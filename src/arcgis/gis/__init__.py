@@ -215,6 +215,7 @@ class GIS(object):
         """
         self._proxy_host = kwargs.pop('proxy_host', None)
         self._proxy_port = kwargs.pop('proxy_port', 80)
+        self._referer = kwargs.pop('referer', None)
 
         from arcgis._impl.tools import _Tools
 
@@ -297,7 +298,8 @@ class GIS(object):
                                            proxy_host=self._proxy_host,
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
-                                           client_id=self._client_id)
+                                           client_id=self._client_id,
+                                           referer=self._referer)
 
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -337,7 +339,8 @@ class GIS(object):
                                       verify_cert=self._verify_cert,
                                       client_id=self._client_id,
                                       proxy_port=self._proxy_port,
-                                      proxy_host=self._proxy_host)
+                                      proxy_host=self._proxy_host,
+                                      referer=self._referer)
                 self._portal = pp
         except: pass
 
@@ -1113,6 +1116,71 @@ class DatastoreManager(object):
             print("Big Data file share exists for " + name)
 
         return output
+
+    #----------------------------------------------------------------------
+    def add_cloudstore(self, name, conn_str, object_store, provider="amazon", managed=False):
+        """
+        Cloud Store data item represents a connection to a Amazon or Microsoft Azure store.
+        Connection information for the data store item is stored within conn_str as a
+        stringified JSON. ArcGIS Server encrypts connection string for storage. Connection
+        strings that are encrypted will include a {crypt} prefix. You can get a data store
+        item with decrypted connection string by passing a decrypt=true parameter in the request
+        for a data store item. Data store with decrypted connection string will be returned only for
+        requests made with https. The examples below show data stores with decrypted conn_str.
+        A valid object_store (S3 bucket or Azure Blob store) is required. Folders within an object
+        store are optional.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The name of the cloud store.
+        ---------------     --------------------------------------------------------------------
+        conn_str            Required string. The connection information for the cloud storage
+                            product.
+        ---------------     --------------------------------------------------------------------
+        object_store        Required string. This is the amazon bucket path or Azuze path.
+        ---------------     --------------------------------------------------------------------
+        provider            Required string. Values must be amazon or azure.
+        ===============     ====================================================================
+
+
+        :return: DataStore
+
+        """
+        path = self._admin_url + "/data/registerItem"
+        cs = {
+            "path": "/cloudStores/%s" % name,
+            "type": "cloudStore",
+            "provider": provider,
+            "info": {
+                "isManaged": managed,
+                "connectionString": conn_str,
+                "objectStore": object_store
+            }
+        }
+        params = {
+        'f' : 'json',
+        'item' : json.dumps(cs)
+        }
+
+        status, msg = self._validate_item(item=params['item'])
+        if status == False:
+            raise Exception(msg)
+        res = self._portal.con.post(path, params, verify_cert=False)
+
+        if res['status'] == 'success' or res['status'] == 'exists':
+            output = Datastore(self, "/cloudStores/" + name)
+
+        if res['success']:
+            print("Created Big Data file share for " + name)
+        elif res['success'] == False and res['status'] != 'exists':
+            raise Exception("Could not create Big Data file share: %s" % name)
+        elif res['status'] == 'exists':
+            print("Big Data file share exists for " + name)
+
+
+        return output
+
 
     def add_database(self,
                      name,
@@ -3120,7 +3188,7 @@ class ContentManager(object):
         deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
         return deep_cloner.clone()
 
-    def _bulk_update(self, itemids, properties):
+    def bulk_update(self, itemids, properties):
         """
         Updates a collection of items' properties.
 
@@ -4516,6 +4584,8 @@ class User(dict):
         website, and manage email communications from Esri. The member
         cannot enable or disable their own access to these Esri resources.
 
+        **Trial** accounts cannot modify esri_access property.
+
         Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
         for more information.
 
@@ -4536,6 +4606,8 @@ class User(dict):
         Community and Forums (GeoNet), access e-Learning on the Training
         website, and manage email communications from Esri. The member
         cannot enable or disable their own access to these Esri resources.
+
+        **Trial** accounts cannot modify esri_access property.
 
         Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
         for more information.
@@ -5808,18 +5880,84 @@ class Item(dict):
         else:
             return self._portal.unshare_item(self.itemid, self.owner, folder, group_ids)
 
-    def delete(self):
-        """ Deletes an item.
+    def delete(self, force=False, dry_run=False):
+        """
+        Deletes the item. If unable to delete, raises a RuntimeException. To know if you can safely delete the item,
+        use the optional parameter 'dry_run'
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        force               Optional bool. Available in ArcGIS Enterprise 10.6.1 and higher.
+                            Force deletion is applicable only to items that were orphaned when
+                            a server federated to the ArcGIS Enterprise was removed accidentally
+                            before properly unfederating it. When called on other items, it has
+                            no effect.
+        ---------------     --------------------------------------------------------------------
+        dry_run             Optional bool. Available in ArcGIS Enterprise 10.6.1 and higher.If
+                            True, checks if the item can be safely deleted and gives you back
+                            either a dictionary with details. If dependent items are preventing
+                            deletion, a list of such Item objects are provided.
+        ===============     ====================================================================
 
         :return:
-            A boolean indicating success (True) or failure (False).
+            A bool containing True (for success) or False (for failure). When dry_run is used, a dictionary with
+            details is returned.
 
+        .. code-block:: python
+
+            USAGE EXAMPLE: Successful deletion of an item
+
+            item1 = gis.content.get('itemId12345')
+            item1.delete()
+
+            >> True
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Failed deletion of an item
+
+            item1 = gis.content.get('itemId12345')
+            item1.delete()
+
+            >> RuntimeError: Unable to delete item. This service item has a related Service item
+            >> (Error Code: 400)
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Dry run to check deletion of an item
+
+            item1 = gis.content.get('itemId12345abcde')
+            item1.delete(dry_run=True)
+
+            >> {'can_delete': False,
+            >> 'details': {'code': 400,
+            >> 'message': 'Unable to delete item. This service item has a related Service item',
+            >> 'offending_items': [<Item title:"Chicago_accidents_WFS" type:WFS owner:sharing1>]}}
+
+        .. note::
+            During the dry run, if you receive a list of offending items, attempt to delete them first before deleting
+            the current item. You can in turn call 'dry_run' on those items to ensure they can be deleted safely.
         """
+
         try:
             folder = self.ownerFolder
         except:
             folder = None
-        return self._portal.delete_item(self.itemid, self.owner, folder)
+
+        if dry_run:
+            can_delete_resp = self._portal.can_delete(self.itemid, self.owner, folder)
+            if can_delete_resp[0]:
+                return {'can_delete':True}
+            else:
+                error_dict = {'code': can_delete_resp[1].get('code'),
+                              'message': can_delete_resp[1].get('message'),
+                              'offending_items': [Item(self._gis, e['itemId']) for e in
+                                                  can_delete_resp[1].get('offendingItems')]}
+
+                return {'can_delete':False, 'details': error_dict}
+        else:
+            return self._portal.delete_item(self.itemid, self.owner, folder, force)
 
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
         """ Updates an item in a Portal.
@@ -5869,6 +6007,8 @@ class Item(dict):
         -----------------  ---------------------------------------------------------------------
         tags               Optional string. Tags listed as comma-separated values, or a list of strings.
                            Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        text               Optional string. For text based items such as Feature Collections & WebMaps
         -----------------  ---------------------------------------------------------------------
         snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
         -----------------  ---------------------------------------------------------------------

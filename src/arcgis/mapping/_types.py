@@ -880,11 +880,11 @@ class OfflineMapAreaManager(object):
             for cached_layer in cached_layers:
                 if cached_layer.layerType == 'VectorTileLayer':
                     if hasattr(cached_layer, 'url'):
-                        layer0_obj = VectorTileLayer(cached_layer.url)
+                        layer0_obj = VectorTileLayer(cached_layer.url, self._gis)
                     elif hasattr(cached_layer, 'itemId'):
                         layer0_obj = VectorTileLayer.fromitem(self._gis.content.get(cached_layer.itemId))
                 else:
-                    layer0_obj = MapImageLayer(cached_layer.url)
+                    layer0_obj = MapImageLayer(cached_layer.url, self._gis)
 
                 # region snap logic
                 # Objective is to find the LoD that is close to the min scale specified. When scale falls between two

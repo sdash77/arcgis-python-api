@@ -1155,6 +1155,7 @@ class _ArcGISConnection(object):
 
                 self._handle_json_error(resp_json['error'], errorcode)
                 return None
+
         except AttributeError:
             # Top-level JSON object isnt a dict, so can't have an error
             pass

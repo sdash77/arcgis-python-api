@@ -43,7 +43,7 @@ class Project:
         self._item = item
         self._item_data = item.get_data()
         self._assignment_schema = AssignmentSchema(self.assignments_layer)
-        self._track_schema = TrackSchema(self.dispatchers_layer)
+        self._track_schema = TrackSchema(self.tracks_layer)
         self._worker_schema = WorkerSchema(self.workers_layer)
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         self._update_cached_objects()

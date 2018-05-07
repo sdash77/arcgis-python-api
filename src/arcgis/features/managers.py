@@ -1011,7 +1011,7 @@ class FeatureLayerCollectionManager(_GISResource):
     def overwrite(self, data_file):
         """
         Overwrite all the features and layers in a hosted feature layer collection service. This operation removes
-        all features but retains the properties (such as symbology, itemID) and capabilities configured on the service.
+        all features but retains the properties (such as metadata, itemID) and capabilities configured on the service.
         There are some limits to using this operation:
             1. Only hosted feature layer collection services can be overwritten
             2. The original data used to publish this layer should be available on the portal

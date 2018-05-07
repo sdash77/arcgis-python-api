@@ -6,6 +6,9 @@ import subprocess
 import logging
 log = logging.getLogger()
 
+JENKINS_ROOT = "http://zion/jenkins"
+NB_TIMEOUT = 120
+
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
     '..'))
@@ -24,6 +27,8 @@ PULL_REQUEST_REGEX = ".*pull.*request.*"
 PUBLISH_REGEX = ".*publish.*"
 LINUX_SLAVE_REGEX = ".*linux.*slave.*"
 UNIT_TEST_REGEX = ".*unit.*test.*"
+NOTEBOOK_TEST_REGEX = ".*notebook.*test.*"
+ALL_TEST_REGEX = ".*all.*test.*"
 DEV_SITE_REGEX = ".*dev.*site.*"
 
 def run_shell_command(cmd):

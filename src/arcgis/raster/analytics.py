@@ -6,6 +6,8 @@ import json as _json
 import arcgis as _arcgis
 import string as _string
 import random as _random
+import collections
+from arcgis.gis import Item
 
 def get_datastores(gis=None):
     """
@@ -126,6 +128,79 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
             }
     output_service.update(item_properties)
     return output_service
+
+
+def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None):
+    
+    inputRasterSpecified = False
+
+    # input rasters
+    if isinstance(input_rasters, list):
+        # extract the IDs of all the input items
+        # and then convert the list to JSON
+        item_id_list = []
+        url_list = []
+        uri_list = []
+        for item in input_rasters:
+            if isinstance(item, Item):
+                item_id_list.append(item.itemid)
+            elif isinstance(item, str):
+                if 'http:' in item or 'https:' in item:
+                    url_list.append(item)
+                else:
+                    uri_list.append(item)        
+        
+        if len(item_id_list) > 0:
+            params["inputRasters"] = _json.dumps({"itemIds" : item_id_list })
+            inputRasterSpecified = True
+        elif len(url_list) > 0:
+            params["inputRasters"] = _json.dumps({"urls" : url_list})
+            inputRasterSpecified = True
+        elif len(uri_list) > 0:
+            params["inputRasters"] = _json.dumps({"uris" : uri_list})
+            inputRasterSpecified = True
+    elif isinstance(input_rasters, str):
+        # the input_rasters is a folder name; try and extract the folderID
+        owner = gis.properties.user.username
+        folderId = gis._portal.get_folder_id(owner, input_rasters)
+        if folderId is None:
+            raise RuntimeError("Input raster name does not seem to be a folder ID")
+
+        params["inputRasters"] = {"folderId" : folderId}
+        inputRasterSpecified = True
+
+    if inputRasterSpecified is False:
+        raise RuntimeError("Input raster list to be added to the collection must be specified")
+
+    # raster_type
+    if not isinstance(raster_type_name, str):
+        raise RuntimeError("Invalid input raster_type parameter")
+
+    if raster_type_params is not None:
+        params["rasterType"] = _json.dumps({ "rasterTypeName" : raster_type_name, "rasterTypeParameters" : raster_type_params })
+    else:
+        params["rasterType"] = { "rasterTypeName" : raster_type_name }
+
+    return
+
+
+###################################################################################################
+###################################################################################################
+def _set_image_collection_param(gis, params, image_collection):
+    if isinstance(image_collection, str):
+        #doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
+        #if doesnotexist:
+            #raise RuntimeError("The input image collection does not exist")
+        if 'http:' in image_collection or 'https:' in image_collection:
+            params['imageCollection'] = _json.dumps({ 'url' : image_collection })
+        else:
+            params['imageCollection'] = _json.dumps({ 'uri' : image_collection })
+    elif isinstance(image_collection, Item):
+        params['imageCollection'] = _json.dumps({ "itemId" : image_collection.itemid })
+    else:
+        raise TypeError("image_collection should be a string (service name) or Item")
+
+    return
 
 # def monitor_vegetation(input_raster,
 #                        method_to_use='NDVI',
@@ -916,10 +991,7 @@ def create_viewshed(input_elevation_surface,
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
-    # print(job_values)
     if output_name is not None:
-        # url = job_values['output']['url']
-        # return FeatureLayer(url, self._gis) #item
         item_properties = {
             "properties": {
                 "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -1069,10 +1141,6 @@ def interpolate_points(input_point_features,
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
-    # print(job_values)
-    # if output_name is not None:
-        # url = job_values['output']['url']
-        # return FeatureLayer(url, self._gis) #item
     item_properties = {
         "properties": {
             "jobUrl": task_url + '/jobs/' + job_info['jobId'],
@@ -1305,3 +1373,303 @@ def train_classifier(input_raster,
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     # print(job_values)
     return job_values['outputClassifierDefinition']
+
+
+###################################################################################################
+## Create image collection
+###################################################################################################
+def create_image_collection(image_collection,
+                            input_rasters, 
+                            raster_type_name,                            
+                            raster_type_params = None, 
+                            out_sr = None,
+                            gis = None):
+    """
+    Create a collection of images that will participate in the ortho-maping project.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    image_collection       Required, the name of the image collection to create.
+                  
+                           The image collection can be an existing image service, in 
+                           which the function will create a mosaic dataset and the existing 
+                           hosted image service will then point to the new mosaic dataset.
+
+                           If the image collection does not exist, a new multi-tenant
+                           service will be created.
+
+                           This parameter can be the Item representing an existing image_collection
+                           or it can be a string representing the name of the image_collection
+                           (either existing or to be created.)
+    ------------------     --------------------------------------------------------------------
+    input_rasters          Required, the list of input rasters to be added to
+                           the image collection being created. This parameter can
+                           be any one of the following:
+                           - List of portal Items of the images
+                           - An image service URL
+                            - Shared data path (this path must be accessible by the server)
+                           - Name of a folder on the portal
+    ------------------     --------------------------------------------------------------------
+    raster_type_name       Required, the name of the raster type to use for adding data to 
+                           the image collection.
+    ------------------     --------------------------------------------------------------------
+    raster_type_params     Optional,  additional raster_type specific parameters.
+        
+                           The process of add rasters to the image collection can be
+                           controlled by specifying additional raster type arguments.
+
+                           The raster type parameters argument is a dictionary.
+    ------------------     --------------------------------------------------------------------
+    out_sr                 Optional, additional parameters of the service.
+                            
+                           The following additional parameters can be specified:
+                           - Spatial reference of the image_collection; The well-known ID of 
+                             the spatial reference or a spatial reference dictionary object for the 
+                             input geometries.
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        The imagery layer item
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+    context = {}
+    task = "CreateImageCollection"
+
+    if isinstance(image_collection, Item):
+        params["imageCollection"] = _json.dumps({"itemId": image_collection.itemid})
+    elif isinstance(image_collection, str):
+        if ("/") in image_collection or ("\\") in image_collection:
+            if 'http:' in image_collection or 'https:' in image_collection:
+                params['imageCollection'] = _json.dumps({ 'url' : image_collection })
+            else:
+                params['imageCollection'] = _json.dumps({ 'uri' : image_collection })
+        else:
+            result = gis.content.search("title:"+str(image_collection), item_type = "Imagery Layer")
+            if len(result) > 0:
+                result = result[0]
+                if result is not None:
+                    params["imageCollection"]= _json.dumps({"itemId": result.itemid})
+            else:
+                doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service") 
+                if doesnotexist:
+                    params["imageCollection"] = _json.dumps({"serviceProperties": {"name" : image_collection}})
+    _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params)
+        
+    # context
+    if out_sr is not None:
+        if isinstance(out_sr, int):
+            context['outSR'] = out_sr
+            params['context'] = _json.dumps(context) 
+    # Create the task to execute   
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties":{
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+            }
+        }
+    output_service= gis.content.get(job_values["result"]["itemId"])
+
+    return  output_service 
+
+
+###################################################################################################
+## Add image
+###################################################################################################
+def add_image(image_collection,
+              input_rasters, 
+              raster_type_name=None, 
+              raster_type_params=None, 
+              gis = None):
+    """
+    Add a collection of images to an existing image_collection.
+
+    It can be used when new data is available to be included in the same 
+    orthomapping project. When new data is added to the image collection
+    the entire image collection must be reset to the original state.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    input_rasters          Required, the list of input rasters to be added to
+                           the image collection being created. This parameter can
+                           be any one of the following:
+                           - List of portal Items of the images
+                           - An image service URL
+                           - Shared data path (this path must be accessible by the server)
+                           - Name of a folder on the portal
+    ------------------     --------------------------------------------------------------------
+    image_collection       Required, the item representing the image collection to add input_rasters to.
+                  
+                           The image collection must be an existing image collection.
+                           
+                           This is the output image collection (mosaic dataset) item or url or uri
+    ------------------     --------------------------------------------------------------------
+    raster_type_name       Required, the name of the raster type to use for adding data to 
+                           the image collection.
+    ------------------     --------------------------------------------------------------------
+    raster_type_params     Optional,  additional raster_type specific parameters.
+        
+                           The process of add rasters to the image collection can be
+                           controlled by specifying additional raster type arguments.
+
+                           The raster type parameters argument is a dictionary.
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        The imagery layer url
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+    _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params)
+
+    # Create the task to execute
+    task = 'AddImage'
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties":{
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+            }
+        }
+
+    return job_values["result"]["url"]
+
+###################################################################################################
+## Delete image
+###################################################################################################
+def delete_image(image_collection, 
+                 where, 
+                 gis = None):
+    """
+    delete_image allows users to remove existing images from the image collection (mosaic dataset). 
+    The function will not only delete the raster item in the mosaic dataset but also remove the 
+    source image from the server.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    image_collection       Required, the input image collection from which to delete images
+                           This can be the 'itemID' of an exisiting portal item or a url
+                           to an Image Service or a uri
+    ------------------     --------------------------------------------------------------------
+    where                  Required string,  a SQL 'where' clause for selecting the images 
+                           to be deleted from the image collection
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        The imagery layer url
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+
+    if where is not None:
+        params['where'] = where
+
+    task = "DeleteImage"
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties":{
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+            }
+        }
+
+    return job_values["result"]["url"]
+
+
+###################################################################################################
+## Delete image collection
+###################################################################################################
+def delete_image_collection(image_collection,
+                            gis = None):
+    '''
+    Delete the image collection. This service tool will delete the image collection
+    image service, portal item and all the source image data it references to.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    image_collection       Required, the input image collection to delete.
+
+                           The image_collection can be a portal Item or an image service URL or a URI.
+                            
+                           The image_collection must exist.
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        Boolean value indicating whether the deletion was successful or not
+
+    '''
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+
+    task = 'DeleteImageCollection'
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties":{
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+            }
+        }
+
+
+    return job_values["result"]
+
