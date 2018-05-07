@@ -210,7 +210,10 @@ def from_featureclass(filename, **kwargs):
             for row in rows:
                 row = list(row)
                 # Prevent curves/arcs
-                if row[geom_idx].type in ['polyline', 'polygon']:
+                if row[geom_idx] is None:
+                    row.pop(geom_idx)
+                    g = {}
+                elif row[geom_idx].type in ['polyline', 'polygon']:
                     g = _types.Geometry(row.pop(geom_idx).generalize(0))
                 else:
                     g = _types.Geometry(row.pop(geom_idx))
