@@ -225,18 +225,17 @@ class GIS(object):
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
-
-            # Check if config file is in the old format
-            if not self._config_is_in_new_format(config):
-                answer = input("Warning: profiles in {} appear to be in the "\
-                    "<v1.3 format, and must be deleted before continuing. "\
-                    "Delete? [y/n]".format(cfg_file_path))
-                if "y" in answer.lower():
-                    os.remove(cfg_file_path)
-                    config = configparser.ConfigParser()
-                else:
-                    raise RuntimeError("{} not deleted, exiting"\
-                        "".format(cfg_file_path))
+                # Check if config file is in the old format
+                if not self._config_is_in_new_format(config):
+                    answer = input("Warning: profiles in {} appear to be in "\
+                        "the <v1.3 format, and must be deleted before "\
+                        "continuing. Delete? [y/n]".format(cfg_file_path))
+                    if "y" in answer.lower():
+                        os.remove(cfg_file_path)
+                        config = configparser.ConfigParser()
+                    else:
+                        raise RuntimeError("{} not deleted, exiting"\
+                            "".format(cfg_file_path))
 
             # Add any __init__() args to config/keyring store
             if profile not in config.keys():
