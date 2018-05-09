@@ -1169,7 +1169,6 @@ def generate_report(image_collection, gis = None):
     task = 'GenerateReport'
     job_values = _execute_task(gis, task, params)
 
-    print(job_values["outReport"]["url"])
     return job_values["outReport"]["url"]
 
 ###################################################################################################
