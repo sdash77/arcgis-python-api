@@ -42,7 +42,6 @@ else:
         'pyshp',
         'matplotlib',
         'keyring',
-        'dill',
         'winkerberos;platform_system=="Windows"' ]
 
 def _post_install():
