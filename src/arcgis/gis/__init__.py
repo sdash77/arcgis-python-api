@@ -1646,7 +1646,7 @@ class UserManager(object):
         return None
 
     def search(self, query=None, sort_field='username', sort_order='asc',
-               max_users=100, outside_org=False, exclude_system=True):
+               max_users=100, outside_org=False, exclude_system=False):
         """
         Searches portal users.
 
