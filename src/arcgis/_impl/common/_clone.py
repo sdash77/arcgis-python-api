@@ -91,6 +91,21 @@ class _DeepCloner():
                 leaf_nodes.append(node)
         return leaf_nodes
 
+    def _get_created_items(self):
+        """
+        Gets all the items that have been created in the order they were created
+        :return: <List> of leaf nodes
+        """
+        created_items = []
+        processed_nodes = []
+        while len(processed_nodes) < len(self._graph.values()):
+            for node in [x for x in self._graph.values() if x not in processed_nodes and (not x.children or all([child in processed_nodes for child in x.children]))]:
+                for item in node.created_items:
+                    if item not in created_items:
+                        created_items.append(item)
+                processed_nodes.append(node)
+        return created_items
+
     def _get_item_definitions(self, item):
         """" Get a list of definitions for the specified item.
         This method differs from get_item_definition in that it is run recursively to return the definitions of dependent items depending on the type.
@@ -469,8 +484,8 @@ class _DeepCloner():
         # Then use graph to clone rest of things
         leaf_nodes = self._get_leaf_nodes()
         level = 0
+
         # also includes items that already existed and mapped
-        cloned_items = []
         while leaf_nodes:
             logging.getLogger().info("Processing Level: {}".format(level))
             loop = asyncio.get_event_loop()
@@ -504,19 +519,15 @@ class _DeepCloner():
             # if any of the results are an _ItemCreate Exception, then delete all created items/groups
             for result in results:
                 if isinstance(result, _ItemCreateException):
-                    for node in self._graph.values():
-                        for item in node.created_items:
-                            item.delete()
+                    created_items = self._get_created_items()
+                    for item in reversed(created_items):
+                        item.delete()
                     raise result
-                # only return created items, not groups or item already found in target portal
-                for node in self._graph.values():
-                    for item in node.created_items:
-                        if item not in cloned_items and isinstance(item, arcgis.gis.Item):
-                            cloned_items.append(item)
+
             level += 1
             leaf_nodes = self._get_leaf_nodes()
         logging.getLogger().info("Completed")
-        return cloned_items
+        return [i for i in self._get_created_items() if isinstance(i, arcgis.gis.Item)]
 
     def clone(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
