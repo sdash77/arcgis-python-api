@@ -1645,7 +1645,8 @@ class UserManager(object):
             return User(self._gis, user['username'], user)
         return None
 
-    def search(self, query=None, sort_field='username', sort_order='asc', max_users=100, outside_org=False):
+    def search(self, query=None, sort_field='username', sort_order='asc',
+               max_users=100, outside_org=False, exclude_system=True):
         """
         Searches portal users.
 
@@ -1686,21 +1687,26 @@ class UserManager(object):
         outside_org       Optional boolean. This controls whether to search outside
                           your organization. The default is False (search only
                           within your organization).
+        ----------------  --------------------------------------------------------
+        exclude_system    Optional boolean. Controls if built-in system accounts are
+                          returned or not.  True means built-in account are not
+                          returned, where as False means that they are.
         ================  ========================================================
 
         :return:
             A list of users.
         """
         if query is None:
-            users = self._portal.get_org_users(max_users)
+            users = self._portal.get_org_users(max_users, exclude_system=json.dumps(exclude_system))
             for u in users:
                 if not 'roleId' in u:
                     u['roleId'] = u.pop('role')
             return [User(self._gis, u['username'], u) for u in users]
         else:
             userlist = []
-
-            users = self._portal.search_users(query, sort_field, sort_order, max_users, outside_org)
+            isinstance(self._portal, portalpy.Portal)
+            users = self._portal.search_users(query, sort_field, sort_order,
+                                              max_users, outside_org, json.dumps(exclude_system))
             for user in users:
                 userlist.append(User(self._gis, user['username'], user))
             return userlist
