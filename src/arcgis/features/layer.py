@@ -1195,10 +1195,11 @@ class FeatureLayer(Layer):
                                 postdata=params, token=self._token)
         if 'error' in result:
             raise ValueError(result)
-
         if  params['returnCountOnly']:
             return result['count']
         elif params['returnIdsOnly']:
+            return result
+        elif 'extent' in result:
             return result
         else:
             return FeatureSet.from_dict(result)
