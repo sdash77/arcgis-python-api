@@ -53,7 +53,6 @@ class Worker(FeatureModel):
             self.status = status
             self.title = title
             self.user_id = user_id
-            self.status = 0
 
     def __str__(self):
         return "{} ({})".format(self.name, self.user_id)
