@@ -147,7 +147,7 @@ def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, unde
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(raster, template_dict, raster_ra, variable_name='Rasters')
+    return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
 def arg_max(rasters, undefined_class=None, astype=None):
     """
