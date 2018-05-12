@@ -228,7 +228,10 @@ class UX(object):
 
          :return: boolean
         """
-        return self._gis.update_properties({"name": name})
+        res = self._gis.update_properties({"name": name})
+        if self._gis.properties.name != name:
+            res = self._gis.update_properties({"name": name})
+        return res
     #----------------------------------------------------------------------
     @property
     def description(self):
