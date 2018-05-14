@@ -100,4 +100,12 @@ return_m = False
 #: If True, messages from geoprocessing tools will be printed to stdout
 verbose = False
 
-
+#: At ArcGIS Enterprise 10.6.1, tasks that have the default_aggregation_styles property set to true in
+#: their context parameter will set the default aggregations for the resulting layer. If this parameter
+#: is set to true, default aggregations include square, pointy triangle, flat triangle, pointy hexagon,
+#: flat hexagon, and geohash. All aggregation styles are supported using wkid 4326 (WGS_1984).
+#: When you create a map service from the resulting feature service, you can select the aggregation style
+#: using ArcGIS GeoEvent Server or a custom app. The syntax of default_aggregation_styles is False.
+#: The default aggregation style is supported for point, line and polygon features, and is useful for
+#: large datasets, if you don't want to view all the raw features at once.
+default_aggregation_styles = False
