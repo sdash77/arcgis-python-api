@@ -25,7 +25,8 @@ class RouteLayer(NetworkLayer):
     The Route Layer which has common properties of Network Layer
     as well as some attributes unique to Route Network Layer only.
     """
-    def solve(self, stops,
+    def solve(self,
+              stops,
               barriers=None,
               polyline_barriers=None,
               polygon_barriers=None,
@@ -60,141 +61,167 @@ class RouteLayer(NetworkLayer):
               output_geometry_precision_units=None,
               return_z=False
               ):
-        """The solve operation is performed on a network layer resource.
+        """
+        The solve operation is performed on a network layer resource.
         The solve operation is supported on a network layer whose layerType
         is esriNAServerRouteLayer. You can provide arguments to the solve
         route operation as query parameters.
-        Inputs:
-            stops - The set of stops loaded as network locations during analysis.
-                    Stops can be specified using a simple comma / semi-colon
-                    based syntax or as a JSON structure. If stops are not
-                    specified, preloaded stops from the map document are used in
-                    the analysis.
-            barriers - The set of barriers loaded as network locations during
-                       analysis. Barriers can be specified using a simple comma
-                       / semi-colon based syntax or as a JSON structure. If
-                       barriers are not specified, preloaded barriers from the
-                       map document are used in the analysis. If an empty json
-                       object is passed ('{}') preloaded barriers are ignored.
-            polylineBarriers - The set of polyline barriers loaded as network
-                               locations during analysis. If polyline barriers
-                               are not specified, preloaded polyline barriers
-                               from the map document are used in the analysis.
-                               If an empty json object is passed ('{}')
-                               preloaded polyline barriers are ignored.
-            polygonBarriers - The set of polygon barriers loaded as network
-                              locations during analysis. If polygon barriers
-                              are not specified, preloaded polygon barriers
-                              from the map document are used in the analysis.
-                              If an empty json object is passed ('{}') preloaded
-                              polygon barriers are ignored.
 
-            travelMode - Travel modes provide override values that help you
-                         quickly and consistently model a vehicle or mode of
-                         transportation. The chosen travel mode must be
-                         preconfigured on the network dataset that the routing
-                         service references.
-            attributeParameterValues - A set of attribute parameter values that
-                                       can be parameterized to determine which
-                                       network elements can be used by a vehicle.
-            returnDirections - If true, directions will be generated and returned
-                               with the analysis results. Default is true.
-            returnRoutes - If true, routes will be returned with the analysis
-                           results. Default is true.
-            returnStops -  If true, stops will be returned with the analysis
-                           results. Default is false.
-            returnBarriers -  If true, barriers will be returned with the analysis
-                              results. Default is false.
-            returnPolylineBarriers -  If true, polyline barriers will be returned
-                                      with the analysis results. Default is false.
-            returnPolygonBarriers - If true, polygon barriers will be returned with
-                                    the analysis results. Default is false.
-            outSR - The spatial reference of the geometries returned with the
-                    analysis results.
-            ignoreInvalidLocations - If true, the solver will ignore invalid
-                                     locations. Otherwise, it will raise an error.
-                                     The default is as defined in the network layer.
-            outputLines - The type of output lines to be generated in the result.
-                          The default is as defined in the network layer.
-            findBestSequence - If true, the solver should re-sequence the route in
-                               the optimal order. The default is as defined in the
-                               network layer.
-            preserveFirstStop - If true, the solver should keep the first stop
-                                fixed in the sequence. The default is as defined
-                                in the network layer.
-            preserveLastStop - If true, the solver should keep the last stop fixed
-                               in the sequence. The default is as defined in the
-                               network layer.
-            useTimeWindows - If true, the solver should consider time windows.
-                             The default is as defined in the network layer.
-            startTime - The time the route begins. If not specified, the solver
-                        will use the default as defined in the network layer.
-            startTimeIsUTC - The time zone of the startTime parameter.
-            accumulateAttributeNames - The list of network attribute names to be
-                                       accumulated with the analysis. The default is
-                                       as defined in the network layer. The value
-                                       should be specified as a comma separated list
-                                       of attribute names. You can also specify a
-                                       value of none to indicate that no network
-                                       attributes should be accumulated.
-            impedanceAttributeName - The network attribute name to be used as the
-                                     impedance attribute in analysis. The default is
-                                     as defined in the network layer.
-            restrictionAttributeNames -The list of network attribute names to be
-                                       used as restrictions with the analysis. The
-                                       default is as defined in the network layer.
-                                       The value should be specified as a comma
-                                       separated list of attribute names. You can
-                                       also specify a value of none to indicate that
-                                       no network attributes should be used as
-                                       restrictions.
-            restrictUTurns -  Specifies how U-Turns should be restricted in the
-                              analysis. The default is as defined in the network
-                              layer. Values: esriNFSBAllowBacktrack |
-                              esriNFSBAtDeadEndsOnly | esriNFSBNoBacktrack |
-                              esriNFSBAtDeadEndsAndIntersections
-            useHierarchy -  If true, the hierarchy attribute for the network should
-                            be used in analysis. The default is as defined in the
-                            network layer.
-            directionsLanguage - The language to be used when computing directions.
-                                 The default is as defined in the network layer. The
-                                 list of supported languages can be found in REST
-                                 layer description.
-            directionsOutputType -  Defines content, verbosity of returned
-                                    directions. The default is esriDOTStandard.
-                                    Values: esriDOTComplete | esriDOTCompleteNoEvents
-                                    | esriDOTInstructionsOnly | esriDOTStandard |
-                                    esriDOTSummaryOnly
-            directionsStyleName - The style to be used when returning the directions.
-                                  The default is as defined in the network layer. The
-                                  list of supported styles can be found in REST
-                                  layer description.
-            directionsLengthUnits - The length units to use when computing directions.
-                                    The default is as defined in the network layer.
-                                    Values: esriNAUFeet | esriNAUKilometers |
-                                    esriNAUMeters | esriNAUMiles |
-                                    esriNAUNauticalMiles | esriNAUYards |
-                                    esriNAUUnknown
-            directionsTimeAttributeName - The name of network attribute to use for
-                                          the drive time when computing directions.
-                                          The default is as defined in the network
-                                          layer.
-            outputGeometryPrecision -  The precision of the output geometry after
-                                       generalization. If 0, no generalization of
-                                       output geometry is performed. The default is
-                                       as defined in the network service
-                                       configuration.
-            outputGeometryPrecisionUnits - The units of the output geometry
-                                           precision. The default value is
-                                           esriUnknownUnits. Values: esriUnknownUnits
-                                           | esriCentimeters | esriDecimalDegrees |
-                                           esriDecimeters | esriFeet | esriInches |
-                                           esriKilometers | esriMeters | esriMiles |
-                                           esriMillimeters | esriNauticalMiles |
-                                           esriPoints | esriYards
-            returnZ - If true, Z values will be included in the returned routes and
-                       compressed geometry if the network dataset is Z-aware.
-                       The default is false.
+
+        ===================================     ====================================================================
+        **Argument**                            **Description**
+        -----------------------------------     --------------------------------------------------------------------
+        stops                                   Required Points/FeatureSet. The set of stops loaded as network
+                                                locations during analysis. Stops can be specified using a simple
+                                                comma / semi-colon based syntax or as a JSON structure. If stops are
+                                                not specified, preloaded stops from the map document are used in the
+                                                analysis.
+        -----------------------------------     --------------------------------------------------------------------
+        barriers                                Optional Point/FeatureSet. The set of barriers loaded as network
+                                                locations during analysis. Barriers can be specified using a simple
+                                                comma/semi-colon based syntax or as a JSON structure. If barriers
+                                                are not specified, preloaded barriers from the map document are used
+                                                in the analysis. If an empty json object is passed ('{}') preloaded
+                                                barriers are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        polyline_barriers                       Optional Polyline/FeatureSet. The set of polyline barriers loaded
+                                                as network locations during analysis. If polyline barriers are not
+                                                specified, preloaded polyline barriers from the map document are
+                                                used in the analysis. If an empty json object is passed ('{}')
+                                                preloaded polyline barriers are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        polygon_barriers                        Optional Polygon/FeatureSet. The set of polygon barriers loaded as
+                                                network locations during analysis. If polygon barriers are not
+                                                specified, preloaded polygon barriers from the map document are used
+                                                in the analysis. If an empty json object is passed ('{}') preloaded
+                                                polygon barriers are ignored.
+        -----------------------------------     --------------------------------------------------------------------
+        travel_mode                             Optional string. Travel modes provide override values that help you
+                                                quickly and consistently model a vehicle or mode of transportation.
+                                                The chosen travel mode must be preconfigured on the network dataset
+                                                that the routing service references.
+        -----------------------------------     --------------------------------------------------------------------
+        attribute_parameter_values              Optional string/list.  A set of attribute parameter values that can be
+                                                parameterized to determine which network elements can be used by a
+                                                vehicle.
+        -----------------------------------     --------------------------------------------------------------------
+        return_directions                       Optional boolean. If true, directions will be generated and returned
+                                                with the analysis results. Default is true.
+        -----------------------------------     --------------------------------------------------------------------
+        return_routes                           Optional boolean. If true, routes will be returned with the analysis
+                                                results. Default is true.
+        -----------------------------------     --------------------------------------------------------------------
+        return_stops                            Optional boolean.  If true, stops will be returned with the analysis
+                                                results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_barriers                         Optional boolean.  If true, barriers will be returned with the
+                                                analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_polyline_barriers                Optional boolean. If true, polyline barriers will be returned with
+                                                the analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        return_polygon_barriers                 Optional boolean. If true, polygon barriers will be returned with
+                                                the analysis results. Default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        out_sr                                  Optional Integer. The spatial reference of the geometries returned
+                                                with the analysis results.
+        -----------------------------------     --------------------------------------------------------------------
+        ignore_invalid_locations                Optional boolean. - If true, the solver will ignore invalid
+                                                locations. Otherwise, it will raise an error. The default is as
+                                                defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        output_lines                            The type of output lines to be generated in the result. The default
+                                                is as defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        find_best_sequence                      Optional boolean. If true, the solver should re-sequence the route in
+                                                the optimal order. The default is as defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        preserve_first_stop                     Optional boolean. If true, the solver should keep the first stop
+                                                fixed in the sequence. The default is as defined in the network
+                                                layer.
+        -----------------------------------     --------------------------------------------------------------------
+        preserve_last_stop                      Optional boolean. If true, the solver should keep the last stop fixed
+                                                in the sequence. The default is as defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        use_time_window                         Optional boolean. If true, the solver should consider time windows.
+                                                The default is as defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        start_time                              Optional string. The time the route begins. If not specified, the
+                                                solver will use the default as defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        start_time_is_utc                       Optional boolean. The time zone of the startTime parameter.
+        -----------------------------------     --------------------------------------------------------------------
+        accumulate_attribute_names              Optional string. A list of network attribute names to be accumulated
+                                                with the analysis. The default is as defined in the network layer.
+                                                The value should be specified as a comma separated list of attribute
+                                                names. You can also specify a value of none to indicate that no
+                                                network attributes should be accumulated.
+        -----------------------------------     --------------------------------------------------------------------
+        impedance_attribute_name                Optional string. The network attribute name to be used as the impedance
+                                                attribute in analysis. The default is as defined in the network layer.
+        -----------------------------------     --------------------------------------------------------------------
+        restriction_attribute_names             Optional string. -The list of network attribute names to be
+                                                used as restrictions with the analysis. The default is as defined in
+                                                the network layer. The value should be specified as a comma
+                                                separated list of attribute names. You can also specify a value of
+                                                none to indicate that no network attributes should be used as
+                                                restrictions.
+        -----------------------------------     --------------------------------------------------------------------
+        restrict_u_turns                        Optional boolean. Specifies how U-Turns should be restricted in the
+                                                analysis. The default is as defined in the network layer.
+                                                Values: esriNFSBAllowBacktrack | esriNFSBAtDeadEndsOnly |
+                                                        esriNFSBNoBacktrack | esriNFSBAtDeadEndsAndIntersections
+        -----------------------------------     --------------------------------------------------------------------
+        use_hierarchy                           Optional boolean.  If true, the hierarchy attribute for the network
+                                                should be used in analysis. The default is as defined in the network
+                                                layer.
+        -----------------------------------     --------------------------------------------------------------------
+        directions_language                     Optional string. The language to be used when computing directions.
+                                                The default is as defined in the network layer. The list of supported
+                                                languages can be found in REST layer description.
+        -----------------------------------     --------------------------------------------------------------------
+        directions_output_type                  Optional string.  Defines content, verbosity of returned directions.
+                                                The default is esriDOTStandard.
+                                                Values: esriDOTComplete | esriDOTCompleteNoEvents
+                                                        | esriDOTInstructionsOnly | esriDOTStandard |
+                                                        esriDOTSummaryOnly
+        -----------------------------------     --------------------------------------------------------------------
+        directions_style_name                   Optional string. The style to be used when returning the directions.
+                                                The default is as defined in the network layer. The list of
+                                                supported styles can be found in REST layer description.
+        -----------------------------------     --------------------------------------------------------------------
+        directions_length_units                 Optional string. The length units to use when computing directions.
+                                                The default is as defined in the network layer.
+                                                Values: esriNAUFeet | esriNAUKilometers | esriNAUMeters |
+                                                        esriNAUMiles | esriNAUNauticalMiles | esriNAUYards |
+                                                        esriNAUUnknown
+        -----------------------------------     --------------------------------------------------------------------
+        directions_time_attribute_name          Optional string. The name of network attribute to use for the drive
+                                                time when computing directions. The default is as defined in the network
+                                                layer.
+        -----------------------------------     --------------------------------------------------------------------
+        output_geometry_precision               Optional float.  The precision of the output geometry after
+                                                generalization. If 0, no generalization of output geometry is
+                                                performed. The default is as defined in the network service
+                                                configuration.
+        -----------------------------------     --------------------------------------------------------------------
+        output_geometry_precision_units         Optional string. The units of the output geometry precision. The
+                                                default value is esriUnknownUnits.
+                                                Values: esriUnknownUnits | esriCentimeters | esriDecimalDegrees |
+                                                        esriDecimeters | esriFeet | esriInches | esriKilometers |
+                                                        esriMeters | esriMiles | esriMillimeters |
+                                                        esriNauticalMiles | esriPoints | esriYards
+        -----------------------------------     --------------------------------------------------------------------
+        return_z                                Optional boolean. If true, Z values will be included in the returned
+                                                routes and compressed geometry if the network dataset is Z-aware.
+                                                The default is false.
+        ===================================     ====================================================================
+
+
+        :return: dict
+
+
+
         """
 
         if not self.properties.layerType == "esriNAServerRouteLayer":
