@@ -1696,12 +1696,14 @@ class UserManager(object):
         :return:
             A list of users.
         """
+
         if query is None:
             users = self._portal.get_org_users(max_users, exclude_system=json.dumps(exclude_system))
             for u in users:
                 if not 'roleId' in u:
-                    u['roleId'] = u.pop('role')
-            return [User(self._gis, u['username'], u) for u in users]
+                    u['roleId'] = u.pop('role', None)
+            gis = self._gis
+            return [User(gis, u['username'], u) for u in users]
         else:
             userlist = []
             isinstance(self._portal, portalpy.Portal)
