@@ -1392,6 +1392,7 @@ class UserManager(object):
         self._gis = gis
         self._portal = gis._portal
 
+
     def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
                provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
@@ -2235,6 +2236,93 @@ class ContentManager(object):
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
+
+    #----------------------------------------------------------------------
+    def create_application(self, title, tags):
+        """
+        Creates an  application item on the enterprise.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        title               Required string. The name of the application.
+        ---------------     --------------------------------------------------------------------
+        tags                Required String.  The descriptive tags for the applications.
+        ===============     ====================================================================
+
+
+        :returns: Item
+
+        """
+        ip = {
+            'title' : title,
+            'tags' : tags,
+            'type' : 'Application'
+        }
+        content = self._gis.content
+        item = content.add(item_properties=ip)
+        res = self.register(item=item, app_type="multiple")
+        return item
+    #----------------------------------------------------------------------
+    def register(self, item, app_type, redirect_uris=None):
+        """
+
+        The register method registers an app item with the enterprise. App
+        registration results in an APPID and APPSECRET (also known as
+        client_id and client_secret in OAuth speak, respectively) being
+        generated for that app. Upon successful registration, a Registered
+        App type keyword gets appended to the app item.
+
+        **Available to the item owner.**
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required Item. Item to register.
+        ---------------     --------------------------------------------------------------------
+        app_type            Required string. The type of app that was registered indicating
+                            whether it's a browser app, native app, server app, or a multiple
+                            interface app.
+                            Values: browser, native, server, or multiple
+        ---------------     --------------------------------------------------------------------
+        redirect_uris       Optional list.  The URIs where the access_token or authorization
+                            code will be delivered upon successful authorization. The
+                            redirect_uri specified during authorization must match one of the
+                            registered URIs, otherwise authorization will be rejected.
+
+                            A special value of urn:ietf:wg:oauth:2.0:oob can also be specified
+                            for authorization grants. This will result in the authorization
+                            code being delivered to a portal URL (/oauth2/approval). This
+                            value is typically used by apps that don't have a web server or a
+                            custom URI scheme where the code can be delivered.
+
+                            The value is a JSON string array.
+
+                            Example:
+
+                            [
+                                "https://app.foo.com",
+                                "urn:ietf:wg:oauth:2.0:oob"
+                            ]
+        ===============     ====================================================================
+
+
+        :return: dict
+
+        """
+        if redirect_uris is None:
+            redirect_uris = []
+        if app_type not in ["browser", "native", "server", "multiple"]:
+            raise ValueError(("Invalid app_type of : %s. Allowed values"
+                             ": browser, native, server or multiple." % app_type))
+        params = {
+            "f" : 'json',
+            "itemId" : item.id,
+            "appType" : app_type,
+            "redirect_uris" : redirect_uris
+        }
+        url = "%soauth2/registerApp" % self._portal.resturl
+        return self._portal.con.post(url, params)
 
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
@@ -6886,6 +6974,85 @@ class Item(dict):
         except:
             return []
         return ps
+    #----------------------------------------------------------------------
+    def create_proxy(self,
+                     url:str=None,
+                     hit_interval:int=None,
+                     interval_length:int=60,
+                     proxy_params:dict=None) -> dict:
+        """
+        A service proxy creates a new endpoint for a service that is
+        specific to your application. Only allowed domains that you
+        specify will be able to access the service.
+
+        ===================    ===============================================================
+        **Argument**           **Description**
+        -------------------    ---------------------------------------------------------------
+        url                    Optional string. Represents the hosted service URLs to proxy.
+        -------------------    ---------------------------------------------------------------
+        hit_interval           Optional Integer. Number of times a service can be used in the
+                               given interval_length.
+        -------------------    ---------------------------------------------------------------
+        interval_length        Optional Integer. The time gap for the total hit_interval that
+                               a service can be used.  The number is in seconds.
+        -------------------    ---------------------------------------------------------------
+        proxy_params           Optional dict. Dictionary that provides referrer checks when
+                               accessing the premium content and optionally rate limiting if
+                               it is not set for each service in proxies.
+                                Example:
+
+                                {
+                                   "referrers": ["http://foo.com", "http://bar.com"],
+                                   "hitsPerInterval": 1000,
+                                   "intervalSeconds": 60
+                                }
+        ===================    ===============================================================
+
+
+        :return: Item
+
+        """
+        url = "%s/sharing/rest/content/users/%s/items/%s/createProxies" % (self._portal.url,
+                                                                           self.owner,
+                                                                           self.id)
+        params = {
+            'f' : 'json',
+            'proxies' : [],
+            'serviceProxyParams': {}
+        }
+        if url and hit_interval and interval_length:
+            params['proxies'].append({
+                "sourceUrl": url,
+                "hitPerInterval" : hit_interval,
+                "intervalSeconds" : interval_length
+            })
+        if proxy_params is not None:
+            params['serviceProxyParams'] = proxy_params
+        res = self._portal.con.post(url, params)
+        return Item(gis=self._gis, itemid=res['id'])
+    #----------------------------------------------------------------------
+    def delete_proxy(self, proxy_id:str) -> dict:
+        """
+        The delete proxies removes a hosted proxies set on an item. The
+        operation can only be made by the item owner or the organization
+        administrator.
+
+        ===================    ===============================================================
+        **Argument**           **Description**
+        -------------------    ---------------------------------------------------------------
+        proxy_id               Required string. This is a comma seperated list of proxy ids.
+        ===================    ===============================================================
+
+
+        :return: dict
+
+        """
+        params = {'f': 'json',
+                  'proxies': proxy_id}
+        url = "%s/content/users/%s/items/%s/deleteProxies" % (self._portal.url,
+                                                              self.owner,
+                                                              self.id)
+        return self._portal.con.post(url, params)
     #----------------------------------------------------------------------
     def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
         """
