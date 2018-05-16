@@ -155,7 +155,7 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
     def test_create_service_defaults(self):
         """
         Calling gis.content.create_service("test","test service") shouls create a feature service.
-        :return: 
+        :return:
         """
         #region old previous output
         old_output_sr = PortalUtils.search_portal_item(self.gis, "dino_ContentManager_test_create_service_defaults", "Feature Service")
@@ -261,6 +261,54 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
     def tearDownClass(cls):
         print("\n==================================================================")
 
+    def test_register_application(self):
+        """tests the creation of an empty application"""
+        try:
+
+            res = []
+            for at in ['browser', 'native', 'server', 'multiple']:
+                ip = {
+                    'title' : uuid.uuid4().hex,
+                    'tags' : "test1,test2,test3,test4",
+                    'type' : 'Application'
+                }
+                item = content.add(item_properties=ip)
+                reg = content.register(item=item, app_type=at)
+                res.append(isinstance(reg, dict))
+                item.delete()
+            self.assertTrue(all(res))
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_create_application(self):
+        """tests the creation of an empty application"""
+        try:
+            content = self.gis.content
+            isinstance(content, arcgis.gis.ContentManger)
+            item = content.create_application(title='testregisterapplication',\
+                                              tags='unittest,unittest2')
+            self.assertIsInstance(item, arcgis.gis.Item)
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+
+
     def test_import_data_geocode(self):
         try:
             # read input data
@@ -300,7 +348,7 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
     def test_create_service_defaults(self):
         """
         Calling gis.content.create_service("test","test service") shouls create a feature service.
-        :return: 
+        :return:
         """
         # region old previous output
         old_output_sr = PortalUtils.search_portal_item(self.gis, "dino_ContentManager_test_create_service_defaults",
