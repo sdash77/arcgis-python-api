@@ -356,7 +356,7 @@ def generate_raster(raster_function,
     if function_arguments is not None:
         params["functionArguments"] = function_arguments
     if output_raster_properties is not None:
-        params["rasterProperties"] = output_raster_properties
+        params["outputRasterProperties"] = output_raster_properties
     _set_context(params)
 
 
