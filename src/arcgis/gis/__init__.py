@@ -2240,7 +2240,7 @@ class ContentManager(object):
     #----------------------------------------------------------------------
     def create_application(self, title, tags):
         """
-        Creates an  application item on the enterprise.
+        Creates an application item on the enterprise.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2249,7 +2249,6 @@ class ContentManager(object):
         ---------------     --------------------------------------------------------------------
         tags                Required String.  The descriptive tags for the applications.
         ===============     ====================================================================
-
 
         :returns: Item
 
@@ -2261,68 +2260,9 @@ class ContentManager(object):
         }
         content = self._gis.content
         item = content.add(item_properties=ip)
-        res = self.register(item=item, app_type="multiple")
+        res = item.register(item=item,
+                            app_type="multiple")
         return item
-    #----------------------------------------------------------------------
-    def register(self, item, app_type, redirect_uris=None):
-        """
-
-        The register method registers an app item with the enterprise. App
-        registration results in an APPID and APPSECRET (also known as
-        client_id and client_secret in OAuth speak, respectively) being
-        generated for that app. Upon successful registration, a Registered
-        App type keyword gets appended to the app item.
-
-        **Available to the item owner.**
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        item                Required Item. Item to register.
-        ---------------     --------------------------------------------------------------------
-        app_type            Required string. The type of app that was registered indicating
-                            whether it's a browser app, native app, server app, or a multiple
-                            interface app.
-                            Values: browser, native, server, or multiple
-        ---------------     --------------------------------------------------------------------
-        redirect_uris       Optional list.  The URIs where the access_token or authorization
-                            code will be delivered upon successful authorization. The
-                            redirect_uri specified during authorization must match one of the
-                            registered URIs, otherwise authorization will be rejected.
-
-                            A special value of urn:ietf:wg:oauth:2.0:oob can also be specified
-                            for authorization grants. This will result in the authorization
-                            code being delivered to a portal URL (/oauth2/approval). This
-                            value is typically used by apps that don't have a web server or a
-                            custom URI scheme where the code can be delivered.
-
-                            The value is a JSON string array.
-
-                            Example:
-
-                            [
-                                "https://app.foo.com",
-                                "urn:ietf:wg:oauth:2.0:oob"
-                            ]
-        ===============     ====================================================================
-
-
-        :return: dict
-
-        """
-        if redirect_uris is None:
-            redirect_uris = []
-        if app_type not in ["browser", "native", "server", "multiple"]:
-            raise ValueError(("Invalid app_type of : %s. Allowed values"
-                             ": browser, native, server or multiple." % app_type))
-        params = {
-            "f" : 'json',
-            "itemId" : item.id,
-            "appType" : app_type,
-            "redirect_uris" : redirect_uris
-        }
-        url = "%soauth2/registerApp" % self._portal.resturl
-        return self._portal.con.post(url, params)
 
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
@@ -6975,7 +6915,7 @@ class Item(dict):
             return []
         return ps
     #----------------------------------------------------------------------
-    def create_proxy(self,
+    def _create_proxy(self,
                      url:str=None,
                      hit_interval:int=None,
                      interval_length:int=60,
@@ -7031,7 +6971,7 @@ class Item(dict):
         res = self._portal.con.post(url, params)
         return Item(gis=self._gis, itemid=res['id'])
     #----------------------------------------------------------------------
-    def delete_proxy(self, proxy_id:str) -> dict:
+    def _delete_proxy(self, proxy_id:str) -> dict:
         """
         The delete proxies removes a hosted proxies set on an item. The
         operation can only be made by the item owner or the organization
@@ -7237,6 +7177,120 @@ class Item(dict):
         if self._depend is None:
             self._depend = ItemDependency(self)
         return self._depend
+    #----------------------------------------------------------------------
+    def register(self, app_type, redirect_uris=None):
+        """
+
+        The register method registers an app item with the enterprise. App
+        registration results in an APPID and APPSECRET (also known as
+        client_id and client_secret in OAuth speak, respectively) being
+        generated for that app. Upon successful registration, a Registered
+        App type keyword gets appended to the app item.
+
+        **Available to the item owner.**
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        app_type            Required string. The type of app that was registered indicating
+                            whether it's a browser app, native app, server app, or a multiple
+                            interface app.
+                            Values: browser, native, server, or multiple
+        ---------------     --------------------------------------------------------------------
+        redirect_uris       Optional list.  The URIs where the access_token or authorization
+                            code will be delivered upon successful authorization. The
+                            redirect_uri specified during authorization must match one of the
+                            registered URIs, otherwise authorization will be rejected.
+
+                            A special value of urn:ietf:wg:oauth:2.0:oob can also be specified
+                            for authorization grants. This will result in the authorization
+                            code being delivered to a portal URL (/oauth2/approval). This
+                            value is typically used by apps that don't have a web server or a
+                            custom URI scheme where the code can be delivered.
+
+                            The value is a JSON string array.
+
+                            Example:
+
+                            [
+                                "https://app.foo.com",
+                                "urn:ietf:wg:oauth:2.0:oob"
+                            ]
+        ===============     ====================================================================
+
+
+        :return: dict
+
+        """
+        if self.type not in ['Application']:
+            return None
+        if redirect_uris is None:
+            redirect_uris = []
+        if app_type not in ["browser", "native", "server", "multiple"]:
+            raise ValueError(("Invalid app_type of : %s. Allowed values"
+                             ": browser, native, server or multiple." % app_type))
+        params = {
+            "f" : 'json',
+            "itemId" : self.id,
+            "appType" : app_type,
+            "redirect_uris" : redirect_uris
+        }
+        url = "%soauth2/registerApp" % self._portal.resturl
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
+    #----------------------------------------------------------------------
+    def unregister(self):
+        """
+
+        The unregister app removes the application registration from an app
+        item along with the Registered App type keyword.
+
+        The operation is available to item owner and organization administrators.
+
+        **Available to the item owner.**
+
+        :return: boolean
+
+
+        """
+        appinfo = self.app_info
+        if 'Registered App' not in self.typeKeywords:
+            return False
+        if appinfo == {} or len(appinfo) == 0:
+            return False
+        params = {"f" : 'json'}
+        url = "%soauth2/apps/%s/unregister" % (self._portal.resturl, appinfo["client_id"])
+        res =  self._portal.con.post(url, params)
+        if res['success']:
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return res['success']
+    #----------------------------------------------------------------------
+    @property
+    def app_info(self):
+        """
+        If the parent item is registered using the register app operation,
+        this resource returns information pertaining to the registered app.
+        Every registered app gets an App ID and App Secret which in OAuth
+        speak are known as client_id and client_secret respectively.
+
+        :returns: dict
+
+        """
+        if "Registered App" not in self.typeKeywords:
+            return {}
+        url = "{base}content/users/{user}/items/{itemid}/registeredAppInfo".format(base=self._portal.resturl,
+                                                                                   user=self._gis.users.me.username,
+                                                                                   itemid=self.id)
+        params = {'f': 'json'}
+        try:
+            return self._portal.con.get(url, params)
+        except:
+            return {}
+
 ########################################################################
 class ItemDependency(object):
     """

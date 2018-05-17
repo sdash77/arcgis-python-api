@@ -261,33 +261,6 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
     def tearDownClass(cls):
         print("\n==================================================================")
 
-    def test_register_application(self):
-        """tests the creation of an empty application"""
-        try:
-
-            res = []
-            for at in ['browser', 'native', 'server', 'multiple']:
-                ip = {
-                    'title' : uuid.uuid4().hex,
-                    'tags' : "test1,test2,test3,test4",
-                    'type' : 'Application'
-                }
-                item = content.add(item_properties=ip)
-                reg = content.register(item=item, app_type=at)
-                res.append(isinstance(reg, dict))
-                item.delete()
-            self.assertTrue(all(res))
-
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
     def test_create_application(self):
         """tests the creation of an empty application"""
         try:
@@ -296,7 +269,7 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
             item = content.create_application(title='testregisterapplication',\
                                               tags='unittest,unittest2')
             self.assertIsInstance(item, arcgis.gis.Item)
-
+            item.delete()
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
@@ -306,8 +279,6 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
-
-
 
     def test_import_data_geocode(self):
         try:
