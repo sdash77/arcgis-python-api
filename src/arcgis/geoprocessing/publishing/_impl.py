@@ -8,9 +8,6 @@ import tempfile
 from ._mappings import _mapping
 from ._template import pyttemplate, xmltemplate
 
-import dill
-from dill.detect import globalvars
-
 def create_toolbox(func, toolbox=None, out_folder=None):
     """
     Creates a Python Toolbox from a method.
@@ -37,6 +34,9 @@ def create_toolbox(func, toolbox=None, out_folder=None):
     path to the xml file.
 
     """
+    import dill
+    from dill.detect import globalvars
+
     if len(func.__annotations__) == 0:
         raise ValueError("Annotations must be used.")
     if out_folder is None:
