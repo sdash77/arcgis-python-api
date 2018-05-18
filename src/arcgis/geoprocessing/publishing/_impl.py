@@ -8,6 +8,39 @@ import tempfile
 from ._mappings import _mapping
 from ._template import pyttemplate, xmltemplate, parameter_template, toolxmltemplate, tool_xml_file_name
 
+def generate_service(result, server, service_name):
+    """
+    Takes a Results from an tool and publishes it to ArcGIS Server
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    result              Required arcpy.Result.  The result of a GP Toolbox being run.
+    ---------------     --------------------------------------------------------------------
+    server              Required Server. The ArcGIS server to publish on.
+    ---------------     --------------------------------------------------------------------
+    service_name        Required string. The service name.
+    ===============     ====================================================================
+
+
+    :returns: boolean
+    """
+    try:
+        import arcpy
+    except:
+        return False
+    import tempfile, os
+    sddraft = os.path.join(tempfile.gettempdir(), "tool.sddraft")
+    sdfile = os.path.join(tempfile.gettempdir(), "tool.sd")
+    for fn in [sddraft, sdfile]:
+        if os.path.exists(fn):
+            os.remove(fn)
+    arcpy.CreateGPSDDraft(result=result, out_sddraft=sddraft,
+                      service_name=service_name,
+                      summary='summary', tags='tags')
+    arcpy.StageService_server(sddraft, sdfile)
+    return server.publish_sd(sd_file=sdfile)
+
 def create_toolbox(func, toolbox=None, out_folder=None):
     """
     Creates a Python Toolbox from a method.
