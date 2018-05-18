@@ -1,7 +1,55 @@
-xmltemplate = '''<?xml version="1.0" encoding="UTF-8"?>
+tool_xml_file_name = r"{toolbox}.{tool}.pyt.xml"
+
+parameter_template = r'<param name="{name}" displayname="{name}" type="{inputtype}" direction="{direction}" datatype="{dtype}" expression="{name}"><dialogReference>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;{description}&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</dialogReference></param>'
+
+toolxmltemplate = r'''<?xml version="1.0"?>
+<metadata xml:lang="en">
+	<Esri>
+		<CreaDate>{date}</CreaDate>
+		<CreaTime>{ctime}</CreaTime>
+		<ArcGISFormat>1.0</ArcGISFormat>
+		<SyncOnce>TRUE</SyncOnce>
+		<ModDate>{date}</ModDate>
+		<ModTime>{ctime}</ModTime>
+		<scaleRange>
+			<minScale>150000000</minScale>
+			<maxScale>5000</maxScale>
+		</scaleRange>
+	</Esri>
+	<tool name="{name}" displayname="{name}" toolboxalias=""
+		xmlns="">
+		<arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath>
+		<parameters>
+			{parameters}
+		</parameters>
+		<summary>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;{summary}&lt;/SPAN&gt;&lt;/P&gt;&lt;P&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;P STYLE="text-indent:20;"&gt;&lt;SPAN /&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</summary>
+		<usage>&lt;DIV STYLE="text-align:Left;"&gt;&lt;DIV&gt;&lt;P&gt;&lt;SPAN&gt;{usage}&lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;&lt;/DIV&gt;</usage>
+	</tool>
+	<dataIdInfo>
+		<idCitation>
+			<resTitle>{name}</resTitle>
+		</idCitation>
+		<searchKeys>
+			<keyword>{tag}</keyword>
+		</searchKeys>
+	</dataIdInfo>
+	<distInfo>
+		<distributor>
+			<distorFormat>
+				<formatName>ArcToolbox Tool</formatName>
+			</distorFormat>
+		</distributor>
+	</distInfo>
+	<mdHrLv>
+		<ScopeCd value="005"></ScopeCd>
+	</mdHrLv>
+	<mdDateSt Sync="TRUE">{date}</mdDateSt>
+</metadata>'''
+
+xmltemplate = r'''<?xml version="1.0" encoding="UTF-8"?>
 <metadata xml:lang="en"><Esri><CreaDate>20180419</CreaDate><CreaTime>12251200</CreaTime><ArcGISFormat>1.0</ArcGISFormat><SyncOnce>TRUE</SyncOnce><ModDate>20180419</ModDate><ModTime>122512</ModTime></Esri><toolbox name="{toolbox}" alias=""><arcToolboxHelpPath>c:\program files\arcgis\pro\Resources\Help\gp</arcToolboxHelpPath><toolsets/></toolbox><dataIdInfo><idCitation><resTitle>{toolbox}</resTitle></idCitation></dataIdInfo><distInfo><distributor><distorFormat><formatName>ArcToolbox Toolbox</formatName></distorFormat></distributor></distInfo></metadata>'''
 
-pyttemplate = '''
+pyttemplate = r'''
 """
 @author:
 @contact:

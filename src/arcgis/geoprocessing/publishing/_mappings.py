@@ -19,7 +19,7 @@ from arcgis.mapping._types import SceneLayer
 _mapping = {
     'Address Locator': 'DEAddressLocator',
     'Address Locator Style': 'GPAddressLocatorStyle',
-    'Analysis Cell Size': 'analysis_cell_size',
+    #'Analysis Cell Size': 'analysis_cell_size',
     'Any Value': 'GPType',
     'ArcMap Document': 'DEMapDocument',
     'Areal Unit': 'GPArealUnit',
@@ -43,12 +43,15 @@ _mapping = {
     'Dataset': 'DEDatasetType',
     'Date': 'GPDate',
     datetime.datetime : "GPDate",
+    'datetime.datetime' : "GPDate",
+    'datetime' : "GPDate",
     'dBASE Table': 'DEDbaseTable',
     'Decimate': 'GP3DADecimate',
     'Diagram Layer': 'GPDiagramLayer',
     'Disk Connection': 'DEDiskConnection',
     'Double': 'GPDouble',
     float : "GPDouble",
+    'float' : "GPDouble",
     'Encrypted String': 'GPEncryptedString',
     'Envelope': 'GPEnvelope',
     'Evaluation Scale': 'GPEvaluationScale',
@@ -60,6 +63,7 @@ _mapping = {
     FeatureLayer : "GPFeatureLayer",
     'Feature Set': 'GPFeatureRecordSetLayer',
     SpatialDataFrame : "GPFeatureLayer",
+    'SpatialDataFrame' : "GPFeatureLayer",
     'Field': 'Field',
     'Field Info': 'GPFieldInfo',
     'Field Mappings': 'GPFieldMapping',
@@ -76,6 +80,7 @@ _mapping = {
     'GlobeServer': 'DEGlobeServer',
     'GPServer': 'DEGPServer',
     Toolbox : "DEGPServer",
+    'Toolbox' : "DEGPServer",
     'Graph': 'GPGraph',
     'Graph Data Table': 'GPGraphDataTable',
     'Group Layer': 'GPGroupLayer',
@@ -83,6 +88,7 @@ _mapping = {
     'Image Service': 'DEImageServer',
     'Index': 'Index',
     int : "GPLong",
+    'int' : "GPLong",
     'INFO Expression': 'GPINFOExpression',
     'INFO Item': 'GPArcInfoItem',
     'INFO Table': 'DEArcInfoTable',
@@ -100,6 +106,7 @@ _mapping = {
     'MapServer': 'DEMapServer',
     'Map Server Layer': 'GPMapServerLayer',
     MapImageLayer : 'GPMapServerLayer',
+    'MapImageLayer' : 'GPMapServerLayer',
     'Mosaic Dataset': 'DEMosaicDataset',
     'Mosaic Layer': 'GPMosaicLayer',
     'Neighborhood': 'GPSANeighborhood',
@@ -107,6 +114,7 @@ _mapping = {
     'Network Analyst Hierarchy Settings': 'GPNAHierarchySettings',
     'Network Analyst Layer': 'GPNALayer',
     NetworkDataset : 'GPNetworkDatasetLayer',
+    'NetworkDataset' : 'GPNetworkDatasetLayer',
     'Network Dataset': 'DENetworkDataset',
     'Network Dataset Layer': 'GPNetworkDatasetLayer',
     'Network Travel Mode': 'NetworkTravelMode',
@@ -148,6 +156,7 @@ _mapping = {
     'SQL Expression': 'GPSQLExpression',
     'String': 'GPString',
     str : "GPString",
+    'str' : "GPString",
     'String Hidden': 'GPStringHidden',
     'Table': 'DETable',
     'Table View': 'GPTableView',
@@ -185,6 +194,7 @@ _mapping = {
 try:
     import arcpy
     _mapping[arcpy.RecordSet] = 'GPRecordSet'
+    _mapping['RecordSet'] = 'GPRecordSet'
     _mapping[arcpy.FeatureSet] = "GPFeatureRecordSetLayer"
+    _mapping['FeatureSet'] = "GPFeatureRecordSetLayer"
 except: pass
-

@@ -6,7 +6,7 @@ import typing
 import inspect
 import tempfile
 from ._mappings import _mapping
-from ._template import pyttemplate, xmltemplate
+from ._template import pyttemplate, xmltemplate, parameter_template, toolxmltemplate, tool_xml_file_name
 
 def create_toolbox(func, toolbox=None, out_folder=None):
     """
@@ -47,15 +47,30 @@ def create_toolbox(func, toolbox=None, out_folder=None):
         toolbox = func.__name__+ "Toolbox"
     source = inspect.getsource(func).strip()
 
-    tool = func.__name__+ "Tool"
+    tool = func.__name__ + "Tool"
 
     x = xmltemplate.format(tool=tool, toolbox=toolbox)
+
     xmlfile = os.path.join(out_folder, "%s.pyt.xml" % toolbox)
+    xmltoolfile = os.path.join(out_folder, "{toolbox}.{tool}.pyt.xml".format(toolbox=toolbox, tool=tool))
     pytfile = os.path.join(out_folder, "%s.pyt" % toolbox)
-    params, input_index, set_order = _create_parameter_mapping(func)
+    params, input_index, set_order, xml_params = _create_parameter_mapping(func)
     f = dill.loads(dill.dumps(func))
     source = inspect.getsource(f)
     ins = []
+    import datetime
+    dt = datetime.datetime.now()
+    date = dt.strftime("%Y%m%d")
+    ctime =  dt.strftime("%H%M%S00")
+    xtool = toolxmltemplate.format(
+        name=tool,
+        parameters="\n".join(xml_params),
+        summary="NA",
+        usage="NA",
+        tag="NA",
+        date=date,
+        ctime=ctime
+    )
     for k,v in input_index.items():
         ins.append("'{key}' : parameters[{idx}].value".format(key=k, idx=v))
     ins = "{%s}" % ",".join(ins)
@@ -79,7 +94,7 @@ def create_toolbox(func, toolbox=None, out_folder=None):
                            parameters=params,
                            code=source,
                            use=use)
-
+    open(xmltoolfile, 'w').write(xtool)
     open(xmlfile, 'w').write(x)
     open(pytfile, 'w').write(t)
     return pytfile, xmlfile
@@ -101,6 +116,7 @@ def _create_parameter_mapping(func):
     :return: string, dict, list
 
     """
+    import copy
     name = func.__name__
     asp = inspect.getfullargspec(func)
     sig = inspect.signature(func)
@@ -108,6 +124,7 @@ def _create_parameter_mapping(func):
     input_order = {} # 'function param : index
     set_index = []
     params = []
+    xml_params = []
     pns = []
     count = 0
     if len(annotations) == 0 and len(asp) > 0:
@@ -125,12 +142,18 @@ def _create_parameter_mapping(func):
             datatype=\"{mapping}\",
             parameterType=\"{pt}\",
             direction="Input")""".format(arg=arg, varname=varname, pt=pt, mapping=_mapping[func.__annotations__[arg]]))
-
+        paramxml = copy.copy(parameter_template)
+        paramxml = paramxml.format(name=arg, inputtype=pt,
+                                     direction="Input", dtype=_mapping[func.__annotations__[arg]],
+                                     description=arg)
+        xml_params.append(paramxml)
         pns.append(varname)
         if arg in sig.parameters and\
            sig.parameters[arg]._default != inspect._empty:
             default = sig.parameters[arg].default
             if isinstance(default, (int, float)):
+                params.append("        {varname}.value = {default}".format(varname=varname, default=default))
+            elif default is None:
                 params.append("        {varname}.value = {default}".format(varname=varname, default=default))
             else:
                 params.append("        {varname}.value = '{default}'".format(varname=varname, default=default))
@@ -169,4 +192,4 @@ def _create_parameter_mapping(func):
             pns.append(varname)
             set_index.append(count)
     params.append("        params = [{p}]".format(p=", ".join(pns)))
-    return "\n".join(params), input_order, set_index
+    return "\n".join(params), input_order, set_index, xml_params
