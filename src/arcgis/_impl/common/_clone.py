@@ -492,28 +492,51 @@ class _DeepCloner():
             # things to execute async
             futures = []
             synchronous_clone = []
+            
+            # Resolve any nodes that were provided in the item or group mapping
+            for node in [node for node in leaf_nodes if node.info['id'] in self._clone_mapping['Item IDs'] or node.info['id'] in self._clone_mapping['Group IDs']]:
+                node.resolved = True
+                leaf_nodes.remove(node)
+
+            # Portal hosted feature layer views referencing the same source feature layer must be processed synchronously because of lock being placed on the source service
+            if self.target.properties.isPortal:
+                view_sources = {}
+                for hosted_view in [node for node in leaf_nodes if isinstance(node, _FeatureServiceDefinition) and node.is_view]:
+                    for id, source in hosted_view.view_sources.items():
+                        if source not in view_sources:
+                            view_sources[source] = [hosted_view]
+                        else:
+                            view_sources[source].append(hosted_view)
+                for source, nodes in view_sources.items():
+                    if len(nodes) > 1:
+                        for node in nodes:
+                            if node not in synchronous_clone:
+                                synchronous_clone.append(node)
+                                leaf_nodes.remove(node)
+
+            # Process remaining nodes
             for node in leaf_nodes:
-                if node.info['id'] not in self._clone_mapping['Item IDs'] and node.info['id'] not in self._clone_mapping['Group IDs']:
-                    if isinstance(node, _ProProjectPackageDefinition):
-                        synchronous_clone.append(node)
-                    else:
-                        futures.append(
-                            loop.run_in_executor(
-                                excecutor,
-                                node.clone,
-                            )
-                        )
+                if isinstance(node, _ProProjectPackageDefinition):
+                    synchronous_clone.append(node)
                 else:
-                    node.resolved = True
+                    futures.append(
+                        loop.run_in_executor(
+                            excecutor,
+                            node.clone,
+                        )
+                    )
+
             results = []
+            exception = False
             if len(synchronous_clone) > 0:
                 for node in synchronous_clone:
                     try:
                         results.append(node.clone())
                     except _ItemCreateException as ex:
+                        exception = True
                         results.append(ex)
                         break
-            if len(futures) > 0:
+            if not exception and len(futures) > 0:
                 results.extend(await asyncio.gather(*futures, return_exceptions=True))
                 
             # if any of the results are an _ItemCreate Exception, then delete all created items/groups
