@@ -71,11 +71,10 @@ default_aggregation_styles
 
 .. py:data:: default_aggregation_styles
 
-At ArcGIS Enterprise 10.6.1, tasks that have the default_aggregation_styles property set to true will set the
-default aggregations for the resulting layer. Default aggregations can be square, pointy triangle,
-flat triangle, pointy hexagon, flat hexagon, and geohash. All aggregation styles are supported using WKID 4326
-(WGS_1984). The default_aggregation_styles is False.
-
+Tasks that have the default_aggregation_styles property set to true will set the default aggregations for the
+resulting layer. Default aggregations can be square, pointy triangle, flat triangle, pointy hexagon, flat
+hexagon, and geohash. All aggregation styles are supported using WKID 4326 (WGS_1984).
+The default_aggregation_styles is False. (supported at 10.6.1+)
 """
 
 #: The currently active GIS, that is used for analysis functions unless explicitly specified.
@@ -111,8 +110,8 @@ return_m = False
 #: If True, messages from geoprocessing tools will be printed to stdout
 verbose = False
 
-#: At ArcGIS Enterprise 10.6.1, tasks that have the default_aggregation_styles property set to true will set the
-#: default aggregations for the resulting layer. Default aggregations can be square, pointy triangle,
-#: flat triangle, pointy hexagon, flat hexagon, and geohash. All aggregation styles are supported using WKID 4326
-#: (WGS_1984). The default_aggregation_styles is False.
+#: Tasks that have the default_aggregation_styles property set to true will set the default aggregations for the
+#: resulting layer. Default aggregations can be square, pointy triangle, flat triangle, pointy hexagon, flat
+#: hexagon, and geohash. All aggregation styles are supported using WKID 4326 (WGS_1984).
+#: The default_aggregation_styles is False. (supported at 10.6.1+)
 default_aggregation_styles = False
