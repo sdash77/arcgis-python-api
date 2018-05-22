@@ -2237,33 +2237,6 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    #----------------------------------------------------------------------
-    def create_application(self, title, tags):
-        """
-        Creates an application item on the enterprise.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        title               Required string. The name of the application.
-        ---------------     --------------------------------------------------------------------
-        tags                Required String.  The descriptive tags for the applications.
-        ===============     ====================================================================
-
-        :returns: Item
-
-        """
-        ip = {
-            'title' : title,
-            'tags' : tags,
-            'type' : 'Application'
-        }
-        content = self._gis.content
-        item = content.add(item_properties=ip)
-        res = item.register(item=item,
-                            app_type="multiple")
-        return item
-
     def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
 
