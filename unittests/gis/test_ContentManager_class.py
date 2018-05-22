@@ -261,25 +261,6 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
     def tearDownClass(cls):
         print("\n==================================================================")
 
-    def test_create_application(self):
-        """tests the creation of an empty application"""
-        try:
-            content = self.gis.content
-            isinstance(content, arcgis.gis.ContentManger)
-            item = content.create_application(title='testregisterapplication',\
-                                              tags='unittest,unittest2')
-            self.assertIsInstance(item, arcgis.gis.Item)
-            item.delete()
-        except AssertionError as assertErrorException:
-            test_skip = True
-            raise assertErrorException
-
-        except unittest.SkipTest as skipException:
-            raise skipException
-
-        except Exception as testException:
-            self.fail("Error during test: " + testException.__str__())
-
     def test_import_data_geocode(self):
         try:
             # read input data
