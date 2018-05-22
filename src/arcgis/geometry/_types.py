@@ -133,6 +133,36 @@ class GeometryFactory(type):
                 iterable = json.loads(iterable.JSON)
             elif type(iterable.JSON) == dict:
                 iterable = iterable.JSON
+        elif isinstance(iterable, str) and \
+             iterable.find("{") == -1 and HASARCPY:
+            sr = kwargs.pop('sr',
+                            SpatialReference({'wkid' : 4326}).as_arcpy)
+            if isinstance(sr, int):
+                sr = SpatialReference({'wkid' : sr}).as_arcpy
+            elif isinstance(sr, SpatialReference) == False and \
+                 isinstance(sr, dict):
+                sr = SpatialReference(sr).as_arcpy
+            elif isinstance(sr, SpatialReference):
+                sr = sr.as_arcpy
+            elif isinstance(sr, arcpy.SpatialReference) == False:
+                raise ValueError("Invalid Spatial Reference")
+            return Geometry(arcpy.FromWKT(iterable,
+                                          spatial_reference=sr))
+        elif isinstance(iterable, (bytes, bytearray)) and \
+             HASARCPY: # WKB
+            sr = kwargs.pop('sr',
+                            SpatialReference({'wkid' : 4326}).as_arcpy)
+            if isinstance(sr, int):
+                sr = SpatialReference({'wkid' : sr}).as_arcpy
+            elif isinstance(sr, SpatialReference) == False and \
+                 isinstance(sr, dict):
+                sr = SpatialReference(sr).as_arcpy
+            elif isinstance(sr, SpatialReference):
+                sr = sr.as_arcpy
+            elif isinstance(sr, arcpy.SpatialReference) == False:
+                raise ValueError("Invalid Spatial Reference")
+            return Geometry(arcpy.FromWKB(iterable,
+                                          spatial_reference=sr))
         if cls is Geometry:
             if len(iterable) > 0:
                 if isinstance(iterable, dict):
