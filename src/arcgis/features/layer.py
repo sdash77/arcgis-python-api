@@ -285,7 +285,8 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_fields                          Optional string. The attribute fields to return. The default is "*".
         -------------------------------     --------------------------------------------------------------------
-        object_ids                          Optional list. The object IDs of this layer or table to be queried.
+        object_ids                          Optional string. The object IDs of this layer or table to be queried.
+                                            The object ID values are comma seperate string.
         -------------------------------     --------------------------------------------------------------------
         distance                            Optional integer. The buffer distance for the input geometries.
                                             The distance unit is specified by units. For example, if the

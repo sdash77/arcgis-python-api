@@ -5,7 +5,7 @@ import random
 import arcgis
 from arcgis.gis import Layer
 from arcgis.features import FeatureCollection
-    
+
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
@@ -51,10 +51,15 @@ def _set_context(params):
     process_sr = arcgis.env.process_spatial_reference
     out_extent = arcgis.env.analysis_extent
     output_datastore = arcgis.env.output_datastore
-    
+    default_aggregation_styles = arcgis.env.default_aggregation_styles
+
     context = {}
     set_context = False
-    
+
+    if default_aggregation_styles is not None and\
+       isinstance(defaultAggregationStyles, bool):
+        context['defaultAggregationStyles'] = json.dumps(default_aggregation_styles)
+        set_context = True
     if out_sr is not None:
         context['outSR'] = {'wkid': int(out_sr)}
         set_context = True
@@ -118,4 +123,4 @@ def _create_output_service(gis, output_name, output_service_name='Analysis featu
             }
     output_service.update(item_properties)
     return output_service
-    
+
