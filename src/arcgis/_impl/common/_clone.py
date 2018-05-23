@@ -544,7 +544,8 @@ class _DeepCloner():
                 if isinstance(result, _ItemCreateException):
                     created_items = self._get_created_items()
                     for item in reversed(created_items):
-                        item.delete()
+                        if item:
+                            item.delete()
                     raise result
 
             level += 1
@@ -1247,6 +1248,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 name = original_item['name']
                 if name is None:
                     name = os.path.basename(os.path.dirname(original_item['url']))
+                # replace non-alphanumeric characters with underscore
+                name = re.sub('\W+', '_', name)
                 name = self._get_unique_name(self.target, name)
                 service_definition['name'] = name
 

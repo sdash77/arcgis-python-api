@@ -198,7 +198,7 @@ def _set_image_collection_param(gis, params, image_collection):
     elif isinstance(image_collection, Item):
         params['imageCollection'] = _json.dumps({ "itemId" : image_collection.itemid })
     else:
-        raise TypeError("image_collection should be a string (service name) or Item")
+        raise TypeError("image_collection should be a string (url or uri) or Item")
 
     return
 
