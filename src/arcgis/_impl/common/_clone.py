@@ -1248,6 +1248,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 name = original_item['name']
                 if name is None:
                     name = os.path.basename(os.path.dirname(original_item['url']))
+                # replace non-alphanumeric characters with underscore
+                name = re.sub('\W+', '_', name)
                 name = self._get_unique_name(self.target, name)
                 service_definition['name'] = name
 
