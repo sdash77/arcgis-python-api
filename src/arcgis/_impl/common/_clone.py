@@ -544,7 +544,8 @@ class _DeepCloner():
                 if isinstance(result, _ItemCreateException):
                     created_items = self._get_created_items()
                     for item in reversed(created_items):
-                        item.delete()
+                        if item:
+                            item.delete()
                     raise result
 
             level += 1
