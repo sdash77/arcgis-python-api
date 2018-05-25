@@ -818,6 +818,37 @@ class _ItemDefinition(CloneNode):
         """Gets the data of the item"""
         return copy.deepcopy(self._data)
 
+    def _add_new_item(self, item_properties, data=None):
+        """Add the new item to the portal"""
+        thumbnail = self.thumbnail
+        if not thumbnail and self.portal_item:
+            temp_dir = os.path.join(self._temp_dir.name, self.info['id'])
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
+            thumbnail = self.portal_item.download_thumbnail(temp_dir)
+
+        new_item = self.target.content.add(item_properties=item_properties, data=data, thumbnail=thumbnail, folder=self.folder)
+        self.created_items.append(new_item)
+        self._clone_resources(new_item)
+        return new_item
+
+    def _clone_resources(self, new_item):
+        """Add the resources to the new item"""
+        if self.portal_item:
+            resources = self.portal_item.resources
+            resource_list = resources.list()
+            if len(resource_list) > 0:
+                resources_dir = os.path.join(self._temp_dir.name, self.info['id'], 'resources')
+                if not os.path.exists(resources_dir):
+                    os.makedirs(resources_dir)
+                for resource in resource_list:
+                    resource_name = resource['resource']
+                    folder_name = None
+                    if len(resource_name.split('/')) == 2:
+                        folder_name, resource_name = resource_name.split('/')
+                    resource_path = resources.get(resource['resource'], False, resources_dir, resource_name)
+                    new_item.resources.add(resource_path, folder_name, resource_name)
+
     def _get_item_properties(self, item_extent=None):
         """Get a dictionary of item properties used in create and update operations."""
 
@@ -873,13 +904,9 @@ class _ItemDefinition(CloneNode):
                     os.rename(data, new_path)
                     data = new_path
 
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-
                 # Add the new item
-                new_item = self.target.content.add(item_properties=item_properties, data=data, thumbnail=thumbnail, folder=self.folder)
-                self.created_items.append(new_item)
+                new_item = self._add_new_item(item_properties, data)
+
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved = True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
@@ -908,14 +935,9 @@ class _TextItemDefinition(_ItemDefinition):
                 if data:
                     item_properties['text'] = json.dumps(data)
 
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail, folder=self.folder)
-                self.created_items.append(new_item)
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
+
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved = True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
@@ -955,14 +977,9 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
                                     layer['featureSet']['features'] = []
                     item_properties['text'] = json.dumps(data)
 
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail, folder=self.folder)
-                self.created_items.append(new_item)
+                # Add the new item
+                new_item = self._add_new_item(item_properties, data)
+
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved = True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
@@ -1661,6 +1678,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     thumbnail = self.portal_item.download_thumbnail(temp_dir)
                 new_item.update(item_properties=item_properties, thumbnail=thumbnail)
 
+                # Clone any item resources
+                self._clone_resources(new_item)
+
                 # Copy features from original item
                 if self.copy_data and not self.is_view:
                     self._add_features(new_layers, relationships, layer_field_mapping, feature_service.properties['spatialReference'])
@@ -1754,14 +1774,9 @@ class _WebMapDefinition(_TextItemDefinition):
                 # Add the web map to the target portal
                 item_properties['text'] = json.dumps(webmap_json)
 
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail, folder=self.folder)
-                self.created_items.append(new_item)
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
+
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
@@ -1805,16 +1820,9 @@ class _OperationViewDefintion(_TextItemDefinition):
 
                 item_properties['text'] = app_json_text
 
-                # Add the application to the target portal
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail,
-                                              folder=self.folder)
-                self.created_items.append(new_item)
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
+
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
@@ -1921,16 +1929,9 @@ class _DashboardDefinition(_TextItemDefinition):
 
                 item_properties['text'] = app_json_text
 
-                # Add the application to the target portal
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail,
-                                              folder=self.folder)
-                self.created_items.append(new_item)
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
+
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
@@ -2220,31 +2221,8 @@ class _ApplicationDefinition(_TextItemDefinition):
 
                     item_properties['text'] = app_json_text
 
-                # Add the application to the target portal
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail, folder=self.folder)
-                self.created_items.append(new_item)
-
-                # Add the resources to the new item
-                if self.portal_item:
-                    resources = self.portal_item.resources
-                    resource_list = resources.list()
-                    if len(resource_list) > 0:
-                        resources_dir = os.path.join(self._temp_dir.name, original_item['id'], 'resources')
-                        if not os.path.exists(resources_dir):
-                            os.makedirs(resources_dir)
-                        for resource in resource_list:
-                            resource_path = resources.get(resource['resource'], False, resources_dir)
-                            folder_name = None
-                            resource_name = resource['resource']
-                            if len(resource_name.split('/')) == 2:
-                                folder_name, resource_name = resource_name.split('/')
-                            new_item.resources.add(resource_path, folder_name, resource_name)
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
 
                 # Update the url of the item to point to the new portal and new id of the application if required
                 if original_item['url'] is not None:
@@ -2309,16 +2287,8 @@ class _FormDefinition(_ItemDefinition):
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
 
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-
                 # Add the new item
-                new_item = self.target.content.add(item_properties=item_properties, data=None, thumbnail=thumbnail, folder=self.folder)
-                self.created_items.append(new_item)
+                new_item = self._add_new_item(item_properties)
 
                 # Update Survey123 form data
                 original_item = self.info
@@ -2534,16 +2504,10 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                                 if item_id in self._clone_mapping['Item IDs']:
                                     integration['urlTemplate'] = url_template.replace(item_id, self._clone_mapping['Item IDs'][item_id])
 
-                # Add the project to the target portal
                 item_properties['text'] = json.dumps(workforce_json)
-                thumbnail = self.thumbnail
-                if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                    if not os.path.exists(temp_dir):
-                        os.makedirs(temp_dir)
-                    thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item = self.target.content.add(item_properties=item_properties, thumbnail=thumbnail, folder=self.folder)
-                self.created_items.append(new_item)
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
+
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved=True
             self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
