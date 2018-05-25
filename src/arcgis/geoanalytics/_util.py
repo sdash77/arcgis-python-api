@@ -57,7 +57,7 @@ def _set_context(params):
     set_context = False
 
     if default_aggregation_styles is not None and\
-       isinstance(defaultAggregationStyles, bool):
+       isinstance(default_aggregation_styles, bool):
         context['defaultAggregationStyles'] = json.dumps(default_aggregation_styles)
         set_context = True
     if out_sr is not None:
