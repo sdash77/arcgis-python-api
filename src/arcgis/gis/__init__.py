@@ -995,7 +995,7 @@ class DatastoreManager(object):
     def config(self, value):
         """
         The data store configuration properties affect the behavior of the data holdings of the server. The properties include:
-        blockDataCopy—When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
+        blockDataCopy When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
         When this property is True, the client application is not allowed to copy data to the site when publishing. Rather, the publisher is required to register data items through which the service being published can reference data. Values: True | False
         Note:
         If you specify the property as True, users will not be able to publish geoprocessing services and geocode services from composite locators. These service types require data to be copied to the server. As a workaround, you can temporarily set the property to False, publish the service, and then set the property back to True.

@@ -1812,7 +1812,7 @@ class Envelope(Geometry):
     def __setstate__(self, d):
         """unpickle support """
         self.__dict__.update(d)
-        self = Evelope(iterable=d)
+        self = Envelope(iterable=d)
     #----------------------------------------------------------------------
     def __getstate__(self):
         """ pickle support """

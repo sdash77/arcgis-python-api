@@ -28,7 +28,8 @@ class Site(BasePortalAdmin):
             self._init()
     #----------------------------------------------------------------------
     @staticmethod
-    def create(url,
+    def create(con,
+               url,
                username,
                password,
                full_name,
@@ -55,6 +56,8 @@ class Site(BasePortalAdmin):
 
         ===========================     ====================================================================
         **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        con                             Required Connection. The connection object.
         ---------------------------     --------------------------------------------------------------------
         url                             Required string. The portal administration url
                                         Ex: https://mysite.com/<web adaptor>/portaladmin
@@ -94,7 +97,7 @@ class Site(BasePortalAdmin):
         if question_idx and question_ans:
             params['securityQuestionIdx'] = question_idx
             params['securityQuestionAns'] = question_ans
-        return self._con.post(path=url, postdata=params)
+        return con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
     def export_site(self, location):
         """

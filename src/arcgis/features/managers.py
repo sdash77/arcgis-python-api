@@ -802,9 +802,9 @@ class FeatureLayerCollectionManager(_GISResource):
                     view_layers=None):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
-        represented by a hosted feature layer—for example, you want to apply different editor settings, apply different
+        represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
         styles or filters, define which features or fields are available, or share the data to different groups than
-        the hosted feature layer—create a hosted feature layer view of that hosted feature layer.
+        the hosted feature layer  create a hosted feature layer view of that hosted feature layer.
 
         When you create a feature layer view, a new hosted feature layer item is added to Content. This new layer is a
         view of the data in the hosted feature layer, which means updates made to the data appear in the hosted feature
