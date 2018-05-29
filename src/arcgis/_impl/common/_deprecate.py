@@ -14,7 +14,7 @@ import re
 __version__ = "1.4.1"
 
 # This is mostly here so automodule docs are ordered more ideally.
-__all__ = ["deprecated", "message_location", "fail_if_not_removed",
+__all__ = ["deprecated", "message_location",
            "DeprecatedWarning", "UnsupportedWarning"]
 
 # message_location provides some simple

@@ -181,6 +181,7 @@ class ServiceManager(BaseServer):
         :returns: boolean
 
         """
+        folder = os.path.dirname(file_path)
         if os.path.isdir(folder) == False:
             os.makedirs(folder)
         url = self._url + "/importServices"

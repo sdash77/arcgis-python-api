@@ -34,7 +34,7 @@ Parameters:
 
    keep_boundaries_with_no_points: keepBoundariesWithNoPoints (bool). Optional parameter.  Specify whether the polygons without any points should be returned in the output.
 
-   summary_fields: summaryFields (str). Optional parameter.  A list of field names and summary type. Example [“fieldName1 summaryType1”,”fieldName2 summaryType2”].
+   summary_fields: summaryFields (str). Optional parameter.  A list of field names and summary type. Example [ fieldName1 summaryType1,fieldName2 summaryType2].
 
    group_by_field: groupByField (str). Optional parameter.  A field name from PointLayer based on which the points will be grouped.
 
@@ -93,7 +93,7 @@ def find_hot_spots(analysis_layer: str = None,
     """
 
 
-The “Find Hot Spots” task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
+The  �Find Hot Spots   task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
 
 Parameters:
 

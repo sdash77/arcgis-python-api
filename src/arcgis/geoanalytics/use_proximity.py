@@ -85,7 +85,7 @@ Returns:
     if isinstance(input_layer, FeatureCollection) and \
        'layers' in input_layer.properties and \
        len(input_layer.properties.layers) > 0:
-        input_layer = FeatureSet.from_dict(
+        input_layer = _FeatureSet.from_dict(
             featureset_dict=input_layer._lazy_properties.layers[0].featureSet)
 
     params = {}
