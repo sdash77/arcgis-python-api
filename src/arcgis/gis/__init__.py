@@ -1117,7 +1117,8 @@ class DatastoreManager(object):
         return output
 
     #----------------------------------------------------------------------
-    def add_cloudstore(self, name, conn_str, object_store, provider="amazon", managed=False):
+    def add_cloudstore(self, name, conn_str, object_store,
+                       provider, managed=False, folder=None):
         """
         Cloud Store data item represents a connection to a Amazon or Microsoft Azure store.
         Connection information for the data store item is stored within conn_str as a
@@ -1140,6 +1141,14 @@ class DatastoreManager(object):
         object_store        Required string. This is the amazon bucket path or Azuze path.
         ---------------     --------------------------------------------------------------------
         provider            Required string. Values must be amazon or azure.
+        ---------------     --------------------------------------------------------------------
+        managed             Optional boolean. When the data store is server only, the database
+                            is entirely managed and owned by the server and cannot be accessed
+                            by the publisher directly. When this option is chosen, the
+                            managed property should be set to true. Otherwise it is false.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. For some Azure cloud stores, an optional folder
+                            can be specified.
         ===============     ====================================================================
 
 
@@ -1157,6 +1166,8 @@ class DatastoreManager(object):
                 "objectStore": object_store
             }
         }
+        if folder is not None:
+            cs['info']['folder'] = folder
         params = {
         'f' : 'json',
         'item' : json.dumps(cs)
