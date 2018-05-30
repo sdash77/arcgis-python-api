@@ -1,7 +1,9 @@
 from ._ge import _GeoEnrichment
+from arcgis import __version__
 from arcgis import env
 from arcgis.geometry import Geometry
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
 import re
 
@@ -883,13 +885,13 @@ def _find_report(country, gis=None):
 #                            have the ability to consume credits
 #     ==================     ====================================================================
 #
-#     :return: Pandas' DataFrame
-#     """
-#     if gis is None:
-#         gis = env.active_gis
-#     ge = _GeoEnrichment(gis=gis)
-#     return ge.report_metadata(country=country)
+#:return: Pandas' DataFrame """ if gis is None: gis = env.active_gis ge =\
+#_GeoEnrichment(gis=gis) return ge.report_metadata(country=country)\
 #----------------------------------------------------------------------
+@deprecated(deprecated_in=1.4.1,
+            removed_in=1.5.0,
+            current_version=__version__,
+            details="Method will be removed due to changes in the GeoEnrichment API")
 def find_businesses(type_filters=None,
                       feature_limit=1000,
                       feature_offset=0,

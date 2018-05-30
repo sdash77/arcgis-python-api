@@ -104,6 +104,9 @@ class AttachmentManager(object):
 
         """
         import copy
+        columns = [col.upper() for col in ['ParentObjectid', 'ParentGlobalId', 'Id',
+                                           'Name', 'GlobalId', 'ContentType',
+                                           'Size','KeyWords', 'URL', 'IMAGE_PREVIEW']]
         result_offset = 0
         if keywords is None:
             keywords = []
@@ -125,60 +128,106 @@ class AttachmentManager(object):
             size = ",".join(list([str(s) for s in size]))
         elif size is None:
             size = None
-        url = '{}/{}'.format(self._layer.url, 'queryAttachments')
-        params = {
-            'f' : 'json',
-            "attachmentTypes" : ",".join(attachment_types),
-            'objectIds' : ",".join([str(v) for v in object_ids]),
-            'globalIds' : ",".join([str(v) for v in global_ids]),
-            "definitionExpression" : where,
-            'keywords' : ",".join([str(v) for v in keywords]),
-            'size' : None,
-        }
+        if self._layer._gis._portal.is_arcgisonline == False and \
+           self._layer.properties.hasAttachments:
+            rows = []
 
-        iterparams = copy.copy(params)
-        for k,v in iterparams.items():
-            if k in ['objectIds', 'globalIds',
-                     'attachmentTypes'] and \
-               v == "":
-                del params[k]
-            elif k == 'size' and \
-                 v is None:
-                del params[k]
-        columns = [col.upper() for col in ['ParentObjectid', 'ParentGlobalId', 'Id',
-                                           'Name', 'GlobalId', 'ContentType',
-                                           'Size','KeyWords', 'URL', 'IMAGE_PREVIEW']]
-        results = self._layer._con.post(url,params)
-        rows = []
-        for result in results['attachmentGroups']:
-            for data in result['attachmentInfos']:
+            query = self._layer.query(where=where,
+                                      object_ids=",".join(object_ids),
+                                      global_ids=",".join(global_ids),
+                                      return_ids_only=True)
+            if 'objectIds' in query:
                 token = self._layer._con.token
-                if not token is None:
-                    att_path = '{}/{}/attachments/{}?token={}'.format(self._layer.url, result['parentObjectId'], data['id'], self._layer._con.token)
-                else:
-                    att_path = '{}/{}/attachments/{}'.format(self._layer.url, result['parentObjectId'], data['id'])
-                preview = None
-                if data['contentType'].find("image") > -1:
-                    preview = "<img src=\"" + att_path + "\" width=150 height=150 />"
+                for i in query['objectIds']:
+                    attachments = self.get_list(oid=i)
+                    for att in attachments:
+                        if not token is None:
+                            att_path = '{}/{}/attachments/{}?token={}'.format(self._layer.url, i, att['id'], self._layer._con.token)
+                        else:
+                            att_path = '{}/{}/attachments/{}'.format(self._layer.url, i, att['id'])
+                        preview = None
+                        if att['contentType'].find("image") > -1:
+                            preview = "<img src=\"" + att_path + "\" width=150 height=150 />"
 
-                row = {
-                    "PARENTOBJECTID" : result['parentObjectId'],
-                    "PARENTGLOBALID" : result['parentGlobalId'],
-                    "ID" : data['id'],
-                    "NAME" : data['name'],
-                    "CONTENTTYPE" : data['contentType'],
-                    "SIZE" : data['size'],
-                    "KEYWORDS" : data['keywords'],
-                    "IMAGE_PREVIEW" : preview
-                }
-                if 'globalId' in data:
-                    row["GLOBALID"] = data['globalId']
-                if as_df and show_images:
-                    row["DOWNLOAD_URL"] = "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path
-                else:
-                    row["DOWNLOAD_URL"] = "%s" % att_path
-                rows.append(row)
-                del row
+                        row = {
+                            "PARENTOBJECTID" : i,
+                            "PARENTGLOBALID" : "N/A",
+                            "ID" : att['id'],
+                            "NAME" : att['name'],
+                            "CONTENTTYPE" : att['contentType'],
+                            "SIZE" : att['size'],
+                            "KEYWORDS" : "",
+                            "IMAGE_PREVIEW" : preview
+                        }
+                        if 'globalId' in att:
+                            row["GLOBALID"] = att['globalId']
+                        if as_df and show_images:
+                            row["DOWNLOAD_URL"] = "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path
+                        else:
+                            row["DOWNLOAD_URL"] = "%s" % att_path
+                        rows.append(row)
+
+                if attachment_types is not None and \
+                   len(attachment_types) > 0: # performs contenttype search
+                    if isinstance(attachment_types, str):
+                        attachment_types= attachment_types.split(',')
+                    rows = [row for row in rows \
+                            if os.path.splitext(row['NAME'])[1][1:] in attachment_types or \
+                            row['CONTENTTYPE'] in attachment_types]
+        else:
+            url = '{}/{}'.format(self._layer.url, 'queryAttachments')
+            params = {
+                'f' : 'json',
+                "attachmentTypes" : ",".join(attachment_types),
+                'objectIds' : ",".join([str(v) for v in object_ids]),
+                'globalIds' : ",".join([str(v) for v in global_ids]),
+                "definitionExpression" : where,
+                'keywords' : ",".join([str(v) for v in keywords]),
+                'size' : None,
+            }
+            iterparams = copy.copy(params)
+            for k,v in iterparams.items():
+                if k in ['objectIds', 'globalIds',
+                         'attachmentTypes'] and \
+                   v == "":
+                    del params[k]
+                elif k == 'size' and \
+                     v is None:
+                    del params[k]
+
+            results = self._layer._con.post(url,params)
+            rows = []
+            if 'attachmentGroups' not in results:
+                return []
+            for result in results['attachmentGroups']:
+                for data in result['attachmentInfos']:
+                    token = self._layer._con.token
+                    if not token is None:
+                        att_path = '{}/{}/attachments/{}?token={}'.format(self._layer.url, result['parentObjectId'], data['id'], self._layer._con.token)
+                    else:
+                        att_path = '{}/{}/attachments/{}'.format(self._layer.url, result['parentObjectId'], data['id'])
+                    preview = None
+                    if data['contentType'].find("image") > -1:
+                        preview = "<img src=\"" + att_path + "\" width=150 height=150 />"
+
+                    row = {
+                        "PARENTOBJECTID" : result['parentObjectId'],
+                        "PARENTGLOBALID" : result['parentGlobalId'],
+                        "ID" : data['id'],
+                        "NAME" : data['name'],
+                        "CONTENTTYPE" : data['contentType'],
+                        "SIZE" : data['size'],
+                        "KEYWORDS" : data['keywords'],
+                        "IMAGE_PREVIEW" : preview
+                    }
+                    if 'globalId' in data:
+                        row["GLOBALID"] = data['globalId']
+                    if as_df and show_images:
+                        row["DOWNLOAD_URL"] = "<a href=\"%s\" target=\"_blank\">DATA</a>" % att_path
+                    else:
+                        row["DOWNLOAD_URL"] = "%s" % att_path
+                    rows.append(row)
+                    del row
 
         if as_df == True:
             import pandas as pd
@@ -753,9 +802,9 @@ class FeatureLayerCollectionManager(_GISResource):
                     view_layers=None):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
-        represented by a hosted feature layer—for example, you want to apply different editor settings, apply different
+        represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
         styles or filters, define which features or fields are available, or share the data to different groups than
-        the hosted feature layer—create a hosted feature layer view of that hosted feature layer.
+        the hosted feature layer  create a hosted feature layer view of that hosted feature layer.
 
         When you create a feature layer view, a new hosted feature layer item is added to Content. This new layer is a
         view of the data in the hosted feature layer, which means updates made to the data appear in the hosted feature

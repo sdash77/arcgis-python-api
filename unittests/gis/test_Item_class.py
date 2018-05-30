@@ -374,7 +374,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
     def test_download_method_empty_data(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
-        :return: 
+        :return:
         """
         try:
             chicago_wfl_item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
@@ -399,7 +399,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
     def test_download_method_empty_data_nopath(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
-        :return: 
+        :return:
         """
         try:
             chicago_wfl_item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
@@ -424,7 +424,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
     def test_download_method_txt_data_nopath(self):
         """
         When no path is provided, Item.download() downloads to sys temp dir
-        :return: 
+        :return:
         """
         try:
             chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
@@ -450,7 +450,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
     def test_download_method_txt_data_outputpath(self):
         """
         When given a download path, ensure Item.download() downloads file into that path
-        :return: 
+        :return:
         """
         try:
             chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
@@ -479,7 +479,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
         """
         When Item has JSON data, ensure Item.download() downloads file into that path instead
         of returning parsed dict
-        :return: 
+        :return:
         """
         try:
             JSON_item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
@@ -506,9 +506,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_download_method_binary_data_outputpath(self):
         """
-        When Item has binary data - like layer packages, ensure Item.download() downloads file 
+        When Item has binary data - like layer packages, ensure Item.download() downloads file
         into that path instead of returning None or binary stream.
-        :return: 
+        :return:
         """
         try:
             JSON_item = self.gis.content.search("set1_mmpk_usa", "Mobile Map Package")[0]
@@ -536,7 +536,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
     def test_get_data_method_Image(self):
         """
         For Image item, item.get_data(False) should return string representation of the item.
-        :return: 
+        :return:
         """
         try:
             data_item = self.gis.content.search("set1_shifting_opportunity.png", "Image")[0]
@@ -564,7 +564,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
     def test_download_method_zero_size_data(self):
         """
         When Item has no data or 0kb size - ensure Item.download() returns None
-        :return: 
+        :return:
         """
         try:
             JSON_item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
@@ -586,9 +586,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_binary_data_tryjson_True(self):
         """
-        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file 
+        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file
         into that path even if try_json is set to True
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_lpk", "Layer Package")[0]
@@ -614,9 +614,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_binary_data_tryjson_False(self):
         """
-        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file 
+        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file
         into that path when try_json is set to False
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_geometric", "Map Document")[0]
@@ -642,9 +642,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_JSON_data_tryjson_False(self):
         """
-        When Item has JSON data - like web maps, calling Item.get_data() with try_json False, 
+        When Item has JSON data - like web maps, calling Item.get_data() with try_json False,
         should return the data as str instead of dict
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
@@ -665,9 +665,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_JSON_data_tryjson_True(self):
         """
-        When Item has JSON data - like web maps, calling Item.get_data() with try_json True, 
+        When Item has JSON data - like web maps, calling Item.get_data() with try_json True,
         should return the data dict instead of str
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
@@ -688,9 +688,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_zero_size_data_tryjson_False(self):
         """
-        When Item has no data, calling Item.get_data() with try_json False, 
+        When Item has no data, calling Item.get_data() with try_json False,
         should return None.
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
@@ -711,9 +711,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_zero_size_data_tryjson_True(self):
         """
-        When Item has no data, calling Item.get_data() with try_json True, 
+        When Item has no data, calling Item.get_data() with try_json True,
         should return None.
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
@@ -734,9 +734,9 @@ class Test_Item_portal_builtin(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_empty_data_tryjson_True(self):
         """
-        When Item has no data, but item.size > 0, calling Item.get_data() with try_json True, 
+        When Item has no data, but item.size > 0, calling Item.get_data() with try_json True,
         should return None.
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
@@ -761,7 +761,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
         """
         Update a csv item with new csv file. Ensure the contents are updated and
         itemid remains same.
-        :return: 
+        :return:
         """
         # region delete old service on portal
         old_sr = PortalUtils.search_portal_item(self.gis, "set1_overwrite_old", "CSV")
@@ -1289,7 +1289,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
     def test_download_method_empty_data(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
-        :return: 
+        :return:
         """
         try:
             chicago_wfl_item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
@@ -1314,7 +1314,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
     def test_download_method_empty_data_nopath(self):
         """
         When Item has no data, Item.download() should download to a file of size 0
-        :return: 
+        :return:
         """
         try:
             chicago_wfl_item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
@@ -1339,7 +1339,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
     def test_download_method_txt_data_nopath(self):
         """
         When no path is provided, Item.download() downloads to sys temp dir
-        :return: 
+        :return:
         """
         try:
             chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
@@ -1367,7 +1367,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
     def test_download_method_txt_data_outputpath(self):
         """
         When given a download path, ensure Item.download() downloads file into that path
-        :return: 
+        :return:
         """
         try:
             chicago_csv_item = self.gis.content.search("set1_Chicago", "CSV")[0]
@@ -1396,7 +1396,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         """
         When Item has JSON data, ensure Item.download() downloads file into that path instead
         of returning parsed dict
-        :return: 
+        :return:
         """
         try:
             JSON_item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
@@ -1423,9 +1423,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_download_method_binary_data_outputpath(self):
         """
-        When Item has binary data - like layer packages, ensure Item.download() downloads file 
+        When Item has binary data - like layer packages, ensure Item.download() downloads file
         into that path instead of returning None or binary stream.
-        :return: 
+        :return:
         """
         try:
             JSON_item = self.gis.content.search("set1_mmpk_usa", "Mobile Map Package")[0]
@@ -1453,7 +1453,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
     def test_get_data_method_Image(self):
         """
         For Image item, item.get_data(False) should return string representation of the item.
-        :return: 
+        :return:
         """
         try:
             data_item = self.gis.content.search("set1_shifting_opportunity.png", "Image")[0]
@@ -1481,7 +1481,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
     def test_download_method_zero_size_data(self):
         """
         When Item has no data or 0kb size - ensure Item.download() returns None
-        :return: 
+        :return:
         """
         try:
             JSON_item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
@@ -1503,9 +1503,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_binary_data_tryjson_True(self):
         """
-        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file 
+        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file
         into that path even if try_json is set to True
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_lpk", "Layer Package")[0]
@@ -1531,9 +1531,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_binary_data_tryjson_False(self):
         """
-        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file 
+        When Item has binary data - like layer packages, word docs, ensure Item.get_data() downloads file
         into that path when try_json is set to False
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_geometric", "Map Document")[0]
@@ -1559,9 +1559,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_JSON_data_tryjson_False(self):
         """
-        When Item has JSON data - like web maps, calling Item.get_data() with try_json False, 
+        When Item has JSON data - like web maps, calling Item.get_data() with try_json False,
         should return the data as str instead of dict
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
@@ -1582,9 +1582,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_JSON_data_tryjson_True(self):
         """
-        When Item has JSON data - like web maps, calling Item.get_data() with try_json True, 
+        When Item has JSON data - like web maps, calling Item.get_data() with try_json True,
         should return the data dict instead of str
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_cities_webmap", "Web Map")[0]
@@ -1605,9 +1605,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_zero_size_data_tryjson_False(self):
         """
-        When Item has no data, calling Item.get_data() with try_json False, 
+        When Item has no data, calling Item.get_data() with try_json False,
         should return None.
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
@@ -1628,9 +1628,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_zero_size_data_tryjson_True(self):
         """
-        When Item has no data, calling Item.get_data() with try_json True, 
+        When Item has no data, calling Item.get_data() with try_json True,
         should return None.
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_empty_webapp", "Web Mapping Application")[0]
@@ -1651,9 +1651,9 @@ class Test_Item_arcgis_online(unittest.TestCase):
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_get_data_method_empty_data_tryjson_True(self):
         """
-        When Item has no data, but item.size > 0, calling Item.get_data() with try_json True, 
+        When Item has no data, but item.size > 0, calling Item.get_data() with try_json True,
         should return None.
-        :return: 
+        :return:
         """
         try:
             item = self.gis.content.search("set1_Chicago", "Feature Layer")[0]
@@ -1678,7 +1678,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         """
         Update a csv item with new csv file. Ensure the contents are updated and
         itemid remains same.
-        :return: 
+        :return:
         """
         # region delete old service on portal
         old_sr = PortalUtils.search_portal_item(self.gis, "set1_overwrite_old", "CSV")
@@ -1722,6 +1722,90 @@ class Test_Item_arcgis_online(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + str(testException))
+
+    def test_register_application(self):
+        """tests the registering of an Application item"""
+        try:
+            content = self.gis.content
+            res = []
+            for at in ['browser', 'native', 'server', 'multiple']:
+                ip = {
+                    'title' : uuid.uuid4().hex,
+                    'tags' : "test1,test2,test3,test4",
+                    'type' : 'Application'
+                }
+                item = content.add(item_properties=ip)
+                reg = item.register(app_type=at)
+                res.append(isinstance(reg, dict))
+                item.delete()
+            self.assertTrue(all(res))
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_application_info(self):
+        """tests the application information property is working"""
+        try:
+            content = self.gis.content
+            res = []
+            for at in ['multiple']:
+                ip = {
+                    'title' : uuid.uuid4().hex,
+                    'tags' : "test1,test2,test3,test4",
+                    'type' : 'Application'
+                }
+                item = content.add(item_properties=ip)
+                reg = item.register(app_type=at)
+                appinfo = item.app_info
+                res.append(isinstance(appinfo, dict) and len(appinfo)>0)
+                item.delete()
+            self.assertTrue(all(res))
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+
+    def test_unregister_application(self):
+        """tests the unregistering of an Application item"""
+        try:
+            content = self.gis.content
+            res = []
+            for at in ['multiple']:
+                ip = {
+                    'title' : uuid.uuid4().hex,
+                    'tags' : "test1,test2,test3,test4",
+                    'type' : 'Application'
+                }
+                item = content.add(item_properties=ip)
+                reg = item.register(app_type=at)
+                unreg = item.unregister()
+                res.append(unreg)
+                item.delete()
+            self.assertTrue(all(res))
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_overwrite_manyHFS_using_csv_errors(self):
@@ -1969,7 +2053,7 @@ class Test_Item_arcgis_online(unittest.TestCase):
         """
         In AGOL, users can search for public items outside the org and share them to their group
         This is a popular way to accumulate content in their GIS.
-        :return: 
+        :return:
         """
         try:
             itemid = "8651e4d585654f6b955564efe44d04e5"

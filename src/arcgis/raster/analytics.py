@@ -198,7 +198,7 @@ def _set_image_collection_param(gis, params, image_collection):
     elif isinstance(image_collection, Item):
         params['imageCollection'] = _json.dumps({ "itemId" : image_collection.itemid })
     else:
-        raise TypeError("image_collection should be a string (service name) or Item")
+        raise TypeError("image_collection should be a string (url or uri) or Item")
 
     return
 
@@ -333,14 +333,15 @@ def generate_raster(raster_function,
     if output_name is None:
         output_name = 'GeneratedRasterProduct' + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
-        raise TypeError("output_raster should be a string (service name) or Item")
-
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
+        raise TypeError("output_raster should be a string (service name) or Item") 
 
     if isinstance(function_arguments, _arcgis.gis.Item):
         if function_arguments.type.lower() == 'image service':
@@ -422,19 +423,19 @@ def convert_feature_to_raster(input_feature,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
         raise TypeError("output_raster should be a string (service name) or Item")
 
     params = {}
 
-    params["inputFeature"] = _layer_input(input_feature)
-
-
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
+    params["inputFeature"] = _layer_input(input_feature) 
 
     params["outputName"] = output_raster
 
@@ -502,16 +503,18 @@ def copy_raster(input_raster,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
         raise TypeError("output_raster should be a string (service name) or Item")
 
     params = {}
 
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     params["outputName"] = output_raster
 
     params["inputRaster"] = _layer_input(input_raster)
@@ -604,17 +607,17 @@ def summarize_raster_within(input_zone_layer,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
-        output_name = output_service['title']
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
         raise TypeError("output_raster should be a string (service name) or Item")
 
     params = {}
-
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
 
     #    _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     params["OutputName"] = output_raster
@@ -822,16 +825,18 @@ def calculate_density(input_point_or_line_features,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
         raise TypeError("output_raster should be a string (service name) or Item")
 
     params = {}
 
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     params["outputName"] = output_raster
 
 
@@ -942,16 +947,18 @@ def create_viewshed(input_elevation_surface,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
         raise TypeError("output_raster should be a string (service name) or Item")
 
     params = {}
 
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     params["outputName"] = output_raster
 
 
@@ -1106,16 +1113,18 @@ def interpolate_points(input_point_features,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
         raise TypeError("output_raster should be a string (service name) or Item")
 
     params = {}
 
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     params["outputName"] = output_raster
 
 
@@ -1204,16 +1213,18 @@ def classify(input_raster,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
         raise TypeError("output_raster should be a string (service name) or Item")
 
     params = {}
 
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     params["outputName"] = output_raster
 
 
@@ -1287,16 +1298,18 @@ def segment(input_raster,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
+        output_raster = _json.dumps({"itemId":output_service.itemid})
     else:
         raise TypeError("output_raster should be a string (service name) or Item")
 
     params = {}
 
-    output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
     params["outputName"] = output_raster
 
 

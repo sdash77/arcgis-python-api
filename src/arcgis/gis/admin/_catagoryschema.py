@@ -271,5 +271,5 @@ class CategoryManager(object):
     #----------------------------------------------------------------------
     def reset(self, items):
         """deletes all the categories for a given set of items"""
-        return content._bulk_update(items, {'categories': ''})
+        return self._gis.content.bulk_update(items, {'categories': ''})
 

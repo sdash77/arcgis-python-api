@@ -995,7 +995,7 @@ class DatastoreManager(object):
     def config(self, value):
         """
         The data store configuration properties affect the behavior of the data holdings of the server. The properties include:
-        blockDataCopy—When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
+        blockDataCopy When this property is False, or not set at all, copying data to the site when publishing services from a client application is allowed. This is the default behavior.
         When this property is True, the client application is not allowed to copy data to the site when publishing. Rather, the publisher is required to register data items through which the service being published can reference data. Values: True | False
         Note:
         If you specify the property as True, users will not be able to publish geoprocessing services and geocode services from composite locators. These service types require data to be copied to the server. As a workaround, you can temporarily set the property to False, publish the service, and then set the property back to True.
@@ -1392,6 +1392,7 @@ class UserManager(object):
         self._gis = gis
         self._portal = gis._portal
 
+
     def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
                provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
@@ -1696,12 +1697,14 @@ class UserManager(object):
         :return:
             A list of users.
         """
+
         if query is None:
             users = self._portal.get_org_users(max_users, exclude_system=json.dumps(exclude_system))
             for u in users:
                 if not 'roleId' in u:
-                    u['roleId'] = u.pop('role')
-            return [User(self._gis, u['username'], u) for u in users]
+                    u['roleId'] = u.pop('role', None)
+            gis = self._gis
+            return [User(gis, u['username'], u) for u in users]
         else:
             userlist = []
             isinstance(self._portal, portalpy.Portal)
@@ -6885,6 +6888,85 @@ class Item(dict):
             return []
         return ps
     #----------------------------------------------------------------------
+    def _create_proxy(self,
+                     url:str=None,
+                     hit_interval:int=None,
+                     interval_length:int=60,
+                     proxy_params:dict=None) -> dict:
+        """
+        A service proxy creates a new endpoint for a service that is
+        specific to your application. Only allowed domains that you
+        specify will be able to access the service.
+
+        ===================    ===============================================================
+        **Argument**           **Description**
+        -------------------    ---------------------------------------------------------------
+        url                    Optional string. Represents the hosted service URLs to proxy.
+        -------------------    ---------------------------------------------------------------
+        hit_interval           Optional Integer. Number of times a service can be used in the
+                               given interval_length.
+        -------------------    ---------------------------------------------------------------
+        interval_length        Optional Integer. The time gap for the total hit_interval that
+                               a service can be used.  The number is in seconds.
+        -------------------    ---------------------------------------------------------------
+        proxy_params           Optional dict. Dictionary that provides referrer checks when
+                               accessing the premium content and optionally rate limiting if
+                               it is not set for each service in proxies.
+                                Example:
+
+                                {
+                                   "referrers": ["http://foo.com", "http://bar.com"],
+                                   "hitsPerInterval": 1000,
+                                   "intervalSeconds": 60
+                                }
+        ===================    ===============================================================
+
+
+        :return: Item
+
+        """
+        url = "%s/sharing/rest/content/users/%s/items/%s/createProxies" % (self._portal.url,
+                                                                           self.owner,
+                                                                           self.id)
+        params = {
+            'f' : 'json',
+            'proxies' : [],
+            'serviceProxyParams': {}
+        }
+        if url and hit_interval and interval_length:
+            params['proxies'].append({
+                "sourceUrl": url,
+                "hitPerInterval" : hit_interval,
+                "intervalSeconds" : interval_length
+            })
+        if proxy_params is not None:
+            params['serviceProxyParams'] = proxy_params
+        res = self._portal.con.post(url, params)
+        return Item(gis=self._gis, itemid=res['id'])
+    #----------------------------------------------------------------------
+    def _delete_proxy(self, proxy_id:str) -> dict:
+        """
+        The delete proxies removes a hosted proxies set on an item. The
+        operation can only be made by the item owner or the organization
+        administrator.
+
+        ===================    ===============================================================
+        **Argument**           **Description**
+        -------------------    ---------------------------------------------------------------
+        proxy_id               Required string. This is a comma seperated list of proxy ids.
+        ===================    ===============================================================
+
+
+        :return: dict
+
+        """
+        params = {'f': 'json',
+                  'proxies': proxy_id}
+        url = "%s/content/users/%s/items/%s/deleteProxies" % (self._portal.url,
+                                                              self.owner,
+                                                              self.id)
+        return self._portal.con.post(url, params)
+    #----------------------------------------------------------------------
     def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
         """
         Copy allows for the creation of an item that is derived from the current item.
@@ -7068,6 +7150,120 @@ class Item(dict):
         if self._depend is None:
             self._depend = ItemDependency(self)
         return self._depend
+    #----------------------------------------------------------------------
+    def register(self, app_type, redirect_uris=None):
+        """
+
+        The register method registers an app item with the enterprise. App
+        registration results in an APPID and APPSECRET (also known as
+        client_id and client_secret in OAuth speak, respectively) being
+        generated for that app. Upon successful registration, a Registered
+        App type keyword gets appended to the app item.
+
+        **Available to the item owner.**
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        app_type            Required string. The type of app that was registered indicating
+                            whether it's a browser app, native app, server app, or a multiple
+                            interface app.
+                            Values: browser, native, server, or multiple
+        ---------------     --------------------------------------------------------------------
+        redirect_uris       Optional list.  The URIs where the access_token or authorization
+                            code will be delivered upon successful authorization. The
+                            redirect_uri specified during authorization must match one of the
+                            registered URIs, otherwise authorization will be rejected.
+
+                            A special value of urn:ietf:wg:oauth:2.0:oob can also be specified
+                            for authorization grants. This will result in the authorization
+                            code being delivered to a portal URL (/oauth2/approval). This
+                            value is typically used by apps that don't have a web server or a
+                            custom URI scheme where the code can be delivered.
+
+                            The value is a JSON string array.
+
+                            Example:
+
+                            [
+                                "https://app.foo.com",
+                                "urn:ietf:wg:oauth:2.0:oob"
+                            ]
+        ===============     ====================================================================
+
+
+        :return: dict
+
+        """
+        if self.type not in ['Application']:
+            return None
+        if redirect_uris is None:
+            redirect_uris = []
+        if app_type not in ["browser", "native", "server", "multiple"]:
+            raise ValueError(("Invalid app_type of : %s. Allowed values"
+                             ": browser, native, server or multiple." % app_type))
+        params = {
+            "f" : 'json',
+            "itemId" : self.id,
+            "appType" : app_type,
+            "redirect_uris" : redirect_uris
+        }
+        url = "%soauth2/registerApp" % self._portal.resturl
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
+    #----------------------------------------------------------------------
+    def unregister(self):
+        """
+
+        The unregister app removes the application registration from an app
+        item along with the Registered App type keyword.
+
+        The operation is available to item owner and organization administrators.
+
+        **Available to the item owner.**
+
+        :return: boolean
+
+
+        """
+        appinfo = self.app_info
+        if 'Registered App' not in self.typeKeywords:
+            return False
+        if appinfo == {} or len(appinfo) == 0:
+            return False
+        params = {"f" : 'json'}
+        url = "%soauth2/apps/%s/unregister" % (self._portal.resturl, appinfo["client_id"])
+        res =  self._portal.con.post(url, params)
+        if res['success']:
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return res['success']
+    #----------------------------------------------------------------------
+    @property
+    def app_info(self):
+        """
+        If the parent item is registered using the register app operation,
+        this resource returns information pertaining to the registered app.
+        Every registered app gets an App ID and App Secret which in OAuth
+        speak are known as client_id and client_secret respectively.
+
+        :returns: dict
+
+        """
+        if "Registered App" not in self.typeKeywords:
+            return {}
+        url = "{base}content/users/{user}/items/{itemid}/registeredAppInfo".format(base=self._portal.resturl,
+                                                                                   user=self._gis.users.me.username,
+                                                                                   itemid=self.id)
+        params = {'f': 'json'}
+        try:
+            return self._portal.con.get(url, params)
+        except:
+            return {}
+
 ########################################################################
 class ItemDependency(object):
     """

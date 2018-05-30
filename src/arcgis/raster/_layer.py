@@ -12,7 +12,7 @@ import logging
 _LOGGER = logging.getLogger(__name__)
 
 def _get_input_raster(fnarg_ra, fnarg):
-#gets raster url from _fnra and rendering rule from _fn 
+#gets raster url from _fnra and rendering rule from _fn
     for key,value in fnarg_ra.items():
         if key == "Raster" and isinstance(value,dict):
             return _get_input_raster(value["rasterFunctionArguments"], fnarg)
@@ -34,7 +34,7 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
         self._extent = None
-        self._uses_gbl_function = False        
+        self._uses_gbl_function = False
         # self._extent = self.properties.initialExtent
 
     @property
@@ -950,7 +950,7 @@ class ImageryLayer(Layer):
             if 'function_chain' in rendering_rule:
                 params['renderingRule'] = rendering_rule['function_chain']
             else:
-                params['renderingRule'] = rendering_rule        
+                params['renderingRule'] = rendering_rule
 
         elif self._fn is not None:
             if not self._uses_gbl_function:
@@ -958,7 +958,7 @@ class ImageryLayer(Layer):
             else:
                 _LOGGER.warning("""Imagery layer object containing global functions in the function chain cannot be used for dynamic visualization.
                                    \nThe layer output must be saved as a new image service before it can be visualized. Use save() method of the layer object to create the processed output.""")
-                return None 
+                return None
 
         if compression_tolerance is not None:
             params['compressionTolerance'] = compression_tolerance
@@ -2330,7 +2330,7 @@ class ImageryLayer(Layer):
             else:
                 raise RuntimeError('This GIS does not support raster analysis.')
 
-    def to_features(self, 
+    def to_features(self,
                     field="Value",
                     output_type="Polygon",
                     simplify=True,
@@ -2368,34 +2368,34 @@ class ImageryLayer(Layer):
             g = gis
 
         from arcgis.raster.analytics import convert_raster_to_feature
-        input_raster_dict=None        
+        input_raster_dict=None
         if self._fnra is None:
             return convert_raster_to_feature(self._url, field, output_type, simplify, output_name, gis)
         fnarg_ra = self._fnra['rasterFunctionArguments']
         fnarg = self._fn
         return convert_raster_to_feature(_get_input_raster(fnarg_ra, fnarg), field, output_type, simplify, output_name, gis)
-    
-    
+
+
     def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):
         """
         Displays a structural representation of the function chain and it's raster input values. If
-        show_attributes is set to True, then the draw_graph function also displays the attributes 
-        of all the functions in the function chain, representing the rasters in a blue rectangular 
-        box, attributes in green rectangular box and the raster function names in yellow. 
+        show_attributes is set to True, then the draw_graph function also displays the attributes
+        of all the functions in the function chain, representing the rasters in a blue rectangular
+        box, attributes in green rectangular box and the raster function names in yellow.
 
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        show_attributes       optional boolean. If True, the graph displayed includes all the 
-                              attributes of the function and not only it's function name and raster 
-                              inputs 
-                              Set to False by default, to display only he raster function name and 
+        show_attributes       optional boolean. If True, the graph displayed includes all the
+                              attributes of the function and not only it's function name and raster
+                              inputs
+                              Set to False by default, to display only he raster function name and
                               the raster inputs to it.
         -----------------     --------------------------------------------------------------------
-        graph_size            optional string. Maximum width and height of drawing, in inches, 
-                              seperated by a comma. If only a single number is given, this is used 
-                              for both the width and the height. If defined and the drawing is 
-                              larger than the given size, the drawing is uniformly scaled down so 
+        graph_size            optional string. Maximum width and height of drawing, in inches,
+                              seperated by a comma. If only a single number is given, this is used
+                              for both the width and the height. If defined and the drawing is
+                              larger than the given size, the drawing is uniformly scaled down so
                               that it fits within the given size.
         =================     ====================================================================
 
@@ -2458,15 +2458,15 @@ class ImageryLayer(Layer):
                 rastername=_raster_slicestring(rfa_value)
                 G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
                 G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
-        
-            
+
+
         def _attribute_function_graph(rfa_value,rfa_key,root):
             global nodenumber
             nodenumber+=1
             rastername=rfa_key+" = "+str(rfa_value)
             G.node(str(nodenumber), rastername, style=('filled'), shape='rectangle',color='antiquewhite',fillcolor='antiquewhite', fontname="sans-serif")
             G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
-            
+
         def _function_graph(dictionary,childnode,connect):
             global nodenumber
             if isinstance(dictionary, dict):
@@ -2475,18 +2475,18 @@ class ImageryLayer(Layer):
                         nodenumber+=1
                         G.node(str(nodenumber), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
                         G.edge(str(nodenumber), str(connect),color="silver", arrowsize="0.9", penwidth="1")
-                        connect=nodenumber  
+                        connect=nodenumber
                         for dkey, dvalue in dictionary.items():  # Check dictionary again for rasterFunctionArguments
                             if dkey == "rasterFunctionArguments":
-                                for key, value in dvalue.items():        
+                                for key, value in dvalue.items():
                                     if (key == "Raster" or key=="Raster2" or key=="Rasters" or key=="PanImage" or key=="MSImage"):
                                         _raster_function_graph(value,key,connect)
                                     elif show_attributes==True:
                                         _attribute_function_graph(value,key,connect)
-                                    
-                    elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments 
+
+                    elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments
                         for rf_key, rf_value in dictionary.items():
-                             if rf_key == "rasterFunctionArguments":  
+                             if rf_key == "rasterFunctionArguments":
                                 for gbl_key, gbl_value in rf_value.items():
                                     if gbl_key=="toolName":
                                         toolname=_toolname_slicestring(gbl_value)
@@ -2498,7 +2498,7 @@ class ImageryLayer(Layer):
                                         _raster_function_graph(gbl_value,gbl_key,connect)
                                     elif show_attributes==True and gbl_key != "PrimaryInputParameterName" and gbl_key != "OutputRasterParameterName":
                                         _attribute_function_graph(gbl_value,gbl_key,connect)
-        
+
 
 
          #To find first rasterFunction
@@ -2515,10 +2515,10 @@ class ImageryLayer(Layer):
                                 _raster_function_graph(rfa_value,rfa_key,root)
                             elif show_attributes==True:
                                 _attribute_function_graph(rfa_value,rfa_key,root)
-        
-            elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments 
+
+            elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments
                 for rf_key, rf_value in function_dictionary.items():
-                     if rf_key == "rasterFunctionArguments":  
+                     if rf_key == "rasterFunctionArguments":
                         for gbl_key, gbl_value in rf_value.items():
                             if gbl_key=="toolName":
                                 toolname=_toolname_slicestring(gbl_value)
@@ -2528,7 +2528,7 @@ class ImageryLayer(Layer):
                                 _raster_function_graph(gbl_value,gbl_key,root)
                             elif show_attributes==True and gbl_key != "PrimaryInputParameterName" and gbl_key != "OutputRasterParameterName":
                                 _attribute_function_graph(gbl_value,gbl_key,root)
-    
+
         return G
 
 
@@ -2728,8 +2728,8 @@ class ImageryTileManager(object):
     Manages the tiles for Cached Imagery Layers.
 
     .. note :: This class is not created by users directly. An instance of this class, called
-     ‘tiles’, is available as a property of an ImageryLayer object. Users call methods on this
-     ‘tiles’ object to create and access tiles from an ImageryLayer.
+      tiles , is available as a property of an ImageryLayer object. Users call methods on this
+      tiles  object to create and access tiles from an ImageryLayer.
 
 
     =================     ====================================================================
@@ -2782,7 +2782,7 @@ class ImageryTileManager(object):
         The export method allows client applications to download map tiles
         from server for offline use. This operation is performed on a
         Image Layer that allows clients to export cache tiles. The result
-        of this operation is Image Layer Job. .
+        of this operation is Image Layer Job.
 
         export can be enabled in a layer by using ArcGIS Desktop or the
         ArcGIS Server Administrative Site Directory. In ArcGIS Desktop,
@@ -3369,8 +3369,8 @@ class RasterManager(object):
     ImageryLayer object.  The functions are only available if the
     layer has 'Edit' on it's capabilities property.
 
-    .. note :: This class is not created by users directly. An instance of this class, called ‘rasters’,
-     is available as a property of an ImageryLayer object. Users call methods on this ‘rasters’ object
+    .. note :: This class is not created by users directly. An instance of this class, called  rasters ,
+     is available as a property of an ImageryLayer object. Users call methods on this  rasters  object
      to  update, add and delete rasters from an ImageryLayer
 
     =================     ====================================================================

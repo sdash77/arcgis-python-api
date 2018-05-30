@@ -155,7 +155,7 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
     def test_create_service_defaults(self):
         """
         Calling gis.content.create_service("test","test service") shouls create a feature service.
-        :return: 
+        :return:
         """
         #region old previous output
         old_output_sr = PortalUtils.search_portal_item(self.gis, "dino_ContentManager_test_create_service_defaults", "Feature Service")
@@ -300,7 +300,7 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
     def test_create_service_defaults(self):
         """
         Calling gis.content.create_service("test","test service") shouls create a feature service.
-        :return: 
+        :return:
         """
         # region old previous output
         old_output_sr = PortalUtils.search_portal_item(self.gis, "dino_ContentManager_test_create_service_defaults",

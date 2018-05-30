@@ -494,7 +494,7 @@ def match_control_points(image_collection, control_points, similarity=None, cont
 def color_correction(image_collection,
                   color_correction_method,
                   dodging_surface_type,
-                  reference_image=None,
+                  target_image=None,
                   context = None,
                   gis = None):
     '''
@@ -577,7 +577,7 @@ def color_correction(image_collection,
                                              All input pixels are altered toward multiple 
                                              points obtained from the cubic surface.
     ------------------------------------     --------------------------------------------------------------------
-    reference_image                          Optional. The image service you want to use to color balance 
+    target_image                             Optional. The image service you want to use to color balance 
                                              the images in the image collection.
                                              It can be a portal Item or an image service URL or a URI
     ------------------------------------     --------------------------------------------------------------------
@@ -612,20 +612,16 @@ def color_correction(image_collection,
             raise RuntimeError('similarity can only be one of the following: '+ str(dodging_surface_type_allowed_values))
     params['dodgingSurface'] = dodging_surface_type
 
-    if reference_image is not None:
-        if isinstance(reference_image, str):
-            if 'http:' in reference_image or 'https:' in reference_image:
-                doesnotexist = gis.content.is_service_name_available(reference_image, "Image Service")
-                if doesnotexist:
-                    raise RuntimeError("The input image collection does not exist")
-
-                params['referenceImage'] = json.dumps({ 'url' : reference_image })
+    if target_image is not None:
+        if isinstance(target_image, str):
+            if 'http:' in target_image or 'https:' in target_image:
+                params['targetImage'] = json.dumps({ 'url' : target_image })
             else:
-                params['referenceImage'] = json.dumps({ 'uri' : reference_image })
-        elif isinstance(reference_image, Item):
-                params['referenceImage'] = json.dumps({ "itemId" : reference_image.itemid })
+                params['targetImage'] = json.dumps({ 'uri' : target_image })
+        elif isinstance(target_image, Item):
+                params['targetImage'] = json.dumps({ "itemId" : target_image.itemid })
         else:
-            raise TypeError("reference_image should be a string (service name) or Item")
+            raise TypeError("target_image should be a string (url or uri) or Item")
     
     if context is not None:
         params['context'] = json.dumps(context)          
@@ -661,22 +657,27 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
                                             points set with the image service. 
                                             It can be a portal Item or an image service URL or a URI
     ------------------------------------    --------------------------------------------------------------------
-    image_location_accuracy                 Optional string. The tolerance level for your control point matching.
+    image_location_accuracy                 Optional string. This option allows users to specify the location accuracy of the  
+                                            imagery.
+                                            VERYLOW, LOW, MEDIUM, HIGH
+                                            LOW-Images have a large shift and a large rotation (> 5 degrees).
+                                                The SIFT algorithm will be used in the point matching computation. 
 
+                                            MEDIUM-Images have a medium shift and a small rotation (<5 degrees).
+                                                   The Harris algorithm will be used in the point matching computation. 
 
-                                            LOW-The similarity tolerance for finding control points will be low. 
-                                             This option will produce the most control points, but some may have a higher level of error.
-
-                                            MEDIUM-The similarity tolerance for finding control points will be medium.
-
-                                            HIGH-The similarity tolerance for finding control points will be high. 
-                                             This option will produce the least number of control points, but each matching pair will 
-                                             have a lower level of error. This is the default.
+                                            HIGH-Images have a small shift and a small rotation.
+                                                 The Harris algorithm will be used in the point matching computation. 
 
                                             Default is HIGH
     ------------------------------------    --------------------------------------------------------------------
     context                                 Optional dictionary. Context contains additional environment settings that affect 
                                             output control points generation.
+                                            {
+                                            "pointSimilarity":"MEDIUM",
+                                            "pointDensity": "MEDIUM",
+                                            "pointDistribution": "RANDOM"
+                                            }
     ------------------------------------    --------------------------------------------------------------------
     gis                                     Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
     ====================================    ====================================================================
@@ -694,17 +695,13 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     if reference_image is not None:
         if isinstance(reference_image, str):
             if 'http:' in reference_image or 'https' in reference_image:
-                doesnotexist = gis.content.is_service_name_available(reference_image, "Image Service")
-                if doesnotexist:
-                    raise RuntimeError("The input image collection does not exist")
-
                 params['referenceImage'] = json.dumps({ 'url' : reference_image })
             else:
                 params['referenceImage'] = json.dumps({ 'uri' : reference_image })
         elif isinstance(reference_image, Item):
                 params['referenceImage'] = json.dumps({ "itemId" : reference_image.itemid })
         else:
-            raise TypeError("reference_image should be a string (service name) or Item")
+            raise TypeError("reference_image should be a string (url or uri) or Item")
 
     params["imageLocationAccuracy"]=image_location_accuracy
 
@@ -743,7 +740,16 @@ def compute_seamlines(image_collection,
     
                             VORONOI-Generate seamlines using the area Voronoi diagram. 
 
-                            DISPARITY-Generate seamlines based on the disparity images of stereo pairs. 
+                            DISPARITY-Generate seamlines based on the disparity images of stereo pairs.
+                            
+                            GEOMETRY - Generate seamlines for overlapping areas based on the intersection 
+                            of footprints. Areas with no overlapping imagery will merge the footprints. 
+
+                            RADIOMETRY - Generate seamlines based on the spectral patterns of features 
+                            within the imagery.
+
+                            EDGE_DETECTION - Generate seamlines over intersecting areas based on the 
+                            edges of features in the area.
 
                             This method can avoid seamlines cutting through buildings. 
     ------------------     --------------------------------------------------------------------
@@ -784,7 +790,7 @@ def compute_seamlines(image_collection,
                            "minThinnessRatio", "maxSilverSize"
                            }
 
-    seamlines_method_allowed_values = ['VORONOI', 'DISPARITY']
+    seamlines_method_allowed_values = ['VORONOI', 'DISPARITY','GEOMETRY', 'RADIOMETRY', 'EDGE_DETECTION']
     if not seamlines_method.upper() in seamlines_method_allowed_values:
             raise RuntimeError('similarity can only be one of the following: '+str(seamlines_method_allowed_values))
     params['seamlinesMethod'] = seamlines_method
