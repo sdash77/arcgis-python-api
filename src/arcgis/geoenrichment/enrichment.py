@@ -888,8 +888,8 @@ def _find_report(country, gis=None):
 #:return: Pandas' DataFrame """ if gis is None: gis = env.active_gis ge =\
 #_GeoEnrichment(gis=gis) return ge.report_metadata(country=country)\
 #----------------------------------------------------------------------
-@deprecated(deprecated_in=1.4.1,
-            removed_in=1.5.0,
+@deprecated(deprecated_in="1.4.1",
+            removed_in="1.5.0",
             current_version=__version__,
             details="Method will be removed due to changes in the GeoEnrichment API")
 def find_businesses(type_filters=None,
