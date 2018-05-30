@@ -232,6 +232,20 @@ class _DeepCloner():
                     feature_collection = source.content.get(feature_collection['itemId'])
                     item_definition.add_child(self._get_item_definitions(feature_collection))
 
+            if not self._use_org_basemap:
+                basemap_layers = _deep_get(webmap_json, 'baseMap', 'baseMapLayers')
+                if basemap_layers is not None:
+                    for basemap_layer in basemap_layers:
+                        if 'layerType' in basemap_layer and basemap_layer['layerType'] == 'VectorTileLayer':
+                            try:
+                                vector_tile_item = source.content.get(basemap_layer['itemId'])
+                                if not self.target.properties.isPortal:
+                                    if vector_tile_item['orgId'] != item['orgId']:
+                                        continue
+                                item_definition.add_child(self._get_item_definitions(vector_tile_item))
+                            except:
+                                pass 
+
         # If the item is a feature service determine if it is a view and if it is find all it's sources
         elif item['type'] == 'Feature Service':
             svc = FeatureLayerCollection.fromitem(item)
@@ -1756,6 +1770,18 @@ class _WebMapDefinition(_TextItemDefinition):
                             map_service_layer['url'] = new_service['url']
                             map_service_layer['itemId'] = new_service['id']
                             break
+
+                basemap_layers = _deep_get(webmap_json, 'baseMap', 'baseMapLayers')
+                if basemap_layers is not None:
+                    for basemap_layer in basemap_layers:
+                        if 'layerType' in basemap_layer and basemap_layer['layerType'] == 'VectorTileLayer':
+                            if 'itemId' in basemap_layer and basemap_layer['itemId'] in self._clone_mapping['Item IDs']:
+                                new_id = self._clone_mapping['Item IDs'][basemap_layer['itemId']]
+                                portal_url = "http://www.arcgis.com/"
+                                if self.target.properties.isPortal:
+                                    portal_url = _get_org_url(self.target)
+                                basemap_layer['styleUrl'] = "{0}sharing/rest/content/items/{1}/resources/styles/root.json".format(portal_url, new_id)
+                                basemap_layer['itemId'] = new_id        
 
                 # Change the basemap to the default basemap defined in the target organization
                 if self.use_org_basemap:
