@@ -37,6 +37,7 @@ else:
         'six',
         'ipywidgets >=7',
         'widgetsnbextension >=3',
+        'tornado >=4.5.3,<5',
         'pandas',
         'numpy',
         'pyshp',
