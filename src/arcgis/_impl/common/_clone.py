@@ -236,15 +236,13 @@ class _DeepCloner():
                 basemap_layers = _deep_get(webmap_json, 'baseMap', 'baseMapLayers')
                 if basemap_layers is not None:
                     for basemap_layer in basemap_layers:
-                        if 'layerType' in basemap_layer and basemap_layer['layerType'] == 'VectorTileLayer':
-                            try:
-                                vector_tile_item = source.content.get(basemap_layer['itemId'])
-                                if not self.target.properties.isPortal:
-                                    if vector_tile_item['orgId'] != item['orgId']:
-                                        continue
+                        if 'layerType' in basemap_layer and basemap_layer['layerType'] == 'VectorTileLayer' and 'itemId' in basemap_layer:
+                            vector_tile_item = source.content.get(basemap_layer['itemId'])
+                            if vector_tile_item is None:
+                                continue
+
+                            if vector_tile_item['owner'] == item['owner']:
                                 item_definition.add_child(self._get_item_definitions(vector_tile_item))
-                            except:
-                                pass 
 
         # If the item is a feature service determine if it is a view and if it is find all it's sources
         elif item['type'] == 'Feature Service':
