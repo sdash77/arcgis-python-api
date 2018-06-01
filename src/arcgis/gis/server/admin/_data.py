@@ -235,7 +235,8 @@ class DataStoreManager(BaseServer):
         """
         res = self._register_data_item(item=item)
         if res['status'] == 'success' or res['status'] == 'exists':
-            return Datastore(self, "/enterpriseDatabases/" + name)
+
+            return Datastore(self, item['path'])
         else:
             #print(str(res))
             return None
@@ -270,9 +271,8 @@ class DataStoreManager(BaseServer):
             server_path = server_path.replace('\\', '\\\\')
 
         path_str = '{"path":"' + server_path + '"}'
-        params = {
-            'f': 'json',
-            'item' : json.dumps({
+
+        item = {
                 "path": "/bigDataFileShares/" + name,
                 "type": "bigDataFileShare",
 
@@ -280,9 +280,8 @@ class DataStoreManager(BaseServer):
                     "connectionString": path_str,
                     "connectionType": connection_type
                 }
-            })
-        }
-        res = self._register_data_item(item=params)
+            }
+        res = self._register_data_item(item=item)
 
         if res['status'] == 'success' or res['status'] == 'exists':
             output = Datastore(self, "/bigDataFileShares/" + name)
@@ -983,7 +982,8 @@ class Datastore(BaseServer):
             "item": self._json_dict
         }
         path = self._datastore._url + "/validateDataItem"
-        if params['item']['provider'] == 'ArcGIS Data Store':
+        if 'provider' in params['item'] and \
+           params['item']['provider'] == 'ArcGIS Data Store':
             path = self._url + "/machines/" + params['item']['info']['machines'][0]['name'] + "/validate"
             res = self._con.post(path, {"f": "json"}, verify_cert=False)
         else:
