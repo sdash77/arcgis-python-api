@@ -235,27 +235,35 @@ class DataStoreManager(BaseServer):
         """
         res = self._register_data_item(item=item)
         if res['status'] == 'success' or res['status'] == 'exists':
-            return Datastore(self, "/enterpriseDatabases/" + name)
+
+            return Datastore(self, item['path'])
         else:
             #print(str(res))
             return None
     #----------------------------------------------------------------------
     def add_bigdata(self,
                     name,
-                    server_path=None):
+                    server_path=None,
+                    connection_type="fileShare"):
         """
         Registers a bigdata fileshare with the data store.
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        name                   Required string. The unique bigdata fileshare name on the server.
-        ------------------     --------------------------------------------------------------------
-        server_path            Optional string. The path to the folder from the server.
-        ==================     ====================================================================
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The unique bigdata fileshare name on the server.
+        ---------------     --------------------------------------------------------------------
+        server_path         Optional string. The path to the folder from the server.
+        ---------------     --------------------------------------------------------------------
+        connection_type     Optional string. Allows for the setting of the types of big data store.
+                            The value 'fileShare' is used for local big data stores, and for
+                            cloud stores, the connection_type should be 'dataStore'. The value
+                            'fileShare' is the default value.
+        ===============     ====================================================================
 
         :return:
-            The data item if successfully registered, None otherwise.
+           The big data fileshare if registered successfully, None otherwise.
         """
         output = None
         pattern = r'\\\\[a-zA-Z]+'
@@ -263,19 +271,17 @@ class DataStoreManager(BaseServer):
             server_path = server_path.replace('\\', '\\\\')
 
         path_str = '{"path":"' + server_path + '"}'
-        params = {
-            'f': 'json',
-            'item' : json.dumps({
+
+        item = {
                 "path": "/bigDataFileShares/" + name,
                 "type": "bigDataFileShare",
 
                 "info": {
                     "connectionString": path_str,
-                    "connectionType": "fileShare"
+                    "connectionType": connection_type
                 }
-            })
-        }
-        res = self._register_data_item(item=params)
+            }
+        res = self._register_data_item(item=item)
 
         if res['status'] == 'success' or res['status'] == 'exists':
             output = Datastore(self, "/bigDataFileShares/" + name)
@@ -976,7 +982,8 @@ class Datastore(BaseServer):
             "item": self._json_dict
         }
         path = self._datastore._url + "/validateDataItem"
-        if params['item']['provider'] == 'ArcGIS Data Store':
+        if 'provider' in params['item'] and \
+           params['item']['provider'] == 'ArcGIS Data Store':
             path = self._url + "/machines/" + params['item']['info']['machines'][0]['name'] + "/validate"
             res = self._con.post(path, {"f": "json"}, verify_cert=False)
         else:
