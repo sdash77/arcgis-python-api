@@ -242,20 +242,27 @@ class DataStoreManager(BaseServer):
     #----------------------------------------------------------------------
     def add_bigdata(self,
                     name,
-                    server_path=None):
+                    server_path=None,
+                    connection_type="fileShare"):
         """
         Registers a bigdata fileshare with the data store.
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        name                   Required string. The unique bigdata fileshare name on the server.
-        ------------------     --------------------------------------------------------------------
-        server_path            Optional string. The path to the folder from the server.
-        ==================     ====================================================================
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        name                Required string. The unique bigdata fileshare name on the server.
+        ---------------     --------------------------------------------------------------------
+        server_path         Optional string. The path to the folder from the server.
+        ---------------     --------------------------------------------------------------------
+        connection_type     Optional string. Allows for the setting of the types of big data store.
+                            The value 'fileShare' is used for local big data stores, and for
+                            cloud stores, the connection_type should be 'dataStore'. The value
+                            'fileShare' is the default value.
+        ===============     ====================================================================
 
         :return:
-            The data item if successfully registered, None otherwise.
+           The big data fileshare if registered successfully, None otherwise.
         """
         output = None
         pattern = r'\\\\[a-zA-Z]+'
@@ -271,7 +278,7 @@ class DataStoreManager(BaseServer):
 
                 "info": {
                     "connectionString": path_str,
-                    "connectionType": "fileShare"
+                    "connectionType": connection_type
                 }
             })
         }

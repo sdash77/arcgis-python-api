@@ -1062,7 +1062,8 @@ class DatastoreManager(object):
 
     def add_bigdata(self,
                     name,
-                    server_path=None):
+                    server_path=None,
+                    connection_type="fileShare"):
         """
         Registers a bigdata fileshare with the data store.
 
@@ -1073,6 +1074,11 @@ class DatastoreManager(object):
         name                Required string. The unique bigdata fileshare name on the server.
         ---------------     --------------------------------------------------------------------
         server_path         Optional string. The path to the folder from the server.
+        ---------------     --------------------------------------------------------------------
+        connection_type     Optional string. Allows for the setting of the types of big data store.
+                            The value 'fileShare' is used for local big data stores, and for
+                            cloud stores, the connection_type should be 'dataStore'. The value
+                            'fileShare' is the default value.
         ===============     ====================================================================
 
 
@@ -1095,10 +1101,11 @@ class DatastoreManager(object):
 
                 "info": {
                     "connectionString": path_str,
-                    "connectionType": "fileShare"
+                    "connectionType": connection_type
                 }
             })
         }
+
         status, msg = self._validate_item(item=params['item'])
         if status == False:
             raise Exception(msg)
