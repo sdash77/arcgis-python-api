@@ -990,7 +990,7 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
                     item_properties['text'] = json.dumps(data)
 
                 # Add the new item
-                new_item = self._add_new_item(item_properties, data)
+                new_item = self._add_new_item(item_properties)
 
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved = True
