@@ -36,12 +36,12 @@ class JournalStoryMap(object):
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
         elif item and isinstance(item, Item) and \
-             'MapJournal' in item.typeKeyswords:
+             'MapJournal' in item.typeKeywords:
             self._item = item
             self._itemid = self._item.itemid
             self._properties = self._item.get_data()
         elif item and isinstance(item, Item) and \
-             'MapJournal' not in item.typeKeyswords:
+             'MapJournal' not in item.typeKeywords:
             raise ValueError("Item is not a Journal Story Map")
         else:
             self._properties = reference['journal']
