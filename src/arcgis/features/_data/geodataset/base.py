@@ -236,10 +236,11 @@ class BaseSpatialPandas(object):
                         item = item.centroid
                     if HASARCPY:
                         try:
-                            qi.insert(item=idx, bbox=(item.extent.XMin - factor,
-                                                      item.extent.YMin - factor,
-                                                      item.extent.XMax + factor,
-                                                      item.extent.YMax + factor))
+                            xmin, ymin, xmax, ymax = item.extent
+                            qi.insert(item=idx, bbox=(xmin - factor,
+                                                      ymin - factor,
+                                                      xmax + factor,
+                                                      ymax + factor))
                         except:
                             pass
                     else:
