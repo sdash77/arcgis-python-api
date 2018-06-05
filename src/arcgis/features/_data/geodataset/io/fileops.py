@@ -42,9 +42,6 @@ def _from_xy(df, x_column, y_column, sr=None):
     """
     from arcgis.geometry import SpatialReference, Geometry
     from arcgis.features import SpatialDataFrame
-    def assemble_points(x, y, sr):
-        return Geometry({'x' : x, 'y' : y,
-                         "spatialReference" : sr})
     if sr is None:
         sr = SpatialReference({'wkid' : 4326})
     if not isinstance(sr, SpatialReference):
@@ -54,9 +51,13 @@ def _from_xy(df, x_column, y_column, sr=None):
             sr = SpatialReference({'wkid' : sr})
         elif isinstance(sr, str):
             sr = SpatialReference({'wkt' : sr})
-    df['SHAPE'] = df.apply(lambda row: assemble_points(row[x_column],
-                                                     row[y_column],
-                                                     sr), axis=1)
+    geoms = []
+    for idx, row in df.iterrows():
+        geoms.append(
+            Geometry({'x' : row[x_column], 'y' : row[y_column],
+             'spatialReference' : sr})
+        )
+    df['SHAPE'] = geoms
     return SpatialDataFrame(data=df, sr=sr)
 
 def _pyshp_to_shapefile(df, out_path, out_name):
