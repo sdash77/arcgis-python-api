@@ -1075,8 +1075,7 @@ class FeatureLayerCollectionManager(_GISResource):
         :param data: path to data_file used to overwrite the hosted feature layer collection
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
-        if self._gis._portal.is_arcgisonline == False:
-            return self._overwrite_portal(data=data_file)
+
         # region Get Item associated with the service
         if 'serviceItemId' in self.properties.keys():
             feature_layer_item = self._gis.content.get(self.properties['serviceItemId'])

@@ -82,7 +82,7 @@ class Test_FeatureLayerCollectionManager_portal(unittest.TestCase):
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
         #endregion
