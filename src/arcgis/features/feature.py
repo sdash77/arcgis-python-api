@@ -201,6 +201,14 @@ class Feature(object):
         """returns a feature from a dict"""
         geom = feature['geometry'] if 'geometry' in feature else None
         attribs = feature['attributes'] if 'attributes' in feature else None
+        if 'centroid' in feature:
+            if attribs is None:
+                attribs = {'centroid' : feature['centroid']}
+            elif 'centroid' in attribs:
+                fld = "centroid_" + uuid.uuid4().hex[:2]
+                attribs[fld] = feature['centroid']
+            else:
+                attribs['centroid'] = feature['centroid']
         return cls(geom, attribs)
     # ----------------------------------------------------------------------
     def __str__(self):
