@@ -117,7 +117,7 @@ class GIS(object):
                         will be used as the default GIS object throughout the whole
                         scripting session.
     ----------------    ---------------------------------------------------------------
-    client_id           Optional string. Used for OAuth athentication.  This is the
+    client_id           Optional string. Used for OAuth authentication.  This is the
                         client ID value.
     ----------------    ---------------------------------------------------------------
     profile             Optional string. the name of the profile that the user wishes to use
@@ -702,7 +702,7 @@ class GIS(object):
         using the GIS's configured geocoders and if a match is found, the geographic
         extent of the matched address is used as the map extent. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel.
+        to the specified zoomlevel. See :class:`~arcgis.widgets` for more inforomation.
 
         Note: The map widget is only supported within Jupyter Notebook.
 
@@ -4604,7 +4604,9 @@ class User(dict):
     @property
     def esri_access(self):
         """
-        Enable or disable 'Esri access'. Administrator privileges required.
+        When getting, will return a string describing the current user's esri access
+        When setting, supply a *bool* to enable or disable esri_access for that user (Administrator privileges required)
+
         A member whose account has Esri access enabled can use My Esri and
         Community and Forums (GeoNet), access e-Learning on the Training
         website, and manage email communications from Esri. The member
@@ -4613,7 +4615,7 @@ class User(dict):
         **Trial** accounts cannot modify esri_access property.
 
         Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
-        for more information.
+        or https://bit.ly/2JsJV1i for more information.
 
 
         """
@@ -5146,7 +5148,7 @@ class Item(dict):
                                authoritative.
                                If a value of None is given, then the value will be reset.
 
-                               Allowsed Values: authoritative, deprecated, or None
+                               Allowed Values: authoritative, deprecated, or None
         ==================     ====================================================================
         """
         try:
@@ -6084,8 +6086,11 @@ class Item(dict):
 
     def get_data(self, try_json=True):
         """
-        Retrieves the data component of an item and returns the data associated with an item.
-
+        Retrieves the data associated with an item. Note that this call may 
+        return different results for different item types: some item types may 
+        even return *None*. See 
+        `this REST API page <https://developers.arcgis.com/rest/users-groups-and-items/working-with-users-groups-and-items.htm>`_
+        for more information.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -6152,8 +6157,9 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
-                            'Service2Data', 'Service2Service']. See Relationship types in
-                            REST API help for more information on this parameter.
+                            'Service2Data', 'Service2Service']. See
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            for more information on this parameter.                            
         ---------------     --------------------------------------------------------------------
         direction           Required string. One of ['forward', 'reverse']
         ===============     ====================================================================
@@ -6200,8 +6206,9 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
-                            'Service2Data', 'Service2Service']. See Relationship types in
-                            REST API help for more information on this parameter.
+                            'Service2Data', 'Service2Service']. See
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            for more information on this parameter.
         ===============     ====================================================================
 
 
@@ -6235,8 +6242,9 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
-                            'Service2Data', 'Service2Service']. See Relationship types in
-                            REST API help for more information on this parameter.
+                            'Service2Data', 'Service2Service']. See
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            for more information on this parameter.
         ===============     ====================================================================
 
 
@@ -6933,7 +6941,7 @@ class Item(dict):
                                 Example:
 
                                 {
-                                   "referrers": ["http://foo.com", "http://bar.com"],
+                                   "referrers": ["http://foo.example.com", "http://bar.example.com"],
                                    "hitsPerInterval": 1000,
                                    "intervalSeconds": 60
                                 }
@@ -7204,7 +7212,7 @@ class Item(dict):
                             Example:
 
                             [
-                                "https://app.foo.com",
+                                "https://app.example.com",
                                 "urn:ietf:wg:oauth:2.0:oob"
                             ]
         ===============     ====================================================================
