@@ -686,8 +686,33 @@ class SSLCertificates(BasePortalAdmin):
     #----------------------------------------------------------------------
     def list(self):
         """
-        list of certificates
+        List of SSL Certificates as represented in the Portal Admin API
+
+        .. code-block:: python
+
+            USAGE: Print out information about each SSL Certificate
+
+            from arcgis.gis import GIS
+            gis = GIS("https://yourportal.com/portal", "portaladmin", "password")
+            # Get the SSL Certificate class
+            sslmgr = gis.admin.security.ssl
+            # Get a list of SSL Certificates
+            sslcerts = sslmgr.list()
+            # For each certificate, print its alias and issuer
+            for sslcert in sslcerts:
+                print("{} : {}".format(dict(sslcert)['aliasName'], dict(sslcert)['issuer']))
+
+            # Output
+            portal : CN=YOURPORTAL.COM, OU=Self Signed Certificate
+            yourorgroot : CN=YourOrg Enterprise Root, DC=empty, DC=local
+            samlcert : CN=YOURPORTAL.COM, OU=Self Signed Certificate
+            ca_signed : CN=YourOrg Enterprise Root, DC=empty, DC=local
+
+        :returns:
+            List of SSLCertificate objects
+
         """
+
         certs = []
         self._refresh()
         for cert in self.properties.sslCertificates:

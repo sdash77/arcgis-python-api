@@ -365,7 +365,40 @@ class WebAdaptors(BasePortalAdmin):
             self._init(self._gis)
     #----------------------------------------------------------------------
     def list(self):
-        """returns all instances of WebAdaptors"""
+        """
+        Returns all instances of WebAdaptors
+
+        .. code-block:: python
+
+            USAGE: Get all Web Adaptors and list keys,values of first Web Adaptor object
+
+            from arcgis.gis import GIS
+            gis = GIS("https://yourportal.com/portal", "portaladmin", "password")
+
+            # Return a List of Web Adaptor objects
+            webadaptors = gis.admin.system.web_adaptors.list()
+
+            # Get the first Web Adaptor object and print out each of its values
+            for key, value in dict(webadaptors[0]).items():
+                print("{} : {}".format(key, value))
+
+            # Output
+            machineName : yourportal.com
+            machineIP : 10.11.12.13
+            webAdaptorURL : https://yourwebserver.com/portal
+            id : ac17d7b9-adbd-4c45-ae13-77b0ad6f14e8
+            description :
+            httpPort : 80
+            httpsPort : 443
+            refreshServerListInterval : 1
+            reconnectServerOnFailureInterval : 1
+
+
+        :return:
+            List of Web Adaptor objects.  Typically, only 1 Web Adaptor will exist for a Portal
+
+        """
+
         res = []
         if 'webAdaptors' in self.properties:
             for wa in self.properties.webAdaptors:

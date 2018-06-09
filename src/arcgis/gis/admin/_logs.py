@@ -38,6 +38,23 @@ class Logs(BasePortalAdmin):
         Deletes all the log files on the machine hosting Portal for ArcGIS.
         This operation allows you to free up disk space. The logs cannot be
         recovered after executing this operation.
+
+        .. code-block:: python
+
+            USAGE: Clean logs from your Portal Admin API
+
+            from arcgis.gis import GIS
+            gis = GIS("https://yourportal.com/portal", "portaladmin", "password")
+            logs = gis.admin.logs
+            resp = logs.clean()
+            print(resp)
+
+            # Output
+            True
+
+        :returns:
+            Boolean True or False depicting success
+
         """
         url = "%s/clean" % self._url
         params = {"f" : "json"}
@@ -51,6 +68,28 @@ class Logs(BasePortalAdmin):
     def settings(self):
         """
         Reads/writes the current log settings for the portal.
+
+        .. code-block:: python
+
+            USAGE: Print out the Log Settings
+
+            from arcgis.gis import GIS
+            gis = GIS("https://yourportal.com/portal", "portaladmin", "password")
+            logs = gis.admin.logs
+            logsettings = logs.settings
+            for key, value in dict(logsettings).items():
+                print("{} : {}".format(key, value))
+
+            # Output
+            logDir : C:\\arcgisportal\\logs
+            logLevel : INFO
+            maxErrorReportsCount : 10
+            maxLogFileAge : 90
+            usageMeteringEnabled : False
+
+        :returns:
+            Dictionary of key/value pairs of log settings
+
         """
         url = "%s/settings" % self._url
         params = {'f' : 'json'}
