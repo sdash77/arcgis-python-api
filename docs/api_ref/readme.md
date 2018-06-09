@@ -153,7 +153,7 @@ Note, here I left out the 'rot13' function or any other utility method we have i
 
 ## On-going doc updates
 Here is the part that explains how to incrementally build the doc once the set-up process is completed.
- - From the Command Prompt, simply run `make html` from the `docs` folder to re-build the `html` and index it.
+ - From the Command Prompt, simply run `make html` from the `docs/api-ref` folder to re-build the `html` and index it.
  - Do this step regularly throughout the editing session to verify the translation of the Python docstrings to `html`.
 
-**Note:**  The initial `rst` files are built by running `sphinx-apidoc -f -o source ../src/arcgis` from `docs` folder. This creates / updates the `rst` files, but generally is not part of the on-going documentation process.  These `rst` files are gained locally by pulling the latest repo.  Any new modules that get created will require an `rst` file be created, also.
+**Note:**  The initial `rst` files are built by running `sphinx-apidoc -f -o source ../src/arcgis` from `docs/api-ref` folder. This creates / updates the `rst` files, but generally is not part of the on-going documentation process.  These `rst` files are gained locally by pulling the latest repo.  Any new modules that get created will require an `rst` file be created, also.
