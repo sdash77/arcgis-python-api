@@ -17,3 +17,4 @@ dependencies:
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
+  - sphinx-rtd-theme

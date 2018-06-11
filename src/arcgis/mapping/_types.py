@@ -33,22 +33,92 @@ def _tempinput(data):
 
 class SceneLayer(Layer):
     """
-    The SceneSerice is represents a 3D service published on server.
+    Represents a Web scene layer. Web scene layers are cached web layers that are optimized for displaying a large
+    amount of 2D and 3D features. You can use scene layers to represent 3D points, point clouds, 3D objects and
+    integrated mesh layers.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.mapping import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.mapping._types.SceneLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
     """
     def __init__(self, url, gis=None):
         """
-        Constructs a feature layer given a feature layer URL
-        :param url: feature layer url
-        :param gis: optional, the GIS that this layer belongs to. Required for secure feature layers.
+        Constructs a SceneLayer given a web scene layer URL
         """
         super(SceneLayer, self).__init__(url, gis)
 
 
 class WebMap(collections.OrderedDict):
     """
-    Represents a web map item and provides access to its basemaps and operational layers as well
+    Represents a web map and provides access to its basemaps and operational layers as well
     as functionality to visualize and interact with them.
-    http://resources.arcgis.com/en/help/arcgis-web-map-json/index.html#/Web_map_format_overview/02qt00000007000000/
+
+    An ArcGIS web map is an interactive display of geographic information that you can use to tell stories and answer
+    questions. Maps contain a basemap over which a set of data layers called operational layers are drawn. To learn
+    more about web maps, refer: https://doc.arcgis.com/en/arcgis-online/reference/what-is-web-map.htm
+
+    Web maps can be used across ArcGIS apps because they adhere to the same web map specification. This means you can
+    author web maps in one ArcGIS app (including the Python API) and view and modify them in another. To learn more
+    about the web map specification, refer: https://developers.arcgis.com/web-map-specification/
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    webmapitem             Optional Item object whose Item.type is 'Web Map'. If not specified
+                           an empty WebMap object is created with some useful defaults.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+            # USAGE EXAMPLE 1: Creating a WebMap object from an existing web map item
+
+            from arcgis.mapping import WebMap
+            from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            gis = GIS(url, username, password)
+            wm_item = gis.content.get('1234abcd_web map item id')
+
+            # create a WebMap object from the existing web map item
+            wm = WebMap(wm_item)
+            type(wm)
+            >> arcgis.mapping._types.WebMap
+
+            # explore the layers in this web map using the 'layers' property
+            wm.layers
+            >> [{}...{}]  # returns a list of dictionaries representing each operational layer
+
+    .. code-block:: python
+            # USAGE EXAMPLE 2: Creating a new WebMap object
+
+            from arcgis.mapping import WebMap
+
+            # create a new WebMap object
+            wm = WebMap()
+            type(wm)
+            >> arcgis.mapping._types.WebMap
+
+            # explore the layers in this web map using the 'layers' property
+            wm.layers
+            >> []  # returns an empty list. You can add layers using the `add_layer()` method
     """
 
     def __init__(self, webmapitem=None):
@@ -110,6 +180,10 @@ class WebMap(collections.OrderedDict):
         return mapwidget._ipython_display_(**kwargs)
 
     def __repr__(self):
+        """
+        Hidden, to enhance how the object is represented when you simply query it in non Jupyter envs.
+        :return:
+        """
         return 'WebMap at ' + self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid
 
     def __str__(self):
@@ -129,34 +203,38 @@ class WebMap(collections.OrderedDict):
                                for the layer that is added. If not specified, appropriate defaults are applied.
         ==================     ====================================================================
 
-        .. code-block:: python  (optional)
+        .. code-block:: python
 
-           USAGE EXAMPLE: Add feature layer and map image layer item objects to the WebMap object.
+           # USAGE EXAMPLE: Add feature layer and map image layer item objects to the WebMap object.
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            streets_item = gis.content.search("LA Streets","Map Service")[0]
 
            wm = WebMap()  # create an empty web map with a default basemap
            wm.add_layer(streets_item)
+           >> True
+
+           # Add crime layer, but customize the title, transparency and turn off the default visibility.
            wm.add_layer(fl_item, {'title':'2012 crime in LA city',
                                   'opacity':0.5,
                                   'visibility':False})
+            >> True
 
         :return:
             True if layer was successfully added. Else, raises appropriate exception.
         """
         if options is None:
             options = {}
-        #region extact basic info from options
+        # region extact basic info from options
         title = options['title'] if options and 'title' in options else None
         opacity = options['opacity'] if options and 'opacity' in options else 1
         visibility = options['visibility'] if options and 'visibility' in options else True
         layer_spatial_ref = options['spatialReference'] if options and 'spatialReference' in options else None
         popup = options['popup'] if options and 'popup' in options else None  # from draw method
         item_id = None
-        #endregion
+        # endregion
 
-        #region extract rendering info from options
+        # region extract rendering info from options
         # info for feature layers
         definition_expression = options['definition_expression'] if options and 'definition_expression' in options else None
         renderer = options['renderer'] if options and 'renderer' in options else None
@@ -168,16 +246,16 @@ class WebMap(collections.OrderedDict):
         image_service_parameters = options['imageServiceParameters'] \
             if options and 'imageServiceParameters' in options else None
 
-        #endregion
+        # endregion
 
-        #region infer layer type
+        # region infer layer type
         layer_type = None
         if isinstance(layer, Layer) or isinstance(layer, arcgis.features.FeatureSet):
             if hasattr(layer, 'properties'):
                 if hasattr(layer.properties, 'name'):
                     title = layer.properties.name if title is None else title
 
-                #find layer type
+                # find layer type
                 if isinstance(layer, arcgis.features.FeatureLayer) or isinstance(layer, arcgis.features.FeatureCollection) \
                         or isinstance(layer, arcgis.features.FeatureSet):
                     layer_type = 'ArcGISFeatureLayer'
@@ -197,7 +275,7 @@ class WebMap(collections.OrderedDict):
             elif isinstance(layer, arcgis.features.FeatureSet):
                 layer_type = 'ArcGISFeatureLayer'
         elif isinstance(layer, arcgis.gis.Item):
-            #set the item's extent
+            # set the item's extent
             if not self._extent:
                 self._extent = layer.extent
             if hasattr(layer, 'layers'):
@@ -222,7 +300,7 @@ class WebMap(collections.OrderedDict):
         else:
             raise TypeError("Input layer should either be a Layer object or an Item object. To know the supported layer types, refer" +
                                 'to https://developers.arcgis.com/web-map-specification/objects/operationalLayers/')
-        #endregion
+        # endregion
 
         # region create the new layer dict in memory
         new_layer = {'title':title,
@@ -529,10 +607,36 @@ class WebMap(collections.OrderedDict):
         culture            Optional string. Language and country information.
         =================  =====================================================================
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        The above are the most common item properties (metadata) that you set. To get a complete list, see
+        https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm#ESRI_SECTION1_1FFBA7FE775B4BDA8D97524A6B9F7C98
 
         :return:
             Item object corresponding to the new web map Item created.
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE 1: Save a WebMap object into a new web map item
+            from arcgis.gis import GIS
+            from arcgis.mapping import WebMap
+
+            # log into your GIS
+            gis = GIS(url, username, password)
+
+            # compose web map by adding, removing, editing layers and basemaps
+            wm = WebMap()  # new web map
+            wm.add_layer(...)  # add some layers
+
+            # save the web map
+            webmap_item_properties = {'title':'Ebola incidents and facilities',
+                         'snippet':'Map created using Python API showing locations of Ebola treatment centers',
+                         'tags':['automation', 'ebola', 'world health', 'python']}
+
+            new_wm_item = wm.save(webmap_item_properties, thumbnail='./webmap_thumbnail.png')
+
+            # to visit the web map using a browser
+            print(new_wm_item.homepage)
+            >> 'https://your portal url.com/webadaptor/item.html?id=1234abcd...'
+
         """
 
         item_properties['type'] = 'Web Map'
@@ -562,7 +666,7 @@ class WebMap(collections.OrderedDict):
             RuntimeError exception. If you want to save the WebMap object into a new web map item, call the `save()`
             method instead.
 
-            For item_properties, pass in arguments for only the properties you want to be updated.
+            For item_properties, pass in arguments for the properties you want to be updated.
             All other properties will be untouched.  For example, if you want to update only the
             item's description, then only provide the description argument in item_properties.
 
@@ -604,10 +708,36 @@ class WebMap(collections.OrderedDict):
                            or not allowed (false).
         =================  =====================================================================
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        The above are the most common item properties (metadata) that you set. To get a complete list, see
+        https://developers.arcgis.com/rest/users-groups-and-items/common-parameters.htm#ESRI_SECTION1_1FFBA7FE775B4BDA8D97524A6B9F7C98
 
         :return:
            A boolean indicating success (True) or failure (False).
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE 1: Update an existing web map
+
+            from arcgis.gis import GIS
+            from arcgis.mapping import WebMap
+
+            # log into your GIS
+            gis = GIS(url, username, password)
+
+            # edit web map by adding, removing, editing layers and basemaps
+            wm = WebMap()  # new web map
+            wm.add_layer(...)  # add some layers
+
+            # save the web map
+            webmap_item_properties = {'title':'Ebola incidents and facilities',
+                         'snippet':'Map created using Python API showing locations of Ebola treatment centers',
+                         'tags':['automation', 'ebola', 'world health', 'python']}
+
+            new_wm_item = wm.save(webmap_item_properties, thumbnail='./webmap_thumbnail.png')
+
+            # to visit the web map using a browser
+            print(new_wm_item.homepage)
+            >> 'https://your portal url.com/webadaptor/item.html?id=1234abcd...'
         """
 
         if self.item is not None:
@@ -627,7 +757,25 @@ class WebMap(collections.OrderedDict):
     def layers(self):
         """
         Operational layers in the web map
-        :return: List of Layer objects
+        :return: List of Layers as dictionaries
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE 1: Get the list of layers from a web map
+
+            from arcgis.mapping import WebMap
+            wm = WebMap(wm_item)
+
+            wm.layers
+            >> [{"id": "Landsat8_Views_515",
+            "layerType": "ArcGISImageServiceLayer",
+            "url": "https://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer",
+            ...},
+            {...}]
+
+            len(wm.layers)
+            >> 2
+
         """
         if self._layers is not None:
             return self._layers
@@ -645,7 +793,25 @@ class WebMap(collections.OrderedDict):
     def basemap(self):
         """
         Base map layers in the web map
-        :return: List of layer objects
+        :return: List of layers as dictionaries
+
+        .. code-block:: python
+            # Usage example: Get the basemap used in the web map
+
+            from arcgis.mapping import WebMap
+            wm = WebMap(wm_item)
+
+            wm.basemap
+            >> {"baseMapLayers": [
+                {"id": "defaultBasemap",
+                "layerType": "ArcGISTiledMapServiceLayer",
+                "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+                "visibility": true,
+                "opacity": 1,
+                "title": "Topographic"
+                }],
+                "title": "Topographic"
+                }
         """
         if self._basemap:
             return PropertyMap(self._basemap)
