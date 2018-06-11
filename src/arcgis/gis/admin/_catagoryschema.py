@@ -159,7 +159,30 @@ class CategoryManager(object):
         return all(res)
     #----------------------------------------------------------------------
     def add(self, items, category):
-        """adds a category to an existing item"""
+        """
+        Adds a category to an existing set of items
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        items                      Required Items. The content within a GIS that will be
+                                   updated with a list of categories.
+        -----------------------    -------------------------------------------------------------
+        category                   Required String. Assigns a category value to the items.
+        =======================    =============================================================
+
+        .. code-block:: python
+
+            >>> item = [gis.content.get("<item id 1>"),
+                        gis.content.get("<item id 2>")]
+            >>> cs = gis.admin.category_schema
+            >>> print(cs.add(items=[item], category="/Categories/TEST3"))
+            [{'results': [{'itemId': '<item id 1>', 'success': True}]},
+             {'results': [{'itemId': '<item id 2>', 'success': True}]}]
+
+        :returns: dict
+
+        """
         from arcgis.gis import Item
         path = self._gis._portal.resturl + "content/updateItems"
         params = {'f' : 'json'}
