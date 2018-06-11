@@ -237,7 +237,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
-            if isinstance(self['SHAPE'], (GeoSeries, pd.Series)):
+            if isinstance(self['SHAPE'], (GeoSeries, pd.Series)) and self['SHAPE'].dtype.name == 'object':
                 if all(isinstance(x, _types.Geometry) for x in self[self._geometry_column_name]) == False:
                     geometry = [_types.Geometry(g) for g in self['SHAPE'].tolist()]
                     del self['SHAPE']
