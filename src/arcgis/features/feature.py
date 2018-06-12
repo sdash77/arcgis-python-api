@@ -195,7 +195,10 @@ class Feature(object):
         """ :return: the geometry type of the feature as a string"""
         if self._geom_type is None:
             if self.geometry is not None:
-                self._geom_type = self.geometry.type
+                if hasattr(self.geometry, 'type'):
+                    self._geom_type = self.geometry.type
+                else:
+                    self._geom_type = Geometry(self.geometry)._type
             else:
                 self._geom_type = "Table"
         return self._geom_type
