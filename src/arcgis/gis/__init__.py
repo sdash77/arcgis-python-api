@@ -5784,8 +5784,17 @@ class Item(dict):
         if not self._hydrated:
             self._hydrate()  # hydrated properties needed below
 
-        # Call with owner info
-        resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
+        # find if portal is ArcGIS Online
+        if self._gis._portal.is_arcgisonline:
+            # Call with owner info
+            resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
+
+        else:  # gis is a portal, find if item resides in a folder
+            if self.ownerFolder is not None:
+                resp = self._portal.con.get('content/users/' + self.owner + '/' + self.ownerFolder + "/items/" +
+                                            self.itemid)
+            else:
+                resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
 
         # Get the sharing info
         sharing_info = resp['sharing']
