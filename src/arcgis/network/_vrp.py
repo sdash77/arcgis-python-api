@@ -1,4 +1,5 @@
 import logging as _logging
+import json
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
@@ -519,7 +520,11 @@ def solve_vehicle_routing_problem(
     directions_style_name = """NA Desktop""",
     travel_mode = """Custom""",
     impedance = """Drive Time""",
-    gis = None):
+    gis = None,
+    time_zone_usage_for_time_fields="""GEO_LOCAL""",
+    save_output_layer=False,
+    overrides=None,
+    save_route_data=False):
     """
 
 
@@ -1974,6 +1979,22 @@ Parameters:
 
     gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+    time_zone_usage_for_time_fields: Time Zone Usage for Time Fields (str). Optional parameter. Specifies the time zone for the input date-time fields supported by the tool. This parameter specifies the time zone           for the following fields: TimeWindowStart1, TimeWindowEnd1, TimeWindowStart2, TimeWindowEnd2, InboundArriveTime, and OutboundDepartTime on orders. TimeWindowStart1, TimeWindowEnd1, TimeWindowStart2, and         TimeWindowEnd2 on depots. EarliestStartTime and LatestStartTime on routes. TimeWindowStart and TimeWindowEnd on breaks. GEO_LOCAL — The date-time values associated with the orders or depots are in the           time zone in which the orders and depots are located. For routes, the date-time values are based on the time zone in which the starting depot for the route is located. If a route does not have a                 starting depot, all orders and depots across all the routes must be in a single time zone. For breaks, the date-time values are based on the time zone of the routes. For example, if your depot is                located in an area that follows eastern standard time and has the first time window values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as          8:00 a.m. and 5:00 p.m. eastern standard time. UTC — The date-time values associated with the orders or depots are in the in coordinated universal time (UTC) and are not based on the time zone in which          the orders or depots are located. For example, if your depot is located in an area that follows eastern standard time and has the first time window values (specified as TimeWindowStart1 and                      TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 12:00 p.m. and 9:00 p.m. eastern standard time assuming the eastern standard time is obeying the daylight saving time.                 Specifying the date-time values in UTC is useful if you do not know the time zone in which the orders or depots are located or when you have orders and depots in multiple time zones, and you want all            the date-time values to start simultaneously. The UTC option is applicable only when your network dataset defines a time zone attribute. Otherwise, all the date-time values are always treated as                 GEO_LOCAL. 
+      Choice list:['UTC', 'GEO_LOCAL']
+
+    save_output_layer: Save Output Layer (bool). Optional parameter.  Specify if the tool should save the analysis settings as a network analysis layer file. You cannot directly work with this file even when you           open the file in an ArcGIS Desktop application like ArcMap. It is meant to be sent to Esri Technical Support to diagnose the quality of results returned from the tool. 
+           True:
+               Save the network analysis layer file. The file is downloaded in a temporary directory on your machine. In ArcGIS Pro, the location of the downloaded file can be determined by viewing the value for the Output Network Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Network Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.
+           False:
+               Do not save the network analysis layer file. This is the default. 
+    
+    overrides: Overrides (str). Optional parameter. Specify additional settings that can influence the behavior of the solver when finding solutions for the network analysis problems. The value for this parameter          needs to be specified in JavaScript Object Notation (JSON). For example, a valid value is of the following form {"overrideSetting1" : "value1", "overrideSetting2" : "value2"}. The override setting name          is always enclosed in double quotes. The values can be a number, Boolean, or string. The default value for this parameter is no value, which indicates not to override any solver settings. Overrides are          advanced settings that should be used only after careful analysis of the results obtained before and after applying the settings. A list of supported override settings for each solver and their                  acceptable values can be obtained by contacting Esri Technical Support. 
+
+    save_route_data: Save Route Data (bool). Optional parameter. Choose whether the output includes a zip file that contains a file geodatabase holding the inputs and outputs of the analysis in a format that can be        used to share route layers with ArcGIS Online or Portal for ArcGIS.
+           True:
+               Save the route data as a zip file. The file is downloaded in a temporary directory on your machine. In ArcGIS Pro, the location of the downloaded file can be determined by viewing the value for the Output Route Data parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Route Data parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.
+           False:
+               Do not save the route data. This is the default.  
 
     Returns the following as a named tuple:
        out_unassigned_stops - Output Unassigned Stops as a FeatureSet
@@ -1981,6 +2002,8 @@ Parameters:
        out_routes - Output Routes as a FeatureSet
        out_directions - Output Directions as a FeatureSet
        solve_succeeded - Solve Succeeded as a bool
+       out_network_analysis_layer - Output Network Analysis Layer as a file
+       out_route_data - Output Route Data as a file
 
     See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/VehicleRoutingProblem_GPServer/World_VehicleRoutingProblem/SolveVehicleRoutingProblem.htm for additional help.
     """
@@ -2019,6 +2042,9 @@ Parameters:
     if route_line_simplification_tolerance is None:
         route_line_simplification_tolerance = default_tolerance
 
+    if isinstance(overrides, dict):
+        overrides = json.dumps(overrides)
+
     param_db = {
         "orders": (FeatureSet, "orders"),
         "depots": (FeatureSet, "depots"),
@@ -2048,11 +2074,17 @@ Parameters:
         "directions_style_name": (str, "directions_style_name"),
         "travel_mode": (str, "travel_mode"),
         "impedance": (str, "impedance"),
+        "time_zone_usage_for_time_fields": (str, "time_zone_usage_for_time_fields"),
+        "save_output_layer": (bool, "save_output_layer"),
+        "overrides": (str, "overrides"),
+        "save_route_data": (str, "save_route_data"),
         "out_unassigned_stops": (FeatureSet, "Output Unassigned Stops"),
         "out_stops": (FeatureSet, "Output Stops"),
         "out_routes": (FeatureSet, "Output Routes"),
         "out_directions": (FeatureSet, "Output Directions"),
         "solve_succeeded": (bool, "Solve Succeeded"),
+        "out_network_analysis_layer": (DataFile, "Output Network Analysis Layer"),
+        "out_route_data": (DataFile, "Output Route Data"),
     }
 
     return_values = [
@@ -2061,6 +2093,8 @@ Parameters:
         {"name": "out_routes", "display_name": "Output Routes", "type": FeatureSet},
         {"name": "out_directions", "display_name": "Output Directions", "type": FeatureSet},
         {"name": "solve_succeeded", "display_name": "Solve Succeeded", "type": bool},
+        {"name": "out_network_analysis_layer", "display_name": "Output Network Analysis Layer", "type": DataFile},
+        {"name": "out_route_data", "display_name": "Output Route Data", "type": DataFile},
     ]
 
     if gis is None:
@@ -2099,4 +2133,8 @@ solve_vehicle_routing_problem.__annotations__ = {
     'directions_style_name': str,
     'travel_mode': str,
     'impedance': str,
+    'time_zone_usage_for_time_fields': str,
+    'save_output_layer': bool,
+    'overrides': str,
+    'save_route_data': bool,
     'return': tuple}    
