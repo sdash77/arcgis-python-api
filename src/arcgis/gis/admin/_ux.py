@@ -1,4 +1,5 @@
 import os
+import json
 from ._resources import PortalResourceManager
 
 ###########################################################################
@@ -11,6 +12,42 @@ class UX(object):
         """Creates helper object to manage portal home page, resources, update resources"""
         self._gis = gis
         self._portal = gis._portal
+    #----------------------------------------------------------------------
+    @property
+    def summary(self):
+        """
+        Allows the get/setting of a brief summary to describe your organization on the sign in page
+        associated with its custom apps and sites. This summary has a maximum of 310 characters.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        text              Required string. The brief description of the organization.
+        ================  ===============================================================
+
+        :return: string
+        """
+        portal_resources = PortalResourceManager(self._gis)
+        res = json.loads(open(portal_resources.get('localizedOrgProperties'), 'r').read())
+        return res['default']['description']
+    #----------------------------------------------------------------------
+
+    @summary.setter
+    def summary(self, text):
+        """
+        Allows the get/setting of a brief summary to describe your organization on the sign in page
+        associated with its custom apps and sites. This summary has a maximum of 310 characters.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        text              Required string. The brief description of the organization.
+        ================  ===============================================================
+
+        :return: string
+        """
+        portal_resources = PortalResourceManager(self._gis)
+        portal_resources.add(key='localizedOrgProperties', text=json.dumps(params['text']))
     #----------------------------------------------------------------------
     def set_banner(self, banner_file=None, is_built_in=False, custom_html = None):
         """
