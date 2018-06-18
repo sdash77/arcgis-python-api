@@ -128,7 +128,7 @@ class Test_UX_portal(unittest.TestCase):
     def test_set_banner_html(self):
         """
         Change the banner of arcgis enterprise using html
-        :return: 
+        :return:
         """
         try:
             banner = "<div> Hello </div>"
@@ -149,11 +149,100 @@ class Test_UX_portal(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    def test_get_summary(self):
+        """
+        gets the summary as string
+        """
+        try:
+            res = self.gis.admin.ux.summary
+            if res is None or \
+               len(res) == 0:
+                self.gis.admin.ux.summary = "random string"
+            res2 = self.gis.admin.ux.summary
+            self.assertTrue(isinstance(res2, str), "Summary should be a string")
+            self.gis.admin.ux.summary = res
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_set_summary_null(self):
+        """
+        resets the summary as string
+        """
+        try:
+            summary = self.gis.admin.ux.summary
+            self.gis.admin.ux.summary = None
+            res = self.gis.admin.ux.summary
+            self.assertTrue((isinstance(res, str) or res is None), "Summary is not None")
+            self.gis.admin.ux.summary = summary
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_set_summary_empty(self):
+        """
+        resets the summary as string using empty string
+        """
+        try:
+            summary = self.gis.admin.ux.summary
+            self.gis.admin.ux.summary = ""
+            res = self.gis.admin.ux.summary
+            self.assertTrue(res is None, "Summary is not None")
+            self.gis.admin.ux.summary = summary
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_set_summary_random(self):
+        """
+        resets the summary as string
+        """
+        try:
+            # store the default
+            summary = self.gis.admin.ux.summary
+            self.gis.admin.ux.summary = 'random string'
+            res = self.gis.admin.ux.summary
+            self.assertTrue(isinstance(res, str), "Summary is not a string")
+            self.assertTrue(res == 'random string', "Summary should be 'random string' not %s" % res)
+            # reset to test default
+            self.gis.admin.ux.summary = summary
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+
+
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_set_banner_built_in_image(self):
         """
         Change the banner of arcgis enterprise using html
-        :return: 
+        :return:
         """
         try:
             change_result = self.gis.admin.ux.set_banner('banner-1', True)
@@ -177,7 +266,7 @@ class Test_UX_portal(unittest.TestCase):
     def test_set_banner_built_in_image_custom_html(self):
         """
         Change the banner of arcgis enterprise using html
-        :return: 
+        :return:
         """
         try:
             banner_file = 'banner-1'
@@ -215,7 +304,7 @@ class Test_UX_portal(unittest.TestCase):
     def test_set_banner_custom_image(self):
         """
         Change the banner of arcgis enterprise using custom image
-        :return: 
+        :return:
         """
         try:
             banner_file = os.path.join(self.qalab_cls_path, 'fire_banner.png')
@@ -241,7 +330,7 @@ class Test_UX_portal(unittest.TestCase):
     def test_remove_banner(self):
         """
         Change the banner of arcgis enterprise using html
-        :return: 
+        :return:
         """
         try:
             change_result = self.gis.admin.ux.set_banner(None)
