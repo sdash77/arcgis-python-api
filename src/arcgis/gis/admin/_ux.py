@@ -46,6 +46,13 @@ class UX(object):
 
         :return: string
         """
+        if text == "":
+            text = None
+        params = {"key": "localizedOrgProperties",
+                  "text": {"default":{"name": self.name,
+                                      "description":text}},
+                  "f": "json"
+        }
         portal_resources = PortalResourceManager(self._gis)
         portal_resources.add(key='localizedOrgProperties', text=json.dumps(params['text']))
     #----------------------------------------------------------------------
