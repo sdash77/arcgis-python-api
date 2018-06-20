@@ -6095,9 +6095,9 @@ class Item(dict):
 
     def get_data(self, try_json=True):
         """
-        Retrieves the data associated with an item. Note that this call may 
-        return different results for different item types: some item types may 
-        even return *None*. See 
+        Retrieves the data associated with an item. Note that this call may
+        return different results for different item types: some item types may
+        even return *None*. See
         `this REST API page <https://developers.arcgis.com/rest/users-groups-and-items/working-with-users-groups-and-items.htm>`_
         for more information.
 
@@ -6168,7 +6168,7 @@ class Item(dict):
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
                             'Service2Data', 'Service2Service']. See
                             `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
-                            for more information on this parameter.                            
+                            for more information on this parameter.
         ---------------     --------------------------------------------------------------------
         direction           Required string. One of ['forward', 'reverse']
         ===============     ====================================================================

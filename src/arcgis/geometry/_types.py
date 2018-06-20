@@ -1629,8 +1629,8 @@ class Geometry(BaseGeometry):
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return self.as_arcpy.intersect(other=second_geometry,
-                                           dimension=dimension)
+            return Geometry(self.as_arcpy.intersect(other=second_geometry,
+                                           dimension=dimension))
         elif HASSHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
