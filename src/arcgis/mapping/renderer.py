@@ -660,8 +660,8 @@ def generate_renderer(geometry_type,
                 uvals2.append(",".join(row))
                 del r
             uvals = uvals2
-        if len(uvals) > 10:
-            uvals = uvals[:10]
+            if len(uvals) > 255:
+                uvals = uvals[:255]
         unique_values = []
         for idx, uval in enumerate(uvals):
             unique_values.append({

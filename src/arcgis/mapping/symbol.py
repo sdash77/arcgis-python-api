@@ -507,7 +507,9 @@ def create_symbol(geometry_type,
     gtype = geometry_type.upper()
     if colors is None:
         colors = 'jet'
-    cstep = kwargs.pop('cstep', 1)
+
+    # Get color step, if not specified, pick a random value between 0 and 255.
+    cstep = kwargs.pop('cstep', int(np.random.randint(0, 255)))
     renderer_type = "simple"
 
     marker_size = kwargs.pop('marker_size', 8)
@@ -518,29 +520,38 @@ def create_symbol(geometry_type,
     line_width = kwargs.pop('line_width', 2)
 
     outline_style = LINE_STYLES[kwargs.pop('outline_style', "s")]
-    outline_color = kwargs.pop('outline_color', colors)
 
+    # get outline_color if specified, else use a nice mild gray
+    outline_color = kwargs.pop('outline_color', [128, 128, 128, 0.4])
+
+    # get a random color if a colormap is specified
     if isinstance(colors, str):
-        colors = list(
-            _cmap2rgb(colors=colors, step=cstep,alpha=alpha))
+        colors = list(_cmap2rgb(colors=colors,
+                                step=cstep,
+                                alpha=alpha))
+
+    # if specific 4 color tuple is specified, go with it
     elif isinstance(colors, (list, tuple)) and \
          len(colors) == 4:
         colors = colors
+
+    # if not, the first color in the 'jet' color map. This is a deep blue
     else:
         colors = list(_cmap2rgb(
             colors='jet',
             step=cstep,
             alpha=alpha))
+
     if isinstance(outline_color, str):
         outline_cmap = list(_cmap2rgb(colors=outline_color,
-                                      step=int(np.random.randint(0,255)),
+                                      step=int(np.random.randint(0, 255)),
                                       alpha=alpha))
     elif isinstance(outline_color, (tuple, list)) and \
          len(outline_color) == 4:
         outline_cmap = outline_color
     else:
         outline_cmap = list(_cmap2rgb(colors='jet',
-                                      step=int(np.random.randint(0,255)),
+                                      step=int(np.random.randint(0, 255)),
                                       alpha=alpha))
 
     if symbol is not None:
@@ -573,7 +584,7 @@ def create_symbol(geometry_type,
             else:
                 raise Exception("Invalid geometry types only points, lines, and polygons can be plotted")
         # build the symbol
-        symbol = { }
+        symbol = dict()
         symbol["type"] = symbol_type
         if isinstance(colors, str):
             colors = list(
