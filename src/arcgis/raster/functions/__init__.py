@@ -72,7 +72,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
 
     return newlyr
 
-def _clone_layer_pansharpen(layer, function_chain, function_chain_ra):
+def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     if isinstance(layer, Item):
         layer = layer.layers[0]
       
@@ -2850,7 +2850,12 @@ def apply(raster, fn_name, **kwargs):
     :param kwargs: keyword arguments to override the default values of the raster function template, including astype
     :return: the output raster
     """
-    layer, raster, raster_ra = _raster_input(raster)
+    
+    variable_name = kwargs.pop("variable_name", None)
+    if variable_name is not None:
+        layer, raster, raster_ra = _raster_input(kwargs.pop(variable_name))
+    else:
+        layer, raster, raster_ra = _raster_input(raster)
 
     template_dict = {
         "rasterFunction": fn_name,
@@ -2866,8 +2871,23 @@ def apply(raster, fn_name, **kwargs):
     astype = kwargs.pop('astype', None)
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
+        template_dict["rasterFunctionArguments"].pop('astype', None)
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    if variable_name is not None:
+        template_dict["variableName"] = variable_name        
+        template_dict["rasterFunctionArguments"][variable_name] = raster        
+        template_dict["rasterFunctionArguments"].pop('variable_name', None)
+        template_dict["rasterFunctionArguments"].pop('Raster', None)
+
+    function_chain_ra = {
+        "rasterFunction" : "Identity",
+        "rasterFunctionArguments": {
+            "Raster" : {"renderingRule":copy.deepcopy(template_dict),
+                         "url":layer._url},
+        }
+    }
+
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
 def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_reference_system='Geographic',
@@ -3343,7 +3363,7 @@ def pansharpen(pan_raster,
     if ir_raster is not None:
         function_chain_ra['rasterFunctionArguments']['InfraredImage'] = raster_ra3
 
-    return _clone_layer_pansharpen(layer, template_dict, function_chain_ra)
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
 def weighted_overlay(rasters, fields, influences, remaps, eval_from, eval_to):
