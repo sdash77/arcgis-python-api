@@ -2407,8 +2407,8 @@ class ImageryLayer(Layer):
         except:
             print("Graphviz needs to be installed. pip install graphviz")
 
-        global nodenumber
-        nodenumber=0
+        global nodenumber,root
+        nodenumber=root=0
         function_dictionary=self._fnra
         def _raster_slicestring(slice_string):
             try:
@@ -2431,9 +2431,13 @@ class ImageryLayer(Layer):
         def _raster_function_graph(rfa_value,rfa_key,root):
             global nodenumber
             if isinstance(rfa_value,dict):
-                for k in rfa_value.keys():
-                    if k=="rasterFunction":
-                        _function_graph(rfa_value,rfa_key,root)
+                if "rasterFunction" in rfa_value.keys():
+                    _function_graph(rfa_value,rfa_key,root)
+                elif "url" in rfa_value.keys(): # rendering rule url processing
+                        nodenumber+=1
+                        rastername=_raster_slicestring(rfa_value["url"])
+                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
 
             elif isinstance(rfa_value,list):
                 for rfa_value_search_dict in rfa_value:
@@ -2468,21 +2472,27 @@ class ImageryLayer(Layer):
             G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
 
         def _function_graph(dictionary,childnode,connect):
-            global nodenumber
+            global nodenumber,root
             if isinstance(dictionary, dict):
                 for dkey, dvalue in dictionary.items():
                     if dkey == "rasterFunction" and dvalue != "GPAdapter":
-                        nodenumber+=1
-                        G.node(str(nodenumber), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
-                        G.edge(str(nodenumber), str(connect),color="silver", arrowsize="0.9", penwidth="1")
-                        connect=nodenumber
-                        for dkey, dvalue in dictionary.items():  # Check dictionary again for rasterFunctionArguments
-                            if dkey == "rasterFunctionArguments":
-                                for key, value in dvalue.items():
-                                    if (key == "Raster" or key=="Raster2" or key=="Rasters" or key=="PanImage" or key=="MSImage"):
-                                        _raster_function_graph(value,key,connect)
-                                    elif show_attributes==True:
-                                        _attribute_function_graph(value,key,connect)
+                        if (dvalue=="Identity" and "renderingRule" in dictionary["rasterFunctionArguments"]["Raster"]):
+                            if "rasterFunction" in dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"]:
+                                _function_graph(dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"],"Raster",connect)
+                        
+                        else:
+                            nodenumber+=1
+                            G.node(str(nodenumber), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
+                            if childnode != None:
+                                G.edge(str(nodenumber), str(connect),color="silver", arrowsize="0.9", penwidth="1")
+                            connect=nodenumber  
+                            for dkey, dvalue in dictionary.items():  # Check dictionary again for rasterFunctionArguments
+                                if dkey == "rasterFunctionArguments":
+                                    for key, value in dvalue.items():        
+                                        if (key == "Raster" or key=="Raster2" or key=="Rasters" or key=="PanImage" or key=="MSImage"):
+                                            _raster_function_graph(value,key,connect)
+                                        elif show_attributes==True:
+                                            _attribute_function_graph(value,key,connect)
 
                     elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments
                         for rf_key, rf_value in dictionary.items():
@@ -2502,19 +2512,24 @@ class ImageryLayer(Layer):
 
 
          #To find first rasterFunction
-        root=nodenumber=0
         for dkey, dvalue in function_dictionary.items():
             if dkey == "rasterFunction" and dvalue != "GPAdapter": #To find first rasterFunction
-                G.node(str(nodenumber), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")  #create first rasterFunction graph node
-                for rf_key, rf_value in function_dictionary.items():
-                    if rf_key == "rasterFunctionArguments":         #To check dictionary again for rasterFunctionArguments
-                        for rfa_key, rfa_value in rf_value.items():
-                            if rfa_key=="rasterFunction":           #To check if rasterFunctionArguments has another rasterFunction chain in it
-                                _function_graph(rfa_value,rfa_key,nodenumber)
-                            elif rfa_key == "Raster" or rfa_key=="Raster2" or rfa_key=="Rasters" or rfa_key=="PanImage" or rfa_key=="MSImage": #To check if rasterFunctionArguments includes raster inputs in it
-                                _raster_function_graph(rfa_value,rfa_key,root)
-                            elif show_attributes==True:
-                                _attribute_function_graph(rfa_value,rfa_key,root)
+                if (dvalue=="Identity" and "renderingRule" in function_dictionary["rasterFunctionArguments"]["Raster"]):
+                    if "rasterFunction" in function_dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"]:
+                        _function_graph(function_dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"],None,root)
+                else: 
+                    root+=1
+                    G.node(str(root), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")  #create first rasterFunction graph node
+                    nodenumber = root
+                    for rf_key, rf_value in function_dictionary.items():
+                        if rf_key == "rasterFunctionArguments":         #To check dictionary again for rasterFunctionArguments
+                            for rfa_key, rfa_value in rf_value.items():
+                                if rfa_key=="rasterFunction":           #To check if rasterFunctionArguments has another rasterFunction chain in it
+                                    _function_graph(rfa_value,rfa_key,nodenumber)
+                                elif rfa_key == "Raster" or rfa_key=="Raster2" or rfa_key=="Rasters" or rfa_key=="PanImage" or rfa_key=="MSImage": #To check if rasterFunctionArguments includes raster inputs in it
+                                    _raster_function_graph(rfa_value,rfa_key,root)
+                                elif show_attributes==True:
+                                    _attribute_function_graph(rfa_value,rfa_key,root)
 
             elif dkey == "rasterFunction" and dvalue == "GPAdapter": #To handle global function arguments
                 for rf_key, rf_value in function_dictionary.items():

@@ -578,19 +578,21 @@ class SyncManager(object):
         http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000vv000000
         """
         # TODO:
-        return self._fs._synchronize_replica(replica_id,
-                                             transport_type,
-                                             replica_server_gen,
-                                             return_ids_for_adds,
-                                             edits,
-                                             return_attachment_databy_url,
-                                             asynchronous,
-                                             sync_direction,
-                                             sync_layers,
-                                             edits_upload_id,
-                                             edits_upload_format,
-                                             data_format,
-                                             rollback_on_failure)
+        return self._fs._synchronize_replica(replica_id=replica_id,
+                                             transport_type=transport_type,
+                                             replica_server_gen=replica_server_gen,
+                                             return_ids_for_adds=return_ids_for_adds,
+                                             edits=edits,
+                                             return_attachment_databy_url=return_attachment_databy_url,
+                                             asynchronous=asynchronous,
+                                             sync_direction=sync_direction,
+                                             sync_layers=sync_layers,
+                                             edits_upload_id=edits_upload_id,
+                                             edits_upload_format=edits_upload_format,
+                                             data_format=data_format,
+                                             rollback_on_failure=rollback_on_failure,
+                                             close_replica=False,
+                                             out_path=None)
     def create_replica_item(self,
                             replica_name,
                             item,
@@ -1075,8 +1077,7 @@ class FeatureLayerCollectionManager(_GISResource):
         :param data: path to data_file used to overwrite the hosted feature layer collection
         :return: JSON message as dictionary such as {'success':True} or {'error':'error message'}
         """
-        if self._gis._portal.is_arcgisonline == False:
-            return self._overwrite_portal(data=data_file)
+
         # region Get Item associated with the service
         if 'serviceItemId' in self.properties.keys():
             feature_layer_item = self._gis.content.get(self.properties['serviceItemId'])

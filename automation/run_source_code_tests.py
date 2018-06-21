@@ -5,12 +5,8 @@ import logging
 log = logging.getLogger()
 
 from automation._common import *
-try:
-    sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "unittests"))
-    from run_test_cases import run_test_cases
-except Exception:
-    log.warn("Couldn't import run_test_cases from {}. Attempting to continue."\
-             "..".format(os.path.join(GEOSAURUS_ROOT_DIR, "unittests")))
+sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "unittests"))
+from run_test_cases import run_test_cases
 
 def run_source_code_tests(*args, **kwargs):
     log.info("Attempting to run all test cases...")

@@ -10,38 +10,47 @@ Example:
 
 .. code-block:: python
 
-    pt = Point({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})
-    print (pt.is_valid)
-    print (pt.type) # POINT
-    print (pt)
-    print (pt.x, pt.y)
+    >>> pt = Point({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})
+    >>> print (pt.is_valid)
+    True
+    >>> print (pt.type) # POINT
+    'POINT'
+    >>> print (pt)
+    '{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'
+    >>> print (pt.x, pt.y)
+    (-118.15,33.80)
 
 Example Polyline:
 
 .. code-block:: python
 
 
-    line = {
+    >>> line = {
       "paths" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],
                  [[-97.06326,32.759],[-97.06298,32.755]]],
       "spatialReference" : {"wkid" : 4326}
     }
-    polyline = Polyline(line)
-    print(polyline)
-    print(polyline.is_valid)
+    >>> polyline = Polyline(line)
+    >>> print(polyline)
+    '{"paths" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],[[-97.06326,32.759],[-97.06298,32.755]]],"spatialReference" : {"wkid" : 4326}}'
+    >>> print(polyline.is_valid)
+    True
 
 Example of invalid geometry:
 
 .. code-block:: python
 
-    line = {
+    >>> line = {
       "paths" : [[[-97.06138],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],
                  [[-97.06326,32.759],[-97.06298,32.755]]],
       "spatialReference" : {"wkid" : 4326}
     }
-    polyline = Polyline(line)
-    print(polyline)
-    print(polyline.is_valid) # False
+    >>> polyline = Polyline(line)
+    >>> print(polyline)
+    '''{"paths" : [[[-97.06138],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832]],
+    [[-97.06326,32.759],[-97.06298,32.755]]],"spatialReference" : {"wkid" : 4326}}'''
+    >>>print(polyline.is_valid)
+    False
 
 The same pattern can be used repeated for Polygon, MultiPoint and SpatialReference.
 
@@ -50,14 +59,16 @@ geometry type and returns the correct type as the example below demonstrates:
 
 .. code-block:: python
 
-    geom = Geometry({
+    >>> geom = Geometry({
       "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
                   [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
                   [-97.06326,32.759]]],
       "spatialReference" : {"wkid" : 4326}
     })
-    print (geom.type) # Polygon
-    print (isinstance(geom, Polygon) # True
+    >>> print (geom.type) # Polygon
+    'Polygon'
+    >>> print(isinstance(geom, Polygon)
+    True
 
 """
 

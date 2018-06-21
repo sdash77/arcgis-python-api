@@ -42,9 +42,6 @@ def _from_xy(df, x_column, y_column, sr=None):
     """
     from arcgis.geometry import SpatialReference, Geometry
     from arcgis.features import SpatialDataFrame
-    def assemble_points(x, y, sr):
-        return Geometry({'x' : x, 'y' : y,
-                         "spatialReference" : sr})
     if sr is None:
         sr = SpatialReference({'wkid' : 4326})
     if not isinstance(sr, SpatialReference):
@@ -54,9 +51,13 @@ def _from_xy(df, x_column, y_column, sr=None):
             sr = SpatialReference({'wkid' : sr})
         elif isinstance(sr, str):
             sr = SpatialReference({'wkt' : sr})
-    df['SHAPE'] = df.apply(lambda row: assemble_points(row[x_column],
-                                                     row[y_column],
-                                                     sr), axis=1)
+    geoms = []
+    for idx, row in df.iterrows():
+        geoms.append(
+            Geometry({'x' : row[x_column], 'y' : row[y_column],
+             'spatialReference' : sr})
+        )
+    df['SHAPE'] = geoms
     return SpatialDataFrame(data=df, sr=sr)
 
 def _pyshp_to_shapefile(df, out_path, out_name):
@@ -93,6 +94,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             geom_type = df.loc[idx][geom_field].type
         shpfile = shapefile.Writer(GEOMTYPELOOKUP[geom_type])
         shpfile.autoBalance = 1
+        row_cols = []
         for c in df.columns:
             idx = df[c].first_valid_index()
             if idx > -1:
@@ -100,6 +102,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                               Geometry):
                     geom_field = (c, "GEOMETRY")
                 else:
+                    row_cols.append(c)
                     if isinstance(df[c].loc[idx], six.string_types):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], six.integer_types):
@@ -116,6 +119,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             del idx
         for idx, row in df.iterrows():
             geom = row[df.geometry.name]
+            #del row[df.geometry.name]
             if geom.type == "Polygon":
                 shpfile.poly(geom['rings'])
             elif geom.type == "Polyline":
@@ -124,7 +128,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                 shpfile.point(x=geom.x, y=geom.y)
             else:
                 shpfile.null()
-            shpfile.record(*row.tolist()[:-1])
+            shpfile.record(*row[row_cols].tolist())
             del idx
             del row
             del geom

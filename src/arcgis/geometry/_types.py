@@ -281,6 +281,7 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     def __iter__(self):
         """
+        Iterator for the Geometry
         """
         import numpy as np
         if isinstance(self, Polygon):
@@ -346,7 +347,11 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def __geo_interface__(self):
-        """converts an ESRI JSON to GeoJSON"""
+        """
+        Converts an ESRI JSON to GeoJSON
+
+        :returns: string
+        """
 
         if HASARCPY:
             if isinstance(self.as_arcpy, arcpy.Point):
@@ -421,6 +426,11 @@ class Geometry(BaseGeometry):
         """
         Returns the current feature's extent
 
+        >>> g = Geometry({...})
+        >>> g.geoextent
+        (1,2,3,4)
+
+
         :return: tuple
         """
         import numpy as np
@@ -466,6 +476,24 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     def skew(self, x_angle=0,
              y_angle=0, inplace=False):
+        """
+        Create a skew transform along one or both axes.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        x_angle             optional Float. Angle to skew in the x coordinate
+        ---------------     --------------------------------------------------------------------
+        y_angle             Optional Float. Angle to skew in the y coordinate
+        ---------------     --------------------------------------------------------------------
+        inplace             Optional Boolean. If True, the value is updated in the object, False
+                            creates a new object
+        ===============     ====================================================================
+
+
+        :return: Geometry
+
+        """
         from .affine import skew
         if inplace:
             self = skew(geom=self, x_angle=45, y_angle=-20)
@@ -474,7 +502,23 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     def rotate(self, theta,
                inplace=False):
-        """rotates a shape by some degree theta"""
+        """
+        Rotates a geometry counter-clockwise by a given angle.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        theta               Required Float. The rotation angle.
+        ---------------     --------------------------------------------------------------------
+        inplace             Optional Boolean. If True, the value is updated in the object, False
+                            creates a new object
+        ===============     ====================================================================
+
+
+        :return: Geometry
+
+        """
         from .affine import rotate
         r = rotate(self, theta)
         if inplace:
@@ -482,7 +526,25 @@ class Geometry(BaseGeometry):
         return r
     #----------------------------------------------------------------------
     def scale(self, x_scale=1, y_scale=1, inplace=False):
-        """scales in either the x,y or both directions"""
+        """
+        Scales in either the x,y or both directions
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        x_scale             Optional Float. The x-scale factor.
+        ---------------     --------------------------------------------------------------------
+        y_scale             Optional Float. The y-scale factor.
+        ---------------     --------------------------------------------------------------------
+        inplace             Optional Boolean. If True, the value is updated in the object, False
+                            creates a new object
+        ===============     ====================================================================
+
+
+        :return: Geometry
+
+        """
         from .affine import scale
         g = copy.copy(self)
         s = scale(g, *(x_scale, y_scale))
@@ -492,7 +554,25 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     def translate(self, x_offset=0,
                   y_offset=0, inplace=False):
-        """moves a geometry in a given x and y distance"""
+        """
+        moves a geometry in a given x and y distance
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        x_offset            Optional Float. Translation x offset
+        ---------------     --------------------------------------------------------------------
+        y_offset            Optional Float. Translation y offset
+        ---------------     --------------------------------------------------------------------
+        inplace             Optional Boolean. If False, updates the existing Geometry,else it
+                            creates a new Geometry object
+        ===============     ====================================================================
+
+
+        :return: Geometry
+
+        """
         from .affine import translate
         t = translate(self, x_offset, y_offset)
         if inplace:
@@ -607,7 +687,20 @@ class Geometry(BaseGeometry):
     @property
     def area(self):
         """
-        The area of a polygon feature. Empty for all other feature types.
+        The area of a polygon feature. None for all other feature types.
+        The area is in the units of the spatial reference.
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.area
+            -1.869999999973911e-06
+
 
         :return: float
         """
@@ -640,7 +733,19 @@ class Geometry(BaseGeometry):
         """
         Returns the center of the geometry
 
-        :returns: a arcgis.geometry.Point
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.centroid
+            (-97.06258999999994, 32.754333333000034)
+
+
+        :returns: tuple(x,y)
         """
         if HASARCPY:
             if isinstance(self, Point):
@@ -660,6 +765,17 @@ class Geometry(BaseGeometry):
     def extent(self):
         """
         The extent of the geometry as a tuple containing xmin, ymin, xmax, ymax
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.extent
+            (-97.06326, 32.749, -97.06124, 32.837)
 
         :return: tuple
         """
@@ -695,6 +811,18 @@ class Geometry(BaseGeometry):
     def first_point(self):
         """
         The first coordinate point of the geometry.
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.first_point
+            {'x': -97.06138, 'y': 32.837, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
+
 
         :return: arcgis.gis.Geometry
         """
@@ -737,6 +865,17 @@ class Geometry(BaseGeometry):
         A space-delimited string of the coordinate pairs of the convex hull
         rectangle.
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.hull_rectangle
+            '-97.06153 32.749 -97.0632940971127 32.7490060186843 -97.0629938635673 32.8370055061228 -97.0612297664546 32.8369994874385'
+
         :return: string
         """
         if HASARCPY:
@@ -749,6 +888,18 @@ class Geometry(BaseGeometry):
     def is_multipart(self):
         """
         True, if the number of parts for this geometry is more than one.
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.is_multipart
+            True
+
 
         :return: boolean
         """
@@ -767,7 +918,19 @@ class Geometry(BaseGeometry):
         The point at which the label is located. The label_point is always
         located within or on a feature.
 
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.label_point
+            {'x': -97.06258999999994, 'y': 32.754333333000034, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
+
         :returns: arcgis.geometry.Point
+
         """
         if HASARCPY:
             return Geometry(arcpy.PointGeometry(getattr(self.as_arcpy, "labelPoint", None),
@@ -780,6 +943,19 @@ class Geometry(BaseGeometry):
     def last_point(self):
         """
         The last coordinate of the feature.
+
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.last_point
+            {'x': -97.06326, 'y': 32.759, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
+
 
         :returns: arcgis.geometry.Point
         """
@@ -810,6 +986,18 @@ class Geometry(BaseGeometry):
     def length(self):
         """
         The length of the linear feature. Zero for point and multipoint feature types.
+        The length units is the same as the spatial reference.
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.length
+            0.03033576008004027
 
         :return: float
         """
@@ -824,7 +1012,20 @@ class Geometry(BaseGeometry):
     def length3D(self):
         """
         The 3D length of the linear feature. Zero for point and multipoint
-        feature types.
+        feature types. The length units is the same as the spatial
+        reference.
+
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.length3D
+            0.03033576008004027
 
         :return: float
         """
@@ -840,6 +1041,18 @@ class Geometry(BaseGeometry):
     def part_count(self):
         """
         The number of geometry parts for the feature.
+
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.part_count
+            1
 
         :return: integer
         """
@@ -860,6 +1073,18 @@ class Geometry(BaseGeometry):
         """
         The total number of points for the feature.
 
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.point_count
+            9
+
         :return: Integer
         """
         if HASARCPY:
@@ -879,6 +1104,18 @@ class Geometry(BaseGeometry):
         """
         The spatial reference of the geometry.
 
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.spatial_reference
+            <SpatialReference Class>
+
         :return: arcgis.geometery.SpatialReference
         """
         if HASARCPY:
@@ -891,6 +1128,18 @@ class Geometry(BaseGeometry):
     def true_centroid(self):
         """
         The center of gravity for a feature.
+
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.true_centroid
+            {'x': -97.06272135472369, 'y': 32.746201426025, 'spatialReference': {'wkid': 4326, 'latestWkid': 4326}}
 
         :returns: arcgis.geometry.Point
         """
@@ -907,6 +1156,18 @@ class Geometry(BaseGeometry):
     def geometry_type(self):
         """
         The geometry type: polygon, polyline, point, multipoint
+
+        .. code-block:: python
+
+            >>> geom = Geometry({
+              "rings" : [[[-97.06138,32.837],[-97.06133,32.836],[-97.06124,32.834],[-97.06127,32.832],
+                          [-97.06138,32.837]],[[-97.06326,32.759],[-97.06298,32.755],[-97.06153,32.749],
+                          [-97.06326,32.759]]],
+              "spatialReference" : {"wkid" : 4326}
+            })
+            >>> geom.geometry_type
+            'polygon'
+
 
         :returns: string
         """
@@ -1368,8 +1629,8 @@ class Geometry(BaseGeometry):
         if HASARCPY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return self.as_arcpy.intersect(other=second_geometry,
-                                           dimension=dimension)
+            return Geometry(self.as_arcpy.intersect(other=second_geometry,
+                                           dimension=dimension))
         elif HASSHAPELY:
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely

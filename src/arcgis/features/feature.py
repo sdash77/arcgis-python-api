@@ -22,7 +22,16 @@ except ImportError:
     HASARCPY = False
 
 class Feature(object):
-    """ Entities located in space with a set of properties can be represented as features. """
+    """ Entities located in space with a set of properties can be represented as features.
+
+    .. code-block:: python
+
+        # Obtain a feature from a feature layer:
+
+        feat_set = feature_layer.query(where="OBJECTID=1")
+        feat = feat_set[0]
+
+    """
     _geom = None
     _json = None
     _dict = None
@@ -49,11 +58,10 @@ class Feature(object):
         ---------------     --------------------------------------------------------------------
         field_name          Required String. The name of the field to update.
         ---------------     --------------------------------------------------------------------
-        value               Required object. The value to update the field with.
+        value               Required. Value to update the field with.
         ===============     ====================================================================
 
-
-        :return: boolean
+        :return: boolean indicating whether field_name value was updated.
 
         """
         if field_name in self.fields:
@@ -91,16 +99,17 @@ class Feature(object):
     # ----------------------------------------------------------------------
     def get_value(self, field_name):
         """
-        returns a value for a given field name
+        Retrieves the value for a specified field name
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        field_name          Required String. The name of the field to get the value for.
-        ===============     ====================================================================
+        +--------------+----+------------------------------------------------------------------+
+        |**Argument**  |    |**Description**                                                   |
+        +==============+====+==================================================================+
+        | field name   |    | | Required String. The name of the field to get the value for.   |
+        |              |    | |                                                                |
+        |              |    | | ``feature.fields`` will return a list of all field names.      |
+        +--------------+----+------------------------------------------------------------------+
 
-
-        :return: object
+        :return: value for the specified attribute field of the feature.
 
         """
         if field_name in self.fields:
@@ -112,16 +121,21 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def as_dict(self):
-        """returns the feature as a dictionary"""
+        """:return: the feature as a dictionary"""
         return self._dict
 
     # ----------------------------------------------------------------------
     @property
     def as_row(self):
-        """ converts a feature to a list for insertion into an insert cursor
-            :return:
-               [row items], [field names]
-               returns a list of fields and the row object
+        """ :return: the feature as a tuple containing two lists:
+
+        =============     ===========================================================
+        **List of:**          **Description**
+        -------------     -----------------------------------------------------------
+        row values        the specific attribute values and geometry for this feature
+        -------------     -----------------------------------------------------------
+        field names       the name for each attribute field
+        =============     ===========================================================
         """
         fields = self.fields
         row = [""] * len(fields)
@@ -137,7 +151,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def geometry(self):
-        """returns the feature geometry"""
+        """ :return: the feature geometry"""
         if self._geom is None:
             if 'geometry' in self._dict.keys():
                 self._geom = self._dict['geometry']
@@ -154,7 +168,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def attributes(self):
-        """returns the feature attributes"""
+        """:return: a dictionary of feature attribute values with field names as the key"""
         if self._attributes is None and 'attributes' in self._dict:
             self._attributes = self._dict['attributes']
         return self._attributes
@@ -168,7 +182,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def fields(self):
-        """ returns a list of feature fields """
+        """ :return: attribute field names for the feature as a list of strings"""
         if 'attributes' in self._dict:
             self._attributes = self._dict['attributes']
             return list(self._attributes.keys())
@@ -178,10 +192,13 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @property
     def geometry_type(self):
-        """ returns the feature's geometry type """
+        """ :return: the geometry type of the feature as a string"""
         if self._geom_type is None:
             if self.geometry is not None:
-                self._geom_type = self.geometry.type
+                if hasattr(self.geometry, 'type'):
+                    self._geom_type = self.geometry.type
+                else:
+                    self._geom_type = Geometry(self.geometry)._type
             else:
                 self._geom_type = "Table"
         return self._geom_type
@@ -189,7 +206,7 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @classmethod
     def from_json(cls, json_str):
-        """returns a feature from a JSON string"""
+        """:return: a feature from a JSON string"""
         feature = json.loads(json_str)
         geom = feature['geometry'] if 'geometry' in feature else None
         attribs = feature['attributes'] if 'attributes' in feature else None
@@ -198,9 +215,17 @@ class Feature(object):
     # ----------------------------------------------------------------------
     @classmethod
     def from_dict(cls, feature):
-        """returns a feature from a dict"""
+        """:return: a feature from a dict"""
         geom = feature['geometry'] if 'geometry' in feature else None
         attribs = feature['attributes'] if 'attributes' in feature else None
+        if 'centroid' in feature:
+            if attribs is None:
+                attribs = {'centroid' : feature['centroid']}
+            elif 'centroid' in attribs:
+                fld = "centroid_" + uuid.uuid4().hex[:2]
+                attribs[fld] = feature['centroid']
+            else:
+                attribs['centroid'] = feature['centroid']
         return cls(geom, attribs)
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -694,7 +719,7 @@ class FeatureSet(object):
             sr = df.sr
         elif isinstance(df, pd.DataFrame):
             geoms = []
-            df_rows = df.copy().to_dict('records')
+            df_rows = df.copy()
         else:
             raise ValueError("Invalid input type")
         index = 0

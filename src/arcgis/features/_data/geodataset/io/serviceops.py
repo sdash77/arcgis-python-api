@@ -68,6 +68,8 @@ def from_layer(layer, **kwargs):
     dtypes = {}
     for field in layer.properties.fields:
         dtypes[field['name']] = _look_up_types[field['type']]
+        if _look_up_types[field['type']] == 'datetime64':
+            res[field['name']] = pd.to_datetime(res[field['name']]/1000, unit='s')
         del field
     return res
 #----------------------------------------------------------------------

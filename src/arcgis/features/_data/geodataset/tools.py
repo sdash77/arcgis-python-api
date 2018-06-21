@@ -36,7 +36,10 @@ def spatial_join(df1, df2, left_tag="_left", right_tag="_right", keep_all=True):
         raise ValueError("df2 is missing a geometry column")
     for idx, row in df1.iterrows():
         geom = row[geom_field]
-        ext = (geom.extent.XMin, geom.extent.YMin, geom.extent.XMax, geom.extent.YMax)
+        if isinstance(geom.extent, tuple):
+            ext = (geom.extent[0], geom.extent[1], geom.extent[2], geom.extent[3])
+        else:
+            ext = (geom.extent.XMin, geom.exten.YMin, geom.extent.XMax, geom.extent.YMax)
         select_idx = right_index.intersect(ext)
         if len(select_idx) > 0:
             sub = df2.loc[select_idx]

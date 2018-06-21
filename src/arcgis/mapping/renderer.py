@@ -514,6 +514,10 @@ def generate_renderer(geometry_type,
         colors = 'jet'
     if isinstance(colors, str):
         colors = colors.split(',')
+    elif isinstance(colors, list) and \
+         len(colors) == 4 and \
+         all([isinstance(i, int) for i in colors]):
+        colors = [colors]
     if 'alpha' in symbol_args:
         alpha = symbol_args['alpha']
     else:
@@ -656,8 +660,8 @@ def generate_renderer(geometry_type,
                 uvals2.append(",".join(row))
                 del r
             uvals = uvals2
-        if len(uvals) > 10:
-            uvals = uvals[:10]
+            if len(uvals) > 255:
+                uvals = uvals[:255]
         unique_values = []
         for idx, uval in enumerate(uvals):
             unique_values.append({

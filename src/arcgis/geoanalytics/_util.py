@@ -58,7 +58,7 @@ def _set_context(params):
 
     if default_aggregation_styles is not None and\
        isinstance(default_aggregation_styles, bool):
-        context['defaultAggregationStyles'] = json.dumps(default_aggregation_styles)
+        context['defaultAggregationStyles'] = default_aggregation_styles
         set_context = True
     if out_sr is not None:
         context['outSR'] = {'wkid': int(out_sr)}

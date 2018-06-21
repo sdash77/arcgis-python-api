@@ -237,7 +237,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         if geometry is not None:
             self.set_geometry(geometry, inplace=True)
         elif 'SHAPE' in self.columns:
-            if isinstance(self['SHAPE'], (GeoSeries, pd.Series)):
+            if isinstance(self['SHAPE'], (GeoSeries, pd.Series)) and self['SHAPE'].dtype.name == 'object':
                 if all(isinstance(x, _types.Geometry) for x in self[self._geometry_column_name]) == False:
                     geometry = [_types.Geometry(g) for g in self['SHAPE'].tolist()]
                     del self['SHAPE']
@@ -541,7 +541,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     def plot(self, *args, **kwargs):
         """
         Plot draws the data on a web map. The user can describe in simple terms how to
-        renderer spatial data using symbol.  To make the process simplier a pallette
+        renderer spatial data using symbol.  To make the process simpler a palette
         for which colors are drawn from can be used instead of explicit colors.
 
 
@@ -573,7 +573,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                         visualization that emphasizes areas of higher
                                         density or weighted values.
         ----------------------  ---------------------------------------------------------
-        symbol_type             optional string. This is the type of symbol the user
+        symbol_style            optional string. This is the type of symbol the user
                                 needs to create.  Valid inputs are: simple, picture, text,
                                 or carto.  The default is simple.
         ----------------------  ---------------------------------------------------------
@@ -620,8 +620,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         col                     optional string/list. Field or fields used for heatmap,
                                 class breaks, or unique renderers.
         ----------------------  ---------------------------------------------------------
-        pallette                optional string. The color map to draw from in order to
-                                visualize the data.  The default pallette is 'jet'. To
+        palette                 optional string. The color map to draw from in order to
+                                visualize the data.  The default palette is 'jet'. To
                                 get a visual representation of the allowed color maps,
                                 use the **display_colormaps** method.
         ----------------------  ---------------------------------------------------------
@@ -630,18 +630,18 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
                                 of the renderer when applicable.
         ======================  =========================================================
 
-        ** Render Syntax **
+        **Render Syntax**
 
         The render syntax allows for users to fully customize symbolizing the data.
 
-        ** Simple Renderer**
+        **Simple Renderer**
 
         A simple renderer is a renderer that uses one symbol only.
 
         ======================  =========================================================
         **Optional Argument**   **Description**
         ----------------------  ---------------------------------------------------------
-        symbol_type             optional string. This is the type of symbol the user
+        symbol_style            optional string. This is the type of symbol the user
                                 needs to create.  Valid inputs are: simple, picture, text,
                                 or carto.  The default is simple.
         ----------------------  ---------------------------------------------------------
@@ -750,7 +750,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         ----------------------  ---------------------------------------------------------
         default_symbol          Symbol used when a value cannot be matched.
         ----------------------  ---------------------------------------------------------
-        field1, field2, field3  Attribute field renderer uses to match values.
+        col                     String or List of Strings. Attribute field(s) the
+                                renderer uses to match values.
         ----------------------  ---------------------------------------------------------
         field_delimiter         String inserted between the values if multiple attribute
                                 fields are specified.
@@ -867,12 +868,12 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
 
 
 
-        ** Symbol Syntax **
+        **Symbol Syntax**
 
         =======================  =========================================================
         **Optional Argument**    **Description**
         -----------------------  ---------------------------------------------------------
-        symbol_type              optional string. This is the type of symbol the user
+        symbol_style             optional string. This is the type of symbol the user
                                  needs to create.  Valid inputs are: simple, picture, text,
                                  or carto.  The default is simple.
         -----------------------  ---------------------------------------------------------

@@ -117,7 +117,7 @@ class GIS(object):
                         will be used as the default GIS object throughout the whole
                         scripting session.
     ----------------    ---------------------------------------------------------------
-    client_id           Optional string. Used for OAuth athentication.  This is the
+    client_id           Optional string. Used for OAuth authentication.  This is the
                         client ID value.
     ----------------    ---------------------------------------------------------------
     profile             Optional string. the name of the profile that the user wishes to use
@@ -702,7 +702,7 @@ class GIS(object):
         using the GIS's configured geocoders and if a match is found, the geographic
         extent of the matched address is used as the map extent. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel.
+        to the specified zoomlevel. See :class:`~arcgis.widgets` for more inforomation.
 
         Note: The map widget is only supported within Jupyter Notebook.
 
@@ -1062,7 +1062,8 @@ class DatastoreManager(object):
 
     def add_bigdata(self,
                     name,
-                    server_path=None):
+                    server_path=None,
+                    connection_type="fileShare"):
         """
         Registers a bigdata fileshare with the data store.
 
@@ -1073,6 +1074,11 @@ class DatastoreManager(object):
         name                Required string. The unique bigdata fileshare name on the server.
         ---------------     --------------------------------------------------------------------
         server_path         Optional string. The path to the folder from the server.
+        ---------------     --------------------------------------------------------------------
+        connection_type     Optional string. Allows for the setting of the types of big data store.
+                            The value 'fileShare' is used for local big data stores, and for
+                            cloud stores, the connection_type should be 'dataStore'. The value
+                            'fileShare' is the default value.
         ===============     ====================================================================
 
 
@@ -1095,10 +1101,11 @@ class DatastoreManager(object):
 
                 "info": {
                     "connectionString": path_str,
-                    "connectionType": "fileShare"
+                    "connectionType": connection_type
                 }
             })
         }
+
         status, msg = self._validate_item(item=params['item'])
         if status == False:
             raise Exception(msg)
@@ -1117,7 +1124,8 @@ class DatastoreManager(object):
         return output
 
     #----------------------------------------------------------------------
-    def add_cloudstore(self, name, conn_str, object_store, provider="amazon", managed=False):
+    def add_cloudstore(self, name, conn_str, object_store,
+                       provider, managed=False, folder=None):
         """
         Cloud Store data item represents a connection to a Amazon or Microsoft Azure store.
         Connection information for the data store item is stored within conn_str as a
@@ -1140,6 +1148,14 @@ class DatastoreManager(object):
         object_store        Required string. This is the amazon bucket path or Azuze path.
         ---------------     --------------------------------------------------------------------
         provider            Required string. Values must be amazon or azure.
+        ---------------     --------------------------------------------------------------------
+        managed             Optional boolean. When the data store is server only, the database
+                            is entirely managed and owned by the server and cannot be accessed
+                            by the publisher directly. When this option is chosen, the
+                            managed property should be set to true. Otherwise it is false.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. For some Azure cloud stores, an optional folder
+                            can be specified.
         ===============     ====================================================================
 
 
@@ -1157,6 +1173,8 @@ class DatastoreManager(object):
                 "objectStore": object_store
             }
         }
+        if folder is not None:
+            cs['info']['folder'] = folder
         params = {
         'f' : 'json',
         'item' : json.dumps(cs)
@@ -4586,7 +4604,9 @@ class User(dict):
     @property
     def esri_access(self):
         """
-        Enable or disable 'Esri access'. Administrator privileges required.
+        When getting, will return a string describing the current user's esri access
+        When setting, supply a *bool* to enable or disable esri_access for that user (Administrator privileges required)
+
         A member whose account has Esri access enabled can use My Esri and
         Community and Forums (GeoNet), access e-Learning on the Training
         website, and manage email communications from Esri. The member
@@ -4595,7 +4615,7 @@ class User(dict):
         **Trial** accounts cannot modify esri_access property.
 
         Please see: http://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_7CE845E428034AE8A40EF8C1085E2A23
-        for more information.
+        or https://bit.ly/2JsJV1i for more information.
 
 
         """
@@ -5128,7 +5148,7 @@ class Item(dict):
                                authoritative.
                                If a value of None is given, then the value will be reset.
 
-                               Allowsed Values: authoritative, deprecated, or None
+                               Allowed Values: authoritative, deprecated, or None
         ==================     ====================================================================
         """
         try:
@@ -5764,8 +5784,17 @@ class Item(dict):
         if not self._hydrated:
             self._hydrate()  # hydrated properties needed below
 
-        # Call with owner info
-        resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
+        # find if portal is ArcGIS Online
+        if self._gis._portal.is_arcgisonline:
+            # Call with owner info
+            resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
+
+        else:  # gis is a portal, find if item resides in a folder
+            if self.ownerFolder is not None:
+                resp = self._portal.con.get('content/users/' + self.owner + '/' + self.ownerFolder + "/items/" +
+                                            self.itemid)
+            else:
+                resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
 
         # Get the sharing info
         sharing_info = resp['sharing']
@@ -6066,8 +6095,11 @@ class Item(dict):
 
     def get_data(self, try_json=True):
         """
-        Retrieves the data component of an item and returns the data associated with an item.
-
+        Retrieves the data associated with an item. Note that this call may
+        return different results for different item types: some item types may
+        even return *None*. See
+        `this REST API page <https://developers.arcgis.com/rest/users-groups-and-items/working-with-users-groups-and-items.htm>`_
+        for more information.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -6134,8 +6166,9 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
-                            'Service2Data', 'Service2Service']. See Relationship types in
-                            REST API help for more information on this parameter.
+                            'Service2Data', 'Service2Service']. See
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            for more information on this parameter.
         ---------------     --------------------------------------------------------------------
         direction           Required string. One of ['forward', 'reverse']
         ===============     ====================================================================
@@ -6182,8 +6215,9 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
-                            'Service2Data', 'Service2Service']. See Relationship types in
-                            REST API help for more information on this parameter.
+                            'Service2Data', 'Service2Service']. See
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            for more information on this parameter.
         ===============     ====================================================================
 
 
@@ -6217,8 +6251,9 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         rel_type            Required string.  The type of the related item; is one of
                             ['Map2Service', 'WMA2Code', 'Map2FeatureCollection', 'MobileApp2Code',
-                            'Service2Data', 'Service2Service']. See Relationship types in
-                            REST API help for more information on this parameter.
+                            'Service2Data', 'Service2Service']. See
+                            `Relationship Types <https://bit.ly/2LAHNoK>`_. in the REST API help
+                            for more information on this parameter.
         ===============     ====================================================================
 
 
@@ -6915,7 +6950,7 @@ class Item(dict):
                                 Example:
 
                                 {
-                                   "referrers": ["http://foo.com", "http://bar.com"],
+                                   "referrers": ["http://foo.example.com", "http://bar.example.com"],
                                    "hitsPerInterval": 1000,
                                    "intervalSeconds": 60
                                 }
@@ -7186,7 +7221,7 @@ class Item(dict):
                             Example:
 
                             [
-                                "https://app.foo.com",
+                                "https://app.example.com",
                                 "urn:ietf:wg:oauth:2.0:oob"
                             ]
         ===============     ====================================================================
