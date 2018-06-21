@@ -719,7 +719,7 @@ class FeatureSet(object):
             sr = df.sr
         elif isinstance(df, pd.DataFrame):
             geoms = []
-            df_rows = df.copy().to_dict('records')
+            df_rows = df.copy()
         else:
             raise ValueError("Invalid input type")
         index = 0
