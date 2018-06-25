@@ -347,15 +347,17 @@ class ImageryLayer(Layer):
             params['mosaicRule'] = mosaic_rule
         elif self._mosaic_rule is not None:
             params['mosaicRule'] = self._mosaic_rule
-
-        if isinstance(rendering_rules, dict):
-            params['renderingRule'] = rendering_rules
-        elif isinstance(rendering_rules, list):
-            params['renderingRules'] = rendering_rules
+        
+        if rendering_rules is not None:
+            if isinstance(rendering_rules, dict):
+                params['renderingRule'] = rendering_rules
+            elif isinstance(rendering_rules, list):
+                params['renderingRules'] = rendering_rules
+            else:
+                raise ValueError("Invalid Rendering Rules - It can be only be a dictionary or a list type object")
         elif self._fn:
             params['renderingRule'] = self._fn
-        else:
-            raise ValueError("Invalid Rendering Rules")
+
         if pixel_size is not None:
             params['pixelSize'] = pixel_size
         if time_extent is not None:
@@ -1657,8 +1659,8 @@ class ImageryLayer(Layer):
             params['pixelSize'] = pixel_size
         if rendering_rule is not None:
             params['renderingRule'] = rendering_rule
-        elif 'renderingRule' in self._fn:
-            params['renderingRule'] = self._fn['renderingRule']
+        elif self._fn is not None:
+            params['renderingRule'] = self._fn
         if mosaic_rule is not None:
             params['mosaicRule'] = mosaic_rule
         elif self._mosaic_rule is not None:
