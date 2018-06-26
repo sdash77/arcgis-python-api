@@ -23,6 +23,25 @@ def _get_input_raster(fnarg_ra, fnarg):
             input_raster_dict = {"url":fnarg_ra[key],"renderingRule":fnarg}
             return input_raster_dict
 
+def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
+    for key,value in fnarg_ra.items():
+        if key == "Raster" and isinstance(value,dict)  and not (value.keys() & {"url"}):
+            return _find_and_replace_mosaic_rule(value["rasterFunctionArguments"], fnarg)
+        if key == "Rasters":
+            if isinstance(value,list):
+                for each_element in value:
+                    return _find_and_replace_mosaic_rule(each_element["rasterFunctionArguments"], fnarg)
+        elif (key == "Raster"  or key == "Rasters"):
+            if isinstance(value,dict):
+                if value.keys() & {"url"}:
+                    value["mosaicRule"] = mosaic_rule
+            else:
+                fnarg_ra[key]={}
+                fnarg_ra[key]["url"] = url
+                fnarg_ra[key]["mosaicRule"] = mosaic_rule
+                 
+    return fnarg_ra
+
 class ImageryLayer(Layer):
     def __init__(self, url, gis=None):
         super(ImageryLayer, self).__init__(url, gis)
@@ -2124,7 +2143,7 @@ class ImageryLayer(Layer):
                               subset of rasters used in the mosaic, be aware that the rasters may
                               not be visible at all scales.
         -----------------     --------------------------------------------------------------------
-        muldidef              optional dict. multidemensional definition used for filtering by
+        muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
         -----------------     --------------------------------------------------------------------
@@ -2171,7 +2190,11 @@ class ImageryLayer(Layer):
             mosaic_rule['mosaicMethod'] = 'esriMosaicLockRaster'
             mosaic_rule['lockRasterIds'] = lock_rasters
 
+        if self._fnra is not None:
+            self._fnra["rasterFunctionArguments"] = _find_and_replace_mosaic_rule(self._fnra["rasterFunctionArguments"], mosaic_rule, self._url)
         self._mosaic_rule = mosaic_rule
+
+
 
     @property
     def mosaic_rule(self):
@@ -2327,6 +2350,11 @@ class ImageryLayer(Layer):
                 raise RuntimeError('You need to be signed in to a GIS to create Items')
         else:
             from .analytics import is_supported, generate_raster
+            if self._fnra is None:
+                from .functions import identity
+                identity_layer = identity(self)
+                self._fnra = identity_layer._fnra
+
             if is_supported(g):
                 return generate_raster(self._fnra, output_name=output_name, gis=g)
             else:

@@ -2852,6 +2852,7 @@ def apply(raster, fn_name, **kwargs):
     """
     
     variable_name = kwargs.pop("variable_name", None)
+    raster_layer = raster
     if variable_name is not None:
         layer, raster, raster_ra = _raster_input(kwargs.pop(variable_name))
     else:
@@ -2887,6 +2888,8 @@ def apply(raster, fn_name, **kwargs):
         }
     }
 
+    if raster_layer._mosaic_rule is not None:
+        function_chain_ra["rasterFunctionArguments"]["Raster"]["mosaicRule"] = raster_layer._mosaic_rule
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
