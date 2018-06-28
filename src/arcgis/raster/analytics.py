@@ -130,10 +130,127 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
     return output_service
 
 
+def _flow_direction_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None):
+    input_surface_raster = forceFlow = flowDirectionType = output_flow_direction_raster = output_drop_name = None
+
+    input_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
+    if 'force_flow' in raster_function['rasterFunctionArguments'].keys():
+        forceFlow = raster_function['rasterFunctionArguments']['force_flow']
+    if 'flow_direction_type' in raster_function['rasterFunctionArguments'].keys():
+        flowDirectionType = raster_function['rasterFunctionArguments']['flow_direction_type']
+    output_flow_direction_raster = output_name
+    if "out_drop_raster" in other_outputs.keys():
+        output_drop_name = "out_drop_raster" + '_' + _id_generator()
+    return _flow_direction(input_surface_raster, forceFlow, flowDirectionType, output_flow_direction_raster, output_drop_name, gis=gis)
+
+def _calculate_travel_cost_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None):
+    input_source = None
+    input_cost_raster=None
+    input_surface_raster=None
+    maximum_distance=None
+    input_horizonal_raster=None
+    horizontal_factor=None
+    input_vertical_raster=None
+    vertical_factor=None
+    source_cost_multiplier=None
+    source_start_cost=None
+    source_resistance_rate=None
+    source_capacity=None
+    source_direction=None
+    allocation_field=None
+    output_backlink_name=None
+    output_allocation_name=None
+    output_distance_name=None
+
+    if raster_function['rasterFunctionArguments']['in_source_data'] is not None:
+        input_source = raster_function['rasterFunctionArguments']['in_source_data']
+    if 'in_cost_raster' in raster_function['rasterFunctionArguments'].keys():
+        input_cost_raster = raster_function['rasterFunctionArguments']['in_cost_raster']
+    if 'in_surface_raster' in raster_function['rasterFunctionArguments'].keys():
+        input_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
+    if 'maximum_distance' in raster_function['rasterFunctionArguments'].keys():
+        maximum_distance = raster_function['rasterFunctionArguments']['maximum_distance']
+    if 'in_horizontal_raster' in raster_function['rasterFunctionArguments'].keys():
+        input_horizonal_raster = raster_function['rasterFunctionArguments']['in_horizontal_raster']
+    if 'horizontal_factor' in raster_function['rasterFunctionArguments'].keys():
+        horizontal_factor = raster_function['rasterFunctionArguments']['horizontal_factor']
+    if 'in_vertical_raster' in raster_function['rasterFunctionArguments'].keys():
+        input_vertical_raster = raster_function['rasterFunctionArguments']['in_vertical_raster']
+    if 'vertical_factor' in raster_function['rasterFunctionArguments'].keys():
+        vertical_factor = raster_function['rasterFunctionArguments']['vertical_factor']
+    if 'source_cost_multiplier' in raster_function['rasterFunctionArguments'].keys():
+        source_cost_multiplier = raster_function['rasterFunctionArguments']['source_cost_multiplier']
+    if 'source_start_cost' in raster_function['rasterFunctionArguments'].keys():
+        source_start_cost = raster_function['rasterFunctionArguments']['source_start_cost']
+    if 'source_resistance_rate' in raster_function['rasterFunctionArguments'].keys():
+        source_resistance_rate = raster_function['rasterFunctionArguments']['source_resistance_rate']
+    if 'source_capacity' in raster_function['rasterFunctionArguments'].keys():
+        source_capacity = raster_function['rasterFunctionArguments']['source_capacity']
+    if 'source_direction' in raster_function['rasterFunctionArguments'].keys():
+        source_direction = raster_function['rasterFunctionArguments']['source_direction']
+    if 'allocation_field' in raster_function['rasterFunctionArguments'].keys():
+        allocation_field = raster_function['rasterFunctionArguments']['allocation_field']
+    output_distance_name = output_name
+
+    if "out_backlink_raster" in other_outputs.keys():
+        if other_outputs["out_backlink_raster"] is True:
+            output_backlink_name = "out_backlink" + '_' + _id_generator()
+
+    if "out_allocation_raster" in other_outputs.keys():
+        if other_outputs["out_allocation_raster"] is True:
+            output_allocation_name = "out_allocation" + '_' + _id_generator()
+
+    return _calculate_travel_cost(input_source, input_cost_raster, input_surface_raster,
+                                  maximum_distance, input_horizonal_raster, horizontal_factor,
+                                  input_vertical_raster, vertical_factor, source_cost_multiplier,
+                                  source_start_cost, source_resistance_rate, source_capacity,
+                                  source_direction, allocation_field, output_distance_name,
+                                  output_backlink_name, output_allocation_name, gis=gis)
+
+
+def _return_output(num_returns, output_dict ,return_value_names):
+    if num_returns == 1:
+        return output_dict[return_value_names[0]]
+ 
+    else:
+        ret_names = []
+        for return_value in return_value_names:
+            ret_names.append(return_value)
+        NamedTuple = collections.namedtuple('FunctionOutput', ret_names)
+        function_output = NamedTuple(**output_dict)
+        return function_output
+
+def _set_output_raster(output_name, task, gis):
+    output_service = None
+    output_raster = None
+
+    if output_name is None:
+        output_name = task + '_' + _id_generator()
+        output_service = _create_output_image_service(gis, output_name, task)
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+
+    elif isinstance(output_name, str):
+            output_service = _create_output_image_service(gis, output_name, task)
+            output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
+
+    elif isinstance(output_name, _arcgis.gis.Item):        
+        output_service = output_name
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
+
+    else:
+        raise TypeError("output name should be a string (service name) or Item")
+
+    return output_raster, output_service
+
+def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None):
+    if raster_function['rasterFunctionArguments']['toolName'] is "FlowDirection_sa":
+        return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis)
+    if raster_function['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
+        return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis)
+
 def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None):
     
     inputRasterSpecified = False
-
     # input rasters
     if isinstance(input_rasters, list):
         # extract the IDs of all the input items
@@ -1685,4 +1802,383 @@ def delete_image_collection(image_collection,
 
 
     return job_values["result"]
+
+
+def _flow_direction(input_surface_raster,
+                   force_flow= False,
+                   flow_direction_type= "D8",
+                   output_flow_direction_name=None,
+                   output_drop_name=None,
+                   gis=None):
+    """
+    Replaces cells of a raster corresponding to a mask 
+    with the values of the nearest neighbors.
+
+    Parameters
+    ----------
+    input_surface_raster : The input raster representing a continuous surface.
+
+    force_flow  : Boolean, Specifies if edge cells will always flow outward or follow normal flow rules.
+
+    flow_direction_type : Specifies which flow direction type to use.
+						  D8 - Use the D8 method. This is the default.
+						  MFD - Use the Multi Flow Direction (MFD) method.
+						  DINF - Use the D-Infinity method.
+
+    output_drop_name : An optional output drop raster . 
+					   The drop raster returns the ratio of the maximum change in elevation from each cell 
+					   along the direction of flow to the path length between centers of cells, expressed in percentages.
+
+    output_flow_direction_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+        You can pass in an existing Image Service Item from your GIS to use that instead.
+        Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+        A RuntimeError is raised if a service by that name already exists
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "FlowDirection"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+    return_value_names = ["output_flow_direction_service"]
+    params = {}
+
+    output_flow_direction_raster, output_flow_direction_service = _set_output_raster(output_flow_direction_name, task, gis)  
+    params["outputFlowDirectionName"] = output_flow_direction_raster 
+
+    params["inputSurfaceRaster"] = _layer_input(input_surface_raster)
+    
+    if output_drop_name is not None:
+        output_drop_raster, output_drop_service = _set_output_raster(output_drop_name, task, gis) 
+        params["outputDropName"] = output_drop_raster
+        return_value_names.extend(["output_drop_service"])
+
+    if force_flow is not None:
+        if isinstance(force_flow, bool):
+            params["forceFlow"] = force_flow
+        elif isinstance(force_flow, str):
+            if force_flow == "NORMAL":
+                params["forceFlow"] = False
+            elif force_flow == "FORCE":
+                params["forceFlow"] = True
+    
+    flow_direction_type_AllowedValues= {"D8", "MFD", "DINF"}
+    
+    if not flow_direction_type in flow_direction_type_AllowedValues:
+            raise RuntimeError('flow_direction_type can only be one of the following: '.join(flow_direction_type_AllowedValues))
+    params["flowDirectionType"] = flow_direction_type
+    
+    _set_context(params)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)    
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_flow_direction_service.update(item_properties)
+    outputs = {"output_flow_direction_service" : output_flow_direction_service}
+    if output_drop_name is not None:
+        output_drop_service.update(item_properties)
+        outputs.update({"output_drop_service" : output_drop_service})
+
+    num_returns = len(outputs)
+
+    return _return_output(num_returns,outputs,return_value_names)
+
+
+def _calculate_travel_cost(input_source,
+                          input_cost_raster=None,
+                          input_surface_raster=None,
+                          maximum_distance=None,
+                          input_horizonal_raster=None,
+                          horizontal_factor="BINARY",
+                          input_vertical_raster=None,
+                          vertical_factor="BINARY",
+                          source_cost_multiplier=None,
+                          source_start_cost=None,
+                          source_resistance_rate=None,
+                          source_capacity=None,
+                          source_direction="FROM_SOURCE",
+                          allocation_field=None,
+                          output_distance_name=None,
+                          output_backlink_name=None,
+                          output_allocation_name=None,
+                          gis=None):
+    """
+
+    Parameters
+    ----------
+    input_source : The layer that defines the sources to calculate the distance too. The layer 
+				   can be raster or feature.
+
+    input_cost_raster  : A raster defining the impedance or cost to move planimetrically through each cell.
+
+    input_surface_raster : A raster defining the elevation values at each cell location.
+
+    maximum_distance : The maximum distance to calculate out to. If no distance is provided, a default will 
+	                   be calculated that is based on the locations of the input sources.
+
+    input_horizonal_raster : A raster defining the horizontal direction at each cell.
+
+    horizontal_factor : The Horizontal Factor defines the relationship between the horizontal cost 
+						factor and the horizontal relative moving angle.
+
+    input_vertical_raster : A raster defining the vertical (z) value for each cell.
+
+    vertical_factor : The Vertical Factor defines the relationship between the vertical cost factor and 
+					  the vertical relative moving angle (VRMA).
+
+    source_cost_multiplier : Multiplier to apply to the cost values.
+
+    source_start_cost : The starting cost from which to begin the cost calculations.
+
+    source_resistance_rate : This parameter simulates the increase in the effort to overcome costs 
+							as the accumulative cost increases.
+
+    source_capacity : Defines the cost capacity for the traveler for a source.
+
+    source_direction : Defines the direction of the traveler when applying horizontal and vertical factors, 
+					   the source resistance rate, and the source starting cost.
+
+    allocation_field : A field on theinputSourceRasterOrFeatures layer that holds the values that define each source.
+
+    output_backlink_name  : This is the output image service name that will be created.
+
+    output_allocation_name : This is the output image service name that will be created.
+
+    output_distance_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+        You can pass in an existing Image Service Item from your GIS to use that instead.
+        Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+        A RuntimeError is raised if a service by that name already exists
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "CalculateTravelCost"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+    return_value_names = ["output_distance_service"]
+    params = {}
+
+    output_distance_raster, output_distance_service = _set_output_raster(output_distance_name, task, gis)  
+    params["outputDistanceName"] = output_distance_raster 
+
+    if input_source is not None:
+        params["inputSourceRasterOrFeatures"] = _layer_input(input_source)
+
+    if input_cost_raster is not None:
+        params["inputCostRaster"] = _layer_input(input_cost_raster)
+
+    if input_surface_raster is not None:
+        params["inputSurfaceRaster"] = _layer_input(input_surface_raster)
+
+    if maximum_distance is not None:
+        params["maximumDistance"] = maximum_distance
+
+    if input_horizonal_raster is not None:
+        params["inputHorizonalRaster"] = _layer_input(input_horizonal_raster)
+
+    if horizontal_factor is not None:
+        params["horizontalFactor"] = horizontal_factor
+
+    if input_vertical_raster is not None:
+        params["inputVerticalRaster"] = _layer_input(input_vertical_raster)
+
+    if vertical_factor is not None:
+        params["verticalFactor"] = vertical_factor
+
+    if source_cost_multiplier is not None:
+        params["sourceCostMultiplier"] = source_cost_multiplier
+
+    if source_start_cost is not None:
+        params["sourceStartCost"] = source_start_cost
+
+    if source_resistance_rate is not None:
+        params["sourceResistanceRate"] = source_resistance_rate
+
+    if source_capacity is not None:
+        params["sourceCapacity"] = source_capacity
+
+    if source_direction is not None:
+        params["sourceDirection"] = source_direction
+
+    if allocation_field is not None:
+        params["allocationField"] = allocation_field
+
+    if output_backlink_name is not None:
+        #output_backlink_service = None
+        #if isinstance(output_backlink_name, str):
+        #    output_backlink_service = _create_output_image_service(gis, output_backlink_name, task)
+        #elif isinstance(output_backlink_name, _arcgis.gis.Item):
+        #    output_backlink_service = output_backlink_name
+        #else:
+        #    raise TypeError("output_backlink_name should be a string (service name) or Item")
+        
+        #output_backlink_raster = _json.dumps({"serviceProperties": {"name" : output_backlink_name, "serviceUrl" : output_backlink_service.url}, "itemProperties": {"itemId" : output_backlink_service.itemid}}) 
+        #output_backlink_raster = _json.dumps({"serviceProperties": {"name" : output_backlink_name}})
+        output_backlink_raster, output_backlink_service = _set_output_raster(output_backlink_name, task, gis)
+        params["outputBacklinkName"] = output_backlink_raster
+        return_value_names.extend(["output_backlink_service"])
+
+    if output_allocation_name is not None:
+        #output_allocation_service = None
+        #if isinstance(output_allocation_name, str):
+        #    output_allocation_service = _create_output_image_service(gis, output_allocation_name, task)
+        #elif isinstance(output_allocation_name, _arcgis.gis.Item):
+        #    output_allocation_service = output_allocation_name
+        #else:
+        #    raise TypeError("output_allocation_name should be a string (service name) or Item")
+        
+        #output_allocation_raster = _json.dumps({"serviceProperties": {"name" : output_allocation_name, "serviceUrl" : output_allocation_service.url}, "itemProperties": {"itemId" : output_allocation_service.itemid}}) 
+        output_allocation_raster, out_allocation_service = _set_output_raster(output_allocation_name, task, gis) 
+        params["outputAllocationName"] = output_allocation_raster
+        return_value_names.extend(["output_allocation_service"])
+
+    _set_context(params)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_distance_service.update(item_properties)
+    outputs={"output_distance_service" : output_distance_service}
+    if output_backlink_name is not None:
+       output_backlink_service.update(item_properties)
+       outputs.update({"output_backlink_service":output_backlink_service})
+    if output_allocation_name is not None:
+       out_allocation_service.update(item_properties)
+       outputs.update({"output_allocation_service" : out_allocation_service})
+    num_returns = len(outputs)
+
+    return _return_output(num_returns, outputs, return_value_names)
+
+
+def optimum_travel_cost_network(input_regions_raster,
+                                input_cost_raster,
+                                output_optimum_network_name=None,
+                                output_neighbor_network_name=None,
+                                context=None,
+                                gis=None):
+
+    """
+    calculates the optimum cost network from a set of input regions.
+
+    Parameters
+    ----------
+    input_regions_raster : The layer that defines the regions to find the optimum travel cost netork for. 
+						   The layer can be raster or feature.
+
+    input_cost_raster  : A raster defining the impedance or cost to move planimetrically through each cell.
+
+    output_optimum_network_name : Optional. If not provided, a feature layer is created by the method and used as the output.
+        You can pass in an existing feature layer Item from your GIS to use that instead.
+        Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
+        A RuntimeError is raised if a service by that name already exists
+
+    output_neighbor_network_name : Optional. This is the name of the output neighbour network feature layer that will be created.
+
+	context: Context contains additional settings that affect task execution.
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "DetermineOptimumTravelCostNetwork"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+
+    return_value_names=["output_optimum_network_service"]
+    params = {}
+
+    if output_optimum_network_name is None:
+        output_optimum_network_service_name = 'Optimum Network Raster_' + _id_generator()
+        output_optimum_network_name = output_optimum_network_service_name.replace(' ', '_')
+    else:
+        output_optimum_network_service_name = output_optimum_network_name.replace(' ', '_')
+
+    output_optimum_network_service = _create_output_feature_service(gis, output_optimum_network_name, 
+                                                                    output_optimum_network_service_name, 
+                                                                    'DetermineOptimumTravelCostNetwork') 
+
+    params["outputOptimumNetworkName"] = _json.dumps({"serviceProperties": {"name": output_optimum_network_service_name, 
+                                                                            "serviceUrl": output_optimum_network_service.url},
+                                                                            "itemProperties": {"itemId": output_optimum_network_service.itemid}})
+
+    params["inputRegionsRasterOrFeatures"] = _layer_input(input_regions_raster)
+    #primary output end
+
+    if input_cost_raster is not None:
+        params["inputCostRaster"] = _layer_input(input_cost_raster)
+
+    #secondary output start
+    if output_neighbor_network_name is None:
+        output_neighbor_network_service_name = 'Neighbor Network Raster_' + _id_generator()
+        output_neighbor_network_name = output_neighbor_network_service_name.replace(' ', '_')
+    else:
+        output_neighbor_network_service_name = output_neighbor_network_name.replace(' ', '_')
+
+    output_neighbor_network_service = _create_output_feature_service(gis, output_neighbor_network_name, 
+                                                                     output_neighbor_network_service_name, 
+                                                                     'DetermineOptimumTravelCostNetwork') 
+
+    params["outputNeighborNetworkName"] = _json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, 
+                                                                             "serviceUrl": output_neighbor_network_service.url},
+                                                                             "itemProperties": {"itemId": output_neighbor_network_service.itemid}})
+    return_value_names.extend(["output_neighbor_network_service"])
+    _set_context(params)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_optimum_network_service.update(item_properties)
+    outputs={"output_optimum_network_service" : output_optimum_network_service}
+    if output_neighbor_network_name is not None:
+        output_neighbor_network_service.update(item_properties)
+        outputs.update({"output_neighbor_network_service":output_neighbor_network_service})
+
+    num_returns = len(outputs)
+
+    return _return_output(num_returns, outputs, return_value_names)
 

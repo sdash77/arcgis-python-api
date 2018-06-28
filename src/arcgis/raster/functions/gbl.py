@@ -1,7 +1,7 @@
 """
 Global Raster functions.
 These functions are applied to the raster data to create a
-processed product on disk, using ImageryLalyer.save() method or arcgis.raster.analytics.generate_raster().
+processed product on disk, using ImageryLayer.save() method or arcgis.raster.analytics.generate_raster().
 
 Global functions cannot be used for visualization using dynamic image processing. They cannot be applied to layers that
 are added to a map for on-the-fly image processing or visualized inline within the Jupyter notebook.
@@ -13,12 +13,49 @@ Functions can be applied to various rasters (or images), including the following
 
 """
 from arcgis.raster._layer import ImageryLayer
+from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
 import numbers
 from arcgis.raster.functions.utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra
+from arcgis.geoprocessing._support import _layer_input,_feature_input
+import string as _string
+import random as _random
+import arcgis as _arcgis
 
-def _gbl_clone_layer(layer, function_chain, function_chain_ra):
+def _create_output_image_service(gis, output_name, task):
+    ok = gis.content.is_service_name_available(output_name, "Image Service")
+    if not ok:
+        raise RuntimeError("An Image Service by this name already exists: " + output_name)
+
+    create_parameters = {
+        "name": output_name,
+        "description": "",
+        "capabilities": "Image",
+        "properties": {
+            "path": "@",
+            "description": "",
+            "copyright": ""
+        }
+    }
+
+    output_service = gis.content.create_service(output_name, create_params=create_parameters,
+                                                      service_type="imageService")
+    description = "Image Service generated from running the " + task + " tool."
+    item_properties = {
+        "description": description,
+        "tags": "Analysis Result, " + task,
+        "snippet": "Analysis Image Service generated from " + task
+    }
+    output_service.update(item_properties)
+    return output_service
+
+
+def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
+    return ''.join(_random.choice(chars) for _ in range(size))
+
+
+def _gbl_clone_layer(layer, function_chain, function_chain_ra,**kwargs):
     if isinstance(layer, Item):
         layer = layer.layers[0]    
 
@@ -42,9 +79,29 @@ def _gbl_clone_layer(layer, function_chain, function_chain_ra):
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
+    
     newlyr._uses_gbl_function = True
+    for key in kwargs:
+        newlyr._other_outputs.update({key:kwargs[key]})
+
     return newlyr
 
+def _feature_gbl_clone_layer(layer, function_chain, function_chain_ra,**kwargs):
+    if isinstance(layer, Item):
+        layer = layer.layers[0]    
+
+    newlyr = ImageryLayer(layer._url, layer._gis)
+    
+    newlyr._fn = function_chain
+    newlyr._fnra = function_chain_ra
+
+    newlyr._storage = layer._storage
+    newlyr._dynamic_layer = layer._dynamic_layer
+
+    newlyr._uses_gbl_function = True
+    for key in kwargs:
+        newlyr._other_outputs.update({key:kwargs[key]})
+    return newlyr
 
 def euclidean_distance(in_source_data,
                        cell_size=None,
@@ -196,7 +253,7 @@ def cost_distance(in_source_data,
                             distance exceeds this value, the output value for the pixel location will be NoData. 
                             The maximum distance defines the extent for which the accumulative cost distances are
                             calculated. The default distance is to the edge of the output raster.
-    :param source_cost_multiplier: The threshold that the accumulative cost values cannot exceed. If an accumulative
+    :param source_cost_multiplier: The threshold that the accumulative cost values cannot exceed. If an accumulative                                       
                             cost distance exceeds this value, the output value for the pixel location will be 
                             NoData. The maximum distance defines the extent for which the accumulative cost 
                             distances are calculated. The default distance is to the edge of the output raster.
@@ -224,9 +281,9 @@ def cost_distance(in_source_data,
                             A double numeric value or a field from the Source Raster can be used for this parameter.
     :param source_direction: Defines the direction of the traveler when applying the source resistance rate and the source
                             starting cost.
-                            From Source - The source resistance rate and source starting cost will be applied beginning
+                            FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning
                             at the input source and moving out to the nonsource cells. This is the default.
-                            To Source - The source resistance rate and source starting cost will be applied beginning at
+                            TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at
                             each nonsource cell and moving back to the input source.
                             Either specify the From Source or To Source keyword, which will be applied to all sources,
                             or specify a field in the Source Raster that contains the keywords to identify the direction
@@ -236,7 +293,7 @@ def cost_distance(in_source_data,
     """        
     layer1, in_source_data, raster_ra1 = _raster_input(in_source_data)  
     layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
-                            
+    
     template_dict = {
         "rasterFunction" : "GPAdapter",
         "rasterFunctionArguments" : {
@@ -264,16 +321,20 @@ def cost_distance(in_source_data,
     if source_capacity is not None:
         template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
     
+    source_direction_list = ["FROM_SOURCE","TO_SOURCE"]
+
     if source_direction is not None:
+        if source_direction.upper() not in source_direction_list:
+            raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list))
         template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
-    
+
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
-        
-        
+
+
 def cost_allocation(in_source_data,
                     in_cost_raster,
                     in_value_raster=None,
@@ -344,9 +405,9 @@ def cost_allocation(in_source_data,
                             A double numeric value or a field from the Source Raster can be used for this parameter.
     :source_direction: Defines the direction of the traveler when applying the source resistance rate and the source
                             starting cost.
-                            From Source - The source resistance rate and source starting cost will be applied beginning
+                            FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning
                             at the input source and moving out to the nonsource cells. This is the default.
-                            To Source - The source resistance rate and source starting cost will be applied beginning at
+                            TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at
                             each nonsource cell and moving back to the input source.
                             Either specify the From Source or To Source keyword, which will be applied to all sources,
                             or specify a field in the Source Raster that contains the keywords to identify the direction
@@ -390,10 +451,15 @@ def cost_allocation(in_source_data,
     
     if source_capacity is not None:
         template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
-    
+
+    source_direction_list = ["FROM_SOURCE","TO_SOURCE"]
+
     if source_direction is not None:
+        if source_direction.upper() not in source_direction_list:
+            raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list))
         template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
-    
+
+
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
     function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
@@ -401,12 +467,12 @@ def cost_allocation(in_source_data,
         function_chain_ra["rasterFunctionArguments"]["in_value_raster"] = raster_ra3
 
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
-    
-    
+
+
 def zonal_statistics(in_zone_data,
                      zone_field,
                      in_value_raster,
-                     ignore_nodata=None,
+                     ignore_nodata=True,
                      statistics_type=None):
                      
     """"
@@ -422,37 +488,38 @@ def zonal_statistics(in_zone_data,
     :param in_value_raster: Raster that contains the values on which to calculate a statistic.
     :param ignore_no_data: Denotes whether NoData values in the Value Raster will influence the results
                             of the zone that they fall within.
-                            Yes - Within any particular zone, only pixels that have a value in the Value
+                            True - Within any particular zone, only pixels that have a value in the Value
                             Raster will be used in determining the output value for that zone. NoData 
                             pixels in the Value Raster will be ignored in the statistic calculation. 
                             This is the default.
-                            No - Within any particular zone, if any NoData pixels exist in the Value 
+                            False - Within any particular zone, if any NoData pixels exist in the Value 
                             Raster, it is deemed that there is insufficient information to perform 
                             statistical calculations for all the pixels in that zone; therefore, the 
                             entire zone will receive the NoData value on the output raster.
     :param statistics_type: Statistic type to be calculated.
-                            Mean-Calculates the average of all pixels in the Value Raster that belong to
+                            MEAN-Calculates the average of all pixels in the Value Raster that belong to
                             the same zone as the output pixel.
-                            Majority-Determines the value that occurs most often of all pixels in the 
+                            MAJORITY-Determines the value that occurs most often of all pixels in the 
                             Value Raster that belong to the same zone as the output pixel.
-                            Maximum-Determines the largest value of all pixels in the Value Raster 
+                            MAXIMUM-Determines the largest value of all pixels in the Value Raster 
                             that belong to the same zone as the output pixel.
-                            Median-Determines the median value of all pixels in the Value Raster
+                            MEDIAN-Determines the median value of all pixels in the Value Raster
                             that belong to the same zone as the output pixel.
-                            Minimum-Determines the smallest value of all pixels in the Value Raster 
+                            MINIMUM-Determines the smallest value of all pixels in the Value Raster 
                             that belong to the same zone as the output pixel.
-                            Minority-Determines the value that occurs least often of all pixels in
+                            MINORITY-Determines the value that occurs least often of all pixels in
                             the Value Raster that belong to the same zone as the output pixel.
-                            Range-Calculates the difference between the largest and smallest value 
+                            RANGE-Calculates the difference between the largest and smallest value 
                             of all pixels in the Value Raster that belong to the same zone as the
                             output pixel.
-                            Standard Deviation-Calculates the standard deviation of all pixels in
+                            STD-Calculates the standard deviation of all pixels in
                             the Value Rasterthat belong to the same zone as the output pixel.
-                            Sum-Calculates the total value of all pixels in the Value Raster that
+                            SUM-Calculates the total value of all pixels in the Value Raster that
                             belong to the same zone as the output pixel.
-                            Variety-Calculates the number of unique values for all pixels in the 
+                            VARIETY-Calculates the number of unique values for all pixels in the 
                             Value Raster that belong to the same zone as the output pixel.
     :return: output raster with function applied
+
     """
     layer1, in_zone_data, raster_ra1 = _raster_input(in_zone_data)  
     layer2, in_value_raster, raster_ra2 = _raster_input(in_value_raster)
@@ -468,14 +535,25 @@ def zonal_statistics(in_zone_data,
             "in_value_raster" : in_value_raster
              
         }
-    }    
-    
+    }
+
     if ignore_nodata is not None:
+        if not isinstance(ignore_nodata,bool):
+            raise RuntimeError('ignore_nodata should be a boolean value')
+        if ignore_nodata is True:
+            ignore_nodata = "DATA"
+        elif ignore_nodata is False:
+            ignore_nodata = "NODATA"
         template_dict["rasterFunctionArguments"]["ignore_nodata"] = ignore_nodata
-    
+        
+             
+    statistics_type_list = ["MEAN","MAJORITY","MAXIMUM","MEDIAN","MINIMUM","MINORITY","RANGE","STD","SUM","VARIETY"]
     if statistics_type is not None:
+        if statistics_type.upper() not in statistics_type_list:
+            raise RuntimeError('statistics_type should be one of the following '+ str(statistics_type_list))    
         template_dict["rasterFunctionArguments"]["statistics_type"] = statistics_type
-    
+
+
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']["in_zone_data"] = raster_ra1
     function_chain_ra["rasterFunctionArguments"]["in_value_raster"] = raster_ra2
@@ -487,7 +565,7 @@ def least_cost_path(in_source_data,
                     in_cost_raster,
                     in_destination_data,
                     destination_field=None,                    
-                    path_type=None,
+                    path_type="EACH_CELL",
                     max_distance=None,
                     source_cost_multiplier=None,
                     source_start_cost=None,
@@ -566,9 +644,9 @@ def least_cost_path(in_source_data,
                             A double numeric value or a field from the Source Raster can be used for this parameter.
     :param source_direction: Defines the direction of the traveler when applying the source resistance rate and the source
                             starting cost.
-                            From Source - The source resistance rate and source starting cost will be applied beginning
+                            FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning
                             at the input source and moving out to the nonsource cells. This is the default.
-                            To Source-The source resistance rate and source starting cost will be applied beginning at
+                            TO_SOURCE-The source resistance rate and source starting cost will be applied beginning at
                             each nonsource cell and moving back to the input source.
                             Either specify the From Source or To Source keyword, which will be applied to all sources,
                             or specify a field in the Source Raster that contains the keywords to identify the direction
@@ -597,8 +675,11 @@ def least_cost_path(in_source_data,
         template_dict["rasterFunctionArguments"]["destination_field"] = destination_field
     
     if path_type is not None:
+        path_type_list = ["EACH_CELL", "EACH_ZONE", "BEST_SINGLE"]
+        if path_type.upper() not in path_type_list:
+            raise RuntimeError('path_type should be one of the following '+ str(path_type_list))
         template_dict["rasterFunctionArguments"]["path_type"] = path_type
-    
+
     if max_distance is not None:
         template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
     
@@ -613,9 +694,12 @@ def least_cost_path(in_source_data,
     
     if source_capacity is not None:
         template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
-    
-    if source_direction is not None:
-        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
+
+    source_direction_list = ["FROM_SOURCE","TO_SOURCE"]
+
+    if source_direction.upper() not in source_direction_list:
+        raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list) )
+    template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']["in_source_data"] = raster_ra1
@@ -628,7 +712,7 @@ def least_cost_path(in_source_data,
 def flow_distance(input_stream_raster,
                   input_surface_raster,
                   input_flow_direction_raster=None,
-                  distance_type=None):
+                  distance_type="VERTICAL"):
                      
     """
     This function computes, for each cell, the minimum downslope 
@@ -664,10 +748,14 @@ def flow_distance(input_stream_raster,
     if input_flow_direction_raster is not None:
         layer3, input_flow_direction_raster, raster_ra3 = _raster_input(input_flow_direction_raster)
         template_dict["rasterFunctionArguments"]["in_flow_direction_raster"] = input_flow_direction_raster
+    
+    distance_type_list = ["VERTICAL","HORIZONTAL"]
 
     if distance_type is not None:
+        if distance_type.upper() not in distance_type_list:
+            raise RuntimeError('distance_type should be one of the following '+ str(distance_type_list))
         template_dict["rasterFunctionArguments"]["distance_type"] = distance_type
-    
+
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']["in_stream_raster"] = raster_ra1
     function_chain_ra['rasterFunctionArguments']["in_surface_raster"] = raster_ra2
@@ -679,7 +767,7 @@ def flow_distance(input_stream_raster,
 
 def flow_accumulation(input_flow_direction_raster,
                       input_weight_raster=None,
-                      data_type=None):
+                      data_type="FLOAT"):
                      
     """"    
     Replaces cells of a raster corresponding to a mask 
@@ -707,8 +795,12 @@ def flow_accumulation(input_flow_direction_raster,
         layer2, input_weight_raster, raster_ra2 = _raster_input(input_weight_raster) 
         template_dict["rasterFunctionArguments"]["in_weight_raster"] = input_weight_raster
 
+    data_type_list=["FLOAT","INTEGER","DOUBLE"]
+
     if data_type is not None:
-        template_dict["rasterFunctionArguments"]["data_type"] = data_type
+        if data_type.upper() not in data_type_list:
+            raise RuntimeError('data_type should be one of the following '+ str(data_type_list))
+        template_dict["rasterFunctionArguments"]["data_type"] = data_type            
     
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_flow_direction_raster"] = raster_ra1    
@@ -720,7 +812,8 @@ def flow_accumulation(input_flow_direction_raster,
 
 def flow_direction(input_surface_raster,
                    force_flow= "NORMAL",
-                   flow_direction_type= "D8"):
+                   flow_direction_type= "D8",
+                   generate_out_drop_raster=False):
     """
     Replaces cells of a raster corresponding to a mask 
     with the values of the nearest neighbors.
@@ -733,7 +826,21 @@ def flow_direction(input_surface_raster,
                           D8 - Use the D8 method. This is the default.
                           MFD - Use the Multi Flow Direction (MFD) method.
                           DINF - Use the D-Infinity method.
-    
+    : param generate_out_drop_raster: Boolean, determines whether out_drop_raster should be generated or not.
+                                      Set this parameter to True, in order to generate the out_drop_raster.
+                                      If set to true, the output will be a named tuple with name values being
+                                      output_flow_direction_service and output_drop_service.
+                                      eg,
+                                      flow_direction_output =  flow_direction(input_surface_raster,
+                                                                            force_flow= "NORMAL",
+                                                                            flow_direction_type= "D8",
+                                                                            generate_out_drop_raster=True)
+                                      out_var = flow_direction_output.save()
+                                      then,
+                                      out_var.output_flow_direction_service -> gives you the output flow direction imagery layer item
+                                      out_var.output_drop_service -> gives you the output drop raster imagery layer item
+
+
     :return: output raster with function applied
 
     """
@@ -745,18 +852,28 @@ def flow_direction(input_surface_raster,
             "toolName" : "FlowDirection_sa",           
             "PrimaryInputParameterName" : "in_surface_raster",
             "OutputRasterParameterName" : "out_flow_direction_raster",
-            "in_surface_raster" : input_surface_raster,
-            "force_flow" : force_flow,
-            "flow_direction_type" : flow_direction_type
-             
+            "in_surface_raster" : input_surface_raster
         }
     }    
-        
+      
+    force_flow_list = ["NORMAL","FORCE"]
+    if force_flow is not None:
+        if force_flow.upper() not in force_flow_list:
+            raise RuntimeError('force_flow should be one of the following '+ str(force_flow_list))
+        template_dict["rasterFunctionArguments"]["force_flow"] = force_flow
+       
+
+    flow_direction_type_list = ["D8","MFD","DINF"]
+    if flow_direction_type is not None:
+        if flow_direction_type.upper() not in flow_direction_type_list:
+            raise RuntimeError('flow_direction_type should be one of the following '+ str(flow_direction_type_list))
+        template_dict["rasterFunctionArguments"]["flow_direction_type"] = flow_direction_type
+             
+
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra    
     
-    return _gbl_clone_layer(layer, template_dict, function_chain_ra)
-
+    return _gbl_clone_layer(layer, template_dict, function_chain_ra, out_drop_raster = generate_out_drop_raster)
 
 def fill(input_surface_raster,        
          zlimit=None):
@@ -837,6 +954,19 @@ def nibble(input_raster,
         }
     }    
     
+    nibble_values_list = ["ALL_VALUES","DATA_ONLY"]
+    if nibble_values is not None:
+        if nibble_values.upper() not in nibble_values_list:
+            raise RuntimeError('nibble_values should be one of the following '+ str(nibble_values_list))
+        template_dict["rasterFunctionArguments"]["nibble_values"] = nibble_values
+
+
+    nibble_no_data_list = ["PRESERVE_NODATA","PROCESS_NODATA"]
+    if nibble_no_data is not None:
+         if nibble_no_data.upper() not in nibble_no_data_list:
+             raise RuntimeError('nibble_nodata should be one of the following '+ str(nibble_no_data_list))
+         template_dict["rasterFunctionArguments"]["nibble_nodata"] = nibble_no_data
+
     if input_zone_raster is not None:
         layer3, input_zone_raster, raster_ra3 = _raster_input(input_zone_raster)
         template_dict["rasterFunctionArguments"]["in_zone_raster"] = input_zone_raster
@@ -929,3 +1059,511 @@ def watershed(input_flow_direction_raster,
     function_chain_ra["rasterFunctionArguments"]["in_pour_point_data"] = raster_ra2
         
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+
+
+def calculate_travel_cost(in_source_data,
+                          in_cost_raster=None,
+                          in_surface_raster=None,
+                          in_horizontal_raster=None,
+                          in_vertical_raster=None,
+                          horizontal_factor="BINARY",
+                          vertical_factor="BINARY",
+                          maximum_distance=None,
+                          source_cost_multiplier=None,
+                          source_start_cost=None,
+                          source_resistance_rate=None,
+                          source_capacity=None,
+                          source_direction="FROM_SOURCE",
+                          allocation_field=None,
+                          generate_out_allocation_raster=False,
+                          generate_out_backlink_raster=False):
+    """
+
+    Parameters
+    ----------
+    :param in_source_data : The layer that defines the sources to calculate the distance too. The layer 
+                            can be raster or feature.
+
+    :param in_cost_raster  : A raster defining the impedance or cost to move planimetrically through each cell.
+
+    :param in_surface_raster : A raster defining the elevation values at each cell location.
+    
+    :param in_horizonal_raster : A raster defining the horizontal direction at each cell.
+
+    :param in_vertical_raster : A raster defining the vertical (z) value for each cell.
+
+    :param horizontal_factor : The Horizontal Factor defines the relationship between the horizontal cost 
+                               factor and the horizontal relative moving angle.
+                               Possible values are: "BINARY", "LINEAR", "FORWARD", "INVERSE_LINEAR"
+
+    :param vertical_factor : The Vertical Factor defines the relationship between the vertical cost factor and 
+                            the vertical relative moving angle (VRMA)
+                            Possible values are: "BINARY", "LINEAR", "SYMMETRIC_LINEAR", "INVERSE_LINEAR",
+                            "SYMMETRIC_INVERSE_LINEAR", "COS", "SEC", "COS_SEC", "SEC_COS"
+
+    :param maximum_distance : The maximum distance to calculate out to. If no distance is provided, a default will 
+                             be calculated that is based on the locations of the input sources.
+
+    :param source_cost_multiplier : Multiplier to apply to the cost values.
+
+    :param source_start_cost : The starting cost from which to begin the cost calculations.
+
+    :param source_resistance_rate : This parameter simulates the increase in the effort to overcome costs 
+                                    as the accumulative cost increases.
+
+    :param source_capacity : Defines the cost capacity for the traveler for a source.
+
+    :param source_direction : Defines the direction of the traveler when applying horizontal and vertical factors, 
+                              the source resistance rate, and the source starting cost.
+                              Possible values: FROM_SOURCE, TO_SOURCE
+
+    :param allocation_field : A field on theinputSourceRasterOrFeatures layer that holds the values that define each source.
+
+    :param generate_out_backlink_raster  : Boolean, determines whether out_backlink_raster should be generated or not.
+                                           Set this parameter to True, in order to generate the out_backlink_raster.
+                                           If set to true, the output will be a named tuple with name values being
+                                           output_distance_service and output_backlink_service.
+                                           eg,
+                                           out_layer = calculate_travel_cost(in_source_data
+                                                                                generate_out_backlink_raster=True)
+                                           out_var = out_layer.save()
+                                           then,
+                                           out_var.output_distance_service -> gives you the output distance imagery layer item
+                                           out_var.output_backlink_service -> gives you the output backlink raster imagery layer item
+
+    :param generate_out_allocation_raster : Boolean, determines whether out_allocation_raster should be generated or not.
+                                            Set this parameter to True, in order to generate the out_backlink_raster.
+                                            If set to true, the output will be a named tuple with name values being
+                                            output_distance_service and output_allocation_service.
+                                            eg,
+                                            out_layer = calculate_travel_cost(in_source_data
+                                                                                generate_out_allocation_raster=False)
+                                            out_var = out_layer.save()
+                                            then,
+                                            out_var.output_distance_service -> gives you the output distance imagery layer item
+                                            out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    :return: output_raster : output raster with function applied
+    """
+    if isinstance (in_source_data, ImageryLayer):
+        layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
+    else:
+        raster_ra1 = _layer_input(in_source_data)
+        input_source_data = raster_ra1
+        layer1=raster_ra1
+
+
+    if in_cost_raster is not None:
+        layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
+       
+    if in_surface_raster is not None:
+        layer3, in_surface_raster, raster_ra3 = _raster_input(in_surface_raster)
+    if in_horizontal_raster is not None:
+        layer4, in_horizontal_raster, raster_ra4 = _raster_input(in_horizontal_raster)
+    if in_vertical_raster is not None:
+        layer5, in_vertical_raster, raster_ra5 = _raster_input(in_vertical_raster)
+            
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "CalculateTravelCost_sa",
+            "PrimaryInputParameterName" : "in_source_data",
+            "OutputRasterParameterName":"out_distance_raster",
+            "in_source_data" : input_source_data
+        }
+    }
+    
+    if in_cost_raster is not None:
+        template_dict["rasterFunctionArguments"]["in_cost_raster"] = in_cost_raster
+
+    if in_surface_raster is not None:
+        template_dict["rasterFunctionArguments"]["in_surface_raster"] = in_surface_raster
+
+    if in_horizontal_raster is not None:
+        template_dict["rasterFunctionArguments"]["in_horizontal_raster"] = in_horizontal_raster
+
+    if in_vertical_raster is not None:
+        template_dict["rasterFunctionArguments"]["in_vertical_raster"] = in_vertical_raster
+
+    horizontal_factor_list = ["BINARY", "LINEAR", "FORWARD", "INVERSE_LINEAR"]
+    if horizontal_factor.upper() not in horizontal_factor_list:
+        raise RuntimeError('horizontal_factor should be one of the following '+ str(horizontal_factor_list))
+    template_dict["rasterFunctionArguments"]["horizontal_factor"] = horizontal_factor
+
+    vertical_factor_list = ["BINARY", "LINEAR", "SYMMETRIC_LINEAR", "INVERSE_LINEAR",
+                            "SYMMETRIC_INVERSE_LINEAR", "COS", "SEC", "COS_SEC", "SEC_COS"]
+    if vertical_factor.upper() not in vertical_factor_list:
+        raise RuntimeError('vertical_factor should be one of the following '+ str(vertical_factor_list))
+    template_dict["rasterFunctionArguments"]["vertical_factor"] = vertical_factor
+
+    if maximum_distance is not None:
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = maximum_distance
+
+    if source_cost_multiplier is not None:
+        template_dict["rasterFunctionArguments"]["source_cost_multiplier"] = source_cost_multiplier
+
+    if source_start_cost is not None:
+        template_dict["rasterFunctionArguments"]["source_start_cost"] = source_start_cost
+
+    if source_resistance_rate is not None:
+        template_dict["rasterFunctionArguments"]["source_resistance_rate"] = source_resistance_rate
+
+    if source_capacity is not None:
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
+
+    source_direction_list = ["FROM_SOURCE","TO_SOURCE"]
+
+    if source_direction.upper() not in source_direction_list:
+        raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list) )
+    template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
+
+    if allocation_field is not None:
+        template_dict["rasterFunctionArguments"]["allocation_field"] = allocation_field
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra['rasterFunctionArguments']["in_source_data"] = raster_ra1
+    if in_cost_raster is not None:
+        function_chain_ra['rasterFunctionArguments']["in_cost_raster"] = raster_ra2
+
+    if in_surface_raster is not None:
+        function_chain_ra['rasterFunctionArguments']["in_surface_raster"] = raster_ra3
+
+    if in_horizontal_raster is not None:
+        function_chain_ra['rasterFunctionArguments']["in_horizontal_raster"] = raster_ra4
+
+    if in_vertical_raster is not None:
+        function_chain_ra['rasterFunctionArguments']["in_vertical_raster"] = raster_ra5
+
+    if isinstance(in_source_data, ImageryLayer):
+        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_backlink_raster = generate_out_backlink_raster)
+    else:
+        return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_backlink_raster = generate_out_backlink_raster)
+        
+def kernel_density(in_features,
+                   population_field,
+                   cell_size=None,
+                   search_radius=None,
+                   area_unit_scale_factor="SQUARE_MAP_UNITS",
+                   out_cell_values="DENSITIES",
+                   method="PLANAR"):
+    """
+    Calculates a magnitude-per-unit area from point or polyline features using a kernel function to 
+    fit a smoothly tapered surface to each point or polyline. 
+    For more information, see 
+    http://pro.arcgis.com/en/pro-app/help/data/imagery/kernel-density-global-function.htm
+
+    :param in_features     : The input point or line features for which to calculate the density
+    :param population_field: Field denoting population values for each feature. The Population 
+                             Field is the count or quantity to be spread across the landscape to 
+                             create a continuous surface. Values in the population field may be 
+                             integer or floating point.
+    :param cell_size      :  The pixel size for the output raster dataset. If the Cellsize has 
+                             been set in the geoprocessing Environments it will be the default.
+    :search_radius        :  The search radius within which to calculate density. Units are 
+                             based on the linear unit of the projection.
+    :param area_unit_scale_factor :The desired area units of the output density values.
+                             -SQUARE_MAP_UNITS-For the square of the linear units of the output spatial reference.
+                             -SQUARE_MILES-For (U.S.) miles.
+                             -SQUARE_KILOMETERS-For kilometers.
+                             -ACRES For (U.S.) acres.
+                             -HECTARES-For hectares.
+                             -SQUARE_METERS-For meters.
+                             -SQUARE_YARDS-For (U.S.) yards.
+                             -SQUARE_FEET-For (U.S.) feet.
+                             -SQUARE_INCHES-For (U.S.) inches.
+                             -SQUARE_CENTIMETERS-For centimeters.
+                             -SQUARE_MILLIMETERS-For millimeters.
+    :param out_cell_values :  Determines what the values in the output raster represent.
+                             -DENSITIES-The output values represent the predicted density value. This is the default.
+                             -EXPECTED_COUNTS-The output values represent the predicted amount of the phenomenon within each 
+                             pixel. Since the pixel value is linked to the specified Cellsize, the resulting raster cannot be 
+                             resampled to a different pixel size and still represent the amount of the phenomenon.
+    :param method          : Determines whether to use a shortest path on a spheroid (geodesic) or a flat earth (planar) method.
+                             -PLANAR-Uses planar distances between the features. This is the default.
+                             -GEODESIC-Uses geodesic distances between features. This method takes into account the curvature 
+                             of the spheroid and correctly deals with data near the poles and the International dateline.
+    :return                :  output raster
+    """
+
+    input_features = _layer_input(in_features)
+        
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "KernelDensity_sa",           
+            "PrimaryInputParameterName":"in_features",
+            "OutputRasterParameterName":"out_raster",
+            "in_features": input_features,
+            "population_field":population_field,
+            "RasterInfo":{"blockWidth" : 2048,
+                          "blockHeight":256,
+                          "bandCount":1,
+                          "pixelType":9,
+                          "firstPyramidLevel":1,
+                          "maximumPyramidLevel":30,
+                          "pixelSizeX":0,
+                          "pixelSizeY" :0,
+                          "type":"RasterInfo"}
+        }
+    }
+
+    if search_radius is not None:
+        template_dict["rasterFunctionArguments"]["search_radius"] = search_radius
+
+    if cell_size is not None:
+        template_dict["rasterFunctionArguments"]["cell_size"] = cell_size
+    
+    if area_unit_scale_factor is not None: 
+        area_unit_scale_factor_list = ["SQUARE_MAP_UNITS","SQUARE_MILES", "SQUARE_KILOMETERS", "ACRES","HECTARES","SQUARE_METERS","SQUARE_YARDS"
+                                       "SQUARE_FEET","SQUARE_INCHES", "SQUARE_CENTIMETERS","SQUARE_MILLIMETERS"]
+        if area_unit_scale_factor.upper() not in area_unit_scale_factor_list:
+            raise RuntimeError('area_unit_scale_factor should be one of the following '+ str(area_unit_scale_factor_list))
+        template_dict["rasterFunctionArguments"]["area_unit_scale_factor"] = area_unit_scale_factor
+
+    out_cell_values_list = ["DENSITIES", "EXPECTED_COUNTS"]
+    if out_cell_values.upper() not in out_cell_values_list:
+        raise RuntimeError('out_cell_values should be one of the following '+ str(out_cell_values_list))
+    template_dict["rasterFunctionArguments"]["out_cell_values"] = out_cell_values
+
+    method_list = ["PLANAR", "GEODESIC"]
+    if method.upper() not in method_list:
+        raise RuntimeError('method should be one of the following '+ str(method_list))
+    template_dict["rasterFunctionArguments"]["method"] = method
+
+    if isinstance(in_features, Item):
+        in_features = in_features.layers[0]
+    newlyr = ImageryLayer(in_features._url, in_features._gis)
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    newlyr._uses_gbl_function = True
+    return newlyr
+
+
+def cost_path(in_destination_data,
+              in_cost_distance_raster,
+              in_cost_backlink_raster,
+              path_type="EACH_CELL",
+              destination_field=None,
+             ):
+    """
+    Calculates the least-cost path from a source to a destination.
+
+    Parameters
+    ----------
+    :param in_destination_data     :A raster or feature dataset that identifies those cells from which the least-cost 
+                                    path is determined to the least costly source. If the input is a raster, the input 
+                                    consists of cells that have valid values (zero is a valid value), and the remaining 
+                                    cells must be assigned NoData.
+    :param in_cost_distance_raster :The name of a cost distance raster to be used to determine the least-cost path from 
+                                    the destination locations to a source. The cost distance raster is usually created 
+                                    with the Cost Distance, Cost Allocation or Cost Back Link tools. The cost distance 
+                                    raster stores, for each cell, the minimum accumulative cost distance over a cost 
+                                    surface from each cell to a set of source cells.
+    :param in_cost_backlink_raster :The name of a cost back link raster used to determine the path to return to a source 
+                                    via the least-cost path. For each cell in the back link raster, a value identifies 
+                                    the neighbor that is the next cell on the least accumulative cost path from the cell
+                                    to a single source cell or set of source cells.
+    :param path_type               :A keyword defining the manner in which the values and zones on the input destination 
+                                    data will be interpreted in the cost path calculations.
+                                    EACH_CELL — For each cell with valid values on the input destination data, a least-cost
+                                    path is determined and saved on the output raster. With this option, each cell of the 
+                                    input destination data is treated separately, and a least-cost path is determined for 
+                                    each from cell.
+                                    EACH_ZONE — For each zone on the input destination data, a least-cost path is determined
+                                    and saved on the output raster. With this option, the least-cost path for each zone 
+                                    begins at the cell with the lowest cost distance weighting in the zone.
+                                    BEST_SINGLE — For all cells on the input destination data, the least-cost path is derived 
+                                    from the cell with the minimum of the least-cost paths to source cells.
+    :param destination_field       :The field used to obtain values for the destination locations. Input feature data must 
+                                    contain at least one valid field.
+    
+    :return: output raster with function applied
+    """        
+    layer1, in_destination_data, raster_ra1 = _raster_input(in_destination_data)  
+    layer2, in_cost_distance_raster, raster_ra2 = _raster_input(in_cost_distance_raster)
+    layer3,  in_cost_backlink_raster, raster_ra3 = _raster_input(in_cost_backlink_raster)
+    
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "CostPath_sa",           
+            "PrimaryInputParameterName":"in_destination_data",
+            "OutputRasterParameterName":"out_raster",
+            "in_destination_data": in_destination_data, 
+            "in_cost_distance_raster": in_cost_distance_raster,
+            "in_cost_backlink_raster": in_cost_backlink_raster   
+        }
+    }    
+
+    if path_type is not None:
+        path_type_list = ["EACH_CELL", "EACH_ZONE", "BEST_SINGLE"]
+        if path_type.upper() not in path_type_list:
+            raise RuntimeError('path_type should be one of the following '+ str(path_type_list))
+        template_dict["rasterFunctionArguments"]["path_type"] = path_type
+    
+    if destination_field is not None:
+        template_dict["rasterFunctionArguments"]["destination_field"] = destination_field
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["in_destination_data"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_cost_distance_raster"] = raster_ra2
+    function_chain_ra["rasterFunctionArguments"]["in_cost_backlink_raster"] = raster_ra3
+
+    return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+
+def euclidean_direction (in_source_data,
+                         cell_size=None,
+                         max_distance=None):
+    """
+    Calculates, for each cell, the Euclidean distance to the closest source. 
+
+    Parameters
+    ----------
+    :param in_source_data:  The input source locations. This is a raster or feature dataset that 
+                            identifies the cells or locations to which the Euclidean distance for 
+                            every output cell location is calculated. For rasters, the input type 
+                            can  be integer or floating point.
+    :param cell_size:       Defines the threshold that the accumulative distance values cannot 
+                            exceed. If an accumulative Euclidean distance value exceeds this 
+                            value, the output value for the cell location will be NoData. The default
+                            distance is to the edge of the output raster.
+    :param max_distance:    The cell size at which the output raster will be created. This will be the
+                            value in the environment if it is explicitly set. If it is not set in the 
+                            environment, the default cell size will depend on if the input source data 
+                            is a raster or a feature, as follows: If the source is raster, the output 
+                            will have that same cell size. If the source is feature, the output will 
+                            have a cell size determined by the shorter of the width or height of the 
+                            extent of input feature, in the input spatial reference, divided by 250.
+    :return: output raster with function applied
+    """
+    layer, in_source_data, raster_ra = _raster_input(in_source_data)
+                  
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "EucDirection_sa",           
+            "PrimaryInputParameterName":"in_source_data",
+            "OutputRasterParameterName":"out_direction_raster",
+            "in_source_data": in_source_data,
+                
+        }
+    }
+    
+    if cell_size is not None:
+        template_dict["rasterFunctionArguments"]["cell_size"] = cell_size
+    
+    if max_distance is not None:
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra
+
+    return _gbl_clone_layer(layer, template_dict, function_chain_ra)
+
+def cost_backlink(in_source_data,
+                  in_cost_raster,
+                  max_distance=None,
+                  source_cost_multiplier=None,
+                  source_start_cost=None,
+                  source_resistance_rate=None,
+                  source_capacity=None,
+                  source_direction="FROM_SOURCE"):
+    """
+    Calculates the least accumulative cost distance for each cell from or to the least-cost
+    source over a cost surface.
+
+    Parameters
+    ----------
+    :param in_source_data: The input raster that identifies the pixels or locations to which the
+                            least accumulated cost distance for every output pixel location is 
+                            calculated. The Source Raster can be an integer or a floating-point value.
+    :param in_cost_raster: A raster defining the cost or impedance to move planimetrically through each pixel.
+                            The value at each pixel location represents the cost-per-unit distance for moving 
+                            through it. Each pixel location value is multiplied by the pixel resolution, while 
+                            also compensating for diagonal movement to obtain the total cost of passing through 
+                            the pixel. 
+    :param max_distance: The threshold that the accumulative cost values cannot exceed. If an accumulative cost
+                            distance exceeds this value, the output value for the pixel location will be NoData. 
+                            The maximum distance defines the extent for which the accumulative cost distances are
+                            calculated. The default distance is to the edge of the output raster.
+    :param source_cost_multiplier: The threshold that the accumulative cost values cannot exceed. If an accumulative
+                            cost distance exceeds this value, the output value for the pixel location will be 
+                            NoData. The maximum distance defines the extent for which the accumulative cost 
+                            distances are calculated. The default distance is to the edge of the output raster.
+    :param source_start_cost: The starting cost from which to begin the cost calculations. This parameter allows
+                            for the specification of the fixed cost associated with a source. Instead of starting
+                            at a cost of 0, the cost algorithm will begin with the value set here.
+                            The default is 0. The value must be 0 or greater. A numeric (double) value or a field
+                            from the Source Raster can be used for this parameter.
+    :param source_resistance_rate: This parameter simulates the increase in the effort to overcome costs as the
+                            accumulative cost increases. It is used to model fatigue of the traveler. The growing
+                            accumulative cost to reach a pixel is multiplied by the resistance rate and added to 
+                            the cost to move into the subsequent pixel.
+                            It is a modified version of a compound interest rate formula that is used to calculate
+                            the apparent cost of moving through a pixel. As the value of the resistance rate increases,
+                            it increases the cost of the pixels that are visited later. The greater the resistance rate, 
+                            the higher the cost to reach the next pixel, which is compounded for each subsequent movement. 
+                            Since the resistance rate is similar to a compound rate and generally the accumulative cost 
+                            values are very large, small resistance rates are suggested, such as 0.005 or even smaller, 
+                            depending on the accumulative cost values.
+                            The default is 0. The values must be 0 or greater. A numeric (double) value or a field from
+                            the Source Raster can be used for this parameter.
+    :param source_capacity: Defines the cost capacity for the traveler for a source. The cost calculations continue for
+                            each source until the specified capacity is reached.
+                            The default capacity is to the edge of the output raster. The values must be greater than 0. 
+                            A double numeric value or a field from the Source Raster can be used for this parameter.
+    :param source_direction: Defines the direction of the traveler when applying the source resistance rate and the source
+                            starting cost.
+                            FROM_SOURCE - The source resistance rate and source starting cost will be applied beginning
+                            at the input source and moving out to the nonsource cells. This is the default.
+                            TO_SOURCE - The source resistance rate and source starting cost will be applied beginning at
+                            each nonsource cell and moving back to the input source.
+                            Either specify the From Source or To Source keyword, which will be applied to all sources,
+                            or specify a field in the Source Raster that contains the keywords to identify the direction
+                            of travel for each source. That field must contain the string From Source or To Source.
+    
+    :return: output raster with function applied
+    """        
+    layer1, in_source_data, raster_ra1 = _raster_input(in_source_data)  
+    layer2, in_cost_raster, raster_ra2 = _raster_input(in_cost_raster)
+                            
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "CostBackLink_sa",           
+            "PrimaryInputParameterName":"in_source_data",
+            "OutputRasterParameterName":"out_backlink_raster",
+            "in_source_data": in_source_data, 
+            "in_cost_raster": in_cost_raster
+             
+        }
+    }    
+    
+    if max_distance is not None:
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = max_distance
+    
+    if source_cost_multiplier is not None:
+        template_dict["rasterFunctionArguments"]["source_cost_multiplier"] = source_cost_multiplier
+    
+    if source_start_cost is not None:
+        template_dict["rasterFunctionArguments"]["source_start_cost"] = source_start_cost
+    
+    if source_resistance_rate is not None:
+        template_dict["rasterFunctionArguments"]["source_resistance_rate"] = source_resistance_rate
+    
+    if source_capacity is not None:
+        template_dict["rasterFunctionArguments"]["source_capacity"] = source_capacity
+    
+    source_direction_list = ["FROM_SOURCE","TO_SOURCE"]
+    if source_direction.upper() not in source_direction_list:
+        raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list) )
+    template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
+    
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["in_source_data"] = raster_ra1
+    function_chain_ra["rasterFunctionArguments"]["in_cost_raster"] = raster_ra2
+
+    return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
+

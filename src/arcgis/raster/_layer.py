@@ -53,7 +53,8 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
         self._extent = None
-        self._uses_gbl_function = False
+        self._uses_gbl_function = False               
+        self._other_outputs = {}
         # self._extent = self.properties.initialExtent
 
     @property
@@ -2349,13 +2350,16 @@ class ImageryLayer(Layer):
             else:
                 raise RuntimeError('You need to be signed in to a GIS to create Items')
         else:
-            from .analytics import is_supported, generate_raster
+            from .analytics import is_supported, generate_raster, save_ra
             if self._fnra is None:
                 from .functions import identity
                 identity_layer = identity(self)
                 self._fnra = identity_layer._fnra
 
             if is_supported(g):
+                if self._uses_gbl_function:
+                    if True in self._other_outputs.values() or self._fnra['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
+                        return _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g)
                 return generate_raster(self._fnra, output_name=output_name, gis=g)
             else:
                 raise RuntimeError('This GIS does not support raster analysis.')
