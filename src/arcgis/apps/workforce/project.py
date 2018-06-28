@@ -127,6 +127,11 @@ class Project:
         self._update_data()
 
     @property
+    def integrations(self):
+        """The :class:`~arcgis.apps.workforce.managers.AssignmentIntegrationManager` for the project"""
+        return AssignmentIntegrationManager(self)
+
+    @property
     def id(self):
         """The item id of the project"""
         return self._item['id']
