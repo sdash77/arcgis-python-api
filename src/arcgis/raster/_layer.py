@@ -2097,7 +2097,7 @@ class ImageryLayer(Layer):
 
 
     def mosaic_by(self, method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=None, asc=True, where=None, fids=None,
-           muldidef=None, op="first"):
+           muldidef=None, op="first", item_rendering_rule=None):
         """
         Defines how individual images in this layer should be mosaicked. It specifies selection,
         mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
@@ -2151,6 +2151,8 @@ class ImageryLayer(Layer):
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
                               min, max or mean of the pixel values, or blend them.
+        -----------------     --------------------------------------------------------------------
+        item_rendering_rule   optional item rendering rule, applied on items before mosaicking.
         =================     ====================================================================
 
         :return: a mosaic rule defined in the format at
@@ -2179,7 +2181,7 @@ class ImageryLayer(Layer):
             if not isinstance(viewpt, Geometry):
                 viewpt = Geometry(viewpt)
             mosaic_rule['mosaicMethod'] = 'esriMosaicViewpoint'
-            mosaic_rule['viewpt'] = viewpt
+            mosaic_rule['viewpoint'] = viewpt
 
         if sort_by is not None:
             mosaic_rule['mosaicMethod'] = 'esriMosaicAttribute'
@@ -2190,6 +2192,9 @@ class ImageryLayer(Layer):
         if lock_rasters is not None:
             mosaic_rule['mosaicMethod'] = 'esriMosaicLockRaster'
             mosaic_rule['lockRasterIds'] = lock_rasters
+
+        if item_rendering_rule is not None:
+            mosaic_rule['itemRenderingRule'] = item_rendering_rule
 
         if self._fnra is not None:
             self._fnra["rasterFunctionArguments"] = _find_and_replace_mosaic_rule(self._fnra["rasterFunctionArguments"], mosaic_rule, self._url)
