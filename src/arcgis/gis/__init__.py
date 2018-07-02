@@ -2698,6 +2698,13 @@ class ContentManager(object):
         outside_org       Optional boolean. Controls whether to search outside your org (default is False, do not search ourside your org).
         ----------------  --------------------------------------------------------------------------
         categories        Optional string or list. A string of category values.
+        ----------------  --------------------------------------------------------------------------
+        category_filters  Optional string. A comma separated list of up to 3 category terms to
+                          search items that have matching categories.
+
+                          Up to 2 category_filters parameter are allowed per request. It can not be
+                          used together with categories to search in a request.
+
         ================  ==========================================================================
 
         :return:
