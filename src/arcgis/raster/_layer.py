@@ -23,6 +23,25 @@ def _get_input_raster(fnarg_ra, fnarg):
             input_raster_dict = {"url":fnarg_ra[key],"renderingRule":fnarg}
             return input_raster_dict
 
+def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
+    for key,value in fnarg_ra.items():
+        if key == "Raster" and isinstance(value,dict)  and not (value.keys() & {"url"}):
+            return _find_and_replace_mosaic_rule(value["rasterFunctionArguments"], fnarg)
+        if key == "Rasters":
+            if isinstance(value,list):
+                for each_element in value:
+                    return _find_and_replace_mosaic_rule(each_element["rasterFunctionArguments"], fnarg)
+        elif (key == "Raster"  or key == "Rasters"):
+            if isinstance(value,dict):
+                if value.keys() & {"url"}:
+                    value["mosaicRule"] = mosaic_rule
+            else:
+                fnarg_ra[key]={}
+                fnarg_ra[key]["url"] = url
+                fnarg_ra[key]["mosaicRule"] = mosaic_rule
+                 
+    return fnarg_ra
+
 class ImageryLayer(Layer):
     def __init__(self, url, gis=None):
         super(ImageryLayer, self).__init__(url, gis)
@@ -34,7 +53,8 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
         self._extent = None
-        self._uses_gbl_function = False
+        self._uses_gbl_function = False               
+        self._other_outputs = {}
         # self._extent = self.properties.initialExtent
 
     @property
@@ -347,15 +367,17 @@ class ImageryLayer(Layer):
             params['mosaicRule'] = mosaic_rule
         elif self._mosaic_rule is not None:
             params['mosaicRule'] = self._mosaic_rule
-
-        if isinstance(rendering_rules, dict):
-            params['renderingRule'] = rendering_rules
-        elif isinstance(rendering_rules, list):
-            params['renderingRules'] = rendering_rules
+        
+        if rendering_rules is not None:
+            if isinstance(rendering_rules, dict):
+                params['renderingRule'] = rendering_rules
+            elif isinstance(rendering_rules, list):
+                params['renderingRules'] = rendering_rules
+            else:
+                raise ValueError("Invalid Rendering Rules - It can be only be a dictionary or a list type object")
         elif self._fn:
             params['renderingRule'] = self._fn
-        else:
-            raise ValueError("Invalid Rendering Rules")
+
         if pixel_size is not None:
             params['pixelSize'] = pixel_size
         if time_extent is not None:
@@ -1657,8 +1679,8 @@ class ImageryLayer(Layer):
             params['pixelSize'] = pixel_size
         if rendering_rule is not None:
             params['renderingRule'] = rendering_rule
-        elif 'renderingRule' in self._fn:
-            params['renderingRule'] = self._fn['renderingRule']
+        elif self._fn is not None:
+            params['renderingRule'] = self._fn
         if mosaic_rule is not None:
             params['mosaicRule'] = mosaic_rule
         elif self._mosaic_rule is not None:
@@ -2075,7 +2097,7 @@ class ImageryLayer(Layer):
 
 
     def mosaic_by(self, method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=None, asc=True, where=None, fids=None,
-           muldidef=None, op="first"):
+           muldidef=None, op="first", item_rendering_rule=None):
         """
         Defines how individual images in this layer should be mosaicked. It specifies selection,
         mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
@@ -2122,13 +2144,15 @@ class ImageryLayer(Layer):
                               subset of rasters used in the mosaic, be aware that the rasters may
                               not be visible at all scales.
         -----------------     --------------------------------------------------------------------
-        muldidef              optional dict. multidemensional definition used for filtering by
+        muldidef              optional array. multidemensional definition used for filtering by
                               variable/dimensions.
                               See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
         -----------------     --------------------------------------------------------------------
         op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
                               to resolve overlap pixel values: from first or last raster, use the
                               min, max or mean of the pixel values, or blend them.
+        -----------------     --------------------------------------------------------------------
+        item_rendering_rule   optional item rendering rule, applied on items before mosaicking.
         =================     ====================================================================
 
         :return: a mosaic rule defined in the format at
@@ -2157,7 +2181,7 @@ class ImageryLayer(Layer):
             if not isinstance(viewpt, Geometry):
                 viewpt = Geometry(viewpt)
             mosaic_rule['mosaicMethod'] = 'esriMosaicViewpoint'
-            mosaic_rule['viewpt'] = viewpt
+            mosaic_rule['viewpoint'] = viewpt
 
         if sort_by is not None:
             mosaic_rule['mosaicMethod'] = 'esriMosaicAttribute'
@@ -2169,7 +2193,14 @@ class ImageryLayer(Layer):
             mosaic_rule['mosaicMethod'] = 'esriMosaicLockRaster'
             mosaic_rule['lockRasterIds'] = lock_rasters
 
+        if item_rendering_rule is not None:
+            mosaic_rule['itemRenderingRule'] = item_rendering_rule
+
+        if self._fnra is not None:
+            self._fnra["rasterFunctionArguments"] = _find_and_replace_mosaic_rule(self._fnra["rasterFunctionArguments"], mosaic_rule, self._url)
         self._mosaic_rule = mosaic_rule
+
+
 
     @property
     def mosaic_rule(self):
@@ -2324,8 +2355,16 @@ class ImageryLayer(Layer):
             else:
                 raise RuntimeError('You need to be signed in to a GIS to create Items')
         else:
-            from .analytics import is_supported, generate_raster
+            from .analytics import is_supported, generate_raster, save_ra
+            if self._fnra is None:
+                from .functions import identity
+                identity_layer = identity(self)
+                self._fnra = identity_layer._fnra
+
             if is_supported(g):
+                if self._uses_gbl_function:
+                    if True in self._other_outputs.values() or self._fnra['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
+                        return _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g)
                 return generate_raster(self._fnra, output_name=output_name, gis=g)
             else:
                 raise RuntimeError('This GIS does not support raster analysis.')

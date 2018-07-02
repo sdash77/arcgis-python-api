@@ -159,8 +159,12 @@ def _get_raster_ra(raster):
         if raster._fnra is not None:
             raster_ra = raster._fnra
         else:
-            raster_ra = raster._url
-
+            raster_ra = {}
+            if raster._mosaic_rule is not None:
+                raster_ra["url"] = raster._url
+                raster_ra["mosaicRule"] = raster._mosaic_rule
+            else:
+                raster_ra = raster._url
 
             #if raster._mosaic_rule is not None:
             #    raster_ra['mosaicRule'] = raster._mosaic_rule
