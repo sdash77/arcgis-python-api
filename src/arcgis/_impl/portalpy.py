@@ -1590,7 +1590,8 @@ class Portal(object):
         return results
 
     def search(self, q, bbox=None, sort_field='title', sort_order='asc',
-               max_results=1000, outside_org=False, categories=None):
+               max_results=1000, outside_org=False, categories=None,
+               category_filters=None):
 
 
         if not outside_org:
@@ -1601,13 +1602,14 @@ class Portal(object):
                 q = 'accountid:' + accountid
 
         count = 0
-        resp = self._search_page(q, bbox,  1, min(max_results, 100), sort_field, sort_order, categories)
+        resp = self._search_page(q, bbox,  1, min(max_results, 100), sort_field, sort_order,
+                                 categories, category_filters)
         results = resp.get('results')
         count += int(resp['num'])
         nextstart = int(resp['nextStart'])
         while count < max_results and nextstart > 0:
             resp = self._search_page(q, bbox, nextstart, min(max_results - count, 100),
-                                     sort_field, sort_order, categories)
+                                     sort_field, sort_order, categories, category_filters)
             results.extend(resp['results'])
             count += int(resp['num'])
             nextstart = int(resp['nextStart'])
@@ -2383,7 +2385,7 @@ class Portal(object):
             path = "{}/{}".format(path, folderid)
         return self.con.post(path, postdata)
 
-    def _search_page(self, q=None, bbox=None, start=1, num=10, sortfield='', sortorder='asc', categories=None):
+    def _search_page(self, q=None, bbox=None, start=1, num=10, sortfield='', sortorder='asc', categories=None, category_filters=None):
         _log.info('Searching items (q=' + str(q) + ', bbox=' + str(bbox) \
                   + ', start=' + str(start) + ', num=' + str(num) + ')')
         postdata = self._postdata()
@@ -2391,7 +2393,10 @@ class Portal(object):
                           'sortField': sortfield, 'sortOrder': sortorder
                           })
         if categories is not None:
-            postdata['categoryFilters'] = categories
+            postdata['categories'] = categories
+        if category_filters is not None:
+            postdata['categoryFilters'] = category_filters
+
         return self.con.post('search', postdata)
 
 

@@ -2662,7 +2662,8 @@ class ContentManager(object):
                query, item_type=None,
                sort_field='avgRating', sort_order='desc',
                max_items=10, outside_org=False,
-               categories=None):
+               categories=None,
+               category_filters=None):
         """ Searches for portal items.
 
         .. note::
@@ -2740,7 +2741,8 @@ class ContentManager(object):
                 query += ' (type:"' + item_type +'")'
         if isinstance(categories, list):
             categories = ",".join(categories)
-        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org, categories=categories)
+        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org,
+                                    categories=categories, category_filters=category_filters)
         for item in items:
             itemlist.append(Item(self._gis, item['id'], item))
         return itemlist
