@@ -6324,7 +6324,7 @@ class Item(dict):
         file_type              Optional string.  Some formats are not automatically detected, when this occurs, the
                                file_type can be specified: serviceDefinition,shapefile,csv,
                                tilePackage, featureService, featureCollection, fileGeodatabase,
-                               geojson, scenepackage, vectortilepackage, imageCollection,
+                               GeoJson, scenepackage, vectortilepackage, imageCollection,
                                mapService, and sqliteGeodatabase are valid entries. This is an
                                optional parameter.
         -------------------    ---------------------------------------------------------------
