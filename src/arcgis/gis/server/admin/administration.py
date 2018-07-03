@@ -31,7 +31,7 @@ class Server(BaseServer):
 
                            The URL should be formatted as follows:
                            <scheme>://<fully_qualified_domain_name>:<port (optional)>/<web adaptor>/admin
-                           
+
                            Note: Using the fully-qualified domain name to the server, also known as the
                            Web Context URL, is recommended as generally the SSL Certificate binding for
                            the web server uses this hostname.
@@ -557,9 +557,8 @@ class Server(BaseServer):
         cause all of the resources to be cleaned up.
         """
         if self._sitemanager is None:
-            if self._sitemanager is None:
-                self._sitemanager = SiteManager(self._sm)
-            return self._sitemanager
+            self._sitemanager = SiteManager(self)
+        return self._sitemanager
     #----------------------------------------------------------------------
     @property
     def _clusters(self):
