@@ -2662,7 +2662,8 @@ class ContentManager(object):
                query, item_type=None,
                sort_field='avgRating', sort_order='desc',
                max_items=10, outside_org=False,
-               categories=None):
+               categories=None,
+               category_filters=None):
         """ Searches for portal items.
 
         .. note::
@@ -2697,6 +2698,13 @@ class ContentManager(object):
         outside_org       Optional boolean. Controls whether to search outside your org (default is False, do not search ourside your org).
         ----------------  --------------------------------------------------------------------------
         categories        Optional string or list. A string of category values.
+        ----------------  --------------------------------------------------------------------------
+        category_filters  Optional string. A comma separated list of up to 3 category terms to
+                          search items that have matching categories.
+
+                          Up to 2 category_filters parameter are allowed per request. It can not be
+                          used together with categories to search in a request.
+
         ================  ==========================================================================
 
         :return:
@@ -2740,7 +2748,8 @@ class ContentManager(object):
                 query += ' (type:"' + item_type +'")'
         if isinstance(categories, list):
             categories = ",".join(categories)
-        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org, categories=categories)
+        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org,
+                                    categories=categories, category_filters=category_filters)
         for item in items:
             itemlist.append(Item(self._gis, item['id'], item))
         return itemlist
@@ -6355,7 +6364,7 @@ class Item(dict):
                 fileType = 'tilePackage'
             elif self['type'] == 'SQLite Geodatabase':
                 fileType = 'sqliteGeodatabase'
-            elif self['type'] == 'GeoJson':
+            elif self['type'] in ['GeoJson', 'geojson']:
                 fileType = 'geojson'
             elif self['type'] == 'Feature Service' and \
                  'Spatiotemporal' in self['typeKeywords']:
