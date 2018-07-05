@@ -145,6 +145,11 @@ def geocode_locations(input_layer,
         params['geocode_service_url'] = geocode_service_url
     elif isinstance(geocode_service, Geocoder):
         geocode_service = geocode_service.url
+        params['geocode_service_url'] = geocode_service_url
+    elif isinstance(geocode_service, str):
+        params['geocode_service_url'] = geocode_service
+    else:
+        raise ValueError("geocode_service_url must be a string or GeoCoder")
 
     if geocode_parameters is None:
         from arcgis.geoprocessing._tool import Toolbox
@@ -187,11 +192,11 @@ def geocode_locations(input_layer,
 
 def detect_incidents(input_layer,
                      track_fields,
-                           start_condition_expression,
-                           end_condition_expression,
-                           output_mode="AllFeatures",
-                           output_name=None,
-                           gis=None):
+                     start_condition_expression,
+                     end_condition_expression=None,
+                     output_mode="AllFeatures",
+                     output_name=None,
+                     gis=None):
     """
     The Detect Incidents task works with a time-enabled layer of points,
     lines, areas, or tables that represents an instant in time. Using

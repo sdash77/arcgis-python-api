@@ -168,14 +168,9 @@ def find_hot_spots(
     time_step_interval_unit=None,
     time_step_alignment=None,
     time_step_reference=None,
-    cell_size=None,
-    cell_size_units=None,
-    shape_type=None,
     output_name=None,
     gis=None):
     """
-
-
 
     Parameters:
 
@@ -200,12 +195,6 @@ def find_hot_spots(
           Choice list:['EndTime', 'StartTime', 'ReferenceTime']
 
        time_step_reference: Time Step Reference (_datetime). Optional parameter.
-
-       cell_size: optional integer determining the grid size.
-
-       cell_size_units: optional string. The unit of the cell size.
-
-       shape_type: optional string.  The cell shape.
 
        output_name: Output Features Name (str). Optional parameter.
 
@@ -251,9 +240,9 @@ def find_hot_spots(
         "time_step_interval_unit": (str, "timeStepIntervalUnit"),
         "time_step_alignment": (str, "timeStepAlignment"),
         "time_step_reference": (_datetime, "timeStepReference"),
-        "cell_size" : (int, "cellSize"),
-        "cell_size_units": (str, "cellSizeUnits"),
-        "shape_type" : (str, "shapeType"),
+        #"cell_size" : (int, "cellSize"),
+        #"cell_size_units": (str, "cellSizeUnits"),
+        #"shape_type" : (str, "shapeType"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
