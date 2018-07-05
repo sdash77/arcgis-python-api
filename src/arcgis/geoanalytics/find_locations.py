@@ -145,6 +145,11 @@ def geocode_locations(input_layer,
         params['geocode_service_url'] = geocode_service_url
     elif isinstance(geocode_service, Geocoder):
         geocode_service = geocode_service.url
+        params['geocode_service_url'] = geocode_service_url
+    elif isinstance(geocode_service, str):
+        params['geocode_service_url'] = geocode_service
+    else:
+        raise ValueError("geocode_service_url must be a string or GeoCoder")
 
     if geocode_parameters is None:
         from arcgis.geoprocessing._tool import Toolbox
