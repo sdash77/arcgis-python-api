@@ -192,11 +192,11 @@ def geocode_locations(input_layer,
 
 def detect_incidents(input_layer,
                      track_fields,
-                           start_condition_expression,
-                           end_condition_expression,
-                           output_mode="AllFeatures",
-                           output_name=None,
-                           gis=None):
+                     start_condition_expression,
+                     end_condition_expression=None,
+                     output_mode="AllFeatures",
+                     output_name=None,
+                     gis=None):
     """
     The Detect Incidents task works with a time-enabled layer of points,
     lines, areas, or tables that represents an instant in time. Using
