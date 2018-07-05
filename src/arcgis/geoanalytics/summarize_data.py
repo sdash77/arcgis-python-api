@@ -727,8 +727,8 @@ summarize_attributes.__annotations__ = {
                          'summary_fields': str,
                          'output_name': str}
 
-def summarize_within(summary_polygons,
-                     summarized_layer,
+def summarize_within(summarized_layer,
+                     summary_polygons=None,
                      bin_type = None,
                      bin_size = None,
                      bin_size_unit = None,
@@ -752,9 +752,9 @@ def summarize_within(summary_polygons,
 
    Parameters:
 
-   summary_polygons: Summary Polygons Layer (feature input). Required parameter.
-
    summarized_layer: Layer To Summarize (feature input). Required parameter.
+
+   summary_polygons: Summary Polygons Layer (feature input). Optional parameter.
 
    bin_type: Output Bin Type (str). Optional parameter.
       Choice list:['Square', 'Hexagon']
