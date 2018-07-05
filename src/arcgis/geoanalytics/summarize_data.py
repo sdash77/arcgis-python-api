@@ -736,6 +736,9 @@ def summarize_within(summarized_layer,
                      weighted_summary_fields = None,
                      sum_shape = True,
                      shape_units = None,
+                     group_by_field=None,
+                     minority_majority=False,
+                     percent_shape=False,
                      output_name = None,
                      gis=None):
     """
@@ -772,6 +775,12 @@ def summarize_within(summarized_layer,
 
    shape_units: Shape Measure Output Unit (str). Optional parameter.
       Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'SquareMeters', 'SquareKilometers', 'Hectares', 'SquareFeet', 'SquareYards', 'SquareMiles', 'Acres']
+
+   group_by_field: This is a field of the summarized_layer features that you can use to calculate statistics separately for each unique attribute value. For example, suppose the sumWithinLayer contains city boundaries and the summaryPolygons features are parcels. One of the fields of the parcels is Status which contains two values: VACANT and OCCUPIED. To calculate the total area of vacant and occupied parcels within the boundaries of cities, use Status as the groupByField field. This parameter is available at ArcGIS Enterprise 10.6.1+.
+
+   minority_majority: This boolean parameter is applicable only when a group_by_field is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values for each group field are calculated. Two new fields are added to the resultLayer prefixed with Majority_ and Minority_. This parameter is available at ArcGIS Enterprise 10.6.1+. The default is false.
+
+   percent_shape: This boolean parameter is applicable only when a group_by_field is specified. If set to true, the percentage of each unique group_by_field value is calculated for each sum within layer polygon. The default is false. This parameter is available at ArcGIS Enterprise 10.6.1+.
 
    output_name: Output Features Name (str). Required parameter.
 
@@ -818,6 +827,9 @@ Returns:
         "weighted_summary_fields": (str, "weightedSummaryFields"),
         "sum_shape": (bool, "sumShape"),
         "shape_units": (str, "shapeUnits"),
+        "group_by_field": (str, "groupByField"),
+        "minority_majority" : (bool, "minorityMajority"),
+        "percent_shape" : (bool, "percentShape"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
@@ -841,6 +853,9 @@ summarize_within.__annotations__ = {
                      'weighted_summary_fields': str,
                      'sum_shape': bool,
                      'shape_units': str,
+                     'group_by_field': str,
+                     'minority_majority' : bool,
+                     'percent_shape' : bool,
                      'output_name': str
                 }
 
