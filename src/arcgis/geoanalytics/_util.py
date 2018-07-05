@@ -82,7 +82,10 @@ def _create_output_service(gis, output_name, output_service_name='Analysis featu
     ok = gis.content.is_service_name_available(output_name, 'Feature Service')
     if not ok:
         raise RuntimeError("A Feature Service by this name already exists: " + output_name)
-
+    if arcgis.env.output_datastore is not None:
+        output_datastore = arcgis.env.output_datastore
+    else:
+        output_datastore = "spatiotemporal"
     createParameters = {
             "currentVersion": 10.2,
             "serviceDescription": "",
@@ -110,7 +113,7 @@ def _create_output_service(gis, output_name, output_service_name='Analysis featu
             "tables": [],
             "name": output_service_name.replace(' ', '_'),
             "options": {
-                "dataSourceType": "spatiotemporal"
+                "dataSourceType": output_datastore
             }
         }
 
