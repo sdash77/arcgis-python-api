@@ -6748,7 +6748,10 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
-        return self._portal.protect_item(self.itemid, self.owner, folder, enable)
+        res = self._portal.protect_item(self.itemid, self.owner, folder, enable)
+        self._hydrated = False
+        self._hydrate()
+        return res
 
     def _check_publish_status(self, ret, folder):
         """ Internal method to check the status of a publishing job.
