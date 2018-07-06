@@ -22,7 +22,12 @@ def create_uid():
 def _date_handler(obj):
     import numpy
     if isinstance(obj, datetime.datetime) or isinstance(obj, date):
-        return local_time_to_online(obj)
+        try:
+            return local_time_to_online(obj)
+        except:
+            diff =  (datetime.datetime(1970, 1, 1) - obj)
+            v = - diff.total_seconds() * 1000
+            return int(v)
     elif isinstance(obj, (numpy.int32, numpy.int64)):
         return _date_handler(int(obj))
     elif isinstance(obj, decimal.Decimal):
