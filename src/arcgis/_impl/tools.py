@@ -1426,6 +1426,59 @@ class _FeatureAnalysisTools(_AsyncService):
             # Feature Collection
             return arcgis.features.FeatureCollection(job_values['resultLayer'])
 
+    def find_centroids(self,
+                      input_layer,
+                      point_location=False,
+                      output_name=None,
+                      context=None):
+        """
+        The Find Centroids task that finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical workflows where the resulting points can then be used in other analytic workflows.
+
+        For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        input_layer       Required FeatureLayer. The multipoint, line, or polygon features that will be used to generate centroid point features.
+        ----------------  ---------------------------------------------------------------
+        point_location    Optional Boolean. A Boolean value that determines the output location of the points.
+
+
+                          + true - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
+                          + false - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
+
+
+        ----------------  ---------------------------------------------------------------
+        output_name       Optional String. Output feature service name.
+        ----------------  ---------------------------------------------------------------
+        context           Optional String. Additional settings such as processing extent and output spatial reference.
+        ================  ===============================================================
+
+        :Returns: dict
+
+        """
+        task = "FindCentroids"
+
+        params = {}
+        params["inputLayer"] = super()._feature_input(input_layer)
+        params['pointLocation'] = point_location
+        if output_name is not None:
+            params["outputName"] = {"serviceProperties": {"name": output_name }}
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info, job_id = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
+        #print(job_values)
+        if output_name is not None:
+            itemid = job_values['outputLayer']['itemId']
+            item = arcgis.gis.Item(self._gis, itemid)
+            return item
+        else:
+            # Feature Collection
+            return arcgis.features.FeatureCollection(job_values['outputLayer'])
 
     def interpolate_points(self,
                        input_layer,
