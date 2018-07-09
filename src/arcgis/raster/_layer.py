@@ -2355,7 +2355,7 @@ class ImageryLayer(Layer):
             else:
                 raise RuntimeError('You need to be signed in to a GIS to create Items')
         else:
-            from .analytics import is_supported, generate_raster, save_ra
+            from .analytics import is_supported, generate_raster, _save_ra
             if self._fnra is None:
                 from .functions import identity
                 identity_layer = identity(self)

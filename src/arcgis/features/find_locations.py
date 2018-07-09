@@ -146,6 +146,45 @@ def find_similar_locations(
         output_name,
         context)
 
+def find_centroids(input_layer,
+                  point_location=False,
+                  output_name=None,
+                  context=None,
+                  gis=None):
+    """
+    The Find Centroids task that finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical workflows where the resulting points can then be used in other analytic workflows.
+
+    For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       Required FeatureLayer. The multipoint, line, or polygon features that will be used to generate centroid point features.
+    ----------------  ---------------------------------------------------------------
+    point_location    Optional Boolean. A Boolean value that determines the output location of the points.
+
+
+                      + True - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
+
+                      + False - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
+
+    ----------------  ---------------------------------------------------------------
+    output_name       Optional String. Output feature service name.
+    ----------------  ---------------------------------------------------------------
+    context           Optional String. Additional settings such as processing extent and output spatial reference.
+    ================  ===============================================================
+
+    :Returns: FeatureCollection or Item
+
+    """
+    gis = _arcgis.env.active_gis if gis is None else gis
+    if gis._portal.is_arcgisonline == False:
+        raise Exception("find_centroids is only available on ArcGIS Online.")
+    return gis._tools.featureanalysis.find_centroids(input_layer,
+                                                     point_location,
+                                                     output_name,
+                                                     context)
+
 """
 def choose_best_facilities():
     '
