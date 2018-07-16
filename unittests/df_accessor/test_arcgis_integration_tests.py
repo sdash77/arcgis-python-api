@@ -182,7 +182,19 @@ def test_featureset_df():
     assert df.spatial._name == 'SHAPE'
     assert hasattr(df, 'spatial')
     assert hasattr(df.SHAPE, 'geom')
-
+# -------------------------------------------------------------------------
+def test_gp():
+    from arcgis.features import FeatureSet
+    gis = GIS()
+    fs = FeatureSet.from_dict(_fs_dict)
+    df = fs.df
+    from arcgis.geoprocessing import import_toolbox
+    vs = import_toolbox('http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer')
+    import arcgis
+    arcgis.env.out_spatial_reference = 4326
+    res = vs.viewshed(df, "5 Miles") # "5 Miles" or LinearUnit(5, 'Miles') can be passed as input
+    assert isinstance(res, FeatureSet)
+    assert len(res) > 0
 
 
 if __name__ == "__main__":
@@ -203,6 +215,6 @@ if __name__ == "__main__":
 
     print("################################################################")
     print("   Testing GP")
-    #test_ge()
+    test_gp()
     print("   Testing GP finished")
     print("################################################################")
