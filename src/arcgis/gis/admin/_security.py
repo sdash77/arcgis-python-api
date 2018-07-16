@@ -595,7 +595,7 @@ class SSLCertificates(BasePortalAdmin):
             return False
 
     #----------------------------------------------------------------------
-    def import_certificate(self, certificate, alias):
+    def import_certificate(self, certificate, alias, norestart=False):
         """
         This operation imports a certificate authority's (CA) root and
         intermediate certificates into the keystore.
@@ -612,9 +612,28 @@ class SSLCertificates(BasePortalAdmin):
         certificate                     Required string. The file location of the certificate file
         ---------------------------     --------------------------------------------------------------------
         alias                           Required string. The name of the certificate
+        ---------------------------     --------------------------------------------------------------------
+        norestart                       Optional boolean. Determines if the portal should be prevented from
+                                        restarting after importing the certificate. By default this is false
+                                        and the portal will restart.  Added in 10.6.
         ===========================     ====================================================================
 
         :returns: boolean
+
+        .. code-block:: python
+
+            USAGE: Import a trusted CA or Intermediate SSL Certificate into Portal Admin API
+
+            from arcgis.gis import GIS
+            gis = GIS("https://yourportal.com/portal", "portaladmin", "password")
+            # Get the SSL Certificate class
+            sslmgr = gis.admin.security.ssl
+            # Load a trust CA certificate and restart Portal
+            resp = sslmgr.import_certificate(r'c:\\temp\\myTrustedCA.crt', 'myroot', norestart=False)
+            print(resp)
+
+            # Output
+            True
 
         """
 
@@ -623,6 +642,7 @@ class SSLCertificates(BasePortalAdmin):
 
         params = {
             "alias" : alias,
+            "norestart" : norestart,
             "f" : "json"
         }
         files = {
@@ -688,6 +708,9 @@ class SSLCertificates(BasePortalAdmin):
         """
         List of SSL Certificates as represented in the Portal Admin API
 
+        :returns:
+            List of SSLCertificate objects
+
         .. code-block:: python
 
             USAGE: Print out information about each SSL Certificate
@@ -707,9 +730,6 @@ class SSLCertificates(BasePortalAdmin):
             yourorgroot : CN=YourOrg Enterprise Root, DC=empty, DC=local
             samlcert : CN=YOURPORTAL.COM, OU=Self Signed Certificate
             ca_signed : CN=YourOrg Enterprise Root, DC=empty, DC=local
-
-        :returns:
-            List of SSLCertificate objects
 
         """
 
@@ -731,11 +751,41 @@ class SSLCertificates(BasePortalAdmin):
         alias_name                      Required string. The common name of the certificate.
         ===========================     ====================================================================
 
-        :returns: SSLCertificate
+        :returns: SSLCertificate Object
+
+        .. code-block:: python
+
+            USAGE: Print out information about a specific SSL Certificate by alias name
+
+            from arcgis.gis import GIS
+            gis = GIS("https://yourportal.com/portal", "portaladmin", "password")
+            # Get the SSL Certificate class
+            sslmgr = gis.admin.security.ssl
+            # Get a specific certificate alias and print information
+            ssl = sslmgr.get('portal')
+            for prop in ssl.properties:
+                print(prop, ssl.properties[prop])]))
+
+            # Output
+            aliasName portal
+            issuer CN=YOURPORTAL.COM, OU=Self Signed Certificate
+            subject CN=YOURPORTAL.COM, OU=Self Signed Certificate
+            subjectAlternativeNames []
+            validFrom Fri Sep 15 07:46:45 EDT 2017
+            validUntil Sun Jul 24 07:46:45 EDT 2050
+            keyAlgorithm RSA
+            keySize 2048
+            serialNumber 503b23c6
+            version 3
+            signatureAlgorithm SHA256withRSA
+            keyUsage []
+            md5Fingerprint 76d695d72e46b30ea90013676d559faa
+            sha1Fingerprint 6f36513757c28ad43c2df5e4c7cee581ad18dd1e
+            sha256Fingerprint a051aab19d1ed8ceee7322572b3b1b2abd1ed680d0a1d81d0da84cf0e1a1b6cb
 
         """
         for cert in self.list():
-            if cert.properties['Alias name'].lower() == alias_name.lower():
+            if cert.properties['aliasName'].lower() == alias_name.lower():
                 return cert
             del cert
         return None
