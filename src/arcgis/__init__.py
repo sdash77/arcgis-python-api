@@ -6,6 +6,7 @@ from .gis import GIS
 from .features.analysis import *
 from .geocoding import geocode
 #from .features._data.geodataset import SpatialDataFrame
+from .features.geo import GeoAccessor, GeoSeriesAccessor
 __all__ = ['GIS', 'geocode', 'features',  'geoanalytics', 'geocoding', 'geometry', 'geoprocessing', 'network', 'raster', 'apps',
            'realtime', 'schematics', 'mapping',
              'aggregate_points',

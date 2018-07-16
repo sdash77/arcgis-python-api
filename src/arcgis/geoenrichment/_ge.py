@@ -5,6 +5,7 @@ from arcgis.gis import GIS
 from arcgis.features import SpatialDataFrame
 from arcgis.features import FeatureSet
 from arcgis.geometry import Envelope
+from arcgis.features.geo import _is_geoenabled
 ###########################################################################
 class _GeoEnrichment(object):
     """
@@ -495,8 +496,9 @@ class _GeoEnrichment(object):
 
         :returns: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
-
-        if isinstance(study_areas, SpatialDataFrame):
+        if _is_geoenabled(study_areas):
+            study_areas = [{'FeatureSet' : study_areas.spatial.__feature_set__}]
+        elif isinstance(study_areas, SpatialDataFrame):
             study_areas = [{'FeatureSet' : study_areas.__feature_set__ }]
         elif isinstance(study_areas, FeatureSet):
             study_areas = [{"FeatureSet" : study_areas.df.__feature_set__}]

@@ -605,56 +605,12 @@ class FeatureSet(object):
     def df(self):
         """converts the FeatureSet to a Pandas dataframe. Requires pandas"""
         try:
-            try:
-                import arcpy
-                arcpy_found = True
-            except:
-                arcpy_found = False
-            from pandas.io.json import json_normalize
-            from arcgis.features import SpatialDataFrame
-            if len(self.features) == 0:
-                import pandas as pd
-                return pd.DataFrame()
-            elif self.geometry_type is not None:
-                if self._spatial_reference and \
-                   'wkt' in self._spatial_reference.keys():
-                    sr = SpatialReference(self._spatial_reference)
-                elif self._spatial_reference and \
-                     'wkid' in self._spatial_reference:
-                    sr = SpatialReference(self._spatial_reference)
-                else:
-                    sr = None
-                geoms = []
-                attributes = []
-                for feat in self.features:
-                    attributes.append(feat.attributes)
-                    if isinstance(feat.geometry, Geometry):
-                        geoms.append(feat.geometry)
-                    else:
-                        g = Geometry(feat.geometry)
-                        if 'spatialReference' not in g and \
-                           sr is not None:
-                            g['spatialReference'] = sr
-                        geoms.append(g)
-                    del feat
-                df = json_normalize(attributes)
-                df.columns = df.columns.str.replace('attributes.', '')
-                return SpatialDataFrame(df, geometry=geoms, sr=sr)
-            else:
-                #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
-                df = json_normalize(self.value['features'])
-                df.columns = df.columns.str.replace('attributes.', '')
-                if self._object_id_field_name is not None:
-                    df.set_index([self._object_id_field_name], inplace=True)
-                else:
-                    if 'OBJECTID' in df.columns:
-                        df.set_index(['OBJECTID'], inplace=True)
-                    elif 'FID' in df.columns:
-                        df.set_index(['FID'], inplace=True)
-                return df
+            from arcgis.features.geo._io.serviceops import from_featureset
+            return from_featureset(fset=self)
         except ImportError:
-            raise ImportError("pandas not found, please install it")
-
+            raise Exception("Could not find the panda installation, please install it and retry")
+        except:
+            raise Exception("An error occured with exporting the FeatureSet.")
     # ----------------------------------------------------------------------
     def __iter__(self):
         """featureset iterator on features in feature set"""

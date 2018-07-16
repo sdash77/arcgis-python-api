@@ -1762,6 +1762,8 @@ class Geometry(BaseGeometry):
         if HASARCPY:
             if isinstance(spatial_reference, SpatialReference):
                 spatial_reference = spatial_reference.as_arcpy
+            elif isinstance(spatial_reference, dict):
+                spatial_reference = SpatialReference(spatial_reference).as_arcpy
             elif isinstance(spatial_reference, arcpy.SpatialReference):
                 spatial_reference = spatial_reference
             elif isinstance(spatial_reference, integer_types):
