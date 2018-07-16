@@ -62,7 +62,7 @@ class Federation(BasePortalAdmin):
 
         :returns: dict, server response with server ID
         """
-        url = "%s/servers/federate" % self._url
+        fedurl = "%s/servers/federate" % self._url
         params = {
             "f" : "json",
             "url" : url,
@@ -70,7 +70,7 @@ class Federation(BasePortalAdmin):
             "username" : username,
             "password" : password
         }
-        return self._con.post(path=url,
+        return self._con.post(path=fedurl,
                               postdata=params)
     #----------------------------------------------------------------------
     @property
