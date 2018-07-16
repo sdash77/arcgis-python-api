@@ -1599,7 +1599,8 @@ class GeoAccessor(object):
         the following command: `conda install -c conda-forge rtree`
 
         """
-        from ._index._impl import SpatialIndex
+        from arcgis.features.geo._index._impl import SpatialIndex
+        c = 0
         filename = kwargs.pop('filename', None)
         if reset:
             self._sindex = None
@@ -1612,6 +1613,7 @@ class GeoAccessor(object):
            filename and \
            os.path.isfile(filename + ".dat") and \
            os.path.isfile(filename + ".idx"):
+            l = len(self._data[self._name])
             self._sindex = SpatialIndex(stype=stype,
                                         filename=filename,
                                         bbox=self.full_extent)
