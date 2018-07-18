@@ -603,6 +603,70 @@ class FeatureSet(object):
 
     @property
     def df(self):
+        """
+
+        **deprecated in v1.5.0 please use `as_df`**
+
+        converts the FeatureSet to a Pandas dataframe. Requires pandas
+        """
+        import warnings
+        warnings.warn(("The SpatialDataFrame has been deprecated. "
+                       "`df` property be modified to return the Spatially Enabled DataFrame as v2.0"
+                       ". This property should not be used. Please use `as_df` instead."))
+        try:
+            try:
+                import arcpy
+                arcpy_found = True
+            except:
+                arcpy_found = False
+            from pandas.io.json import json_normalize
+            from arcgis.features import SpatialDataFrame
+            if len(self.features) == 0:
+                import pandas as pd
+                return pd.DataFrame()
+            elif self.geometry_type is not None:
+                if self._spatial_reference and \
+                   'wkt' in self._spatial_reference.keys():
+                    sr = SpatialReference(self._spatial_reference)
+                elif self._spatial_reference and \
+                     'wkid' in self._spatial_reference:
+                    sr = SpatialReference(self._spatial_reference)
+                else:
+                    sr = None
+                geoms = []
+                attributes = []
+                for feat in self.features:
+                    attributes.append(feat.attributes)
+                    if isinstance(feat.geometry, Geometry):
+                        geoms.append(feat.geometry)
+                    else:
+                        g = Geometry(feat.geometry)
+                        if 'spatialReference' not in g and \
+                           sr is not None:
+                            g['spatialReference'] = sr
+                        geoms.append(g)
+                    del feat
+                df = json_normalize(attributes)
+                df.columns = df.columns.str.replace('attributes.', '')
+                return SpatialDataFrame(df, geometry=geoms, sr=sr)
+            else:
+                #df = pandas.DataFrame.from_dict([f.attributes for f in fs.features])
+                df = json_normalize(self.value['features'])
+                df.columns = df.columns.str.replace('attributes.', '')
+                if self._object_id_field_name is not None:
+                    df.set_index([self._object_id_field_name], inplace=True)
+                else:
+                    if 'OBJECTID' in df.columns:
+                        df.set_index(['OBJECTID'], inplace=True)
+                    elif 'FID' in df.columns:
+                        df.set_index(['FID'], inplace=True)
+                return df
+        except ImportError:
+            raise ImportError("pandas not found, please install it")
+
+    # ----------------------------------------------------------------------
+    @property
+    def as_df(self):
         """converts the FeatureSet to a Pandas dataframe. Requires pandas"""
         try:
             from arcgis.features.geo._io.serviceops import from_featureset
