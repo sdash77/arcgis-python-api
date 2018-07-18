@@ -845,6 +845,19 @@ class GeoAccessor(object):
             raise ValueError(
                 "Column {name} is not valid. Please ensure it is of type Geometry".format(name=col))
     #----------------------------------------------------------------------
+    @property
+    def name(self):
+        """returns the name of the geometry column"""
+        if self._name is None:
+            try:
+                name = self._data.dtypes[self._data.dtypes == 'geometry'].index[0]
+                self.set_geometry(name)
+            except:
+                raise Exception("Spatial column not defined, please use `set_geometry`")
+
+        return self._name
+
+    #----------------------------------------------------------------------
     def validate(self, strict=False):
         """
         Determines if the Geo Accessor is Valid with Geometries in all values
@@ -857,8 +870,9 @@ class GeoAccessor(object):
             return all(pd.unique(self._data[self._name].geom.is_valid))
         return True
     #----------------------------------------------------------------------
-    def spatial_join(self, right_df, how='inner', op='intersects',
-                     left_tag="_left", right_tag="_right"):
+    def join(self, right_df,
+             how='inner', op='intersects',
+             left_tag="left", right_tag="right"):
         """
         Joins the current DataFrame to another spatially enabled dataframes based
         on spatial location based.
@@ -914,16 +928,18 @@ class GeoAccessor(object):
                              " joined".format(index_left, index_right))
         # Setup the Indexes in temporary coumns
         #
-        left_df = self._data.copy()
-        left_df.spatial.set_geometry(self._name)
-        left_df.index = left_df.index.rename(index_left)
-        left_df = left_df.reset_index()
-        left_df.spatial.set_geometry(self._name)
+        left_df = self._data.copy(deep=True)
+        left_df.spatial.set_geometry(self.name)
+        left_df.reset_index(inplace=True)
+        left_df.spatial.set_geometry(self.name)
+        # process the right df
         shape_right = right_df.spatial._name
-        right_df = right_df.copy()
-        right_df.index = right_df.index.rename(index_right)
-        right_df = right_df.reset_index()
+        right_df = right_df.copy(deep=True)
+        right_df.reset_index(inplace=True)
         right_df.spatial.set_geometry(shape_right)
+        # rename the indexes
+        right_df.index = right_df.index.rename(index_right)
+        left_df.index = left_df.index.rename(index_left)
 
         if op == "within":
             # within implemented as the inverse of contains; swap names
@@ -931,11 +947,10 @@ class GeoAccessor(object):
 
         tree_idx = right_df.spatial.sindex("quadtree")
 
-        idxmatch = (self._data[self._name]
+        idxmatch = (left_df[self.name]
                     .apply(lambda x: x.extent)
                     .apply(lambda x: list(tree_idx.intersect(x))))
         idxmatch = idxmatch[idxmatch.apply(len) > 0]
-
         if idxmatch.shape[0] > 0:
             # if output from join has overlapping geometries
             r_idx = np.concatenate(idxmatch.values)
@@ -960,7 +975,7 @@ class GeoAccessor(object):
                               [l_idx,
                                r_idx,
                                check_predicates(
-                                   left_df[self._name]
+                                   left_df[self.name]
                                    .apply(lambda x: x)[l_idx],
                                    right_df[right_df.spatial._name][r_idx])
                                ]))
@@ -974,20 +989,18 @@ class GeoAccessor(object):
         else:
             # when output from the join has no overlapping geometries
             result = pd.DataFrame(columns=['_key_left', '_key_right'], dtype=float)
-
         if op == "within":
-                # within implemented as the inverse of contains; swap names
-                left_df, right_df = right_df, left_df
-                result = result.rename(columns={'_key_left': '_key_right',
-                                                '_key_right': '_key_left'})
-
+            # within implemented as the inverse of contains; swap names
+            left_df, right_df = right_df, left_df
+            result = result.rename(columns={'_key_left': '_key_right',
+                                            '_key_right': '_key_left'})
 
         if how == 'inner':
             result = result.set_index('_key_left')
             joined = (
                       left_df
                       .merge(result, left_index=True, right_index=True)
-                      .merge(right_df.drop(right_df.spatial._name, axis=1),
+                      .merge(right_df.drop(right_df.spatial.name, axis=1),
                           left_on='_key_right', right_index=True,
                           suffixes=('_%s' % left_tag, '_%s' % right_tag))
                      )
@@ -998,13 +1011,13 @@ class GeoAccessor(object):
             joined = (
                       left_df
                       .merge(result, left_index=True, right_index=True, how='left')
-                      .merge(right_df.drop(right_df.spatial._name, axis=1),
+                      .merge(right_df.drop(right_df.spatial.name, axis=1),
                           how='left', left_on='_key_right', right_index=True,
                           suffixes=('_%s' % left_tag, '_%s' % right_tag))
                      )
             joined = joined.set_index(index_left).drop(['_key_right'], axis=1)
             joined.index.name = None
-        else:  # how == 'right':
+        else:  # 'right join'
             joined = (
                       left_df
                       .drop(left_df.spatial._name, axis=1)
@@ -1016,9 +1029,10 @@ class GeoAccessor(object):
                      )
             joined = joined.drop(['_key_left', '_key_right'], axis=1)
         try:
-            joined.spatial.set_geometry(self._name)
+            joined.spatial.set_geometry(self.name)
         except:
             raise Exception("Could not create spatially enabled dataframe.")
+        joined.reset_index(drop=True, inplace=True)
         return joined
     #----------------------------------------------------------------------
     def plot(self, map_widget=None, **kwargs):
@@ -1760,15 +1774,15 @@ class GeoAccessor(object):
         if self._sindex:
             return self._sindex
         bbox = self.full_extent
-        if self._name and \
+        if self.name and \
            filename and \
            os.path.isfile(filename + ".dat") and \
            os.path.isfile(filename + ".idx"):
-            l = len(self._data[self._name])
+            l = len(self._data[self.name])
             self._sindex = SpatialIndex(stype=stype,
                                         filename=filename,
                                         bbox=self.full_extent)
-            for idx, g in zip(self._index, self._data[self._name]):
+            for idx, g in zip(self._index, self._data[self.name]):
                 if g.type.lower() == 'point':
                     ge = g.geoextent
                     gext = (ge[0] -.001,ge[1] -.001, ge[2] + .001, ge[3] -.001)
@@ -1781,13 +1795,13 @@ class GeoAccessor(object):
                 c += 1
             self._sindex.flush()
             return self._sindex
-        elif self._name:
+        elif self.name:
             c = 0
-            l = len(self._data[self._name])
+            l = len(self._data[self.name])
             self._sindex = SpatialIndex(stype=stype,
                                         filename=filename,
                                         bbox=self.full_extent)
-            for idx, g in zip(self._index, self._data[self._name]):
+            for idx, g in zip(self._index, self._data[self.name]):
                 if g.type.lower() == 'point':
                     ge = g.geoextent
                     gext = (ge[0] -.001,ge[1] -.001, ge[2] + .001, ge[3] -.001)
@@ -1812,8 +1826,8 @@ class GeoAccessor(object):
             "features": []
         }
         for index, row in self._data.iterrows():
-            geom = row[self._name]
-            del row[self._name]
+            geom = row[self.name]
+            del row[self.name]
             gj = copy.copy(geom.__geo_interface__)
             gj['attributes'] = pd.io.json.loads(pd.io.json.dumps(row)) # ensures the values are converted correctly
             template['features'].append(gj)
@@ -1842,7 +1856,7 @@ class GeoAccessor(object):
             "objectIdFieldName" : "",
             "globalIdFieldName" : "",
             "displayFieldName" : "",
-            "geometryType" : _geom_types[type(self._data[self._name][self._data[self._name].first_valid_index()])],
+            "geometryType" : _geom_types[type(self._data[self.name][self._data[self.name].first_valid_index()])],
             "spatialReference" : sr,
             "fields" : [],
             "features" : []
@@ -1878,8 +1892,8 @@ class GeoAccessor(object):
         elif 'globalIdFieldName' in fs and \
              len(fs['globalIdFieldName']) == 0:
             del fs['globalIdFieldName']
-        if self._name in cols_norm:
-            cols_norm.pop(cols_norm.index(self._name))
+        if self.name in cols_norm:
+            cols_norm.pop(cols_norm.index(self.name))
         for col in cols_norm:
             try:
                 idx = self._data[col].first_valid_index()
@@ -1936,9 +1950,9 @@ class GeoAccessor(object):
         fs['fields'] = fields
         for row in self._data.to_dict('records'):
             geom = {}
-            if self._name in row:
-                geom = row[self._name]
-                del row[self._name]
+            if self.name in row:
+                geom = row[self.name]
+                del row[self.name]
             for f in date_fields:
                 try:
                     row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
@@ -1959,7 +1973,7 @@ class GeoAccessor(object):
     def sr(self):
         """gets/sets the spatial reference of the dataframe"""
         srs = pd.DataFrame([g['spatialReference'] \
-                            for g in self._data[self._name]])['wkid'].unique().tolist()
+                            for g in self._data[self.name]])['wkid'].unique().tolist()
         if len(srs) > 1:
             rsrs = []
             for sr in srs:
@@ -1981,17 +1995,17 @@ class GeoAccessor(object):
             wkt = sr['wkt']
         if isinstance(ref, SpatialReference):
             if ref != sr:
-                self._data[self._name] = self._data[self._name].geom.project_as(ref)
+                self._data[self.name] = self._data[self.name].geom.project_as(ref)
         elif isinstance(ref, int):
             if ref != wkid:
-                self._data[self._name] = self._data[self._name].geom.project_as(ref)
+                self._data[self.name] = self._data[self.name].geom.project_as(ref)
         elif isinstance(ref, str):
             if ref != wkt:
-                self._data[self._name] = self._data[self._name].geom.project_as(ref)
+                self._data[self.name] = self._data[self.name].geom.project_as(ref)
         elif isinstance(ref, dict):
             nsr = SpatialReference(ref)
             if sr != nsr:
-                self._data[self._name] = self._data[self._name].geom.project_as(ref)
+                self._data[self.name] = self._data[self.name].geom.project_as(ref)
     #----------------------------------------------------------------------
     def to_featureset(self):
         """
@@ -2189,7 +2203,7 @@ class GeoAccessor(object):
         (-118, 32, -97, 33)
 
         """
-        array = np.array(self._data[self._name].geom.geoextent.tolist())
+        array = np.array(self._data[self.name].geom.geoextent.tolist())
         return (int(array[:,0].min()),
                 int(array[:,1].min()),
                 int(array[:,2].max()),
@@ -2206,7 +2220,7 @@ class GeoAccessor(object):
         143.23427
 
         """
-        return self._data[self._name].geom.area.sum()
+        return self._data[self.name].geom.area.sum()
     #----------------------------------------------------------------------
     @property
     def length(self):
@@ -2219,7 +2233,7 @@ class GeoAccessor(object):
         1.23427
 
         """
-        return self._data[self._name].geom.length.sum()
+        return self._data[self.name].geom.length.sum()
     #----------------------------------------------------------------------
     @property
     def centroid(self):
@@ -2232,7 +2246,7 @@ class GeoAccessor(object):
         (-14.23427, 39)
 
         """
-        df = pd.DataFrame(data=self._data[self._name].geom.centroid.tolist(), columns=['x','y'])
+        df = pd.DataFrame(data=self._data[self.name].geom.centroid.tolist(), columns=['x','y'])
         return df['x'].mean(), df['y'].mean()
     #----------------------------------------------------------------------
     @property
@@ -2246,7 +2260,7 @@ class GeoAccessor(object):
         (1.23427, 34)
 
         """
-        df = pd.DataFrame(data=self._data[self._name].geom.true_centroid.tolist(), columns=['x','y'])
+        df = pd.DataFrame(data=self._data[self.name].geom.true_centroid.tolist(), columns=['x','y'])
         return df['x'].mean(), df['y'].mean()
     #----------------------------------------------------------------------
     @property
@@ -2254,7 +2268,7 @@ class GeoAccessor(object):
         """
         Returns a list Geometry Types for the DataFrame
         """
-        gt = self._data[self._name].geom.geometry_type
+        gt = self._data[self.name].geom.geometry_type
         return pd.unique(gt).tolist()
     #----------------------------------------------------------------------
     @property
@@ -2289,7 +2303,7 @@ class GeoAccessor(object):
         :returns: boolean
         """
         try:
-            self._data[self._name] = self._call_method(name='project_as',
+            self._data[self.name] = self._call_method(name='project_as',
                                                    is_ga=True,
                                                    **{'spatial_reference' : spatial_reference,
                                                       'transformation_name' : transformation_name})
