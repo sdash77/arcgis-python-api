@@ -83,8 +83,6 @@ class Site(BasePortalAdmin):
 
         :returns: dict
 
-
-        Parameters:
         """
         url = "%s/createNewSite" % url
         params = {"f": "json",
@@ -118,6 +116,20 @@ class Site(BasePortalAdmin):
         ===========================     ====================================================================
 
         :returns: dict
+
+        .. code-block:: python
+
+            USAGE: Export Portal Site to a location the Portal server has access to.  ** This can be a
+                   lengthy operation.
+
+            from arcgis.gis import GIS
+            gis = GIS("https://yourportal.com/portal", "portaladmin", "password")
+            sitemgr = gis.admin.site
+            response = sitemgr.export_site(r'c:\\temp')
+            print(response)
+
+            # Output
+            {'status': 'success', 'location': 'C:\\Temp\\June-9-2018-5-22-29-PM-EDT-FULL.portalsite'}
 
         """
         url = "%s/exportSite" % self._url
