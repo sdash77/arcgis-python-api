@@ -1841,11 +1841,11 @@ class RoleManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_id                Required string. The role ID of the role to get. Set to None to get all roles
+        role_id                Required string. The role ID of the role to get.
         ==================     ====================================================================
 
         :return:
-           The role associated with the specified role ID, or a list of all roles if role_id was set to None.
+           The role associated with the specified role ID
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)

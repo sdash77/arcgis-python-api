@@ -15,7 +15,7 @@ except:
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass
-from arcgis.geometry import Geometry, SpatialReference, Envelope
+from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
 #--------------------------------------------------------------------------
 def delegated_method(method, index, name, *args, **kwargs):
     return pd.Series(method(*args, **kwargs), index, name=name)
@@ -857,6 +857,170 @@ class GeoAccessor(object):
             return all(pd.unique(self._data[self._name].geom.is_valid))
         return True
     #----------------------------------------------------------------------
+    def spatial_join(self, right_df, how='inner', op='intersects',
+                     left_tag="_left", right_tag="_right"):
+        """
+        Joins the current DataFrame to another spatially enabled dataframes based
+        on spatial location based.
+
+        .. note::
+            requires the SEDF to be in the same coordinate system
+
+
+        ======================    =========================================================
+        **Argument**              **Description**
+        ----------------------    ---------------------------------------------------------
+        right_df                  Required pd.DataFrame. Spatially enabled dataframe to join.
+        ----------------------    ---------------------------------------------------------
+        how                       Required string. The type of join:
+
+                                    + `left` - use keys from current dataframe and retains only current geometry column
+                                    + `right` - use keys from right_df; retain only right_df geometry column
+                                    + `inner` - use intersection of keys from both dfs and retain only current geometry column
+
+        ----------------------    ---------------------------------------------------------
+        op                        Required string. The operation to use to perform the join.
+                                  The default is `intersects`.
+
+                                  supported perations: `intersects`, `within`, and `contains`
+        ----------------------    ---------------------------------------------------------
+        left_tag                  Optional String. If the same column is in the left and
+                                  right dataframe, this will append that string value to
+                                  the field.
+        ----------------------    ---------------------------------------------------------
+        right_tag                 Optional String. If the same column is in the left and
+                                  right dataframe, this will append that string value to
+                                  the field.
+        ======================    =========================================================
+
+        :returns:
+          Spatially enabled Pandas' DataFrame
+        """
+        import numpy as np
+        import pandas as pd
+        allowed_hows = ['left', 'right', 'inner']
+        allowed_ops = ['contains', 'within', 'intersects']
+        if how not in allowed_hows:
+            raise ValueError("`how` is an invalid inputs of %s, but should be %s" % (how, allowed_hows))
+        if op not in allowed_ops:
+            raise ValueError("`how` is an invalid inputs of %s, but should be %s" % (op, allowed_ops))
+        if self.sr != right_df.spatial.sr:
+            raise Exception("Difference Spatial References, aborting operation")
+        index_left = 'index_{}'.format(left_tag)
+        index_right = 'index_{}'.format(right_tag)
+        if (any(self._data.columns.isin([index_left, index_right]))
+            or any(right_df.columns.isin([index_left, index_right]))):
+            raise ValueError("'{0}' and '{1}' cannot be names in the frames being"
+                             " joined".format(index_left, index_right))
+        # Setup the Indexes in temporary coumns
+        #
+        left_df = self._data.copy()
+        left_df.spatial.set_geometry(self._name)
+        left_df.index = left_df.index.rename(index_left)
+        left_df = left_df.reset_index()
+        left_df.spatial.set_geometry(self._name)
+        shape_right = right_df.spatial._name
+        right_df = right_df.copy()
+        right_df.index = right_df.index.rename(index_right)
+        right_df = right_df.reset_index()
+        right_df.spatial.set_geometry(shape_right)
+
+        if op == "within":
+            # within implemented as the inverse of contains; swap names
+            left_df, right_df = right_df, left_df
+
+        tree_idx = right_df.spatial.sindex("quadtree")
+
+        idxmatch = (self._data[self._name]
+                    .apply(lambda x: x.extent)
+                    .apply(lambda x: list(tree_idx.intersect(x))))
+        idxmatch = idxmatch[idxmatch.apply(len) > 0]
+
+        if idxmatch.shape[0] > 0:
+            # if output from join has overlapping geometries
+            r_idx = np.concatenate(idxmatch.values)
+            l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
+
+            # Vectorize predicate operations
+            def find_intersects(a1, a2):
+                return a1.disjoint(a2) == False
+
+            def find_contains(a1, a2):
+                return a1.contains(a2)
+
+            predicate_d = {'intersects': find_intersects,
+                           'contains': find_contains,
+                           'within': find_contains}
+
+            check_predicates = np.vectorize(predicate_d[op])
+
+            result = (
+                pd.DataFrame(
+                          np.column_stack(
+                              [l_idx,
+                               r_idx,
+                               check_predicates(
+                                   left_df[self._name]
+                                   .apply(lambda x: x)[l_idx],
+                                   right_df[right_df.spatial._name][r_idx])
+                               ]))
+            )
+
+            result.columns = ['_key_left', '_key_right', 'match_bool']
+            result = (
+                pd.DataFrame(result[result['match_bool']==1])
+                      .drop('match_bool', axis=1)
+            )
+        else:
+            # when output from the join has no overlapping geometries
+            result = pd.DataFrame(columns=['_key_left', '_key_right'], dtype=float)
+
+        if op == "within":
+                # within implemented as the inverse of contains; swap names
+                left_df, right_df = right_df, left_df
+                result = result.rename(columns={'_key_left': '_key_right',
+                                                '_key_right': '_key_left'})
+
+
+        if how == 'inner':
+            result = result.set_index('_key_left')
+            joined = (
+                      left_df
+                      .merge(result, left_index=True, right_index=True)
+                      .merge(right_df.drop(right_df.spatial._name, axis=1),
+                          left_on='_key_right', right_index=True,
+                          suffixes=('_%s' % left_tag, '_%s' % right_tag))
+                     )
+            joined = joined.set_index(index_left).drop(['_key_right'], axis=1)
+            joined.index.name = None
+        elif how == 'left':
+            result = result.set_index('_key_left')
+            joined = (
+                      left_df
+                      .merge(result, left_index=True, right_index=True, how='left')
+                      .merge(right_df.drop(right_df.spatial._name, axis=1),
+                          how='left', left_on='_key_right', right_index=True,
+                          suffixes=('_%s' % left_tag, '_%s' % right_tag))
+                     )
+            joined = joined.set_index(index_left).drop(['_key_right'], axis=1)
+            joined.index.name = None
+        else:  # how == 'right':
+            joined = (
+                      left_df
+                      .drop(left_df.spatial._name, axis=1)
+                      .merge(result.merge(right_df,
+                          left_on='_key_right', right_index=True,
+                          how='right'), left_index=True,
+                          right_on='_key_left', how='right')
+                      .set_index(index_right)
+                     )
+            joined = joined.drop(['_key_left', '_key_right'], axis=1)
+        try:
+            joined.spatial.set_geometry(self._name)
+        except:
+            raise Exception("Could not create spatially enabled dataframe.")
+        return joined
+    #----------------------------------------------------------------------
     def plot(self, map_widget=None, **kwargs):
         """
 
@@ -867,9 +1031,6 @@ class GeoAccessor(object):
 
         ======================  =========================================================
         **Explicit Argument**   **Description**
-        ----------------------  ---------------------------------------------------------
-        df                      required SpatialDataFrame or GeoSeries. This is the data
-                                to map.
         ----------------------  ---------------------------------------------------------
         map_widget              optional WebMap object. This is the map to display the
                                 data on.
@@ -1466,22 +1627,6 @@ class GeoAccessor(object):
              **kwargs)
         return True
     #----------------------------------------------------------------------
-    def _plot(self, map_widget=None):
-        """
-        """
-        from arcgis.gis import GIS
-        from arcgis.mapping import WebMap, WebScene
-        from arcgis.widgets import MapView
-        if map_widget is None:
-            map_widget = GIS().map()
-        if not isinstance(map_widget, (WebMap, WebScene, MapView)):
-            raise ValueError("Invalid map_widget type: {t}".format(
-                t=type(map_widget)))
-        if self._name is not None:
-            print('i can plot')
-        else:
-            raise Exception("Geometry Column must be set before plotting.")
-    #----------------------------------------------------------------------
     def to_featureclass(self, location, overwrite=True):
         """exports a geo enabled dataframe to a feature class."""
         return to_featureclass(geo=self,
@@ -1581,6 +1726,12 @@ class GeoAccessor(object):
         from ._io.fileops import _from_xy
         return _from_xy(df=df, x_column=x_column,
                         y_column=y_column, sr=sr)
+    #----------------------------------------------------------------------
+    @staticmethod
+    def from_layer(layer):
+        """imports a FeatureLayer to a Spatially Enabled DataFrame"""
+        from arcgis.features.geo._io.serviceops import from_layer
+        return from_layer(layer=layer)
     #----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(location):

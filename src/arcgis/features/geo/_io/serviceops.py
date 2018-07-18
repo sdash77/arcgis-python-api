@@ -105,7 +105,7 @@ def from_layer(layer,
             ids = [str(i) for i in ids]
             sql = "%s in (%s)" % (oid_info['objectIdFieldName'],
                                   ",".join(ids))
-            frames.append(layer.query(where=sql))
+            frames.append(layer.query(where=sql).df)
         res = pd.concat(frames, ignore_index=True)
         res.reset_index(drop=True, inplace=True)
     else:
