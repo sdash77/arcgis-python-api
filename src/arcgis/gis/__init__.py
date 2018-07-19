@@ -26,6 +26,7 @@ import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
+from arcgis.features.geo import _is_geoenabled
 from six.moves.urllib.error import HTTPError
 _log = logging.getLogger(__name__)
 
@@ -1840,11 +1841,11 @@ class RoleManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_id                Required string. The role ID of the role to get. Set to None to get all roles
+        role_id                Required string. The role ID of the role to get.
         ==================     ====================================================================
 
         :return:
-           The role associated with the specified role ID, or a list of all roles if role_id was set to None.
+           The role associated with the specified role ID
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
@@ -2982,13 +2983,13 @@ class ContentManager(object):
         except ImportError:
             has_pyshp = False
         if isinstance(df, FeatureSet):
-            df = df.df
+            df = df.sdf
         if has_arcpy == False and \
            has_pyshp == False and \
-           isinstance(df, SpatialDataFrame):
-            raise Exception("SpatialDataFrame's must have either pyshp or" + \
+           (isinstance(df, SpatialDataFrame) or _is_geoenabled(df)):
+            raise Exception("Spatially enabled DataFrame's must have either pyshp or" + \
                             " arcpy available to use import_data")
-        elif isinstance(df, SpatialDataFrame):
+        elif (isinstance(df, SpatialDataFrame) or _is_geoenabled(df)):
             import random
             import string
             temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
@@ -3003,8 +3004,14 @@ class ContentManager(object):
                                      uuid4().hex[:5])
                 fgdb = arcpy.CreateFileGDB_management(out_folder_path=temp_dir,
                                                       out_name=name)[0]
-                ds = df.to_featureclass(out_location=fgdb,
+                if isinstance(df, SpatialDataFrame) :
+                    ds = df.to_featureclass(out_location=fgdb,
                                         out_name=os.path.basename(temp_dir))
+                else:
+                    ds =\
+                        df.spatial.to_featureclass(location=os.path.join(fgdb,
+                                                                         os.path.basename(temp_dir)))
+
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
                 item = self.add(
                     item_properties={

@@ -71,3 +71,4 @@ src/.vscode/settings.json
 
 #Any builds from setup.py for pip go in a dist folder
 /src/dist
+/unittests/df_accessor/test_from_fc.py

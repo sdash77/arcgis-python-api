@@ -603,7 +603,16 @@ class FeatureSet(object):
 
     @property
     def df(self):
-        """converts the FeatureSet to a Pandas dataframe. Requires pandas"""
+        """
+
+        **deprecated in v1.5.0 please use `as_df`**
+
+        converts the FeatureSet to a Pandas dataframe. Requires pandas
+        """
+        import warnings
+        warnings.warn(("The SpatialDataFrame has been deprecated. "
+                       "`df` property be modified to return the Spatially Enabled DataFrame as v2.0"
+                       ". This property should not be used. Please use `as_df` instead."))
         try:
             try:
                 import arcpy
@@ -655,6 +664,19 @@ class FeatureSet(object):
         except ImportError:
             raise ImportError("pandas not found, please install it")
 
+    # ----------------------------------------------------------------------
+    @property
+    def sdf(self):
+        """
+        Converts the FeatureSet to a Spatially Enabled Pandas dataframe
+        """
+        try:
+            from arcgis.features.geo._io.serviceops import from_featureset
+            return from_featureset(fset=self)
+        except ImportError:
+            raise Exception("Could not find the panda installation, please install it and retry")
+        except:
+            raise Exception("An error occured with exporting the FeatureSet.")
     # ----------------------------------------------------------------------
     def __iter__(self):
         """featureset iterator on features in feature set"""

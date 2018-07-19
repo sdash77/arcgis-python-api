@@ -14,6 +14,7 @@ dependencies:
 - nbconvert
 - beautifulsoup4
 - requests
+- pytest
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6

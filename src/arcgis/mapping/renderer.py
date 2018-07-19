@@ -696,6 +696,16 @@ def generate_renderer(geometry_type,
         else:
             default_color = colors[0]
             color = colors[0]
+        try:
+            if isinstance(sdf_or_series, SpatialDataFrame) or \
+               hasattr(sdf_or_series, 'geometry_type'):
+                gt = sdf_or_series.geometry_type
+            elif hasattr(sdf_or_series, 'spatial') and \
+                 sdf_or_series.spatial.name and \
+                 hasattr(sdf_or_series.spatial, 'geometry_type'):
+                gt = sdf_or_series.spatial.geometry_type[0]
+        except:
+            raise Exception("geometry_type not found, please ensure DataFrame is spatially enabled.")
         renderer = {
             "type" : "classBreaks",
             "valueExpression" : symbol_args.pop('arcade_expression', None),
@@ -709,7 +719,7 @@ def generate_renderer(geometry_type,
             'minValue' : symbol_args.pop('min_value', 0),
             'field' : symbol_args.pop('field'),
             'defaultSymbol' : symbol_args.pop('default_symbol', create_symbol(
-                geometry_type=sdf_or_series.geometry_type,
+                geometry_type=gt,
                 colors=default_color)
                                               ),
             'defaultLabel' : symbol_args.pop('default_label', 'Other'),
@@ -736,13 +746,20 @@ def generate_renderer(geometry_type,
         st = symbol_args.pop('symbol_type', None)
         import sys
         for idx, pair in enumerate(pairwise(breaks, fillvalue=sys.maxsize)):
-
+            gt = None
+            if isinstance(sdf_or_series, SpatialDataFrame) or \
+               hasattr(sdf_or_series, 'geometry_type'):
+                gt = sdf_or_series.geometry_type
+            elif hasattr(sdf_or_series, 'spatial') and \
+                 sdf_or_series.spatial.name and \
+                 hasattr(sdf_or_series.spatial, 'geometry_type'):
+                gt = sdf_or_series.spatial.geometry_type[0]
             cbs.append({
 
                 'classMaxValue' : pair[1] or pair[0],
                 'label' : "%s - %s" % (pair[0], pair[1] or pair[0]),
                 'description' : "%s - %s" % (pair[0], pair[1] or pair[0]),
-                'symbol' : create_symbol(geometry_type=sdf_or_series.geometry_type,
+                'symbol' : create_symbol(geometry_type=gt,
                                          symbol_style=ss,
                                          symbol_type=st,
                                          colors=color,

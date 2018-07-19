@@ -146,6 +146,13 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
     #----------------------------------------------------------------------
     def __init__(self, *args, **kwargs):
         """
+
+        .. deprecated:: 1.5.0
+           see :class:`GeoAccessor` and :class:`GeoSeriesAccessor`
+
+        .. note::
+           This class is no longer maintained past version 1.4.2
+
         A Spatial Dataframe is an object to manipulate, manage and translate
         data into new forms of information for users.
 
@@ -211,6 +218,8 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         sdf = SpatialDataFrame.from_layer(feature_layer)
 
         """
+        warnings.warn("SpatialDataFrame has been deprecated.  Please switch to the GeoAccessor/GeoSeriesAccessor.")
+
         if not HAS_PANDAS:
             warnings.warn("pandas and numpy are required for SpatialDataFrame.")
             warnings.warn("Please install them.")
