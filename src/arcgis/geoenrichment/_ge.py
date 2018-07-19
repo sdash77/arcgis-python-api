@@ -501,7 +501,7 @@ class _GeoEnrichment(object):
         elif isinstance(study_areas, SpatialDataFrame):
             study_areas = [{'FeatureSet' : study_areas.__feature_set__ }]
         elif isinstance(study_areas, FeatureSet):
-            study_areas = [{"FeatureSet" : study_areas.df.__feature_set__}]
+            study_areas = [{"FeatureSet" : study_areas.sdf.spatial.__feature_set__}]
         params = {
             "langCode" : self._langCode,
             "f" : "json",
@@ -539,7 +539,7 @@ class _GeoEnrichment(object):
                 for result in res['results']:
                     if 'value' in result and 'FeatureSet' in result['value']:
                         for f in result['value']['FeatureSet']:
-                            dfs.append(FeatureSet.from_dict(f).df)
+                            dfs.append(FeatureSet.from_dict(f).sdf)
                             del f
                     del result
             if len(dfs) > 1:
@@ -733,7 +733,7 @@ class _GeoEnrichment(object):
             if 'results' in res:
                 for result in res['results']:
                     if 'value' in result:
-                        dfs.append(FeatureSet.from_dict(result['value']).df)
+                        dfs.append(FeatureSet.from_dict(result['value']).sdf)
                     del result
             if len(dfs) > 1:
                 df = pd.concat(dfs)
@@ -1113,7 +1113,7 @@ class _GeoEnrichment(object):
                 for result in res['results']:
                     if 'value' in result and \
                        'dataType' in result:
-                        dfs.append(FeatureSet.from_dict(result['value']).df)
+                        dfs.append(FeatureSet.from_dict(result['value']).sdf)
             if len(dfs) > 0:
                 df = pd.concat(dfs)
                 df.reset_index(inplace=True, drop=True)

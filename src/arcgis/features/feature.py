@@ -666,8 +666,10 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @property
-    def as_df(self):
-        """converts the FeatureSet to a Pandas dataframe. Requires pandas"""
+    def sdf(self):
+        """
+        Converts the FeatureSet to a Spatially Enabled Pandas dataframe
+        """
         try:
             from arcgis.features.geo._io.serviceops import from_featureset
             return from_featureset(fset=self)

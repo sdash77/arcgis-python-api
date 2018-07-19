@@ -167,7 +167,7 @@ def test_enrichment():
     from arcgis.features import FeatureSet
     from arcgis.geoenrichment import enrich
     fs = FeatureSet.from_dict(_fs_dict)
-    df = fs.df
+    df = fs.sdf
     gis = GIS(username=USERNAME, password=PASSWORD)
     res = enrich(study_areas=df, data_collections=['Age'])
     assert hasattr(df, 'spatial')
@@ -178,7 +178,7 @@ def test_featureset_df():
     """tests the featurelayer.query method"""
     from arcgis.features import FeatureSet
     fs = FeatureSet.from_dict(_fs_dict)
-    df = fs.df
+    df = fs.sdf
     assert df.spatial._name == 'SHAPE'
     assert hasattr(df, 'spatial')
     assert hasattr(df.SHAPE, 'geom')
@@ -187,7 +187,7 @@ def test_gp():
     from arcgis.features import FeatureSet
     gis = GIS()
     fs = FeatureSet.from_dict(_fs_dict)
-    df = fs.df
+    df = fs.sdf
     from arcgis.geoprocessing import import_toolbox
     vs = import_toolbox('http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer')
     import arcgis
@@ -209,9 +209,9 @@ if __name__ == "__main__":
         test_enrichment()
         print("   Testing GeoEnrichment finished")
     print("################################################################")
-    print("   Testing FeatureSet.df")
+    print("   Testing FeatureSet.sdf")
     test_featureset_df()
-    print("   Testing FeatureSet.df finished")
+    print("   Testing FeatureSet.sdf finished")
 
     print("################################################################")
     print("   Testing GP")

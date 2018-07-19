@@ -1,6 +1,5 @@
 import pytest
 import os, sys
-#sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")
 import shutil
 import tempfile
 import pandas as pd
@@ -56,10 +55,10 @@ def test_to_layer():
     df['FIPS_CNTRY'] = "QM"
     layer = to_layer(df, layer=lyr, update_existing=True)
     assert isinstance(layer, FeatureLayer)
-    assert layer.query(where).df['FIPS_CNTRY'][0] == 'QM'
+    assert layer.query(where).sdf['FIPS_CNTRY'][0] == 'QM'
     df['FIPS_CNTRY'] = "SM"
     layer = to_layer(df, layer=lyr, update_existing=True)
-    assert layer.query(where).df['FIPS_CNTRY'][0] == 'SM'
+    assert layer.query(where).sdf['FIPS_CNTRY'][0] == 'SM'
 #--------------------------------------------------------------------------
 
 if __name__ == "__main__":

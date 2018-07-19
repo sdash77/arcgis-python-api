@@ -2983,7 +2983,7 @@ class ContentManager(object):
         except ImportError:
             has_pyshp = False
         if isinstance(df, FeatureSet):
-            df = df.df
+            df = df.sdf
         if has_arcpy == False and \
            has_pyshp == False and \
            (isinstance(df, SpatialDataFrame) or _is_geoenabled(df)):
