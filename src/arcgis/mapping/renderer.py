@@ -12,7 +12,7 @@ from arcgis.geometry import _types
 from arcgis.mapping._utils import _get_list_value
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
 
-__all__ = ['render']
+__all__ = ['generate_renderer']
 
 RENDERER_TYPES = {
     "s" : 'simple',#
