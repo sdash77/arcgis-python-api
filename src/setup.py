@@ -38,7 +38,7 @@ else:
         'ipywidgets >=7',
         'widgetsnbextension >=3',
         'tornado >=4.5.3,<5',
-        'pandas',
+        'pandas >=.23',
         'numpy',
         'pyshp',
         'matplotlib',
