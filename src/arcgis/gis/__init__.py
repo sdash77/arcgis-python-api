@@ -6109,6 +6109,121 @@ class Item(dict):
             self._hydrate()
         return ret
 
+    def usage(self, date_range='7D', as_df=True):
+        """
+
+        For item owners and administrators, usage provides usage details about an item that help you
+        gauge its popularity. Usage details show how many times the item has been used for the time
+        period you select. Historical usage information is available for the past year. Depending on
+        the item type, usage details can include the number of views, requests, or downloads, and
+        the average number of views, requests, or downloads per day.
+
+        Views refers to the number of times the item has been viewed or opened. For maps, scenes,
+        nonhosted layers, and web apps, the view count is increased by one when you open the item
+        page or open the item in Map Viewer. For example, if you opened the item page for a map
+        image layer and clicked Open in Map Viewer, the count would increase by two. For other items
+        such as mobile apps, KML, and so on, the view count is increased by one when you open the
+        item; the count does not increase when you open the item details page.
+
+        For hosted web layers (feature, tile, and scene), the number of requests is provided instead
+        of views. Requests refers to the number of times a request is made for the data within the
+        layer. For example, someone might open an app that contains a hosted feature layer. Opening
+        the app counts as one view for the application, but multiple requests may be necessary to
+        draw all the features in the hosted layer and are counted as such.
+
+        For downloadable file item types such as CSV, SHP, and so on, the number of downloads is
+        displayed. For registered apps, the Usage tab also displays the number of times users have
+        logged in to the app. Apps that allow access to subscriber content through the organization
+        subscription show usage by credits. You can change the time frame for the credit usage
+        reporting period.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        date_range          Optional string.  The default is 7d.  This is the period to query
+                            usage for a given item.
+
+                            =======  =========================
+                            24H      Past 24 hours
+                            -------  -------------------------
+                            7D       Past 7 days
+                            -------  -------------------------
+                            14D      Past 14 days (default)
+                            -------  -------------------------
+                            30D      Past 30 days
+                            -------  -------------------------
+                            60D      Past 60 days
+                            -------  -------------------------
+                            6M       Past 6 months
+                            -------  -------------------------
+                            1Y       Past 12 months
+                            =======  =========================
+        ---------------     --------------------------------------------------------------------
+        as_df               Optional boolean.  Returns a Pandas DataFrame when True, returns data
+                            as a dictionary when False
+        ===============     ====================================================================
+
+        :returns: Pandas DataFrame or Dictionary
+
+        """
+        end_date = None
+        if end_date is None:
+            end_date = datetime.now()
+        params = {
+            'f' : 'json',
+            'startTime': None,
+            'endTime': int(end_date.timestamp() * 1000),
+            "period": '',
+            'vars': 'num',
+            'groupby': 'name',
+            'etype': 'svcusg',
+            'name': self.itemid,
+
+        }
+        from datetime import timedelta
+        if self.type == 'Feature Service':
+            params['stype'] = 'features'
+            params['name'] = os.path.basename(os.path.dirname(self.layers[0].container._url))
+        if date_range.lower() == '24h':
+            params['period'] = '1h'
+            params['startTime'] = int((end_date - timedelta(days=1)).timestamp() * 1000)
+        elif date_range.lower() == '7d':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=7)).timestamp() * 1000)
+        elif date_range.lower() == '14d':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=14)).timestamp() * 1000)
+        elif date_range.lower() == '30d':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=30)).timestamp() * 1000)
+        elif date_range.lower() == '60d':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=60)).timestamp() * 1000)
+        elif date_range.lower() == '6m':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=int(365/2))).timestamp() * 1000)
+        elif date_range.lower() == ['12m', '1y']:
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=365)).timestamp() * 1000)
+        else:
+            raise ValueError("Invalid date range.")
+        isinstance(self._portal, portalpy.Portal)
+
+        url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+        try:
+            res = self._portal.con.post(url, params)
+            if as_df:
+                import pandas as pd
+                df = pd.DataFrame(res['data'][0]['num'],
+                                  columns=['Date', 'Usage'])
+                df.Date = df.astype(float) / 1000
+                df.Date = df.Date.apply(lambda x : datetime.fromtimestamp(x))
+                df.Usage = df.Usage.astype(int)
+                return df
+            return res
+        except:
+            return None
+
     def get_data(self, try_json=True):
         """
         Retrieves the data associated with an item. Note that this call may
@@ -6832,7 +6947,7 @@ class Item(dict):
         start = 1
         num = 100
         nextStart = 0
-        url = "%s/content/items/%s/comments" % (self._portal.url, self.id)
+        url = "%s/sharing/rest/content/items/%s/comments" % (self._portal.url, self.id)
         while nextStart != -1:
             params = {
                 "f" : "json",
@@ -6842,7 +6957,7 @@ class Item(dict):
             res = self._portal.con.post(url, params)
             for c in res['comments']:
                 cs.append(Comment(url="%s/%s" % (url, c['id']),
-                                  item=self, initialize=False))
+                                  item=self, initialize=True))
             start += num
             nextStart = res['nextStart']
         return cs
@@ -6867,7 +6982,7 @@ class Item(dict):
             "f" : "json",
             "comment" : comment
         }
-        url = "%s/content/items/%s/addComment" % (self._portal.url, self.id)
+        url = "%s/sharing/rest/content/items/%s/addComment" % (self._portal.url, self.id)
         res = self._portal.con.post(url, params)
         if 'commentId' in res:
             return res['commentId']
@@ -6878,7 +6993,7 @@ class Item(dict):
         """
         Gets or sets the rating given by the current user to the item.
         """
-        url = "%s/content/items/%s/rating" % (self._portal.url, self.id)
+        url = "%s/sharing/rest/content/items/%s/rating" % (self._portal.url, self.id)
         params = {"f" : "json"}
         res = self._portal.con.get(url, params)
         if 'rating' in res:
@@ -6903,7 +7018,7 @@ class Item(dict):
 
 
         """
-        url = "%s/content/items/%s/addRating" % (self._portal.url,
+        url = "%s/sharing/rest/content/items/%s/addRating" % (self._portal.url,
                                                  self.id)
         params = {"f" : "json",
                   'rating' : float(value)}
@@ -6913,7 +7028,7 @@ class Item(dict):
         """
         Removes the rating the calling user added for the specified item.
         """
-        url = "%s/content/items/%s/deleteRating" % (self._portal.url,
+        url = "%s/sharing/rest/content/items/%s/deleteRating" % (self._portal.url,
                                                     self.id)
         params = {"f" : "json"}
         res = self._portal.con.post(url, params)
@@ -6928,7 +7043,7 @@ class Item(dict):
         item with the Registered App type keyword. This resource is only
         available to the item owner and the organization administrator.
         """
-        url = "%s/content/users/%s/items/%s/proxies" % (self._portal.url,
+        url = "%s/sharing/rest/content/users/%s/items/%s/proxies" % (self._portal.url,
                                                         self.owner,
                                                         self.id)
         params = {"f" : "json"}
@@ -7016,7 +7131,7 @@ class Item(dict):
         """
         params = {'f': 'json',
                   'proxies': proxy_id}
-        url = "%s/content/users/%s/items/%s/deleteProxies" % (self._portal.url,
+        url = "%s/sharing/rest/content/users/%s/items/%s/deleteProxies" % (self._portal.url,
                                                               self.owner,
                                                               self.id)
         return self._portal.con.post(url, params)
