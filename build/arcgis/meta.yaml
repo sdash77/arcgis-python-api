@@ -15,15 +15,16 @@ requirements:
         - python
         - setuptools
         - six
-        - notebook 
+        - notebook
         - ipywidgets >=7
         - widgetsnbextension >=3
         - tornado >=4.5.3,<5
-        - pandas
+        - pandas >=0.23
         - numpy
         - pyshp
         - matplotlib
         - keyring
+        - pytest
         - winkerberos      [win]
     run:
         - python
@@ -32,7 +33,7 @@ requirements:
         - ipywidgets >=7
         - widgetsnbextension >=3
         - tornado >=4.5.3,<5
-        - pandas
+        - pandas >=0.23
         - numpy
         - pyshp
         - matplotlib
