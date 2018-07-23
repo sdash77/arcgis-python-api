@@ -1739,7 +1739,7 @@ class _WebMapDefinition(_TextItemDefinition):
                 if 'operationalLayers' in webmap_json:
                     layers += [layer for layer in webmap_json['operationalLayers'] if 'layerType' in layer and layer['layerType'] == "ArcGISFeatureLayer" and 'url' in layer and layer['url'] is not None]
                     feature_collections += [layer for layer in webmap_json['operationalLayers'] if 'layerType' in layer and layer['layerType'] == "ArcGISFeatureLayer" and 'type' in layer and layer['type'] == "Feature Collection"]
-                    map_service_layers += [layer for layer in webmap_json['operationalLayers'] if 'layerType' in layer and layer['layerType'] == "ArcGISMapServiceLayer" and 'url' in layer and layer['url'] is not None]
+                    map_service_layers += [layer for layer in webmap_json['operationalLayers'] if 'layerType' in layer and layer['layerType'] in ["ArcGISMapServiceLayer", "ArcGISTiledMapServiceLayer"] and 'url' in layer and layer['url'] is not None]
                 if 'tables' in webmap_json:
                     layers += [table for table in webmap_json['tables'] if 'url' in table]
 
