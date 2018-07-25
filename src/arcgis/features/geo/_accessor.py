@@ -1646,6 +1646,35 @@ class GeoAccessor(object):
         return to_featureclass(geo=self,
                                location=location,
                                overwrite=overwrite)
+    #----------------------------------------------------------------------
+    def to_featurelayer(self,
+                        title,
+                        gis=None,
+                        tags=None):
+        """
+        publishes a spatial dataframe to a new feature layer
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        title                           Required string. The name of the service
+        ---------------------------     --------------------------------------------------------------------
+        gis                             Optional GIS. The GIS connection object
+        ---------------------------     --------------------------------------------------------------------
+        tags                            Optional string. A comma seperated list of descriptive words for the
+                                        service
+        ===========================     ====================================================================
+
+        :returns: FeatureLayer
+
+        """
+        from arcgis import env
+        if gis is None:
+            gis = env.active_gis
+            if gis is None:
+                raise ValueError("GIS object must be provided")
+        content = gis.content
+        return content.import_data(self._data, title=title, tags=tags)
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(df, address_column="address", geocoder=None, sr=None):

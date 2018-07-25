@@ -6012,6 +6012,111 @@ class Item(dict):
         else:
             return self._portal.delete_item(self.itemid, self.owner, folder, force)
 
+    def create_thumbnail(self, update=True):
+        """
+        Creates a Thumbnail for a feature service portal item using the service's symbology
+        and the print service registered for the enterprise.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        update              Optional boolean. When set to True, the item will be updated with the
+                            thumbnail generated in this call, else it will not update the item.
+                            The default is True.
+        ===============     ====================================================================
+
+        :returns: DataFile
+
+        """
+        from arcgis.geoprocessing._tool import Toolbox
+        from arcgis.features import FeatureLayer, FeatureLayerCollection
+        from arcgis.gis.server._service import Service
+        props = self._gis.properties
+        gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
+
+        if self.type == 'Feature Service':
+            layers = []
+            container = self.layers[0].container
+            extent = container.properties.initialExtent
+            for lyr in self.layers:
+                layers.append(
+                    {
+                        "id":"%s_%s" % (lyr.properties.serviceItemId, lyr.properties.id),
+                        "title": lyr.properties.name,
+                        "opacity":1,
+                        "minScale": lyr.properties.minScale,
+                        "maxScale": lyr.properties.maxScale,
+                        "layerDefinition": {
+                            "drawingInfo": dict(lyr.properties.drawingInfo)},
+                        "token": self._gis._con.token,
+                        "url": lyr._url
+                    }
+                )
+                del lyr
+            wmjs = {
+                "mapOptions":{
+                    "showAttribution":False,
+                    "extent": dict(extent),
+                    "spatialReference":dict(container.properties.spatialReference)
+                    },
+                "operationalLayers": layers,
+                "exportOptions":{
+                    "outputSize":[600,400],
+                    "dpi":96
+                }
+            }
+
+        elif self.type == 'Web Map':
+            import json
+            layers = []
+            mapjson = self.get_data()
+            container = None
+            for lyr in mapjson['baseMap']['baseMapLayers']:
+                del lyr['layerType']
+                layers.append(lyr)
+            for lyr in mapjson['operationalLayers']:
+                flyr = Service(url=lyr['url'], server=self._gis._con)
+                if container is None and isinstance(flyr, FeatureLayer):
+                    container = FeatureLayerCollection(url=os.path.dirname(flyr._url), gis=self._gis)
+                layers.append(
+                    {
+                        "id":"%s" % lyr['id'],
+                        "title": lyr['title'],
+                        "opacity": lyr['opacity'],
+                        "minScale": flyr.properties.minScale,
+                        "maxScale": flyr.properties.maxScale,
+                        "layerDefinition": {
+                            "drawingInfo": dict(flyr.properties.drawingInfo)},
+                        "token": self._gis._con.token,
+                        "url": lyr['url']
+                    }
+                )
+                del lyr
+            wmjs = {
+                "mapOptions":{
+                    "showAttribution":False,
+                    "extent": dict(container.properties.initialExtent),
+                    "spatialReference": dict(container.properties.spatialReference)
+                    },
+                "operationalLayers": layers,
+                "exportOptions":{
+                    "outputSize":[600,400],
+                    "dpi":96
+                }
+            }
+            print()
+        else:
+            return None
+        if isinstance(self._gis._portal, portalpy.Portal) and \
+                   self._gis._portal.is_arcgisonline:
+            tbx = Toolbox(url=gp_url)
+        else:
+            tbx = Toolbox(url=gp_url, gis=self._gis)
+        res = tbx.export_web_map_task(web_map_as_json=wmjs,format="png32")
+        if update:
+            self.update(item_properties={'thumbnailUrl' : res.url})
+        return res
+
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
         """ Updates an item in a Portal.
 
