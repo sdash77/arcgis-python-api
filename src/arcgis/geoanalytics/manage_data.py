@@ -15,6 +15,76 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+def clip(input_layer, clip_layer, output_name=None, gis=None):
+    """
+    Clip features from one layer to the extent of a boundary layer. Use this tool to cut out a piece
+    of one feature class using one or more of the features in another feature class as a cookie
+    cutter. This is particularly useful for creating a new feature layers - also referred to as study
+    area or area of interest (AOI)- that contains a geographic subset of the features in another,
+    larger feature class.
+
+    Only available at **ArcGIS Enterprise 10.7** and later.
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       required FeatureLayer. The point, line or polygon features.
+    ----------------  ---------------------------------------------------------------
+    clip_layer        required FeatureLayer. The features that will be clipping the input_layer features.
+    ----------------  ---------------------------------------------------------------
+    output_name       optional string. The task will create a feature service of the results. You define the name of the service.
+    ----------------  ---------------------------------------------------------------
+    gis               optional GIS. The GIS object where the analysis will take place.
+    ================  ===============================================================
+
+    :returns: FeatureLayer
+
+    """
+    kwargs = locals()
+    tool_name = "ClipLayer"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json",
+    }
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+    if output_name is None:
+        output_service_name = 'Clip_Layers_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Overlay Layers')
+
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+    _set_context(params)
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "clip_layer": (_FeatureSet, "clipLayer"),
+        "outputType" : (str, 'outputType'),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "output"),
+    }
+    return_values = [
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+    try:
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
+    return
+
+
 def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_name=None, gis=None):
     """
     Only available at ArcGIS Enterprise 10.6.1 and later.

@@ -1661,8 +1661,8 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         gis                             Optional GIS. The GIS connection object
         ---------------------------     --------------------------------------------------------------------
-        tags                            Optional string. A comma seperated list of descriptive words for the
-                                        service
+        tags                            Optional list of strings. A comma seperated list of descriptive
+                                        words for the service.
         ===========================     ====================================================================
 
         :returns: FeatureLayer
