@@ -24,6 +24,55 @@ RENDERER_TYPES = {
     't' : "Temporal",#
     'v' : "vector field"#
 }
+def _size_info(field, min_value, max_value,
+               min_size=6, max_size=37.5, unit='unknown'):
+    """
+    """
+    return {
+         'type' : 'sizeInfo',
+          'field' : field,
+          'valueUnit' : unit,
+          'minSize' : min_size,
+          'maxSize' : max_size,
+          'minDataValue' : min_value,
+          'maxDataValue' : max_value
+     }
+
+def _color_info(field:str,
+                values:list,
+                steps:int=6,
+                colors:str='Reds_r' )-> dict:
+    """
+    Creates the Color Infomration Visual Variable from a collection of information.
+
+    """
+    d = {
+         'type' : 'colorInfo',
+          'field' : field,
+          'stops' : []
+     }
+    import numpy as np
+    steps = np.linspace(0,254, steps, endpoint=True, dtype=int).tolist()
+
+    cmaps = [_cmap2rgb(colors, step) for step in steps]
+    uvalues = list(set(values))
+    sorted(uvalues)
+    psteps = uvalues[::int(len(uvalues)/len(steps))]
+    if psteps[-1] != uvalues[-1]:
+        psteps.append(uvalues[-1])
+        steps = np.linspace(0,254, len(steps)+ 1, endpoint=True, dtype=int).tolist()
+        cmaps = [_cmap2rgb(colors, step) for step in steps]
+
+    #value_index = [uvalues[int(s*step_size)] for s in range(steps)]
+    for k,v in dict(zip(psteps, cmaps)).items():
+        d['stops'].append(
+              {
+                   'value' : k,
+                    'color' : v,
+                    'label' : None
+               }
+          )
+    return d
 #--------------------------------------------------------------------------
 def _trans_info(data, **kwargs):
     """creates a transparancy information for visual variables"""
@@ -524,6 +573,22 @@ def generate_renderer(geometry_type,
         alpha = 1
 
     renderer = None
+    vv = []
+    if 'size_field' in symbol_args:
+        size_field = symbol_args.pop('size_field')
+        vv.append(_size_info(field=size_field,
+                             min_value=sdf_or_series[size_field].min(),
+                             max_value=sdf_or_series[size_field].max(),
+                             min_size=symbol_args.pop('min_size', 1),
+                             max_size=symbol_args.pop('max_size', 24.1),
+                             unit=symbol_args.pop('size_units', 'unknown')))
+    if 'ci_field' in symbol_args:
+        color_field = symbol_args.pop('ci_field')
+        vv.append(_color_info(field=color_field,
+                              values=sdf_or_series[color_field],
+                              steps=symbol_args.pop('ci_steps', 3),
+                              colors=symbol_args.pop('ci_color', 'Reds_r')))
+
     if render_type is None and \
        str(geometry_type).lower() != 'raster':
         render_type = 's'
@@ -549,7 +614,7 @@ def generate_renderer(geometry_type,
             "description" : symbol_args.pop('description', ""),
             "rotationExpression" : symbol_args.pop("rotation_expression", ""),
             "rotationType" : symbol_args.pop("rotation_type", 'arithmetic'),
-            "visualVariables" : symbol_args.pop("visual_variables", None),
+            "visualVariables" : symbol_args.pop("visual_variables", vv),
             "symbol" : symbol
         }
         return renderer
@@ -641,7 +706,7 @@ def generate_renderer(geometry_type,
             "rotationType" : rotation_type,
             "valueExpression" : symbol_args.pop("arcade_expression", None),
             "valueExpressionTitle" : symbol_args.pop("arcade_title", None),
-            "visualVariables" : symbol_args.pop('visual_variables', None)
+            "visualVariables" : symbol_args.pop('visual_variables', vv)
         }
         c = 1
         for f in fields:
@@ -679,7 +744,7 @@ def generate_renderer(geometry_type,
     elif render_type == "v":
         renderer = {
             'type' : 'vectorField',
-            'visualVariables' : symbol_args.pop('visual_variables', None),
+            'visualVariables' : symbol_args.pop('visual_variables', vv),
             'style' : symbol_args.pop('style'),
             'rotationType' : symbol_args.pop('rotation_type', 'arithmetic'),
             'flowRepresentation' : symbol_args.pop('flow', 'flow_from'),
@@ -710,7 +775,7 @@ def generate_renderer(geometry_type,
             "type" : "classBreaks",
             "valueExpression" : symbol_args.pop('arcade_expression', None),
             'valueExpressionTitle' : symbol_args.pop('arcade_title', None),
-            'visualVariables' : symbol_args.pop('visual_variables', None),
+            'visualVariables' : symbol_args.pop('visual_variables', vv),
             'rotationType' : symbol_args.pop('rotation_type', 'arithmetic'),
             'rotationExpression' : symbol_args.pop('rotation_expression', None),
             'normalizationType' : symbol_args.pop('normalization_type', None),
