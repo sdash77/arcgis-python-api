@@ -194,7 +194,10 @@ def from_featureclass(filename, **kwargs):
                     row.pop(geom_idx)
                     g = {}
                 elif row[geom_idx].type in ['polyline', 'polygon']:
-                    g = _types.Geometry(row.pop(geom_idx).generalize(0))
+                    try:
+                        g = _types.Geometry(row.pop(geom_idx))
+                    except:
+                        g = _types.Geometry(row.pop(geom_idx)).generalize(0)
                 else:
                     g = _types.Geometry(row.pop(geom_idx))
                 if g == {}:
