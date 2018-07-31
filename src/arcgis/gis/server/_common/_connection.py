@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import io
 import os
 import re
+import ssl
 import sys
 import json
 import uuid
@@ -726,6 +727,14 @@ class ServerConnection(object):
                            urlparts.fragment))
     #----------------------------------------------------------------------
     def get_handlers(self):
+
+        if self._verify_cert == False:
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            handler = request.HTTPSHandler(context=ctx)
+            handlers.append(handler)
+
         from urllib.request import HTTPRedirectHandler
         redirect_handler = HTTPRedirectHandler()
         redirect_handler.max_redirections = 30

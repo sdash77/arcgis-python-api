@@ -15,9 +15,9 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def clip(input_layer, clip_layer, output_name=None, gis=None):
+def clip_layer(input_layer, clip_layer, output_name=None, gis=None):
     """
-    Clip features from one layer to the extent of a boundary layer. Use this tool to cut out a piece
+    Clip_layer features from one layer to the extent of a boundary layer. Use this tool to cut out a piece
     of one feature class using one or more of the features in another feature class as a cookie
     cutter. This is particularly useful for creating a new feature layers - also referred to as study
     area or area of interest (AOI)- that contains a geographic subset of the features in another,

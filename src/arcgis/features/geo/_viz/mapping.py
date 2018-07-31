@@ -200,7 +200,7 @@ def plot(df,
                 idx += 1
         elif renderer_type == 'c':
             kwargs['field'] = col[0]
-        r = generate_renderer(geometry_type=df.spatial.geometry_type[0].lower(),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=symbol_type,
@@ -211,7 +211,7 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 'h':
-        r = generate_renderer(geometry_type=df.spatial.geometry_type[0].lower(),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=symbol_type,
@@ -222,7 +222,7 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 'str':
-        r = generate_renderer(geometry_type=df.spatial.geometry_type[0].lower(),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=None,
@@ -233,7 +233,7 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 't':
-        r = generate_renderer(geometry_type=df.spatial.geometry_type[0].lower(),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=None,

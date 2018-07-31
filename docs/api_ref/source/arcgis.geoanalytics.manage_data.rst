@@ -11,9 +11,9 @@ calculate_fields
 --------------
 .. automethod:: arcgis.geoanalytics.manage_data.calculate_fields
 
-clip
+clip_layer
 -------------
-..automethod:: arcgis.geoanalytics.manage_data.clip
+..automethod:: arcgis.geoanalytics.manage_data.clip_layer
 
 copy_to_data_store
 --------------
