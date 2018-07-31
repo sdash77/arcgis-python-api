@@ -210,6 +210,17 @@ def plot(df,
                               alpha=alpha,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
+    elif renderer_type in ['u', 'u-a']:
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
+                              sdf_or_series=df,
+                              label=name,
+                              symbol_type=symbol_type,
+                              symbol_style=symbol_style,
+                              render_type=renderer_type,
+                              colors=colors,
+                              alpha=alpha,
+                              **kwargs)
+        fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 'h':
         r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
                               sdf_or_series=df,
