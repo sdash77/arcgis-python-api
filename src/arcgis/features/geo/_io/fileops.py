@@ -331,11 +331,18 @@ def to_featureclass(geo,
             elif df[col].dtype.name == 'datetime64[ns]':
                 dtypes.append((col, '<M8[us]'))
             elif df[col].dtype.name == 'object':
-                u = pd.unique(df[col].apply(type)).tolist()[0]
+                try:
+                    u = type(df[col][df[col].first_valid_index()])
+                except:
+                    u = pd.unique(df[col].apply(type)).tolist()[0]
                 if issubclass(u, str):
                     mlen = df[col].str.len().max()
-                    dtypes.append((col, '<U%s' % mlen))
-
+                    dtypes.append((col, '<U%s' % int(mlen)))
+                else:
+                    try:
+                        dtypes.append((col, type(df[col][s.first_valid_index()])))
+                    except:
+                        dtypes.append((col, '<U254'))
             elif df[col].dtype.name == 'int64':
                 dtypes.append((col, np.int64))
             elif df[col].dtype.name == 'bool':
