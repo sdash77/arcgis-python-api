@@ -1093,9 +1093,34 @@ class FeatureLayerCollectionManager(_GISResource):
             return {'error': 'Cannot find related data item used to publish this feature layer'}
 
         # endregion
+        params = None
+        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
+           self._gis._portal.is_arcgisonline == False:
+            params = {
+                "name" : related_data_item.name,
+                "title" : related_data_item.title,
+                "tags" : related_data_item.tags,
+                "type" : related_data_item.type,
+                "overwrite" : True,
+                "overwriteService" : "on",
+                "useDescription" : "on"
+            }
+            lyr_url_info = "%s/layers" % feature_layer_item.layers[0].container._url
+            fs_url = "%s" % feature_layer_item.layers[0].container._url
+            layer_info = self._gis._con.get(lyr_url_info, {'f' : 'json'})
+            [lyr.pop('fields') for lyr in layer_info['layers']]
+            [lyr.pop('fields') for lyr in layer_info['tables']]
+            feature_service_def = self._gis._con.get(fs_url, {'f' : 'json'})
+            feature_service_def['tables'] = []
+            feature_service_def['layers'] = []
+            feature_service_def.update(layer_info)
+            publish_parameters = feature_service_def
+            publish_parameters['name'] = feature_layer_item.title
+
 
         # region construct publishParameters dictionary
-        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase']:
+        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
+           self._gis._portal.is_arcgisonline:
             # construct a full publishParameters that is a combination of existing Feature Layer definition
             # and original publishParameters.json used for publishing the service the first time
 
@@ -1133,14 +1158,14 @@ class FeatureLayerCollectionManager(_GISResource):
             # combine both old publish params and full feature service definition
             publish_parameters = feature_service_def
             publish_parameters.update(old_publish_parameters)
-
         else:
             # overwriting a SD case - no need for detailed publish parameters
             publish_parameters = None
+
         # endregion
 
         #region Perform overwriting
-        if related_data_item.update(data=data_file):
+        if related_data_item.update(item_properties=params, data=data_file):
             published_item = related_data_item.publish(publish_parameters, overwrite=True)
             if published_item is not None:
                 return {'success': True}

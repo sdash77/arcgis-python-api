@@ -108,9 +108,10 @@ def from_layer(layer,
             ids = [str(i) for i in ids]
             sql = "%s in (%s)" % (oid_info['objectIdFieldName'],
                                   ",".join(ids))
-            frames.append(layer.query(where=sql).df)
+            frames.append(layer.query(where=sql).sdf)
         res = pd.concat(frames, ignore_index=True)
         res.reset_index(drop=True, inplace=True)
+        res.spatial.set_geometry("SHAPE")
     else:
         sr = SpatialReference(dict(layer.container.properties)['spatialReference'])
         res = layer.query(where=query).to_dict()['features']
