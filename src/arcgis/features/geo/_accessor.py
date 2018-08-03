@@ -4,11 +4,17 @@ Holds Delegate and Accessor Logic
 import os
 import copy
 import time
+import uuid
+import shutil
 import datetime
+import tempfile
 import pandas as pd
 import numpy as np
 try:
     import arcpy
+    name = "a%sa.gdb" % uuid.uuid4().hex[:5]
+    fgdb = arcpy.CreateFileGDB_management(tempfile.gettempdir(), name)[0]
+    shutil.rmtree(fgdb)
     HASARCPY = True
 except:
     HASARCPY = False
