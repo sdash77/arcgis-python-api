@@ -94,7 +94,7 @@ def test_build_sindex_rt_load_fn():
 #--------------------------------------------------------------------------
 def test_intersect_rtree():
     """"""
-    from geo._index._impl import SpatialIndex
+    from arcgis.features.geo._index._impl import SpatialIndex
     si = SpatialIndex('rtree')
     si.insert(0, [-179, -89, 179, 89])
     r = si.intersect([-180, -90, 180, 90])
@@ -102,7 +102,7 @@ def test_intersect_rtree():
 #--------------------------------------------------------------------------
 def test_intersect_quadtree():
     """"""
-    from geo._index._impl import SpatialIndex
+    from arcgis.features.geo._index._impl import SpatialIndex
     si = SpatialIndex('quadtree', [-179, -89, 179, 89])
     si.insert(0, [-179, -89, 179, 89])
     r = si.intersect([-180, -90, 180, 90])

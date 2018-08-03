@@ -16,7 +16,7 @@ from arcgis.geometry import Geometry
 ##   from_layer, to_layer and _chunks methods
 ##
 ##--------------------------------------------------------------------------
-from geo._io.serviceops import _chunks, to_featureset, to_layer, from_layer
+from arcgis.features.geo._io.serviceops import _chunks, to_featureset, to_layer, from_layer
 #--------------------------------------------------------------------------
 def test_chunks():
     """Tests the chunking method"""
