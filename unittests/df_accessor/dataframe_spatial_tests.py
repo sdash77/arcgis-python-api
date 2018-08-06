@@ -257,7 +257,7 @@ def test_full_extent():
     data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
     df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
     df.spatial.set_geometry(geoms)
-    assert df.spatial.full_extent == (-118, 32, -97, 33)
+    assert df.spatial.full_extent == (-118.15, 32.832, -97.06124, 33.8)
 #--------------------------------------------------------------------------
 def test_sr_single():
     """tests getting the sr"""

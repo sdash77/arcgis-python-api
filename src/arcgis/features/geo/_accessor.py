@@ -4,14 +4,12 @@ Holds Delegate and Accessor Logic
 import os
 import copy
 import time
+import uuid
+import shutil
 import datetime
+import tempfile
 import pandas as pd
 import numpy as np
-try:
-    import arcpy
-    HASARCPY = True
-except:
-    HASARCPY = False
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass
@@ -35,11 +33,19 @@ class Delegated:
 ###########################################################################
 class DelegatedSeriesProperty(Delegated):
     def _get_result(self, obj, type=None):
-        return getattr(object.__getattribute__(obj, '_data'), self.name)
+        idx = object.__getattribute__(obj, '_index')
+        data = object.__getattribute__(obj, '_data')
+        series = getattr(data, self.name)
+        series.index = idx
+        return series
 ###########################################################################
 class DelegatedProperty(Delegated):
     def _get_result(self, obj, type=None):
-        return getattr(object.__getattribute__(obj, '_data')[obj._name].values, self.name)
+        index = object.__getattribute__(obj, '_index')
+        data = object.__getattribute__(obj, '_data')
+        series = getattr(data, self.name)
+        series.index = index
+        return series#getattr(object.__getattribute__(obj, '_data')[obj._name].values, self.name)
 ###########################################################################
 class DelegatedMethod(Delegated):
     def __get__(self, obj, type=None):
@@ -85,8 +91,8 @@ class GeoSeriesAccessor:
                 for g in self._data]
         if is_ga:
             from ._array import GeoArray
-            return pd.Series(GeoArray(vals))
-        return pd.Series(vals)
+            return pd.Series(GeoArray(vals), index=self._index)
+        return pd.Series(vals, index=self._index)
     #----------------------------------------------------------------------
     @staticmethod
     def _validate(obj):
@@ -2233,10 +2239,10 @@ class GeoAccessor(object):
 
         """
         array = np.array(self._data[self.name].geom.geoextent.tolist())
-        return (int(array[:,0].min()),
-                int(array[:,1].min()),
-                int(array[:,2].max()),
-                int(array[:,3].max()))
+        return (float(array[:,0].min()),
+                float(array[:,1].min()),
+                float(array[:,2].max()),
+                float(array[:,3].max()))
     #----------------------------------------------------------------------
     @property
     def area(self):
@@ -2310,10 +2316,12 @@ class GeoAccessor(object):
         >>> df.spatial.bbox
         {'rings' : [[[1,2], [2,3], [3,3],....]], 'spatialReference' {'wkid': 4326}}
         """
-        fe = self.full_extent
+        xmin, ymin, xmax, ymax = self.full_extent
         return Geometry(
-            {'rings' : [[[fe[0], fe[1]], [fe[0],fe[3]], [fe[2],fe[3]], [fe[2],fe[1]], [fe[0],fe[1]]]],
-             'spatialReference' : self.sr})
+            {'rings' : [[[xmin,ymin], [xmin, ymax],
+                         [xmax, ymax], [xmax, ymin],
+                         [xmin, ymin]]],
+             'spatialReference' : dict(self.sr)})
     #----------------------------------------------------------------------
     def project(self, spatial_reference, transformation_name=None):
         """

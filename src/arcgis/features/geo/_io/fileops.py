@@ -307,7 +307,7 @@ def to_featureclass(geo,
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
-    if geo._name is None:
+    if geo.name is None:
         raise ValueError("DataFrame must have geometry set.")
     if geo.validate(strict=True) == False:
         raise ValueError(("Mixed geometry types detected, "
@@ -364,7 +364,11 @@ def to_featureclass(geo,
             for g in geoms:
                 irows.insertRow([g.as_arcpy])
                 del g
-        oidfld = da.Describe(fc)['OIDFieldName']
+        if hasattr(da, 'Describe'):
+            oidfld = da.Describe(fc)['OIDFieldName']
+        else:
+            desc = arcpy.Describe(fc)
+            oidfld = desc.OIDFieldName
         attr = np.array([tuple(row) for row in attr.tolist()], dtype=dtypes)
         da.ExtendTable(fc, oidfld, attr, join_dummy, append_only=False)
         return fc
