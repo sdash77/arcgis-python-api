@@ -609,10 +609,10 @@ class FeatureSet(object):
 
         converts the FeatureSet to a Pandas dataframe. Requires pandas
         """
-        import warnings
-        warnings.warn(("The SpatialDataFrame has been deprecated. "
-                       "`df` property will be modified to return the Spatially Enabled DataFrame as v2.0"
-                       ". This property should not be used. Please use `sdf` instead."))
+        #import warnings
+        #warnings.warn(("The SpatialDataFrame has been deprecated. "
+                       #"`df` property will be modified to return the Spatially Enabled DataFrame as v2.0"
+                       #". This property should not be used. Please use `sdf` instead."))
         try:
             try:
                 import arcpy

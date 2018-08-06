@@ -307,7 +307,7 @@ def to_featureclass(geo,
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
-    if geo._name is None:
+    if geo.name is None:
         raise ValueError("DataFrame must have geometry set.")
     if geo.validate(strict=True) == False:
         raise ValueError(("Mixed geometry types detected, "
