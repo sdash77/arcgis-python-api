@@ -97,7 +97,7 @@ class GeoSeriesAccessor:
     @staticmethod
     def _validate(obj):
         if not is_geometry_type(obj):
-            raise AttributeError("Cannot use 'spatial' accessor on objects of "
+            raise AttributeError("Cannot use 'geom' accessor on objects of "
                                  "dtype '{}'.".format(obj.dtype))
     ##---------------------------------------------------------------------
     ##   Accessor Properties
@@ -2023,24 +2023,26 @@ class GeoAccessor(object):
     @sr.setter
     def sr(self, ref):
         """Sets the spatial reference"""
-        sr = self.sr
-        if 'wkid' in sr:
-            wkid = sr['wkid']
-        if 'wkt' in sr:
-            wkt = sr['wkt']
-        if isinstance(ref, SpatialReference):
-            if ref != sr:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
-        elif isinstance(ref, int):
-            if ref != wkid:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
-        elif isinstance(ref, str):
-            if ref != wkt:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
-        elif isinstance(ref, dict):
-            nsr = SpatialReference(ref)
-            if sr != nsr:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
+        from arcgis.geometry import HASARCPY
+        if HASARCPY:
+            sr = self.sr
+            if 'wkid' in sr:
+                wkid = sr['wkid']
+            if 'wkt' in sr:
+                wkt = sr['wkt']
+            if isinstance(ref, SpatialReference):
+                if ref != sr:
+                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+            elif isinstance(ref, int):
+                if ref != wkid:
+                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+            elif isinstance(ref, str):
+                if ref != wkt:
+                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+            elif isinstance(ref, dict):
+                nsr = SpatialReference(ref)
+                if sr != nsr:
+                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
     #----------------------------------------------------------------------
     def to_featureset(self):
         """
