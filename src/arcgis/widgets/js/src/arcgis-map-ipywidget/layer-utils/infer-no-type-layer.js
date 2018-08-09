@@ -1,0 +1,193 @@
+var getEsriLoader = require("../loaders/get-esri-loader");
+var inferRenderer = require("../renderer-utils/infer-renderer");
+var rendererTypesUtil = require("../renderer-utils/renderer-types-util");
+var createDefaultPopup = require("../popup-utils/create-default-popup");
+var config = require("config");
+var esriLoader = getEsriLoader(config);
+var options = config.EsriLoaderOptions;
+
+var inferNoTypeLayer = function(noTypeLayer, widget){
+    ///Take a generic object, constructs the correct layer type, returns
+    //a promise that let's you use the typedLayer this func constructs.
+    //For example: if you have an untyped layer (generic js object) like:
+    //var foo = {type: "FeatureLayer", url: "https://arcgis.com/..."}
+    //You can use this function like this:
+    //inferNoTypeLayer(foo).then((typedLayer) => 
+    //    {//typedLayer is an instance of type FeatureLayer })
+    //TODO: put logic for major layer types here (i.e., FeatureLayer) in 
+    //their own JS file
+    return new Promise(function(resolve, reject) {
+        esriLoader.loadModules(['esri/layers/ImageryLayer',
+                                'esri/layers/KMLLayer',
+                                'esri/layers/TileLayer',
+                                'esri/layers/MapImageLayer',
+                                'esri/layers/VectorTileLayer',
+                                'esri/layers/FeatureLayer',
+                                'esri/tasks/support/FeatureSet',
+                                'esri/PopupTemplate',
+                                'esri/layers/support/RasterFunction'],
+        options).then(([ImageryLayer,
+                        KMLLayer,
+                        TileLayer,
+                        MapImageLayer,
+                        VectorTileLayer,
+                        FeatureLayer,
+                        FeatureSet,
+                        PopupTemplate,
+                        RasterFunction]) => {
+            if (noTypeLayer.type === "ImageryLayer"){
+                var typedLayer = new ImageryLayer(noTypeLayer.url);
+                typedLayer.id = noTypeLayer._hashFromPython;
+                if (('options' in noTypeLayer) && 
+                    ('imageServiceParameters' in noTypeLayer.options) &&
+                    ('renderingRule' in noTypeLayer.options.imageServiceParameters)){
+                    //If a raster function is being passed as an arg
+                    console.log("Applying raster function to imagery layer..");
+                    var renderingRule = 
+                        noTypeLayer.options.imageServiceParameters.renderingRule;
+                    var rasterFunction = RasterFunction.fromJSON(renderingRule);
+
+//                        functionName: renderingRule.rasterFunction,
+//                        functionArguments: renderingRule.rasterFunctionArguments,
+//                        variableName: renderingRule.
+//                    });
+                    typedLayer.renderingRule = rasterFunction;
+                }
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "KMLLayer") {
+                var typedLayer = new KMLLayer(noTypeLayer.url);
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if ((noTypeLayer.type == "ArcGISTiledMapServiceLayer") ||
+                     (noTypeLayer.type == "TileLayer")){
+                //Renamed in 4.X
+                var typedLayer = new TileLayer(noTypeLayer.url);
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if ((noTypeLayer.type == "ArcGISDynamicMapServiceLayer") ||
+                     (noTypeLayer.type == "MapImageLayer" )){
+                //renamed in 4.X
+                var typedLayer = new MapImageLayer(noTypeLayer.url);
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer)}
+            else if (noTypeLayer.type == "VectorTileLayer") {
+                var typedLayer = new VectorTileLayer(noTypeLayer.url);
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if ((noTypeLayer.type == "FeatureLayer") ||
+                     (noTypeLayer.type == "Feature Layer")) {
+                //TODO: clean up this Feature layer stuff, seperate into new file
+                
+                //Create the base FeatureLayer
+                var unloadedLayer = new FeatureLayer(noTypeLayer.url, {
+                    "outFields": ["*"]});
+                unloadedLayer.id = noTypeLayer._hashFromPython;
+                unloadedLayer.load().then((layer) => {
+
+                    layer.popupTemplate = createDefaultPopup(layer);
+
+                    //Find out where any extra options are located, set them to lyr_options
+                    var lyr_options = {}
+                    if (noTypeLayer.options == null) {
+                        lyr_options = noTypeLayer;}
+                    else{
+                        lyr_options = noTypeLayer.options;}
+
+                    //Figure out if those options specify opacity and definition_expression
+                    if (lyr_options.opacity != null) {
+                        console.log('FeatureLayerOpacity:' + lyr_options.opacity);
+                        layer.opacity = lyr_options.opacity;}
+                    if (noTypeLayer.opacity != null) {
+                        layer.opacity = noTypeLayer.opacity;}
+                    if (lyr_options.definition_expression != null) {
+                        console.log("FeatureLayerDefinitionExpression:");
+                        console.log(lyr_options.definition_expression);
+                        layer.definitionExpression = lyr_options.definition_expression;}
+                    if (noTypeLayer.definition_expression != null) {
+                        console.log("FeatureLayerDefinitionExpression:");
+                        console.log(noTypeLayer.definition_expression);
+                        layer.definitionExpression = noTypeLayer.definition_expression;}
+
+                    //Figure out the renderer
+                    if (!lyr_options.renderer) {
+                        resolve(layer);
+                    } else { 
+                        console.log("Specifying the FeatureLayer's custom renderer...");
+                        var rendererOptions = {}
+                        if(rendererTypesUtil.isSmartMapRenderer(lyr_options.renderer)){
+                            //TODO: Clean up this section, seperate out into own file
+                            rendererOptions = {layer: layer,
+                                               fieldName: lyr_options.field_name,
+                                               basemap: widget.model.get("basemap"),
+                                               otherLayerOptions: lyr_options };
+                        } else {
+                            rendererOptions = lyr_options;
+                        }
+                        inferRenderer(lyr_options.renderer, rendererOptions,
+                        widget).then((renderer) => {
+                            layer.renderer = renderer;
+                            resolve(layer);
+                        }).catch((err) => {
+                            console.warn("Error on inferring renderer.");
+                            reject(err);})}}
+                ).catch((err) => {
+                    console.warn("Error when laoding Feature Layer");
+                    reject(err);
+                })
+            } else if('featureSet' in noTypeLayer){
+                ///This is a catch for FeatureCollections
+                ///TODO: Seperate this out into its own file,
+                ///have the result of this stored in it's own widget model
+                console.log("Creating from FeatureCollection...");
+
+                //convert all esriJSON to correct 4.X JSON via fromJSON
+                var layerDefinition = noTypeLayer.layerDefinition;
+                var esriJSONFS = noTypeLayer.featureSet;
+                esriJSONFS.spatialReference = layerDefinition.spatialReference;
+                esriJSONFS.fields = layerDefinition.fields;
+                var featureSet = FeatureSet.fromJSON(esriJSONFS);
+
+                //Assemble everything from the featureLayer BUT the renderer
+                var typedLayer = new FeatureLayer({
+                    fields: featureSet.fields,
+                    objectIdField: layerDefinition.objectIdField,
+                    geometryType: featureSet.geometryType,
+                    spatialReference: featureSet.spatialReference,
+                    source: featureSet.features})
+                typedLayer.popupTemplate = createDefaultPopup(typedLayer);
+                typedLayer.id = noTypeLayer._hashFromPython;
+
+                //Get the correct renderer and rendererOptions to
+                if("renderer" in noTypeLayer.options){
+                    renderer = noTypeLayer.options.renderer;
+                } else {
+                    renderer = layerDefinition.drawingInfo.renderer.type;
+                }
+                if(rendererTypesUtil.isSmartMapRenderer(renderer)){
+                    rendererOptions = { layer: typedLayer,
+                                        fieldName: noTypeLayer.options.field_name,
+                                        basemap: widget.model.get("basemap"),
+                                        otherLayerOptions: noTypeLayer.options };
+                } else {
+                    rendererOptions = layerDefinition.drawingInfo.renderer;
+                }
+
+                //Infer the renderer from the above info, add to layer, resolve
+                inferRenderer(renderer, rendererOptions, widget).then(
+                (renderer) => {
+                        typedLayer.renderer = renderer;
+                        resolve(typedLayer);
+                    }).catch((err) => {
+                        console.warn("Error on inferring renderer.");
+                        reject(err);});}
+            else{
+                console.warn('This layer type is not supported:');
+                console.warn(noTypeLayer);
+                reject("This layer type is not supported.");}
+       }).catch((err) => {
+            reject(err);
+        });
+    });
+}
+
+module.exports = inferNoTypeLayer;

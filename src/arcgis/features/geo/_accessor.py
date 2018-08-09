@@ -97,7 +97,7 @@ class GeoSeriesAccessor:
     @staticmethod
     def _validate(obj):
         if not is_geometry_type(obj):
-            raise AttributeError("Cannot use 'spatial' accessor on objects of "
+            raise AttributeError("Cannot use 'geom' accessor on objects of "
                                  "dtype '{}'.".format(obj.dtype))
     ##---------------------------------------------------------------------
     ##   Accessor Properties
@@ -824,9 +824,26 @@ class GeoAccessor(object):
     def set_geometry(self, col):
         """Assigns the Geometry Column by Name or by List"""
         from ._array import GeoArray
+
         if isinstance(col, str) and  \
            col in self._data.columns and \
            self._data[col].dtype.name.lower() != 'geometry':
+            q = self._data[col].isnull()
+            idx = self._data[col].first_valid_index()
+            sr = SpatialReference(self._data.iloc[idx].SHAPE.spatial_reference)
+            if len(q) > 0:
+                if self._data[col][idx].geometry_type.lower() == 'polyline':
+                    data = len(self._data[q]) * [Geometry({'paths' : [], 'spatialReference' : sr})]
+                    self._data.loc[q, col]  = data
+                elif self._data[col][idx].geometry_type.lower() == 'polygon':
+                    data = len(self._data[q]) * [Geometry({"rings" : [], 'spatialReference' : sr})]
+                    self._data.loc[q, col]  = data
+                elif self._data[col][idx].geometry_type.lower() == 'point':
+                    data = len(self._data[q]) * [Geometry({"x" : None, "y": None, 'spatialReference' : sr})]
+                    self._data.loc[q, col]  = data
+                elif self._data[col][idx].geometry_type.lower() == 'multipoint':
+                    data = len(self._data[q]) * [Geometry({"points" : [  ], 'spatialReference' : sr})]
+                    self._data.loc[q, col]  = data
             self._name = col
             self._data[col] = GeoArray(self._data[col])
         elif isinstance(col, str) and  \
@@ -2023,24 +2040,26 @@ class GeoAccessor(object):
     @sr.setter
     def sr(self, ref):
         """Sets the spatial reference"""
-        sr = self.sr
-        if 'wkid' in sr:
-            wkid = sr['wkid']
-        if 'wkt' in sr:
-            wkt = sr['wkt']
-        if isinstance(ref, SpatialReference):
-            if ref != sr:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
-        elif isinstance(ref, int):
-            if ref != wkid:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
-        elif isinstance(ref, str):
-            if ref != wkt:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
-        elif isinstance(ref, dict):
-            nsr = SpatialReference(ref)
-            if sr != nsr:
-                self._data[self.name] = self._data[self.name].geom.project_as(ref)
+        from arcgis.geometry import HASARCPY
+        if HASARCPY:
+            sr = self.sr
+            if 'wkid' in sr:
+                wkid = sr['wkid']
+            if 'wkt' in sr:
+                wkt = sr['wkt']
+            if isinstance(ref, SpatialReference):
+                if ref != sr:
+                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+            elif isinstance(ref, int):
+                if ref != wkid:
+                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+            elif isinstance(ref, str):
+                if ref != wkt:
+                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
+            elif isinstance(ref, dict):
+                nsr = SpatialReference(ref)
+                if sr != nsr:
+                    self._data[self.name] = self._data[self.name].geom.project_as(ref)
     #----------------------------------------------------------------------
     def to_featureset(self):
         """
@@ -2238,7 +2257,9 @@ class GeoAccessor(object):
         (-118, 32, -97, 33)
 
         """
-        array = np.array(self._data[self.name].geom.geoextent.tolist())
+        q = self._data[self.name].geom.geoextent.isnull()
+        data = self._data[~q][self.name].geom.geoextent.tolist()
+        array = np.array(data)
         return (float(array[:,0].min()),
                 float(array[:,1].min()),
                 float(array[:,2].max()),
@@ -2281,7 +2302,8 @@ class GeoAccessor(object):
         (-14.23427, 39)
 
         """
-        df = pd.DataFrame(data=self._data[self.name].geom.centroid.tolist(), columns=['x','y'])
+        q = self._data[self.name].geom.centroid.isnull()
+        df = pd.DataFrame(self._data[~q][self._name].geom.centroid.tolist(), columns=['x','y'])
         return df['x'].mean(), df['y'].mean()
     #----------------------------------------------------------------------
     @property

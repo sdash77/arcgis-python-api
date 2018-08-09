@@ -1,0 +1,7 @@
+div.esri-display-object * {
+    /* This override fixes the issue where certain types of layers (Polygon
+     * layers, load layers, etc.) would not draw in Chrome, or partially draw
+     * in Safari. TODO: Find a more elegant fix other than this hack */
+    height: 99999999px !important;
+    width:  99999999px !important;
+}

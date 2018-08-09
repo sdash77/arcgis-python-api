@@ -43,6 +43,7 @@ else:
         'pyshp',
         'matplotlib',
         'keyring',
+        'jupyterlab',
         'winkerberos;platform_system=="Windows"' ]
 
 def _post_install():
@@ -134,7 +135,7 @@ kwargs = {
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version":'1.4.2',
+    "version":'1.5.0',
 
     "description":'ArcGIS API for Python',
     "long_description":long_description,
@@ -195,10 +196,15 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages":find_packages(),
-    "package_data":{'arcgis': ['widgets/*.js',
-                             'widgets/*.css',
-                             'widgets/icons/*.png',
-                             'widgets/requirejs/*.js']},
+    "include_package_data":True,
+    'data_files': [
+        ('share/jupyter/nbextensions/arcgis', [
+            'arcgis/widgets/js/dist/extension.js',
+            'arcgis/widgets/js/dist/arcgis-map-ipywidget.js',
+            'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map',
+            ]
+        )
+    ],
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:

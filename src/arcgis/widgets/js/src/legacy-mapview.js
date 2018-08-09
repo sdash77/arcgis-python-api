@@ -1,266 +1,44 @@
-// leave at least 2 line with only a star on it below, or doc generation fails
-/**
- *
- *
- * Placeholder for custom user javascript
- * mainly to be overridden in profile/static/custom/custom.js
- * This will always be an empty file in IPython
- *
- * User could add any javascript in the `profile/static/custom/custom.js` file.
- * It will be executed by the ipython notebook at load time.
- *
- * Same thing with `profile/static/custom/custom.css` to inject custom css into the notebook.
- *
- *
- * The object available at load time depend on the version of IPython in use.
- * there is no guaranties of API stability.
- *
- * The example below explain the principle, and might not be valid.
- *
- * Instances are created after the loading of this file and might need to be accessed using events:
- *     define([
- *        'base/js/namespace',
- *        'base/js/events'
- *     ], function(IPython, events) {
- *         events.on("app_initialized.NotebookApp", function () {
- *             IPython.keyboard_manager....
- *         });
- *     });
- *
- * __Example 1:__
- *
- * Create a custom button in toolbar that execute `%qtconsole` in kernel
- * and hence open a qtconsole attached to the same kernel as the current notebook
- *
- *    define([
- *        'base/js/namespace',
- *        'base/js/events'
- *    ], function(IPython, events) {
- *        events.on('app_initialized.NotebookApp', function(){
- *            IPython.toolbar.add_buttons_group([
- *                {
- *                    'label'   : 'run qtconsole',
- *                    'icon'    : 'icon-terminal', // select your icon from http://fortawesome.github.io/Font-Awesome/icons
- *                    'callback': function () {
- *                        IPython.notebook.kernel.execute('%qtconsole')
- *                    }
- *                }
- *                // add more button here if needed.
- *                ]);
- *        });
- *    });
- *
- * __Example 2:__
- *
- * At the completion of the dashboard loading, load an unofficial javascript extension
- * that is installed in profile/static/custom/
- *
- *    define([
- *        'base/js/events'
- *    ], function(events) {
- *        events.on('app_initialized.DashboardApp', function(){
- *            require(['custom/unofficial_extension.js'])
- *        });
- *    });
- *
- * __Example 3:__
- *
- *  Use `jQuery.getScript(url [, success(script, textStatus, jqXHR)] );`
- *  to load custom script into the notebook.
- *
- *    // to load the metadata ui extension example.
- *    $.getScript('/static/notebook/js/celltoolbarpresets/example.js');
- *    // or
- *    // to load the metadata ui extension to control slideshow mode / reveal js for nbconvert
- *    $.getScript('/static/notebook/js/celltoolbarpresets/slideshow.js');
- *
- *
- * @module IPython
- * @namespace IPython
- * @class customjs
- * @static
- */
+var widgets = require('@jupyter-widgets/base');
+var requireJSEsriLoader = require("./arcgis-map-ipywidget/loaders/requirejs-esri-loader");
+var defaultEsriLoader = require("esri-loader");
+var config = require("config")
 
+console.log("Loading arcgis-map-ipywidget...");
 
-var esriCDN = location.protocol + "//js.arcgis.com/3.17amd/"
-var proxyUrl = "/proxy/proxy.jsp";
-
-// Jupyter specific, but should work for local, tmpnb, NSF, and other scenarios
-//    the way Jupyter Notebooks work; get last occurrence of notebooks in URL.
-var strnb = location.href.lastIndexOf("/notebooks");
-var nbextensionPath = "";
-if (strnb < 0) {
-    nbextensionPath = "/nbextensions/arcgis";
-}
-else {
-    nbextensionPath = location.href.substring(0, strnb) + "/nbextensions/arcgis";
+var esriLoader;
+if(!config.JupyterTarget){
+    throw "config does not specify 'JupyterTarget'! Failing";
+} else if(config.JupyterTarget === "lab"){
+    console.log("Using the default esri-loader...");
+    esriLoader = defaultEsriLoader;
+} else if(config.JupyterTarget === "notebook") {
+    //Jupyter Notebooks use RequireJS for AMD module loading
+    //We must use the custom requireJSesri-loader for it to work
+    //See ./requirejs-esri-loader.js for more details
+    console.log("Using the custom RequireJS esri-loader...");
+    esriLoader = requireJSEsriLoader;
+} else{
+    throw "Misconfigured config file! Failing";
 }
 
-require.config({
-    // Define path mappings for modules
-    paths: {
-        // [1] Modules hosted on Esri CDN.
-        "dojo": esriCDN + "dojo",
-        "dojox": esriCDN + "dojox",
-        "dijit": esriCDN + "dijit",
-        "esri": esriCDN + "esri",
-        "dgrid": esriCDN + "dgrid",
-        "xstyle": esriCDN + "xstyle",
-        "put-selector": esriCDN + "put-selector",
-        "moment": esriCDN + "moment",
+console.log("Config loaded:");
+console.log(config);
 
-        // [2] Modules hosted locally.
-        // "location" is specified as path relative to web server root.
-        // "requirejs":  "/research/js/requirejs", - already loaded
-        //"text":       "/static/custom/requirejs/text"
-        "mytext": nbextensionPath + "/requirejs/text"
-    },
+var options = config.EsriLoaderOptions;
 
-    urlArgs: "client=gsrs",
-
-    // Use RequireJS text plugin instead of dojo/text plugin.
-    // Any module that requires dojo/text plugin will use RequireJS
-    // text plugin instead.
-    // http://requirejs.org/docs/api.html#config
-    map: {
-        "*": {
-            "dojo/text": "mytext"
-        }
-    },
-    config: {
-        mytext: {
-
-            useXhr: function (url) {
-                // Allow cross domain XHR requests:
-                // We will route them through a proxy in onXhr below.
-                // https://github.com/requirejs/text/blob/master/text.js#L129
-
-                return true;
-            },
-
-            // In IE 9, text plugin fails even before onXhr is called:
-            // It fails right when calling xhr.open:
-            // https://github.com/requirejs/text/blob/master/text.js#L267
-            // - This is different from other browsers which appear to fail
-            // much later, allowing us a chance to append proxy below.
-            // -- Probably because IE 9 does not support CORS as opposed to
-            // other modern browsers that have CORS support.
-
-            // ESRI modification: let's take over xhr.open below
-            openXhr: false,
-
-            onXhr: function (xhr, url) {
-                // Route cross domain XHR through a proxy if required
-                var hasCors = (
-                  typeof XMLHttpRequest !== "undefined"
-                  && ("withCredentials" in (new XMLHttpRequest()))
-                );
-
-                xhr.open(
-                  "GET",
-                  hasCors ? url : (proxyUrl + "?" + url),
-                  true
-                );
-            }
-        }
-    }
-});
-
-//require([
-//"widgets/js/widget",
-//"widgets/js/manager",
-//"nbextensions/widgets/widgets/js/widget",
-//"nbextensions/widgets/widgets/js/manager",
-require.undef('mapview');
-
-define('mapview', [
-     "@jupyter-widgets/base",
-     "esri/basemaps",
-     "esri/map",
-     "esri/config",
-     "esri/Color",
-     "esri/dijit/LayerSwipe",
-     "esri/graphic",
-     "esri/TimeExtent",
-     "esri/ServerInfo",
-     "esri/IdentityManager",
-     "esri/geometry/Extent",
-     "esri/SpatialReference",
-     "esri/InfoTemplate",
-     "esri/toolbars/draw",
-     "esri/layers/KMLLayer",
-     "esri/layers/VectorTileLayer",
-     "esri/layers/RasterFunction",
-     "esri/layers/MosaicRule",
-     "esri/layers/ArcGISImageServiceLayer",
-     "esri/layers/ArcGISDynamicMapServiceLayer",
-     "esri/layers/ArcGISTiledMapServiceLayer", 
-     "esri/layers/ImageServiceParameters",
-     "esri/geometry/Polyline",
-     "esri/geometry/Polygon",
-     "esri/geometry/Point",
-     "esri/geometry/Multipoint",
-     "esri/layers/FeatureLayer",
-     "esri/renderers/smartMapping",
-	 "esri/renderers/jsonUtils",
-     "esri/symbols/SimpleFillSymbol",
-     "esri/symbols/SimpleLineSymbol",
-     "esri/renderers/HeatmapRenderer",
-     "esri/symbols/PictureMarkerSymbol",
-     "esri/geometry/webMercatorUtils",
-     "esri/arcgis/utils",
-     "esri/dijit/PopupTemplate",
-     "dojo/_base/array",
-     "dojo/_base/lang",
-     "dojo/domReady!"
-], function (
-     widgets,
-     esriBasemaps,
-     Map,
-     esriConfig,
-     Color,
-     LayerSwipe,
-     Graphic,
-     TimeExtent,
-     ServerInfo,
-     IdentityManager,
-     Extent,
-     SpatialReference,
-     InfoTemplate,
-     Draw,
-     KMLLayer,
-     VectorTileLayer,
-     RasterFunction,
-     MosaicRule,
-     ArcGISImageServiceLayer,
-     ArcGISDynamicMapServiceLayer,
-     ArcGISTiledMapServiceLayer,
-     ImageServiceParameters,
-     Polyline,
-     Polygon,
-     Point,
-     Multipoint,
-     FeatureLayer,
-     smartMapping,
-	 jsonUtils,
-     SimpleFillSymbol,
-     SimpleLineSymbol,
-     HeatmapRenderer,
-     PictureMarkerSymbol,
-     webMercatorUtils,
-     arcgisUtils,
-     PopupTemplate,
-     array,
-     lang) {
-    //var map, toolbar;
-    // var layerList = new Array();
-    var MapView = widgets.DOMWidgetView.extend({
-
+var LegacyMapView = widgets.DOMWidgetView.extend({
         // var layerList = new Array(),
-
         // Render the view.
         render: function () {
-            $('head').append($('<link rel="stylesheet" type="text/css" />').attr('href', nbextensionPath + '/custom.css'));
+            console.log("starting to render..");
+            esriLoader.loadModules(['esri/config'], options).then(([esriConfig]) => {
+              console.log(esriConfig);
+            }).catch((err) => { console.log("Caught an error!"); console.log(err);});
+        },
+
+        not_used: function() {
+//            esriLoader.loadModules(['esri/config'], options).then(([esriConfig]) => {
+//            $('head').append($('<link rel="stylesheet" type="text/css" />').attr('href', nbextensionPath + '/custom.css'));
             $('body').addClass('claro');
             var that = this;
 
@@ -305,7 +83,6 @@ define('mapview', [
             } else {
 
                 load_map(that);
-
             }
 
             function load_map(that) {
@@ -475,50 +252,41 @@ define('mapview', [
             this.model.on('change:start_time', this.start_time_changed, this);
             this.model.on('change:end_time', this.end_time_changed, this);
             this.model.on('change:_layerId_to_remove', this.remove_layer, this);
-
-        },
+//        }).catch((err) => {console.log("Caught an error!"); console.log(err)});
+    },
         /*
         on_load: function(evt) {
             console.log('***on_load');
             evt.map.disableKeyboardNavigation(); // interferes with the Notebook keyboard shortcuts
-
             // create the draw toolbar, it activates only when mode=draw_*
             this.toolbar = new Draw(evt.map);
-
             // hook up events
             this.toolbar.on("draw-end", this.onDrawEnd);
             //map.on("extent-change", onExtentChange);
             //evt.map.target.on("click", this.onMouseClick);
             evt.map.on("click", this.onMouseClick);
         },
-
         onDrawEnd : function(evtObj){
             var geometry = evtObj.geometry;
-
             var graphic = this.map.graphics.add(new Graphic(geometry, new SimpleFillSymbol()));
-
             this.toolbar.deactivate();
             //this.draw_end(geometry);
                         this.model.set('mode','navigate');
             this.touch();
             this.send({event: 'draw-end', message: geometry});
         },
-
         onMouseClick: function(event) {
             console.log("User clicked at " +  event.screenPoint.x + ", " + event.screenPoint.y +
                         " on the screen. The map coordinate at this point is " +
                         event.mapPoint.x + ", " + event.mapPoint.y
-
             );
             //console.log("MapCpoint:"+JSON.stringify(event.mapPoint));
             //var normalizedVal = webMercatorUtils.xyToLngLat(event.mapPoint.x, event.mapPoint.y);
             //console.log(normalizedVal);
-
             //this.mouse_clicked(event.mapPoint);//normalizedVal[0], normalizedVal[1]);
             this.send({event: 'mouseclick', message: event.mapPoint});//'{ \'x\':' + mapx + ', \'y\':' + mapy + '}'});
         },
         */
-
         // Incoming Events from the model
         zoom_changed: function () {
             this.map.setZoom(this.model.get('zoom'));
@@ -695,7 +463,7 @@ define('mapview', [
                              */
                         }
 						else{
-							var renderer = jsonUtils.fromJson(lyr_options.renderer); 
+							var renderer = jsonUtils.fromJson(lyr_options.renderer); 
 							layer.setRenderer(renderer);
 						}
 
@@ -1233,29 +1001,6 @@ define('mapview', [
 
     });
 
-    return {
-        MapView: MapView
-    };
-
-    //manager.WidgetManager.register_widget_view('MapView', MapView);
-});
-
-define(function () {
-    function load_ipython_extension() {
-        console.info('loaded map widget');
-    }
-    return {
-        load_ipython_extension: load_ipython_extension
-    }
-});
-/*
-var infoTemplate = new InfoTemplate("${state_name}", "Population (2000):  ${pop2000:NumberFormat}");
-var featureLayer = new FeatureLayer("http://sampleserver6.arcgisonline.com/arcgis/rest/services/USA/MapServer/3",{
-  mode: FeatureLayer.MODE_ONDEMAND,
-  outFields: ["*"],
-  infoTemplate: infoTemplate
-});
-
-//map.addLayer(featureLayer);
-//map.infoWindow.resize(155,75);
-*/
+module.exports = {
+    LegacyMapView: LegacyMapView 
+};

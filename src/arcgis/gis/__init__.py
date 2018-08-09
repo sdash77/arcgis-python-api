@@ -696,7 +696,7 @@ class GIS(object):
         """ Returns the portal properties (using cache unless force=True). """
         return self._portal.get_properties(force)
 
-    def map(self, location=None, zoomlevel=None):
+    def map(self, location=None, zoomlevel=None, mode="2D"):
         """
         Creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
@@ -713,6 +713,8 @@ class GIS(object):
         location               Optional string. The address or lat-long tuple of where the map is to be centered.
         ------------------     --------------------------------------------------------------------
         zoomlevel              Optional integer. The desired zoom level.
+        ------------------     --------------------------------------------------------------------
+        mode                   Optional string of either '2D' or '3D' to specify map mode. Defaults to '2D'.
         ==================     ====================================================================
 
 
@@ -727,9 +729,9 @@ class GIS(object):
             _log.error("Please install it:\n\tconda install ipywidgets")
 
         if isinstance(location, Item) and location.type == 'Web Map':
-            mapwidget = MapView(gis=self, item=location)
+            mapwidget = MapView(gis=self, item=location, mode=mode)
         else:
-            mapwidget = MapView(gis=self)
+            mapwidget = MapView(gis=self, mode=mode)
 
             # Geocode the location
             if isinstance(location, str):

@@ -65,10 +65,13 @@ src/.vscode/settings.json
 *.bz2
 
 # Unittest outputs
-/unittests/test-results/
+tests/integration/test-results/
 /*.wpr
 /*.wpu
 
 #Any builds from setup.py for pip go in a dist folder
 /src/dist
-/unittests/df_accessor/test_from_fc.py
+
+/tests/integration/df_accessor/test_from_fc.py
+
+

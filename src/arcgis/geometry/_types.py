@@ -783,9 +783,11 @@ class Geometry(BaseGeometry):
             if isinstance(self, Point):
                 return tuple(self)
             else:
+                g = getattr(self.as_arcpy, "centroid", None)
+                if g is None:
+                    return g
                 return tuple(Geometry(
-                    arcpy.PointGeometry(
-                        getattr(self.as_arcpy, "centroid", None),
+                    arcpy.PointGeometry(g,
                     self.spatial_reference)
                 ))
         elif HASSHAPELY:
@@ -2112,8 +2114,15 @@ class SpatialReference(Geometry):
     def __init__(self,
                  iterable=None,
                  **kwargs):
+
         if iterable is None:
             iterable = ()
+        elif HASARCPY and \
+             isinstance(iterable, arcpy.SpatialReference):
+            if iterable.factoryCode:
+                iterable = {'wkid' : iterable.factoryCode}
+            else:
+                iterable = {'wkt' : iterable.exportToString()}
         super(SpatialReference, self).__init__(iterable)
         self.update(kwargs)
     #----------------------------------------------------------------------
