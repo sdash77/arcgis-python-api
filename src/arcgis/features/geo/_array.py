@@ -193,7 +193,7 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
     #----------------------------------------------------------------------
     def _call_method(self, name, is_ga=True, **kwargs):
         """accesses method on the geometry object"""
-        vals = [getattr(g, name, None)(**kwargs) for g in self]
+        vals = [getattr(g, name, None)(**kwargs) if g is not None else None for g in self]
         if is_ga:
             return pd.Series(GeoArray(vals))
         return pd.Series(vals)
