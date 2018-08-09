@@ -87,8 +87,12 @@ class GeoSeriesAccessor:
     #----------------------------------------------------------------------
     def _call_method(self, name, is_ga=False, **kwargs):
         """accesses a method on the geometry object"""
-        vals = [getattr(g, name, None)(**kwargs) \
-                for g in self._data]
+        vals = []
+        for g in self._data:
+            if hasattr(g, name):
+                vals.append(getattr(g, name, None)(**kwargs))
+            else:
+                vals.append(None)
         if is_ga:
             from ._array import GeoArray
             return pd.Series(GeoArray(vals), index=self._index)
@@ -814,7 +818,8 @@ class GeoAccessor(object):
     #----------------------------------------------------------------------
     def _call_method(self, name, is_ga=False, **kwargs):
         """accesses a method on the geometry object"""
-        vals = [getattr(g, name, None)(**kwargs) \
+        vals = [getattr(g, name, None)(**kwargs) if g is not None \
+                else None \
                 for g in self._data[self._name]]
         if is_ga:
             from ._array import GeoArray
@@ -2024,8 +2029,10 @@ class GeoAccessor(object):
     @property
     def sr(self):
         """gets/sets the spatial reference of the dataframe"""
-        srs = pd.DataFrame([g['spatialReference'] \
-                            for g in self._data[self.name]])['wkid'].unique().tolist()
+        data = [getattr(g, 'spatialReference', None) \
+                for g in self._data[self.name] \
+                if g not in [None, np.NaN, np.nan]]
+        srs = pd.DataFrame(data)['wkid'].unique().tolist()
         if len(srs) > 1:
             rsrs = []
             for sr in srs:
