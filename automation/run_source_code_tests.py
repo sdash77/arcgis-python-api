@@ -12,8 +12,8 @@ try:
     from run_test_cases import run_test_cases
 except Exception as e:
     log.warn("Couldn't import run_test_cases from {}. Attempting to continue."\
-             "..".format(os.path.join(GEOSAURUS_ROOT_DIR, "unittests")))
-    raise e
+             "..".format(INTEGRATION_TESTS_DIR))
+    log.warn(e)
 
 def run_source_code_tests(*args, **kwargs):
     log.info("Attempting to run all test cases...")
