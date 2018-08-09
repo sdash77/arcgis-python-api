@@ -26,6 +26,7 @@ import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
+from arcgis.features.geo import _is_geoenabled
 from six.moves.urllib.error import HTTPError
 _log = logging.getLogger(__name__)
 
@@ -695,7 +696,7 @@ class GIS(object):
         """ Returns the portal properties (using cache unless force=True). """
         return self._portal.get_properties(force)
 
-    def map(self, location=None, zoomlevel=None):
+    def map(self, location=None, zoomlevel=None, mode="2D"):
         """
         Creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
@@ -712,6 +713,8 @@ class GIS(object):
         location               Optional string. The address or lat-long tuple of where the map is to be centered.
         ------------------     --------------------------------------------------------------------
         zoomlevel              Optional integer. The desired zoom level.
+        ------------------     --------------------------------------------------------------------
+        mode                   Optional string of either '2D' or '3D' to specify map mode. Defaults to '2D'.
         ==================     ====================================================================
 
 
@@ -726,9 +729,9 @@ class GIS(object):
             _log.error("Please install it:\n\tconda install ipywidgets")
 
         if isinstance(location, Item) and location.type == 'Web Map':
-            mapwidget = MapView(gis=self, item=location)
+            mapwidget = MapView(gis=self, item=location, mode=mode)
         else:
-            mapwidget = MapView(gis=self)
+            mapwidget = MapView(gis=self, mode=mode)
 
             # Geocode the location
             if isinstance(location, str):
@@ -1147,7 +1150,8 @@ class DatastoreManager(object):
         ---------------     --------------------------------------------------------------------
         object_store        Required string. This is the amazon bucket path or Azuze path.
         ---------------     --------------------------------------------------------------------
-        provider            Required string. Values must be amazon or azure.
+        provider            Required string. Values must be azuredatalakestore, amazon,
+                            Huawei, Alibaba, or azure.
         ---------------     --------------------------------------------------------------------
         managed             Optional boolean. When the data store is server only, the database
                             is entirely managed and owned by the server and cannot be accessed
@@ -1840,11 +1844,11 @@ class RoleManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_id                Required string. The role ID of the role to get. Set to None to get all roles
+        role_id                Required string. The role ID of the role to get.
         ==================     ====================================================================
 
         :return:
-           The role associated with the specified role ID, or a list of all roles if role_id was set to None.
+           The role associated with the specified role ID
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
@@ -2982,13 +2986,13 @@ class ContentManager(object):
         except ImportError:
             has_pyshp = False
         if isinstance(df, FeatureSet):
-            df = df.df
+            df = df.sdf
         if has_arcpy == False and \
            has_pyshp == False and \
-           isinstance(df, SpatialDataFrame):
-            raise Exception("SpatialDataFrame's must have either pyshp or" + \
+           (isinstance(df, SpatialDataFrame) or _is_geoenabled(df)):
+            raise Exception("Spatially enabled DataFrame's must have either pyshp or" + \
                             " arcpy available to use import_data")
-        elif isinstance(df, SpatialDataFrame):
+        elif (isinstance(df, SpatialDataFrame) or _is_geoenabled(df)):
             import random
             import string
             temp_dir = os.path.join(tempfile.gettempdir(), "a" + uuid4().hex[:7])
@@ -3003,8 +3007,14 @@ class ContentManager(object):
                                      uuid4().hex[:5])
                 fgdb = arcpy.CreateFileGDB_management(out_folder_path=temp_dir,
                                                       out_name=name)[0]
-                ds = df.to_featureclass(out_location=fgdb,
+                if isinstance(df, SpatialDataFrame) :
+                    ds = df.to_featureclass(out_location=fgdb,
                                         out_name=os.path.basename(temp_dir))
+                else:
+                    ds =\
+                        df.spatial.to_featureclass(location=os.path.join(fgdb,
+                                                                         os.path.basename(temp_dir)))
+
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
                 item = self.add(
                     item_properties={
@@ -6005,6 +6015,111 @@ class Item(dict):
         else:
             return self._portal.delete_item(self.itemid, self.owner, folder, force)
 
+    def create_thumbnail(self, update=True):
+        """
+        Creates a Thumbnail for a feature service portal item using the service's symbology
+        and the print service registered for the enterprise.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        update              Optional boolean. When set to True, the item will be updated with the
+                            thumbnail generated in this call, else it will not update the item.
+                            The default is True.
+        ===============     ====================================================================
+
+        :returns: DataFile
+
+        """
+        from arcgis.geoprocessing._tool import Toolbox
+        from arcgis.features import FeatureLayer, FeatureLayerCollection
+        from arcgis.gis.server._service import Service
+        props = self._gis.properties
+        gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
+
+        if self.type == 'Feature Service':
+            layers = []
+            container = self.layers[0].container
+            extent = container.properties.initialExtent
+            for lyr in self.layers:
+                layers.append(
+                    {
+                        "id":"%s_%s" % (lyr.properties.serviceItemId, lyr.properties.id),
+                        "title": lyr.properties.name,
+                        "opacity":1,
+                        "minScale": lyr.properties.minScale,
+                        "maxScale": lyr.properties.maxScale,
+                        "layerDefinition": {
+                            "drawingInfo": dict(lyr.properties.drawingInfo)},
+                        "token": self._gis._con.token,
+                        "url": lyr._url
+                    }
+                )
+                del lyr
+            wmjs = {
+                "mapOptions":{
+                    "showAttribution":False,
+                    "extent": dict(extent),
+                    "spatialReference":dict(container.properties.spatialReference)
+                    },
+                "operationalLayers": layers,
+                "exportOptions":{
+                    "outputSize":[600,400],
+                    "dpi":96
+                }
+            }
+
+        elif self.type == 'Web Map':
+            import json
+            layers = []
+            mapjson = self.get_data()
+            container = None
+            for lyr in mapjson['baseMap']['baseMapLayers']:
+                del lyr['layerType']
+                layers.append(lyr)
+            for lyr in mapjson['operationalLayers']:
+                flyr = Service(url=lyr['url'], server=self._gis._con)
+                if container is None and isinstance(flyr, FeatureLayer):
+                    container = FeatureLayerCollection(url=os.path.dirname(flyr._url), gis=self._gis)
+                layers.append(
+                    {
+                        "id":"%s" % lyr['id'],
+                        "title": lyr['title'],
+                        "opacity": lyr['opacity'],
+                        "minScale": flyr.properties.minScale,
+                        "maxScale": flyr.properties.maxScale,
+                        "layerDefinition": {
+                            "drawingInfo": dict(flyr.properties.drawingInfo)},
+                        "token": self._gis._con.token,
+                        "url": lyr['url']
+                    }
+                )
+                del lyr
+            wmjs = {
+                "mapOptions":{
+                    "showAttribution":False,
+                    "extent": dict(container.properties.initialExtent),
+                    "spatialReference": dict(container.properties.spatialReference)
+                    },
+                "operationalLayers": layers,
+                "exportOptions":{
+                    "outputSize":[600,400],
+                    "dpi":96
+                }
+            }
+            print()
+        else:
+            return None
+        if isinstance(self._gis._portal, portalpy.Portal) and \
+                   self._gis._portal.is_arcgisonline:
+            tbx = Toolbox(url=gp_url)
+        else:
+            tbx = Toolbox(url=gp_url, gis=self._gis)
+        res = tbx.export_web_map_task(web_map_as_json=wmjs,format="png32")
+        if update:
+            self.update(item_properties={'thumbnailUrl' : res.url})
+        return res
+
     def update(self, item_properties=None, data=None, thumbnail=None, metadata=None):
         """ Updates an item in a Portal.
 
@@ -6101,6 +6216,121 @@ class Item(dict):
         if ret:
             self._hydrate()
         return ret
+
+    def usage(self, date_range='7D', as_df=True):
+        """
+
+        For item owners and administrators, usage provides usage details about an item that help you
+        gauge its popularity. Usage details show how many times the item has been used for the time
+        period you select. Historical usage information is available for the past year. Depending on
+        the item type, usage details can include the number of views, requests, or downloads, and
+        the average number of views, requests, or downloads per day.
+
+        Views refers to the number of times the item has been viewed or opened. For maps, scenes,
+        nonhosted layers, and web apps, the view count is increased by one when you open the item
+        page or open the item in Map Viewer. For example, if you opened the item page for a map
+        image layer and clicked Open in Map Viewer, the count would increase by two. For other items
+        such as mobile apps, KML, and so on, the view count is increased by one when you open the
+        item; the count does not increase when you open the item details page.
+
+        For hosted web layers (feature, tile, and scene), the number of requests is provided instead
+        of views. Requests refers to the number of times a request is made for the data within the
+        layer. For example, someone might open an app that contains a hosted feature layer. Opening
+        the app counts as one view for the application, but multiple requests may be necessary to
+        draw all the features in the hosted layer and are counted as such.
+
+        For downloadable file item types such as CSV, SHP, and so on, the number of downloads is
+        displayed. For registered apps, the Usage tab also displays the number of times users have
+        logged in to the app. Apps that allow access to subscriber content through the organization
+        subscription show usage by credits. You can change the time frame for the credit usage
+        reporting period.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        date_range          Optional string.  The default is 7d.  This is the period to query
+                            usage for a given item.
+
+                            =======  =========================
+                            24H      Past 24 hours
+                            -------  -------------------------
+                            7D       Past 7 days
+                            -------  -------------------------
+                            14D      Past 14 days (default)
+                            -------  -------------------------
+                            30D      Past 30 days
+                            -------  -------------------------
+                            60D      Past 60 days
+                            -------  -------------------------
+                            6M       Past 6 months
+                            -------  -------------------------
+                            1Y       Past 12 months
+                            =======  =========================
+        ---------------     --------------------------------------------------------------------
+        as_df               Optional boolean.  Returns a Pandas DataFrame when True, returns data
+                            as a dictionary when False
+        ===============     ====================================================================
+
+        :returns: Pandas DataFrame or Dictionary
+
+        """
+        end_date = None
+        if end_date is None:
+            end_date = datetime.now()
+        params = {
+            'f' : 'json',
+            'startTime': None,
+            'endTime': int(end_date.timestamp() * 1000),
+            "period": '',
+            'vars': 'num',
+            'groupby': 'name',
+            'etype': 'svcusg',
+            'name': self.itemid,
+
+        }
+        from datetime import timedelta
+        if self.type == 'Feature Service':
+            params['stype'] = 'features'
+            params['name'] = os.path.basename(os.path.dirname(self.layers[0].container._url))
+        if date_range.lower() == '24h':
+            params['period'] = '1h'
+            params['startTime'] = int((end_date - timedelta(days=1)).timestamp() * 1000)
+        elif date_range.lower() == '7d':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=7)).timestamp() * 1000)
+        elif date_range.lower() == '14d':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=14)).timestamp() * 1000)
+        elif date_range.lower() == '30d':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=30)).timestamp() * 1000)
+        elif date_range.lower() == '60d':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=60)).timestamp() * 1000)
+        elif date_range.lower() == '6m':
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=int(365/2))).timestamp() * 1000)
+        elif date_range.lower() == ['12m', '1y']:
+            params['period'] = '1d'
+            params['startTime'] = int((end_date - timedelta(days=365)).timestamp() * 1000)
+        else:
+            raise ValueError("Invalid date range.")
+        isinstance(self._portal, portalpy.Portal)
+
+        url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+        try:
+            res = self._portal.con.post(url, params)
+            if as_df:
+                import pandas as pd
+                df = pd.DataFrame(res['data'][0]['num'],
+                                  columns=['Date', 'Usage'])
+                df.Date = df.astype(float) / 1000
+                df.Date = df.Date.apply(lambda x : datetime.fromtimestamp(x))
+                df.Usage = df.Usage.astype(int)
+                return df
+            return res
+        except:
+            return None
 
     def get_data(self, try_json=True):
         """
@@ -6825,7 +7055,7 @@ class Item(dict):
         start = 1
         num = 100
         nextStart = 0
-        url = "%s/content/items/%s/comments" % (self._portal.url, self.id)
+        url = "%s/sharing/rest/content/items/%s/comments" % (self._portal.url, self.id)
         while nextStart != -1:
             params = {
                 "f" : "json",
@@ -6835,7 +7065,7 @@ class Item(dict):
             res = self._portal.con.post(url, params)
             for c in res['comments']:
                 cs.append(Comment(url="%s/%s" % (url, c['id']),
-                                  item=self, initialize=False))
+                                  item=self, initialize=True))
             start += num
             nextStart = res['nextStart']
         return cs
@@ -6860,7 +7090,7 @@ class Item(dict):
             "f" : "json",
             "comment" : comment
         }
-        url = "%s/content/items/%s/addComment" % (self._portal.url, self.id)
+        url = "%s/sharing/rest/content/items/%s/addComment" % (self._portal.url, self.id)
         res = self._portal.con.post(url, params)
         if 'commentId' in res:
             return res['commentId']
@@ -6871,7 +7101,7 @@ class Item(dict):
         """
         Gets or sets the rating given by the current user to the item.
         """
-        url = "%s/content/items/%s/rating" % (self._portal.url, self.id)
+        url = "%s/sharing/rest/content/items/%s/rating" % (self._portal.url, self.id)
         params = {"f" : "json"}
         res = self._portal.con.get(url, params)
         if 'rating' in res:
@@ -6896,7 +7126,7 @@ class Item(dict):
 
 
         """
-        url = "%s/content/items/%s/addRating" % (self._portal.url,
+        url = "%s/sharing/rest/content/items/%s/addRating" % (self._portal.url,
                                                  self.id)
         params = {"f" : "json",
                   'rating' : float(value)}
@@ -6906,7 +7136,7 @@ class Item(dict):
         """
         Removes the rating the calling user added for the specified item.
         """
-        url = "%s/content/items/%s/deleteRating" % (self._portal.url,
+        url = "%s/sharing/rest/content/items/%s/deleteRating" % (self._portal.url,
                                                     self.id)
         params = {"f" : "json"}
         res = self._portal.con.post(url, params)
@@ -6921,7 +7151,7 @@ class Item(dict):
         item with the Registered App type keyword. This resource is only
         available to the item owner and the organization administrator.
         """
-        url = "%s/content/users/%s/items/%s/proxies" % (self._portal.url,
+        url = "%s/sharing/rest/content/users/%s/items/%s/proxies" % (self._portal.url,
                                                         self.owner,
                                                         self.id)
         params = {"f" : "json"}
@@ -7009,7 +7239,7 @@ class Item(dict):
         """
         params = {'f': 'json',
                   'proxies': proxy_id}
-        url = "%s/content/users/%s/items/%s/deleteProxies" % (self._portal.url,
+        url = "%s/sharing/rest/content/users/%s/items/%s/deleteProxies" % (self._portal.url,
                                                               self.owner,
                                                               self.id)
         return self._portal.con.post(url, params)

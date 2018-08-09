@@ -16,11 +16,11 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
+from arcgis.widgets import MapView
 
 from uuid import uuid4 #unique ids for layers in web map
 import datetime
 _log = logging.getLogger(__name__)
-
 
 @contextmanager
 def _tempinput(data):
@@ -174,9 +174,10 @@ class WebMap(collections.OrderedDict):
 
     # def _repr_html_(self):
     def _ipython_display_(self, **kwargs):
-        from arcgis.widgets import MapView
         # return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
         mapwidget = MapView(gis=self._gis, item=self.item)
+        mapwidget.mode = "2D"
+        mapwidget.hide_mode_switch = True
         return mapwidget._ipython_display_(**kwargs)
 
     def __repr__(self):
@@ -303,10 +304,13 @@ class WebMap(collections.OrderedDict):
         # endregion
 
         # region create the new layer dict in memory
+        #dvitale: add ability to specify layer id
+        layer_id = options['layerId'] if options and 'layerId' in options else uuid4().__str__()
+        #end specify layer id section
         new_layer = {'title':title,
                      'opacity':opacity,
                      'visibility':visibility,
-                     'id':uuid4().__str__()}
+                     'id':layer_id}
 
         # if renderer info is available, then write layer definition
         layer_definition = {'definitionExpression':definition_expression}
@@ -1188,6 +1192,13 @@ class WebScene(collections.OrderedDict):
     """
     Represents a web scene and provides access to its basemaps and operational layers as well
     as functionality to visualize and interact with them.
+
+    If you would like more robust webscene authoring functionality,
+    consider using the :class:`~arcgis.widgets.MapView` class. You need to be using a 
+    Jupyter environment for the MapView class to function properly, but you can
+    make copies of WebScenes, add layers using a simple `add_layer()` call,
+    adjust the basemaps, save to new webscenes, and more.
+
     """
 
     def __init__(self, websceneitem):
@@ -1197,11 +1208,15 @@ class WebScene(collections.OrderedDict):
         if websceneitem.type.lower() != 'web scene':
             raise TypeError("item type must be web scene")
         self.item = websceneitem
+        self._gis = websceneitem._gis
         webscenedict = self.item.get_data()
         collections.OrderedDict.__init__(self, webscenedict)
 
-    def _repr_html_(self):
-        return '<iframe width=960 height=600 src="' + "https://www.arcgis.com/home/webscene/viewer.html?webscene=" + self.item.itemid + '"/>'
+    def _ipython_display_(self, **kwargs):
+        mapwidget = MapView(gis=self._gis, item=self.item)
+        mapwidget.mode = "3D"
+        mapwidget.hide_mode_switch = True
+        return mapwidget._ipython_display_(**kwargs)
 
     def __repr__(self):
         return 'WebScene at ' + self.item._portal.url  + "/home/webscene/viewer.html?webscene=" + self.item.itemid
@@ -1213,7 +1228,6 @@ class WebScene(collections.OrderedDict):
     def update(self):
         # with _tempinput(self.__str__()) as tempfilename:
         self.item.update({'text': self.__str__()})
-
 
 class VectorTileLayer(Layer):
 

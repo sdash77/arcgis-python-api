@@ -26,7 +26,7 @@ _regex_and_funcs = [(MASTER_REGEX, [build_conda_package,
                    (PUBLISH_REGEX, [build_conda_package,
                                     publish_to_ftp_site]),
 
-                 (UNIT_TEST_REGEX, [run_source_code_tests]),
+          (SOURCE_CODE_TEST_REGEX, [run_source_code_tests]),
 
                  (NOTEBOOK_TEST_REGEX, [run_notebook_tests]),
 

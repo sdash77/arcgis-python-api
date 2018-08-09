@@ -13,6 +13,7 @@ import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
 from arcgis.features import FeatureCollection, FeatureLayerCollection, FeatureSet, SpatialDataFrame
+from arcgis.features.geo import _is_geoenabled
 from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 
 from arcgis.gis import Item, _GISResource, Layer
@@ -909,6 +910,8 @@ class Toolbox(_AsyncResource):
                 if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     if type(value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
                         params[key] = value.to_dict()
+                    elif _is_geoenabled(value):
+                        params[key] = value.spatial.__feature_set__
                     elif type(value) in [SpatialDataFrame]:
                         params[key] = value.__feature_set__
                     elif type(value) == str:

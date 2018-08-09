@@ -212,9 +212,11 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                         gp_params[gp_param_name] = _layer_input(param_value)
 
                 else:
+                    from arcgis.features.geo._accessor import _is_geoenabled
                     if type(param_value) == FeatureSet:
                         gp_params[gp_param_name] = param_value.to_dict()
-
+                    elif  _is_geoenabled(param_value):
+                        gp_params[gp_param_name] = param_value.spatial.__feature_set__
                     elif type(param_value) == str:
 
                         try:

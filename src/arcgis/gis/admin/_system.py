@@ -210,7 +210,43 @@ class System(BasePortalAdmin):
         progress or there is a problem with the index. It is recommended
         that you reindex to correct any issues. If indexing is in progress,
         you can monitor the status by refreshing the page.
+
+        :returns: dict
+
+        .. code-block:: python
+
+            USAGE: Prints out current Index Status
+
+            from arcgis.gis import GIS
+            gis = GIS("https://yourportal.com/portal", "portaladmin", "password")
+            sysmgr = gis.admin.system
+            idx_status = sysmgr.index_status
+            import json
+            print(json.dumps(idx_status, indent=2))
+
+            # Output
+            {
+              "indexes": [
+                {
+                  "name": "users",
+                  "databaseCount": 51,
+                  "indexCount": 51
+                },
+                {
+                  "name": "groups",
+                  "databaseCount": 325,
+                  "indexCount": 325
+                },
+                {
+                  "name": "search",
+                  "databaseCount": 8761,
+                  "indexCount": 8761
+                }
+              ]
+            }
+            
         """
+
         url = "%s/indexer/status" % self._url
         params = {'f' : 'json'}
         return self._con.get(path=url, params=params)

@@ -10,6 +10,7 @@ from .portaladmin import PortalAdminManager
 from .agoladmin import AGOLAdminManager
 from ._federation import Federation
 from ._logs import Logs
+from ._license import LicenseManager, License
 from ._machines import Machines, Machine
 from ._security import EnterpriseGroups, EnterpriseUsers, OAuth
 from ._security import Security, SSLCertificate, SSLCertificates

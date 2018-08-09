@@ -3,7 +3,7 @@ channels:
 - defaults
 dependencies:
 - ipywidgets >=7
-- pandas
+- pandas >=0.23
 - pip
 - python=3.6
 - setuptools
@@ -14,6 +14,8 @@ dependencies:
 - nbconvert
 - beautifulsoup4
 - requests
+- jupyterlab
+- pytest
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6

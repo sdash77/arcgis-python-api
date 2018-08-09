@@ -4,10 +4,6 @@ Generates Symbol Types
 
 """
 import json
-
-
-
-
 import arcgis
 from arcgis.features import FeatureCollection, FeatureSet, SpatialDataFrame
 from arcgis.gis import GIS

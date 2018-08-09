@@ -21,6 +21,7 @@ representation and user experience - on a map, in a 3D scene, as entities with a
 from .feature import Feature, FeatureSet, FeatureCollection
 from .layer import FeatureLayer, Table, FeatureLayerCollection
 from ._data.geodataset import SpatialDataFrame
+from .geo import GeoAccessor, GeoSeriesAccessor
 from . import analyze_patterns
 from . import enrich_data
 from . import find_locations
@@ -29,6 +30,7 @@ from . import summarize_data
 from . import use_proximity
 from . import analysis
 
-__all__ = ['SpatialDataFrame', 'Feature', 'FeatureSet',
-           'FeatureCollection', 'FeatureLayer', 'Table',
-           'FeatureLayerCollection']
+__all__ = ['GeoAccessor', 'GeoSeriesAccessor',
+           'Feature', 'FeatureSet',
+           'FeatureCollection', 'FeatureLayer',
+           'Table', 'FeatureLayerCollection']

@@ -674,7 +674,7 @@ def enrich(study_areas,
 
     areas = study_areas
     if isinstance(study_areas, FeatureSet):
-        areas = FeatureSet.df
+        areas = FeatureSet.sdf
     elif isinstance(study_areas, dict): # could be dict of NamedAreas, eg usa.subgeographies.states['California'].counties
         areas = list(study_areas.values())
         study_areas = areas
