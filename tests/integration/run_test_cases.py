@@ -41,9 +41,10 @@ import xmlrunner
 import atexit
 import traceback
 
-#Make sure we're importing the arcgis package at ../src
+#Make sure we're importing the arcgis package at ../../src
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
+    '..',
     '..'))
 sys.path.insert(0, os.path.join(GEOSAURUS_ROOT_DIR, "src"))
 import arcgis

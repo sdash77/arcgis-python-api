@@ -833,6 +833,22 @@ class GeoAccessor(object):
         if isinstance(col, str) and  \
            col in self._data.columns and \
            self._data[col].dtype.name.lower() != 'geometry':
+            q = self._data[col].isnull()
+            idx = self._data[col].first_valid_index()
+            sr = SpatialReference(self._data.iloc[idx].SHAPE.spatial_reference)
+            if len(q) > 0:
+                if self._data[col][idx].geometry_type.lower() == 'polyline':
+                    data = len(self._data[q]) * [Geometry({'paths' : [], 'spatialReference' : sr})]
+                    self._data.loc[q, col]  = data
+                elif self._data[col][idx].geometry_type.lower() == 'polygon':
+                    data = len(self._data[q]) * [Geometry({"rings" : [], 'spatialReference' : sr})]
+                    self._data.loc[q, col]  = data
+                elif self._data[col][idx].geometry_type.lower() == 'point':
+                    data = len(self._data[q]) * [Geometry({"x" : None, "y": None, 'spatialReference' : sr})]
+                    self._data.loc[q, col]  = data
+                elif self._data[col][idx].geometry_type.lower() == 'multipoint':
+                    data = len(self._data[q]) * [Geometry({"points" : [  ], 'spatialReference' : sr})]
+                    self._data.loc[q, col]  = data
             self._name = col
             self._data[col] = GeoArray(self._data[col])
         elif isinstance(col, str) and  \

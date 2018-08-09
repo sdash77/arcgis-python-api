@@ -5,14 +5,20 @@ import logging
 log = logging.getLogger()
 
 from automation._common import *
-sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR, "unittests"))
-from run_test_cases import run_test_cases
+
+INTEGRATION_TESTS_DIR = os.path.join(GEOSAURUS_ROOT_DIR, "tests", "integration")
+try:
+    sys.path.append(os.path.join(INTEGRATION_TESTS_DIR))
+    from run_test_cases import run_test_cases
+except Exception:
+    log.warn("Couldn't import run_test_cases from {}. Attempting to continue."\
+             "..".format(os.path.join(GEOSAURUS_ROOT_DIR, "unittests")))
 
 def run_source_code_tests(*args, **kwargs):
     log.info("Attempting to run all test cases...")
     args = [ # run_test_cases.py is called from cmd: this list mimics sys.argv
              'run_source_code_tests', # argv[0] is always the file name
-             os.path.join(GEOSAURUS_ROOT_DIR, 'unittests'), # run all tests
+             INTEGRATION_TESTS_DIR, # run all tests
              '--test_results_dir', STAGING_DIR # Send .xml files to staging
            ]
     run_test_cases(args)

@@ -1,4 +1,4 @@
-__version__ = '1.4.2'
+__version__ = '1.5.0'
 
 from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, mapping, apps
 
@@ -38,8 +38,8 @@ __all__ = ['GIS', 'geocode', 'features',  'geoanalytics', 'geocoding', 'geometry
 def _jupyter_nbextension_paths():
     return [{
         'section': 'notebook',
-        'src': 'widgets',
+        'src': 'widgets/js/dist',
         'dest': 'arcgis',
-        'require': 'arcgis/mapview'
+        'require': 'arcgis/extension'
     }]
 
