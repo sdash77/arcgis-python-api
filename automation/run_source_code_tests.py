@@ -10,9 +10,10 @@ INTEGRATION_TESTS_DIR = os.path.join(GEOSAURUS_ROOT_DIR, "tests", "integration")
 try:
     sys.path.append(os.path.join(INTEGRATION_TESTS_DIR))
     from run_test_cases import run_test_cases
-except Exception:
+except Exception as e:
     log.warn("Couldn't import run_test_cases from {}. Attempting to continue."\
              "..".format(os.path.join(GEOSAURUS_ROOT_DIR, "unittests")))
+    raise e
 
 def run_source_code_tests(*args, **kwargs):
     log.info("Attempting to run all test cases...")
