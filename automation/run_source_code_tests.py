@@ -11,9 +11,9 @@ try:
     sys.path.append(os.path.join(INTEGRATION_TESTS_DIR))
     from run_test_cases import run_test_cases
 except Exception as e:
-    log.warn("Couldn't import run_test_cases from {}. Attempting to continue."\
+    log.warn("Couldn't import run_test_cases from {}. failing."\
              "..".format(INTEGRATION_TESTS_DIR))
-    log.warn(e)
+    raise e
 
 def run_source_code_tests(*args, **kwargs):
     log.info("Attempting to run all test cases...")
