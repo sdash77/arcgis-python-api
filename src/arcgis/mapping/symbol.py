@@ -518,7 +518,7 @@ def create_symbol(geometry_type,
     outline_style = LINE_STYLES[kwargs.pop('outline_style', "s")]
 
     # get outline_color if specified, else use a nice mild gray
-    outline_color = kwargs.pop('outline_color', [128, 128, 128, 0.4])
+    outline_color = kwargs.pop('outline_color', [128, 128, 128, 255])
 
     # get a random color if a colormap is specified
     if isinstance(colors, str):
