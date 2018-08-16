@@ -2441,6 +2441,7 @@ class ImageryLayer(Layer):
         :return: G - Graph item
         """
         import re
+        import numbers
         try:
             from graphviz import Digraph
         except:
@@ -2449,10 +2450,17 @@ class ImageryLayer(Layer):
         global nodenumber,root
         nodenumber=root=0
         function_dictionary=self._fnra
-        def _raster_slicestring(slice_string):
+
+        if function_dictionary is None:
+            return "No raster function has been applied on the Imagery Layer"
+
+        def _raster_slicestring(slice_string,**kwargs):
             try:
                 subString = re.search('/services/(.+?)/ImageServer', slice_string).group(1)
             except AttributeError:
+                if slice_string.startswith("$"):
+                    if "url" in kwargs.keys():
+                        return _raster_slicestring(kwargs["url"])
                 subString = slice_string
             return subString
 
@@ -2467,23 +2475,36 @@ class ImageryLayer(Layer):
         G.clear() #clear all previous cases of the same name
         G.attr(rankdir='LR', len='1',splines='ortho',nodesep='0.5',size=graph_size)   #Display graph from Left to Right
 
-        def _raster_function_graph(rfa_value,rfa_key,root):
+        def _raster_function_graph(rfa_value,rfa_key,root,**kwargs):
             global nodenumber
+            
             if isinstance(rfa_value,dict):
                 if "rasterFunction" in rfa_value.keys():
-                    _function_graph(rfa_value,rfa_key,root)
-                elif "url" in rfa_value.keys(): # rendering rule url processing
-                        nodenumber+=1
-                        rastername=_raster_slicestring(rfa_value["url"])
-                        G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
-                        G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
+                    if "url" in kwargs.keys():
+                        _function_graph(rfa_value,rfa_key,root, url=kwargs["url"])
+                    else:
+                        _function_graph(rfa_value,rfa_key,root)
+                if "url" in rfa_value.keys():
+                    nodenumber+=1
+                    rastername=_raster_slicestring(str(rfa_value["url"]))
+                    G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                    G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
 
             elif isinstance(rfa_value,list):
                 for rfa_value_search_dict in rfa_value:
                     if isinstance(rfa_value_search_dict,dict):
                         for rfa_value_search_key in rfa_value_search_dict.keys():
                             if rfa_value_search_key=="rasterFunction":
-                                _function_graph(rfa_value_search_dict,rfa_key,root)
+                                if "url" in kwargs.keys():
+                                    _function_graph(rfa_value_search_dict,rfa_key,root, url=kwargs["url"])
+                                else:
+                                    _function_graph(rfa_value_search_dict,rfa_key,root)
+                           
+                    elif isinstance(rfa_value_search_dict, numbers.Number) :
+                        nodenumber+=1
+                        rastername=str(rfa_value_search_dict)
+                        G.node(str(nodenumber), rastername, style=('filled'),fixedsize="shape", width=".75", shape='circle',color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                        G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
                     else:
                         nodenumber+=1
                         rastername=_raster_slicestring(str(rfa_value_search_dict))
@@ -2493,12 +2514,15 @@ class ImageryLayer(Layer):
             elif (isinstance(rfa_value,int) or isinstance(rfa_value,float)):
                 nodenumber+=1
                 rastername=str(rfa_value)
-                G.node(str(nodenumber), rastername, style=('filled'), shape='circle',color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                G.node(str(nodenumber), rastername, style=('filled'),fixedsize="shape", width=".75", shape='circle',color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
                 G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
 
             elif isinstance(rfa_value,str):
                 nodenumber+=1
-                rastername=_raster_slicestring(rfa_value)
+                if "url" in kwargs.keys():
+                    rastername=_raster_slicestring(rfa_value,url=kwargs["url"])
+                else:
+                    rastername=_raster_slicestring(rfa_value)
                 G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
                 G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
 
@@ -2510,14 +2534,14 @@ class ImageryLayer(Layer):
             G.node(str(nodenumber), rastername, style=('filled'), shape='rectangle',color='antiquewhite',fillcolor='antiquewhite', fontname="sans-serif")
             G.edge(str(nodenumber),str(root),color="silver", arrowsize="0.9", penwidth="1")
 
-        def _function_graph(dictionary,childnode,connect):
+        def _function_graph(dictionary,childnode,connect,**kwargs):
             global nodenumber,root
             if isinstance(dictionary, dict):
                 for dkey, dvalue in dictionary.items():
                     if dkey == "rasterFunction" and dvalue != "GPAdapter":
                         if (dvalue=="Identity" and "renderingRule" in dictionary["rasterFunctionArguments"]["Raster"]):
                             if "rasterFunction" in dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"]:
-                                _function_graph(dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"],"Raster",connect)
+                                _function_graph(dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"],"Raster",connect,url=dictionary["rasterFunctionArguments"]["Raster"]["url"])
                         
                         else:
                             nodenumber+=1
@@ -2527,9 +2551,12 @@ class ImageryLayer(Layer):
                             connect=nodenumber  
                             for dkey, dvalue in dictionary.items():  # Check dictionary again for rasterFunctionArguments
                                 if dkey == "rasterFunctionArguments":
-                                    for key, value in dvalue.items():        
+                                    for key, value in dvalue.items():
                                         if (key == "Raster" or key=="Raster2" or key=="Rasters" or key=="PanImage" or key=="MSImage"):
-                                            _raster_function_graph(value,key,connect)
+                                            if "url" in kwargs.keys():
+                                                _raster_function_graph(value,key,connect,url=kwargs["url"])
+                                            else:
+                                                _raster_function_graph(value,key,connect)
                                         elif show_attributes==True:
                                             _attribute_function_graph(value,key,connect)
 
@@ -2543,19 +2570,22 @@ class ImageryLayer(Layer):
                                         G.node(str(nodenumber), toolname, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
                                         G.edge(str(nodenumber), str(connect),color="silver", arrowsize="0.9", penwidth="1")
                                         connect=nodenumber
-                                    elif gbl_key.endswith("_raster") or gbl_key.endswith("_data") : #To check if rasterFunctionArguments has rasters in it
-                                        _raster_function_graph(gbl_value,gbl_key,connect)
+                                    elif gbl_key.endswith("_raster") or gbl_key.endswith("_data") or gbl_key.endswith("_features") : #To check if rasterFunctionArguments has rasters in it
+                                        if "url" in kwargs.keys():
+                                            _raster_function_graph(gbl_value,gbl_key,connect,url=kwargs["url"])
+                                        else:
+                                            _raster_function_graph(gbl_value,gbl_key,connect)
                                     elif show_attributes==True and gbl_key != "PrimaryInputParameterName" and gbl_key != "OutputRasterParameterName":
                                         _attribute_function_graph(gbl_value,gbl_key,connect)
-
-
 
          #To find first rasterFunction
         for dkey, dvalue in function_dictionary.items():
             if dkey == "rasterFunction" and dvalue != "GPAdapter": #To find first rasterFunction
                 if (dvalue=="Identity" and "renderingRule" in function_dictionary["rasterFunctionArguments"]["Raster"]):
                     if "rasterFunction" in function_dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"]:
-                        _function_graph(function_dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"],None,root)
+                        _function_graph(function_dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"],None,root,url=function_dictionary["rasterFunctionArguments"]["Raster"]["url"])
+                    else:
+                        return "No raster function applied"
                 else: 
                     root+=1
                     G.node(str(root), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")  #create first rasterFunction graph node
@@ -2578,7 +2608,7 @@ class ImageryLayer(Layer):
                                 toolname=_toolname_slicestring(gbl_value)
                                 #To check if rasterFunctionArguments has another rasterFunction chain in it
                                 G.node(str(nodenumber), toolname, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
-                            elif gbl_key.endswith("_raster") or gbl_key.endswith("_data") : #To check if rasterFunctionArguments includes raster inputs in it
+                            elif gbl_key.endswith("_raster") or gbl_key.endswith("_data") or gbl_key.endswith("_features")  : #To check if rasterFunctionArguments includes raster inputs in it
                                 _raster_function_graph(gbl_value,gbl_key,root)
                             elif show_attributes==True and gbl_key != "PrimaryInputParameterName" and gbl_key != "OutputRasterParameterName":
                                 _attribute_function_graph(gbl_value,gbl_key,root)
