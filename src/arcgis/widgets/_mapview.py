@@ -560,13 +560,18 @@ class MapView(widgets.DOMWidget):
                 popped_layer = self._hashed_layers.pop(hash_, None)
                 #stage remove from js
                 layer_hashes_to_remove.append(hash_)
+                #Remove layer from webmap
+                for wm_layer in self.webmap.layers:
+                    if wm_layer["id"] == hash_:
+                        self.webmap.remove_layer(wm_layer)
             else:
                 log.warn("Could not find layer {} in layers".format(layer))
                 output_bool = False
+
         #Layer is removed from python side: trigger removal from JS side
-        #TODO: Figure out more elegant solution for this hack
         self._layers_to_remove = tuple('nonexistant_layer_id') 
         self._layers_to_remove = tuple(layer_hashes_to_remove)
+
         return output_bool
 
     def _infer_layers(self, arg):
@@ -1066,7 +1071,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
- 
+
         title = attributes['title'] if attributes and \
                 'title' in attributes else "Notebook sketch layer"
 
@@ -1144,14 +1149,15 @@ class MapView(widgets.DOMWidget):
             "symbol": symbol,
             "attributes": feature.attributes
         }
-        return graphic
+        return _make_jsonable_dict(graphic)
 
     def _add_graphic(self, graphic):
         if self.ready:
             self._add_this_graphic = {}
-            self._add_this_graphic = graphic
+            self._add_this_graphic = _make_jsonable_dict(graphic)
         else:
-            self._draw_these_graphics_on_widget_load += (graphic,)
+            self._draw_these_graphics_on_widget_load += \
+                (_make_jsonable_dict(graphic),)
 
     def clear_graphics(self):
         """
