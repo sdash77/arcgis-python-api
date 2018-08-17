@@ -372,8 +372,9 @@ def append_control_points(image_collection, control_points, gis = None):
 ###################################################################################################
 def match_control_points(image_collection, control_points, similarity=None, context=None, gis = None):
     '''
-    Compute the matching tie points, given collection of ground control points, 
-    and at least one of the ground control points has matching tie points. 
+    If each of the ground control point has at least one matching tie point. 
+    Then, this function will help find all remaining tie points on all other image items of the 
+    image collection.
 
     ==================     ====================================================================
     **Argument**           **Description**
