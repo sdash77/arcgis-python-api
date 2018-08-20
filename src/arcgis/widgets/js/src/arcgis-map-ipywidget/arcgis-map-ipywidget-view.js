@@ -708,16 +708,29 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
    },
 
     add_notype_layer: function(noTypeLayer){
-       inferNoTypeLayer(noTypeLayer, this).then((typedLayer) => {
-            var layerExistsOnMap = Boolean(this.map.findLayerById(
-                typedLayer.id));
-            console.log("Adding Layer " + noTypeLayer._hashFromPython + " " +
-                "to map.");
-            this.map.add(typedLayer);
-        }).catch((err) => {
-            this._displayErrorBox("Could not update layer. " + err);
-            console.warn("Could not update layer"); console.warn(err);
+        var layersToInfer = [];
+        if (noTypeLayer.layers){
+            for(var i = 0; i < noTypeLayer.layers.length; i++){
+                var layer = noTypeLayer.layers[i];
+                layer.options = noTypeLayer.options;
+                layersToInfer.push(layer);
+            }
+        } else {
+            layersToInfer.push(noTypeLayer);
+        }
+        for(var i = 0; i<layersToInfer.length; i++){
+           var layerToInfer = layersToInfer[i];
+           inferNoTypeLayer(layerToInfer, this).then((typedLayer) => {
+                var layerExistsOnMap = Boolean(this.map.findLayerById(
+                    typedLayer.id));
+                console.log("Adding Layer " + noTypeLayer._hashFromPython + " " +
+                    "to map.");
+                this.map.add(typedLayer);
+            }).catch((err) => {
+                this._displayErrorBox("Could not update layer. " + err);
+                console.warn("Could not update layer"); console.warn(err);
             });
+       }
     },
 
     layers_to_remove_changed: function(){

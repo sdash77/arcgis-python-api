@@ -6,11 +6,10 @@ This module provides functionality to manage
 is the most important and provides the entry point into the GIS.
 """
 from __future__ import absolute_import
-
 import base64
 import json
 import locale
-import logging
+
 import sys
 import os
 import re
@@ -20,12 +19,17 @@ import configparser
 from contextlib import contextmanager
 import functools
 from datetime import datetime
+import logging
+_log = logging.getLogger(__name__)
+
+from six.moves.urllib.error import HTTPError
 
 import arcgis._impl.portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
+
 from arcgis.features.geo import _is_geoenabled
 from six.moves.urllib.error import HTTPError
 _log = logging.getLogger(__name__)
@@ -264,7 +268,8 @@ class GIS(object):
 
         if url is None:
             url = "https://www.arcgis.com"
-        if self._uri_validator(url) == False and str(url).lower() != 'pro':
+        if (self._uri_validator(url) == False) and \
+           (str(url).lower() not in ['pro', 'home']):
             raise Exception("Malformed url provided: %s" % url)
         if username is not None and password is None:
             from getpass import getpass
@@ -289,7 +294,11 @@ class GIS(object):
         self._verify_cert = verify_cert
         self._client_id = client_id
         self._datastores_list = None
-        utoken = kwargs.pop('token', None)
+        self._utoken = kwargs.pop('token', None)
+
+        if self._url.lower() == "home":
+            #configuring for hosted notebooks need to happen before portalpy
+            self._try_configure_for_hosted_nb() 
 
         try:
             self._portal = portalpy.Portal(self._url, self._username,
@@ -301,13 +310,17 @@ class GIS(object):
                                            client_id=self._client_id,
                                            referer=self._referer)
 
+            if not (self._utoken is None):
+                self._portal.con._token = self._utoken
+                self._portal.con._auth = "BUILTIN"
+
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
                 raise RuntimeError("An untrusted SSL error occurred when attempting to connect to the provided GIS.\n"
                                    "If you trust this server and want to proceed, add 'verify_cert=False' as an "
                                    "argument when connecting to the GIS.")
             else:
-                raise
+                raise e
         try:
             if url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in and \
@@ -345,8 +358,8 @@ class GIS(object):
         except: pass
 
         force_refresh = False
-        if not (utoken is None):
-            self._portal.con._token = utoken
+        if not (self._utoken is None):
+            self._portal.con._token = self._utoken
             self._portal.con._auth = "BUILTIN"
             force_refresh = True
 
@@ -575,6 +588,47 @@ class GIS(object):
                "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "\
                "for Python doc (http://bit.ly/2CK2wG8)."\
                "".format(keyring.get_keyring())
+
+    def _try_configure_for_hosted_nb(self):
+        """If 'home' is specified as the 'url' argument, this func is called"""
+        try:
+            #Get the auth file from environment variables
+            nb_auth_file_path = os.getenv('NB_AUTH_FILE', None)
+            if not nb_auth_file_path:
+                raise RuntimeError("Environment variable 'NB_AUTH_FILE' "\
+                    "must be defined.")
+            elif not os.path.isfile(nb_auth_file_path):
+                raise RuntimeError("'{}' file needed for "\
+                    "authentication not found.".format(nb_auth_file_path))
+            #Open that auth file, 
+            with open(nb_auth_file_path) as nb_auth_file:
+                required_json_keys = set(["portalUrl", "token", "referer"])
+                json_data = json.load(nb_auth_file)
+                assert required_json_keys.issubset(json_data)
+                self._url = json_data["portalUrl"]
+                self._utoken = json_data["token"]
+                self._referer = json_data["referer"]
+
+        #Catch errors and re-throw in with more human readable messages
+        except json.JSONDecodeError as e:
+            self._raise_hosted_nb_error("'{}' file is not "\
+                "valid JSON.".format(nb_auth_file.name))
+        except AssertionError as e:
+            self._raise_hosted_nb_error("Authentication file doesn't"\
+                " contain required keys {}".format(required_json_keys))
+        except Exception as e:
+            self._raise_hosted_nb_error("Unexpected exception "\
+                "when authenticating through 'home' mode: {}".format(e))
+
+    def _raise_hosted_nb_error(self, err_msg):
+        """In the event a user can't authenticate in 'home' mode, raise
+        an error while also giving a simple mitigation technique of connecting 
+        to your portal in the standard GIS() way.
+        """
+        mitigation_msg =  "You can still connect to your portal by creating "\
+            "a GIS() object with the standard user/password, cert_file, etc. "\
+            "See https://bit.ly/2DT1156 for more information."
+        raise RuntimeError("{}\n-----\n{}".format(err_msg, mitigation_msg))
 
     def _uri_validator(self, x):
         from urllib.parse import urlparse
@@ -2331,8 +2385,6 @@ class ContentManager(object):
         licenseInfo        Optional string.  Any license information or restrictions regarding the content.
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Locale, country and language information.
-        -----------------  ---------------------------------------------------------------------
-        access             Optional string. Valid values are private, shared, org, or public.
         -----------------  ---------------------------------------------------------------------
         commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
                            or not allowed (false).
