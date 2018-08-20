@@ -23,13 +23,13 @@ class MachineManager(BaseServer):
     have been registered with the site. In other words, it represents the
     total computing power of your site. A site will continue to run as long
     as there is at least one server machine online.
-    
-    For a server machine to start hosting GIS services, it must be in a cluster 
-    (note that clusters have been deprecated, see 
-    http://server.arcgis.com/en/server/latest/administer/windows/about-single-cluster-mode.htm ). 
-    When you create a new site, a cluster called 'default' (deployed with 
+
+    For a server machine to start hosting GIS services, it must be in a cluster
+    (note that clusters have been deprecated, see
+    http://server.arcgis.com/en/server/latest/administer/windows/about-single-cluster-mode.htm ).
+    When you create a new site, a cluster called 'default' (deployed with
     singleClusterMode set to true) is created for you.
-    
+
     The list of server machines in your site can be dynamic. You can
     register additional server machines when you need to increase the
     computing power of your site, or unregister them if you no longer need
@@ -45,7 +45,7 @@ class MachineManager(BaseServer):
                  initialize=False):
         """Constructor
 
-               
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -53,10 +53,10 @@ class MachineManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         gis                    Optional string. The GIS or Server object.
         ------------------     --------------------------------------------------------------------
-        initialize             Optional string. Denotes whether to load the machine information.  
+        initialize             Optional string. Denotes whether to load the machine information.
                                Default is False.
         ==================     ====================================================================
-        
+
         """
 
         super(MachineManager, self).__init__(gis=gis,
@@ -97,10 +97,10 @@ class MachineManager(BaseServer):
     def list(self):
         """
         Provides the list of machines in the cluster.
-        
+
         :return:
             A JSON list of the machines in the cluster.
-        
+
         """
         if self._machines is None:
             self._init()
@@ -109,16 +109,16 @@ class MachineManager(BaseServer):
     def get(self, machine_name):
         """
         Provides the machine object for a given machine.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         machine_name           Required string. The name of the server. Example: machines_obj.get("SERVER.DOMAIN.COM")
         ==================     ====================================================================
-        
+
         :return:
             The machine object.
-            
+
         """
         url = self._url + "/%s" % machine_name
         return Machine(url=url,
@@ -129,21 +129,21 @@ class MachineManager(BaseServer):
         For a server machine to participate in a site, it needs to be
         registered with the site. The server machine must have ArcGIS
         Server software installed and authorized.
-        
+
         Registering machines this way is a "pull" approach to growing
         the site and is a convenient way when a large number of machines
-        need to be added to a site. A server machine can also 
+        need to be added to a site. A server machine can also
         choose to join a site.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the server machine.
         ------------------     --------------------------------------------------------------------
-        admin_url              Required string. The URL where the Administrator API is running on 
+        admin_url              Required string. The URL where the Administrator API is running on
                                the server machine. Example: http: //<machineName>:6080/arcgis/admin
         ==================     ====================================================================
-        
+
 
         :return:
            A boolean indicating success (True) or failure (False).
@@ -164,12 +164,12 @@ class MachineManager(BaseServer):
         You must use this operation if one of the registered machines
         has undergone a name change. This operation updates any
         references to the former machine configuration.
-        
+
         By default, when the server is restarted, it is capable of
         identifying a name change and repairing itself and all its
         references. This operation is a manual call to handle the
         machine name change.
-    
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -195,49 +195,49 @@ class MachineManager(BaseServer):
 ########################################################################
 class Machine(BaseServer):
     """
-    A resource to provide administrative tools for managing this machine  
+    A resource to provide administrative tools for managing this machine
     and the required SSL Certificate.
-    
-    .. note:: 
+
+    .. note::
         The Machine
-        
+
         A server machine represents a machine on which ArcGIS Server
-        software has been installed and licensed. A site is made up of one 
-        or more machines that must be registered with the site.  The site's 
-        machines work together to host GIS services and data, and provide 
-        administrative capabilities for the site. Each server machine is  
-        capable of performing all these administrative tasks and hence a  
-        site can be thought of as a distributed peer-to-peer network of 
-        machines. The server machine communicates with its peers over a 
-        range of TCP and UDP ports that can be configured using the edit operation 
-        (http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Edit_Machine/02r3000001st000000/ ). 
+        software has been installed and licensed. A site is made up of one
+        or more machines that must be registered with the site.  The site's
+        machines work together to host GIS services and data, and provide
+        administrative capabilities for the site. Each server machine is
+        capable of performing all these administrative tasks and hence a
+        site can be thought of as a distributed peer-to-peer network of
+        machines. The server machine communicates with its peers over a
+        range of TCP and UDP ports that can be configured using the edit operation
+        (http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Edit_Machine/02r3000001st000000/ ).
 
 
     .. note::
         SSL Certificates
-        
+
         A certificate represents a key pair that has been digitally signed
         and acknowledged by a Certifying Authority (CA). It is the most
-        fundamental component in enabling SSL on your server. Before you 
-        enable SSL on your server, you need to generate a certificate and  
-        get it signed by a trusted CA. 
-        
+        fundamental component in enabling SSL on your server. Before you
+        enable SSL on your server, you need to generate a certificate and
+        get it signed by a trusted CA.
+
         The Generate Certificate
-        (http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Generate_Certificate/02r3000001tt000000/ ) 
-        operation creates a new self-signed certificate and adds it to 
+        (http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Generate_Certificate/02r3000001tt000000/ )
+        operation creates a new self-signed certificate and adds it to
         the keystore. For your convenience, the server is capable of generating
         self-signed certificates that can be used during development or
         staging. However, it is critical that you obtain CA-signed
-        certificates when standing up a production server. Even though 
-        a self-signed certificate can be used to enable SSL, it is recommended 
+        certificates when standing up a production server. Even though
+        a self-signed certificate can be used to enable SSL, it is recommended
         that you use these only on staging or development servers.
-        
+
         In order to get a certificate signed by a CA, you need to generate
         a CSR (certificate signing request) and then submit it to your CA.
         The CA will sign your certificate request which can then be
         imported into the server by using the import CA signed certificate
         operation.
-       
+
 
     """
     _appServerMaxHeapSize = None
@@ -261,7 +261,7 @@ class Machine(BaseServer):
                  initialize=False):
         """
         Constructor
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -269,10 +269,10 @@ class Machine(BaseServer):
         ------------------     --------------------------------------------------------------------
         gis                    Optional string. The GIS or Server object.
         ------------------     --------------------------------------------------------------------
-        initialize             Optional string. Denotes whether to load the machine properties at  
+        initialize             Optional string. Denotes whether to load the machine properties at
                                creation (True). Default is False.
         ==================     ====================================================================
-    
+
         """
         connection = gis
         super(Machine, self).__init__(gis=connection,
@@ -302,12 +302,12 @@ class Machine(BaseServer):
     #----------------------------------------------------------------------
     def start(self):
         """
-        Starts this server machine. Starting the machine enables its 
+        Starts this server machine. Starting the machine enables its
         ability to host GIS services.
-        
+
         :return:
            A boolean indicating success (True) or failure (False).
-        
+
         """
         params = {
             "f" : "json"
@@ -320,13 +320,13 @@ class Machine(BaseServer):
     #----------------------------------------------------------------------
     def stop(self):
         """
-        Stops this server machine. Stopping the machine disables its 
+        Stops this server machine. Stopping the machine disables its
         ability to host GIS services.
-        
-        
+
+
         :return:
            A boolean indicating success (True) or failure (False).
-        
+
         """
         params = {
             "f" : "json"
@@ -339,21 +339,21 @@ class Machine(BaseServer):
     #----------------------------------------------------------------------
     def unregister(self):
         """
-        Removes this machine from the site.  This server machine will no 
+        Removes this machine from the site.  This server machine will no
         longer participate in the site or run any of the GIS services.  All
-        resources that were acquired by the server machine (memory, files, 
+        resources that were acquired by the server machine (memory, files,
         and so forth) will be released.
-        
+
         Typically, you should only invoke this operation if the machine
         is going to be shut down for extended periods of time, or if it
         is being upgraded.
-        
+
         Once a machine has been unregistered, you can create a new site
         or join an existing site.
-        
+
         :return:
            A boolean indicating success (True) or failure (False).
-        
+
         """
         params = {
             "f" : "json"
@@ -381,14 +381,14 @@ class Machine(BaseServer):
         Provides the self-signed certificate object.
 
         .. note::
-            Even though a self-signed certificate can be used to enable SSL, it 
-            is recommended that you use a self-signed certificate only on staging 
-            or development servers.  
-        
+            Even though a self-signed certificate can be used to enable SSL, it
+            is recommended that you use a self-signed certificate only on staging
+            or development servers.
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        certificate            Required string. The name of the certificate in the key store to 
+        certificate            Required string. The name of the certificate in the key store to
                                grab information from.
         ==================     ====================================================================
 
@@ -400,10 +400,32 @@ class Machine(BaseServer):
         url = self._url + "/sslcertificates/{cert}".format(cert=certificate)
         return self._con.get(path=url, params=params)
     #----------------------------------------------------------------------
+    def delete_certificate(self, certificate):
+        """
+        Deletes a SSL certificate using the certificate alias.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        certificate            Required string. The name of the certificate to delete
+        ==================     ====================================================================
+
+        :return: boolean
+
+        """
+        params = {'f' : 'json'}
+        url = self._url + "/sslcertificates/{cert}/delete".format(cert=certificate)
+        res = self._con.get(path=url,
+                            params=params)
+        if isinstance(res, dict) and 'status' in res:
+            return res['status']
+        else:
+            return res
+    #----------------------------------------------------------------------
     def export_certificate(self, certificate):
         """
-        Downloads an SSL certificate. The file returned by the 
-        server is an X.509 certificate. The downloaded certificate can then 
+        Downloads an SSL certificate. The file returned by the
+        server is an X.509 certificate. The downloaded certificate can then
         be imported into a client that is making HTTP requests.
 
 
@@ -412,10 +434,10 @@ class Machine(BaseServer):
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store.
         ==================     ====================================================================
-        
+
         :return:
             The SSL certificate object.
-        
+
         """
         params = {"f": "json"}
         url = self._url + "/sslcertificates/%s/export" % certificate
@@ -425,15 +447,15 @@ class Machine(BaseServer):
         """
         Generates a certificate signing request (CSR) for a
         self-signed certificate. A CSR is required by a CA to create a
-        digitally signed version of your certificate.  Supply the certificate 
+        digitally signed version of your certificate.  Supply the certificate
         object that was created with method ssl_certificate.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store.
         ==================     ====================================================================
-        
+
         :return:
            The CSR.
         """
@@ -446,17 +468,17 @@ class Machine(BaseServer):
                                      ca_signed_certificate):
         """
         Imports a certificate authority (CA)-signed SSL certificate into the key store.
-        
-        
+
+
         ======================     ====================================================================
         **Argument**               **Description**
         ----------------------     --------------------------------------------------------------------
         certificate                Required string. The name of the certificate in the key store.
         ----------------------     --------------------------------------------------------------------
-        ca_signed_certificate      Required string. The multi-part POST parameter containing the 
+        ca_signed_certificate      Required string. The multi-part POST parameter containing the
                                    signed certificate file.
         ======================     ====================================================================
-        
+
         :return:
             A boolean indicating success (True) or failure (False).
 
@@ -477,18 +499,18 @@ class Machine(BaseServer):
         If the certificate is a CA-signed certificate, you must first
         import the CA root or intermediate certificate using the
         importRootCertificate operation.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        alias                  Required string. A unique name for the certificate that easily 
+        alias                  Required string. A unique name for the certificate that easily
                                identifies it.
         ------------------     --------------------------------------------------------------------
         cert_password          Required string. The password to unlock the file containing the certificate.
         ------------------     --------------------------------------------------------------------
         cert_file              Required string. The multi-part POST parameter containing the certificate file.
         ==================     ====================================================================
-        
+
 
         :return:
             A boolean indicating success (True) or failure (False).
@@ -510,16 +532,16 @@ class Machine(BaseServer):
                                 alias,
                                 root_CA_certificate):
         """
-        Imports a certificate authority's (CA) root and intermediate 
+        Imports a certificate authority's (CA) root and intermediate
         certificates into the keystore.
-        
+
         To create a production quality CA-signed certificate, you need to
         add the CA's certificates into the keystore that enables the SSL
         mechanism to trust the CA (and the certificates it is signed).
         While most of the popular CA's certificates are already available
         in the keystore, you can use this operation if you have a custom
         CA or specific intermediate certificates.
-        
+
         ===================     ====================================================================
         **Argument**            **Description**
         -------------------     --------------------------------------------------------------------
@@ -528,10 +550,10 @@ class Machine(BaseServer):
         root_CA_certificate     Required string. The multi-part POST parameter containing the certificate file.
         ===================     ====================================================================
 
-        
+
         :return:
            A boolean indicating success (True) or failure (False).
-           
+
         """
         url = self._url + "/sslcertificates/importRootOrIntermediate"
         params = {
