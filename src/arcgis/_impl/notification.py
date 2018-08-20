@@ -30,10 +30,8 @@ class Notification(dict):
         """
         super(Notification, self).__init__()
         self._url = url
-        self._gis = item._gis
+        self._gis = user._gis
         self._portal = self._gis._portal
-        isinstance(user, User)
-
         if isinstance(user._gis, _ArcGISConnection):
             self._con = user._gis
         elif isinstance(user._gis, GIS):
