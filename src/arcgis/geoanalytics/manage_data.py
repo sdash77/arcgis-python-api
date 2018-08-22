@@ -15,6 +15,135 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+def merge_layers(input_layer, merge_layer, merge_attributes=None, output_name=None, gis=None):
+    """
+    The Merge Layers task combines two feature layers to create a single output layer. The tool
+    requires that both layers have the same geometry type (tabular, point, line, or polygon). If
+    time is enabled on one layer, the other must also be time enabled and have the same time type
+    (instant or interval). The result will always contain all fields from the input layer. All
+    fields from the merge layer will be included by default, or you can specify custom merge rules
+    to define the resulting schema. For example:
+
+    - I have three layers for England, Wales, and Scotland and I want a single layer of Great
+      Britain. I can use Merge Layers to combine the areas and maintain all fields from each area.
+    - I have two layers containing parcel information for contiguous townships. I want to join them
+      together into a single layer, keeping only the fields that have the same name and type in the
+      two layers.
+
+    Only available at **ArcGIS Enterprise 10.7** and later.
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       Required FeatureLayer. The point, line or polygon features.
+    ----------------  ---------------------------------------------------------------
+    merge_layer       Required FeatureLayer. The point, line, or polygon features to
+                      merge with the input_layer. The merge_layer must contain the
+                      same geometry type (tabular, point, line, or polygon) and the
+                      same time type (none, instant, or interval) as the input_layer.
+                      All fields in the merge_layer will be included in the result
+                      layer by default or you can define merge_attributes to
+                      customize the resulting schema.
+    ----------------  ---------------------------------------------------------------
+    merge_attributes  Optional list. Defines how the fields in mergeLayer will be
+                      modified. By default, all fields from both inputs will be
+                      included in the output layer.
+
+                      If a field exists in one layer but not the other, the output
+                      layer will still contain the field. The output field will
+                      contain null values for the input features that did not have the
+                      field. For example, if the input_layer contains a field named
+                      TYPE but the merge_layer does not contain TYPE, the output will
+                      contain TYPE, but its values will be null for all the features
+                      copied from the merge_layer.
+
+                      You can control how fields in the merge_layer are written to the
+                      output layer using the following merge types that operate on a
+                      specified merge_layer field:
+
+                      + Remove - The field in the merge_layer will be removed from the output layer.
+                      + Rename - The field in the merge_layer will be renamed in the output layer. You cannot rename a field in the merge_layer to a field in the inputLayer. If you want to make field names equivalent, use Match.
+                      + Match - A field in the merge_layer is made equivalent to a field in the input_layer specified by mergeValue. For example, the input_layer has a field named CODE and the merge_layer has a field named STATUS. You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the merge_layer. Type casting is supported (for example, double to integer, integer to string) except for string to numeric.
+                      REST web example:
+
+                      Syntax: This example matches Average_Sales to Mean_Sales,
+                              removesBonus, and renamesField4 to Errors.
+
+                      ```
+
+                        [{
+                            "mergeLayerField": "Mean_Sales",
+                            "mergeType": "Match",
+                            "mergeValue": "Average_Sales"
+                        },
+                        {
+                            "mergeLayerField": "Bonus",
+                            "mergeType": "Remove",
+                        },
+                        {
+                            "mergeLayerField": "Field4",
+                            "mergeType": "Rename",
+                            "mergeValue": "Errors"
+                        }]
+
+                      ```
+
+    ----------------  ---------------------------------------------------------------
+    output_name       Optional string. The task will create a feature service of the results. You define the name of the service.
+    ----------------  ---------------------------------------------------------------
+    gis               Optional GIS. The GIS object where the analysis will take place.
+    ================  ===============================================================
+
+    :returns: FeatureLayer
+    """
+    kwargs = locals()
+    tool_name = "MergeLayers"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json",
+    }
+    for key, value in kwargs.items():
+
+        if value is not None:
+            params[key] = value
+        elif key == 'merge_attributes' and value is None:
+            params[key] = []
+    if output_name is None:
+        output_service_name = 'Merge_Layers_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers')
+
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+    _set_context(params)
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "merge_layer": (_FeatureSet, "mergeLayer"),
+        "merge_attributes" : (list, "mergingAttributes"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "output"),
+    }
+    return_values = [
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+    try:
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
+    return
+
+
 def clip_layer(input_layer, clip_layer, output_name=None, gis=None):
     """
     Clip_layer features from one layer to the extent of a boundary layer. Use this tool to cut out a piece
