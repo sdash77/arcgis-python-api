@@ -72,39 +72,39 @@ class MapView(widgets.DOMWidget):
     #Start model specific state
     #Start map specific drawing state
     zoom = Float(2).tag(sync=True)
-    """What level of zoom you want to apply: the higher the number, the more 
+    """What level of zoom you want to apply: the higher the number, the more
     zoomed in you are.
     """
     rotation = Float(0).tag(sync=True)
     """For 2D mode, the clockwise rotation of due north in relation to the top
-    of the view in degrees. Note that you can NOT set rotation in 3D mode. 
+    of the view in degrees. Note that you can NOT set rotation in 3D mode.
     3D mode uses the ‘heading’ property.
     """
     heading = Float(0).tag(sync=True)
-    """For 3D mode, the compass heading of the camera in degrees. Heading is 
+    """For 3D mode, the compass heading of the camera in degrees. Heading is
     zero when north is the top of the screen. It increases as the view rotates
-    clockwise. The angles are always normalized between 0 and 360 degrees. 
-    Note that you can NOT set heading in 2D mode. 2D mode uses the ‘rotation’ 
+    clockwise. The angles are always normalized between 0 and 360 degrees.
+    Note that you can NOT set heading in 2D mode. 2D mode uses the ‘rotation’
     property.
     """
     tilt = Float(0).tag(sync=True)
     """For 3D mode, the tilt of the camera in degrees with respect to the
-    surface as projected down from the camera position. Tilt is zero when 
-    looking straight down at the surface and 90 degrees when the camera is 
-    looking parallel to the surface. Note that you can NOT set tilt in 
+    surface as projected down from the camera position. Tilt is zero when
+    looking straight down at the surface and 90 degrees when the camera is
+    looking parallel to the surface. Note that you can NOT set tilt in
     2D mode.
     """
     basemap = Unicode('topo').tag(sync=True)
-    """What basemap you would like to apply to the widget (‘topo’, 
+    """What basemap you would like to apply to the widget (‘topo’,
     ‘national-geographic’, etc.). See `basemaps` for a full list
     """
     mode = Unicode('2D').tag(sync=True)
-    """The string that specifies whether the map displays in '2D' mode 
+    """The string that specifies whether the map displays in '2D' mode
     (MapView) or '3D' mode (SceneView). Possible values: '2D', '3D'.
 
     .. raw:: html
 
-        <p>Note that you can also toggle between '2D' and 
+        <p>Note that you can also toggle between '2D' and
         '3D' mode by pressing the
         <img src=" data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAA
         Bzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH4
@@ -132,12 +132,12 @@ class MapView(widgets.DOMWidget):
     @property
     def extent(self):
         """A property that represents the map widget's extent.
-        
-        
+
+
         ==================     ====================================================================
         getter                 A dict that represents the JSON of the map widget's extent.
         ------------------     --------------------------------------------------------------------
-        setter                 A [[xmin, ymin], [xmax, ymax]] list, or a dict that represents the 
+        setter                 A [[xmin, ymin], [xmax, ymax]] list, or a dict that represents the
                                JSON of the map widget's extent.
         ==================     ====================================================================
 
@@ -165,7 +165,7 @@ class MapView(widgets.DOMWidget):
                 " See the API doc for more information")
 
     _readonly_center = Dict({}).tag(sync=True)
-    _center = Dict({}).tag(sync=True) 
+    _center = Dict({}).tag(sync=True)
     _center_long_lat = List([]).tag(sync=True)
 
     @property
@@ -176,7 +176,7 @@ class MapView(widgets.DOMWidget):
         ==================     ====================================================================
         getter                 A dict that represents the JSON of the map widget's center.
         ------------------     --------------------------------------------------------------------
-        setter                 A [lat, long] list, or a dict that represents the JSON of the map 
+        setter                 A [lat, long] list, or a dict that represents the JSON of the map
                                widget's center.
         ==================     ====================================================================
 
@@ -234,9 +234,9 @@ class MapView(widgets.DOMWidget):
     tab_mode = Unicode('auto').tag(sync=True)
     """
     .. raw:: html
-    
+
         <p>This string property specifies the 'default' behavior of toggling a
-        new window in a JupyterLab environment, whether that is called by 
+        new window in a JupyterLab environment, whether that is called by
         pressing the <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC
         AAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYA
         AAAB3RJTUUH4gcUAAIIxu7mQQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoI
@@ -246,7 +246,7 @@ class MapView(widgets.DOMWidget):
         c3WkMcQDMM46IoPv7NQJIkdyLS/oiXZXk4VxP5FDfGNEvEz17Cuciy7J7kGwB0XRfXd
         X0Yp+NoZ/waGMQbABzE35ekKfIkDhF5mhJf7Q6o6sOReFwUxd7BzdM0ffR5BALglaQA
         iK21eydZZEsSAFpfBkjy2Rhz7Vr5qimoqurTR4JWeYqDgWDAWwpUNb+ogbn/woCAgL/
-        gG9knfWwKBGcvAAAAAElFTkSuQmCC"> icon in the widget UI, or by calling 
+        gG9knfWwKBGcvAAAAAElFTkSuQmCC"> icon in the widget UI, or by calling
         <i>toggle_window_view()</i> function without arguments.</p>
 
     Note that after a widget is 'seperated' from the notebook, you can drag
@@ -291,7 +291,7 @@ class MapView(widgets.DOMWidget):
 
     @property
     def layers(self):
-        """A list of the JSON representation of layers added to the map widget 
+        """A list of the JSON representation of layers added to the map widget
         using the add_layers() method
         """
         return [self._hashed_layers[key] for key in self._hashed_layers]
@@ -344,7 +344,7 @@ class MapView(widgets.DOMWidget):
         self._setup_js_cdn()
         self.mode = mode
         self._hashed_layers = OrderedDict()
-        
+
         #Handle webmaps and webscenes
         self.webmap_item = None
         self.webscene_item = None
@@ -433,9 +433,9 @@ class MapView(widgets.DOMWidget):
         """Call this function before the creation of any MapView object, and
         each instantiated object will use the specified `js_cdn` parameter as
         the  ArcGIS API for JavaScript CDN URL instead of the default
-        http://js.arcgis.com/4.X/. This functionality is necessary in 
-        disconnected  environments if the portal you are connecting to doesn't 
-        ship with the minimum necessary JavaScript API version. See the guide 
+        http://js.arcgis.com/4.X/. This functionality is necessary in
+        disconnected  environments if the portal you are connecting to doesn't
+        ship with the minimum necessary JavaScript API version. See the guide
         page on disconnected environments for more information."""
         global _js_cdn_override_global
         _js_cdn_override_global = js_cdn
@@ -457,7 +457,7 @@ class MapView(widgets.DOMWidget):
 
         .. code-block:: python
 
-            #USAGE EXAMPLE: Add a feature layer with smart mapping renderer and 
+            #USAGE EXAMPLE: Add a feature layer with smart mapping renderer and
             #a definition expression to limit the features drawn.
             map1 = gis.map("Seattle, WA")
             map1.add_layer(wa_streets_feature_layer, {'renderer':'ClassedSizeRenderer',
@@ -478,7 +478,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
-        
+
         if isinstance(item, Item):
             for layer in item.layers:
                 self._add_layer_to_widget(layer, options)
@@ -569,14 +569,14 @@ class MapView(widgets.DOMWidget):
                 output_bool = False
 
         #Layer is removed from python side: trigger removal from JS side
-        self._layers_to_remove = tuple('nonexistant_layer_id') 
+        self._layers_to_remove = tuple('nonexistant_layer_id')
         self._layers_to_remove = tuple(layer_hashes_to_remove)
 
         return output_bool
 
     def _infer_layers(self, arg):
         """For a generic list of Layers, Items, FeatureSets, or an individual
-        'layer', or anything, attempt to return a list of of 'layer' types 
+        'layer', or anything, attempt to return a list of of 'layer' types
         that would exist in self.layers
         """
         from arcgis.features import FeatureSet, Feature, FeatureCollection
@@ -584,19 +584,19 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
- 
+
         output_layers = []
         if isinstance(arg, Layer):
             output_layers.append(arg)
         elif isinstance(arg, Item):
             for layer in arg.layers:
-                output_layers.append(layer) 
+                output_layers.append(layer)
         elif isinstance(arg, FeatureSet):
             fc = FeatureCollection.from_featureset(arg)
             for layer in fc:
                 output_layers.append(layer)
         elif isinstance(arg, dict):
-            output_layers.append(arg) 
+            output_layers.append(arg)
         elif _is_iterable(arg):
             #If it's any iterable not previously checked, attempt to infer
             if 'layers' in arg:
@@ -643,7 +643,7 @@ class MapView(widgets.DOMWidget):
             return False
 
     def display_message(self, msg):
-        """Displays a message on the upper-right corner of the map widget. 
+        """Displays a message on the upper-right corner of the map widget.
         You can only send one message at a time, multiple messages don’t show.
         """
         self._custom_msg = ""
@@ -656,10 +656,10 @@ class MapView(widgets.DOMWidget):
         item in your GIS.
 
         .. note::
-            If you started out with a fresh map widget object, use this method 
+            If you started out with a fresh map widget object, use this method
             to save it as a the webmap/webscene item in your GIS.
-            If you started with a map widget object from an existing 
-            webmap/webscen object, calling this method will create a new item 
+            If you started with a map widget object from an existing
+            webmap/webscen object, calling this method will create a new item
             with your changes. If you want to update the existing item with your
             changes, call the `update()` method instead.
 
@@ -673,8 +673,8 @@ class MapView(widgets.DOMWidget):
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
-        mode                Optional string. Whether to save this map instance as a 2D WebMap, 
-                            or a 3D WebScene. Possible strings: "2D", "webmap", "3D", or 
+        mode                Optional string. Whether to save this map instance as a 2D WebMap,
+                            or a 3D WebScene. Possible strings: "2D", "webmap", "3D", or
                             "webscene".
         ---------------     --------------------------------------------------------------------
         thumbnail           Optional string. Either a path or URL to a thumbnail image.
@@ -692,29 +692,29 @@ class MapView(widgets.DOMWidget):
         =================  =====================================================================
         **Key**            **Value**
         -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for 
+        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for
                            valid values.
         -----------------  ---------------------------------------------------------------------
         description        Optional string. Description of the item.
         -----------------  ---------------------------------------------------------------------
         title              Optional string. Name label of the item.
         -----------------  ---------------------------------------------------------------------
-        tags               Optional string. Tags listed as comma-separated values, or a list of 
+        tags               Optional string. Tags listed as comma-separated values, or a list of
                            strings. Used for searches on items.
         -----------------  ---------------------------------------------------------------------
-        snippet            Optional string. Provide a short summary (limit to max 250 
+        snippet            Optional string. Provide a short summary (limit to max 250
                            characters) of the what the item is.
         -----------------  ---------------------------------------------------------------------
         accessInformation  Optional string. Information on the source of the content.
         -----------------  ---------------------------------------------------------------------
-        licenseInfo        Optional string.  Any license information or restrictions regarding 
+        licenseInfo        Optional string.  Any license information or restrictions regarding
                            the content.
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Locale, country and language information.
         -----------------  ---------------------------------------------------------------------
         access             Optional string. Valid values are private, shared, org, or public.
         -----------------  ---------------------------------------------------------------------
-        commentsEnabled    Optional boolean. Default is true, controls whether comments are 
+        commentsEnabled    Optional boolean. Default is true, controls whether comments are
                            allowed (true) or not allowed (false).
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Language and country information.
@@ -776,7 +776,7 @@ class MapView(widgets.DOMWidget):
             self._check_for_drawn_layers()
 
     def _check_for_renderer_updates(self):
-        js_layers = {layer["id"] : layer 
+        js_layers = {layer["id"] : layer
             for layer in self._readonly_webmap_from_js['layers']}
         for wm_layer in self.webmap.layers:
             wm_layer_id = wm_layer["id"]
@@ -801,7 +801,7 @@ class MapView(widgets.DOMWidget):
                 index += 1
 
     def _check_for_drawn_layers(self):
-        from arcgis.geometry import (Point, Polygon, Polyline, 
+        from arcgis.geometry import (Point, Polygon, Polyline,
                                      MultiPoint, Geometry)
         from arcgis.features import FeatureSet, Feature, FeatureCollection
         for layer in self._readonly_webmap_from_js['layers']:
@@ -862,26 +862,26 @@ class MapView(widgets.DOMWidget):
     def update(self, mode=None, item_properties=None,
                thumbnail=None, metadata=None):
         """
-        Updates the web map item that was used to create the MapWidget object. 
-        In addition, you can update other item properties, thumbnail and 
+        Updates the web map item that was used to create the MapWidget object.
+        In addition, you can update other item properties, thumbnail and
         metadata.
 
         .. note::
-            If you started out a MapView object from an existing 
-            webmap/webscene item, use this method to update the 
+            If you started out a MapView object from an existing
+            webmap/webscene item, use this method to update the
             webmap/webscene item in your with your changes.
-            If you started out with a fresh MapView object (without a 
-            webmap/webscene item), calling this method will raise a 
-            RuntimeError exception. If you want to save the map widget into a 
+            If you started out with a fresh MapView object (without a
+            webmap/webscene item), calling this method will raise a
+            RuntimeError exception. If you want to save the map widget into a
             new item, call the `save()` method instead.
             For item_properties, pass in arguments for only the properties you
-            want to be updated. All other properties will be untouched.  For 
-            example, if you want to update only the item's description, then 
+            want to be updated. All other properties will be untouched.  For
+            example, if you want to update only the item's description, then
             only provide the description argument in item_properties.
 
         .. note::
-            Saving as a WebScene item only works in a Jupyter environment: the 
-            map must be visually displayed in the notebook before calling this 
+            Saving as a WebScene item only works in a Jupyter environment: the
+            map must be visually displayed in the notebook before calling this
             method.
 
         ===============     ====================================================================
@@ -889,43 +889,43 @@ class MapView(widgets.DOMWidget):
         ---------------     --------------------------------------------------------------------
         item_properties     Optional dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
-        mode                Optional string. Whether to save this map instance as a 2D WebMap, 
-                            or a 3D WebScene. Possible strings: "2D", "webmap", "3D", or 
+        mode                Optional string. Whether to save this map instance as a 2D WebMap,
+                            or a 3D WebScene. Possible strings: "2D", "webmap", "3D", or
                             "webscene".
         ---------------     --------------------------------------------------------------------
         thumbnail           Optional string. Either a path or URL to a thumbnail image.
         ---------------     --------------------------------------------------------------------
         metadata            Optional string. Either a path or URL to the metadata.
         ===============     ====================================================================
-        
+
         *Key:Value Dictionary Options for Argument item_properties*
-        
+
         =================  =====================================================================
         **Key**            **Value**
         -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for 
+        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for
                            valid values.
         -----------------  ---------------------------------------------------------------------
         description        Optional string. Description of the item.
         -----------------  ---------------------------------------------------------------------
         title              Optional string. Name label of the item.
         -----------------  ---------------------------------------------------------------------
-        tags               Optional string. Tags listed as comma-separated values, or a list of 
+        tags               Optional string. Tags listed as comma-separated values, or a list of
                            strings. Used for searches on items.
         -----------------  ---------------------------------------------------------------------
-        snippet            Optional string. Provide a short summary (limit to max 250 
+        snippet            Optional string. Provide a short summary (limit to max 250
                            characters) of the what the item is.
         -----------------  ---------------------------------------------------------------------
         accessInformation  Optional string. Information on the source of the content.
         -----------------  ---------------------------------------------------------------------
-        licenseInfo        Optional string.  Any license information or restrictions regarding 
+        licenseInfo        Optional string.  Any license information or restrictions regarding
                            the content.
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Locale, country and language information.
         -----------------  ---------------------------------------------------------------------
         access             Optional string. Valid values are private, shared, org, or public.
         -----------------  ---------------------------------------------------------------------
-        commentsEnabled    Optional boolean. Default is true, controls whether comments are 
+        commentsEnabled    Optional boolean. Default is true, controls whether comments are
                            allowed (true) or not allowed (false).
         =================  =====================================================================
 
@@ -985,7 +985,7 @@ class MapView(widgets.DOMWidget):
     def export_to_html(self, path_to_file, title="Exported ArcGIS Map Widget",
                        credentials_prompt=False):
         """
-        Takes the current state of the map widget, and exports it to a 
+        Takes the current state of the map widget, and exports it to a
         standalone HTML file that can be viewed in any web browser.
 
         By default, only publically viewable layers will be visible in any
@@ -998,9 +998,9 @@ class MapView(widgets.DOMWidget):
             prompts a user for a password.
 
         .. note::
-            You cannot succesfully authenticate if you open the HTML page in a 
-            browser locally like file://path/to/file.html. The credentials 
-            prompt will only properly function if served over a HTTP/HTTPS 
+            You cannot succesfully authenticate if you open the HTML page in a
+            browser locally like file://path/to/file.html. The credentials
+            prompt will only properly function if served over a HTTP/HTTPS
             server.
 
         ==================     ====================================================================
@@ -1018,17 +1018,17 @@ class MapView(widgets.DOMWidget):
         #Make sure height is to 100% so exported page loads in fullscreen
         prev_height = self.layout.height
         self.layout.height = "100%"
-        
+
         #Set the _auth_mode
         prev_auth_mode = self._auth_mode
         if credentials_prompt:
             self._auth_mode = "prompt"
         else:
             self._auth_mode = "anonymous"
-        
+
         #Write the HTML file
         embed_minimal_html(path_to_file, views=[self], title=title)
-        
+
         #Restore the previous model attributes that were changed
         self._auth_mode = prev_auth_mode
         self.layout.height = prev_height
@@ -1045,7 +1045,7 @@ class MapView(widgets.DOMWidget):
         ------------------     --------------------------------------------------------------------
         shape                  Required object.
                                Known geometries:
-                               Shape is one of ["circle", "ellipse", "polygon", "polyline", 
+                               Shape is one of ["circle", "ellipse", "polygon", "polyline",
                                "multipoint", "point", "rectangle", "triangle"].
                                Coordinate pair: specify shape as a list of [lat, long]. Eg: [34, -81]
                                FeatureSet: shape can be a FeatureSet object.
@@ -1094,7 +1094,14 @@ class MapView(widgets.DOMWidget):
                 self._draw_featureset(fset, popup, symbol)
             elif isinstance(shape, dict):
                 if 'type' not in shape:
-                    shape['type'] = 'point'
+                    if 'rings' in shape:
+                        shape['type'] = 'polygon'
+                    elif 'paths' in shape:
+                        shape['type'] = 'polyline'
+                    elif 'points' in shape:
+                        shape['type'] = 'multipoint'
+                    else:
+                        shape['type'] = 'point'
                 graphic = {
                     "geometry": shape,
                     "popupTemplate": popup,
@@ -1103,7 +1110,7 @@ class MapView(widgets.DOMWidget):
                 }
                 self._add_graphic(graphic)
                 f = Feature(shape)
-                fset = FeatureSet([f], 
+                fset = FeatureSet([f],
                                   geometry_type='esriGeometryPoint',
                                   spatial_reference={'wkid':4326})
 
@@ -1113,7 +1120,7 @@ class MapView(widgets.DOMWidget):
                                 'description':"{" + popup['content'] +"}"}
             else:
                 webmap_popup = None
-            wm_options = {'popup':webmap_popup, 'symbol':symbol, 
+            wm_options = {'popup':webmap_popup, 'symbol':symbol,
                           'attributes':attributes, 'title':title,
                           'extent':self.extent}
             self.webmap.add_layer(fset, wm_options)
@@ -1175,7 +1182,7 @@ class MapView(widgets.DOMWidget):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        remove                 Optional boolean. Set to true to remove the callback from the list 
+        remove                 Optional boolean. Set to true to remove the callback from the list
                                of callbacks.
         ==================     ====================================================================
 
@@ -1190,7 +1197,7 @@ class MapView(widgets.DOMWidget):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        remove                 Optional boolean. Set to true to remove the callback from the list 
+        remove                 Optional boolean. Set to true to remove the callback from the list
                                of callbacks.
         ==================     ====================================================================
 
@@ -1201,13 +1208,13 @@ class MapView(widgets.DOMWidget):
         """In a JupyterLab environment, calling this function will seperate
         the drawn map widget to a new window next to the open notebook,
         allowing you to move the widget it, split it, put it in a new tab, etc.
-        If the widget is already seperated in a new window, calling this 
-        function will restore the widget to the notebook where it originated 
+        If the widget is already seperated in a new window, calling this
+        function will restore the widget to the notebook where it originated
         from. See the JupyterLab guide pages for more information.
 
         .. raw:: html
 
-            <p>Note that this functionality can also be acheived by pressing 
+            <p>Note that this functionality can also be acheived by pressing
             the <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAA
             gCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAA
             AAB3RJTUUH4gcUAAIIxu7mQQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoI
@@ -1225,8 +1232,8 @@ class MapView(widgets.DOMWidget):
         title                  What text will display as the widget tab. Default: "ArcGIS Map".
         ------------------     --------------------------------------------------------------------
         tab_mode               The 'tab mode' that this window will open in. Will use this
-                               MapView instance's `tab_mode` property if not specified. Possible 
-                               values: "auto", "split-top", "split-left", "split-right", 
+                               MapView instance's `tab_mode` property if not specified. Possible
+                               values: "auto", "split-top", "split-left", "split-right",
                                "split-bottom", "tab-before", "tab-after"
         ==================     ====================================================================
         """
