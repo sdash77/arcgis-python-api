@@ -1,7 +1,7 @@
 MASTER AGREEMENT
 (E204CW Revised 03/08/2017)
  
-IMPORTANT—READ CAREFULLY
+IMPORTANTâ€”READ CAREFULLY
  
 Unless superseded by a signed license agreement between you and Esri, Esri is willing to provide Esri Offerings to you only if you accept all terms and conditions contained in this Agreement. Please read the terms and conditions carefully. You may not use the Esri Offerings until you have agreed to the terms and conditions of the Agreement. If you do not agree to the terms and conditions as stated, click "I do not accept the Master Agreement" below; you may then request a refund of applicable fees paid.
  
@@ -16,7 +16,7 @@ This Master Agreement ("Agreement") is between you ("Customer") and Environmenta
 a.     Use the Esri Offerings as set forth in the Documentation and applicable Ordering Documents; and
 b.     Copy and make derivative works of the Documentation for Customer's own internal use in conjunction with Customer's authorized use of Products. Customer will include the following copyright attribution notice acknowledging the proprietary rights of Esri and its licensors in any derivative work:
  
-                "Portions of this document include intellectual property of Esri and its licensors and are used under license. Copyright © [Customer will insert the actual copyright date(s) from the source materials.] Esri and its licensors. All rights reserved."
+                "Portions of this document include intellectual property of Esri and its licensors and are used under license. Copyright Â© [Customer will insert the actual copyright date(s) from the source materials.] Esri and its licensors. All rights reserved."
  
 The grants of rights in this section (i) continue for the duration of the subscription or applicable Term or perpetually if no Term is applicable or identified in the Ordering Documents and (ii) are subject to additional rights and restrictions in this Agreement including Attachment B.
  
@@ -230,7 +230,7 @@ GENERAL TERMS AND CONDITIONS
  
 The following general terms and conditions apply to all Esri Offerings and Services that Esri may offer to its customers. Certain Esri Offerings or Services may not be available under this Agreement. Please disregard any terms that are not applicable to Esri Offerings or Services offered under this Agreement.
  
-ARTICLE 1—GENERAL USE RESTRICTIONS
+ARTICLE 1â€”GENERAL USE RESTRICTIONS
  
 Except as expressly permitted in this Agreement, Customer will not
  
@@ -253,7 +253,7 @@ l.      Use, incorporate, modify, distribute, provide access to, or combine any 
  
 These restrictions will not apply to the extent that they conflict with applicable law or regulation.
  
-ARTICLE 2—TERM AND TERMINATION
+ARTICLE 2â€”TERM AND TERMINATION
  
 This Agreement is effective upon acceptance. Customer may terminate this Agreement or any Esri Offerings license or subscription at any time upon written notice to Esri. Termination without cause does not entitle Customer to receive any refund of fees paid or to terminate pending Services engagements without further liability. Either party may terminate this Agreement or any license or subscription for a material breach that is not cured within 30 days of written notice to the breaching party. Upon any termination of this Agreement for breach, Esri will stop providing Services. Any licenses in Esri Offerings that survive termination of this Agreement continue under the terms of this Agreement.
  
@@ -267,7 +267,7 @@ c.     Stop using, uninstall, remove, and destroy all copies of affected Esri Of
  
 Esri may stop performing Services immediately upon written notice to Customer if a bankruptcy or insolvency proceeding is commenced by or against Customer until the trustee cures any existing defaults and provides adequate assurance of future performance under the Agreement. This Agreement terminates upon the insolvency, liquidation, or dissolution of either party.
  
-ARTICLE 3—LIMITED WARRANTIES AND DISCLAIMERS
+ARTICLE 3â€”LIMITED WARRANTIES AND DISCLAIMERS
  
 3.1 Limited Warranties. Esri warrants:
  
@@ -295,7 +295,7 @@ b.    Third-Party Content and Websites. Esri is not responsible for any third-pa
  
 3.5 Exclusive Remedy. Customer's exclusive remedy and Esri's entire liability for breach of the limited warranties in this section will be limited, at Esri's sole discretion, to (i) replace any defective media; (ii) repair, correct, or provide a workaround for the applicable Esri Offering or Services; or (iii) return the fees paid by Customer for Esri Offerings or Services that do not meet Esri's limited warranties, provided that Customer uninstalls, removes, and destroys all copies of the applicable Esri Offerings; ceases accessing and using the applicable Cloud Services; and executes and delivers evidence of such actions to Esri or its authorized distributor.
  
-ARTICLE 4—LIMITATION OF LIABILITY
+ARTICLE 4â€”LIMITATION OF LIABILITY
  
 4.1 Disclaimer of Liability. Neither Customer, Esri, nor any Esri distributor or licensor will be liable for any indirect, special, incidental, or consequential damages, lost profits, lost sales, or loss of goodwill; costs of procurement of substitute goods or services; or damages exceeding the applicable license or subscription fees paid or owed to Esri for the Esri Offerings giving rise to the cause of action.
  
@@ -305,7 +305,7 @@ ARTICLE 4—LIMITATION OF LIABILITY
  
 4.4 The foregoing warranties, limitations, and exclusions may be invalid in some jurisdictions and apply only to the extent permitted by applicable law or regulation in Customer's jurisdiction. Customer may have additional rights that may not be waived or disclaimed. Esri does not seek to limit Customer's warranty or remedies to any extent not permitted by law.
  
-ARTICLE 5—INDEMNIFICATIONS
+ARTICLE 5â€”INDEMNIFICATIONS
  
 5.1 Definitions. The following definitions supplement the definitions provided in Attachment A:
  
@@ -326,7 +326,7 @@ c.     Esri has no obligation to defend an Infringement Claim or to indemnify Cu
  
 5.5 This Section sets forth the entire obligation of Esri, its authorized distributor, and its licensors regarding any Infringement Claim.
  
-ARTICLE 6—INSURANCE
+ARTICLE 6â€”INSURANCE
  
 If Esri is providing Services, Esri will carry, at a minimum, the following coverage:
  
@@ -341,7 +341,7 @@ a.     Comprehensive general liability or commercial general liability with mini
  
 b.     Workers' compensation insurance, with waiver of subrogation, in an amount that complies with statutory limits.
  
-ARTICLE 7—SECURITY AND COMPLIANCE
+ARTICLE 7â€”SECURITY AND COMPLIANCE
  
 7.1 Security. Esri publishes its security capabilities at http://doc.arcgis.com/en/trust/security/security-overview.htm. Customer may give Esri personnel access to Customer systems or to Customer or third-party personal information if access is essential for Esri's performance of Services and if Esri expressly agrees to such access. Esri will use reasonable administrative, technical, and physical safeguards to protect such data and guard against unauthorized access. Customer bears responsibility to (i) confirm that Esri's published security and privacy controls meet all applicable legal requirements for protection of Customer Content and (ii) upload or share controlled Customer Content through Cloud Services only when it is legal to do so. Esri is not responsible to review Customer Content to ensure compliance with applicable laws and regulations. For US federal government customers, Online Services are FISMA Low authorized but do not meet higher security requirements including those found in DFARS 252.239-7010. Alternative solutions that meet these or similar requirements are available.
  
@@ -349,7 +349,7 @@ ARTICLE 7—SECURITY AND COMPLIANCE
  
 7.3 Export Compliance. Each party will comply with all applicable export laws and regulations, including the US Department of Commerce's Export Administration Regulations (EAR), the US Department of State's International Traffic in Arms Regulations (ITAR), and other applicable export laws. Customer will not export, reexport, transfer, release, or otherwise dispose of, in whole or in part, or permit access, transfer, or use of Services or Esri Offerings to any United States embargoed countries or denied entities or persons except in accordance with all then-current applicable US government export laws and regulations. Customer will not export, reexport, transfer, or use Services or Esri Offerings for certain missile, nuclear, chemical, or biological activities or end uses without proper authorization from the US government. Customer shall immediately notify Esri in writing if any US government entity or agency denies, suspends, or revokes Customer's export privileges. Customer will not upload, store, or process in Cloud Services any Customer Content that (i) has an Export Control Classification Number (ECCN) other than EAR99 or (ii) is controlled for export from the United States under ITAR. Customer will notify Esri in advance if Esri's performance of any Services or provision of any Esri Offerings is related to any defense article, defense service, or technical data, as defined under the ITAR Sections 120.6, 120.9, and 120.10 respectively; Esri will not perform any such Services or provide any such Esri Offerings until Esri obtains any necessary export license from the US government. Customer will reasonably assist Esri in applying and obtaining an export license if needed.
  
-ARTICLE 8—CLOUD SERVICES
+ARTICLE 8â€”CLOUD SERVICES
  
 8.1 Prohibited Uses. Customer may not access or use Cloud Services to
  
@@ -370,7 +370,7 @@ Esri is not responsible for any damage, liabilities, or losses that may result f
  
 8.5 Notice to Esri. Customer will promptly notify Esri if Customer becomes aware of any unauthorized use of Customer's subscription or any other breach of security regarding Cloud Services.
  
-ARTICLE 9—GENERAL PROVISIONS
+ARTICLE 9â€”GENERAL PROVISIONS
  
 9.1 Payment. Customer will pay each correct invoice no later than 30 days after receipt and will remit payment to the address stated on the invoice. Customers outside the US will pay the distributor's invoices in accordance with the distributor's payment terms.
  
@@ -402,7 +402,7 @@ b.     Non-Government Entities. US federal law and the law of the State of Calif
 9.13 Dispute Resolution. The parties will use the following dispute resolution processes:
  
 a.     Equitable Relief. Either party will have the right to seek an injunction, specific performance, or other equitable relief in any court of competent jurisdiction without the requirement of posting a bond or proving injury as a condition for relief.
-b.     US Government Agencies. This Agreement is subject to the Contract Disputes Act of 1978, as amended (41 USC 601–613).
+b.     US Government Agencies. This Agreement is subject to the Contract Disputes Act of 1978, as amended (41 USC 601â€“613).
 c.     Other Government Entities. Esri will comply with mandatory dispute resolutions under applicable law.
 d.     Arbitration. Except as noted above, the parties will submit to binding arbitration to resolve any dispute arising out of or relating to this Agreement that cannot be settled through negotiation. If Customer is in the United States or one of its territories or outlying areas, the Commercial Arbitration Rules of the American Arbitration Association will govern the arbitration proceedings. If Customer is outside the United States, the Rules of Arbitration of the International Chamber of Commerce will govern the proceedings. The parties will select a single arbitrator in accordance with the applicable arbitration rules. The language of the arbitration will be English. Arbitration will be at an agreed-upon location. Either party will, at the request of the other, make available documents or witnesses relevant to the major aspects of the dispute.
  
@@ -432,53 +432,53 @@ SOFTWARE
 The following list identifies additional terms of use that apply to specific Software. Each Product listing identifies one or more footnotes that apply to that Product. These footnotes supplement the terms of the Agreement. The definitions for each footnote follow the list. Unless otherwise noted in the applicable Ordering Document, extensions to Software follow the same scope of use as that granted for the corresponding Software.
  
 Desktop Products
-?    ArcGIS Desktop (Advanced, Standard, or Basic) (26)
-?    ArcGIS Earth (65)
-?    ArcGIS Explorer Desktop (20)
-?    ArcGIS for AutoCAD (20)
-?    ArcPad (13)
-?    ArcReader (20)
-?    ArcGIS for Windows Mobile (15; 54)
-?    ArcGIS for Personal Use (3, 26)
+â–ª    ArcGIS Desktop (Advanced, Standard, or Basic) (26)
+â–ª    ArcGIS Earth (65)
+â–ª    ArcGIS Explorer Desktop (20)
+â–ª    ArcGIS for AutoCAD (20)
+â–ª    ArcPad (13)
+â–ª    ArcReader (20)
+â–ª    ArcGIS for Windows Mobile (15; 54)
+â–ª    ArcGIS for Personal Use (3, 26)
  
 Server Products
-?    ArcGIS Enterprise
-      –    Standard or Advanced (21; 31)
-      –    Workgroup Standard or Advanced (21; 28; 29; 30)
-      –    ArcGIS GIS Server (Standard or Advanced) (31)
-      –    ArcGIS GIS Server Basic (39)
-      –    ArcGIS GIS Server Workgroup (Standard or Advanced) (28; 29; 30)
-      –    ArcGIS GIS Server Workgroup Basic (39)
-      –    ArcGIS GIS Server Extension
-      –    ArcGIS Maritime: Server (2)
-      –    ArcGIS Image Server, ArcGIS GeoEvent Server, ArcGIS GeoAnalytics Server (4)
-?    Esri Business Analyst Server
-      –    Workgroup (28; 29; 30; 31; 39)
-      –    Enterprise (31; 39)
-?    World Geocoder for ArcGIS Basic (67)
+â–ª    ArcGIS Enterprise
+      â€“    Standard or Advanced (21; 31)
+      â€“    Workgroup Standard or Advanced (21; 28; 29; 30)
+      â€“    ArcGIS GIS Server (Standard or Advanced) (31)
+      â€“    ArcGIS GIS Server Basic (39)
+      â€“    ArcGIS GIS Server Workgroup (Standard or Advanced) (28; 29; 30)
+      â€“    ArcGIS GIS Server Workgroup Basic (39)
+      â€“    ArcGIS GIS Server Extension
+      â€“    ArcGIS Maritime: Server (2)
+      â€“    ArcGIS Image Server, ArcGIS GeoEvent Server, ArcGIS GeoAnalytics Server (4)
+â–ª    Esri Business Analyst Server
+      â€“    Workgroup (28; 29; 30; 31; 39)
+      â€“    Enterprise (31; 39)
+â–ª    World Geocoder for ArcGIS Basic (67)
  
 Developer Tools
-?    AppStudio for ArcGIS Standard (11, 16, 19)
-?    ArcGIS Runtime SDK for Android, iOS, Java, Mac OS X, Microsoft .NET Framework (Windows [desktop], Windows Phone, Windows Store), Qt, or WPF (16; 19)
-?    ArcGIS Runtime Basic Level for Android, iOS, Java, Mac OS X, Microsoft .NET Framework (Windows [desktop], Windows Phone, Windows Store), Qt, or WPF (1)
-?    ArcGIS Runtime Basic, Standard, Advanced Levels and the Analysis Extension for Android, iOS, Java, Mac OS X, Microsoft .NET Framework (Windows [desktop], Windows Phone, Windows Store), Qt, or WPF (15; 18)
-?    ArcGIS Engine Developer Kit and Extensions (16, 19; 22, 26)
-?    ArcGIS Engine for Windows/Linux and Extensions (15; 22; 26)
-?    ArcGIS Web Mapping (including ArcGIS API for JavaScript/HTML5, ArcGIS API for Flex, ArcGIS API for Microsoft Silverlight) (15; 16; 64; 66)
-?    ArcGIS Developer Subscription (24; 26)
-?    Esri File Geodatabase API (47)
+â–ª    AppStudio for ArcGIS Standard (11, 16, 19)
+â–ª    ArcGIS Runtime SDK for Android, iOS, Java, Mac OS X, Microsoft .NET Framework (Windows [desktop], Windows Phone, Windows Store), Qt, or WPF (16; 19)
+â–ª    ArcGIS Runtime Basic Level for Android, iOS, Java, Mac OS X, Microsoft .NET Framework (Windows [desktop], Windows Phone, Windows Store), Qt, or WPF (1)
+â–ª    ArcGIS Runtime Basic, Standard, Advanced Levels and the Analysis Extension for Android, iOS, Java, Mac OS X, Microsoft .NET Framework (Windows [desktop], Windows Phone, Windows Store), Qt, or WPF (15; 18)
+â–ª    ArcGIS Engine Developer Kit and Extensions (16, 19; 22, 26)
+â–ª    ArcGIS Engine for Windows/Linux and Extensions (15; 22; 26)
+â–ª    ArcGIS Web Mapping (including ArcGIS API for JavaScript/HTML5, ArcGIS API for Flex, ArcGIS API for Microsoft Silverlight) (15; 16; 64; 66)
+â–ª    ArcGIS Developer Subscription (24; 26)
+â–ª    Esri File Geodatabase API (47)
  
 Mobile
-?    Navigator for ArcGIS (14)
+â–ª    Navigator for ArcGIS (14)
  
 Footnotes:
 1.   May not be used to edit an Enterprise Geodatabase via Direct Connect.
 2.   Not for use in navigation.
 3.   Licensed for Personal Use only.
 4.   When used with ArcGIS Enterprise Workgroup
-      –    Limited to 1 four-core server.
-      –    Can be installed on a separate machine.
-5–10.  Reserved.
+      â€“    Limited to 1 four-core server.
+      â€“    Can be installed on a separate machine.
+5â€“10.  Reserved.
 11.  Applications built with AppStudio for ArcGIS Standard are subject to the terms of use for ArcGIS Runtime Standard Level.
 12.  Reserved.
 13.  Licensed as a Dual Use License.
@@ -502,13 +502,13 @@ Footnotes:
 30.  Use is restricted to a maximum of 10 gigabytes of Customer's data.
 31.  Includes a Failover License.
 32.  Reserved.
-33–38.  Reserved.
+33â€“38.  Reserved.
 39.  Any editing functionality included with ArcGIS GIS Server is not permitted for use with ArcGIS GIS Server Basic and ArcGIS GIS Server Workgroup Basic.
-40–46.  Reserved.
+40â€“46.  Reserved.
 47.  Customer may develop and distribute Value-Added Applications that use Esri File Geodatabase API to Customer's end users.
-48–53.  Reserved.
+48â€“53.  Reserved.
 54.  ArcGIS for Windows Mobile Deployments are licensed for use with ArcGIS Enterprise (Advanced or Standard), ArcGIS Enterprise Workgroup (Advanced), ArcGIS Desktop (Advanced, Standard, Basic), and ArcGIS Engine Value-Added Applications.
-55–63.  Reserved.
+55â€“63.  Reserved.
 64.  Value-Added Application(s) for web deployment must be used in conjunction with other Esri Product(s). Third-party technologies may also be used in conjunction with Value-Added Application(s) as long as the Value-Added Application(s) is always used in conjunction with other Esri Product(s).
 65.  Can only be used in conjunction with other Esri Product(s). Third-party technologies may also be used in conjunction with ArcGIS Earth as long as ArcGIS Earth is always used in conjunction with other Esri Product(s).
 66.  For desktop applications, each license is per organization. For the purposes of this license, organization is equivalent to a principal registered unique domain identifier. Domain is the Internet domain name registered with a domain name registrar. For instance, in example.com, example.com is the registered unique domain identifier. Similarly, in example.com.xx, where xx is a registered country code, example.com.xx is the registered unique domain identifier. Desktop applications can be used by any employee of the organization with the principal registered unique domain identifier. There is no limit to the number of applications that can be built and deployed within an organization.
@@ -519,19 +519,19 @@ ONLINE SERVICES
  
 The following list identifies additional terms of use that apply to specific Online Services. Each Product listing identifies one or more footnotes that apply to that Product. The definitions for each footnote follow the list. Unless otherwise noted in the applicable Ordering Document, extensions to Software follow the same scope of use as that granted for the corresponding Software.
  
-?    ArcGIS Online Developer Deployment subscriptions are available through multiple Selling Programs:
-      –    Commercial Retail, EAs; Government Programs              
+â–ª    ArcGIS Online Developer Deployment subscriptions are available through multiple Selling Programs:
+      â€“    Commercial Retail, EAs; Government Programs
             + Free Subscription (1; 9; 10; 13; 16)
             + Paid Subscription (1; 9; 10; 11; 13)
-–    Education Programs (Free or Paid Subscriptions)  (1; 3; 4; 5; 6; 9; 10; 13; 16)
-–    NGO/NPO, Press/Media Programs (Free or Paid Subscription) (1; 3; 4; 5; 6; 9; 10; 13; 16)
-?  ArcGIS Online subscriptions are available through multiple Selling Programs:
-      –    Commercial Retail, EAs; Government Programs (1; 2; 3; 11; 12; 14; 17)
-      –    Education Program (1; 2; 14; 16; 17)
-      –    Non-Profit Program (1; 2; 14; 16; 17)
-?    Public Plan
-      –    Commercial Retail, EAs; Government; NGO/NPO; Press/Media Programs (1; 4; 5; 6; 7; 9; 10; 15; 16)
-      –    Education Programs (1; 4; 5; 6; 7; 9; 10; 15; 16
+â€“    Education Programs (Free or Paid Subscriptions)  (1; 3; 4; 5; 6; 9; 10; 13; 16)
+â€“    NGO/NPO, Press/Media Programs (Free or Paid Subscription) (1; 3; 4; 5; 6; 9; 10; 13; 16)
+â–ª  ArcGIS Online subscriptions are available through multiple Selling Programs:
+      â€“    Commercial Retail, EAs; Government Programs (1; 2; 3; 11; 12; 14; 17)
+      â€“    Education Program (1; 2; 14; 16; 17)
+      â€“    Non-Profit Program (1; 2; 14; 16; 17)
+â–ª    Public Plan
+      â€“    Commercial Retail, EAs; Government; NGO/NPO; Press/Media Programs (1; 4; 5; 6; 7; 9; 10; 15; 16)
+      â€“    Education Programs (1; 4; 5; 6; 7; 9; 10; 15; 16
 Footnotes:
 1.  Customer may not store the geocoded results generated by World Geocoding Service without an ArcGIS Online subscription. Customer may use the data accessible through Infographics Service for display purposes only and may not save any data accessible through this service.
 2.  May be used for any business purpose of the Customer's organization.

@@ -93,7 +93,7 @@ def find_hot_spots(analysis_layer: str = None,
     """
 
 
-The  œFind Hot Spots   task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
+The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
 
 Parameters:
 
