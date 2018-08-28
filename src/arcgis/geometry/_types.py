@@ -189,7 +189,11 @@ class GeometryFactory(type):
                         return SpatialReference(iterable)
                     elif 'rings' in iterable:
                         return Polygon(iterable)
+                    elif "curveRings" in iterable:
+                        return Polygon(iterable)
                     elif 'paths' in iterable:
+                        return Polyline(iterable)
+                    elif 'curvePaths' in iterable:
                         return Polyline(iterable)
                     elif 'points' in iterable:
                         return MultiPoint(iterable)
@@ -204,6 +208,10 @@ class GeometryFactory(type):
                     return SpatialReference(**kwargs)
                 elif 'rings' in kwargs:
                     return Polygon(**kwargs)
+                elif "curveRings" in iterable:
+                    return Polygon(**kwargs)
+                elif 'curvePaths' in iterable:
+                    return Polyline(**kwargs)
                 elif 'paths' in kwargs:
                     return Polyline(**kwargs)
                 elif 'points' in kwargs:
