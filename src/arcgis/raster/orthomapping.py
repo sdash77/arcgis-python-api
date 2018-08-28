@@ -372,8 +372,9 @@ def append_control_points(image_collection, control_points, gis = None):
 ###################################################################################################
 def match_control_points(image_collection, control_points, similarity=None, context=None, gis = None):
     '''
-    Compute the matching tie points, given collection of ground control points, 
-    and at least one of the ground control points has matching tie points. 
+    If each of the ground control point has at least one matching tie point. 
+    Then, this function will help find all remaining tie points on all other image items of the 
+    image collection.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -933,8 +934,10 @@ def generate_dem(image_collection,
                            suitable for generating a DSM for urban areas. This is more 
                            computationally intensive than the ETM method1.  
 
-                           ESGM-This is an extension of SGM, with edge enhancement capability.
-                           
+                           MVM (Multi-view image matching (MVM) - is based on the SGM matching method followed by a fusion step in which 
+                           the redundant depth estimations across single stereo model are merged. 
+                           It produces dense 3D points and is computationally efficient
+
                            References:  
                            Heiko Hirschmuller et al., "Memory Efficient Semi-Global Matching," 
                            ISPRS Annals of the Photogrammetry, Remote Sensing and Spatial 
@@ -1044,9 +1047,8 @@ def generate_orthomosaic(image_collection,
                          context=None,
                          gis=None):
     '''
-    Generate a DEM from the image collection. Refer to "Interpolate From Point Cloud"
-    GP tool for more documentation
-    http://pro.arcgis.com/en/pro-app/tool-reference/data-management/interpolate-from-point-cloud.htm
+    Function can be used for generating single ortho-rectified mosaicked image from image collection after 
+    the block adjustment.  
     
     ===================================    ====================================================================
     **Argument**                           **Description**
@@ -1314,3 +1316,45 @@ def reset_image_collection(image_collection,
     task = 'ResetImageCollection'
     job_values = _execute_task(gis, task, params)
     return job_values["result"]
+
+
+def compute_spatial_reference_factory_code(latitude, longitude): 
+    """
+    Computes spatial reference factory code. This value may be used as out_sr value in create image collection function
+
+    Parameters
+    ----------
+    latitude : latitude value in decimal degress that will be used to compute UTM zone
+    longitude : longitude value in decimal degress that will be used to compute UTM zone
+
+    Returns
+    -------
+    factory_code : spatial reference factory code
+    """
+    from math import isnan, fabs, floor
+    zone = 0
+    if (isnan(longitude) or isnan(latitude) or fabs(longitude) > 360.0 or fabs(latitude) > 90.0):
+        raise RuntimeError("Incorrect latitude or longitude value")
+
+    zone = floor((longitude + 180)/6) + 1
+    if (latitude >= 56.0 and latitude < 64.0 and longitude >= 3.0 and longitude < 12.0):
+        zone = 32;
+
+    if (latitude >= 72.0 and latitude < 84.0):
+        if  (longitude >= 0.0  and longitude <  9.0):
+            zone = 31;
+        elif (longitude >= 9.0  and longitude < 21.0):
+            zone = 33;
+        elif (longitude >= 21.0 and longitude < 33.0):
+            zone = 35;
+        elif (longitude >= 33.0 and longitude < 42.0): 
+            zone = 37
+
+    if(latitude>=0):
+        srid = 32601
+    else:
+        srid = 32701
+
+    factory_code = srid + zone -1
+
+    return factory_code

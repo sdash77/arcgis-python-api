@@ -469,6 +469,14 @@ class SystemManager(BaseServer):
         return res
     #----------------------------------------------------------------------
     @property
+    def _services_directory(self):
+        """returns the Server directory properties"""
+        url = self._url + "/handlers/rest/servicesdirectory"
+        params = {'f' : 'json'}
+        return self._con.post(path=url,
+                              postdata=params)
+    #----------------------------------------------------------------------
+    @property
     def handlers(self):
         """
         Gets the handler of this server. A handler exposes the GIS capabilities of ArcGIS Server through a
@@ -1116,6 +1124,16 @@ class DirectoryManager(object):
                                                      jsapi_arcgis_css2,
                                                      jsapi_arcgis_sdk,
                                                      serviceDirEnabled)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        returns the current service directory properties for the server.
+
+        :returns: dict
+        """
+        return self._system._services_directory
+
     #----------------------------------------------------------------------
     def get(self, name):
         """

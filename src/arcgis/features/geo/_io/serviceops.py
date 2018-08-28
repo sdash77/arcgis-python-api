@@ -62,7 +62,12 @@ def from_featureset(fset, sr=None):
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
         df = pd.DataFrame(data=rows)
         for fld in dt_fields:
-            df[fld] = pd.to_datetime(df[fld])
+            try:
+                df[fld] = pd.to_datetime(df[fld]/1000,
+                                         infer_datetime_format=True,
+                                         unit='s')
+            except:
+                df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
         if 'SHAPE' in df.columns:
             df.spatial.set_geometry("SHAPE")
             df.spatial.sr = sr

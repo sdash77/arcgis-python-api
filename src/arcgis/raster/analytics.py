@@ -248,7 +248,7 @@ def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None):
     if raster_function['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
         return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis)
 
-def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None):
+def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None, image_collection_properties = None, use_input_rasters_by_ref = False):
     
     inputRasterSpecified = False
     # input rasters
@@ -268,36 +268,51 @@ def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster
                     uri_list.append(item)        
         
         if len(item_id_list) > 0:
-            params["inputRasters"] = _json.dumps({"itemIds" : item_id_list })
+            params["inputRasters"] = {"itemIds" : item_id_list }
             inputRasterSpecified = True
         elif len(url_list) > 0:
-            params["inputRasters"] = _json.dumps({"urls" : url_list})
+            params["inputRasters"] = {"urls" : url_list}
             inputRasterSpecified = True
         elif len(uri_list) > 0:
-            params["inputRasters"] = _json.dumps({"uris" : uri_list})
+            params["inputRasters"] = {"uris" : uri_list}
             inputRasterSpecified = True
     elif isinstance(input_rasters, str):
         # the input_rasters is a folder name; try and extract the folderID
         owner = gis.properties.user.username
         folderId = gis._portal.get_folder_id(owner, input_rasters)
         if folderId is None:
-            raise RuntimeError("Input raster name does not seem to be a folder ID")
-
-        params["inputRasters"] = {"folderId" : folderId}
+            if 'http:' in input_rasters or 'https:' in input_rasters:
+                params["inputRasters"] = {"url" : input_rasters}
+            else:
+                params["inputRasters"] = {"uri" : input_rasters}
+        else:
+            params["inputRasters"] = {"folderId" : folderId}
         inputRasterSpecified = True
 
     if inputRasterSpecified is False:
         raise RuntimeError("Input raster list to be added to the collection must be specified")
+    else:
+        if use_input_rasters_by_ref:
+            params["inputRasters"].update({"byref":True})
 
     # raster_type
     if not isinstance(raster_type_name, str):
         raise RuntimeError("Invalid input raster_type parameter")
 
     if raster_type_params is not None:
-        params["rasterType"] = _json.dumps({ "rasterTypeName" : raster_type_name, "rasterTypeParameters" : raster_type_params })
+        if "averagezdem" not in raster_type_params.keys():
+            if "orthomappingElevation" in gis.properties.helperServices.keys():
+                raster_type_params["averagezdem"] = gis.properties.helperServices["orthomappingElevation"]
+            else:
+                raster_type_params["averagezdem"] = {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}
     else:
-        params["rasterType"] = { "rasterTypeName" : raster_type_name }
+        raster_type_params = {"averagezdem":{"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}}
+    params["rasterType"] = { "rasterTypeName" : raster_type_name, "rasterTypeParameters" : raster_type_params }
+    if image_collection_properties is not None:
+        if "rasterType" in params:
+            params["rasterType"].update({"imageCollectionProps":image_collection_properties})
 
+    params["rasterType"] = _json.dumps(params["rasterType"])
     return
 
 
@@ -1510,56 +1525,72 @@ def train_classifier(input_raster,
 ###################################################################################################
 def create_image_collection(image_collection,
                             input_rasters, 
-                            raster_type_name,                            
-                            raster_type_params = None, 
+                            raster_type_name,
+                            raster_type_params = None,
                             out_sr = None,
+                            context = None,
                             gis = None):
-    """
-    Create a collection of images that will participate in the ortho-maping project.
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    image_collection       Required, the name of the image collection to create.
-                  
-                           The image collection can be an existing image service, in 
-                           which the function will create a mosaic dataset and the existing 
-                           hosted image service will then point to the new mosaic dataset.
-
-                           If the image collection does not exist, a new multi-tenant
-                           service will be created.
-
-                           This parameter can be the Item representing an existing image_collection
-                           or it can be a string representing the name of the image_collection
-                           (either existing or to be created.)
-    ------------------     --------------------------------------------------------------------
-    input_rasters          Required, the list of input rasters to be added to
-                           the image collection being created. This parameter can
-                           be any one of the following:
-                           - List of portal Items of the images
-                           - An image service URL
-                            - Shared data path (this path must be accessible by the server)
-                           - Name of a folder on the portal
-    ------------------     --------------------------------------------------------------------
-    raster_type_name       Required, the name of the raster type to use for adding data to 
-                           the image collection.
-    ------------------     --------------------------------------------------------------------
-    raster_type_params     Optional,  additional raster_type specific parameters.
-        
-                           The process of add rasters to the image collection can be
-                           controlled by specifying additional raster type arguments.
-
-                           The raster type parameters argument is a dictionary.
-    ------------------     --------------------------------------------------------------------
-    out_sr                 Optional, additional parameters of the service.
                             
-                           The following additional parameters can be specified:
-                           - Spatial reference of the image_collection; The well-known ID of 
-                             the spatial reference or a spatial reference dictionary object for the 
-                             input geometries.
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
+    """
+    Create a collection of images that will participate in the ortho-mapping project.
+    Provides provision to use input rasters by reference 
+    and to specify image collection properties through context parameter.
+
+    ==================                   ====================================================================
+    **Argument**                         **Description**
+    ------------------                   --------------------------------------------------------------------
+    image_collection                     Required, the name of the image collection to create.
+                  
+                                         The image collection can be an existing image service, in 
+                                         which the function will create a mosaic dataset and the existing 
+                                         hosted image service will then point to the new mosaic dataset.
+
+                                         If the image collection does not exist, a new multi-tenant
+                                         service will be created.
+
+                                         This parameter can be the Item representing an existing image_collection
+                                         or it can be a string representing the name of the image_collection
+                                         (either existing or to be created.)
+    ------------------                   --------------------------------------------------------------------
+    input_rasters                        Required, the list of input rasters to be added to
+                                         the image collection being created. This parameter can
+                                         be any one of the following:
+                                         - List of portal Items of the images
+                                         - An image service URL
+                                         - Shared data path (this path must be accessible by the server)
+                                         - Name of a folder on the portal
+    ------------------                   --------------------------------------------------------------------
+    raster_type_name                     Required, the name of the raster type to use for adding data to 
+                                         the image collection.
+    ------------------                   --------------------------------------------------------------------
+    raster_type_params                   Optional,  additional raster_type specific parameters.
+        
+                                         The process of add rasters to the image collection can be
+                                         controlled by specifying additional raster type arguments.
+
+                                         The raster type parameters argument is a dictionary.
+    ------------------                   --------------------------------------------------------------------
+    out_sr                               Optional, additional parameters of the service.
+                            
+                                         The following additional parameters can be specified:
+                                         - Spatial reference of the image_collection; The well-known ID of 
+                                         the spatial reference or a spatial reference dictionary object for the 
+                                         input geometries.
+    ------------------                   --------------------------------------------------------------------
+    context                               Optional, The context parameter is used to provide additional input parameters
+                                            {"image_collection_properties": {"imageCollectionType":"Satellite"},"use_by_ref":True}
+                                            
+                                            use image_collection_properties key to set value for imageCollectionType.
+                                            Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                            Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
+                                            Therefore, if the image collection is created by reference, the requester should set this 
+                                            property based on the type of images in the image collection using the following keywords. 
+                                            If the imageCollectionType is not set, it defaults to "UAV/UAS"
+
+                                            If use_input_rasters_by_ref is set to True, the data will not be uploaded. If it is not set, the default is False
+    ------------------                   --------------------------------------------------------------------
+    gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================                   ====================================================================
 
     :return:
         The imagery layer item
@@ -1571,8 +1602,15 @@ def create_image_collection(image_collection,
     gptool = _arcgis.gis._GISResource(url, gis)
 
     params = {}
-    context = {}
+    image_collection_properties = None
+    use_input_rasters_by_ref = None
     task = "CreateImageCollection"
+
+    if context is not None:
+        if "image_collection_properties" in context:
+            image_collection_properties = context["image_collection_properties"]
+        if "use_input_rasters_by_ref" in context:
+            use_input_rasters_by_ref = context["use_input_rasters_by_ref"]
 
     if isinstance(image_collection, Item):
         params["imageCollection"] = _json.dumps({"itemId": image_collection.itemid})
@@ -1592,13 +1630,16 @@ def create_image_collection(image_collection,
                 doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service") 
                 if doesnotexist:
                     params["imageCollection"] = _json.dumps({"serviceProperties": {"name" : image_collection}})
-    _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params)
-        
+    _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params, image_collection_properties, use_input_rasters_by_ref)
+
     # context
+
+    context = {}
     if out_sr is not None:
         if isinstance(out_sr, int):
             context['outSR'] = out_sr
             params['context'] = _json.dumps(context) 
+
     # Create the task to execute   
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
@@ -1614,7 +1655,7 @@ def create_image_collection(image_collection,
         }
     output_service= gis.content.get(job_values["result"]["itemId"])
 
-    return  output_service 
+    return  output_service
 
 
 ###################################################################################################
@@ -1624,46 +1665,59 @@ def add_image(image_collection,
               input_rasters, 
               raster_type_name=None, 
               raster_type_params=None, 
-              gis = None):
+              context = None,
+              gis =None):
     """
-    Add a collection of images to an existing image_collection.
+    Add a collection of images to an existing image_collection. Provides provision to use input rasters by reference 
+    and to specify image collection properties through context parameter.
 
     It can be used when new data is available to be included in the same 
     orthomapping project. When new data is added to the image collection
     the entire image collection must be reset to the original state.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    input_rasters          Required, the list of input rasters to be added to
-                           the image collection being created. This parameter can
-                           be any one of the following:
-                           - List of portal Items of the images
-                           - An image service URL
-                           - Shared data path (this path must be accessible by the server)
-                           - Name of a folder on the portal
-    ------------------     --------------------------------------------------------------------
-    image_collection       Required, the item representing the image collection to add input_rasters to.
+    ==================                   ====================================================================
+    **Argument**                         **Description**
+    ------------------                   --------------------------------------------------------------------
+    input_rasters                        Required, the list of input rasters to be added to
+                                         the image collection being created. This parameter can
+                                         be any one of the following:
+                                         - List of portal Items of the images
+                                         - An image service URL
+                                         - Shared data path (this path must be accessible by the server)
+                                         - Name of a folder on the portal
+    ------------------                   --------------------------------------------------------------------
+    image_collection                     Required, the item representing the image collection to add input_rasters to.
                   
-                           The image collection must be an existing image collection.
-                           
-                           This is the output image collection (mosaic dataset) item or url or uri
-    ------------------     --------------------------------------------------------------------
-    raster_type_name       Required, the name of the raster type to use for adding data to 
-                           the image collection.
-    ------------------     --------------------------------------------------------------------
-    raster_type_params     Optional,  additional raster_type specific parameters.
+                                         The image collection must be an existing image collection.
+                                         This is the output image collection (mosaic dataset) item or url or uri
+    ------------------                   --------------------------------------------------------------------
+    raster_type_name                     Required, the name of the raster type to use for adding data to 
+                                         the image collection.
+    ------------------                   --------------------------------------------------------------------
+    raster_type_params                   Optional,  additional raster_type specific parameters.
         
-                           The process of add rasters to the image collection can be
-                           controlled by specifying additional raster type arguments.
+                                         The process of add rasters to the image collection can be
+                                         controlled by specifying additional raster type arguments.
 
-                           The raster type parameters argument is a dictionary.
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
+                                         The raster type parameters argument is a dictionary.
+    ------------------                   --------------------------------------------------------------------
+    context                               Optional, The context parameter is used to provide additional input parameters
+                                            {"image_collection_properties": {"imageCollectionType":"Satellite"},"use_by_ref":True}
+                                            
+                                            use image_collection_properties key to set value for imageCollectionType.
+                                            Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                            Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
+                                            Therefore, if the image collection is created by reference, the requester should set this 
+                                            property based on the type of images in the image collection using the following keywords. 
+                                            If the imageCollectionType is not set, it defaults to "UAV/UAS"
+
+                                            If use_input_rasters_by_ref is set to True, the data will not be uploaded. If it is not set, the default is False
+    ------------------                   --------------------------------------------------------------------
+    gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================                   ====================================================================
 
     :return:
-        The imagery layer url
+        The imagery layer item
 
     """
 
@@ -1672,9 +1726,15 @@ def add_image(image_collection,
     gptool = _arcgis.gis._GISResource(url, gis)
 
     params = {}
-
+    image_collection_properties = None
+    use_input_rasters_by_ref = None
+    if context is not None:
+        if "image_collection_properties" in context:
+            image_collection_properties = context["image_collection_properties"]
+        if "use_input_rasters_by_ref" in context:
+            use_input_rasters_by_ref = context["use_input_rasters_by_ref"]
     _set_image_collection_param(gis, params, image_collection)
-    _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params)
+    _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params, image_collection_properties, use_input_rasters_by_ref)
 
     # Create the task to execute
     task = 'AddImage'
