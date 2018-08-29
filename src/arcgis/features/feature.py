@@ -18,7 +18,7 @@ from arcgis.gis import Layer
 try:
     import arcpy
     HASARCPY = True
-except ImportError:
+except:
     HASARCPY = False
 
 class Feature(object):
