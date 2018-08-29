@@ -254,9 +254,14 @@ def alter_processing_states(image_collection, new_states, gis = None):
     params['newStates'] = json.dumps(new_states)
     task = 'AlterProcessingStates'
     job_values = _execute_task(gis, task, params)
-    processing_states = job_values['processingStates'].replace("'",'"')
-    processing_states=json.loads( processing_states.replace('u"','"'))
-    return processing_states
+    if "processingStates" in job_values:
+        if isinstance(job_values["processingStates"], dict):
+            return job_values["processingStates"]
+        elif isinstance(job_values["processingStates"], str):
+            processing_states = job_values['processingStates'].replace("'",'"')
+            processing_states=json.loads( processing_states.replace('u"','"'))
+            return processing_states
+ 
  
 
 ###################################################################################################
