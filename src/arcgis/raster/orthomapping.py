@@ -223,13 +223,15 @@ def alter_processing_states(image_collection, new_states, gis = None):
 
                            This a dictionary of states that should be set on the image collection
                            The new states that can be set on the image collection are:
-                           adjustment, dem, gcp, seamlines, colorcorrection
+                           blockadjustment, dem, gcp, seamlines, colorcorrection, adjust_index, imagetype
 
                            Example:
-                           {"adjustment": "raw",
+                           {"blockadjustment": "raw",
                             "dem": "Dense_Natual_Neighbor",
                             "seamlines":"VORONOI",
-                            "colorcorrection":"SingleColor"}
+                            "colorcorrection":"SingleColor",
+                            "imagetype": "UAV/UAS",
+                            "adjust_index": 0}
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -245,7 +247,7 @@ def alter_processing_states(image_collection, new_states, gis = None):
 
     _set_image_collection_param(gis, params, image_collection)
 
-    newStatesAllowedValues = ['adjustment', 'dem', 'gcp', 'seamlines', 'colorcorrection']
+    newStatesAllowedValues = ['blockadjustment', 'dem', 'gcp', 'seamlines', 'colorcorrection', 'adjust_index', 'imagetype']
 
     for key in new_states:
         if not key in newStatesAllowedValues:
