@@ -7,6 +7,19 @@ from .features.analysis import *
 from .geocoding import geocode
 #from .features._data.geodataset import SpatialDataFrame
 from .features.geo import GeoAccessor, GeoSeriesAccessor
+
+#Test import arcpy: if it's found, but there's an unhandled error, alert user
+try:
+    import arcpy
+except ImportError:
+    pass
+except Exception as e:
+    import logging
+    log = logging.getLogger(__name__)
+    log.warn("arcpy found on system, but threw an unhandled exception. "\
+             "arcpy is not useable in this session. Exception thrown:")
+    log.warn(e)
+
 __all__ = ['GIS', 'geocode', 'features',  'geoanalytics', 'geocoding', 'geometry', 'geoprocessing', 'network', 'raster', 'apps',
            'realtime', 'schematics', 'mapping',
              'aggregate_points',
