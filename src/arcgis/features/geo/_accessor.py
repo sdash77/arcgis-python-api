@@ -1803,13 +1803,47 @@ class GeoAccessor(object):
     #----------------------------------------------------------------------
     @staticmethod
     def from_layer(layer):
-        """imports a FeatureLayer to a Spatially Enabled DataFrame"""
+        """
+        Imports a FeatureLayer to a Spatially Enabled DataFrame
+
+        This operation converts a FeatureLayer or TableLayer to a Pandas' DataFrame
+
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        layer                   Required FeatureLayer or TableLayer. The service to convert
+                                to a Spatially enabled DataFrame.
+        ====================    =========================================================
+
+        Usage:
+
+        >>> from arcgis.features import FeatureLayer
+        >>> mylayer = FeatureLayer(("https://sampleserver6.arcgisonline.com/arcgis/rest"
+                            "/services/CommercialDamageAssessment/FeatureServer/0"))
+        >>> df = from_layer(mylayer)
+        >>> print(df.head())
+
+        :returns: Pandas' `DataFrame`
+
+        """
         from arcgis.features.geo._io.serviceops import from_layer
         return from_layer(layer=layer)
     #----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(location):
-        """import a geo enabled dataframe to a feature class."""
+        """
+        Returns a Spatially enbaled `pandas.DataFrame` from a feature class.
+
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        location                Required String. The full qualified path to the feature
+                                class.
+        ====================    =========================================================
+
+        :returns: Pandas' `DataFrame`
+
+        """
         return from_featureclass(filename=location)
     #----------------------------------------------------------------------
     def sindex(self, stype, reset=False, **kwargs):
