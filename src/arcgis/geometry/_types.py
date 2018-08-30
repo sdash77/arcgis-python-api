@@ -8,7 +8,7 @@ from six import add_metaclass
 try:
     import arcpy
     HASARCPY = True
-except ImportError:
+except:
     HASARCPY = False
 try:
     import shapely
