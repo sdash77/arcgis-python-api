@@ -30,7 +30,6 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 
-from arcgis.features.geo import _is_geoenabled
 from six.moves.urllib.error import HTTPError
 _log = logging.getLogger(__name__)
 
@@ -57,6 +56,12 @@ def _lazy_property(fn):
             setattr(self, attr_name, fn(self))
         return getattr(self, attr_name)
     return _lazy_property
+
+try:
+    from arcgis.features.geo import _is_geoenabled
+except:
+    def _is_geoenabled(o):
+        return False
 
 class GIS(object):
     """
@@ -298,7 +303,7 @@ class GIS(object):
 
         if self._url.lower() == "home":
             #configuring for hosted notebooks need to happen before portalpy
-            self._try_configure_for_hosted_nb() 
+            self._try_configure_for_hosted_nb()
 
         try:
             self._portal = portalpy.Portal(self._url, self._username,
@@ -600,7 +605,7 @@ class GIS(object):
             elif not os.path.isfile(nb_auth_file_path):
                 raise RuntimeError("'{}' file needed for "\
                     "authentication not found.".format(nb_auth_file_path))
-            #Open that auth file, 
+            #Open that auth file,
             with open(nb_auth_file_path) as nb_auth_file:
                 required_json_keys = set(["portalUrl", "token", "referer"])
                 json_data = json.load(nb_auth_file)
@@ -622,7 +627,7 @@ class GIS(object):
 
     def _raise_hosted_nb_error(self, err_msg):
         """In the event a user can't authenticate in 'home' mode, raise
-        an error while also giving a simple mitigation technique of connecting 
+        an error while also giving a simple mitigation technique of connecting
         to your portal in the standard GIS() way.
         """
         mitigation_msg =  "You can still connect to your portal by creating "\
