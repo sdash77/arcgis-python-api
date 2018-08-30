@@ -378,6 +378,9 @@ def to_featureclass(geo,
         return _pyshp_to_shapefile(df=df,
                             out_path=out_location,
                             out_name=fc_name)
+    elif HASARCPY == False and HASPYSHP == False:
+        raise Exception(("Cannot Export the data without ArcPy or PyShp modules."
+                        " Please install them and try again."))
     else:
         return None
 #--------------------------------------------------------------------------

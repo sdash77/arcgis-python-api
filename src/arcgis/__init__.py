@@ -5,9 +5,16 @@ from . import features, geoanalytics, geocoding, geometry, geoprocessing, networ
 from .gis import GIS
 from .features.analysis import *
 from .geocoding import geocode
-#from .features._data.geodataset import SpatialDataFrame
-from .features.geo import GeoAccessor, GeoSeriesAccessor
-__all__ = ['GIS', 'geocode', 'features',  'geoanalytics', 'geocoding', 'geometry', 'geoprocessing', 'network', 'raster', 'apps',
+
+try:
+    import pandas as pd
+    from .features.geo import GeoAccessor, GeoSeriesAccessor
+except ImportError:
+    pass
+
+__all__ = ['GIS', 'geocode', 'features',
+           'geoanalytics', 'geocoding', 'geometry',
+           'geoprocessing', 'network', 'raster', 'apps',
            'realtime', 'schematics', 'mapping',
              'aggregate_points',
              'calculate_density',
