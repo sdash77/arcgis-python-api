@@ -1762,8 +1762,8 @@ def delete_image(image_collection,
                  gis = None):
     """
     delete_image allows users to remove existing images from the image collection (mosaic dataset). 
-    The function will not only delete the raster item in the mosaic dataset but also remove the 
-    source image from the server.
+    The function will only delete the raster item in the mosaic dataset and will not remove the
+    source image.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -1818,7 +1818,8 @@ def delete_image_collection(image_collection,
                             gis = None):
     '''
     Delete the image collection. This service tool will delete the image collection
-    image service, portal item and all the source image data it references to.
+    image service, that is, the portal-hosted image layer item. It will not delete 
+    the source images that the image collection references.
 
     ==================     ====================================================================
     **Argument**           **Description**
