@@ -13,7 +13,6 @@ import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
 from arcgis.features import FeatureCollection, FeatureLayerCollection, FeatureSet, SpatialDataFrame
-from arcgis.features.geo import _is_geoenabled
 from arcgis.geoprocessing import LinearUnit, DataFile, RasterData
 
 from arcgis.gis import Item, _GISResource, Layer
@@ -23,6 +22,12 @@ from ._types import LinearUnit, DataFile, RasterData
 
 from ..features import FeatureSet
 from ..mapping import MapImageLayer
+
+try:
+    from arcgis.features.geo import _is_geoenabled
+except:
+    def _is_geoenabled(o):
+        return False
 
 
 def _import_code(code, name, verbose=False, add_to_sys_modules=False):

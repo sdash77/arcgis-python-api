@@ -62,12 +62,15 @@ def _is_geoenabled(df):
 
     :returns: boolean
     """
-    if isinstance(df, pd.DataFrame) and \
-       hasattr(df, 'spatial') and \
-       df.spatial._name and \
-       df[df.spatial._name].dtype.name.lower() == 'geometry':
-        return True
-    else:
+    try:
+        if isinstance(df, pd.DataFrame) and \
+           hasattr(df, 'spatial') and \
+           df.spatial._name and \
+           df[df.spatial._name].dtype.name.lower() == 'geometry':
+            return True
+        else:
+            return False
+    except:
         return False
 ###########################################################################
 @pd.api.extensions.register_series_accessor("geom")
