@@ -11,17 +11,6 @@ try:
     from .features.geo import GeoAccessor, GeoSeriesAccessor
 except:
     pass
-#Test import arcpy: if it's found, but there's an unhandled error, alert user
-try:
-    import arcpy
-except ImportError:
-    pass
-except Exception as e:
-    import logging
-    log = logging.getLogger(__name__)
-    log.warn("arcpy found on system, but threw an unhandled exception. "\
-             "arcpy is not useable in this session. Exception thrown:")
-    log.warn(e)
 
 __all__ = ['GIS', 'geocode', 'features',
            'geoanalytics', 'geocoding', 'geometry',
