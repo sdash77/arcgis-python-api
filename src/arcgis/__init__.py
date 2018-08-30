@@ -9,38 +9,48 @@ from .geocoding import geocode
 try:
     import pandas as pd
     from .features.geo import GeoAccessor, GeoSeriesAccessor
+except:
+    pass
+#Test import arcpy: if it's found, but there's an unhandled error, alert user
+try:
+    import arcpy
 except ImportError:
     pass
+except Exception as e:
+    import logging
+    log = logging.getLogger(__name__)
+    log.warn("arcpy found on system, but threw an unhandled exception. "\
+             "arcpy is not useable in this session. Exception thrown:")
+    log.warn(e)
 
 __all__ = ['GIS', 'geocode', 'features',
            'geoanalytics', 'geocoding', 'geometry',
            'geoprocessing', 'network', 'raster', 'apps',
            'realtime', 'schematics', 'mapping',
-             'aggregate_points',
-             'calculate_density',
-             'connect_origins_to_destinations',
-             'create_buffers',
-             'create_drive_time_areas',
-             'create_route_layers',
-             'create_viewshed',
-             'create_watersheds',
-             'derive_new_locations',
-             'dissolve_boundaries',
-             'enrich_layer',
-             'extract_data',
-             'find_existing_locations',
-             'find_hot_spots',
-             'find_nearest',
-             'find_similar_locations',
-             'interpolate_points',
-             'join_features',
-             'merge_layers',
-             'overlay_layers',
-             'plan_routes',
-             'summarize_nearby',
-             'summarize_within',
-             'trace_downstream'
-           ]
+           'aggregate_points',
+           'calculate_density',
+           'connect_origins_to_destinations',
+           'create_buffers',
+           'create_drive_time_areas',
+           'create_route_layers',
+           'create_viewshed',
+           'create_watersheds',
+           'derive_new_locations',
+           'dissolve_boundaries',
+           'enrich_layer',
+           'extract_data',
+           'find_existing_locations',
+           'find_hot_spots',
+           'find_nearest',
+           'find_similar_locations',
+           'interpolate_points',
+           'join_features',
+           'merge_layers',
+           'overlay_layers',
+           'plan_routes',
+           'summarize_nearby',
+           'summarize_within',
+           'trace_downstream']
 
 def _jupyter_nbextension_paths():
     return [{
