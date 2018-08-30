@@ -1239,8 +1239,7 @@ def query_control_points(image_collection,
                          gis = None):
     '''
     Query for control points in an image collection. It allows users to query 
-    certain control points from image collection's control point table with 
-    a SQL query (or a feature/image service in the future).  
+    among certain control point sets that has ground control points inside.
 
     ==================     ====================================================================
     **Argument**           **Description**
