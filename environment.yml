@@ -16,6 +16,7 @@ dependencies:
 - requests
 - jupyterlab
 - pytest
+- matplotlib
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
