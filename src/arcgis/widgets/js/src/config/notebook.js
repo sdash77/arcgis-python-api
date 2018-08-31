@@ -1,12 +1,22 @@
 var config = require("./common");
 var configureCdn = require("./configure-cdn");
 
+//This section is a workaround for notebooks.esri.com, since it uses tmpnb
+var strnb = location.href.lastIndexOf("/notebooks");
+var nbextensionPath = "";
+if (strnb < 0) {
+    nbextensionPath = "/nbextensions/arcgis/";
+}
+else {
+    nbextensionPath = location.href.substring(0, strnb) + "/nbextensions/arcgis/";
+}
+//end section
 config.JupyterTarget = "notebook"; 
 config.BaseRequireJSConfig = {
     map : {
         "*" : {
-            "arcgis-map-ipywidget": "/nbextensions/arcgis/arcgis-map-ipywidget.js",
-            "legacy-mapview": "/nbextensions/arcgis/legacy-mapview.js"
+            "arcgis-map-ipywidget": nbextensionPath + "arcgis-map-ipywidget.js",
+            "legacy-mapview": nbextensionPath + "legacy-mapview.js"
         },
     },
     config : {

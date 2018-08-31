@@ -11,7 +11,6 @@ var loadingProgressDisplay = require('./elements/loading-progress-display');
 var inferNoTypeLayer = require('./layer-utils/infer-no-type-layer');
 var icons = require('./icons/icons');
 var mainCssString = require('../css/main.css').toString();
-var chromeSafariCssString = require('../css/chrome-safari-workaround.css').toString();
 var configureCDN = require("../config/configure-cdn");
 
 //import the configuration and the specific esri-loader based off the config
@@ -48,7 +47,6 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     render: function() {
     ///This is called once the first time the widget is drawn in the notebook
     this._override_right_click_menu();
-    this._apply_css_workaround();
     this._setup_js_cdn();
     this._setup_elements();
     this.model.set("jupyter_target", config.JupyterTarget);
@@ -56,14 +54,16 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     esriLoader.loadModules(['esri/Map',
                             'esri/views/MapView',
                             'esri/views/SceneView',
-                            'esri/core/watchUtils'], options).then((
+                            'esri/core/watchUtils',
+                            'esri/widgets/Compass'], options).then((
                             [Map,
                              MapView,
                              SceneView,
-                             watchUtils]) => {
+                             watchUtils,
+                             Compass]) => {
         loadingProgressDisplay.stop();
         this._setup_custom_buttons();
-        this._instantiate_esri_components(Map, MapView, SceneView);
+        this._instantiate_esri_components(Map, MapView, SceneView, Compass);
         this._setup_stationary_callback(watchUtils);
         this._miscellanous_setup();
 
@@ -173,16 +173,6 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             }
             console.warn("*****MESSAGE_BOX: " + msg);
             displayPureJSErrorBox(multiple_messages_info, this.elements);
-        }
-    },
-
-    _apply_css_workaround: function(){
-        ///In jupyter notebook (not lab), there's a special CSS override
-        ///needed for chrome and safari for certain layer types to load
-        if((config.JupyterTarget === "notebook") &&
-              ((navigator.userAgent.indexOf("Chrome") != -1) ||
-               (navigator.userAgent.indexOf("Safari") != -1))){
-            _applyCssString(chromeSafariCssString);
         }
     },
 
@@ -332,20 +322,23 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.js_cdn_changed();
     },
 
-    _instantiate_esri_components: function(Map, MapView, SceneView){
+    _instantiate_esri_components: function(Map, MapView, SceneView, Compass){
         this.map = new Map({ground: "world-elevation"});
         this.container = this.elements.mapElement;
         this._3dMap = new SceneView({map: this.map, container: this.container});
         this._3dMap._parentIPyWidget = this;
-        this._2dMap = new MapView({map: this.map, container: this.container});
+        this._2dMap = new MapView({
+            map: this.map,
+            container: this.container});
+        this._2dMap.ui.add(new Compass({view: this._2dMap}), "top-left");
         this._2dMap._parentIPyWidget = this;
         this.activeView = this._2dMap;
     },
 
-
     _override_right_click_menu: function(){
+        //JupyterLab has a right click menu we don't want displaying
+        //when the map is right clicked to rotate
         this.el.addEventListener('contextmenu', function(e) {
-            //alert("You tried to open a context menu");
             e.preventDefault();
             e.stopPropagation();
             return false;
@@ -361,14 +354,25 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     },
 
     basemap_changed: function () {
-        try{
+        esriLoader.loadModules(['esri/Basemap'],
+        options).then(([Basemap]) => {
             console.log("updating basemap...");
-            this.map.basemap = this.model.get('basemap');
-        } catch(err){
-            this._displayErrorBox();
+            var basemapStr = this.model.get('basemap');
+            var galleryBasemaps = this.model.get('_gallery_basemaps');
+            if (basemapStr in galleryBasemaps){
+                //If the basemap passed in is in the gallery, use it
+                var basemapJSON = galleryBasemaps[basemapStr];
+                var basemap = Basemap.fromJSON(basemapJSON);
+                this.map.basemap = basemap;
+            } else {
+                //Else, just pass the str to the map (it can autocast)
+                this.map.basemap = basemapStr
+            }
+        }).catch((err) => {
+            this._displayErrorBox("Error while changing basemap.");
             console.warn("Error on basemap_change: "); console.warn(err)
-        }
-        //TODO: REMOVE ME!
+        });
+        //This print is useful for debugging purposes
         console.log("Widget = ");
         console.log(this);
     },
@@ -796,11 +800,11 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         esriLoader.loadModules(['esri/layers/GraphicsLayer',
                                 'esri/Graphic',
                                 'esri/geometry/Geometry',
-                                'esri/symbols/Symbol'],
+                                'esri/symbols/support/jsonUtils'],
         options).then(([GraphicsLayer,
                         Graphic,
                         Geometry,
-                        Symbol]) => {
+                        symbolJsonUtils]) => {
             var gfx = new Graphic(graphic_json);
             if(gfx.symbol == null) {
                 console.log(gfx.geometry);
@@ -813,9 +817,15 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 } else if (/multipoint/i.test(gfx.geometry.type)) {
                     gfx.symbol = { type: 'simple-marker' }
                 }
-        }
-        var graphicsLayer = this.getGraphicsLayer(GraphicsLayer);
-        graphicsLayer.add(gfx);
+            }
+            if('symbol' in graphic_json){
+                var symbol = symbolJsonUtils.fromJSON(graphic_json.symbol);
+                if(symbol != null){
+                    gfx.symbol = symbol
+                }
+            }
+            var graphicsLayer = this.getGraphicsLayer(GraphicsLayer);
+            graphicsLayer.add(gfx);
         }).catch((err) => {
             this._displayErrorBox("Error on updating graphics.");
             console.warn("Error on updating graphics"); console.warn(err);

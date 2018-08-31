@@ -113,7 +113,8 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         resolve(layer);
                     } else { 
                         console.log("Specifying the FeatureLayer's custom renderer...");
-                        var rendererOptions = {}
+                        var renderer = "";
+                        var rendererOptions = {};
                         if(rendererTypesUtil.isSmartMapRenderer(lyr_options.renderer)){
                             //TODO: Clean up this section, seperate out into own file
                             rendererOptions = {layer: layer,
@@ -123,7 +124,19 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         } else {
                             rendererOptions = lyr_options;
                         }
-                        inferRenderer(lyr_options.renderer, rendererOptions,
+
+                        //At this point, lyr_options.renderer should be a string
+                        //If instead the user passed in the whole object as the 
+                        //'renderer', assemble 'renderer' and 'rendererOptions' correctly
+                        if((typeof lyr_options.renderer != 'string') && 
+                           ("type" in lyr_options.renderer)) {
+                            renderer = lyr_options.renderer.type;
+                            rendererOptions = lyr_options.renderer;
+                        } else {
+                            renderer = lyr_options.renderer;
+                        }
+
+                        inferRenderer(renderer, rendererOptions,
                         widget).then((renderer) => {
                             layer.renderer = renderer;
                             resolve(layer);
