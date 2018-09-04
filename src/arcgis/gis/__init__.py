@@ -4296,6 +4296,77 @@ class GroupApplication(object):
 class User(dict):
     """
     Represents a registered user of the GIS (ArcGIS Online, or Portal for ArcGIS).
+
+    =====================    =========================================================
+    **Property**             **Details**
+    ---------------------    ---------------------------------------------------------
+    username                 The username of the user.
+    ---------------------    ---------------------------------------------------------
+    fullName                 The user's full name
+    ---------------------    ---------------------------------------------------------
+    availableCredits         The number of credits available to the user.
+    ---------------------    ---------------------------------------------------------
+    assignedCredits          The number of credits allocated to the user.
+    ---------------------    ---------------------------------------------------------
+    firstName                The user's first name.
+    ---------------------    ---------------------------------------------------------
+    lastName                 The user's last name.
+    ---------------------    ---------------------------------------------------------
+    preferredView            The user's preferred view for content, either web or GIS.
+    ---------------------    ---------------------------------------------------------
+    description              A description of the user.
+    ---------------------    ---------------------------------------------------------
+    email                    The user's e-mail address.
+    ---------------------    ---------------------------------------------------------
+    idpUsername              The original username if using enterprise logins.
+    ---------------------    ---------------------------------------------------------
+    favGroupId               The user's favorites group and is created automatically for each user.
+    ---------------------    ---------------------------------------------------------
+    lastLogin                The last login date of the user as a UNIX timestamp.
+    ---------------------    ---------------------------------------------------------
+    mfaEnabled               Indicates if the user's account has multifactor authentication set up.
+    ---------------------    ---------------------------------------------------------
+    access                   Indicates the level of access of the user: private, org, or public. If private, the user descriptive information will not be available to others nor will the username be searchable.
+    ---------------------    ---------------------------------------------------------
+    storageUsage             The amount of storage used for the user's subscription.
+    ---------------------    ---------------------------------------------------------
+    storageQuota             Applicable to public users as it sets the total amount of storage available for a subscription. The maximum quota is 2GB.
+    ---------------------    ---------------------------------------------------------
+    orgId                    The ID of the organization the user belongs to.
+    ---------------------    ---------------------------------------------------------
+    role                     Defines the user's role in the organization.<br><br>Values: org_admin (organization administrator or custom role with administrative privileges) , org_publisher (organization publisher or custom role with publisher privileges) , org_user (organization user or custom role with user privileges)
+    ---------------------    ---------------------------------------------------------
+    privileges               A JSON array of strings with predefined permissions in each. For a complete listing, see Privileges.
+    ---------------------    ---------------------------------------------------------
+    roleId                   (Optional) The ID of the user's role if it is a custom one.
+    ---------------------    ---------------------------------------------------------
+    level                    The level of the user.
+    ---------------------    ---------------------------------------------------------
+    disabled                 Disables access to the organization by the user.
+    ---------------------    ---------------------------------------------------------
+    units                    User-defined units for measurement.
+    ---------------------    ---------------------------------------------------------
+    tags                     User-defined tags that describe the user.
+    ---------------------    ---------------------------------------------------------
+    culture                  The user locale information (language and country).
+    ---------------------    ---------------------------------------------------------
+    cultureFormat            The user preferred number and date format defined in CLDR (only applicable for English and Spanish, i.e. when culture is en or es).<br><br>See Languages for supported formats. It will inherit from organization cultureFormat if undefined.
+    ---------------------    ---------------------------------------------------------
+    region                   The user preferred region, used to set the featured maps on the home page, content in the gallery, and the default extent of new maps in the Viewer.
+    ---------------------    ---------------------------------------------------------
+    thumbnail                The file name of the thumbnail used for the user.
+    ---------------------    ---------------------------------------------------------
+    created                  The date the user was created. Shown in UNIX time.
+    ---------------------    ---------------------------------------------------------
+    modified                 The date the user was last modified. Shown in UNIX time.
+    ---------------------    ---------------------------------------------------------
+    groups                   A JSON array of groups the user belongs to. See Group for properties of a group.
+    ---------------------    ---------------------------------------------------------
+    provider                 The identity provider for the organization.<br>Values: arcgis (for built-in users) ,enterprise (for external users managed by an enterprise identity store), facebook (for public accounts in ArcGIS Online), google (for public accounts in ArcGIS Online)
+    =====================    =========================================================
+
+
+
     """
     def __init__(self, gis, username, userdict=None):
         dict.__init__(self)
