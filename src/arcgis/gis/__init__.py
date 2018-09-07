@@ -7449,7 +7449,7 @@ class Item(dict):
 
         """
         url = "%s/sharing/rest/content/users/%s/items/%s/createProxies" % (self._portal.url,
-                                                                           self.owner,
+                                                                           self._user_id,
                                                                            self.id)
         params = {
             'f' : 'json',
@@ -7486,8 +7486,8 @@ class Item(dict):
         params = {'f': 'json',
                   'proxies': proxy_id}
         url = "%s/sharing/rest/content/users/%s/items/%s/deleteProxies" % (self._portal.url,
-                                                              self.owner,
-                                                              self.id)
+                                                                           self._user_id,
+                                                                           self.id)
         return self._portal.con.post(url, params)
     #----------------------------------------------------------------------
     def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
