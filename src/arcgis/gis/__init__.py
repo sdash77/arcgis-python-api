@@ -3461,7 +3461,11 @@ class ContentManager(object):
         :returns: boolean
         """
         user = self._gis.users.me
-        url = "%s/content/users/%s/replaceService" % (self._portal.resturl, user.username)
+        if 'id' in user:
+            user = user.id
+        else:
+            user = user.username
+        url = "%s/content/users/%s/replaceService" % (self._portal.resturl, user)
 
         if isinstance(replace_item, Item):
             replace_item = replace_item.itemid
