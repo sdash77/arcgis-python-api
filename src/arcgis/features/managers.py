@@ -868,7 +868,12 @@ class FeatureLayerCollectionManager(_GISResource):
             url = gis._url + "/sharing/rest"
         else:
             url = gis._url
-        url = "%s/content/users/%s/createService" % (url, gis.users.me.username)
+
+        if 'id' in gis.properties.user:
+            me = gis.properties.user.id
+        else:
+            me = gis.user.me.username
+        url = "%s/content/users/%s/createService" % (url, me)
         params = {
             "f" : "json",
             "isView" : True,
