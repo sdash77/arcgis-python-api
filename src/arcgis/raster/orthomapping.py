@@ -818,8 +818,8 @@ def compute_seamlines(image_collection,
 def edit_control_points(image_collection, control_points, gis = None):
     '''
     This service can be used to append additional ground control point sets to
-    the image collection's control points. A complete ground control point (GCP)
-    set should have one ground control point and multiple (more than 3) tie points.
+    the image collection's control points. It is recommended that a ground control point (GCP) set 
+    should contain one ground control point and multiple tie points. 
     The service tool can also be used to edit tie point sets. 
     The input control points dictionary will always replace the points in the tie points
     table if the point IDs already exist. 
