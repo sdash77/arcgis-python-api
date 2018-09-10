@@ -299,14 +299,35 @@ def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster
     if not isinstance(raster_type_name, str):
         raise RuntimeError("Invalid input raster_type parameter")
 
+    elevation_set = 0
     if raster_type_params is not None:
-        if "averagezdem" not in raster_type_params.keys():
+        for element in raster_type_params.keys():
+            if(element.lower() == "constantz"):
+                value = raster_type_params[element]
+                del raster_type_params[element]
+                raster_type_params.update({"ConstantZ":value})
+
+                elevation_set = 1
+                break
+            elif(element.lower() == "averagezdem"):
+                value = raster_type_params[element]
+                del raster_type_params[element]
+                raster_type_params.update({"averagezdem":value})
+                elevation_set = 1
+                break
+
+        if(elevation_set == 0):
             if "orthomappingElevation" in gis.properties.helperServices.keys():
                 raster_type_params["averagezdem"] = gis.properties.helperServices["orthomappingElevation"]
             else:
                 raster_type_params["averagezdem"] = {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}
     else:
-        raster_type_params = {"averagezdem":{"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}}
+        if "orthomappingElevation" in gis.properties.helperServices.keys():
+            raster_type_params = {"averagezdem" : gis.properties.helperServices["orthomappingElevation"]}
+        else:
+            raster_type_params = {"averagezdem": {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}}
+
+
     params["rasterType"] = { "rasterTypeName" : raster_type_name, "rasterTypeParameters" : raster_type_params }
     if image_collection_properties is not None:
         if "rasterType" in params:
