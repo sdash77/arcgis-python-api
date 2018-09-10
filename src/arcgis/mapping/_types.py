@@ -751,8 +751,9 @@ class WebMap(collections.OrderedDict):
             item_properties['extent'] = self._process_extent()
             if 'type' in item_properties:
                 item_properties.pop('type')  # type should not be changed.
-            return self.item.update({'text': json.dumps(self._webmapdict, default=_date_handler),
-                                     'extent':self._process_extent()})
+            return self.item.update(item_properties=item_properties,
+                                    thumbnail=thumbnail,
+                                    metadata=metadata)
         else:
             raise RuntimeError('Item object missing, you should use `save()` method if you are creating a '
                                'new web map item')
@@ -1194,7 +1195,7 @@ class WebScene(collections.OrderedDict):
     as functionality to visualize and interact with them.
 
     If you would like more robust webscene authoring functionality,
-    consider using the :class:`~arcgis.widgets.MapView` class. You need to be using a 
+    consider using the :class:`~arcgis.widgets.MapView` class. You need to be using a
     Jupyter environment for the MapView class to function properly, but you can
     make copies of WebScenes, add layers using a simple `add_layer()` call,
     adjust the basemaps, save to new webscenes, and more.
