@@ -448,9 +448,11 @@ class SSLCertificates(BasePortalAdmin):
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
+        self._certs = None
         super(SSLCertificates, self).__init__(url=url,
                                               gis=gis,
                                               **kwargs)
+
         initialize = kwargs.pop("initialize", False)
         if isinstance(gis, _ArcGISConnection):
             self._con = gis
@@ -499,6 +501,7 @@ class SSLCertificates(BasePortalAdmin):
         :returns: dict
 
         """
+        self._certs = None
         url = "%s/update" % self._url
         params = {
             "f" : "json",
@@ -583,6 +586,7 @@ class SSLCertificates(BasePortalAdmin):
             'validity': validity,
             'san':alt_name
         }
+        self._certs = None
         url = "%s/generateCertificate" % self._url
         try:
             res = self._con.post(path=url, postdata=params)
@@ -639,7 +643,7 @@ class SSLCertificates(BasePortalAdmin):
 
         from six.moves.urllib.error import HTTPError
 
-
+        self._certs = None
         params = {
             "alias" : alias,
             "norestart" : norestart,
@@ -704,9 +708,18 @@ class SSLCertificates(BasePortalAdmin):
             return True
         return True
     #----------------------------------------------------------------------
-    def list(self):
+    def list(self, force=False):
         """
         List of SSL Certificates as represented in the Portal Admin API
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        force                           Optional Boolean. If True, the certificate list will be refreshed,
+                                        else, if a set of values is in memory, it will use those values.
+                                        This is used when you want to ensure you have the most up to date
+                                        list of certificates.
+        ===========================     ====================================================================
 
         :returns:
             List of SSLCertificate objects
@@ -734,12 +747,14 @@ class SSLCertificates(BasePortalAdmin):
         """
 
         certs = []
-        self._refresh()
-        for cert in self.properties.sslCertificates:
-            url = "%s/%s" % (self._url, cert)
-            certs.append(SSLCertificate(url=url, gis=self._gis))
-            del cert
-        return certs
+        if self._certs is None or force:
+            self._refresh()
+            for cert in self.properties.sslCertificates:
+                url = "%s/%s" % (self._url, cert)
+                certs.append(SSLCertificate(url=url, gis=self._gis))
+                del cert
+            self._certs = certs
+        return self._certs
     #----------------------------------------------------------------------
     def get(self, alias_name):
         """
