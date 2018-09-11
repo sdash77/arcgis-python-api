@@ -132,16 +132,6 @@ class Federation(BasePortalAdmin):
 
         :returns: boolean
 
-
-
-        Parameters:
-         :server_id: unique id of the server
-         :role: Whether the server is a hosting server for the portal, a
-          federated server, or a server with restricted access to
-          publishing. The allowed values are:
-           FEDERATED_SERVER, FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
-           or HOSTING_SERVER.
-         :function:
         """
         role_allow = ["FEDERATED_SERVER",
                       "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
