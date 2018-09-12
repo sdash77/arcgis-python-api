@@ -705,7 +705,7 @@ class SSLCertificates(BasePortalAdmin):
                                   postdata=params,
                                   files=files)
         except:
-            return True
+            return False
         return True
     #----------------------------------------------------------------------
     def list(self, force=False):

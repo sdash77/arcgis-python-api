@@ -17,6 +17,7 @@ class Federation(BasePortalAdmin):
     def __init__(self, url, gis):
         """Constructor"""
         if isinstance(gis, GIS):
+            url = url.replace("http://", "https://")
             self._url = url
             self._gis = gis
             self._portal = gis._portal
@@ -70,8 +71,11 @@ class Federation(BasePortalAdmin):
             "username" : username,
             "password" : password
         }
-        return self._con.post(path=fedurl,
-                              postdata=params)
+        res = self._con.post(path=fedurl,
+                             postdata=params)
+        if 'status' in res:
+            return res['status']
+        return res
     #----------------------------------------------------------------------
     @property
     def servers(self):
@@ -102,8 +106,10 @@ class Federation(BasePortalAdmin):
         """
         url = "%s/servers/%s/unfederate" % (self._url, server_id)
         params = {"f" : "json"}
-        res = self._con.get(path=url, params=params)
-        return res['status'] == 'success'
+        res = self._con.post(url, params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return False
     #----------------------------------------------------------------------
     def update(self, server_id, role, function=None):
         """
@@ -132,16 +138,6 @@ class Federation(BasePortalAdmin):
 
         :returns: boolean
 
-
-
-        Parameters:
-         :server_id: unique id of the server
-         :role: Whether the server is a hosting server for the portal, a
-          federated server, or a server with restricted access to
-          publishing. The allowed values are:
-           FEDERATED_SERVER, FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING,
-           or HOSTING_SERVER.
-         :function:
         """
         role_allow = ["FEDERATED_SERVER",
                       "FEDERATED_SERVER_WITH_RESTRICTED_PUBLISHING",
@@ -163,7 +159,7 @@ class Federation(BasePortalAdmin):
         if function:
             params["serverFunction"] = function
         url = "%s/servers/%s/update" % (self._url, server_id)
-        return self._con.get(path=url, params=params)
+        return self._con.post(url, params)
     #----------------------------------------------------------------------
     def validate(self, server_id):
         """
