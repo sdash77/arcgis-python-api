@@ -15,12 +15,15 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def dissolve_boundaries(input_layer, multipart=False,
-                        dissolve_fields=None, summary_fields=None,
-                        output_name=None, gis=None):
+def dissolve_boundaries(input_layer,
+                        dissolve_fields=None,
+                        summary_fields=None,
+                        multipart=False,
+                        output_name=None,
+                        gis=None):
     """
 
-    The Dissolve Boundaries tool merges areas that overlap or share a common boundary into a single area.
+    The Dissolve Boundaries task finds polygons that intersect or have the same field values and merges them together to form a single polygon.
 
     Examples:
 
@@ -36,11 +39,6 @@ def dissolve_boundaries(input_layer, multipart=False,
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
     input_layer       required FeatureLayer. The point, line or polygon features.
-    ----------------  ---------------------------------------------------------------
-    multipart         Optional boolean. If True, the output service can contain
-                      multipart features. If False (default):, the output service
-                      will only contain single-part features, and individual features
-                      will be created for each part.
     ----------------  ---------------------------------------------------------------
     dissolve_fields   Optional string. A comma seperated list of strings for each
                       field that you want to dissolve on.
@@ -67,6 +65,11 @@ def dissolve_boundaries(input_layer, multipart=False,
                        summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"},
                                          {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"},
                                          {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
+    ----------------  ---------------------------------------------------------------
+    multipart         Optional boolean. If True, the output service can contain
+                      multipart features. If False (default):, the output service
+                      will only contain single-part features, and individual features
+                      will be created for each part.
     ----------------  ---------------------------------------------------------------
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
