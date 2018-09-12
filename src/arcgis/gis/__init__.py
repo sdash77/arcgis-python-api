@@ -5343,7 +5343,8 @@ class Item(dict):
         except:
             pass
         user = self._gis.users.get(self.owner)
-        if hasattr(user, 'id'):
+        if hasattr(user, 'id') and \
+           user.id != 'null':
             self._user_id = user.id
         else:
             self._user_id = user.username
@@ -6438,7 +6439,8 @@ class Item(dict):
            A boolean indicating success (True) or failure (False).
         """
         owner = self._gis.users.get(self.owner)
-        if hasattr(owner, 'id'):
+        if hasattr(owner, 'id') and \
+           owner.id != 'null':
             owner = owner.id
         else:
             owner = owner.username
