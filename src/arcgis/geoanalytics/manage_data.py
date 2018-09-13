@@ -15,6 +15,116 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+def dissolve_boundaries(input_layer,
+                        dissolve_fields=None,
+                        summary_fields=None,
+                        multipart=False,
+                        output_name=None,
+                        gis=None):
+    """
+
+    The Dissolve Boundaries task finds polygons that intersect or have the same field values and merges them together to form a single polygon.
+
+    Examples:
+
+        A city council wants to control liquor sales by refusing new licenses to stores within 1,000 feet of schools, libraries, and parks. After creating a 1,000-foot buffer around the schools, libraries, and parks, the buffered layers can be joined together and the boundaries can be dissolved to create a single layer of restricted areas.
+
+    Usage Notes:
+
+
+
+    Only available at ArcGIS Enterprise 10.7 and later.
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       required FeatureLayer. The point, line or polygon features.
+    ----------------  ---------------------------------------------------------------
+    dissolve_fields   Optional string. A comma seperated list of strings for each
+                      field that you want to dissolve on.
+    ----------------  ---------------------------------------------------------------
+    summary_fields    Optional list. Calculate one or more statistics for the
+                      dissolved areas by using the summary_fields parameter. The
+                      input is a list of key/value pairs in the following format:
+
+                         [{"statisticType" : "<stat>", "onStatisticField" : "<field name>"}]
+
+                      Allows statistics are:
+
+                        + Any (string fields only)
+                        + Count
+                        + Sum
+                        + Minimum
+                        + Maximum
+                        + Average
+                        + Variance
+                        + Standard Deviation
+
+                      Example:
+
+                       summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"},
+                                         {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"},
+                                         {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
+    ----------------  ---------------------------------------------------------------
+    multipart         Optional boolean. If True, the output service can contain
+                      multipart features. If False (default):, the output service
+                      will only contain single-part features, and individual features
+                      will be created for each part.
+    ----------------  ---------------------------------------------------------------
+    output_name       optional string. The task will create a feature service of the results. You define the name of the service.
+    ----------------  ---------------------------------------------------------------
+    gis               optional GIS. The GIS object where the analysis will take place.
+    ================  ===============================================================
+
+    :returns: FeatureLayer
+    """
+    kwargs = locals()
+    tool_name = "DissolveBoundaries"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    params = {
+        "f" : "json",
+    }
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+
+    if output_name is None:
+        output_service_name = 'Dissolve_Bounds_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Merge Layers')
+
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+    _set_context(params)
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "multipart": (bool, "multipart"),
+        "summary_fields": (list, "summaryFields"),
+        "dissolve_fields" : (list, "dissolveFields"),
+        "output_name": (str, "OutputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "output"),
+    }
+
+    return_values = [
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+
+    try:
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+    return
+
 def merge_layers(input_layer, merge_layer, merge_attributes=None, output_name=None, gis=None):
     """
     The Merge Layers task combines two feature layers to create a single output layer. The tool
