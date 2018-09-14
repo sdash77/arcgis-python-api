@@ -5,7 +5,11 @@ from arcgis.gis import GIS
 from arcgis.features import SpatialDataFrame
 from arcgis.features import FeatureSet
 from arcgis.geometry import Envelope
-from arcgis.features.geo import _is_geoenabled
+try:
+    from arcgis.features.geo import _is_geoenabled
+except:
+    def _is_geoenabled(o):
+        return False
 ###########################################################################
 class _GeoEnrichment(object):
     """

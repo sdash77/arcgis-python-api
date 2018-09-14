@@ -8,7 +8,7 @@ from six import add_metaclass
 try:
     import arcpy
     HASARCPY = True
-except ImportError:
+except:
     HASARCPY = False
 try:
     import shapely
@@ -189,7 +189,11 @@ class GeometryFactory(type):
                         return SpatialReference(iterable)
                     elif 'rings' in iterable:
                         return Polygon(iterable)
+                    elif "curveRings" in iterable:
+                        return Polygon(iterable)
                     elif 'paths' in iterable:
+                        return Polyline(iterable)
+                    elif 'curvePaths' in iterable:
                         return Polyline(iterable)
                     elif 'points' in iterable:
                         return MultiPoint(iterable)
@@ -204,6 +208,10 @@ class GeometryFactory(type):
                     return SpatialReference(**kwargs)
                 elif 'rings' in kwargs:
                     return Polygon(**kwargs)
+                elif "curveRings" in iterable:
+                    return Polygon(**kwargs)
+                elif 'curvePaths' in iterable:
+                    return Polyline(**kwargs)
                 elif 'paths' in kwargs:
                     return Polyline(**kwargs)
                 elif 'points' in kwargs:
@@ -435,10 +443,32 @@ class Geometry(BaseGeometry):
         """
         import numpy as np
         if hasattr(self, 'type'):
-            if str(self.type).upper() == "POLYGON":
+            if str(self.type).upper() == "POLYGON" and\
+               'rings' in self:
                 a = self['rings']
-            elif str(self.type).upper() == "POLYLINE":
+            elif str(self.type).upper() == "POLYGON" and\
+                 'curveRings' in self and \
+                 HASARCPY:
+                return (self.as_arcpy.extent.XMin,
+                        self.as_arcpy.extent.YMin,
+                        self.as_arcpy.extent.XMax,
+                        self.as_arcpy.extent.YMax)
+            elif str(self.type).upper() == "POLYGON" and \
+                 'curveRings' in self and \
+                 HASARCPY == False:
+                raise Exception("Cannot calculate the geoextent with curves without ArcPy.")
+            elif str(self.type).upper() == "POLYLINE" and \
+                 'paths' in self:
                 a = self['paths']
+            elif str(self.type).upper() == "POLYLINE" and \
+                 "curvePaths" in self and HASARCPY:
+                return (self.as_arcpy.extent.XMin,
+                        self.as_arcpy.extent.YMin,
+                        self.as_arcpy.extent.XMax,
+                        self.as_arcpy.extent.YMax)
+            elif str(self.type).upper() == "POLYLINE" and \
+                 "curvePaths" in self and HASARCPY == False:
+                raise Exception("Cannot calculate the geoextent with curves without ArcPy.")
             elif str(self.type).upper() == "MULTIPOINT":
                 a = self['points']
                 x_max = max(np.array(a)[:,0])

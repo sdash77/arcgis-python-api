@@ -243,7 +243,6 @@ def from_featureclass(filename, **kwargs):
         sdf.reset_index(inplace=True)
         return sdf
     elif HASARCPY == False and \
-         HASPYSHP == False and \
          HASFIONA == True and \
          (filename.lower().find('.shp') > -1 or \
           os.path.dirname(filename).lower().find('.gdb') > -1):
@@ -378,6 +377,9 @@ def to_featureclass(geo,
         return _pyshp_to_shapefile(df=df,
                             out_path=out_location,
                             out_name=fc_name)
+    elif HASARCPY == False and HASPYSHP == False:
+        raise Exception(("Cannot Export the data without ArcPy or PyShp modules."
+                        " Please install them and try again."))
     else:
         return None
 #--------------------------------------------------------------------------

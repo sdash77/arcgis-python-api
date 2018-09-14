@@ -11,7 +11,7 @@ SUPPORTED_FORMATS = []
 try:
     import arcpy
     HASARCPY = True
-except ImportError:
+except:
     HASARCPY = False
     # warnings.warn("ArcPy Missing, cannot perform sqlite operations")
 

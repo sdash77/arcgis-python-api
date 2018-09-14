@@ -299,14 +299,35 @@ def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster
     if not isinstance(raster_type_name, str):
         raise RuntimeError("Invalid input raster_type parameter")
 
+    elevation_set = 0
     if raster_type_params is not None:
-        if "averagezdem" not in raster_type_params.keys():
+        for element in raster_type_params.keys():
+            if(element.lower() == "constantz"):
+                value = raster_type_params[element]
+                del raster_type_params[element]
+                raster_type_params.update({"ConstantZ":value})
+
+                elevation_set = 1
+                break
+            elif(element.lower() == "averagezdem"):
+                value = raster_type_params[element]
+                del raster_type_params[element]
+                raster_type_params.update({"averagezdem":value})
+                elevation_set = 1
+                break
+
+        if(elevation_set == 0):
             if "orthomappingElevation" in gis.properties.helperServices.keys():
                 raster_type_params["averagezdem"] = gis.properties.helperServices["orthomappingElevation"]
             else:
                 raster_type_params["averagezdem"] = {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}
     else:
-        raster_type_params = {"averagezdem":{"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}}
+        if "orthomappingElevation" in gis.properties.helperServices.keys():
+            raster_type_params = {"averagezdem" : gis.properties.helperServices["orthomappingElevation"]}
+        else:
+            raster_type_params = {"averagezdem": {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}}
+
+
     params["rasterType"] = { "rasterTypeName" : raster_type_name, "rasterTypeParameters" : raster_type_params }
     if image_collection_properties is not None:
         if "rasterType" in params:
@@ -1762,8 +1783,8 @@ def delete_image(image_collection,
                  gis = None):
     """
     delete_image allows users to remove existing images from the image collection (mosaic dataset). 
-    The function will not only delete the raster item in the mosaic dataset but also remove the 
-    source image from the server.
+    The function will only delete the raster item in the mosaic dataset and will not remove the
+    source image.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -1818,7 +1839,8 @@ def delete_image_collection(image_collection,
                             gis = None):
     '''
     Delete the image collection. This service tool will delete the image collection
-    image service, portal item and all the source image data it references to.
+    image service, that is, the portal-hosted image layer item. It will not delete 
+    the source images that the image collection references.
 
     ==================     ====================================================================
     **Argument**           **Description**

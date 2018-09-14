@@ -223,13 +223,15 @@ def alter_processing_states(image_collection, new_states, gis = None):
 
                            This a dictionary of states that should be set on the image collection
                            The new states that can be set on the image collection are:
-                           adjustment, dem, gcp, seamlines, colorcorrection
+                           blockadjustment, dem, gcp, seamlines, colorcorrection, adjust_index, imagetype
 
                            Example:
-                           {"adjustment": "raw",
+                           {"blockadjustment": "raw",
                             "dem": "Dense_Natual_Neighbor",
                             "seamlines":"VORONOI",
-                            "colorcorrection":"SingleColor"}
+                            "colorcorrection":"SingleColor",
+                            "imagetype": "UAV/UAS",
+                            "adjust_index": 0}
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -245,7 +247,7 @@ def alter_processing_states(image_collection, new_states, gis = None):
 
     _set_image_collection_param(gis, params, image_collection)
 
-    newStatesAllowedValues = ['adjustment', 'dem', 'gcp', 'seamlines', 'colorcorrection']
+    newStatesAllowedValues = ['blockadjustment', 'dem', 'gcp', 'seamlines', 'colorcorrection', 'adjust_index', 'imagetype']
 
     for key in new_states:
         if not key in newStatesAllowedValues:
@@ -254,9 +256,14 @@ def alter_processing_states(image_collection, new_states, gis = None):
     params['newStates'] = json.dumps(new_states)
     task = 'AlterProcessingStates'
     job_values = _execute_task(gis, task, params)
-    processing_states = job_values['processingStates'].replace("'",'"')
-    processing_states=json.loads( processing_states.replace('u"','"'))
-    return processing_states
+    if "processingStates" in job_values:
+        if isinstance(job_values["processingStates"], dict):
+            return job_values["processingStates"]
+        elif isinstance(job_values["processingStates"], str):
+            processing_states = job_values['processingStates'].replace("'",'"')
+            processing_states=json.loads( processing_states.replace('u"','"'))
+            return processing_states
+ 
  
 
 ###################################################################################################
@@ -811,8 +818,8 @@ def compute_seamlines(image_collection,
 def edit_control_points(image_collection, control_points, gis = None):
     '''
     This service can be used to append additional ground control point sets to
-    the image collection's control points. A complete ground control point (GCP)
-    set should have one ground control point and multiple (more than 3) tie points.
+    the image collection's control points. It is recommended that a ground control point (GCP) set 
+    should contain one ground control point and multiple tie points. 
     The service tool can also be used to edit tie point sets. 
     The input control points dictionary will always replace the points in the tie points
     table if the point IDs already exist. 
@@ -1232,8 +1239,7 @@ def query_control_points(image_collection,
                          gis = None):
     '''
     Query for control points in an image collection. It allows users to query 
-    certain control points from image collection's control point table with 
-    a SQL query (or a feature/image service in the future).  
+    among certain control point sets that has ground control points inside.
 
     ==================     ====================================================================
     **Argument**           **Description**

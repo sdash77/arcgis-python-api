@@ -828,15 +828,15 @@ class FeatureLayerCollectionManager(_GISResource):
         extent                   Optional dict. Specify the extent of the view
         --------------------     --------------------------------------------------------------------
         allow_schema_changes     Optional bool. Default is True. Determines if a view can alter a
-                                  service's schema.
+                                 service's schema.
         --------------------     --------------------------------------------------------------------
         updateable               Optional bool. Default is True. Determines if view can update values
         --------------------     --------------------------------------------------------------------
         capabilities             Optional string. Specify capabilities as a comma separated string.
-                                  For example "Query, Update, Delete". Default is 'Query'.
+                                 For example "Query, Update, Delete". Default is 'Query'.
         --------------------     --------------------------------------------------------------------
         view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
-                                  that you want in the view.
+                                 that you want in the view.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -849,6 +849,17 @@ class FeatureLayerCollectionManager(_GISResource):
            # Create a view with just the first layer
            crime_view = crime_flc.manager.create_view(name='Crime in 2012", updateable=False,
                                                         view_layers=[crime_flc.layers[0]])
+
+        .. code-block:: python (optional)
+
+            USAGE EXAMPLE: Create an editable view
+
+            crime_fl_item = gis.content.search("2012 crime")[0]
+            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
+            crime_view = crime_flc.manager.create_view(name=uuid.uuid4().hex[:9], # create random name
+                                                       updateable=True,
+                                                       allow_schema_changes=False,
+                                                       capabilities="Query,Update,Delete")
 
         :return:
             Returns the newly created item for the view.
@@ -868,7 +879,12 @@ class FeatureLayerCollectionManager(_GISResource):
             url = gis._url + "/sharing/rest"
         else:
             url = gis._url
-        url = "%s/content/users/%s/createService" % (url, gis.users.me.username)
+
+        if 'id' in gis.properties.user:
+            me = gis.properties.user.id
+        else:
+            me = gis.user.me.username
+        url = "%s/content/users/%s/createService" % (url, me)
         params = {
             "f" : "json",
             "isView" : True,

@@ -46,7 +46,7 @@ try:
                   arcpy.Polyline, arcpy.Multipatch,
                   arcpy.Multipoint] + list(GEOM_TYPES)
     GEOM_TYPES = tuple(GEOM_TYPES)
-except ImportError:
+except:
     # warning.warn("Missing Pro will cause functionality to be limited")
     HASARCPY = False
     HAS_ARCPY = False

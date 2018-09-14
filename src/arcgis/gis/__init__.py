@@ -30,7 +30,6 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 
-from arcgis.features.geo import _is_geoenabled
 from six.moves.urllib.error import HTTPError
 _log = logging.getLogger(__name__)
 
@@ -57,6 +56,12 @@ def _lazy_property(fn):
             setattr(self, attr_name, fn(self))
         return getattr(self, attr_name)
     return _lazy_property
+
+try:
+    from arcgis.features.geo import _is_geoenabled
+except:
+    def _is_geoenabled(o):
+        return False
 
 class GIS(object):
     """
@@ -298,7 +303,7 @@ class GIS(object):
 
         if self._url.lower() == "home":
             #configuring for hosted notebooks need to happen before portalpy
-            self._try_configure_for_hosted_nb() 
+            self._try_configure_for_hosted_nb()
 
         try:
             self._portal = portalpy.Portal(self._url, self._username,
@@ -600,7 +605,7 @@ class GIS(object):
             elif not os.path.isfile(nb_auth_file_path):
                 raise RuntimeError("'{}' file needed for "\
                     "authentication not found.".format(nb_auth_file_path))
-            #Open that auth file, 
+            #Open that auth file,
             with open(nb_auth_file_path) as nb_auth_file:
                 required_json_keys = set(["portalUrl", "token", "referer"])
                 json_data = json.load(nb_auth_file)
@@ -622,7 +627,7 @@ class GIS(object):
 
     def _raise_hosted_nb_error(self, err_msg):
         """In the event a user can't authenticate in 'home' mode, raise
-        an error while also giving a simple mitigation technique of connecting 
+        an error while also giving a simple mitigation technique of connecting
         to your portal in the standard GIS() way.
         """
         mitigation_msg =  "You can still connect to your portal by creating "\
@@ -1702,7 +1707,8 @@ class UserManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        username               Required string. The user to get as an object.
+        username               Required string. The user to get as a string. This can be the
+                               user's login name or the user's ID.
         ==================     ====================================================================
 
 
@@ -1721,6 +1727,80 @@ class UserManager(object):
         if user is not None:
             return User(self._gis, user['username'], user)
         return None
+
+    def enable_users(self, users):
+        """
+        This is a bulk operation that allows administrators to quickly enable large number of users
+        in a single call.  It is useful to do this operation if you have multiple users that need
+        to be enabled.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        users                  Required List. List of User or UserNames to enable
+        ==================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        url = "{base}/portals/self/enableUsers".format(base=self._portal.resturl)
+        params = {
+            'f' : 'json',
+            'users' : None
+        }
+        if isinstance(users, User) or \
+           isinstance(users, str):
+            users = [users]
+        if isinstance(users, (list, tuple)):
+            ul = []
+            for user in users:
+                if isinstance(user, User):
+                    ul.append(user.username)
+                else:
+                    ul.append(user)
+            params['users'] = ",".join(ul)
+            res = self._portal.con.post(url, params)
+            return any([r['status'] for r in res['results']])
+        else:
+            raise ValueError('Invalid input: must be of type list.')
+        return False
+
+    def disable_users(self, users):
+        """
+        This is a bulk disables user operation that allows administrators to quickly disable large
+        number of users in a single call.  It is useful to do this operation if you have multiple
+        users that need to be disabled.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        users                  Required List. List of User or UserNames to disable
+        ==================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        url = "{base}/portals/self/disableUsers".format(base=self._portal.resturl)
+        params = {
+            'f' : 'json',
+            'users' : None
+        }
+        if isinstance(users, User) or \
+           isinstance(users, str):
+            users = [users]
+        if isinstance(users, (list, tuple)):
+            ul = []
+            for user in users:
+                if isinstance(user, User):
+                    ul.append(user.username)
+                else:
+                    ul.append(user)
+            params['users'] = ",".join(ul)
+            res = self._portal.con.post(url, params)
+            return any([r['status'] for r in res['results']])
+        else:
+            raise ValueError('Invalid input: must be of type list.')
+        return False
 
     def search(self, query=None, sort_field='username', sort_order='asc',
                max_users=100, outside_org=False, exclude_system=False):
@@ -3381,7 +3461,11 @@ class ContentManager(object):
         :returns: boolean
         """
         user = self._gis.users.me
-        url = "%s/content/users/%s/replaceService" % (self._portal.resturl, user.username)
+        if 'id' in user:
+            user = user.id
+        else:
+            user = user.username
+        url = "%s/content/users/%s/replaceService" % (self._portal.resturl, user)
 
         if isinstance(replace_item, Item):
             replace_item = replace_item.itemid
@@ -3408,11 +3492,18 @@ class ResourceManager(object):
     An instance of this class, called 'resources', is available as a property of the Item object.
     Users call methods on this 'resources' object to manage (add, remove, update, list, get) item resources.
     """
-
+    _user_id = None
     def __init__(self, item, gis):
         self._gis = gis
         self._portal = gis._portal
         self._item = item
+
+        owner = self._item.owner
+        user = gis.users.get(owner)
+        if hasattr(user, 'id'):
+            self._user_id = user.id
+        else:
+            self._user_id = user.username
 
     def add(self, file=None, folder_name=None, file_name=None, text=None, archive=False):
         """The add resources operation adds new file resources to an existing item. For example, an image that is
@@ -3464,7 +3555,7 @@ class ResourceManager(object):
         """
         if not file and (not text or not file_name):
             raise ValueError("Please provide a valid file or text/file_name.")
-        query_url = 'content/users/'+ self._item.owner +\
+        query_url = 'content/users/'+ self._user_id +\
             '/items/' + self._item.itemid + '/addResources'
 
         files = [] #create a list of named tuples to hold list of files
@@ -3533,7 +3624,7 @@ class ResourceManager(object):
                         } }
         """
 
-        query_url = 'content/users/' + self._item.owner + \
+        query_url = 'content/users/' + self._user_id + \
             '/items/' + self._item.itemid + '/updateResources'
 
         files = []  # create a list of named tuples to hold list of files
@@ -3669,7 +3760,7 @@ class ResourceManager(object):
         else:
             delete_all = 'true'
 
-        query_url = 'content/users/'+ self._item.owner +\
+        query_url = 'content/users/'+ self._user_id +\
             '/items/' + self._item.itemid + '/removeResources'
         params = {'f':'json',
                   'resource': safe_file_format if safe_file_format else "",
@@ -4291,12 +4382,85 @@ class GroupApplication(object):
 class User(dict):
     """
     Represents a registered user of the GIS (ArcGIS Online, or Portal for ArcGIS).
+
+    =====================    =========================================================
+    **Property**             **Details**
+    ---------------------    ---------------------------------------------------------
+    username                 The username of the user.
+    ---------------------    ---------------------------------------------------------
+    fullName                 The user's full name
+    ---------------------    ---------------------------------------------------------
+    availableCredits         The number of credits available to the user.
+    ---------------------    ---------------------------------------------------------
+    assignedCredits          The number of credits allocated to the user.
+    ---------------------    ---------------------------------------------------------
+    firstName                The user's first name.
+    ---------------------    ---------------------------------------------------------
+    lastName                 The user's last name.
+    ---------------------    ---------------------------------------------------------
+    preferredView            The user's preferred view for content, either web or GIS.
+    ---------------------    ---------------------------------------------------------
+    description              A description of the user.
+    ---------------------    ---------------------------------------------------------
+    email                    The user's e-mail address.
+    ---------------------    ---------------------------------------------------------
+    idpUsername              The original username if using enterprise logins.
+    ---------------------    ---------------------------------------------------------
+    favGroupId               The user's favorites group and is created automatically for each user.
+    ---------------------    ---------------------------------------------------------
+    lastLogin                The last login date of the user as a UNIX timestamp.
+    ---------------------    ---------------------------------------------------------
+    mfaEnabled               Indicates if the user's account has multifactor authentication set up.
+    ---------------------    ---------------------------------------------------------
+    access                   Indicates the level of access of the user: private, org, or public. If private, the user descriptive information will not be available to others nor will the username be searchable.
+    ---------------------    ---------------------------------------------------------
+    storageUsage             The amount of storage used for the user's subscription.
+    ---------------------    ---------------------------------------------------------
+    storageQuota             Applicable to public users as it sets the total amount of storage available for a subscription. The maximum quota is 2GB.
+    ---------------------    ---------------------------------------------------------
+    orgId                    The ID of the organization the user belongs to.
+    ---------------------    ---------------------------------------------------------
+    role                     Defines the user's role in the organization.<br><br>Values: org_admin (organization administrator or custom role with administrative privileges) , org_publisher (organization publisher or custom role with publisher privileges) , org_user (organization user or custom role with user privileges)
+    ---------------------    ---------------------------------------------------------
+    privileges               A JSON array of strings with predefined permissions in each. For a complete listing, see Privileges.
+    ---------------------    ---------------------------------------------------------
+    roleId                   (Optional) The ID of the user's role if it is a custom one.
+    ---------------------    ---------------------------------------------------------
+    level                    The level of the user.
+    ---------------------    ---------------------------------------------------------
+    disabled                 Disables access to the organization by the user.
+    ---------------------    ---------------------------------------------------------
+    units                    User-defined units for measurement.
+    ---------------------    ---------------------------------------------------------
+    tags                     User-defined tags that describe the user.
+    ---------------------    ---------------------------------------------------------
+    culture                  The user locale information (language and country).
+    ---------------------    ---------------------------------------------------------
+    cultureFormat            The user preferred number and date format defined in CLDR (only applicable for English and Spanish, i.e. when culture is en or es).<br><br>See Languages for supported formats. It will inherit from organization cultureFormat if undefined.
+    ---------------------    ---------------------------------------------------------
+    region                   The user preferred region, used to set the featured maps on the home page, content in the gallery, and the default extent of new maps in the Viewer.
+    ---------------------    ---------------------------------------------------------
+    thumbnail                The file name of the thumbnail used for the user.
+    ---------------------    ---------------------------------------------------------
+    created                  The date the user was created. Shown in UNIX time.
+    ---------------------    ---------------------------------------------------------
+    modified                 The date the user was last modified. Shown in UNIX time.
+    ---------------------    ---------------------------------------------------------
+    groups                   A JSON array of groups the user belongs to. See Group for properties of a group.
+    ---------------------    ---------------------------------------------------------
+    provider                 The identity provider for the organization.<br>Values: arcgis (for built-in users) ,enterprise (for external users managed by an enterprise identity store), facebook (for public accounts in ArcGIS Online), google (for public accounts in ArcGIS Online)
+    ---------------------    ---------------------------------------------------------
+    id                       (optional) The unique identifier of the user used on AGOL/ArcGIS Enterprise 10.7+
+    =====================    =========================================================
+
+
+
     """
     def __init__(self, gis, username, userdict=None):
         dict.__init__(self)
         self._gis = gis
         self._portal = gis._portal
-        self.username = username
+        self._user_id = username
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         # userdict = self._portal.get_user(self.username)
@@ -4306,11 +4470,17 @@ class User(dict):
                 del userdict['groups']
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
+        if hasattr(self, 'id'):
+            self._user_id = self.id
+        else:
+            self._user_id = self.username
+        #if hasattr(self, 'username'):
+            #self.username =
 
     # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
 
     def _hydrate(self):
-        userdict = self._portal.get_user(self.username)
+        userdict = self._portal.get_user(self._user_id)
         if not 'roleId' in userdict and \
            'role' in userdict:
             userdict['roleId'] = userdict['role']
@@ -4354,7 +4524,7 @@ class User(dict):
         if thumbnail_file is None:
             return self._portal.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + '/community/users/' + self.username + '/info/' + thumbnail_file
+            thumbnail_url_path = self._portal.con.baseurl + 'community/users/' + self._user_id + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     def _repr_html_(self):
@@ -4390,7 +4560,7 @@ class User(dict):
         except:
             description = "This user has not provided any personal information."
 
-        url = self._portal.url  + "/home/user.html?user=" + self.username
+        url = self._portal.url  + "/home/user.html?user=" + self._user_id
 
         return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
@@ -4516,7 +4686,7 @@ class User(dict):
             A boolean indicating success (True) or failure (False).
 
         """
-        return self._portal.reset_user(self.username, password, new_password,
+        return self._portal.reset_user(self._user_id, password, new_password,
                                        new_security_question, new_security_answer)
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
@@ -4628,7 +4798,7 @@ class User(dict):
         else:
             files = None
         url = "%s/sharing/rest/community/users/%s/update" % (self._gis._url,
-                                                             self.username)
+                                                             self._user_id)
         ret = self._gis._con.post(path=url,
                                   postdata=params,
                                   files=files)
@@ -4646,7 +4816,7 @@ class User(dict):
 
         """
         params = {"f" : "json"}
-        url = "%s/sharing/rest/community/users/%s/disable" % (self._gis._url, self.username)
+        url = "%s/sharing/rest/community/users/%s/disable" % (self._gis._url, self._user_id)
         res = self._gis._con.post(url, params)
         if 'status' in res:
             self._hydrate()
@@ -4662,7 +4832,7 @@ class User(dict):
         It is only available to the administrator of the organization.
         """
         params = {"f" : "json"}
-        url = "%s/sharing/rest/community/users/%s/enable" % (self._gis._url, self.username)
+        url = "%s/sharing/rest/community/users/%s/enable" % (self._gis._url, self._user_id)
         res = self._gis._con.post(url, params)
         if 'status' in res:
             self._hydrate()
@@ -4723,10 +4893,10 @@ class User(dict):
         """
         if self._portal.is_arcgisonline:
             if value == True:
-                ret = self._portal.update_user(self.username,
+                ret = self._portal.update_user(self._user_id,
                                                user_type="both")
             else:
-                ret = self._portal.update_user(self.username,
+                ret = self._portal.update_user(self._user_id,
                                                user_type="arcgisonly")
             self._hydrate()
     #----------------------------------------------------------------------
@@ -4734,7 +4904,7 @@ class User(dict):
     def linked_accounts(self):
         """returns all linked account for the current user as User objects"""
         url = "%s/sharing/rest/community/users/%s/linkedUsers" % (self._gis._url,
-                                                                  self.username)
+                                                                  self._user_id)
         start = 1
         params = {
             'f' : 'json',
@@ -4791,7 +4961,7 @@ class User(dict):
             'user' : username,
             'userToken' : userToken
         }
-        url = "%s/sharing/rest/community/users/%s/linkUser" % (self._gis._url, self.username)
+        url = "%s/sharing/rest/community/users/%s/linkUser" % (self._gis._url, self._user_id)
         res = self._gis._con.post(url, params)
         if 'success' in res:
             return res['success']
@@ -4820,7 +4990,7 @@ class User(dict):
             'f' : 'json',
             'user' : username
         }
-        url = "%s/sharing/rest/community/users/%s/unlinkUser" % (self._gis._url, self.username)
+        url = "%s/sharing/rest/community/users/%s/unlinkUser" % (self._gis._url, self._user_id)
         res = self._gis._con.post(url, params)
         if 'success' in res:
             return res['success']
@@ -4850,7 +5020,7 @@ class User(dict):
         """
         if isinstance(role, Role):
             role = role.role_id
-        passed = self._portal.update_user_role(self.username, role)
+        passed = self._portal.update_user_role(self._user_id, role)
         if passed:
             self._hydrate()
             self.role = role
@@ -4879,7 +5049,7 @@ class User(dict):
         """
         if isinstance(reassign_to, User):
             reassign_to = reassign_to.username
-        return self._portal.delete_user(self.username, reassign_to)
+        return self._portal.delete_user(self._user_id, reassign_to)
 
     def reassign_to(self, target_username):
         """
@@ -4906,7 +5076,7 @@ class User(dict):
         """
         if isinstance(target_username, User):
             target_username = target_username.username
-        return self._portal.reassign_user(self.username, target_username)
+        return self._portal.reassign_user(self._user_id, target_username)
 
     def get_thumbnail(self):
         """
@@ -4926,7 +5096,7 @@ class User(dict):
         """
         thumbnail_file = self.thumbnail
         if thumbnail_file:
-            thumbnail_url_path = 'community/users/' + self.username + '/info/' + thumbnail_file
+            thumbnail_url_path = 'community/users/' + self._user_id + '/info/' + thumbnail_file
             if thumbnail_url_path:
                 return self._portal.con.get(thumbnail_url_path, try_json=False, force_bytes=True)
 
@@ -4948,7 +5118,7 @@ class User(dict):
 
         # Only proceed if a thumbnail exists
         if thumbnail_file:
-            thumbnail_url_path = 'community/users/' + self.username + '/info/' + thumbnail_file
+            thumbnail_url_path = 'community/users/' + self._user_id + '/info/' + thumbnail_file
             if thumbnail_url_path:
                 if not save_folder:
                     save_folder = self._workdir
@@ -4966,7 +5136,7 @@ class User(dict):
     @property
     def folders(self):
         """Gets the list of the user's folders"""
-        return self._portal.user_folders(self.username)
+        return self._portal.user_folders(self._user_id)
 
     def items(self, folder=None, max_items=100):
         """
@@ -4991,7 +5161,7 @@ class User(dict):
         folder_id = None
         if folder is not None:
             if isinstance(folder, str):
-                folder_id = self._portal.get_folder_id(self.username, folder)
+                folder_id = self._portal.get_folder_id(self._user_id, folder)
                 if folder_id is None:
                     msg = "Could not locate the folder: %s" % folder
                     raise ValueError("%s. Please verify that this folder exists and try again." % msg)
@@ -5001,7 +5171,7 @@ class User(dict):
                 print("folder should be folder name as a string"
                       "or a dict containing the folder 'id'")
 
-        resp = self._portal.user_items(self.username, folder_id, max_items)
+        resp = self._portal.user_items(self._user_id, folder_id, max_items)
         for item in resp:
             items.append(Item(self._gis, item['id'], item))
 
@@ -5014,7 +5184,7 @@ class User(dict):
         """
         from .._impl.notification import Notification
         result = []
-        url = "%s/community/users/%s/notifications" % (self._portal.resturl, self.username)
+        url = "%s/community/users/%s/notifications" % (self._portal.resturl, self._user_id)
         params = {"f" : "json"}
         ns = self._portal.con.get(url, params)
         if "notifications" in ns:
@@ -5039,6 +5209,8 @@ class Item(dict):
     Items that have layers (eg FeatureLayerCollection items and ImageryLayer items) and tables have
     the dynamic `layers` and `tables` properties to get to the individual layers/tables in this item.
     """
+
+    _user_id = None
 
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
@@ -5066,6 +5238,7 @@ class Item(dict):
             self.tables = None
             self['layers'] = None
             self['tables'] = None
+
 
     def _has_layers(self):
         return self.type ==  'Feature Collection' or \
@@ -5169,6 +5342,13 @@ class Item(dict):
                 self._populate_layers()
         except:
             pass
+        user = self._gis.users.get(self.owner)
+        if hasattr(user, 'id') and \
+           user.id != 'null':
+            self._user_id = user.id
+        else:
+            self._user_id = user.username
+
 
     def __getattribute__ (self, name):
         if name == 'layers':
@@ -5492,7 +5672,12 @@ class Item(dict):
                    'GeoJson',
                    'Scene Package',
                    'KML']
-        data_path = 'content/users/%s/export' % self._gis.users.me.username
+        user = self._gis.users.me
+        if hasattr(user, 'id'):
+            user_id = user.id
+        else:
+            user_id = user.username
+        data_path = 'content/users/%s/export' % user_id
         params = {
             "f" : "json",
             "itemId" : self.itemid,
@@ -5540,7 +5725,8 @@ class Item(dict):
         params = {
             "f" : "json"
         }
-        data_path = 'content/users/%s/items/%s/status' % (self._gis.users.me.username, self.itemid)
+        data_path = 'content/users/%s/items/%s/status' % (self._user_id,
+                                                          self.itemid)
         if job_type is not None:
             params['jobType'] = job_type
         if job_id is not None:
@@ -5831,7 +6017,7 @@ class Item(dict):
             current_folder = self.ownerFolder
         except:
             current_folder = None
-        resp = self._portal.reassign_item(self.itemid, self.owner, target_owner, current_folder, target_folder)
+        resp = self._portal.reassign_item(self.itemid, self._user_id, target_owner, current_folder, target_folder)
         if resp is True:
             self._hydrate() # refresh
             return resp
@@ -5858,14 +6044,14 @@ class Item(dict):
         # find if portal is ArcGIS Online
         if self._gis._portal.is_arcgisonline:
             # Call with owner info
-            resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
+            resp = self._portal.con.get('content/users/' + self._user_id + "/items/" + self.itemid)
 
         else:  # gis is a portal, find if item resides in a folder
             if self.ownerFolder is not None:
-                resp = self._portal.con.get('content/users/' + self.owner + '/' + self.ownerFolder + "/items/" +
+                resp = self._portal.con.get('content/users/' + self._user_id + '/' + self.ownerFolder + "/items/" +
                                             self.itemid)
             else:
-                resp = self._portal.con.get('content/users/' + self.owner + "/items/" + self.itemid)
+                resp = self._portal.con.get('content/users/' + self._user_id + "/items/" + self.itemid)
 
         # Get the sharing info
         sharing_info = resp['sharing']
@@ -5939,7 +6125,7 @@ class Item(dict):
         if self.access == 'public' and not everyone and not org:
             return self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
         else:
-            return self._portal.share_item(self.itemid, self.owner, folder, everyone, org, group_ids, allow_members_to_edit)
+            return self._portal.share_item(self.itemid, self._user_id, folder, everyone, org, group_ids, allow_members_to_edit)
 
     def unshare(self, groups):
         """
@@ -5986,7 +6172,12 @@ class Item(dict):
         if self.access == 'public':
             return self._portal.unshare_item_as_group_admin(self.itemid, group_ids)
         else:
-            return self._portal.unshare_item(self.itemid, self.owner, folder, group_ids)
+            owner = self._gis.users.get(self.owner)
+            if hasattr(owner, 'id'):
+                owner = owner.id
+            else:
+                owner = owner.username
+            return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
 
     def delete(self, force=False, dry_run=False):
         """
@@ -6054,7 +6245,7 @@ class Item(dict):
             folder = None
 
         if dry_run:
-            can_delete_resp = self._portal.can_delete(self.itemid, self.owner, folder)
+            can_delete_resp = self._portal.can_delete(self.itemid, self._user_id, folder)
             if can_delete_resp[0]:
                 return {'can_delete':True}
             else:
@@ -6065,7 +6256,7 @@ class Item(dict):
 
                 return {'can_delete':False, 'details': error_dict}
         else:
-            return self._portal.delete_item(self.itemid, self.owner, folder, force)
+            return self._portal.delete_item(self.itemid, self._user_id, folder, force)
 
     def create_thumbnail(self, update=True):
         """
@@ -6247,6 +6438,12 @@ class Item(dict):
         :return:
            A boolean indicating success (True) or failure (False).
         """
+        owner = self._gis.users.get(self.owner)
+        if hasattr(owner, 'id') and \
+           owner.id != 'null':
+            owner = owner.id
+        else:
+            owner = owner.username
         try:
             folder = self.ownerFolder
         except:
@@ -6263,7 +6460,7 @@ class Item(dict):
                     item_properties['tags'] = ",".join(item_properties['tags'])
 
         ret = self._portal.update_item(self.itemid, item_properties, data,
-                                       thumbnail, metadata, self.owner, folder,
+                                       thumbnail, metadata, owner, folder,
                                        large_thumbnail)
         if ret:
             self._hydrate()
@@ -6367,7 +6564,6 @@ class Item(dict):
             params['startTime'] = int((end_date - timedelta(days=365)).timestamp() * 1000)
         else:
             raise ValueError("Invalid date range.")
-        isinstance(self._portal, portalpy.Portal)
 
         url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
         try:
@@ -6522,9 +6718,7 @@ class Item(dict):
         postdata['originItemId'] = self.itemid
         postdata['destinationItemId'] = rel_item.itemid
         postdata['relationshipType'] = rel_type
-        path = 'content/users/' + self.owner
-
-        path += '/addRelationship'
+        path = 'content/users/{uid}/addRelationship'.format(uid=self._user_id)
 
         resp = self._portal.con.post(path, postdata)
         if resp:
@@ -6557,10 +6751,8 @@ class Item(dict):
         postdata['originItemId'] =  self.itemid
         postdata['destinationItemId'] = rel_item.itemid
         postdata['relationshipType'] = rel_type
-        path = 'content/users/' + self.owner
+        path = 'content/users/{uid}/deleteRelationship'.format(uid=self._user_id)
 
-
-        path += '/deleteRelationship'
         resp = self._portal.con.post(path, postdata)
         if resp:
             return resp.get('success')
@@ -6813,7 +7005,7 @@ class Item(dict):
         ret = self._portal.publish_item(self.itemid, None,
                                         None, fileType,
                                         publish_parameters, output_type,
-                                        overwrite, self.owner,
+                                        overwrite, self._user_id,
                                         folder, buildInitialCache)
 
         #Check publishing job status
@@ -6875,15 +7067,23 @@ class Item(dict):
 
         """
         if isinstance(owner, User):
-            owner_name = owner.username
-        elif isinstance(owner, str):
-            user = self._gis.users.get(owner)
-            if user is None:
-                owner_name = self._portal.logged_in_user()['username']
+            if hasattr(owner, 'id'):
+                owner_name = owner.id
             else:
-                owner_name = user.username
+                owner_name = owner.username
+        elif isinstance(owner, str):
+            owner = self._gis.users.get(owner)
+            if owner is None:
+                owner = self._portal.logged_in_user()
+            if hasattr(owner, 'id'):
+                owner_name = owner.id
+            else:
+                owner_name = owner.username
         else:
-            owner_name = self._portal.logged_in_user()['username']
+            if 'id' in self._gis.properties.user:
+                owner_name = self._gis.properties.user.id
+            else:
+                owner_name = self._gis.properties.user.username
 
         folder_id = None
         if folder is not None:
@@ -6987,7 +7187,7 @@ class Item(dict):
                 "publishParameters" : json.dumps(pp)
             }
             url = "%s/content/users/%s/publish" % (self._portal.resturl,
-                                                   self._gis.users.me.username)
+                                                   self._user_id)
             res = self._gis._con.post(url, params)
             serviceitem_id = self._check_publish_status(res['services'], folder=None)
             if self._gis._portal.is_arcgisonline:
@@ -7030,7 +7230,7 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
-        res = self._portal.protect_item(self.itemid, self.owner, folder, enable)
+        res = self._portal.protect_item(self.itemid, self._user_id, folder, enable)
         self._hydrated = False
         self._hydrate()
         return res
@@ -7204,7 +7404,7 @@ class Item(dict):
         available to the item owner and the organization administrator.
         """
         url = "%s/sharing/rest/content/users/%s/items/%s/proxies" % (self._portal.url,
-                                                        self.owner,
+                                                        self._user_id,
                                                         self.id)
         params = {"f" : "json"}
         ps = []
@@ -7255,7 +7455,7 @@ class Item(dict):
 
         """
         url = "%s/sharing/rest/content/users/%s/items/%s/createProxies" % (self._portal.url,
-                                                                           self.owner,
+                                                                           self._user_id,
                                                                            self.id)
         params = {
             'f' : 'json',
@@ -7292,8 +7492,8 @@ class Item(dict):
         params = {'f': 'json',
                   'proxies': proxy_id}
         url = "%s/sharing/rest/content/users/%s/items/%s/deleteProxies" % (self._portal.url,
-                                                              self.owner,
-                                                              self.id)
+                                                                           self._user_id,
+                                                                           self.id)
         return self._portal.con.post(url, params)
     #----------------------------------------------------------------------
     def copy(self, title=None, tags=None, snippet=None, description=None, layers=None):
@@ -7429,7 +7629,7 @@ class Item(dict):
                         })
                 params['text'] = text
             url = "%s/content/users/%s/addItem" % (self._gis._portal.resturl,
-                                                   self._gis.users.me.username)
+                                                   self._user_id)
             res = self._gis._con.post(url,
                                       params)
             if 'id' in res:
@@ -7585,7 +7785,7 @@ class Item(dict):
         if "Registered App" not in self.typeKeywords:
             return {}
         url = "{base}content/users/{user}/items/{itemid}/registeredAppInfo".format(base=self._portal.resturl,
-                                                                                   user=self._gis.users.me.username,
+                                                                                   user=self._user_id,
                                                                                    itemid=self.id)
         params = {'f': 'json'}
         try:

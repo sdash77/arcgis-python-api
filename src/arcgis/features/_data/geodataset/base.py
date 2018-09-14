@@ -15,7 +15,7 @@ try:
     import arcpy
     HASARCPY  = True
     GEOTYPES.append(arcpy.Geometry)
-except ImportError:
+except:
     GEOTYPES = [_types.Geometry]
     HASARCPY = False
 
