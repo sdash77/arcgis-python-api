@@ -675,6 +675,43 @@ class Geometry(BaseGeometry):
             return json.dumps(self)
         return
     #----------------------------------------------------------------------
+    @classmethod
+    def from_shapely(cls, shapely_geometry, spatial_reference=None):
+        """
+        Creates a Python API Geometry object from a Shapely geometry object.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        shapely_geometry    Required Shapely Geometry
+                            Single instance of Shapely Geometry to be converted to ArcGIS
+                            Python API geometry instance.
+        ---------------     --------------------------------------------------------------------
+        spatial_reference   Optional SpatialReference
+                            Defines the spatial reference for the output geometry.
+        ===============     ====================================================================
+
+        :return: arcgis.geometry.Geometry
+
+        .. code-block:: python
+
+            # Usage Example: importing shapely geometry object and setting spatial reference to WGS84
+
+            Geometry.from_shapely(
+                shapely_geometry=shapely_geometry_object,
+                spatial_reference={'wkid': 4326}
+            )
+
+        """
+        if HASSHAPELY:
+            geometry = cls(shapely_geometry.__geo_interface__)
+            if spatial_reference:
+                geometry.spatial_reference = spatial_reference
+            return geometry
+        else:
+            raise Exception('Shapely is required to execute from_shapely.')
+    #----------------------------------------------------------------------
     @property
     def WKT(self):
         """
