@@ -868,7 +868,9 @@ class OfflineMapAreaManager(object):
         except Exception:
             warn("GIS does not support creating packages for offline usage")
 
-    def create(self, area, item_properties=None, folder=None, min_scale=None, max_scale=None, layers_to_ignore=None):
+    def create(self, area, item_properties=None, folder=None, min_scale=None,
+               max_scale=None, layers_to_ignore=None, refresh_schedule="Never",
+               refresh_rates=None):
         """
         Create offline map area items and packages for ArcGIS Runtime powered applications. This method creates two
         different types of items. It first creates 'Map Area' items for the specified extent or bookmark. Next it
@@ -908,6 +910,51 @@ class OfflineMapAreaManager(object):
         layers_to_ignore       Optional List of layer objects to exclude when creating offline
                                packages. You can get the list of layers in a web map by calling
                                the `layers` property on the `WebMap` object.
+        ------------------     --------------------------------------------------------------------
+        refresh_schedule       Optional string. Allows for the scheduling of refreshes at given times.
+
+
+                               The following are valid variables:
+
+                                    + Never - never refreshes the offline package (default)
+                                    + Daily - refreshes everyday
+                                    + Weekly - refreshes once a week
+                                    + Monthly - refreshes once a month
+
+        ------------------     --------------------------------------------------------------------
+        refresh_rates          Optional dict. This parameter allows for the customization of the
+                               scheduler.  The dictionary accepts the following:
+
+                                {
+                                    "hour" : 1
+                                    "minute" = 0
+                                    "nthday" = 3
+                                    "day_of_week" = 0
+                                }
+
+                               - hour - a value between 0-23 (integers)
+                               - minute a value between 0-60 (integers)
+                               - nthday - this is used for monthly only. This say the refresh will occur on the 'x' day of the month.
+                               - day_of_week - a value between 0-6 where 0 is Sunday and 6 is Saturday.
+
+                               Example **Daily**:
+
+                                {
+                                    "hour": 10,
+                                    "minute" : 30
+                                }
+
+                               This means every day at 10:30 AM UTC
+
+                               Example **Weekly**:
+
+                                {
+                                    "hour" : 23,
+                                    "minute" : 59,
+                                    "day_of_week" : 4
+                                }
+
+                               This means every Wednesday at 11:59 PM UTC
         ==================     ====================================================================
 
         *Hint: Your min_scale is always bigger in value than your max_scale*
@@ -962,6 +1009,16 @@ class OfflineMapAreaManager(object):
 
 
         """
+        _dow_lu = {
+            0:"SUN",
+            1:"MON",
+            2:"TUE",
+            3: "WED",
+            4: "THU",
+            5: "FRI",
+            6: "SAT",
+            7: "SUN"
+        }
         # region find if bookmarks or extent is specified
         _bookmark = None
         _extent = None
@@ -1003,11 +1060,99 @@ class OfflineMapAreaManager(object):
         else:
             tags = None
 
+        if refresh_schedule.lower() in ['daily', 'weekly', 'monthly']:
+            refresh_schedule = refresh_schedule.lower()
+            if refresh_schedule == 'daily':
+                if refresh_rates and isinstance(refresh_rates, dict):
+                    hour = 1
+                    minute = 0
+                    if 'hour' in refresh_rates:
+                        hour = refresh_rates['hour']
+                    if 'minute' in refresh_rates:
+                        minute = refresh_rates['minute']
+                    map_area_refresh_params = {
+                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "type":"daily",
+                        "nthDay":1,
+                        "dayOfWeek":0
+                    }
+                    refresh_schedule = "0 {m} {hour} * * ?".format(m=minute, hour=hour)
+                else:
+                    map_area_refresh_params = {
+                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "type":"daily",
+                        "nthDay":1,
+                        "dayOfWeek":0
+                    }
+                    refresh_schedule = "0 0 1 * * ?"
+            elif refresh_schedule == 'weekly':
+                if refresh_rates and \
+                   isinstance(refresh_rates, dict):
+                    hour = 1
+                    minute = 0
+                    dayOfWeek = "MON"
+                    if 'hour' in refresh_rates:
+                        hour = refresh_rates['hour']
+                    if 'minute' in refresh_rates:
+                        minute = refresh_rates['minute']
+                    if 'day_of_week' in refresh_rates:
+                        dayOfWeek = refresh_rates['day_of_week']
+                    map_area_refresh_params = {
+                            "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                            "type":"weekly",
+                            "nthDay": 1,
+                            "dayOfWeek": dayOfWeek
+                    }
+                    refresh_schedule = "0 {m} {hour} ? * {dow}".format(m=minute, hour=hour,
+                                                                       dow=_dow_lu[dayOfWeek])
+                else:
+                    map_area_refresh_params = {
+                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "type":"weekly",
+                        "nthDay":1,
+                        "dayOfWeek":1
+                    }
+                    refresh_schedule = "0 0 1 ? * MON"
+            elif refresh_schedule == 'monthly':
+                if refresh_rates and \
+                   isinstance(refresh_rates, dict):
+                    hour = 1
+                    minute = 0
+                    nthday = 3
+                    dayOfWeek = 0
+                    if 'hour' in refresh_rates:
+                        hour = refresh_rates['hour']
+                    if 'minute' in refresh_rates:
+                        minute = refresh_rates['minute']
+                    if 'nthday' in refresh_rates['nthday']:
+                        nthday = refresh_rates['nthday']
+                    if 'day_of_week' in refresh_rates:
+                        dayOfWeek = refresh_rates['day_of_week']
+                    map_area_refresh_params = {
+                        "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                        "type":"monthly",
+                        "nthDay": nthday,
+                        "dayOfWeek": dayOfWeek
+                    }
+                    refresh_schedule = "0 {m} {hour} ? * {nthday}#{dow}".format(m=minute, hour=hour,
+                                                                                nthday=nthday, dow=dayOfWeek)
+                else:
+                    map_area_refresh_params = {"startDate":int(datetime.datetime.utcnow().timestamp()) * 1000,
+                                               "type":"monthly","nthDay":3,"dayOfWeek":3}
+                    refresh_schedule = "0 0 14 ? * 4#3"
+        else:
+            refresh_schedule = None
+            refresh_rates_cron = None
+            map_area_refresh_params = {'type' : 'never'}
+
+
         output_name = {'title': item_properties['title'] if 'title' in item_properties else None,
                        'snippet': item_properties['snippet'] if 'snippet' in item_properties else None,
                        'description': item_properties['description'] if 'description' in item_properties else None,
                        'tags': tags,
-                       'folderId': folder_id}
+                       'folderId': folder_id,
+                       'packageRefreshSchedule' : refresh_schedule}
+
         # endregion
 
         # region call CreateMapArea tool
@@ -1015,6 +1160,32 @@ class OfflineMapAreaManager(object):
         pkg_tb = Toolbox(url=self._url, gis=self._gis)
         oma_result = pkg_tb.create_map_area(self._item.id, _bookmark, _extent, output_name=output_name)
         # endregion
+
+        # Call update on Item with Refresh Information
+        #import datetime
+        item = Item(gis=self._gis, itemid=oma_result)
+        update_items = {
+            'snippet' : "Map with no advanced offline settings set (default is assumed to be features and attachments)",
+            'title' : item_properties['title'] if 'title' in item_properties else None,
+            'typeKeywords' : "Map, Map Area",
+            'clearEmptyFields' : True,
+            'text' : json.dumps({
+                'mapAreaTileScale' : {
+                    'minScale': min_scale,
+                    'maxScale' : max_scale},
+                "mapAreaRefreshParams": map_area_refresh_params
+            })
+        }
+        item.update(item_properties=update_items)
+        update_items = {
+            "properties": {
+                "extent": _extent,
+                "status":"processing",
+                "packageRefreshSchedule": refresh_schedule
+            }
+        }
+        item.update(item_properties=update_items)
+        # End Item Update Refresh Call
 
         # region build input parameters - for setupMapArea tool
         # map layers to ignore parameter
@@ -1083,10 +1254,177 @@ class OfflineMapAreaManager(object):
 
         # region call the SetupMapArea tool
         setup_oma_result = pkg_tb.setup_map_area(oma_result, map_layers_to_ignore, lods)
-        # print(setup_oma_result)
+
         _log.info(str(setup_oma_result))
         # endregion
         return Item(gis=self._gis, itemid=oma_result)
+
+    def modify_refresh_schedule(self, item, refresh_schedule=None, refresh_rates=None):
+        """
+        Modifies an Existing Package's Refresh Schedule for offline packages.
+
+
+
+        ============================     ====================================================================
+        **Argument**                     **Description**
+        ----------------------------     --------------------------------------------------------------------
+        item                             Required Item. This is the Offline Package to update the refresh
+                                         schedule.
+        ----------------------------     --------------------------------------------------------------------
+        refresh_schedule                 Optional String.  This is the rate of refreshing.
+
+                                         The following are valid variables:
+
+                                            + Never - never refreshes the offline package (default)
+                                            + Daily - refreshes everyday
+                                            + Weekly - refreshes once a week
+                                            + Monthly - refreshes once a month
+        ----------------------------     --------------------------------------------------------------------
+        refresh_rates                    Optional dict. This parameter allows for the customization of the
+                                         scheduler. Note all time is in UTC.
+
+                                         The dictionary accepts the following:
+
+                                         {
+                                            "hour" : 1
+                                            "minute" = 0
+                                            "nthday" = 3
+                                            "day_of_week" = 0
+                                         }
+
+                                         - hour - a value between 0-23 (integers)
+                                         - minute a value between 0-60 (integers)
+                                         - nthday - this is used for monthly only. This say the refresh will occur on the 'x' day of the month.
+                                         - day_of_week - a value between 0-6 where 0 is Sunday and 6 is Saturday.
+
+                                         Example **Daily**:
+
+                                         {
+                                            "hour": 10,
+                                            "minute" : 30
+                                         }
+
+                                         This means every day at 10:30 AM UTC
+
+                                         Example **Weekly**:
+
+                                         {
+                                            "hour" : 23,
+                                            "minute" : 59,
+                                            "day_of_week" : 4
+                                         }
+
+                                         This means every Wednesday at 11:59 PM UTC
+
+        ============================     ====================================================================
+
+        :returns: boolean
+
+
+        ## Updates Offline Package Building Everyday at 10:30 AM UTC
+
+        .. code-block:: python
+
+            gis = GIS(profile='owner_profile')
+            item = gis.content.get('9b93887c640a4c278765982aa2ec999c')
+            oa = wm.offline_areas.modify_refresh_schedule(item.id, 'daily', {'hour' : 10, 'minute' : 30})
+
+
+        """
+        if isinstance(item, str):
+            item = self._gis.content.get(item)
+        _dow_lu = {
+            0:"SUN",
+            1:"MON",
+            2:"TUE",
+            3: "WED",
+            4: "THU",
+            5: "FRI",
+            6: "SAT",
+            7: "SUN"
+        }
+        hour = 1
+        minute = 0
+        nthday = 3
+        dayOfWeek = 0
+        if refresh_rates is None:
+            refresh_rates = {}
+        if refresh_schedule is None or str(refresh_schedule).lower() == "never":
+            refresh_schedule = None
+            refresh_rates_cron = None
+            map_area_refresh_params = {'type' : 'never'}
+        elif refresh_schedule.lower() == 'daily':
+            if 'hour' in refresh_rates:
+                hour = refresh_rates['hour']
+            if 'minute' in refresh_rates:
+                minute = refresh_rates['minute']
+            map_area_refresh_params = {
+                "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                "type":"daily",
+                "nthDay":1,
+                "dayOfWeek":0
+            }
+            refresh_schedule = "0 {m} {hour} * * ?".format(m=minute, hour=hour)
+        elif refresh_schedule.lower() == 'weekly':
+            if 'hour' in refresh_rates:
+                hour = refresh_rates['hour']
+            if 'minute' in refresh_rates:
+                minute = refresh_rates['minute']
+            if 'day_of_week' in refresh_rates:
+                dayOfWeek = refresh_rates['day_of_week']
+            map_area_refresh_params = {
+                    "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                    "type":"weekly",
+                    "nthDay": 1,
+                    "dayOfWeek": dayOfWeek
+            }
+            refresh_schedule = "0 {m} {hour} ? * {dow}".format(m=minute, hour=hour,
+                                                               dow=_dow_lu[dayOfWeek])
+        elif refresh_schedule.lower() == 'monthly':
+            if 'hour' in refresh_rates:
+                hour = refresh_rates['hour']
+            if 'minute' in refresh_rates:
+                minute = refresh_rates['minute']
+            if 'nthday' in refresh_rates['nthday']:
+                nthday = refresh_rates['nthday']
+            if 'day_of_week' in refresh_rates:
+                dayOfWeek = refresh_rates['day_of_week']
+            map_area_refresh_params = {
+                "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
+                "type":"monthly",
+                "nthDay": nthday,
+                "dayOfWeek": dayOfWeek,
+            }
+            refresh_schedule = "0 {m} {hour} ? * {nthday}#{dow}".format(m=minute, hour=hour,
+                                                                        nthday=nthday, dow=dayOfWeek)
+        else:
+            raise ValueError(("Invalid refresh_schedule, value"
+                              " can only be Never, Daily, Weekly or Monthly."))
+        text = item.get_data()
+        text['mapAreas']['mapAreaRefreshParams'] = map_area_refresh_params
+        update_items = {
+            'clearEmptyFields' : True,
+            'text' : json.dumps(text)
+        }
+        item.update(item_properties=update_items)
+        properties = item.properties
+        _extent = item.properties['extent']
+        _bookmark = None
+        update_items = {
+            "properties": {
+                "extent": _extent,
+                "status":"complete",
+                "packageRefreshSchedule": refresh_schedule
+            }
+        }
+        item.update(item_properties=update_items)
+        from arcgis.geoprocessing._tool import Toolbox
+        pkg_tb = Toolbox(url=self._url, gis=self._gis)
+        try:
+            result = pkg_tb.setup_map_area(item.id)
+            return True
+        except:
+            return False
 
     def update(self, offline_map_area_items=None):
         """

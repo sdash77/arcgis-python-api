@@ -1257,11 +1257,11 @@ class DatastoreManager(object):
             output = Datastore(self, "/cloudStores/" + name)
 
         if res['success']:
-            print("Created Big Data file share for " + name)
+            print("Created cloud store for " + name)
         elif res['success'] == False and res['status'] != 'exists':
-            raise Exception("Could not create Big Data file share: %s" % name)
+            raise Exception("Could not create cloud store: %s" % name)
         elif res['status'] == 'exists':
-            print("Big Data file share exists for " + name)
+            print("Cloud store exists for exists for " + name)
 
 
         return output
