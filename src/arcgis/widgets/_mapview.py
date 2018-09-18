@@ -412,7 +412,6 @@ class MapView(widgets.DOMWidget):
         self._draw_end_handlers = widgets.CallbackDispatcher()
         self._click_handlers = widgets.CallbackDispatcher()
 
-
     def _setup_gis_properties(self, gis):
         self.gis = gis
         if gis._portal.con._token:
@@ -420,7 +419,11 @@ class MapView(widgets.DOMWidget):
             self._auth_mode = "tokenBased"
         else:
             self._auth_mode = "anonymous"
-        self._portal_url = str(gis._url)
+        if gis._is_hosted_nb_home:
+            #A GIS('home') conn needs to connect to public URL
+            self._portal_url = str(gis._public_portal_url)
+        else:
+            self._portal_url = str(gis._url)
         self._portal_sharing_rest_url = str(gis._con.baseurl)
         self._username = str(gis._username)
 
