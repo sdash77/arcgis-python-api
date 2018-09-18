@@ -1259,9 +1259,10 @@ class OfflineMapAreaManager(object):
         # endregion
         return Item(gis=self._gis, itemid=oma_result)
 
-    def modify_schedule(self, item, refresh_schedule=None, refresh_rates=None):
+    def modify_refresh_schedule(self, item, refresh_schedule=None, refresh_rates=None):
         """
         Modifies an Existing Package's Refresh Schedule for offline packages.
+
 
 
         ============================     ====================================================================
@@ -1280,7 +1281,9 @@ class OfflineMapAreaManager(object):
                                             + Monthly - refreshes once a month
         ----------------------------     --------------------------------------------------------------------
         refresh_rates                    Optional dict. This parameter allows for the customization of the
-                                         scheduler.  The dictionary accepts the following:
+                                         scheduler. Note all time is in UTC.
+
+                                         The dictionary accepts the following:
 
                                          {
                                             "hour" : 1
@@ -1317,6 +1320,16 @@ class OfflineMapAreaManager(object):
 
         :returns: boolean
 
+
+        ## Updates Offline Package Building Everyday at 10:30 AM UTC
+
+        .. code-block:: python
+
+            gis = GIS(profile='owner_profile')
+            item = gis.content.get('9b93887c640a4c278765982aa2ec999c')
+            oa = wm.offline_areas.modify_refresh_schedule(item.id, 'daily', {'hour' : 10, 'minute' : 30})
+
+
         """
         if isinstance(item, str):
             item = self._gis.content.get(item)
@@ -1341,8 +1354,6 @@ class OfflineMapAreaManager(object):
             refresh_rates_cron = None
             map_area_refresh_params = {'type' : 'never'}
         elif refresh_schedule.lower() == 'daily':
-            hour = 1
-            minute = 0
             if 'hour' in refresh_rates:
                 hour = refresh_rates['hour']
             if 'minute' in refresh_rates:
@@ -1355,9 +1366,6 @@ class OfflineMapAreaManager(object):
             }
             refresh_schedule = "0 {m} {hour} * * ?".format(m=minute, hour=hour)
         elif refresh_schedule.lower() == 'weekly':
-            hour = 1
-            minute = 0
-            dayOfWeek = 1
             if 'hour' in refresh_rates:
                 hour = refresh_rates['hour']
             if 'minute' in refresh_rates:
@@ -1385,7 +1393,7 @@ class OfflineMapAreaManager(object):
                 "startDate": int(datetime.datetime.utcnow().timestamp()) * 1000,
                 "type":"monthly",
                 "nthDay": nthday,
-                "dayOfWeek": dayOfWeek
+                "dayOfWeek": dayOfWeek,
             }
             refresh_schedule = "0 {m} {hour} ? * {nthday}#{dow}".format(m=minute, hour=hour,
                                                                         nthday=nthday, dow=dayOfWeek)
@@ -1393,7 +1401,7 @@ class OfflineMapAreaManager(object):
             raise ValueError(("Invalid refresh_schedule, value"
                               " can only be Never, Daily, Weekly or Monthly."))
         text = item.get_data()
-        text['mapAreaRefreshParams'] = map_area_refresh_params
+        text['mapAreas']['mapAreaRefreshParams'] = map_area_refresh_params
         update_items = {
             'clearEmptyFields' : True,
             'text' : json.dumps(text)
@@ -1405,20 +1413,18 @@ class OfflineMapAreaManager(object):
         update_items = {
             "properties": {
                 "extent": _extent,
-                "status":"processing",
+                "status":"complete",
                 "packageRefreshSchedule": refresh_schedule
             }
         }
         item.update(item_properties=update_items)
         from arcgis.geoprocessing._tool import Toolbox
         pkg_tb = Toolbox(url=self._url, gis=self._gis)
-        #oma_result = pkg_tb.create_map_area(item.id, _bookmark, _extent, output_name=output_name)
         try:
             result = pkg_tb.setup_map_area(item.id)
             return True
         except:
             return False
-        print('fin')
 
     def update(self, offline_map_area_items=None):
         """
