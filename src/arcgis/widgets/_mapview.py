@@ -422,9 +422,10 @@ class MapView(widgets.DOMWidget):
         if gis._is_hosted_nb_home:
             #A GIS('home') conn needs to connect to public URL
             self._portal_url = str(gis._public_portal_url)
+            self._portal_sharing_rest_url = self._portal_url + '/sharing/rest/'
         else:
             self._portal_url = str(gis._url)
-        self._portal_sharing_rest_url = str(gis._con.baseurl)
+            self._portal_sharing_rest_url = str(gis._con.baseurl)
         self._username = str(gis._username)
 
     def _setup_js_cdn(self):
