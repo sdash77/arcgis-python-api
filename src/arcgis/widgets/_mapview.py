@@ -131,14 +131,24 @@ class MapView(widgets.DOMWidget):
 
     @property
     def extent(self):
-        """A property that represents the map widget's extent.
+        """A property representing the map widget's extent.
 
 
         ==================     ====================================================================
         getter                 A dict that represents the JSON of the map widget's extent.
         ------------------     --------------------------------------------------------------------
-        setter                 A [[xmin, ymin], [xmax, ymax]] list, or a dict that represents the
-                               JSON of the map widget's extent.
+        setter                 A [[xmin, ymin], [xmax, ymax]] list, Spatially Enabled Data Frame `full_extent`,
+                               or a dict that represents the JSON of the map widget's extent.
+
+                               Examples for each:
+                               web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
+                               web_map.extent = data_frame.spatial.full_extent
+                               web_map.extent = {
+                                    "xmin": -124.35,
+                                    "ymin": 32.54,
+                                    "xmax": -114.31,
+                                    "ymax": 41.95
+                                }
         ==================     ====================================================================
 
        """
@@ -151,18 +161,26 @@ class MapView(widgets.DOMWidget):
         try:
             if isinstance(value, dict):
                 self._extent = value
+            elif _is_iterable(value) and isinstance(value, tuple):
+                self._extent = {
+                    "xmin": value[0],
+                    "ymin": value[1],
+                    "xmax": value[2],
+                    "ymax": value[3]
+                }
             elif _is_iterable(value):
                 self._extent = {
-                    "xmin" : value[0][0],
-                    "ymin" : value[0][1],
-                    "xmax" : value[1][0],
-                    "ymax" : value[1][1]}
+                    "xmin": value[0][0],
+                    "ymin": value[0][1],
+                    "xmax": value[1][0],
+                    "ymax": value[1][1]}
             else:
                 raise Exception
         except Exception:
-            log.warn("extent must be set to either a dict or a 2d list"\
-                ". Values specified must include xmin, ymin, xmax, ymax."\
-                " See the API doc for more information")
+            log.warn("extent must be set to either a 2d list, spatially " \
+                "enabled data frame full_extent, or dict. Values specified " \
+                "must include xmin, ymin, xmax, ymax. Please see the API doc for " \
+                "more information")
 
     _readonly_center = Dict({}).tag(sync=True)
     _center = Dict({}).tag(sync=True)
@@ -394,7 +412,6 @@ class MapView(widgets.DOMWidget):
         self._draw_end_handlers = widgets.CallbackDispatcher()
         self._click_handlers = widgets.CallbackDispatcher()
 
-
     def _setup_gis_properties(self, gis):
         self.gis = gis
         if gis._portal.con._token:
@@ -402,7 +419,11 @@ class MapView(widgets.DOMWidget):
             self._auth_mode = "tokenBased"
         else:
             self._auth_mode = "anonymous"
-        self._portal_url = str(gis._url)
+        if gis._is_hosted_nb_home:
+            #A GIS('home') conn needs to connect to public URL
+            self._portal_url = str(gis._public_portal_url)
+        else:
+            self._portal_url = str(gis._url)
         self._portal_sharing_rest_url = str(gis._con.baseurl)
         self._username = str(gis._username)
 

@@ -197,6 +197,8 @@ class GIS(object):
 
     """
     _server_list = None
+    _is_hosted_nb_home = False
+    """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
     def __init__(self, url=None, username=None, password=None, key_file=None, cert_file=None,
@@ -302,6 +304,7 @@ class GIS(object):
         self._utoken = kwargs.pop('token', None)
 
         if self._url.lower() == "home":
+            self._is_hosted_nb_home = True
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
 
@@ -597,33 +600,35 @@ class GIS(object):
     def _try_configure_for_hosted_nb(self):
         """If 'home' is specified as the 'url' argument, this func is called"""
         try:
-            #Get the auth file from environment variables
+            # Get the auth file from environment variables
             nb_auth_file_path = os.getenv('NB_AUTH_FILE', None)
             if not nb_auth_file_path:
                 raise RuntimeError("Environment variable 'NB_AUTH_FILE' "\
-                    "must be defined.")
+                                   "must be defined.")
             elif not os.path.isfile(nb_auth_file_path):
                 raise RuntimeError("'{}' file needed for "\
-                    "authentication not found.".format(nb_auth_file_path))
-            #Open that auth file,
+                                   "authentication not found.".format(nb_auth_file_path))
+            # Open that auth file,
             with open(nb_auth_file_path) as nb_auth_file:
-                required_json_keys = set(["portalUrl", "token", "referer"])
+                required_json_keys = set(["privatePortalUrl",
+                    "publicPortalUrl", "token", "referer"])
                 json_data = json.load(nb_auth_file)
                 assert required_json_keys.issubset(json_data)
-                self._url = json_data["portalUrl"]
+                self._url = json_data["privatePortalUrl"]
+                self._public_portal_url = json_data["publicPortalUrl"]
                 self._utoken = json_data["token"]
                 self._referer = json_data["referer"]
 
-        #Catch errors and re-throw in with more human readable messages
+        # Catch errors and re-throw in with more human readable messages
         except json.JSONDecodeError as e:
             self._raise_hosted_nb_error("'{}' file is not "\
-                "valid JSON.".format(nb_auth_file.name))
+                                        "valid JSON.".format(nb_auth_file.name))
         except AssertionError as e:
-            self._raise_hosted_nb_error("Authentication file doesn't"\
-                " contain required keys {}".format(required_json_keys))
+            self._raise_hosted_nb_error("Authentication file doesn't contain "\
+                                        "required keys {}".format(required_json_keys))
         except Exception as e:
-            self._raise_hosted_nb_error("Unexpected exception "\
-                "when authenticating through 'home' mode: {}".format(e))
+            self._raise_hosted_nb_error("Unexpected exception when authenticating "\
+                                        "through 'home' mode: {}".format(e))
 
     def _raise_hosted_nb_error(self, err_msg):
         """In the event a user can't authenticate in 'home' mode, raise
@@ -1252,11 +1257,11 @@ class DatastoreManager(object):
             output = Datastore(self, "/cloudStores/" + name)
 
         if res['success']:
-            print("Created Big Data file share for " + name)
+            print("Created cloud store for " + name)
         elif res['success'] == False and res['status'] != 'exists':
-            raise Exception("Could not create Big Data file share: %s" % name)
+            raise Exception("Could not create cloud store: %s" % name)
         elif res['status'] == 'exists':
-            print("Big Data file share exists for " + name)
+            print("Cloud store exists for exists for " + name)
 
 
         return output
@@ -3860,7 +3865,14 @@ class Group(dict):
         except:
             owner = 'Not available'
 
-        url = self._portal.url  + "/home/group.html?id=" + self.groupid
+        if self._gis._is_hosted_nb_home:
+            url = "{}{}{}".format(self._gis._public_portal_url,
+                                  "/home/group.html?id=",
+                                  self.groupid)
+        else:
+            url = "{}{}{}".format(self._portal.url,
+                                  "/home/group.html?id=",
+                                  self.groupid)
         return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
                        <a href='""" + str(url) + """' target='_blank'>
@@ -4560,7 +4572,14 @@ class User(dict):
         except:
             description = "This user has not provided any personal information."
 
-        url = self._portal.url  + "/home/user.html?user=" + self._user_id
+        if self._gis._is_hosted_nb_home:
+            url = "{}{}{}".format(self._gis._public_portal_url,
+                                  "/home/user.html?user=",
+                                  self._user_id)
+        else:
+            url = "{}{}{}".format(self._portal.url,
+                                  "/home/user.html?user=",
+                                  self._user_id)
 
         return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
@@ -5961,8 +5980,14 @@ class Item(dict):
         snippet = self.snippet
         if snippet is None:
             snippet = ""
-
-        portalurl = self._portal.url  + "/home/item.html?id=" + self.itemid
+        if self._gis._is_hosted_nb_home:
+            portalurl = "{}{}{}".format(self._gis._public_portal_url,
+                                        "/home/item.html?id=",
+                                        self.itemid)
+        else:
+            portalurl = "{}{}{}".format(self._portal.url,
+                                        "/home/item.html?id=",
+                                        self.itemid)
 
         locale.setlocale(locale.LC_ALL, '')
         numViews = locale.format("%d", self.numViews, grouping=True)
@@ -8206,3 +8231,4 @@ class Layer(_GISResource):
             field_domain['fieldName'] = field.name
             domains.append({field.name:field_domain})
         return domains
+
