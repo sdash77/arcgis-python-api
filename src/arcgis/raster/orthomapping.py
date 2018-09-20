@@ -264,7 +264,6 @@ def alter_processing_states(image_collection, new_states, gis = None):
             processing_states=json.loads( processing_states.replace('u"','"'))
             return processing_states
  
- 
 
 ###################################################################################################
 ## Get processing states
@@ -392,46 +391,74 @@ def match_control_points(image_collection, control_points, similarity=None, cont
                             
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
-    control_points         Required list. a list of control point objects.
-                           A control point object is a dictionary with key-value
-                           pairs as described below:
+    control_points         Required, a list of control point sets objects.
 
                            The schema of control points follows the schema 
-                           of the mosaic dataset control point table. The following are
-                           required when defining control points:
+                           of the mosaic dataset control point table. 
 
-                           - The control points must contain a Point geometry object 
+                           The control point object should contain the point geometry, pointID, type, status and the
+                           imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
 
-                           - There must be one attribute set, describing the attributes of the control point.
+                           -- pointID (int) - The ID of the point within the control point table.
 
-                             The control point attributes is a dictionary that must contain the following 
+                           -- type (int)    - The type of the control point as determined by its numeric value
+                                                 1: Tie Point 
+                                                 2: Ground Control Point.
+                                                 3: Check Point
 
-                             key-value pairs:
+                           -- status (int)  - The status of the point. A value of 0 indicates that the point will
+                                                 not be used in computation. A non-zero value indicates otherwise.
 
-                             -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
+                           
 
-                             -- pointID (int) - The ID of the point within the control point table
-
-                             -- type (int)    - The type of the control point as determined by its numeric value
-                                                1: Tie Point 
-                                                2: Ground Control Point.
-                                                3: Check Point
-
-                             -- status (int)  - The status of the point. A value of 0 indicates that the point will
-                                                not be used in computation. A non-zero value indicates otherwise.
+                           -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
                            Example:
-                           {"geometry": {
-                               "x":-118.15,"y":33.80,"z":10.0,
-                               "spatialReference":{"wkid":4326}},  
-                               "attributes": {
-                                  "imageID": 22,
-                                  "pointID": 2, 
-                                  "type": 2,
-                                  "status": 1, 
-                                },
-                           <more points>
-                           }
+                           [{
+                           "status": 1,
+                           "type": 2,
+                           "x": -117.0926538,
+                           "y": 34.00704253,
+                           "z": 634.2175,
+                           "spatialReference": {
+                               "wkid": 4326
+                           }, // default WGS84
+                           "imagePointSpatialReference": {}, // default ICS
+                           "pointId": 1,
+                           "xyAccuracy": "0.008602325",
+                           "zAccuracy": "0.015",
+                           "imagePoints": [{
+                               "imageID": 1,
+                               "x": 2986.5435987557084,
+                               "y": -2042.5193648409431,
+                               "u": 3057.4580682832734,
+                               "v": -1909.1506872159698
+                           },
+                           {
+                               "imageID": 2,
+                               "x": 1838.2814361401108,
+                               "y": -2594.5280063817972,
+                               "u": 3059.4079724863363,
+                               "v": -2961.292545463305
+                           },
+                           {
+                               "imageID": 12,
+                               "x": 5332.855578204663,
+                               "y": -2533.2805429751907,
+                               "u": 614.2338676573158,
+                               "v": -165.10836768947297
+                           },
+                           {
+                               "imageID": 13,
+                               "x": 4932.0895715254455,
+                               "y": -1833.8401744114287,
+                               "u": 616.9396928182223,
+                               "v": -1243.1445126959693
+                           }]
+                           },
+                           …
+                           …
+                           ] 
     ------------------     --------------------------------------------------------------------
     similarity             Optional string. Choose the tolerance level for your control point matching. 
 
@@ -668,6 +695,7 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     image_location_accuracy                 Optional string. This option allows users to specify the location accuracy of the  
                                             imagery.
                                             VERYLOW, LOW, MEDIUM, HIGH
+
                                             LOW-Images have a large shift and a large rotation (> 5 degrees).
                                                 The SIFT algorithm will be used in the point matching computation. 
 
@@ -831,45 +859,75 @@ def edit_control_points(image_collection, control_points, gis = None):
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
-    control_points         Required, a list of control point objects.
-                           A control point object is a dictionary with key-value
-                           pairs as described below:
+    control_points         Required, a list of control point sets objects.
 
                            The schema of control points follows the schema 
-                           of the mosaic dataset control point table. The following are
-                           required when defining control points:
+                           of the mosaic dataset control point table. 
 
-                           - The control points must contain a Point geometry object 
+                           The control point object should contain the point geometry, pointID, type, status and the
+                           imagePoints. (the imagePoints attribute inside the control points object lists the imageIDs)
 
-                           - There must be one attribute set, describing the attributes of the control point. 
-                           
-                           The control point attributes is a dictionary that must contain the following 
-                           key-value pairs:
-
-                           -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
-
-                           -- pointID (int) - The ID of the point within the control point table
+                           -- pointID (int) - The ID of the point within the control point table.
 
                            -- type (int)    - The type of the control point as determined by its numeric value
                                                  1: Tie Point 
                                                  2: Ground Control Point.
                                                  3: Check Point
 
-                             -- status (int)  - The status of the point. A value of 0 indicates that the point will
+                           -- status (int)  - The status of the point. A value of 0 indicates that the point will
                                                  not be used in computation. A non-zero value indicates otherwise.
 
+                           
+
+                           -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
+
                            Example:
-                           {"geometry": {
-                                "x":-118.15,"y":33.80,"z":10.0,
-                                "spatialReference":{"wkid":4326}},  
-                                "attributes": {
-                                   "imageID": 22,
-                                   "pointID": 2, 
-                                   "type": 2,
-                                   "status": 1, 
-                                 },
-                            <more points>
-                           }
+                           [{
+                           "status": 1,
+                           "type": 2,
+                           "x": -117.0926538,
+                           "y": 34.00704253,
+                           "z": 634.2175,
+                           "spatialReference": {
+                               "wkid": 4326
+                           }, // default WGS84
+                           "imagePointSpatialReference": {}, // default ICS
+                           "pointId": 1,
+                           "xyAccuracy": "0.008602325",
+                           "zAccuracy": "0.015",
+                           "imagePoints": [{
+                               "imageID": 1,
+                               "x": 2986.5435987557084,
+                               "y": -2042.5193648409431,
+                               "u": 3057.4580682832734,
+                               "v": -1909.1506872159698
+                           },
+                           {
+                               "imageID": 2,
+                               "x": 1838.2814361401108,
+                               "y": -2594.5280063817972,
+                               "u": 3059.4079724863363,
+                               "v": -2961.292545463305
+                           },
+                           {
+                               "imageID": 12,
+                               "x": 5332.855578204663,
+                               "y": -2533.2805429751907,
+                               "u": 614.2338676573158,
+                               "v": -165.10836768947297
+                           },
+                           {
+                               "imageID": 13,
+                               "x": 4932.0895715254455,
+                               "y": -1833.8401744114287,
+                               "u": 616.9396928182223,
+                               "v": -1243.1445126959693
+                           }]
+                           },
+                           …
+                           …
+                           ] 
+
 
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
