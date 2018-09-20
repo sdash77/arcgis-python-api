@@ -304,7 +304,6 @@ class GIS(object):
         self._utoken = kwargs.pop('token', None)
 
         if self._url.lower() == "home":
-            self._is_hosted_nb_home = True
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
 
@@ -600,6 +599,10 @@ class GIS(object):
     def _try_configure_for_hosted_nb(self):
         """If 'home' is specified as the 'url' argument, this func is called"""
         try:
+            #Set relevant properties and overrides
+            self._is_hosted_nb_home = True
+            self._verify_cert = False
+
             # Get the auth file from environment variables
             nb_auth_file_path = os.getenv('NB_AUTH_FILE', None)
             if not nb_auth_file_path:
