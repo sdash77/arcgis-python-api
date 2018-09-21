@@ -829,7 +829,7 @@ class GeoAccessor(object):
             return pd.Series(GeoArray(vals))
         return pd.Series(vals)
     #----------------------------------------------------------------------
-    def set_geometry(self, col):
+    def set_geometry(self, col, sr=None):
         """Assigns the Geometry Column by Name or by List"""
         from ._array import GeoArray
 
@@ -838,18 +838,22 @@ class GeoAccessor(object):
            self._data[col].dtype.name.lower() != 'geometry':
             q = self._data[col].isnull()
             idx = self._data[col].first_valid_index()
-            sr = SpatialReference(self._data.iloc[idx].SHAPE.spatial_reference)
+            if sr is None:
+                try:
+                    sr = SpatialReference(Geometry(self._data.iloc[idx][col]).spatial_reference)
+                except:
+                    sr = SpatialReference({'wkid' : 4326})
             if len(q) > 0:
-                if self._data[col][idx].geometry_type.lower() == 'polyline':
+                if Geometry(self._data[col][idx]).geometry_type.lower() == 'polyline':
                     data = len(self._data[q]) * [Geometry({'paths' : [], 'spatialReference' : sr})]
                     self._data.loc[q, col]  = data
-                elif self._data[col][idx].geometry_type.lower() == 'polygon':
+                elif Geometry(self._data[col][idx]).geometry_type.lower() == 'polygon':
                     data = len(self._data[q]) * [Geometry({"rings" : [], 'spatialReference' : sr})]
                     self._data.loc[q, col]  = data
-                elif self._data[col][idx].geometry_type.lower() == 'point':
+                elif Geometry(self._data[col][idx]).geometry_type.lower() == 'point':
                     data = len(self._data[q]) * [Geometry({"x" : None, "y": None, 'spatialReference' : sr})]
                     self._data.loc[q, col]  = data
-                elif self._data[col][idx].geometry_type.lower() == 'multipoint':
+                elif Geometry(self._data[col][idx]).geometry_type.lower() == 'multipoint':
                     data = len(self._data[q]) * [Geometry({"points" : [  ], 'spatialReference' : sr})]
                     self._data.loc[q, col]  = data
             self._name = col
@@ -2066,10 +2070,16 @@ class GeoAccessor(object):
     @property
     def sr(self):
         """gets/sets the spatial reference of the dataframe"""
-        data = [getattr(g, 'spatialReference', None) \
+        data = [getattr(g, 'spatialReference', None) or g['spatialReference'] \
                 for g in self._data[self.name] \
                 if g not in [None, np.NaN, np.nan]]
-        srs = pd.DataFrame(data)['wkid'].unique().tolist()
+        df = pd.DataFrame(data)
+        label = "wkid"
+        if 'wkid' in df:
+            srs = pd.DataFrame(data)['wkid'].unique().tolist()
+        else:
+            label = "wkt"
+            srs = pd.DataFrame(data)['wkt'].unique().tolist()
         if len(srs) > 1:
             rsrs = []
             for sr in srs:
@@ -2079,7 +2089,7 @@ class GeoAccessor(object):
                     rsrs.append(SpatialReference({'wkt' : sr}))
             return rsrs
         else:
-            return SpatialReference({'wkid' : srs[0]})
+            return SpatialReference({label : srs[0]})
     #----------------------------------------------------------------------
     @sr.setter
     def sr(self, ref):
