@@ -274,6 +274,7 @@ class FeatureLayer(Layer):
               sql_format=None,
               return_true_curves=False,
               return_exceeded_limit_features=None,
+              as_df=False,
               **kwargs):
         """
         Queries a feature layer based on a sql statement
@@ -452,6 +453,9 @@ class FeatureLayer(Layer):
                                             This allows a client to find the resolution in which the transfer
                                             limit is no longer exceeded without making multiple calls.
         -------------------------------     --------------------------------------------------------------------
+        as_df                               Optional boolean.  If True, the results are returned as a DataFrame
+                                            instead of a FeatureSet.
+        -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
                                             explicitly implemented on the function. A complete list of functions
@@ -459,7 +463,8 @@ class FeatureLayer(Layer):
         ===============================     ====================================================================
 
         :returns: A FeatureSet containing the features matching the query unless another return type is specified, such as count
-         """
+        """
+        as_raw = as_df
         if self._dynamic_layer is None:
             url = self._url + "/query"
         else:
@@ -563,10 +568,10 @@ class FeatureLayer(Layer):
                 del key, val
 
         if not return_all_records:
-            return self._query(url, params)
+            return self._query(url, params, raw=as_raw)
 
         params['returnCountOnly'] = True
-        record_count = self._query(url, params)
+        record_count = self._query(url, params, raw=as_raw)
         if 'maxRecordCount' in self.properties:
             max_records = self.properties['maxRecordCount']
         else:
@@ -574,41 +579,59 @@ class FeatureLayer(Layer):
 
         params['returnCountOnly'] = False
         if record_count <= max_records:
-            return self._query(url, params)
+            if as_df:
+                return self._query_df(url, params)
+            return self._query(url, params, raw=as_raw)
 
         result = None
         if 'advancedQueryCapabilities' not in self.properties or \
                 'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
                 not self.properties['advancedQueryCapabilities']['supportsPagination']:
             params['returnIdsOnly'] = True
-            oid_info = self._query(url, params)
+            oid_info = self._query(url, params, raw=as_raw)
             params['returnIdsOnly'] = False
             for ids in chunks(oid_info['objectIds'], max_records):
                 ids = [str(i) for i in ids]
                 sql = "%s in (%s)" % (oid_info['objectIdFieldName'], ",".join(ids))
                 params['where'] = sql
-                records = self._query(url, params)
+                records = self._query(url, params, raw=as_raw)
                 if result:
                     result.features.extend(records.features)
                 else:
                     result = records
         else:
             i = 0
+            count = 0
+            df = None
             params['resultRecordCount'] = max_records
-
+            dfs = []
             while True:
                 params['resultOffset'] = max_records * i
-                records = self._query(url, params)
+                if as_df == False:
+                    records = self._query(url, params, raw=as_raw)
 
-                if result:
-                    result.features.extend(records.features)
+                    if result:
+                        result.features.extend(records.features)
+                    else:
+                        result = records
+
+                    if len(records.features) < max_records:
+                        break
                 else:
-                    result = records
 
-                if len(records.features) < max_records:
-                    break
+                    df = self._query_df(url, params)
+                    count += len(df)
+                    dfs.append(df)
+                    if count == record_count:
+                        break
                 i += 1
-
+        if as_df:
+            import pandas as pd
+            if len(dfs) == 1:
+                return dfs[0]
+            df = pd.concat(dfs)
+            df.reset_index(drop=True, inplace=True)
+            return df
         return result
     # ----------------------------------------------------------------------
     def validate_sql(self, sql, sql_type="where"):
@@ -1190,7 +1213,7 @@ class FeatureLayer(Layer):
                               postdata=params, token=self._token)
 
     # ----------------------------------------------------------------------
-    def _query(self, url, params):
+    def _query(self, url, params, raw=False):
         """ returns results of query """
         result = self._con.post(path=url,
                                 postdata=params, token=self._token)
@@ -1202,8 +1225,77 @@ class FeatureLayer(Layer):
             return result
         elif 'extent' in result:
             return result
+        elif raw:
+            return result
         else:
             return FeatureSet.from_dict(result)
+    def _query_df(self, url, params):
+        """ returns results of a query as a pd.DataFrame"""
+        import pandas as pd
+        from arcgis.features import GeoAccessor, GeoSeriesAccessor
+        from arcgis.geometry import SpatialReference
+        import numpy as np
+        _fld_lu = {
+            "esriFieldTypeSmallInteger" : np.int32,
+            "esriFieldTypeInteger" : np.int64,
+            "esriFieldTypeSingle" : np.int32,
+            "esriFieldTypeDouble" : float,
+            "esriFieldTypeString" : str,
+            "esriFieldTypeDate" : pd.datetime,
+            "esriFieldTypeOID" : np.int64,
+            "esriFieldTypeGeometry" : object,
+            "esriFieldTypeBlob" : object,
+            "esriFieldTypeRaster" : object,
+            "esriFieldTypeGUID" : str,
+            "esriFieldTypeGlobalID" : str,
+            "esriFieldTypeXML" : object
+        }
+        def feature_to_row(feature, sr):
+            """:return: a feature from a dict"""
+            from arcgis.geometry import Geometry
+            geom = feature['geometry'] if 'geometry' in feature else None
+            attribs = feature['attributes'] if 'attributes' in feature else {}
+            if 'centroid' in feature:
+                if attribs is None:
+                    attribs = {'centroid' : feature['centroid']}
+                elif 'centroid' in attribs:
+                    fld = "centroid_" + uuid.uuid4().hex[:2]
+                    attribs[fld] = feature['centroid']
+                else:
+                    attribs['centroid'] = feature['centroid']
+            if geom:
+                if "spatialReference" not in geom:
+                    geom["spatialReference"] = sr
+                attribs['SHAPE'] = Geometry(geom)
+            return attribs
+        #------------------------------------------------------------------
+        featureset_dict = self._con.post(url, params)
+        sr = featureset_dict['spatialReference']
+        df = None
+        dtypes = None
+        geom = None
+        names = None
+        if 'fields' in featureset_dict:
+            dtypes = {}
+            names = []
+            fields = featureset_dict['fields']
+            for fld in fields:
+
+                if fld['type'] != "esriFieldTypeGeometry":
+                    dtypes[fld['name']] = _fld_lu[fld['type']]
+                    names.append(fld['name'])
+        rows = [feature_to_row(row, sr) \
+                for row in featureset_dict['features']]
+        if len(rows) == 0:
+            return None
+        df = pd.DataFrame.from_records(data=rows)
+
+        isinstance(df, pd.DataFrame)
+        df = df.astype(dtypes, False)
+        if 'geometryType' in featureset_dict:
+            df.spatial.set_geometry('SHAPE')
+
+        return df
 
 
 class Table(FeatureLayer):
