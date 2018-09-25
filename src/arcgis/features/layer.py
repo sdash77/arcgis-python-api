@@ -628,9 +628,13 @@ class FeatureLayer(Layer):
         if as_df:
             import pandas as pd
             if len(dfs) == 1:
+                if 'SHAPE' in dfs[0].columns:
+                    dfs[0].spatial.set_geometry('SHAPE')
                 return dfs[0]
             df = pd.concat(dfs)
             df.reset_index(drop=True, inplace=True)
+            if 'SHAPE' in df.columns:
+                df.spatial.set_geometry('SHAPE')
             return df
         return result
     # ----------------------------------------------------------------------
