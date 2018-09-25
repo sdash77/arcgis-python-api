@@ -593,7 +593,7 @@ class FeatureLayer(Layer):
                                                  unit='s')
                     except:
                         df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
-                return df#df = self._query_df(url, params)
+                return df
 
             return self._query(url, params, raw=as_raw)
 
