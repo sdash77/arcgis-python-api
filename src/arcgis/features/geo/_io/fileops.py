@@ -359,9 +359,10 @@ def to_featureclass(geo,
                                             out_name=fc_name,
                                             geometry_type=gt,
                                             spatial_reference=sr)[0]
-        with da.InsertCursor(fc, ['SHAPE@']) as irows:
+        import json
+        with da.InsertCursor(fc, ['SHAPE@JSON']) as irows:
             for g in geoms:
-                irows.insertRow([g.as_arcpy])
+                irows.insertRow([json.dumps(g)])
                 del g
         if hasattr(da, 'Describe'):
             oidfld = da.Describe(fc)['OIDFieldName']

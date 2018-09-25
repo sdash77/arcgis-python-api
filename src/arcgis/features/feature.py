@@ -1076,16 +1076,16 @@ class FeatureSet(object):
             res = os.path.join(save_location, out_name)
             with open(res, access, **kwargs) as writer:
                 json.dump(self.value, writer, sort_keys=True, indent=4, ensure_ascii=False)
-                writer.flush()
-                writer.close()
             del writer
         else:
+            import json
+
             temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, "%s.json" % uuid.uuid4().hex)
-            with open(temp_file, 'wt', **kwargs) as writer:
-                writer.write(self.to_json)
-                writer.flush()
-                writer.close()
+            with open(temp_file, access, **kwargs) as writer:
+                json.dump(self.value,
+                          writer,
+                          default=_date_handler)
             del writer
             res = json_to_featureclass(json_file=temp_file,
                                        out_fc=os.path.join(save_location, out_name))
