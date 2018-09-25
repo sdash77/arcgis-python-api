@@ -72,7 +72,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         //comes from Python, from the UI, etc. The callback function is called on change
         //start map specific draw state
         this.model.on('change:mode', this.mode_changed, this);
-        this.model.on('change:basemap', this.basemap_changed, this);
+        this.model.on('change:_basemap', this.basemap_changed, this);
         this.model.on('change:zoom', this.zoom_changed, this);
         this.model.on('change:rotation', this.rotation_changed, this);
         this.model.on('change:heading', this.heading_changed, this);
@@ -357,7 +357,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         esriLoader.loadModules(['esri/Basemap'],
         options).then(([Basemap]) => {
             console.log("updating basemap...");
-            var basemapStr = this.model.get('basemap');
+            var basemapStr = this.model.get('_basemap');
             var galleryBasemaps = this.model.get('_gallery_basemaps');
             if (basemapStr in galleryBasemaps){
                 //If the basemap passed in is in the gallery, use it
