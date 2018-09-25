@@ -580,7 +580,21 @@ class FeatureLayer(Layer):
         params['returnCountOnly'] = False
         if record_count <= max_records:
             if as_df:
-                return self._query_df(url, params)
+                import pandas as pd
+                df = self._query_df(url, params)
+                dt_fields = [fld['name'] for fld in self.properties.fields \
+                             if fld['type'] == 'esriFieldTypeDate']
+                if 'SHAPE' in df.columns:
+                    df.spatial.set_geometry('SHAPE')
+                for fld in dt_fields:
+                    try:
+                        df[fld] = pd.to_datetime(df[fld]/1000,
+                                                 infer_datetime_format=True,
+                                                 unit='s')
+                    except:
+                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                return df#df = self._query_df(url, params)
+
             return self._query(url, params, raw=as_raw)
 
         result = None
@@ -627,14 +641,22 @@ class FeatureLayer(Layer):
                 i += 1
         if as_df:
             import pandas as pd
+            dt_fields = [fld['name'] for fld in self.properties.fields \
+                         if fld['type'] == 'esriFieldTypeDate']
             if len(dfs) == 1:
-                if 'SHAPE' in dfs[0].columns:
-                    dfs[0].spatial.set_geometry('SHAPE')
-                return dfs[0]
-            df = pd.concat(dfs)
-            df.reset_index(drop=True, inplace=True)
+                df = dfs[0]
+            else:
+                df = pd.concat(dfs)
+                df.reset_index(drop=True, inplace=True)
             if 'SHAPE' in df.columns:
                 df.spatial.set_geometry('SHAPE')
+            for fld in dt_fields:
+                try:
+                    df[fld] = pd.to_datetime(df[fld]/1000,
+                                             infer_datetime_format=True,
+                                             unit='s')
+                except:
+                    df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
             return df
         return result
     # ----------------------------------------------------------------------
