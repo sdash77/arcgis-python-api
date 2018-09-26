@@ -6497,6 +6497,8 @@ class Item(dict):
     def usage(self, date_range='7D', as_df=True):
         """
 
+        ArcGIS Enterprise 10.7+ and ArcGIS Online Only
+
         For item owners and administrators, usage provides usage details about an item that help you
         gauge its popularity. Usage details show how many times the item has been used for the time
         period you select. Historical usage information is available for the past year. Depending on
