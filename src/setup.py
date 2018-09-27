@@ -43,6 +43,7 @@ else:
         'matplotlib',
         'keyring',
         'jupyterlab',
+        'beautifulsoup4',
         'winkerberos;platform_system=="Windows"' ]
 
 def _post_install():

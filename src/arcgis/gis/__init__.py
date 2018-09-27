@@ -3508,7 +3508,7 @@ class ResourceManager(object):
 
         owner = self._item.owner
         user = gis.users.get(owner)
-        if hasattr(user, 'id'):
+        if (hasattr(user, 'id')) and (user.id != 'null'):
             self._user_id = user.id
         else:
             self._user_id = user.username
