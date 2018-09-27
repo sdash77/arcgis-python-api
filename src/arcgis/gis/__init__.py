@@ -373,10 +373,11 @@ class GIS(object):
         # If a token was injected, then force refresh to get updated properties
         self._lazy_properties = PropertyMap(self._portal.get_properties(force=force_refresh))
 
+        self._con = self._portal.con
+
         if self._url.lower() == "pro":
             self._url = self._portal.url
-
-        self._con = self._portal.con
+            self._con._auth = "PRO"
 
         if self._con._auth.lower() != 'anon' and \
            self._con._auth is not None and \
