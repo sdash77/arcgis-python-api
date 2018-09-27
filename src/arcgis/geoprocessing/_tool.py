@@ -400,7 +400,9 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
     if not url.endswith('/GPServer'):
         idx = url.index('/GPServer')
         url = url[0:idx + len('/GPServer')]
+
     tbx = _AsyncResource(url, gis)
+
 
     src_code = """import logging as _logging
 import arcgis
@@ -412,9 +414,12 @@ from arcgis.geoprocessing._support import _execute_gp_tool
 
 _log = _logging.getLogger(__name__)
     """
-
-    execution_type = tbx.properties.executionType
-
+    try:
+        execution_type = tbx.properties.executionType
+    except:
+        from arcgis.gis import GIS
+        return import_toolbox(url_or_item=url_or_item,
+                              gis=GIS(), verbose=verbose)
     use_async = True
     if execution_type == 'esriExecutionTypeSynchronous':
         use_async = False
