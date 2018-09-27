@@ -312,19 +312,31 @@ def to_featureclass(geo,
         raise ValueError(("Mixed geometry types detected, "
                          "cannot export to feature class."))
     if HASARCPY:
-        join_dummy = "AEIOUYAJCZ"
+        # 1. Create the Save Feature Class
+        #
         columns = df.columns.tolist()
-        columns.pop(columns.index(geo._name))
-        attr = df[columns].reset_index(drop=False, inplace=False)
-        attr['index'] += 1
-        attr = attr.values
-        columns = [join_dummy] + columns
-        gt = pd.unique(geo._data[geo._name].geom.geometry_type).tolist()[0].upper()
-        sr = geo.sr
-        geoms = df[geo._name].tolist()
+        join_dummy = "AEIOUYAJC81Z"
+        columns.pop(columns.index(df.spatial.name))
         dtypes = [(join_dummy, np.int64)]
-
-        for col in columns[1:]:
+        if overwrite and arcpy.Exists(location):
+            arcpy.Delete_management(location)
+        elif overwrite == False and arcpy.Exists(location):
+            raise ValueError(('overwrite set to False, Cannot '
+                              'overwrite the table. '))
+        sr = geo.sr
+        if isinstance(sr, list):
+            sr = sr[0]
+        sr = sr.as_arcpy
+        gt = pd.unique(geo._data[geo._name].geom.geometry_type).tolist()[0].upper()
+        fc = arcpy.CreateFeatureclass_management(out_location,
+                                                 spatial_reference=sr,
+                                                 geometry_type=gt,
+                                                 out_name=fc_name,
+                                                )[0]
+        # 2. Add the Fields and Data Types
+        #
+        oidfld = da.Describe(fc)['OIDFieldName']
+        for col in columns[:]:
             if col.lower() in ['fid', 'oid', 'objectid']:
                 dtypes.append((col, np.int32))
             elif df[col].dtype.name == 'datetime64[ns]':
@@ -348,29 +360,30 @@ def to_featureclass(geo,
                 dtypes.append((col, np.int32))
             else:
                 dtypes.append((col, df[col].dtype.type))
-        if arcpy.Exists(location) and overwrite:
-            arcpy.Delete_management(location)
-        elif arcpy.Exists(location) and overwrite == False:
-            raise ValueError("Dataset exists, try another file name")
-        from arcgis.geometry._types import SpatialReference
-        if isinstance(sr, SpatialReference):
-            sr = sr.as_arcpy
-        fc = arcpy.CreateFeatureclass_management(out_path=out_location,
-                                            out_name=fc_name,
-                                            geometry_type=gt,
-                                            spatial_reference=sr)[0]
+
+        array = np.array([],
+                        np.dtype(dtypes))
+        arcpy.da.ExtendTable(fc,
+                             oidfld, array,
+                             join_dummy, append_only=False)
+        # 3. Insert the Data
+        #
+        fields = arcpy.ListFields(fc)
+        icols = [fld.name for fld in fields \
+                 if fld.type not in ['OID', 'Geometry'] and \
+                 fld.name in df.columns] + ['SHAPE@JSON']
+        dfcols = [fld.name for fld in fields \
+                  if fld.type not in ['OID', 'Geometry'] and\
+                  fld.name in df.columns] + [df.spatial.name]
         import json
-        with da.InsertCursor(fc, ['SHAPE@JSON']) as irows:
-            for g in geoms:
-                irows.insertRow([json.dumps(g)])
-                del g
-        if hasattr(da, 'Describe'):
-            oidfld = da.Describe(fc)['OIDFieldName']
-        else:
-            desc = arcpy.Describe(fc)
-            oidfld = desc.OIDFieldName
-        attr = np.array([tuple(row) for row in attr.tolist()], dtype=dtypes)
-        da.ExtendTable(fc, oidfld, attr, join_dummy, append_only=False)
+        with da.InsertCursor(fc, icols) as irows:
+            for idx, row in df[dfcols].iterrows():
+                try:
+                    r = row.tolist()
+                    r[-1] = json.dumps(r[-1])
+                    irows.insertRow(r)
+                except:
+                    print("row %s could not be inserted." % idx)
         return fc
     elif HASPYSHP:
         if fc_name.endswith('.shp') == False:

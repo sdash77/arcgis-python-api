@@ -94,7 +94,21 @@ class MapView(widgets.DOMWidget):
     looking parallel to the surface. Note that you can NOT set tilt in
     2D mode.
     """
-    basemap = Unicode('topo').tag(sync=True)
+
+    @property
+    def basemap(self):
+        return self._basemap
+
+    @basemap.setter
+    def basemap(self, value):
+        if value in self.basemaps:
+            self._basemap = value
+        elif value in self.gallery_basemaps:
+            self._basemap = value
+        else:
+            raise RuntimeError("Basemap '{}' isn't valid".format(value))
+
+    _basemap = Unicode('topo').tag(sync=True)
     """What basemap you would like to apply to the widget (‘topo’,
     ‘national-geographic’, etc.). See `basemaps` for a full list
     """
@@ -307,12 +321,8 @@ class MapView(widgets.DOMWidget):
         """
         View your portal's custom basemap group
         """
-        if not self._gallery_basemaps:
-            # Set the 'default' field in the default basemap property
-            if 'defaultBasemap' in self.gis.properties:
-                self._gallery_basemaps['default'] = \
-                        self.gis.properties['defaultBasemap']
-            # Query all the other gallery basemaps and add them in
+        if len(self._gallery_basemaps) <= 1:
+            # If the only loaded gallery_basemaps is 'default', load the rest
             bmquery = self.gis.properties['basemapGalleryGroupQuery']
             basemapsgrp = self.gis.groups.search(bmquery, outside_org=True)
             if len(basemapsgrp) == 1:
@@ -393,7 +403,6 @@ class MapView(widgets.DOMWidget):
         # Set up miscellanous properties needed on startup
         self.mode = mode
         self._hashed_layers = OrderedDict()
-        self.gallery_basemaps # This needs to be called to populate basemaps
         self._setup_js_cdn()
         self._setup_default_basemap()
 
@@ -446,11 +455,18 @@ class MapView(widgets.DOMWidget):
                     self._js_cdn_override = _portal_cdn
 
     def _setup_default_basemap(self):
-        # Always use the default basemap for any portal connected to
-        # this is needed in disconnected environments when arcgisonline.com
-        # can't be reached
-        if 'default' in self.gallery_basemaps:
-            self.basemap = 'default'
+        """This method gets called once on startup, it populates the 'default'
+        basemap field and the corresponding JSON without loading the rest
+        of the `gallery_basemaps` property (which has a long load time)
+        """
+        if 'defaultBasemap' in self.gis.properties:
+            self._gallery_basemaps['default'] = \
+                self.gis.properties['defaultBasemap']
+            self._basemap = 'default'
+            # You need to re-write this dict to trigger the JS side change
+            copy_gallery = dict(self._gallery_basemaps)
+            self._gallery_basemaps = {}
+            self._gallery_basemaps = copy_gallery
 
     def _is_reachable(self, url):
         import urllib.request

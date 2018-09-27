@@ -1132,10 +1132,21 @@ class FeatureLayerCollectionManager(_GISResource):
             feature_service_def.update(layer_info)
             publish_parameters = feature_service_def
             publish_parameters['name'] = feature_layer_item.title
+            publish_parameters['_ssl'] = False
+            for idx, lyr in enumerate(publish_parameters['layers']):
+                lyr['parentLayerId'] = -1
+                for k in {'sourceSpatialReference', 'isCoGoEnabled',
+                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+                    lyr.pop(k, None)
+            for idx, lyr in enumerate(publish_parameters['tables']):
+                lyr['parentLayerId'] = -1
+                for k in {'sourceSpatialReference', 'isCoGoEnabled',
+                          'parentLayer', 'isDataArchived', 'cimVersion'}:
+                    lyr.pop(k, None)
 
 
         # region construct publishParameters dictionary
-        if related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
+        elif related_data_item.type in ['CSV', 'Shapefile', 'File Geodatabase'] and \
            self._gis._portal.is_arcgisonline:
             # construct a full publishParameters that is a combination of existing Feature Layer definition
             # and original publishParameters.json used for publishing the service the first time

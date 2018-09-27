@@ -18,7 +18,8 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         value : 'From Scene Model',
 
         //start map specific draw state
-        basemap: "topo",
+        _basemap: "topo",
+        _gallery_basemaps: {},
         mode: "2D",
         zoom: 2,
         rotation: 0,
