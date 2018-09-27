@@ -739,6 +739,9 @@ class FeatureSet(object):
             del df_rows['SHAPE']
             geoms = df['SHAPE'].tolist()
             sr = df.sr
+        elif isinstance(df, pd.DataFrame) and \
+             not df.spatial.name is None:
+            return FeatureSet.from_dict(df.spatial.__feature_set__)
         elif isinstance(df, pd.DataFrame):
             geoms = []
             df_rows = df.copy()
