@@ -1599,7 +1599,7 @@ def create_image_collection(image_collection,
                                          input geometries.
     ------------------                   --------------------------------------------------------------------
     context                               Optional, The context parameter is used to provide additional input parameters
-                                            {"image_collection_properties": {"imageCollectionType":"Satellite"},"use_by_ref":True}
+                                            {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
                                             
                                             use image_collection_properties key to set value for imageCollectionType.
                                             Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
@@ -1608,7 +1608,7 @@ def create_image_collection(image_collection,
                                             property based on the type of images in the image collection using the following keywords. 
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
-                                            If use_input_rasters_by_ref is set to True, the data will not be uploaded. If it is not set, the default is False
+                                            If byref is set to True, the data will not be uploaded. If it is not set, the default is False
     ------------------                   --------------------------------------------------------------------
     gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================                   ====================================================================
@@ -1630,8 +1630,8 @@ def create_image_collection(image_collection,
     if context is not None:
         if "image_collection_properties" in context:
             image_collection_properties = context["image_collection_properties"]
-        if "use_input_rasters_by_ref" in context:
-            use_input_rasters_by_ref = context["use_input_rasters_by_ref"]
+        if "byref" in context:
+            use_input_rasters_by_ref = context["byref"]
 
     if isinstance(image_collection, Item):
         params["imageCollection"] = _json.dumps({"itemId": image_collection.itemid})
@@ -1723,7 +1723,7 @@ def add_image(image_collection,
                                          The raster type parameters argument is a dictionary.
     ------------------                   --------------------------------------------------------------------
     context                               Optional, The context parameter is used to provide additional input parameters
-                                            {"image_collection_properties": {"imageCollectionType":"Satellite"},"use_by_ref":True}
+                                            {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
                                             
                                             use image_collection_properties key to set value for imageCollectionType.
                                             Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
@@ -1732,7 +1732,7 @@ def add_image(image_collection,
                                             property based on the type of images in the image collection using the following keywords. 
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
-                                            If use_input_rasters_by_ref is set to True, the data will not be uploaded. If it is not set, the default is False
+                                            If byref is set to True, the data will not be uploaded. If it is not set, the default is False
     ------------------                   --------------------------------------------------------------------
     gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================                   ====================================================================
@@ -1752,8 +1752,8 @@ def add_image(image_collection,
     if context is not None:
         if "image_collection_properties" in context:
             image_collection_properties = context["image_collection_properties"]
-        if "use_input_rasters_by_ref" in context:
-            use_input_rasters_by_ref = context["use_input_rasters_by_ref"]
+        if "byref" in context:
+            use_input_rasters_by_ref = context["byref"]
     _set_image_collection_param(gis, params, image_collection)
     _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params, image_collection_properties, use_input_rasters_by_ref)
 
