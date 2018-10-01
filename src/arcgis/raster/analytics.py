@@ -2264,3 +2264,47 @@ def optimum_travel_cost_network(input_regions_raster,
 
     return _return_output(num_returns, outputs, return_value_names)
 
+
+def list_datastore_content(datastore, filter=None, gis = None):
+    """
+    Parameters
+    ----------
+    datastore: Required. datastore from which the contents are to be listed. 
+               It can be string specfying the datastore path eg "/fileShares/SensorData" 
+               or it can be a Datastore object.
+               eg:
+               ds=analytics.get_datastores()
+               ds_items =ds.search()
+               ds_items[1]
+               ds_items[1] may be specified as input for datastore         
+               
+    filter : Optional. To filter out the raster contents to be displayed
+    Returns
+    -------
+    list of contents in the datastore
+    """
+
+    task = "ListDatastoreContent"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    if isinstance(datastore,_arcgis.gis.Datastore):
+        params["dataStoreName"] = datastore.datapath
+    else:
+        params["dataStoreName"] = datastore
+
+    if filter is not None:
+        params["filter"] = filter
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    if job_values["contentList"] is "":
+        return None
+    return _json.loads(job_values["contentList"]["contentList"])
+
