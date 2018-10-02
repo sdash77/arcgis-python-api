@@ -1256,6 +1256,74 @@ class FeatureLayerCollectionManager(_GISResource):
 
         return publish_parameters
 
+class MetadataManager(object):
+    """Manages Layer Level Metadata"""
+    _layer = None
+    _gis = None
+    _con = None
+    def __init__(self, layer):
+        self._layer = layer
+        self._gis = layer._gis
+        self._con = self._gis._portal.con
+    #----------------------------------------------------------------------
+    def download(self, save_folder=None):
+        """downloads the metadata.xml to local disk"""
+        if save_folder is None:
+            save_folder = tempfile.gettempdir()
+        url = "%s%s" % (self._layer.url, "/metadata")
+        params = {'f' : 'json'}
+        return self._layer._con.get(url, params,
+                                    out_folder=save_folder,
+                                    file_name='metadata.xml')
+    #----------------------------------------------------------------------
+    @property
+    def metadata(self):
+        """ returns the metadata as string"""
+        url = "%s%s" % (self._layer.url, "/metadata")
+        params = {'f' : 'json'}
+        return self._layer._con.get(url, params)
+    #----------------------------------------------------------------------
+    def update(self, file_path):
+        """
+        Updates a Layer's metadata from an xml file.
+        """
+        if os.path.isfile(file_path) == False or \
+           os.path.splitext(file_path)[1].lower() != '.xml':
+            raise ValueError("file_path must be a XML file.")
+
+        url = "%s%s" % (self._layer.url, "/metadata/update")
+        with open(file_path, 'r') as reader:
+            text = reader.read()
+
+            params = {
+                'f' : 'json',
+                'metadata' : text,
+                "metadataUploadId": "",
+                "metadataItemId": "",
+                "metadataUploadFormat": "xml"
+            }
+            res = self._con.post(url, params)
+            if 'statusUrl' in res:
+                return self._status(res['statusUrl'])
+        return False
+    #----------------------------------------------------------------------
+    def _status(self, url):
+        """checks the update status"""
+        res = self._con.get(url, {'f':'json'})
+        if res['status'].lower() == 'completed':
+            return True
+        while res['status'].lower() != 'completed':
+            time.sleep(1)
+            res = self._con.get(url, {'f':'json'})
+            if res['status'].lower() == 'completed':
+                return True
+            elif res['status'].lower() == 'failed':
+                return False
+        return False
+
+
+
+
 
 class FeatureLayerManager(_GISResource):
     """

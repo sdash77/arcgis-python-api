@@ -34,6 +34,8 @@ class FeatureLayer(Layer):
     Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
+    _metadatamanager = None
+
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a feature layer given a feature layer URL
@@ -71,6 +73,17 @@ class FeatureLayer(Layer):
 
         res = FeatureLayerManager(admin_url, self._gis)
         return res
+
+    @property
+    def metadata(self):
+        """returns the metadata manager if present on the layer"""
+        if 'hasMetadata' in self.properties:
+            if self._metadatamanager is None:
+                from .managers import MetadataManager
+                self._metadatamanager = MetadataManager(self)
+            return self._metadatamanager
+        return None
+
 
     @property
     def container(self):
