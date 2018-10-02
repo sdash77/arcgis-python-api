@@ -79,8 +79,8 @@ class FeatureLayer(Layer):
         """returns the metadata manager if present on the layer"""
         if 'hasMetadata' in self.properties:
             if self._metadatamanager is None:
-                from .managers import MetadataManager
-                self._metadatamanager = MetadataManager(self)
+                from .managers import Metadata
+                self._metadatamanager = Metadata(self)
             return self._metadatamanager
         return None
 

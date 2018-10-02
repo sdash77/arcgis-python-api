@@ -1256,7 +1256,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         return publish_parameters
 
-class MetadataManager(object):
+class Metadata(object):
     """Manages Layer Level Metadata"""
     _layer = None
     _gis = None
@@ -1266,8 +1266,27 @@ class MetadataManager(object):
         self._gis = layer._gis
         self._con = self._gis._portal.con
     #----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+    #----------------------------------------------------------------------
+    def __str__(self):
+        """ returns the metadata as string"""
+        url = "%s%s" % (self._layer.url, "/metadata")
+        params = {'f' : 'json'}
+        return self._layer._con.get(url, params)
+    #----------------------------------------------------------------------
     def download(self, save_folder=None):
-        """downloads the metadata.xml to local disk"""
+        """
+        Downloads the metadata.xml to local disk
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        save_folder           Optional String. A save location to download the metadata XML file.
+        =================     ====================================================================
+
+        :returns: String
+        """
         if save_folder is None:
             save_folder = tempfile.gettempdir()
         url = "%s%s" % (self._layer.url, "/metadata")
@@ -1276,16 +1295,17 @@ class MetadataManager(object):
                                     out_folder=save_folder,
                                     file_name='metadata.xml')
     #----------------------------------------------------------------------
-    @property
-    def metadata(self):
-        """ returns the metadata as string"""
-        url = "%s%s" % (self._layer.url, "/metadata")
-        params = {'f' : 'json'}
-        return self._layer._con.get(url, params)
-    #----------------------------------------------------------------------
     def update(self, file_path):
         """
         Updates a Layer's metadata from an xml file.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        file_path             Required String.  The path to the .xml file that contains the metadata.
+        =================     ====================================================================
+
+        :returns: boolean
         """
         if os.path.isfile(file_path) == False or \
            os.path.splitext(file_path)[1].lower() != '.xml':
@@ -1320,10 +1340,6 @@ class MetadataManager(object):
             elif res['status'].lower() == 'failed':
                 return False
         return False
-
-
-
-
 
 class FeatureLayerManager(_GISResource):
     """
