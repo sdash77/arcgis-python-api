@@ -136,6 +136,7 @@ class WebMap(collections.OrderedDict):
             pmap = PropertyMap(self._webmapdict)
             self.definition = pmap
             self._layers = None
+            self._tables = None
             self._basemap = None
             self._extent = self.item.extent
 
@@ -170,6 +171,7 @@ class WebMap(collections.OrderedDict):
                 self._con = None
             self.item = None
             self._layers = []
+            self._tables = []
             self._extent = []
 
     # def _repr_html_(self):
@@ -190,6 +192,34 @@ class WebMap(collections.OrderedDict):
     def __str__(self):
         return json.dumps(self, default=_date_handler)
 
+    def add_table(self, table, options=None):
+        """
+        Adds the given layer to the WebMap.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        table                  Required object. You can add:
+
+                                   - Table objects
+        ------------------     --------------------------------------------------------------------
+        options                Optional dict. Specify properties such as title, symbol, opacity, visibility, renderer
+                               for the table that is added. If not specified, appropriate defaults are applied.
+        ==================     ====================================================================
+
+        .. code-block:: python
+
+            wm = WebMap()
+            table = Table('https://some-url.com/')
+            wm.add_layer(table)
+
+        :return:
+            True if table was successfully added. Else, raises appropriate exception.
+        """
+        if not isinstance(table, arcgis.features.Table):
+            raise Exception("Type of object passed in must of type 'Table'")
+        self.add_layer(table, options)
+
     def add_layer(self, layer, options=None):
         """
         Adds the given layer to the WebMap.
@@ -197,8 +227,11 @@ class WebMap(collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        layer                  Required object. You can add any Layer objects such as FeatureLayer, MapImageLayer,
-                               ImageryLayer etc. You can also add Item objects and FeatureSet and FeatureCollections.
+        layer                  Required object. You can add:
+
+                                   - Layer objects such as FeatureLayer, MapImageLayer, ImageryLayer etc.
+                                   - Item objects and FeatureSet and FeatureCollections
+                                   - Table objects
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify properties such as title, symbol, opacity, visibility, renderer
                                for the layer that is added. If not specified, appropriate defaults are applied.
@@ -257,9 +290,14 @@ class WebMap(collections.OrderedDict):
                     title = layer.properties.name if title is None else title
 
                 # find layer type
-                if isinstance(layer, arcgis.features.FeatureLayer) or isinstance(layer, arcgis.features.FeatureCollection) \
-                        or isinstance(layer, arcgis.features.FeatureSet):
-                    layer_type = 'ArcGISFeatureLayer'
+                if (isinstance(layer, arcgis.features.FeatureLayer) or \
+                    isinstance(layer, arcgis.features.FeatureCollection) or \
+                    isinstance(layer, arcgis.features.FeatureSet)):
+                    # Can be either a FeatureLayer or a table: figure it out
+                    if isinstance(layer, arcgis.features.Table):
+                        layer_type = 'Table'
+                    else:
+                        layer_type = 'ArcGISFeatureLayer'
                 elif isinstance(layer, arcgis.raster.ImageryLayer):
                     layer_type='ArcGISImageServiceLayer'
                     #todo : get renderer info
@@ -449,7 +487,10 @@ class WebMap(collections.OrderedDict):
         #endregion
 
         # region Process popup info
-        if layer_type in ['ArcGISFeatureLayer', 'ArcGISImageServiceLayer', 'Feature Collection']:  # supports popup
+        if layer_type in ['ArcGISFeatureLayer',
+                          'ArcGISImageServiceLayer',
+                          'Feature Collection',
+                          'Table']:  # supports popup
             popup = {'title': title,
                      'fieldInfos': [],
                      'description': None,
@@ -492,28 +533,51 @@ class WebMap(collections.OrderedDict):
 
         # endregion
 
-        # region add layers to operationalLayers
-        if 'operationalLayers' not in self._webmapdict.keys():
-            # there no layers yet, create one here
-            self._webmapdict['operationalLayers'] = [new_layer]
-            self.definition = PropertyMap(self._webmapdict)
+        # region sort layers into 'operationalLayers' or 'tables'
+        if isinstance(layer, arcgis.features.Table):
+            if 'tables' not in self._webmapdict.keys():
+                # There are no tables yet, create one here
+                self._webmapdict['tables'] = [new_layer]
+                self.definition = PropertyMap(self._webmapdict)
+            else:
+                # There are tables, just append to it
+                self._webmapdict['tables'].append(new_layer)
+                self.definition = PropertyMap(self._webmapdict)
         else:
-            # there are operational layers, just append to it
-            self._webmapdict['operationalLayers'].append(new_layer)
-            self.definition = (PropertyMap(self._webmapdict))
+            if 'operationalLayers' not in self._webmapdict.keys():
+                # there no layers yet, create one here
+                self._webmapdict['operationalLayers'] = [new_layer]
+                self.definition = PropertyMap(self._webmapdict)
+            else:
+                # there are operational layers, just append to it
+                self._webmapdict['operationalLayers'].append(new_layer)
+                self.definition = (PropertyMap(self._webmapdict))
         # endregion
 
         # update layers property
         if not self._layers:
-            self._layers = []
-            for l in self._webmapdict['operationalLayers']:
-                self._layers.append(PropertyMap(l))
-
-            #reverse the layer list - webmap viewer reverses the list always
-            self._layers.reverse()
+            if 'operationalLayers' in self._webmapdict:
+                self._layers = []
+                for l in self._webmapdict['operationalLayers']:
+                    self._layers.append(PropertyMap(l))
+                # reverse the layer list - webmap viewer reverses the list always
+                self._layers.reverse()
         else:
             # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
             self._layers.append(PropertyMap(new_layer))
+
+        # update tables property
+        if not self._tables:
+            self._tables = []
+            if 'tables' in self._webmapdict:
+                for t in self._webmapdict['tables']:
+                    self._tables.append(PropertyMap(t))
+            # reverse the layer list - webmap viewer reverses the list always
+            self._tables.reverse()
+        else:
+            # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
+            self._tables.append(PropertyMap(new_layer))
+
         return True
 
     def _process_extent(self):
@@ -759,6 +823,37 @@ class WebMap(collections.OrderedDict):
                                'new web map item')
 
     @property
+    def tables(self):
+        """
+        Tables in the web map
+
+        :return: List of Tables as dictionaries
+
+        .. code-block:: python
+
+            wm = WebMap()
+            table = Table('https://some-url.com/')
+            wm.add_layer(table)
+            wm.tables
+            >> [{"id": "fZvgsrA68ElmNajAZl3sOMSPG3iTnL",
+                 "title": "change_table",
+                 "url": "https://some-url.com/",
+                 "popupInfo": {
+                 ...
+        """
+        if self._tables is not None:
+            return self._tables
+        else:
+            self._tables = []
+            if 'tables' in self._webmapdict.keys():
+                for l in self._webmapdict['tables']:
+                    self._tables.append(PropertyMap(l))
+
+            #reverse the layer list - webmap viewer reverses the list always
+            self._tables.reverse()
+        return self._tables
+
+    @property
     def layers(self):
         """
         Operational layers in the web map
@@ -824,6 +919,21 @@ class WebMap(collections.OrderedDict):
             if "baseMap" in self._webmapdict.keys():
                 self._basemap = self._webmapdict['baseMap']
             return PropertyMap(self._basemap)
+
+    def remove_table(self, table):
+        """
+        Removes the specified table from the web map. You can get the list of tables in map using the 'tables' property
+        and pass one of those tables to this method for removal form the map.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        table                  Required object. Pass the table that needs to be removed from the map. You can get the
+                               list of tables in the map by calling the `tables` property.
+        ==================     ====================================================================
+        """
+        self._webmapdict['tables'].remove(table)
+        self._tables.remove(PropertyMap(table))
 
     def remove_layer(self, layer):
         """

@@ -199,6 +199,33 @@ class Test_WebMap_AGO(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
     @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_add_table(self):
+        """
+        Compose a new web map with one table
+        """
+        # Set up the WebMap and Table instances
+        wm_obj = WebMap()
+        from arcgis.features import Table
+        table_service_url = 'https://services2.arcgis.com/PWJUSsdoJDp7SgLj/arcgis/rest/services/DavidVsMap_WFL1/FeatureServer/1'
+        table = Table(table_service_url, self.gis)
+        wm_obj.add_table(table)
+
+        # Assert that the table was set up correctly
+        self.assertTrue('tables' in wm_obj._webmapdict)
+        table_added_underlying_dict = wm_obj._webmapdict['tables'][0]
+        table_added_public_property_obj = wm_obj.tables[0]
+        self.assertEqual(table_service_url, table_added_underlying_dict['url'])
+        self.assertEqual(table_service_url, table_added_public_property_obj.url)
+        self.assertEqual(len(wm_obj.tables), 1)
+        self.assertTrue('popupInfo' in table_added_underlying_dict)
+
+        # Remove the table
+        wm_obj.remove_table(table_added_public_property_obj)
+
+        # Assert that the table was removed correctly
+        self.assertEqual(len(wm_obj.tables), 0)
+
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
     def test_add_layer_simple_FL_existing_wm(self):
         """
         Compose a new web map with one operational layer.
