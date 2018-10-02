@@ -42,7 +42,10 @@ def _layer_input(input_layer):
         input_param = input_layer
 
     elif isinstance(input_layer, str):
-        input_param = {"url": input_layer}
+        if 'http:' in input_layer or 'https:' in input_layer:
+            input_param = {"url": input_layer}
+        else:
+            input_param = {"uri": input_layer}
 
     else:
         raise Exception("Invalid format of input layer. url string, layer Item, layer instance or dict supported")
@@ -102,7 +105,6 @@ def _analysis_job(gptool, task, params):
     submit_url = "{}/submitJob".format(task_url)
 
     params["f"] = "json"
-
     resp = gptool._con.post(submit_url, params, token=gptool._token)
     # print(resp)
     return task_url, resp, resp['jobId']
