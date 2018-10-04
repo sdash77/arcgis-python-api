@@ -3175,8 +3175,14 @@ class ContentManager(object):
                 import string
                 name = "%s%s.shp" % (random.choice(string.ascii_lowercase),
                                      uuid4().hex[:5])
-                ds = df.to_featureclass(out_location=temp_dir,
-                                        out_name=name)
+                if isinstance(df, SpatialDataFrame) :
+                    ds = df.to_featureclass(out_location=temp_dir,
+                                            out_name=name)
+                else:
+                    ds = df.spatial.to_featureclass(
+                        location=os.path.join(temp_dir,
+                                              name)
+                    )
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
                 item = self.add(
                     item_properties={
