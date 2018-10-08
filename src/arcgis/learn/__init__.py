@@ -9,6 +9,7 @@ import random as _random
 from arcgis.gis import Item
 from .models import *
 
+
 def _set_param(gis, params, param_name, input_param):
     if isinstance(input_param, str):
         if 'http:' in input_param or 'https:' in input_param:
@@ -143,30 +144,6 @@ def detect_objects(input_raster,
     input_raster           Required. raster layer that contains objects that need to be detected.
     ------------------     --------------------------------------------------------------------
     model                  Required model object. 
-                           The model input can be a model package item uploaded to your portal,
-                           a *.emd file, or the entire JSON string of the model definition.
-                           eg: Portal Item or portal item url 
-                           "https://testportal/portal/sharing/rest/content/items/x2u130909jcvojzkeeraedf"
-
-                           .emd file
-                           "\\\\sharedstorage\\sharefolder\\findtrees.emd"
-
-                           dictionary
-                           { "Framework": "TensorFlow", 
-                             "ModelConfiguration": "ObjectDetectionAPI", 
-                             "InferenceFunction":"[functions]System\\DeepLearning\\ObjectDetector.py", 
-                             "ModelFile":"\\\\sharedstorage\\model\\tensorflow\\model\\frozen_inference_graph.pb", 
-                             "ModelType":"ObjectDetection", 
-                             "ImageHeight":850, 
-                             "ImageWidth":850, 
-                             "ExtractBands":[0,1,2], 
-                             "Classes": [ 
-                                { "Value": 0, 
-                                  "Name": "Tree", 
-                                  "Color": [0, 255, 0] 
-                                  } 
-                                  ] 
-                            }
     ------------------     --------------------------------------------------------------------
     model_arguments        Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
                            eg: {"name1":"value1", "name2": "value2"}
@@ -260,27 +237,6 @@ def classify_pixels(input_raster,
     input_raster           Required. raster layer that needs to be classified
     ------------------     --------------------------------------------------------------------
     model                  Required model object. 
-                           Required. The model input can be a model package item uploaded to your portal,
-                           a *.emd file, or the entire JSON string of the model definition.
-                           eg: Portal Item or portal item url 
-                           "https://testportal/portal/sharing/rest/content/items/x2u130909jcvojzkeeraedf"
-
-                           .emd file
-                           "\\\\sharedstorage\\sharefolder\\ImageClassifier.emd"
-
-                           dictionary
-                           {"Framework":"TensorFlow", 
-                           "ModelConfiguration":"DeepLab", 
-                           "InferenceFunction":"[functions]System\\DeepLearning\\ImageClassifier.py", 
-                           "ModelFile":"\\\\sharedstorage\\model\\tensorflow\\model\\frozen_inference_graph.pb", 
-                           "ExtractBands":[0,1,2], "ImageWidth":513, "ImageHeight":513, 
-                           "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] }, {
-                            "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] }, 
-                            { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] }, 
-                            { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] }, 
-                            { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] }, {
-                            "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] }
-                            ] }
     ------------------     --------------------------------------------------------------------
     model_arguments        Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
                            eg: {"name1":"value1", "name2": "value2"}
@@ -367,7 +323,6 @@ def export_training_data(input_raster,
                         tile_size=None,
                         stride_size=None,
                         metadata_format = None,
-                        zoom_out_factor = None,
                         classvalue_field = None,
                         buffer_radius = None,
                         output_location = None,
@@ -427,9 +382,6 @@ def export_training_data(input_raster,
                            The model generates bounding boxes and segmentation masks for each instance of an object in the image. 
                            It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
     ------------------     --------------------------------------------------------------------
-    zoom_out_factor         Optional integer. Specifies the scale at which image chips will be created.
-
-    ------------------     --------------------------------------------------------------------
     classvalue_field        Optional string. Specifies the field which contains the class values. If all field is specified, 
                             the system will look for a ‘value’ or ‘classvalue’ field. If this feature does 
                             not contain a class field, the system will presume all records belong the 1 class.
@@ -454,6 +406,8 @@ def export_training_data(input_raster,
                            2. startIndex - Allows you to set the start index for the sequence of image chips. 
                               This lets you append more image chips to an existing sequence. The default value is 0. 
                               Syntax: {"exportAllTiles" : true, "startIndex": 0 }
+
+                           3. cellSize - cell size can be set using this key in context parameter
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -503,23 +457,14 @@ def export_training_data(input_raster,
 
         params['metadataFormat'] = metadata_format
 
-    if zoom_out_factor is not None:
-        params["zoomOutFactor"]= zoom_out_factor
-
     if buffer_radius is not None:
         params["bufferRadius"]= buffer_radius
     
     if classvalue_field is not None:
         params["classValueField"]= classvalue_field
 
-    if "exportAllTiles" in context:
-        params.update({"context":{"exportAllTiles": context["exportAllTiles"]}})
-
-    if "startIndex" in context:
-        if params["context"] is None:
-            params.update({"context":{"startIndex": context["startIndex"]}})
-        else:
-            params["context"].update({"startIndex": context["startIndex"]})
+    if context is not None:
+        params["context"] = context
 
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
@@ -534,4 +479,6 @@ def export_training_data(input_raster,
         }
     }
     return job_values["outLocation"]
+
+
 
