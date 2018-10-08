@@ -8,6 +8,7 @@ from arcgis.gis import Layer
 from arcgis.geometry import Geometry
 from arcgis.features import FeatureSet
 import logging
+from arcgis import env
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -2450,6 +2451,8 @@ class ImageryLayer(Layer):
                 raise RuntimeError('You need to be signed in to a GIS to create Items')
         else:
             from .analytics import is_supported, generate_raster, _save_ra
+            if self._extent and env.analysis_extent is None:
+                env.analysis_extent = self._extent
             if self._fnra is None:
                 from .functions import identity
                 identity_layer = identity(self)
