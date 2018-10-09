@@ -142,7 +142,7 @@ class VersionManager(object):
         return self._con.post(url, params)['lockInfos']
     #----------------------------------------------------------------------
     @property
-    def versions(self):
+    def all(self):
         """returns all visible versions on a service"""
         if self._versions is None or \
            len(self._versions) == 0:
