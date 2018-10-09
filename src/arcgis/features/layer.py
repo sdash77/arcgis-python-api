@@ -1513,7 +1513,7 @@ class FeatureLayerCollection(_GISResource):
         return self._admin
 
     @property
-    def version_management(self):
+    def versions(self):
         """
         Returns a `VersionManager` to create, update and use versions on a `FeatureLayerCollection`.
         If versioning is not enabled on the service, None is returned.
