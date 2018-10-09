@@ -141,6 +141,155 @@ def _from_xy(df, x_column, y_column, sr=None):
     return df
 
 #--------------------------------------------------------------------------
+def from_table(filename, **kwargs):
+    """
+    Allows a user to read from a non-spatial table
+
+    **Note: ArcPy is Required for this method**
+
+    ===============     ====================================================
+    **Argument**        **Description**
+    ---------------     ----------------------------------------------------
+    filename            Required string. The path to the table.
+    ===============     ====================================================
+
+    **Keyword Arguments**
+
+    ===============     ====================================================
+    **Argument**        **Description**
+    ---------------     ----------------------------------------------------
+    fields              Optional List/Tuple. A list (or tuple) of field
+                        names. For a single field, you can use a string
+                        instead of a list of strings.
+
+                        Use an asterisk (*) instead of a list of fields if
+                        you want to access all fields from the input table
+                        (raster and BLOB fields are excluded). However, for
+                        faster performance and reliable field order, it is
+                        recommended that the list of fields be narrowed to
+                        only those that are actually needed.
+
+                        Geometry, raster, and BLOB fields are not supported.
+
+    ---------------     ----------------------------------------------------
+    where               Optional String. An optional expression that limits
+                        the records returned.
+    ---------------     ----------------------------------------------------
+    skip_nulls          Optional Boolean. This controls whether records
+                        using nulls are skipped.
+    ---------------     ----------------------------------------------------
+    null_value          Optional String/Integer/Float. Replaces null values
+                        from the input with a new value.
+    ===============     ====================================================
+
+    :returns: pd.DataFrame
+
+    """
+    if HASARCPY:
+        where = kwargs.pop("where", None)
+        fields = kwargs.pop('fields', "*")
+        skip_nulls = kwargs.pop('skip_nulls', True)
+        null_value = kwargs.pop("null_value", None)
+        return pd.DataFrame(da.TableToNumPyArray(in_table=filename,
+                                                 field_names=fields,
+                                                 where_clause=where,
+                                                 skip_nulls=skip_nulls,
+                                                 null_value=null_value))
+    elif filename.lower().find('.csv') > -1:
+        return pd.read_csv(filename)
+
+    return
+#--------------------------------------------------------------------------
+def to_table(geo, location, overwrite=True):
+    """
+    Exports a geo enabled dataframe to a table.
+
+    ===========================     ====================================================================
+    **Argument**                    **Description**
+    ---------------------------     --------------------------------------------------------------------
+    location                        Required string. The output of the table.
+    ---------------------------     --------------------------------------------------------------------
+    overwrite                       Optional Boolean.  If True and if the table exists, it will be
+                                    deleted and overwritten.  This is default.  If False, the table and
+                                    the table exists, and exception will be raised.
+    ===========================     ====================================================================
+
+    :returns: String
+    """
+    out_location= os.path.dirname(location)
+    fc_name = os.path.basename(location)
+    df = geo._data
+    if location.lower().find('.csv') > -1:
+        geo._df.to_csv(location)
+        return location
+    elif HASARCPY:
+        columns = df.columns.tolist()
+        join_dummy = "AEIOUYAJC81Z"
+        try:
+            columns.pop(columns.index(df.spatial.name))
+        except:
+            pass
+        dtypes = [(join_dummy, np.int64)]
+        if overwrite and arcpy.Exists(location):
+            arcpy.Delete_management(location)
+        elif overwrite == False and arcpy.Exists(location):
+            raise ValueError(('overwrite set to False, Cannot '
+                              'overwrite the table. '))
+        fc = arcpy.CreateTable_management(out_path=out_location,
+                                          out_name=fc_name)[0]
+        # 2. Add the Fields and Data Types
+        #
+        oidfld = da.Describe(fc)['OIDFieldName']
+        for col in columns[:]:
+            if col.lower() in ['fid', 'oid', 'objectid']:
+                dtypes.append((col, np.int32))
+            elif df[col].dtype.name == 'datetime64[ns]':
+                dtypes.append((col, '<M8[us]'))
+            elif df[col].dtype.name == 'object':
+                try:
+                    u = type(df[col][df[col].first_valid_index()])
+                except:
+                    u = pd.unique(df[col].apply(type)).tolist()[0]
+                if issubclass(u, str):
+                    mlen = df[col].str.len().max()
+                    dtypes.append((col, '<U%s' % int(mlen)))
+                else:
+                    try:
+                        dtypes.append((col, type(df[col][s.first_valid_index()])))
+                    except:
+                        dtypes.append((col, '<U254'))
+            elif df[col].dtype.name == 'int64':
+                dtypes.append((col, np.int64))
+            elif df[col].dtype.name == 'bool':
+                dtypes.append((col, np.int32))
+            else:
+                dtypes.append((col, df[col].dtype.type))
+
+        array = np.array([],
+                        np.dtype(dtypes))
+        arcpy.da.ExtendTable(fc,
+                             oidfld, array,
+                             join_dummy, append_only=False)
+        # 3. Insert the Data
+        #
+        fields = arcpy.ListFields(fc)
+        icols = [fld.name for fld in fields \
+                 if fld.type not in ['OID', 'Geometry'] and \
+                 fld.name in df.columns]
+        dfcols = [fld.name for fld in fields \
+                  if fld.type not in ['OID', 'Geometry'] and\
+                  fld.name in df.columns]
+        import json
+        with da.InsertCursor(fc, icols) as irows:
+            for idx, row in df[dfcols].iterrows():
+                try:
+                    irows.insertRow(row.tolist())
+                except:
+                    print("row %s could not be inserted." % idx)
+        return fc
+
+    return
+#--------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
     """
     Returns a GeoDataFrame from a feature class.
@@ -280,7 +429,7 @@ def from_featureclass(filename, **kwargs):
                     df.spatial.set_geometry(geoms)
                     return df
     return
-
+#--------------------------------------------------------------------------
 def to_featureclass(geo,
                     location,
                     overwrite=True):
