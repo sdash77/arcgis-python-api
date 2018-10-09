@@ -15,11 +15,41 @@ class Model:
 
 
     def from_json(self, model):
+        """
+        Function is used to initialise Model object from model definition JSON
+        eg usage:
+        model = Model()
+        model.from_json({"Framework" :"TensorFlow", 
+                        "ModelConfiguration":"DeepLab", 
+                        "InferenceFunction":"[functions]System\\DeepLearning\\ImageClassifier.py", 
+                        "ModelFile":"\\\\uaenas1\\CRData\\ArcGIS_Pro_2_3\\ImageClassification\\tensorflow\\model\\frozen_inference_graph.pb", 
+                        "ExtractBands":[0,1,2], 
+                        "ImageWidth":513, 
+                        "ImageHeight":513, 
+                        "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] }, 
+                                    { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] }, 
+                                    { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] }, 
+                                    { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] }, 
+                                    { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] }, 
+                                    { "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] } ] })
+
+        """
         if isinstance(model, dict):
             self._model = model
             self._model_package = False
             
     def from_model_path(self, model):
+        """
+        Function is used to initialise Model object from url of model package or path of model definition file
+        eg usage:
+        model = Model()
+        model.from_model_path("https://xxxportal.esri.com/sharing/rest/content/items/bf5bad4cdbe144ba8edd6dd11e01e7e1")
+
+        or
+        model = Model()
+        model.from_model_path("\\\\sharedstorage\\sharefolder\\findtrees.emd")
+
+        """
         if 'http:' in model or 'https:' in model:
             self._model = _json.dumps({ 'url' : model })
             self._model_package = True

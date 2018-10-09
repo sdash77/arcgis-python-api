@@ -1,7 +1,7 @@
 arcgis.learn.models module
 ====================
 
-query_model_info
+list_models
 -----------------
 .. automethod:: arcgis.learn.models.list_models
 
@@ -9,7 +9,6 @@ query_model_info
 Model
 ------
 .. autoclass:: arcgis.learn.models.Model
-    :inherited-members:
     :members:
     :undoc-members:
 
