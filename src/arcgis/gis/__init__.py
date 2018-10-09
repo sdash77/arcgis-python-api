@@ -3175,8 +3175,14 @@ class ContentManager(object):
                 import string
                 name = "%s%s.shp" % (random.choice(string.ascii_lowercase),
                                      uuid4().hex[:5])
-                ds = df.to_featureclass(out_location=temp_dir,
-                                        out_name=name)
+                if isinstance(df, SpatialDataFrame) :
+                    ds = df.to_featureclass(out_location=temp_dir,
+                                            out_name=name)
+                else:
+                    ds = df.spatial.to_featureclass(
+                        location=os.path.join(temp_dir,
+                                              name)
+                    )
                 zip_shp = zipws(path=temp_dir, outfile=temp_zip, keep=False)
                 item = self.add(
                     item_properties={
@@ -4627,7 +4633,7 @@ class User(dict):
 
         Built-in roles including organization administrator, publisher, and
         user are assigned as Level 2, members with custom roles can be
-        assigned as Level 1 or Level 2.
+        assigned as Level 1, 1PlusEdit, or Level 2.
 
         Level 1 membership allows for limited capabilities given through a
         maximum of 8 privileges: `portal:user:joinGroup,
@@ -4644,11 +4650,14 @@ class User(dict):
         fail if the user being updated has got licenses assigned to premium
         apps that are not allowed at the targeting level.
 
+        Level 1PlusEdit has all the features of level one, plus it can edit
+        Feature Layer data.
+
         =====================  =========================================================
         **Argument**           **Description**
         ---------------------  ---------------------------------------------------------
-        level                  Required integer. The values of 1 or 2. This is the user
-                               level for the given user.
+        level                  Required string. The values of 1, 1PlusEdit, or 2. This
+                               is the user level for the given user.
         =====================  =========================================================
 
         :returns:
@@ -4664,12 +4673,10 @@ class User(dict):
             self._hydrated = False
             self._hydrate()
 
+        allowed_roles = {'1', '2', '1PlusEdit'}
 
-        if not isinstance(level, int):
-            raise ValueError("level must be an integer with values 1 or 2")
-
-        if level < 1 or level > 2:
-            raise ValueError("level is an integers with values: 1 or 2")
+        if level not in allowed_roles:
+            raise ValueError("level must be in %s" % ",".join(allowed_roles))
 
         url = "%s/portals/self/updateUserLevel" % self._portal.resturl
         params = {

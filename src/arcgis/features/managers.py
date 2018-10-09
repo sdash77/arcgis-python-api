@@ -12,7 +12,6 @@ import collections
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import _GISResource
 
-
 # pylint: disable=protected-access
 
 class AttachmentManager(object):
@@ -1255,7 +1254,6 @@ class FeatureLayerCollectionManager(_GISResource):
         # endregion
 
         return publish_parameters
-
 
 class FeatureLayerManager(_GISResource):
     """
