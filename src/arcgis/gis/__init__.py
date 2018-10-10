@@ -6862,6 +6862,8 @@ class Item(dict):
         if file_type is None:
             if self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'
+            elif self['type'] == 'Microsoft Excel':
+                fileType = 'excel'
             elif self['type'] == 'Feature Collection':
                 fileType = 'featureCollection'
             elif self['type'] == 'CSV':
@@ -6897,7 +6899,7 @@ class Item(dict):
                 publish_parameters =  {"hasStaticData":True, "name":os.path.splitext(self['name'])[0],
                                        "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
 
-            elif fileType == 'CSV' and not overwrite:
+            elif fileType in ['CSV', 'excel'] and not overwrite:
                 path = "content/features/analyze"
 
                 postdata = {
@@ -7017,7 +7019,8 @@ class Item(dict):
                 name = re.sub(r'[\W_]+', '_', self['title'])
                 publish_parameters =  {"hasStaticData":True, "name": name, "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
 
-        elif fileType == 'CSV': # merge users passed-in publish parameters with analyze results
+        elif fileType == 'CSV' or \
+             fileType == 'excel': # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
             path = "content/features/analyze"
 

@@ -277,6 +277,21 @@ class Version(object):
             self._guid = session_guid
         self._flc = flc
     #----------------------------------------------------------------------
+    @property
+    def parcel_fabric(self):
+        """
+        Provides access to a parcel fabric manager
+
+        :returns: ParcelFabricManager
+        """
+        if "controllerDatasetLayers" in self._flc.properties and \
+           "parcelLayerId" in self._flc.properties.controllerDatasetLayers:
+            from arcgis.features._parcel import ParcelFabricManager
+            url = os.path.dirname(self._flc.url) + "/ParcelFabricServer"
+            return ParcelFabricManager(url=url, gis=self._gis,
+                                       version=self, flc=self._flc)
+        return
+    #----------------------------------------------------------------------
     def __str__(self):
         return "<Version {name} @ {guid}>".format(name=self.properties.versionName,
                                                   guid=self.properties.versionGuid)
