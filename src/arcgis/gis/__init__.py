@@ -5714,6 +5714,8 @@ class Item(dict):
             "exportFormat" : export_format,
             "title" : title,
         }
+        if parameters:
+            params.update({'exportParameters': parameters})
         res = self._portal.con.post(data_path, params)
         export_item = Item(gis=self._gis, itemid=res['exportItemId'])
         if wait == True:
