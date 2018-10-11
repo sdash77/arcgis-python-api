@@ -34,6 +34,8 @@ class FeatureLayer(Layer):
     Feature layers are created by publishing feature data to a GIS, and are exposed as a broader resource (Item) in the
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
+    _metadatamanager = None
+
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a feature layer given a feature layer URL
@@ -71,6 +73,102 @@ class FeatureLayer(Layer):
 
         res = FeatureLayerManager(admin_url, self._gis)
         return res
+
+    @property
+    def metadata(self):
+        """
+        The `metadata` property allows for the setting and downloading of the
+        Feature Layer's metadata.  If metadata is disabled on the GIS or the
+        layer does not support metdata, None value will be returned.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        value                 Required String. (SET) Path to the metadata file.
+        =================     ====================================================================
+
+        :returns: String (GET)
+
+        """
+        if 'hasMetadata' in self.properties:
+            try:
+                return self._download_metadata()
+            except:
+                return None
+        return None
+    #----------------------------------------------------------------------
+    def _download_metadata(self, save_folder=None):
+        """
+        Downloads the metadata.xml to local disk
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        save_folder           Optional String. A save location to download the metadata XML file.
+        =================     ====================================================================
+
+        :returns: String
+        """
+        import tempfile
+        if save_folder is None:
+            save_folder = tempfile.gettempdir()
+        url = "%s%s" % (self.url, "/metadata")
+        params = {'f' : 'json',
+                  'format' : 'default'
+                  }
+
+        return self._con.get(url, params,
+                                    out_folder=save_folder,
+                                    file_name='metadata.xml')
+    #----------------------------------------------------------------------
+    def update_metadata(self, file_path):
+        """
+        Updates a Layer's metadata from an xml file.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        file_path             Required String.  The path to the .xml file that contains the metadata.
+        =================     ====================================================================
+
+        :returns: boolean
+        """
+        if 'hasMetadata' not in self.properties:
+            return None
+
+        if os.path.isfile(file_path) == False or \
+           os.path.splitext(file_path)[1].lower() != '.xml':
+            raise ValueError("file_path must be a XML file.")
+
+        url = "%s%s" % (self.url, "/metadata/update")
+        with open(file_path, 'r') as reader:
+            text = reader.read()
+
+            params = {
+                'f' : 'json',
+                'metadata' : text,
+                "metadataUploadId": "",
+                "metadataItemId": "",
+                "metadataUploadFormat": "xml"
+            }
+            res = self._con.post(url, params)
+            if 'statusUrl' in res:
+                return self._status_metadata(res['statusUrl'])
+        return False
+    #----------------------------------------------------------------------
+    def _status_metadata(self, url):
+        """checks the update status"""
+        res = self._con.get(url, {'f':'json'})
+        if res['status'].lower() == 'completed':
+            return True
+        while res['status'].lower() != 'completed':
+            time.sleep(1)
+            res = self._con.get(url, {'f':'json'})
+            if res['status'].lower() == 'completed':
+                return True
+            elif res['status'].lower() == 'failed':
+                return False
+        return False
 
     @property
     def container(self):
@@ -1285,6 +1383,7 @@ class FeatureLayer(Layer):
                 if attribs is None:
                     attribs = {'centroid' : feature['centroid']}
                 elif 'centroid' in attribs:
+                    import uuid
                     fld = "centroid_" + uuid.uuid4().hex[:2]
                     attribs[fld] = feature['centroid']
                 else:
@@ -1353,6 +1452,7 @@ class FeatureLayerCollection(_GISResource):
     Note: You can use the `layers` and `tables` property to get to the individual layers and tables in this
     feature layer collection.
     """
+    _vermgr = None
 
     def __init__(self, url, gis=None):
         super(FeatureLayerCollection, self).__init__(url, gis)
@@ -1411,6 +1511,22 @@ class FeatureLayerCollection(_GISResource):
 
             self._admin = FeatureLayerCollectionManager(admin_url, self._gis, self)
         return self._admin
+
+    @property
+    def versions(self):
+        """
+        Returns a `VersionManager` to create, update and use versions on a `FeatureLayerCollection`.
+        If versioning is not enabled on the service, None is returned.
+        """
+        if "hasVersionedData" in self.properties and \
+           self.properties.hasVersionedData == True:
+            if self._vermgr is None:
+                from ._version import VersionManager
+                import os
+                url = os.path.dirname(self.url) + "/VersionManagementServer"
+                self._vermgr = VersionManager(url=url, gis=self._gis)
+            return self._vermgr
+        return None
 
     def query(self,
               layer_defs_filter=None,

@@ -8,6 +8,7 @@ from arcgis.gis import Layer
 from arcgis.geometry import Geometry
 from arcgis.features import FeatureSet
 import logging
+from arcgis import env
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -2201,6 +2202,100 @@ class ImageryLayer(Layer):
         self._mosaic_rule = mosaic_rule
 
 
+    def validate(self, rendering_rule = None, mosaic_rule = None):
+        """
+        validates rendering rule and/or mosaic rule of an image service.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        rendering_rule        optional dictionary. Specifies the rendering rule to be validated
+        -----------------     --------------------------------------------------------------------
+        mosaic_rule           optional dictionary. Specifies the mosaic rule to be validated
+        =================     ====================================================================
+
+        :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
+        """
+                
+        url = self._url + "/validate"
+
+        params = {
+            'f': 'json'
+        }
+        if mosaic_rule is not None:
+            params['mosaicRule'] = mosaic_rule
+        if rendering_rule is not None:
+            params['renderingRule'] = rendering_rule
+
+        return self._con.post(path=url, postdata=params)
+
+
+    def calculate_volume(self, geometries, base_type = None, mosaic_rule = None, constant_z = None, pixel_size = None):
+        """
+        Performs volumetric calculation on an elevation service. Results are always in square meters (area) and cubic
+        meters (volume). If a service does not have vertical spatial reference and z unit is not in meters, user 
+        needs to apply a conversion factor when interpreting results.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        geometries            required a list of Polygon geometry objects or a list of envelope geometry objects. 
+                              A geometry that defines the geometry
+                              within which the volume is computed. The geometry can be an
+                              envelope or a polygon
+        -----------------     --------------------------------------------------------------------
+        base_type              optional integer.
+                               0 - constant z;
+                               1 - best fitting plane; 
+                               2 - lowest elevation on the perimeter; 
+                               3 - highest elevation on the perimeter; 
+                               4 - average elevation on the perimeter
+        -----------------     --------------------------------------------------------------------
+        mosaic_rule           Optional dictionary. Used to select different DEMs in a mosaic dataset
+        -----------------     --------------------------------------------------------------------
+        constant_z            Optional integer. parameter to specify constant z value
+        -----------------     --------------------------------------------------------------------
+        pixel_size            Optional dictionary. Defines the spatial resolution at which volume calculation is performed
+        =================     ====================================================================
+
+        :returns: dictionary showing volume values for each geometry in the input geometries array
+
+        """
+
+        if self.properties.serviceDataType == "esriImageServiceDataTypeElevation":
+            url = "%s/calculateVolume" % self._url
+            from arcgis.geometry import Polygon
+            if isinstance(geometries, list):
+                geometry = geometries[0]
+                if geometry:
+                    if isinstance(geometry, Polygon):
+                        gt = "esriGeometryPolygon"
+                    else:
+                        gt = "esriGeometryEnvelope"
+            else:
+                raise RuntimeError("Invalid geometries - required an array of Polygon geometry object or an array of envelope geometry object")
+            params = {
+                'f' : 'json',
+                'geometries' : geometries,
+                'geometryType' : gt
+            }
+            if base_type is not None:
+                params['baseType'] = base_type
+
+            if mosaic_rule is not None:
+                params['mosaicRule'] = mosaic_rule
+            elif self._mosaic_rule is not None:
+                params['mosaicRule'] = self._mosaic_rule
+
+            if constant_z is not None:
+                params['constantZ'] = constant_z
+
+            if pixel_size is not None:
+                params['pixelSize'] = pixel_size
+            return self._con.post(path=url, postdata=params)
+
+        return None
+
 
     @property
     def mosaic_rule(self):
@@ -2356,6 +2451,8 @@ class ImageryLayer(Layer):
                 raise RuntimeError('You need to be signed in to a GIS to create Items')
         else:
             from .analytics import is_supported, generate_raster, _save_ra
+            if self._extent and env.analysis_extent is None:
+                env.analysis_extent = self._extent
             if self._fnra is None:
                 from .functions import identity
                 identity_layer = identity(self)

@@ -1682,6 +1682,29 @@ class GeoAccessor(object):
                                location=location,
                                overwrite=overwrite)
     #----------------------------------------------------------------------
+    def to_table(self, location, overwrite=True):
+        """
+        Exports a geo enabled dataframe to a table.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        location                        Required string. The output of the table.
+        ---------------------------     --------------------------------------------------------------------
+        overwrite                       Optional Boolean.  If True and if the table exists, it will be
+                                        deleted and overwritten.  This is default.  If False, the table and
+                                        the table exists, and exception will be raised.
+        ===========================     ====================================================================
+
+        :returns: String
+
+        """
+        from arcgis.features.geo._io.fileops import to_table
+        return to_table(geo=self,
+                        location=location,
+                        overwrite=overwrite)
+
+    #----------------------------------------------------------------------
     def to_featurelayer(self,
                         title,
                         gis=None,
@@ -1849,6 +1872,54 @@ class GeoAccessor(object):
 
         """
         return from_featureclass(filename=location)
+    #----------------------------------------------------------------------
+    @staticmethod
+    def from_table(filename, **kwargs):
+        """
+            Allows a user to read from a non-spatial table
+
+            **Note: ArcPy is Required for this method**
+
+            ===============     ====================================================
+            **Argument**        **Description**
+            ---------------     ----------------------------------------------------
+            filename            Required string. The path to the table.
+            ===============     ====================================================
+
+            **Keyword Arguments**
+
+            ===============     ====================================================
+            **Argument**        **Description**
+            ---------------     ----------------------------------------------------
+            fields              Optional List/Tuple. A list (or tuple) of field
+                                names. For a single field, you can use a string
+                                instead of a list of strings.
+
+                                Use an asterisk (*) instead of a list of fields if
+                                you want to access all fields from the input table
+                                (raster and BLOB fields are excluded). However, for
+                                faster performance and reliable field order, it is
+                                recommended that the list of fields be narrowed to
+                                only those that are actually needed.
+
+                                Geometry, raster, and BLOB fields are not supported.
+
+            ---------------     ----------------------------------------------------
+            where               Optional String. An optional expression that limits
+                                the records returned.
+            ---------------     ----------------------------------------------------
+            skip_nulls          Optional Boolean. This controls whether records
+                                using nulls are skipped.
+            ---------------     ----------------------------------------------------
+            null_value          Optional String/Integer/Float. Replaces null values
+                                from the input with a new value.
+            ===============     ====================================================
+
+            :returns: pd.DataFrame
+        """
+        from arcgis.features.geo._io.fileops import from_table
+        return from_table(filename, **kwargs)
+
     #----------------------------------------------------------------------
     def sindex(self, stype, reset=False, **kwargs):
         """

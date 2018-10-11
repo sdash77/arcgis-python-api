@@ -342,6 +342,9 @@ class _ArcGISConnection(object):
             return self.token
         elif self._token:
             return self._token
+        elif self._token is None and \
+             self._is_arcpy:
+            return self.login(username=None, password=None)
         elif self._username and self._password:
             self.login(username=self._username, password=self._password, expiration=60)
             return self._token
