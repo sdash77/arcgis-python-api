@@ -247,7 +247,7 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     template_dict = {
         "rasterFunction": "Arithmetic",
         "rasterFunctionArguments": {
-            "OperationType": operation_type,
+            "Operation": operation_type,
             "Raster": raster_1,
             "Raster2": raster_2
         }
