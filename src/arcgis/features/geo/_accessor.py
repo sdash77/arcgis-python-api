@@ -2385,10 +2385,10 @@ class GeoAccessor(object):
         q = self._data[self.name].geom.geoextent.isnull()
         data = self._data[~q][self.name].geom.geoextent.tolist()
         array = np.array(data)
-        return (float(array[:,0].min()),
-                float(array[:,1].min()),
-                float(array[:,2].max()),
-                float(array[:,3].max()))
+        return (float(array[:,0][array[:,0]!=None].min()),
+                float(array[:,1][array[:,1]!=None].min()),
+                float(array[:,2][array[:,2]!=None].max()),
+                float(array[:,3][array[:,3]!=None].max()))
     #----------------------------------------------------------------------
     @property
     def area(self):
@@ -2464,11 +2464,15 @@ class GeoAccessor(object):
         {'rings' : [[[1,2], [2,3], [3,3],....]], 'spatialReference' {'wkid': 4326}}
         """
         xmin, ymin, xmax, ymax = self.full_extent
+        sr = self.sr
+        if isinstance(sr, list) and \
+           len(sr) > 0:
+            sr = sr[0]
         return Geometry(
             {'rings' : [[[xmin,ymin], [xmin, ymax],
                          [xmax, ymax], [xmax, ymin],
                          [xmin, ymin]]],
-             'spatialReference' : dict(self.sr)})
+             'spatialReference' : dict(sr)})
     #----------------------------------------------------------------------
     def project(self, spatial_reference, transformation_name=None):
         """
