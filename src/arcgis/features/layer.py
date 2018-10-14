@@ -1527,6 +1527,193 @@ class FeatureLayerCollection(_GISResource):
                 self._vermgr = VersionManager(url=url, gis=self._gis)
             return self._vermgr
         return None
+    # ----------------------------------------------------------------------
+    def extract_changes(self,
+                        layers,
+                        servergen,
+                        queries=None,
+                        geometry=None,
+                        geometry_type=None,
+                        version=None,
+                        return_inserts=False,
+                        return_updates=False,
+                        return_deletes=False,
+                        return_ids_only=False,
+                        return_extent_only=False,
+                        return_attachements=False,
+                        attachments_by_url=False,
+                        data_format="json",
+                        change_extent_grid_cell=None):
+        """
+        Feature service change tracking is an efficient change tracking
+        mechanism for applications. Applications can use change tracking to
+        query changes that have been made to the layers and tables in the
+        service. For enterprise geodatabase based feature services published
+        from ArcGIS Pro 2.2 or higher, the ChangeTracking capability
+        requires all layers and tables to be either archive enabled or
+        branch versioned and have globalid columns. Change tracking can also
+        be enabled for ArcGIS Online hosted feature services. If all layers
+        and tables in the service have the ChangeTracking capability, the
+        `extract_changes` operation can be used to get changes.
+
+
+        ================================     ====================================================================
+        **Argument**                         **Description**
+        --------------------------------     --------------------------------------------------------------------
+        layers                               Required List.  The list of layers and tables to include in the
+                                             replica.
+        --------------------------------     --------------------------------------------------------------------
+        servergen                            Required List.   The servergens allows a client to specify the last
+                                             layer generation numbers for the changes received from the server.
+
+                                                + minServerGen: It is the min generation of the server data changes.
+                                                  clients with layerServerGens that is less than minServerGen cannot
+                                                  extract changes and would need to make a full server/layers query
+                                                  instead of extracting changes.
+                                                + serverGen: It is the current server generation number of the
+                                                  changes. Every changed feature has a version or a generation number
+                                                  that is changed every time the feature is updated.
+
+                                             Syntax: servergen = [{"id": <layerId1>, "serverGen": <genNum1>},
+                                                                 {"id": <layerId2>, "serverGen": <genNum2>}]
+
+                                             Example: servergen= [{"id": 0, "serverGen": 10500},
+                                                                 {"id": 1, "serverGen": 1100},
+                                                                 {"id": 2, "serverGen": 1200}]
+        --------------------------------     --------------------------------------------------------------------
+        queries                              Optional Dictionary. In addition to the layers and geometry
+                                             parameters, the `queries` parameter can be used to further define
+                                             what changes to return. This parameter allows you to set query
+                                             properties on a per-layer or per-table basis. If a layer's ID is
+                                             present in the layers parameter and missing from layer `queries`,
+                                             it's changed features that intersect with the filter geometry are
+                                             returned.
+
+                                             The properties include the following:
+
+                                                + where - Defines an attribute query for a layer or table. The
+                                                  default is no where clause.
+                                                + useGeometry - Determines whether or not to apply the geometry
+                                                  for the layer. The default is true. If set to false, features
+                                                  from the layer that intersect the geometry are not added.
+                                                + includeRelated - Determines whether or not to add related
+                                                  rows. The defualt is true. The value true is honored only
+                                                  for queryOption=none. This is only applicable if your data
+                                                  has relationship classes. Relationships are only processed
+                                                  in a forward direction from origin to destination.
+                                                + queryOption - Defines whether or how filters will be applied
+                                                  to a layer. The queryOption was added in 10.2. See the
+                                                  Compatibility notes topic for more information.
+
+                                             Values: None, useFilter, or all
+
+                                             When is value is none, no feature are returned based on where and
+                                             filter geometry. if includeRelated is false, no features are
+                                             returned. If includeRelated is true, features in this layer (that
+                                             are related to the features in other layers in the replica) are
+                                             returned.
+
+                                             When the value is useFilter, features that satisfy filtering based
+                                             on geometry and where are returned. The value of includeRelated is
+                                             ignored.
+
+                                             Syntax: queries={Layer_or_tableID1:{"where":"attribute query",
+                                             "useGeometry": true | false, "includeRelated": true | false},
+                                             Layer_or_tableID2: {.}}
+        --------------------------------     --------------------------------------------------------------------
+        geometry                             Option Geometry/Extent. The geometry to apply as the spatial filter
+                                             for the changes. All the changed features in layers intersecting
+                                             this geometry will be returned. The structure of the geometry is the
+                                             same as the structure of the JSON geometry objects returned by the
+                                             ArcGIS REST API. In addition to the JSON structures, for envelopes
+                                             and points, you can specify the geometry with a simpler
+                                             comma-separated syntax.
+        --------------------------------     --------------------------------------------------------------------
+        geometry_type                        Optional String. The type of geometry specified by the geometry
+                                             parameter. The geometry type can be an envelope, point, line or
+                                             polygon. The default geometry type is an envelope.
+
+                                             Values: esriGeometryPoint, esriGeometryMultipoint,
+                                                     esriGeometryPolyline, esriGeometryPolygon,
+                                                     esriGeometryEnvelope
+        --------------------------------     --------------------------------------------------------------------
+        in_sr                                Optional Integer. The spatial reference of the input geometry.
+        --------------------------------     --------------------------------------------------------------------
+        out_sr                               Optional Integer/String. The output spatial reference of the
+                                             returned changes.
+        --------------------------------     --------------------------------------------------------------------
+        version                              Optional String. If branch versioning is enabled, a user can specify
+                                             the branch version name to extract changes from.
+        --------------------------------     --------------------------------------------------------------------
+        return_inserts                       Optional Boolean.  If true, newly inserted features will be
+                                             returned. The default is false.
+        --------------------------------     --------------------------------------------------------------------
+        return_updates                       Optional Boolean. If true, updated features will be returned. The
+                                             default is false.
+        --------------------------------     --------------------------------------------------------------------
+        return_deletes                       Optional Boolean. If true, deleted features will be returned. The
+                                             default is false.
+        --------------------------------     --------------------------------------------------------------------
+        return_ids_only                      Optional Boolean. If true, the response includes an array of object
+                                             IDs only. The default is false.
+        --------------------------------     --------------------------------------------------------------------
+        return_attachements                  Optional Boolean.  If true, attachments changes are returned in the
+                                             response. Otherwise, attachments are not included. The default is
+                                             false. This parameter is only applicable if the feature service has
+                                             attachments.
+        --------------------------------     --------------------------------------------------------------------
+        attachments_by_url                   Optional Boolean.  If true, a reference to a URL will be provided
+                                             for each attachment returned. Otherwise, attachments are embedded in
+                                             the response. The default is true.
+        --------------------------------     --------------------------------------------------------------------
+        data_format                          Optional String. The format of the changes returned in the response.
+                                             The default is json. Values: sqllite or json
+        --------------------------------     --------------------------------------------------------------------
+        change_extent_grid_cell              Optional String. To optimize localizing changes extent, the value
+                                             medium is an 8x8 grid that bound the changes extent. Used only when
+                                             `return_extent_only` is true. The default is none.
+                                             Values: None, large, medium, or small
+        ================================     ====================================================================
+
+
+        """
+        url = "%s/extractChanges"  % self._url
+        params = {
+            "f" : "json",
+            "layerQueries" : queries,
+            "layers" : layers,
+            "geometry" : geometry,
+            "geometryType" : geometry_type,
+            "inSR" : in_sr,
+            "gdbVersion" : version,
+            "returnInserts" : return_inserts,
+            "returnUpdates" : return_updates,
+            "returnDeletes" : return_deletes,
+            "layerServerGens" : servergens,
+            "returnIdsOnly" : return_ids_only,
+            "returnExtentOnly" : return_extent_only,
+            "returnAttachments" : return_attachements,
+            "returnAttachmentsDatabyURL" : attachments_by_url,
+            "dataFormat" : data_format,
+            "layerServerGens" : servergen,
+            "changesExtentGridCell" : change_extent_grid_cell
+        }
+
+        res = self._con.post(url, params)
+        if 'statusUrl' in res:
+            surl = res['statusUrl']
+            params = {'f' : 'json'}
+            res = self._con.get(surl, params)
+            while res['status'].lower() != "completed":
+                res = self._con.get(surl, params)
+                status = res['status']
+                if status.lower() == 'completed':
+                    return self._con.get(res['resultUrl'])
+                elif  status.lower() == 'failed':
+                    return None
+                else:
+                    time.sleep(1)
+        return None
 
     def query(self,
               layer_defs_filter=None,

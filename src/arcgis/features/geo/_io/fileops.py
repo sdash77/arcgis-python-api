@@ -302,73 +302,62 @@ def from_featureclass(filename, **kwargs):
      fields: list of fields to extract from the table
     """
     from arcgis.geometry import _types
+    import json
     if HASARCPY:
         sql_clause = kwargs.pop('sql_clause', (None,None))
         where_clause = kwargs.pop('where_clause', None)
-        sr = kwargs.pop('sr', arcpy.Describe(filename).spatialReference or arcpy.SpatialReference(4326))
         fields = kwargs.pop('fields', None)
-        desc = arcpy.Describe(filename)
-        if not fields:
-            fields = [field.name for field in arcpy.ListFields(filename) \
-                      if field.type not in ['Geometry']]
-
-            if hasattr(desc, 'areaFieldName'):
-                afn = desc.areaFieldName
-                if afn in fields:
-                    fields.remove(afn)
-            if hasattr(desc, 'lengthFieldName'):
-                lfn = desc.lengthFieldName
-                if lfn in fields:
-                    fields.remove(lfn)
-        geom_fields = fields + ['SHAPE@']
-        flds = fields + ['SHAPE']
-        vals = []
-        geoms = []
-        geom_idx = flds.index('SHAPE')
-        shape_type = desc.shapeType
-        default_polygon = _types.Geometry(arcpy.Polygon(arcpy.Array([arcpy.Point(0,0)]* 3)))
-        default_polyline = _types.Geometry(arcpy.Polyline(arcpy.Array([arcpy.Point(0,0)]* 2)))
-        default_point = _types.Geometry(arcpy.PointGeometry(arcpy.Point()))
-        default_multipoint = _types.Geometry(arcpy.Multipoint(arcpy.Array([arcpy.Point()])))
-        with arcpy.da.SearchCursor(filename,
-                                   field_names=geom_fields,
-                                   where_clause=where_clause,
-                                   sql_clause=sql_clause,
-                                   spatial_reference=sr) as rows:
-
+        sr = kwargs.pop('sr', None)
+        try:
+            desc = arcpy.da.Describe(filename)
+            area_field = desc.pop('areaFieldName', None)
+            length_field = desc.pop('lengthFieldName', None)
+        except: # for older versions of arcpy
+            desc = arcpy.Describe(filename)
+            desc = {
+                'fields' : desc.fields
+            }
+            area_field = getattr(desc, 'areaFieldName', None)
+            length_field = getattr(desc, 'lengthFieldName', None)
+        shape_name = desc['shapeType']
+        if fields is None:
+            fields = [fld.name for fld in desc['fields'] \
+                      if fld.type not in ['Geometry'] and \
+                      fld.name not in [area_field, length_field]]
+            cursor_fields = fields + ['SHAPE@JSON']
+            df_fields = fields + ['SHAPE']
+        count = 0
+        dfs = []
+        with da.SearchCursor(filename,
+                             field_names=cursor_fields,
+                             where_clause=where_clause,
+                             sql_clause=sql_clause,
+                             spatial_reference=sr) as rows:
+            srows = []
             for row in rows:
-                row = list(row)
-                # Prevent curves/arcs
-                if row[geom_idx] is None:
-                    row.pop(geom_idx)
-                    g = {}
-                elif row[geom_idx].type in ['polyline', 'polygon']:
-                    try:
-                        g = _types.Geometry(row.pop(geom_idx))
-                    except:
-                        g = _types.Geometry(row.pop(geom_idx)).generalize(0)
-                else:
-                    g = _types.Geometry(row.pop(geom_idx))
-                if g == {}:
-                    if shape_type.lower() == 'point':
-                        g = default_point
-                    elif shape_type.lower() == 'polygon':
-                        g = default_polygon
-                    elif shape_type.lower() == 'polyline':
-                        g = default_point
-                    elif shape_type.lower() == 'multipoint':
-                        g = default_multipoint
-                geoms.append(g)
-                vals.append(row)
+                srows.append(row)
+                if len(srows) == 25000:
+                    dfs.append( pd.DataFrame(srows,
+                                             columns=df_fields))
+                    srows = []
                 del row
-            del rows
-        df = pd.DataFrame(data=vals, columns=fields)
-        df.spatial.set_geometry(geoms)
-        if df.spatial.sr is None:
-            if sr is not None:
-                df.spatial.sr = sr
-            else:
-                df.spatial.sr = df.spatial._date[df.spatial._name][sdf.geometry.first_valid_index()].spatial_reference
+            if len(srows):
+                dfs.append( pd.DataFrame(srows,
+                                         columns=df_fields))
+                srows = []
+            del srows
+        if len(dfs) > 0:
+            df = pd.concat(dfs)
+            df = df.reset_index(drop=True)
+        else:
+            df = dfs[0]
+        q = df.SHAPE.notnull()
+        df.SHAPE = (
+            df.SHAPE[q]
+            .apply(json.loads)
+            .apply(_types.Geometry)
+        )
+        df.spatial.set_geometry("SHAPE")
         return df
     elif HASARCPY == False and \
          HASPYSHP == True and\
