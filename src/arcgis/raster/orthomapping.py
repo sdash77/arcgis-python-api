@@ -1397,7 +1397,7 @@ def compute_spatial_reference_factory_code(latitude, longitude):
     """
     from math import isnan, fabs, floor
     zone = 0
-    if (isnan(longitude) or isnan(latitude) or fabs(longitude) > 360.0 or fabs(latitude) > 90.0):
+    if (isnan(longitude) or isnan(latitude) or fabs(longitude) > 180.0 or fabs(latitude) > 90.0):
         raise RuntimeError("Incorrect latitude or longitude value")
 
     zone = floor((longitude + 180)/6) + 1

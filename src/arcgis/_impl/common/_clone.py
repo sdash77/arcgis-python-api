@@ -1451,39 +1451,60 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # Create a field mapping object if the case or name of the field has changes
                 layer_field_mapping = {}
                 for layer in layers_definition['layers'] + layers_definition['tables']:
-                    layer_id = layer['id']
-                    fields = layer['fields']
-                    if self.is_view:
-                        fields = self.view_source_fields[layer_id]
-                    new_layer = new_layers[layer_id]
                     field_mapping = {}
-                    if len(fields) <= len(new_layer.properties['fields']):
-                        for i in range(0, len(fields)):
-                            if fields[i]['name'] != new_layer.properties['fields'][i]['name']:
-                                field_mapping[fields[i]['name']] = new_layer.properties['fields'][i]['name']
-                        if len(field_mapping) > 0:
-                            layer_field_mapping[layer_id] = field_mapping
-
-                    # If editor tracking fields changed from original layer we need to update the layer field mapping
                     del_fields = []
-                    if 'editFieldsInfo' in layer and layer['editFieldsInfo'] is not None and 'editFieldsInfo' in new_layer.properties and new_layer.properties['editFieldsInfo'] is not None:
-                        new_edit_fields_info = new_layer.properties['editFieldsInfo']
-                        for key, old_field in layer['editFieldsInfo'].items():
-                            if key in new_edit_fields_info:
-                                new_field = new_edit_fields_info[key]
-                                if old_field != new_field:
-                                    new_delete_field = old_field
-                                    if old_field in field_mapping:
-                                        new_delete_field = field_mapping[old_field]
-                                    for field in new_layer.properties['fields']:
-                                        if field['name'] == new_delete_field and self.is_view == False:
-                                            del_fields.append(new_delete_field)
-                                            break
-                                    if layer_id in layer_field_mapping:
-                                        layer_field_mapping[layer_id][old_field] = new_field
-                                    else:
-                                        field_mapping = {old_field : new_field}
-                                        layer_field_mapping[layer_id] = field_mapping
+                    layer_id = layer['id']
+                    new_layer = new_layers[layer_id]
+                    new_layer_properties = new_layer.properties
+
+                    original_fields = _deep_get(layer, 'fields')
+                    if self.is_view:
+                        original_fields = self.view_source_fields[layer_id]
+                    new_fields = _deep_get(new_layer_properties, 'fields')
+                    if new_fields is None or original_fields is None:
+                        break
+                    new_fields_lower = [f['name'].lower() for f in new_fields]
+
+                    if 'editFieldsInfo' in layer and layer['editFieldsInfo'] is not None:
+                        if 'editFieldsInfo' in new_layer_properties and new_layer_properties['editFieldsInfo'] is not None:                           
+                            for editor_field in ['creationDateField', 'creatorField', 'editDateField', 'editorField']:
+                                original_editor_field_name = _deep_get(layer, 'editFieldsInfo', editor_field)
+                                new_editor_field_name = _deep_get(new_layer_properties, 'editFieldsInfo', editor_field)
+                                if original_editor_field_name !=  new_editor_field_name:
+                                    if original_editor_field_name is not None and original_editor_field_name != "" and new_editor_field_name is not None and new_editor_field_name != "":
+                                        field_mapping[original_editor_field_name] = new_editor_field_name
+                                        #Delete old editor tracking fields
+                                        if self.is_view == False:
+                                            try:
+                                                new_delete_field = new_fields[new_fields_lower.index(original_editor_field_name.lower())]
+                                                del_fields.append(new_delete_field['name'])
+                                            except ValueError:
+                                                pass
+
+                    original_oid_field = _deep_get(layer, 'objectIdField')
+                    new_oid_field = _deep_get(new_layer_properties, 'objectIdField')
+                    if original_oid_field != new_oid_field:
+                        if original_oid_field is not None and original_oid_field != "" and new_oid_field is not None and new_oid_field != "":
+                            field_mapping[original_oid_field] = new_oid_field
+
+                    original_globalid_field = _deep_get(layer, 'globalIdField')
+                    new_globalid_field = _deep_get(new_layer_properties, 'globalIdField')
+                    if original_globalid_field != new_globalid_field:
+                        if original_globalid_field is not None and original_globalid_field != "" and new_globalid_field is not None and new_globalid_field != "":
+                            field_mapping[original_globalid_field] = new_globalid_field
+
+                    for field in original_fields:
+                        if field['name'] in field_mapping:
+                            continue
+                        try:
+                            new_field = new_fields[new_fields_lower.index(field['name'].lower())]
+                            if field['name'] != new_field['name']:
+                                field_mapping[field['name']] = new_field['name']
+                        except ValueError:
+                            pass
+
+                    if len(field_mapping) > 0:
+                        layer_field_mapping[layer_id] = field_mapping
 
                     update_definition = {}
                     delete_definition = {}
@@ -1501,22 +1522,21 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         if layer_id in layer_field_mapping:
                             field_mapping = layer_field_mapping[layer_id]
 
-                            if 'templates' in new_layer.properties and new_layer.properties['templates'] is not None:
-                                templates = new_layer.properties['templates']
+                            if 'templates' in new_layer_properties and new_layer_properties['templates'] is not None:
+                                templates = new_layer_properties['templates']
                                 for template in templates:
                                     if 'prototype' in template and template['prototype'] is not None:
                                         _update_feature_attributes(template['prototype'], field_mapping)
                                 update_definition['templates'] = templates
 
-                            if 'types' in new_layer.properties and new_layer.properties['types'] is not None:
-                                types = new_layer.properties['types']
+                            if 'types' in new_layer_properties and new_layer_properties['types'] is not None:
+                                types = new_layer_properties['types']
                                 for layer_type in types:
                                     if 'templates' in layer_type and layer_type['templates'] is not None:
                                         for template in layer_type['templates']:
                                             if 'prototype' in template and template['prototype'] is not None:
                                                 _update_feature_attributes(template['prototype'], field_mapping)
                                 update_definition['types'] = types
-
                     
                     if self.is_view:
                         # Update field visibility for views
@@ -1525,21 +1545,24 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             if layer_id in layer_field_mapping:
                                 update_definition['viewDefinitionQuery'] = _find_and_replace_fields(update_definition['viewDefinitionQuery'], layer_field_mapping[layer_id])
 
-                        field_visibility = []
-                        need_update = False
+                        field_updates = []
                         view_field_names = [f['name'].lower() for f in layer['fields']]
+                        view_fields = {f['name']: f for f in layer['fields']}
                         for source_field in self.view_source_fields[layer_id]:
                             source_field_name = source_field['name']
                             visible = source_field_name.lower() in view_field_names
-                            if not visible:
-                                need_update = True
                             field_name = source_field_name
                             if layer_id in layer_field_mapping:
                                 if source_field_name in layer_field_mapping[layer_id]:
                                     field_name = layer_field_mapping[layer_id][source_field_name]
-                            field_visibility.append({'name' : field_name, 'visible' : visible})
-                        if need_update:
-                            update_definition['fields'] = field_visibility
+
+                            field_update = {}
+                            if source_field_name in view_fields:
+                                field_update = copy.deepcopy(view_fields[source_field_name])
+                            field_update['name'] = field_name
+                            field_update['visible'] = visible
+                            field_updates.append(field_update)
+                        update_definition['fields'] = field_updates
 
                         # Reapply the renderer and feature templates for views created in Portal
                         if self.target.properties.isPortal:
