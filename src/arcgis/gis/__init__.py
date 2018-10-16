@@ -1872,19 +1872,32 @@ class UserManager(object):
         """
 
         if query is None:
-            users = self._portal.get_org_users(max_users, exclude_system=json.dumps(exclude_system))
+            users = self._portal.get_org_users(max_users,
+                                               exclude_system=json.dumps(exclude_system))
+            gis = self._gis
+            user_storage = []
             for u in users:
+                if 'id' in u and \
+                   (u['id'] is None or u['id'] == 'null'):
+                    un = user['username']
+                else:
+                    un = u['id']
                 if not 'roleId' in u:
                     u['roleId'] = u.pop('role', None)
-            gis = self._gis
-            return [User(gis, u['username'], u) for u in users]
+                user_storage.append(User(gis, un, u))
+            return user_storage
         else:
             userlist = []
             isinstance(self._portal, portalpy.Portal)
             users = self._portal.search_users(query, sort_field, sort_order,
                                               max_users, outside_org, json.dumps(exclude_system))
             for user in users:
-                userlist.append(User(self._gis, user['username'], user))
+                if 'id' in user and \
+                   (user['id'] is None or user['id'] == 'null'):
+                    un = user['username']
+                else:
+                    un = user['id']
+                userlist.append(User(self._gis, un))
             return userlist
 
         #TODO: remove org users, invite users

@@ -127,76 +127,44 @@ class GeometryFactory(type):
     def __call__(cls, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
-        if hasattr(iterable, 'JSON') and \
-           (HASARCPY or HASSHAPELY):
+        elif HASARCPY and \
+           isinstance(iterable, arcpy.Geometry):
+            return Geometry(json.loads(iterable.JSON))
+        elif hasattr(iterable, 'JSON'): # HANDLE Arcpy.Geometry or Shapely.Geometry
             if type(iterable.JSON) == str:
                 iterable = json.loads(iterable.JSON)
             elif type(iterable.JSON) == dict:
                 iterable = iterable.JSON
         elif isinstance(iterable, str) and \
-             iterable.find("{") == -1 and HASARCPY:
-            sr = kwargs.pop('sr',
-                            SpatialReference({'wkid' : 4326}).as_arcpy)
-            if isinstance(sr, int):
-                sr = SpatialReference({'wkid' : sr}).as_arcpy
-            elif isinstance(sr, SpatialReference) == False and \
-                 isinstance(sr, dict):
-                sr = SpatialReference(sr).as_arcpy
-            elif isinstance(sr, SpatialReference):
-                sr = sr.as_arcpy
-            elif isinstance(sr, arcpy.SpatialReference) == False:
-                raise ValueError("Invalid Spatial Reference")
-            return Geometry(arcpy.FromWKT(iterable,
-                                          spatial_reference=sr))
+             iterable[0] != "{" and HASARCPY: # WKT
+            return Geometry(json.loads(
+                arcpy.FromWKT(iterable).JSON))
         elif isinstance(iterable, (bytes, bytearray)) and \
-             HASARCPY: # WKB
-            sr = kwargs.pop('sr',
-                            SpatialReference({'wkid' : 4326}).as_arcpy)
-            if isinstance(sr, int):
-                sr = SpatialReference({'wkid' : sr}).as_arcpy
-            elif isinstance(sr, SpatialReference) == False and \
-                 isinstance(sr, dict):
-                sr = SpatialReference(sr).as_arcpy
-            elif isinstance(sr, SpatialReference):
-                sr = sr.as_arcpy
-            elif isinstance(sr, arcpy.SpatialReference) == False:
-                raise ValueError("Invalid Spatial Reference")
-            return Geometry(arcpy.FromWKB(iterable,
-                                          spatial_reference=sr))
+            HASARCPY: # WKB
+            return Geometry(json.loads(
+                arcpy.FromWKB(iterable).JSON))
+        elif isinstance(iterable, str): # JSON as String
+            return Geometry(json.loads(iterable))
         if cls is Geometry:
-            if len(iterable) > 0:
-                if isinstance(iterable, dict):
-                    if 'x' in iterable and \
-                       'y' in iterable:
-                        return Point(iterable=iterable)
-                    elif 'type' in iterable and \
-                         'coordinates' in iterable:
-                        if iterable['type'].lower() == "point":
-                            return Point._from_geojson(data=iterable)
-                        elif iterable['type'].lower() in ['polygon', 'multipolygon']:
-                            return Polygon._from_geojson(iterable)
-                        elif iterable['type'].lower() in ['linestring', 'multilinestring']:
-                            return Polyline._from_geojson(iterable,
-                                                          sr=None)
-                        elif iterable['type'].lower() == "multipoint":
-                            return MultiPoint._from_geojson(data=iterable)
-                        else:
-                            raise Exception("Invalid GeoJSON")
-                    elif 'xmin' in iterable:
-                        return Envelope(iterable)
-                    elif 'wkt' in iterable or \
-                         'wkid' in iterable:
-                        return SpatialReference(iterable)
-                    elif 'rings' in iterable:
-                        return Polygon(iterable)
-                    elif "curveRings" in iterable:
-                        return Polygon(iterable)
-                    elif 'paths' in iterable:
-                        return Polyline(iterable)
-                    elif 'curvePaths' in iterable:
-                        return Polyline(iterable)
-                    elif 'points' in iterable:
-                        return MultiPoint(iterable)
+            if iterable:
+                if 'x' in iterable or \
+                   'y' in iterable:
+                    return Point(**iterable)
+                elif 'xmin' in iterable:
+                    return Envelope(iterable, **iterable)
+                elif 'wkt' in iterable or \
+                     'wkid' in iterable:
+                    return SpatialReference(**iterable)
+                elif 'rings' in iterable:
+                    return Polygon(**iterable)
+                elif "curveRings" in iterable:
+                    return Polygon(**iterable)
+                elif 'curvePaths' in iterable:
+                    return Polyline(**iterable)
+                elif 'paths' in iterable:
+                    return Polyline(**iterable)
+                elif 'points' in iterable:
+                    return MultiPoint(**iterable)
             elif len(kwargs) > 0:
                 if 'x' in kwargs or \
                    'y' in kwargs:
