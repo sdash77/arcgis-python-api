@@ -17,6 +17,93 @@ _log=_logging.getLogger(__name__)
 
 _use_async=True
 
+
+def find_point_clusters(
+    input_layer,
+    method,
+    min_feature_clusters,
+    search_distance=None,
+    distance_unit=None,
+    output_name=None,
+    gis=None):
+    """
+    This tool extracts clusters from your input point features and identifies any surrounding noise.
+
+    For example, a nongovernmental organization is studying a particular pest-borne disease. It has
+    a point dataset representing households in a study area, some of which are infested, and some of
+    which are not. By using the Find Point Clusters tool, an analyst can determine clusters of
+    infested households to help pinpoint an area to begin treatment and extermination of pests.
+
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    input_layer                  required FeatureSet, The table, point, line or polygon features
+                                 containing potential incidents.
+    --------------------------   ---------------------------------------------------------------
+    method                       required String. The algorithm used for cluster analysis. This
+                                 parameter must be specified as DBSCAN or HDBSCAN.
+    --------------------------   ---------------------------------------------------------------
+    min_feature_clusters         optional Integer. Minimum number of clusters to find in a dataset.
+    --------------------------   ---------------------------------------------------------------
+    search_distance              optional Float.  The distance to search between points to form
+                                 a cluster.  This is required for DBSCAN.
+    --------------------------   ---------------------------------------------------------------
+    distance_unit                optional String. The `search_distance` units.
+    --------------------------   ---------------------------------------------------------------
+    output_name                  optional string, The task will create a feature service of the
+                                 results. You define the name of the service.
+    --------------------------   ---------------------------------------------------------------
+    gis                          optional GIS, the GIS on which this tool runs. If not
+                                 specified, the active GIS is used.
+    ==========================   ===============================================================
+
+    :returns:
+       Output feature layer item
+
+    """
+    kwargs=locals()
+
+    gis=_arcgis.env.active_gis if gis is None else gis
+    url=gis.properties.helperServices.geoanalytics.url
+
+    params={}
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key]=value
+
+    if output_name is None:
+        output_service_name='Find Point Clusters_' + _id_generator()
+        output_name=output_service_name.replace(' ', '_')
+    else:
+        output_service_name=output_name.replace(' ', '_')
+
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters')
+
+    _set_context(params)
+
+    param_db={
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "method" : (str, "clusterMethod"),
+        "min_feature_clusters": (int, "minFeaturesCluster"),
+        "distance_unit": (str, "searchDistanceUnit"),
+        "search_distance" : (float, "searchDistance"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "Output Features"),
+    }
+    return_values=[
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    ]
+
+    try:
+        _execute_gp_tool(gis, "FindPointClusters", params, param_db, return_values, _use_async, url, True)
+        return output_service
+    except:
+        output_service.delete()
+        raise
+
+    return
+
 def calculate_density(
     input_layer,
     fields=None,

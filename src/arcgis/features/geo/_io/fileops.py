@@ -315,7 +315,8 @@ def from_featureclass(filename, **kwargs):
         except: # for older versions of arcpy
             desc = arcpy.Describe(filename)
             desc = {
-                'fields' : desc.fields
+                'fields' : desc.fields,
+                'shapeType' : desc.shapeType
             }
             area_field = getattr(desc, 'areaFieldName', None)
             length_field = getattr(desc, 'lengthFieldName', None)
@@ -328,6 +329,7 @@ def from_featureclass(filename, **kwargs):
             df_fields = fields + ['SHAPE']
         count = 0
         dfs = []
+        shape_field_idx = cursor_fields.index("SHAPE@JSON")
         with da.SearchCursor(filename,
                              field_names=cursor_fields,
                              where_clause=where_clause,
@@ -340,7 +342,6 @@ def from_featureclass(filename, **kwargs):
                     dfs.append( pd.DataFrame(srows,
                                              columns=df_fields))
                     srows = []
-                del row
             if len(srows):
                 dfs.append( pd.DataFrame(srows,
                                          columns=df_fields))
@@ -352,10 +353,19 @@ def from_featureclass(filename, **kwargs):
         else:
             df = dfs[0]
         q = df.SHAPE.notnull()
+        gt = desc['shapeType'].lower()
+        geoms = {
+            "point" : _types.Point,
+            "polygon" : _types.Polygon,
+            "polyline" : _types.Polyline,
+            "multipoint" : _types.MultiPoint,
+            "envelope" : _types.Envelope,
+            "geometry" : _types.Geometry
+        }
         df.SHAPE = (
-            df.SHAPE[q]
-            .apply(json.loads)
-            .apply(_types.Geometry)
+           df.SHAPE[q]
+           .apply(json.loads)
+           .apply(geoms[gt])
         )
         df.spatial.set_geometry("SHAPE")
         return df
@@ -520,8 +530,8 @@ def to_featureclass(geo,
                     r = row.tolist()
                     r[-1] = json.dumps(r[-1])
                     irows.insertRow(r)
-                except:
-                    print("row %s could not be inserted." % idx)
+                except Exception as e:
+                    raise Exception(e)
         return fc
     elif HASPYSHP:
         if fc_name.endswith('.shp') == False:

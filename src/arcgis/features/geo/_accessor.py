@@ -3,7 +3,6 @@ Holds Delegate and Accessor Logic
 """
 import os
 import copy
-import time
 import uuid
 import shutil
 import datetime
@@ -14,46 +13,7 @@ from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
-#--------------------------------------------------------------------------
-def delegated_method(method, index, name, *args, **kwargs):
-    return pd.Series(method(*args, **kwargs), index, name=name)
-###########################################################################
-class Delegated:
-    # Descriptor for delegating attribute access to from
-    # a Series to an underlying array
-
-    def __init__(self, name):
-        self.name = name
-
-    def __get__(self, obj, type=None):
-        index = object.__getattribute__(obj, '_index')
-        name = object.__getattribute__(obj, '_name')
-        result = self._get_result(obj)
-        return pd.Series(result, index)
-###########################################################################
-class DelegatedSeriesProperty(Delegated):
-    def _get_result(self, obj, type=None):
-        idx = object.__getattribute__(obj, '_index')
-        data = object.__getattribute__(obj, '_data')
-        series = getattr(data, self.name)
-        series.index = idx
-        return series
-###########################################################################
-class DelegatedProperty(Delegated):
-    def _get_result(self, obj, type=None):
-        index = object.__getattribute__(obj, '_index')
-        data = object.__getattribute__(obj, '_data')
-        series = getattr(data, self.name)
-        series.index = index
-        return series#getattr(object.__getattribute__(obj, '_data')[obj._name].values, self.name)
-###########################################################################
-class DelegatedMethod(Delegated):
-    def __get__(self, obj, type=None):
-        index = object.__getattribute__(obj, '_index')
-        name = object.__getattribute__(obj, '_name')
-        method = getattr(object.__getattribute__(obj, '_data')[obj._name].values, self.name)
-        return delegated_method(method, index, name)
-#--------------------------------------------------------------------------
+############################################################################
 def _is_geoenabled(df):
     """
     Checks if a Panda's DataFrame is 'geo-enabled'.
@@ -87,19 +47,19 @@ class GeoSeriesAccessor:
         self._data = obj.values
         self._index = obj.index
         self._name = obj.name
-    #----------------------------------------------------------------------
-    def _call_method(self, name, is_ga=False, **kwargs):
-        """accesses a method on the geometry object"""
-        vals = []
-        for g in self._data:
-            if hasattr(g, name):
-                vals.append(getattr(g, name, None)(**kwargs))
-            else:
-                vals.append(None)
-        if is_ga:
-            from ._array import GeoArray
-            return pd.Series(GeoArray(vals), index=self._index)
-        return pd.Series(vals, index=self._index)
+    ##----------------------------------------------------------------------
+    #def _call_method(self, name, is_ga=False, **kwargs):
+        #"""accesses a method on the geometry object"""
+        #vals = []
+        #for g in self._data:
+            #if hasattr(g, name):
+                #vals.append(getattr(g, name, None)(**kwargs))
+            #else:
+                #vals.append(None)
+        #if is_ga:
+            #from ._array import GeoArray
+            #return pd.Series(GeoArray(vals), index=self._index)
+        #return pd.Series(vals, index=self._index)
     #----------------------------------------------------------------------
     @staticmethod
     def _validate(obj):
@@ -109,51 +69,258 @@ class GeoSeriesAccessor:
     ##---------------------------------------------------------------------
     ##   Accessor Properties
     ##---------------------------------------------------------------------
-    area = DelegatedSeriesProperty('area')
+    @property
+    def area(self):
+        """
+        Returns the features area
+
+        :returns: float in a series
+        """
+        res = self._data.area
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    as_arcpy = DelegatedSeriesProperty("as_arcpy")
+    @property
+    def as_arcpy(self):
+        """
+        Returns the features as ArcPy Geometry
+
+        :returns: arcpy.Geometry in a series
+        """
+        res = self._data.as_arcpy
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    as_shapely = DelegatedSeriesProperty("as_shapely")
+    @property
+    def as_shapely(self):
+        """
+        Returns the features as Shapely Geometry
+
+        :returns: shapely.Geometry in a series
+        """
+        res = self._data.as_shapely
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    centroid = DelegatedSeriesProperty("centroid")
+    @property
+    def centroid(self):
+        """
+        Returns the feature's centroid
+
+        :returns: tuple (x,y) in series
+        """
+        res = self._data.centroid
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    extent = DelegatedSeriesProperty('extent')
+    @property
+    def extent(self):
+        """
+        Returns the feature's extent
+
+        :returns: tuple (xmin,ymin,xmax,ymax) in series
+        """
+        res = self._data.extent
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    first_point = DelegatedSeriesProperty('first_point')
+    @property
+    def first_point(self):
+        """
+        Returns the feature's first point
+
+        :returns: Geometry
+        """
+        res = self._data.first_point
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    geoextent = DelegatedSeriesProperty("geoextent")
+    @property
+    def geoextent(self):
+        """
+        A returns the geometry's extents
+
+        :returns: Series of Floats
+        """
+        res = self._data.geoextent
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    geometry_type = DelegatedSeriesProperty("geometry_type")
+    @property
+    def geometry_type(self):
+        """
+        A returns the geometry types
+
+        :returns: Series of strings
+        """
+        res = self._data.geometry_type
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    hull_rectangle = DelegatedSeriesProperty("hull_rectangle")
+    @property
+    def hull_rectangle(self):
+        """
+        A space-delimited string of the coordinate pairs of the convex hull
+
+        :returns: Series of strings
+        """
+        res = self._data.hull_rectangle
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    is_empty = DelegatedSeriesProperty("is_empty")
+    @property
+    def is_empty(self):
+        """
+        Returns True/False if feature is empty
+
+        :returns: Series of Booleans
+        """
+        res = self._data.is_empty
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    is_multipart = DelegatedSeriesProperty("is_multipart")
+    @property
+    def is_multipart(self):
+        """
+        Returns True/False if features has multiple parts
+
+        :returns: Series of Booleans
+        """
+        res = self._data.is_multipart
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    is_valid = DelegatedSeriesProperty("is_valid")
+    @property
+    def is_valid(self):
+        """
+        Returns True/False if features geometry is valid
+
+        :returns: Series of Booleans
+        """
+        res = self._data.is_valid
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    JSON = DelegatedSeriesProperty("JSON")
+    @property
+    def JSON(self):
+        """
+        Returns JSON string  of Geometry
+
+        :returns: Series of strings
+        """
+        res = self._data.JSON
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    label_point = DelegatedSeriesProperty("label_point")
+    @property
+    def label_point(self):
+        """
+        Returns the geometry point for the optimal label location
+
+        :returns: Series of Geometries
+        """
+        res = self._data.label_point
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    last_point = DelegatedSeriesProperty("last_point")
+    @property
+    def last_point(self):
+        """
+        Returns the Geometry of the last point in a feature.
+
+        :returns: Series of Geometry
+        """
+        res = self._data.last_point
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    length = DelegatedSeriesProperty("length")
+    @property
+    def length(self):
+        """
+        Returns the length of the features
+
+        :returns: Series of float
+        """
+        res = self._data.length
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    length3D = DelegatedSeriesProperty("length3D")
+    @property
+    def length3D(self):
+        """
+        Returns the length of the features
+
+        :returns: Series of float
+        """
+        res = self._data.length3D
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    part_count = DelegatedSeriesProperty("part_count")
+    @property
+    def part_count(self):
+        """
+        Returns the number of parts in a feature's geometry
+
+        :returns: Series of Integer
+        """
+        res = self._data.part_count
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    point_count = DelegatedSeriesProperty("point_count")
+    @property
+    def point_count(self):
+        """
+        Returns the number of points in a feature's geometry
+
+        :returns: Series of Integer
+        """
+        res = self._data.point_count
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    spatial_reference = DelegatedSeriesProperty("spatial_reference")
+    @property
+    def spatial_reference(self):
+        """
+        Returns the Spatial Reference of the Geometry
+
+        :returns: Series of SpatialReference
+        """
+        res = self._data.spatial_reference
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    true_centroid = DelegatedSeriesProperty("true_centroid")
+    @property
+    def true_centroid(self):
+        """
+        Returns the true centroid of the Geometry
+
+        :returns: Series of Points
+        """
+        res = self._data.true_centroid
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    WKB = DelegatedSeriesProperty("WKB")
+    @property
+    def WKB(self):
+        """
+        Returns the Geometry as WKB
+
+        :returns: Series of Bytes
+        """
+        res = self._data.WKB
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
-    WKT = DelegatedSeriesProperty("WKT")
+    @property
+    def WKT(self):
+        """
+        Returns the Geometry as WKT
+
+        :returns: Series of String
+        """
+        res = self._data.WKT
+        res.index = self._index
+        return res
     ##---------------------------------------------------------------------
     ##  Accessor Geometry Method
     ##---------------------------------------------------------------------
@@ -176,10 +343,10 @@ class GeoSeriesAccessor:
 
         :returns: a tuple of angle and distance to another point using a measurement type.
         """
-        return self._call_method(name='angle_distance_to',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'method' : method})
+        res = self._data.angle_distance_to(**{'second_geometry' : second_geometry,
+                                               'method' : method})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def boundary(self):
         """
@@ -188,7 +355,9 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Polyline
         """
 
-        return self._call_method(name='boundary', is_ga=True)
+        res = self._data.boundary()
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def buffer(self, distance):
         """
@@ -204,9 +373,9 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Polygon
         """
-        return self._call_method(name='buffer',
-                                 is_ga=True,
-                                 **{'distance' : distance})
+        res = self._data.buffer(**{'distance' : distance})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def clip(self, envelope):
         """
@@ -222,9 +391,7 @@ class GeoSeriesAccessor:
         :returns: output geometry clipped to extent
 
         """
-        return self._call_method(name='clip',
-                                 is_ga=True,
-                                 **{'envelope' : envelope})
+        return self._data.clip(**{'envelope' : envelope})
     #----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
         """
@@ -244,18 +411,15 @@ class GeoSeriesAccessor:
 
         :returns: boolean
         """
-        return self._call_method(name='contains',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'relation' : relation})
+        return self._data.contains(**{'second_geometry' : second_geometry,
+                                      'relation' : relation})
     #----------------------------------------------------------------------
     def convex_hull(self):
         """
         Constructs the geometry that is the minimal bounding polygon such
         that all outer angles are convex.
         """
-        return self._call_method(name='convex_hull',
-                                 is_ga=True)
+        return self._data.convex_hull()
     #----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
@@ -271,9 +435,7 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return self._call_method(name='crosses',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.crosses(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def cut(self, cutter):
         """
@@ -289,9 +451,7 @@ class GeoSeriesAccessor:
         :returns: a list of two geometries
 
         """
-        return self._call_method(name='cut',
-                                 is_ga=True,
-                                 **{'cutter' : cutter})
+        return self._data.cut(**{'cutter' : cutter})
     #----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
@@ -320,9 +480,7 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._call_method(name='densify',
-                                 is_ga=True,
-                                 **{'method' : method,
+        return self._data.densify(**{'method' : method,
                                     'distance' : distance,
                                     'deviation' : deviation})
     #----------------------------------------------------------------------
@@ -342,9 +500,7 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._call_method(name='difference',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.difference(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
@@ -360,9 +516,7 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return self._call_method(name='disjoint',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.disjoint(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def distance_to(self, second_geometry):
         """
@@ -379,9 +533,7 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        return self._call_method(name='distance_to',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.distance_to(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def equals(self, second_geometry):
         """
@@ -399,9 +551,7 @@ class GeoSeriesAccessor:
 
 
         """
-        return self._call_method(name='equals',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.equals(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def generalize(self, max_offset):
         """
@@ -417,9 +567,7 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._call_method(name='generalize',
-                                 is_ga=True,
-                                 **{'max_offset' : max_offset})
+        return self._data.generalize(**{'max_offset' : max_offset})
     #----------------------------------------------------------------------
     def get_area(self, method, units=None):
         """
@@ -443,10 +591,8 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        return self._call_method(name='get_area',
-                                 is_ga=False,
-                                 **{'method' : method,
-                                    'units' : units})
+        return self._data.get_area(**{'method' : method,
+                                      'units' : units})
     #----------------------------------------------------------------------
     def get_length(self, method, units):
         """
@@ -469,10 +615,8 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        return self._call_method(name='get_length',
-                                 is_ga=False,
-                                 **{'method' : method,
-                                    'units' : units})
+        return self._data.get_length(**{'method' : method,
+                                        'units' : units})
     #----------------------------------------------------------------------
     def get_part(self, index=None):
         """
@@ -490,9 +634,7 @@ class GeoSeriesAccessor:
         :return: arcpy.Array
 
         """
-        return self._call_method(name='get_part',
-                                 is_ga=False,
-                                 **{'index' : index})
+        return self._data.get_part(**{'index' : index})
     #----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
@@ -519,10 +661,8 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return self._call_method(name='intersect',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry,
-                                    'dimension' : dimension})
+        return self._data.intersect(**{'second_geometry' : second_geometry,
+                                       'dimension' : dimension})
     #----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
         """
@@ -540,10 +680,8 @@ class GeoSeriesAccessor:
         :return: float
 
         """
-        return self._call_method(name='measure_on_line',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'as_percentage' : as_percentage})
+        return self._data.measure_on_line(**{'second_geometry' : second_geometry,
+                                             'as_percentage' : as_percentage})
     #----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
@@ -560,9 +698,7 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        return self._call_method(name='overlaps',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.overlaps(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
         """
@@ -587,11 +723,9 @@ class GeoSeriesAccessor:
 
 
         """
-        return self._call_method(name='point_from_angle_and_distance',
-                                 is_ga=True,
-                                 **{'angle' : angle,
-                                    'distance' : distance,
-                                    'method' : method})
+        return self._data.point_from_angle_and_distance(**{'angle' : angle,
+                                                           'distance' : distance,
+                                                           'method' : method})
     #----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
@@ -613,10 +747,8 @@ class GeoSeriesAccessor:
         :return: arcgis.gis.Geometry
 
         """
-        return self._call_method(name='position_along_line',
-                                 is_ga=True,
-                                 **{'value' : value,
-                                    'use_percentage' : use_percentage})
+        return self._data.position_along_line(**{'value' : value,
+                                                 'use_percentage' : use_percentage})
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
@@ -633,11 +765,8 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Geometry
         """
-        return self._call_method(name='project_as',
-                                 is_ga=True,
-                                 **{'spatial_reference' : spatial_reference,
-                                    'transformation_name' : transformation_name}
-                                 )
+        return self._data.project_as(**{'spatial_reference' : spatial_reference,
+                                        'transformation_name' : transformation_name})
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
                                  use_percentage=False):
@@ -659,10 +788,8 @@ class GeoSeriesAccessor:
         :return: tuple
 
         """
-        return self._call_method(name='query_point_and_distance',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'use_percentage' : use_percentage})
+        return self._data.query_point_and_distance(**{'second_geometry' : second_geometry,
+                                                      'use_percentage' : use_percentage})
     #----------------------------------------------------------------------
     def segment_along_line(self, start_measure,
                            end_measure, use_percentage=False):
@@ -689,11 +816,9 @@ class GeoSeriesAccessor:
         :returns: Geometry
 
         """
-        return self._call_method(name='segment_along_line',
-                                 is_ga=True,
-                                 **{'start_measure' : start_measure,
-                                    'end_measure' : end_measure,
-                                    'use_percentage' : use_percentage})
+        return self._data.segment_along_line(**{'start_measure' : start_measure,
+                                                'end_measure' : end_measure,
+                                                'use_percentage' : use_percentage})
     #----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
         """
@@ -708,9 +833,7 @@ class GeoSeriesAccessor:
         :return: arcgis.gis.Geometry
 
         """
-        return self._call_method(name='snap_to_line',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.snap_to_line(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def symmetric_difference (self, second_geometry):
         """
@@ -727,9 +850,7 @@ class GeoSeriesAccessor:
 
         :return: arcgis.gis.Geometry
         """
-        return self._call_method(name='symmetric_difference',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.symmetric_difference(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
@@ -744,9 +865,7 @@ class GeoSeriesAccessor:
 
         :return: boolean
         """
-        return self._call_method(name='touches',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.touches(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def union(self, second_geometry):
         """
@@ -762,9 +881,7 @@ class GeoSeriesAccessor:
 
         :return: arcgis.gis.Geometry
         """
-        return self._call_method(name='union',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry})
+        return self._data.union(**{'second_geometry' : second_geometry})
     #----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
@@ -786,10 +903,9 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        return self._call_method(name='within',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'relation' : relation})
+        return self._data.within(**{'second_geometry' : second_geometry,
+                                    'relation' : relation}
+                                 )
 
 
 #--------------------------------------------------------------------------
@@ -819,16 +935,6 @@ class GeoAccessor(object):
         self._index = obj.index
         self._name = None
     #----------------------------------------------------------------------
-    def _call_method(self, name, is_ga=False, **kwargs):
-        """accesses a method on the geometry object"""
-        vals = [getattr(g, name, None)(**kwargs) if g is not None \
-                else None \
-                for g in self._data[self._name]]
-        if is_ga:
-            from ._array import GeoArray
-            return pd.Series(GeoArray(vals))
-        return pd.Series(vals)
-    #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):
         """Assigns the Geometry Column by Name or by List"""
         from ._array import GeoArray
@@ -843,18 +949,18 @@ class GeoAccessor(object):
                     sr = SpatialReference(Geometry(self._data.iloc[idx][col]).spatial_reference)
                 except:
                     sr = SpatialReference({'wkid' : 4326})
-            if len(q) > 0:
+            if True in q.unique():
                 if Geometry(self._data[col][idx]).geometry_type.lower() == 'polyline':
-                    data = len(self._data[q]) * [Geometry({'paths' : [], 'spatialReference' : sr})]
+                    data = Geometry({'paths' : [], 'spatialReference' : sr})
                     self._data.loc[q, col]  = data
                 elif Geometry(self._data[col][idx]).geometry_type.lower() == 'polygon':
-                    data = len(self._data[q]) * [Geometry({"rings" : [], 'spatialReference' : sr})]
+                    data = Geometry({"rings" : [], 'spatialReference' : sr})
                     self._data.loc[q, col]  = data
                 elif Geometry(self._data[col][idx]).geometry_type.lower() == 'point':
-                    data = len(self._data[q]) * [Geometry({"x" : None, "y": None, 'spatialReference' : sr})]
+                    data = Geometry({"x" : None, "y": None, 'spatialReference' : sr})
                     self._data.loc[q, col]  = data
                 elif Geometry(self._data[col][idx]).geometry_type.lower() == 'multipoint':
-                    data = len(self._data[q]) * [Geometry({"points" : [  ], 'spatialReference' : sr})]
+                    data = Geometry({"points" : [  ], 'spatialReference' : sr})
                     self._data.loc[q, col]  = data
             self._name = col
             self._data[col] = GeoArray(self._data[col])
@@ -862,7 +968,7 @@ class GeoAccessor(object):
              col in self._data.columns and \
              self._data[col].dtype.name.lower() == 'geometry':
             self._name = col
-            self._data[col] = self._data[col]
+            #self._data[col] = self._data[col]
         elif isinstance(col, str) and \
              col not in self._data.columns:
             raise ValueError(
@@ -945,8 +1051,6 @@ class GeoAccessor(object):
         :returns:
           Spatially enabled Pandas' DataFrame
         """
-        import numpy as np
-        import pandas as pd
         allowed_hows = ['left', 'right', 'inner']
         allowed_ops = ['contains', 'within', 'intersects']
         if how not in allowed_hows:
@@ -1857,7 +1961,7 @@ class GeoAccessor(object):
         return from_layer(layer=layer)
     #----------------------------------------------------------------------
     @staticmethod
-    def from_featureclass(location):
+    def from_featureclass(location, **kwargs):
         """
         Returns a Spatially enbaled `pandas.DataFrame` from a feature class.
 
@@ -1871,7 +1975,7 @@ class GeoAccessor(object):
         :returns: Pandas' `DataFrame`
 
         """
-        return from_featureclass(filename=location)
+        return from_featureclass(filename=location, **kwargs)
     #----------------------------------------------------------------------
     @staticmethod
     def from_table(filename, **kwargs):
@@ -1942,7 +2046,7 @@ class GeoAccessor(object):
             self._stype = None
         if self._sindex:
             return self._sindex
-        bbox = self.full_extent
+        #bbox = self.full_extent
         if self.name and \
            filename and \
            os.path.isfile(filename + ".dat") and \
@@ -2222,7 +2326,6 @@ class GeoAccessor(object):
         :returns: FeatureCollection object
         """
         from arcgis.features import FeatureCollection
-        import uuid
         import string
         import random
 
@@ -2382,8 +2485,9 @@ class GeoAccessor(object):
         (-118, 32, -97, 33)
 
         """
-        q = self._data[self.name].geom.geoextent.isnull()
-        data = self._data[~q][self.name].geom.geoextent.tolist()
+        ge = self._data[self.name].geom.geoextent
+        q = ge.notnull()
+        data = ge[q].tolist()
         array = np.array(data)
         return (float(array[:,0][array[:,0]!=None].min()),
                 float(array[:,1][array[:,1]!=None].min()),
@@ -2401,7 +2505,7 @@ class GeoAccessor(object):
         143.23427
 
         """
-        return self._data[self.name].geom.area.sum()
+        return self._data[self.name].values.area.sum()
     #----------------------------------------------------------------------
     @property
     def length(self):
@@ -2414,7 +2518,7 @@ class GeoAccessor(object):
         1.23427
 
         """
-        return self._data[self.name].geom.length.sum()
+        return self._data[self.name].values.length.sum()
     #----------------------------------------------------------------------
     @property
     def centroid(self):
@@ -2491,10 +2595,12 @@ class GeoAccessor(object):
         :returns: boolean
         """
         try:
-            self._data[self.name] = self._call_method(name='project_as',
-                                                   is_ga=True,
-                                                   **{'spatial_reference' : spatial_reference,
-                                                      'transformation_name' : transformation_name})
+            if isinstance(spatial_reference, (int, str)):
+                import arcpy
+                spatial_reference = arcpy.SpatialReference(spatial_reference)
+            vals = self._data[self.name].values.project_as(**{'spatial_reference' : spatial_reference,
+                                                              'transformation_name' : transformation_name})
+            self._data[self.name] = vals
             return True
-        except:
-            return False
+        except Exception as e:
+            raise Exception(e)
