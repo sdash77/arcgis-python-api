@@ -39,6 +39,7 @@ def _infer_type(df, col):
     Ouput:
       field type name
     """
+    import six
     nn = df[col].notnull()
     nn = list(df[nn].index)
     if len(nn) > 0:
@@ -255,7 +256,7 @@ def to_table(geo, location, overwrite=True):
                     dtypes.append((col, '<U%s' % int(mlen)))
                 else:
                     try:
-                        dtypes.append((col, type(df[col][s.first_valid_index()])))
+                        dtypes.append((col, type(df[col][0])))
                     except:
                         dtypes.append((col, '<U254'))
             elif df[col].dtype.name == 'int64':
@@ -279,7 +280,6 @@ def to_table(geo, location, overwrite=True):
         dfcols = [fld.name for fld in fields \
                   if fld.type not in ['OID', 'Geometry'] and\
                   fld.name in df.columns]
-        import json
         with da.InsertCursor(fc, icols) as irows:
             for idx, row in df[dfcols].iterrows():
                 try:
@@ -451,6 +451,13 @@ def to_featureclass(geo,
     :returns: string
 
     """
+    null_geom = {
+        'point': pd.io.json.dumps({'x' : None, 'y': None, 'spatialReference' : geo.sr}),
+        'polyline' : pd.io.json.dumps({'paths' : [], 'spatialReference' : geo.sr}),
+        'polygon' : pd.io.json.dumps({'rings' : [], 'spatialReference' : geo.sr}),
+        'multipoint' : pd.io.json.dumps({'points' : [], 'spatialReference' : geo.sr})
+    }
+
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
@@ -475,7 +482,10 @@ def to_featureclass(geo,
         if isinstance(sr, list):
             sr = sr[0]
         sr = sr.as_arcpy
-        gt = pd.unique(geo._data[geo._name].geom.geometry_type).tolist()[0].upper()
+        notnull = geo._data[geo._name].notnull()
+        idx = geo._data[geo._name][notnull].first_valid_index()
+        gt = geo._data[geo._name][idx].geometry_type.upper()
+        null_geom = null_geom[gt.lower()]
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,
@@ -499,7 +509,7 @@ def to_featureclass(geo,
                     dtypes.append((col, '<U%s' % int(mlen)))
                 else:
                     try:
-                        dtypes.append((col, type(df[col][s.first_valid_index()])))
+                        dtypes.append((col, type(df[col][idx])))
                     except:
                         dtypes.append((col, '<U254'))
             elif df[col].dtype.name == 'int64':
@@ -523,15 +533,14 @@ def to_featureclass(geo,
         dfcols = [fld.name for fld in fields \
                   if fld.type not in ['OID', 'Geometry'] and\
                   fld.name in df.columns] + [df.spatial.name]
-        import json
         with da.InsertCursor(fc, icols) as irows:
-            for idx, row in df[dfcols].iterrows():
-                try:
-                    r = row.tolist()
-                    r[-1] = json.dumps(r[-1])
-                    irows.insertRow(r)
-                except Exception as e:
-                    raise Exception(e)
+            def _insert_row(row):
+                row[-1] = pd.io.json.dumps(row[-1])
+                irows.insertRow(row)
+            q = df[geo._name].isna()
+            df.loc[q, 'SHAPE'] = null_geom # set null values to proper JSON
+            np.apply_along_axis(_insert_row, 1, df[dfcols].values)
+            df.loc[q, 'SHAPE'] = None # reset null values
         return fc
     elif HASPYSHP:
         if fc_name.endswith('.shp') == False:
@@ -629,6 +638,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
 
         # create the PRJ file
         try:
+            from urllib import request
             wkid = df.spatial.sr['wkid']
 
             prj_filename = out_fc.replace('.shp', '.prj')

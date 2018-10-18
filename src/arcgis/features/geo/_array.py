@@ -81,7 +81,7 @@ class GeoType(ExtensionDtype):
     type = Geometry
     kind = 'O'
     _record_type = np.dtype('O')
-    na_value = None
+    na_value = None#{}
 
     @classmethod
     def construct_from_string(cls, string):
@@ -118,7 +118,7 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         return self.__repr__()
 
     def _format_values(self):
-        return [_format(x) for x in self.data]
+        return [_format(x) if x else None for x in self.data]
 
     @classmethod
     def from_geometry(cls, data, copy=False):
@@ -130,8 +130,11 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         return new
 
     def __setitem__(self, key, value):
-        value = Geometry(value)
-        self.data[key] = value
+        if value is None or value == "":
+            self.data[key] = value
+        else:
+            value = Geometry(value)
+            self.data[key] = value
 
     def __iter__(self):
         return iter(self.data.tolist())
