@@ -379,10 +379,13 @@ class GIS(object):
             self._url = self._portal.url
             self._con._auth = "PRO"
 
+        if self._con._auth != 'anon':
+            me = self.users.me
+
         if self._con._auth.lower() != 'anon' and \
            self._con._auth is not None and \
-           hasattr(self.users.me, 'role') and \
-           self.users.me.role == "org_admin":
+           hasattr(me, 'role') and \
+           me.role == "org_admin":
             try:
                 if self.properties.isPortal == True:
                     from .admin.portaladmin import PortalAdminManager
@@ -395,8 +398,8 @@ class GIS(object):
                 pass
         elif self._con._auth.lower() != 'anon' and \
              self._con._auth is not None and\
-             hasattr(self.users.me, 'role') and \
-             self.users.me.role == 'org_publisher' and \
+             hasattr(me, 'role') and \
+             me.role == 'org_publisher' and \
              self._portal.is_arcgisonline == False:
             try:
                 from .admin.portaladmin import PortalAdminManager
@@ -406,7 +409,7 @@ class GIS(object):
                 pass
         elif self._con._auth.lower() != 'anon' and \
              self._con._auth is not None and\
-             hasattr(self.users.me, 'privileges') and \
+             hasattr(me, 'privileges') and \
              self._portal.is_arcgisonline == False:
             privs = ['portal:publisher:publishFeatures',
                      'portal:publisher:publishScenes',
@@ -414,7 +417,7 @@ class GIS(object):
                      'portal:publisher:publishServerServices',
                      'portal:publisher:publishTiles']
             for priv in privs:
-                if priv in self.users.me.privileges:
+                if priv in me.privileges:
                     can_publish = True
                     break
                 else:
@@ -428,8 +431,8 @@ class GIS(object):
                     pass
         if self._con._auth.lower() != 'anon' and \
            self._con._auth is not None and\
-           hasattr(self.users.me, 'role') and \
-           self.users.me.role == 'org_publisher' and \
+           hasattr(me, 'role') and \
+           me.role == 'org_publisher' and \
            self._portal.is_arcgisonline == False:
             try:
                 from .admin.portaladmin import PortalAdminManager

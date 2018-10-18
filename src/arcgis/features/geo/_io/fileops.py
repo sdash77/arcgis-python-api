@@ -364,7 +364,7 @@ def from_featureclass(filename, **kwargs):
         }
         df.SHAPE = (
            df.SHAPE[q]
-           .apply(json.loads)
+           .apply(pd.io.json.loads)
            .apply(geoms[gt])
         )
         df.spatial.set_geometry("SHAPE")
