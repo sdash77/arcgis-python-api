@@ -431,7 +431,8 @@ def from_featureclass(filename, **kwargs):
 #--------------------------------------------------------------------------
 def to_featureclass(geo,
                     location,
-                    overwrite=True):
+                    overwrite=True,
+                    validate=False):
     """
     Exports the DataFrame to a Feature class.
 
@@ -451,19 +452,15 @@ def to_featureclass(geo,
     :returns: string
 
     """
-    null_geom = {
-        'point': pd.io.json.dumps({'x' : None, 'y': None, 'spatialReference' : geo.sr}),
-        'polyline' : pd.io.json.dumps({'paths' : [], 'spatialReference' : geo.sr}),
-        'polygon' : pd.io.json.dumps({'rings' : [], 'spatialReference' : geo.sr}),
-        'multipoint' : pd.io.json.dumps({'points' : [], 'spatialReference' : geo.sr})
-    }
+
 
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
     if geo.name is None:
         raise ValueError("DataFrame must have geometry set.")
-    if geo.validate(strict=True) == False:
+    if validate and \
+       geo.validate(strict=True) == False:
         raise ValueError(("Mixed geometry types detected, "
                          "cannot export to feature class."))
     if HASARCPY:
@@ -478,13 +475,18 @@ def to_featureclass(geo,
         elif overwrite == False and arcpy.Exists(location):
             raise ValueError(('overwrite set to False, Cannot '
                               'overwrite the table. '))
-        sr = geo.sr
-        if isinstance(sr, list):
-            sr = sr[0]
-        sr = sr.as_arcpy
+
         notnull = geo._data[geo._name].notnull()
         idx = geo._data[geo._name][notnull].first_valid_index()
+        sr = sr = geo._data[geo._name][idx]['spatialReference']
         gt = geo._data[geo._name][idx].geometry_type.upper()
+        null_geom = {
+            'point': pd.io.json.dumps({'x' : None, 'y': None, 'spatialReference' : sr}),
+            'polyline' : pd.io.json.dumps({'paths' : [], 'spatialReference' : sr}),
+            'polygon' : pd.io.json.dumps({'rings' : [], 'spatialReference' : sr}),
+            'multipoint' : pd.io.json.dumps({'points' : [], 'spatialReference' : sr})
+        }
+        sr = geo._data[geo._name][idx].spatial_reference
         null_geom = null_geom[gt.lower()]
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
