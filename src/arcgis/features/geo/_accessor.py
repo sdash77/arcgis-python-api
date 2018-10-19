@@ -942,26 +942,12 @@ class GeoAccessor(object):
         if isinstance(col, str) and  \
            col in self._data.columns and \
            self._data[col].dtype.name.lower() != 'geometry':
-            q = self._data[col].isnull()
             idx = self._data[col].first_valid_index()
             if sr is None:
                 try:
                     sr = SpatialReference(Geometry(self._data.iloc[idx][col]).spatial_reference)
                 except:
                     sr = SpatialReference({'wkid' : 4326})
-            if True in q.unique():
-                if Geometry(self._data[col][idx]).geometry_type.lower() == 'polyline':
-                    data = Geometry({'paths' : [], 'spatialReference' : sr})
-                    self._data.loc[q, col]  = data
-                elif Geometry(self._data[col][idx]).geometry_type.lower() == 'polygon':
-                    data = Geometry({"rings" : [], 'spatialReference' : sr})
-                    self._data.loc[q, col]  = data
-                elif Geometry(self._data[col][idx]).geometry_type.lower() == 'point':
-                    data = Geometry({"x" : None, "y": None, 'spatialReference' : sr})
-                    self._data.loc[q, col]  = data
-                elif Geometry(self._data[col][idx]).geometry_type.lower() == 'multipoint':
-                    data = Geometry({"points" : [  ], 'spatialReference' : sr})
-                    self._data.loc[q, col]  = data
             self._name = col
             self._data[col] = GeoArray(self._data[col])
         elif isinstance(col, str) and  \
@@ -1006,9 +992,15 @@ class GeoAccessor(object):
         if self._name is None:
             return False
         if strict:
-            return len(pd.unique(self._data[self._name].geom.geometry_type)) == 1
+            q = self._data[self._name].notna()
+            gt = pd.unique(self._data[q][self._name].geom.geometry_type)
+            if len(gt) == 1:
+                return True
+            else:
+                return False
         else:
-            return all(pd.unique(self._data[self._name].geom.is_valid))
+            q = self._data[self._name].notna()
+            return all(pd.unique(self._data[q][self._name].geom.is_valid))
         return True
     #----------------------------------------------------------------------
     def join(self, right_df,
@@ -2056,16 +2048,17 @@ class GeoAccessor(object):
                                         filename=filename,
                                         bbox=self.full_extent)
             for idx, g in zip(self._index, self._data[self.name]):
-                if g.type.lower() == 'point':
-                    ge = g.geoextent
-                    gext = (ge[0] -.001,ge[1] -.001, ge[2] + .001, ge[3] -.001)
-                    self._sindex.insert(oid=idx, bbox=gext)
-                else:
-                    self._sindex.insert(oid=idx, bbox=g.geoextent)
-                if c >= int(l/4) + 1:
-                    self._sindex.flush()
-                    c = 0
-                c += 1
+                if g:
+                    if g.type.lower() == 'point':
+                        ge = g.geoextent
+                        gext = (ge[0] -.001,ge[1] -.001, ge[2] + .001, ge[3] -.001)
+                        self._sindex.insert(oid=idx, bbox=gext)
+                    else:
+                        self._sindex.insert(oid=idx, bbox=g.geoextent)
+                    if c >= int(l/4) + 1:
+                        self._sindex.flush()
+                        c = 0
+                    c += 1
             self._sindex.flush()
             return self._sindex
         elif self.name:
@@ -2075,16 +2068,17 @@ class GeoAccessor(object):
                                         filename=filename,
                                         bbox=self.full_extent)
             for idx, g in zip(self._index, self._data[self.name]):
-                if g.type.lower() == 'point':
-                    ge = g.geoextent
-                    gext = (ge[0] -.001,ge[1] -.001, ge[2] + .001, ge[3] -.001)
-                    self._sindex.insert(oid=idx, bbox=gext)
-                else:
-                    self._sindex.insert(oid=idx, bbox=g.geoextent)
-                if c >= int(l/4) + 1:
-                    self._sindex.flush()
-                    c = 0
-                c += 1
+                if g:
+                    if g.type.lower() == 'point':
+                        ge = g.geoextent
+                        gext = (ge[0] -.001,ge[1] -.001, ge[2] + .001, ge[3] -.001)
+                        self._sindex.insert(oid=idx, bbox=gext)
+                    else:
+                        self._sindex.insert(oid=idx, bbox=g.geoextent)
+                    if c >= int(l/4) + 1:
+                        self._sindex.flush()
+                        c = 0
+                    c += 1
             self._sindex.flush()
             return self._sindex
         else:
@@ -2247,7 +2241,7 @@ class GeoAccessor(object):
         """gets/sets the spatial reference of the dataframe"""
         data = [getattr(g, 'spatialReference', None) or g['spatialReference'] \
                 for g in self._data[self.name] \
-                if g not in [None, np.NaN, np.nan]]
+                if g not in [None, np.NaN, np.nan, '']]
         df = pd.DataFrame(data)
         label = "wkid"
         if 'wkid' in df:
@@ -2546,8 +2540,9 @@ class GeoAccessor(object):
         (1.23427, 34)
 
         """
-        df = pd.DataFrame(data=self._data[self.name].geom.true_centroid.tolist(), columns=['x','y'])
-        return df['x'].mean(), df['y'].mean()
+        q = self._data[self.name].notnull()
+        df = pd.DataFrame(data=self._data[self.name][q].geom.true_centroid.tolist(), columns=['x','y']).mean()
+        return df['x'], df['y']
     #----------------------------------------------------------------------
     @property
     def geometry_type(self):

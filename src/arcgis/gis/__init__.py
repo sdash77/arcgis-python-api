@@ -230,8 +230,10 @@ class GIS(object):
         self._referer = kwargs.pop('referer', None)
 
         from arcgis._impl.tools import _Tools
-
-        if profile is not None:
+        if profile is not None and \
+           len(profile) == 0:
+            raise ValueError("A `profile` name must not be an empty string.")
+        elif profile is not None:
             # Load config
             cfg_file_path = os.path.expanduser("~") + '/.arcgisprofile'
             config = configparser.ConfigParser()
