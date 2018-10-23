@@ -12,17 +12,6 @@ import arcgis as _arcgis
 
 _LOGGER = logging.getLogger(__name__)
 
-def _get_input_raster(fnarg_ra, fnarg):
-#gets raster url from _fnra and rendering rule from _fn
-    for key,value in fnarg_ra.items():
-        if key == "Raster" and isinstance(value,dict):
-            return _get_input_raster(value["rasterFunctionArguments"], fnarg)
-        if key == "Rasters":
-            if isinstance(value,list):
-                return _get_input_raster(value[0]["rasterFunctionArguments"], fnarg)
-        elif (key == "Raster"  or key == "Rasters") and not isinstance(value,dict):
-            input_raster_dict = {"url":fnarg_ra[key],"renderingRule":fnarg}
-            return input_raster_dict
 
 def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
     for key,value in fnarg_ra.items():
@@ -2509,7 +2498,11 @@ class ImageryLayer(Layer):
             return convert_raster_to_feature(self._url, field, output_type, simplify, output_name, gis)
         fnarg_ra = self._fnra['rasterFunctionArguments']
         fnarg = self._fn
-        return convert_raster_to_feature(_get_input_raster(fnarg_ra, fnarg), field, output_type, simplify, output_name, gis)
+        if "url" in self._lyr_dict:
+            url = self._lyr_dict["url"]
+        if "serviceToken" in self._lyr_dict:
+            url = url+"?token="+ self._lyr_dict["serviceToken"]
+        return convert_raster_to_feature({"url":url,"renderingRule":self._fn}, field, output_type, simplify, output_name, gis)
 
 
     def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):

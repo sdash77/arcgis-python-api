@@ -155,17 +155,21 @@ def _get_raster_url(raster, layer):
 
 
 def _get_raster_ra(raster):
+
     if isinstance(raster, ImageryLayer):
+        if "url" in raster._lyr_dict:
+            url = raster._lyr_dict["url"]
+        if "serviceToken" in raster._lyr_dict:
+            url = url+"?token="+ raster._lyr_dict["serviceToken"]
         if raster._fnra is not None:
             raster_ra = raster._fnra
         else:
             raster_ra = {}
             if raster._mosaic_rule is not None:
-                raster_ra["url"] = raster._url
+                raster_ra["url"] = url
                 raster_ra["mosaicRule"] = raster._mosaic_rule
             else:
-                raster_ra = raster._url
-
+                raster_ra = url
             #if raster._mosaic_rule is not None:
             #    raster_ra['mosaicRule'] = raster._mosaic_rule
     elif isinstance(raster, Item):
