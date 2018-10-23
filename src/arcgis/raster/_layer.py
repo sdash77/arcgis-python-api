@@ -752,7 +752,7 @@ class ImageryLayer(Layer):
         ----------------------  --------------------------------------------------------------------
         size                    optional list. The size (width * height) of the exported image in
                                 pixels. If size is not specified, an image with a default size of
-                                400 * 400 will be exported.
+                                1200*450 will be exported.
                                 Syntax: list of [width, height]
         ----------------------  --------------------------------------------------------------------
         time                    optional datetime.date, datetime.datetime or timestamp string. The
