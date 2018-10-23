@@ -254,6 +254,43 @@ class Geometry(BaseGeometry):
             iterable = ()
         super(Geometry, self).__init__(iterable)
         self.update(kwargs)
+    def _repr_svg_(self):
+        """SVG representation for iPython notebook"""
+        svg_top = '<svg xmlns="http://www.w3.org/2000/svg" ' \
+            'xmlns:xlink="http://www.w3.org/1999/xlink" '
+        if self.is_empty:
+            return svg_top + '/>'
+        else:
+            # Establish SVG canvas that will fit all the data + small space
+            xmin, ymin, xmax, ymax = self.extent
+            if xmin == xmax and ymin == ymax:
+                # This is a point; buffer using an arbitrary size
+                xmin, ymin, xmax, ymax = self.buffer(1).extent
+            else:
+                # Expand bounds by a fraction of the data ranges
+                expand = 0.04  # or 4%, same as R plots
+                widest_part = max([xmax - xmin, ymax - ymin])
+                expand_amount = widest_part * expand
+                xmin -= expand_amount
+                ymin -= expand_amount
+                xmax += expand_amount
+                ymax += expand_amount
+            dx = xmax - xmin
+            dy = ymax - ymin
+            width = min([max([100., dx]), 300])
+            height = min([max([100., dy]), 300])
+            try:
+                scale_factor = max([dx, dy]) / max([width, height])
+            except ZeroDivisionError:
+                scale_factor = 1.
+            view_box = "{0} {1} {2} {3}".format(xmin, ymin, dx, dy)
+            transform = "matrix(1,0,0,-1,0,{0})".format(ymax + ymin)
+            return svg_top + (
+                'width="{1}" height="{2}" viewBox="{0}" '
+                'preserveAspectRatio="xMinYMin meet">'
+                '<g transform="{3}">{4}</g></svg>'
+                ).format(view_box, width, height, transform,
+                         self.svg(scale_factor))
     #----------------------------------------------------------------------
     def __iter__(self):
         """
@@ -2168,6 +2205,12 @@ class SpatialReference(Geometry):
     def __hash__(self):
         return hash(json.dumps(dict(self)))
     #----------------------------------------------------------------------
+    _repr_svg_ = None
+    def svg(self, scale_factor=1, fill_color=None):
+        """represents the SVG of the object"""
+        return "<g/>"
+
+    #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
         """returns the class as an arcpy SpatialReference object"""
@@ -2210,6 +2253,10 @@ class Envelope(Geometry):
     #----------------------------------------------------------------------
     def __hash__(self):
         return hash(json.dumps(dict(self)))
+    #----------------------------------------------------------------------
+    def svg(self, scale_factor=1, fill_color=None):
+        """"""
+        return self.polygon.svg(scale_factor, fill_color)
     #----------------------------------------------------------------------
     def coordinates(self):
         """returns the coordinates as a np.array"""
@@ -2290,6 +2337,26 @@ class Point(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
+    def svg(self, scale_factor=1, fill_color=None):
+        """Returns SVG circle element for the Point geometry.
+
+        Parameters
+        ==========
+        scale_factor : float
+            Multiplication factor for the SVG circle diameter.  Default is 1.
+        fill_color : str, optional
+            Hex string for fill color. Default is to use "#66cc99" if
+            geometry is valid, and "#ff3333" if invalid.
+        """
+        if self.is_empty:
+            return '<g />'
+        if fill_color is None:
+            fill_color = "#66cc99" if self.is_valid else "#ff3333"
+        return (
+            '<circle cx="{0.x}" cy="{0.y}" r="{1}" '
+            'stroke="#555555" stroke-width="{2}" fill="{3}" opacity="0.6" />'
+            ).format(self, 3 * scale_factor, 1 * scale_factor, fill_color)
+    #----------------------------------------------------------------------
     def __setstate__(self, d):
         """unpickle support """
         self.__dict__.update(d)
@@ -2360,6 +2427,28 @@ class MultiPoint(Geometry):
     def type(self):
         return self._type
     #----------------------------------------------------------------------
+    def svg(self, scale_factor=1., fill_color=None):
+        """Returns a group of SVG circle elements for the MultiPoint geometry.
+
+        Parameters
+        ==========
+        scale_factor : float
+            Multiplication factor for the SVG circle diameters.  Default is 1.
+        fill_color : str, optional
+            Hex string for fill color. Default is to use "#66cc99" if
+            geometry is valid, and "#ff3333" if invalid.
+        """
+        if self.is_empty:
+            return '<g />'
+        if fill_color is None:
+            fill_color = "#66cc99" if self.is_valid else "#ff3333"
+        return '<g>' + \
+            ''.join(('<circle cx="{0.x}" cy="{0.y}" r="{1}" '
+            'stroke="#555555" stroke-width="{2}" fill="{3}" opacity="0.6" />'
+            ).format(Point({'x': p[0], 'y': p[1]}), 3 * scale_factor, 1 * scale_factor, fill_color) \
+                    for p in self['points']) + \
+            '</g>'
+    #----------------------------------------------------------------------
     def __hash__(self):
         return hash(json.dumps(dict(self)))
     #----------------------------------------------------------------------
@@ -2411,6 +2500,29 @@ class Polyline(Geometry):
             iterable = ()
         super(Polyline, self).__init__(iterable)
         self.update(kwargs)
+    #----------------------------------------------------------------------
+    def svg(self, scale_factor=1, stroke_color=None):
+        """Returns SVG polyline element for the LineString geometry.
+
+        Parameters
+        ==========
+        scale_factor : float
+            Multiplication factor for the SVG stroke-width.  Default is 1.
+        stroke_color : str, optional
+            Hex string for stroke color. Default is to use "#66cc99" if
+            geometry is valid, and "#ff3333" if invalid.
+        """
+        if self.is_empty:
+            return '<g />'
+        if stroke_color is None:
+            stroke_color = "#66cc99" if self.is_valid else "#ff3333"
+        paths = []
+        for path in self['paths']:
+            pnt_format = " ".join(["{0},{1}".format(*c) for c in path])
+            s = ('<polyline fill="none" stroke="{2}" stroke-width="{1}" '
+             'points="{0}" opacity="0.8" />').format(pnt_format, 2. * scale_factor, stroke_color)
+            paths.append(s)
+        return "<g>" + "".join(paths) + "</g>"
     #----------------------------------------------------------------------
     @property
     def type(self):
@@ -2483,6 +2595,27 @@ class Polygon(Geometry):
             iterable = ()
         super(Polygon, self).__init__(iterable)
         self.update(kwargs)
+    #----------------------------------------------------------------------
+    def svg(self, scale_factor=1, fill_color=None):
+        """Returns SVG path element for the Polygon geometry.
+
+        Parameters
+        ==========
+        scale_factor : float
+            Multiplication factor for the SVG stroke-width.  Default is 1.
+        fill_color : str, optional
+            Hex string for fill color. Default is to use "#66cc99" if
+            geometry is valid, and "#ff3333" if invalid.
+        """
+        if self.is_empty:
+            return '<g />'
+        if fill_color is None:
+            fill_color = "#66cc99" if self.is_valid else "#ff3333"
+        polygons = []
+        for ring in self['rings']:
+            polygons.append("""<polygon fill-rule="evenodd" fill="%s" stroke="#555555" stroke-width="2.0" opacity="0.6" points="%s" />""" % \
+                            (fill_color, " ".join(["%s,%s" % (pt[0] * scale_factor, pt[1] * scale_factor) for pt in ring])))
+        return "<g>" + " ".join(polygons) + "</g>"
     #----------------------------------------------------------------------
     @property
     def type(self):
