@@ -16,6 +16,7 @@ from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
 from arcgis._impl.common._utils import _date_handler
 
+
 _log = logging.getLogger(__name__)
 
 
@@ -37,6 +38,13 @@ def _layer_input(input_layer):
 
     elif isinstance(input_layer, arcgis.gis.Layer):
         input_param = input_layer._lyr_dict
+        from arcgis.raster import ImageryLayer
+        if isinstance(input_layer, ImageryLayer):
+            if "url" in input_param:
+                url = input_param["url"]
+            if "serviceToken" in input_param:
+                url = url+"?token="+ input_param["serviceToken"]
+            input_param = {"url":url}
 
     elif isinstance(input_layer, dict):
         input_param = input_layer

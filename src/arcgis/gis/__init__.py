@@ -230,8 +230,10 @@ class GIS(object):
         self._referer = kwargs.pop('referer', None)
 
         from arcgis._impl.tools import _Tools
-
-        if profile is not None:
+        if profile is not None and \
+           len(profile) == 0:
+            raise ValueError("A `profile` name must not be an empty string.")
+        elif profile is not None:
             # Load config
             cfg_file_path = os.path.expanduser("~") + '/.arcgisprofile'
             config = configparser.ConfigParser()
@@ -379,10 +381,13 @@ class GIS(object):
             self._url = self._portal.url
             self._con._auth = "PRO"
 
+        if self._con._auth != 'anon':
+            me = self.users.me
+
         if self._con._auth.lower() != 'anon' and \
            self._con._auth is not None and \
-           hasattr(self.users.me, 'role') and \
-           self.users.me.role == "org_admin":
+           hasattr(me, 'role') and \
+           me.role == "org_admin":
             try:
                 if self.properties.isPortal == True:
                     from .admin.portaladmin import PortalAdminManager
@@ -395,8 +400,8 @@ class GIS(object):
                 pass
         elif self._con._auth.lower() != 'anon' and \
              self._con._auth is not None and\
-             hasattr(self.users.me, 'role') and \
-             self.users.me.role == 'org_publisher' and \
+             hasattr(me, 'role') and \
+             me.role == 'org_publisher' and \
              self._portal.is_arcgisonline == False:
             try:
                 from .admin.portaladmin import PortalAdminManager
@@ -406,7 +411,7 @@ class GIS(object):
                 pass
         elif self._con._auth.lower() != 'anon' and \
              self._con._auth is not None and\
-             hasattr(self.users.me, 'privileges') and \
+             hasattr(me, 'privileges') and \
              self._portal.is_arcgisonline == False:
             privs = ['portal:publisher:publishFeatures',
                      'portal:publisher:publishScenes',
@@ -414,7 +419,7 @@ class GIS(object):
                      'portal:publisher:publishServerServices',
                      'portal:publisher:publishTiles']
             for priv in privs:
-                if priv in self.users.me.privileges:
+                if priv in me.privileges:
                     can_publish = True
                     break
                 else:
@@ -428,8 +433,8 @@ class GIS(object):
                     pass
         if self._con._auth.lower() != 'anon' and \
            self._con._auth is not None and\
-           hasattr(self.users.me, 'role') and \
-           self.users.me.role == 'org_publisher' and \
+           hasattr(me, 'role') and \
+           me.role == 'org_publisher' and \
            self._portal.is_arcgisonline == False:
             try:
                 from .admin.portaladmin import PortalAdminManager
@@ -751,14 +756,22 @@ class GIS(object):
             # delattr(self, '_lazy_properties') # force refresh of properties when queried next
             return resp.get('success')
 
+    @property
+    def url(self):
+        """Readonly URL of the GIS you are connected to."""
+        if self._is_hosted_nb_home:
+            return self._public_portal_url
+        else:
+           return self._url
+
     def __str__(self):
-        return 'GIS @ ' + self._url
+        return 'GIS @ ' + self.url
 
     def _repr_html_(self):
         """
         HTML Representation for IPython Notebook
         """
-        return 'GIS @ <a href="' + self._url + '">' + self._url + '</a>'
+        return 'GIS @ <a href="' + self.url + '">' + self.url + '</a>'
 
     def _get_properties(self, force=False):
         """ Returns the portal properties (using cache unless force=True). """
@@ -1864,19 +1877,32 @@ class UserManager(object):
         """
 
         if query is None:
-            users = self._portal.get_org_users(max_users, exclude_system=json.dumps(exclude_system))
+            users = self._portal.get_org_users(max_users,
+                                               exclude_system=json.dumps(exclude_system))
+            gis = self._gis
+            user_storage = []
             for u in users:
+                if 'id' in u and \
+                   (u['id'] is None or u['id'] == 'null'):
+                    un = user['username']
+                else:
+                    un = u['id']
                 if not 'roleId' in u:
                     u['roleId'] = u.pop('role', None)
-            gis = self._gis
-            return [User(gis, u['username'], u) for u in users]
+                user_storage.append(User(gis, un, u))
+            return user_storage
         else:
             userlist = []
             isinstance(self._portal, portalpy.Portal)
             users = self._portal.search_users(query, sort_field, sort_order,
                                               max_users, outside_org, json.dumps(exclude_system))
             for user in users:
-                userlist.append(User(self._gis, user['username'], user))
+                if 'id' in user and \
+                   (user['id'] is None or user['id'] == 'null'):
+                    un = user['username']
+                else:
+                    un = user['id']
+                userlist.append(User(self._gis, un))
             return userlist
 
         #TODO: remove org users, invite users
@@ -3843,6 +3869,13 @@ class Group(dict):
             thumbnail_url_path = self._portal.con.baseurl + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
+    @property
+    def homepage(self):
+        """Gets the URL to the HTML page for the group."""
+        return "{}{}{}".format(self._gis.url,
+                               "/home/group.html?id=",
+                               self.groupid)
+
     def _repr_html_(self):
         thumbnail = self.thumbnail
         if self.thumbnail is None or not self._portal.is_logged_in:
@@ -3875,14 +3908,8 @@ class Group(dict):
         except:
             owner = 'Not available'
 
-        if self._gis._is_hosted_nb_home:
-            url = "{}{}{}".format(self._gis._public_portal_url,
-                                  "/home/group.html?id=",
-                                  self.groupid)
-        else:
-            url = "{}{}{}".format(self._portal.url,
-                                  "/home/group.html?id=",
-                                  self.groupid)
+        url = self.homepage
+
         return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
                        <a href='""" + str(url) + """' target='_blank'>
@@ -4549,6 +4576,13 @@ class User(dict):
             thumbnail_url_path = self._portal.con.baseurl + 'community/users/' + self._user_id + '/info/' + thumbnail_file
             return thumbnail_url_path
 
+    @property
+    def homepage(self):
+        """Gets the URL to the HTML page for the user."""
+        return "{}{}{}".format(self._gis.url,
+                               "/home/user.html?user=",
+                               self._user_id)
+
     def _repr_html_(self):
         thumbnail = self.thumbnail
         if self.thumbnail is None or not self._portal.is_logged_in:
@@ -4582,14 +4616,7 @@ class User(dict):
         except:
             description = "This user has not provided any personal information."
 
-        if self._gis._is_hosted_nb_home:
-            url = "{}{}{}".format(self._gis._public_portal_url,
-                                  "/home/user.html?user=",
-                                  self._user_id)
-        else:
-            url = "{}{}{}".format(self._portal.url,
-                                  "/home/user.html?user=",
-                                  self._user_id)
+        url = self.homepage
 
         return """<div class="9item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
                     <div class="item_left" style="width: 210px; float: left;">
@@ -5488,8 +5515,9 @@ class Item(dict):
     @property
     def homepage(self):
         """Gets the URL to the HTML page for the item."""
-        itemid = self.itemid
-        return "%s/home/item.html?id=%s" % (self._portal.resturl.replace("/sharing/rest/", ""), itemid)
+        return "{}{}{}".format(self._gis.url,
+                               "/home/item.html?id=",
+                               self.itemid)
 
     def copy_feature_layer_collection(self, service_name, layers=None, tables=None, folder=None,
                                       description=None, snippet=None, owner=None):
@@ -5993,14 +6021,8 @@ class Item(dict):
         snippet = self.snippet
         if snippet is None:
             snippet = ""
-        if self._gis._is_hosted_nb_home:
-            portalurl = "{}{}{}".format(self._gis._public_portal_url,
-                                        "/home/item.html?id=",
-                                        self.itemid)
-        else:
-            portalurl = "{}{}{}".format(self._portal.url,
-                                        "/home/item.html?id=",
-                                        self.itemid)
+
+        portalurl = self.homepage
 
         locale.setlocale(locale.LC_ALL, '')
         numViews = locale.format("%d", self.numViews, grouping=True)

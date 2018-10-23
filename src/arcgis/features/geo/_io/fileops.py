@@ -39,6 +39,7 @@ def _infer_type(df, col):
     Ouput:
       field type name
     """
+    import six
     nn = df[col].notnull()
     nn = list(df[nn].index)
     if len(nn) > 0:
@@ -255,7 +256,7 @@ def to_table(geo, location, overwrite=True):
                     dtypes.append((col, '<U%s' % int(mlen)))
                 else:
                     try:
-                        dtypes.append((col, type(df[col][s.first_valid_index()])))
+                        dtypes.append((col, type(df[col][0])))
                     except:
                         dtypes.append((col, '<U254'))
             elif df[col].dtype.name == 'int64':
@@ -279,7 +280,6 @@ def to_table(geo, location, overwrite=True):
         dfcols = [fld.name for fld in fields \
                   if fld.type not in ['OID', 'Geometry'] and\
                   fld.name in df.columns]
-        import json
         with da.InsertCursor(fc, icols) as irows:
             for idx, row in df[dfcols].iterrows():
                 try:
@@ -302,73 +302,72 @@ def from_featureclass(filename, **kwargs):
      fields: list of fields to extract from the table
     """
     from arcgis.geometry import _types
+    import json
     if HASARCPY:
         sql_clause = kwargs.pop('sql_clause', (None,None))
         where_clause = kwargs.pop('where_clause', None)
-        sr = kwargs.pop('sr', arcpy.Describe(filename).spatialReference or arcpy.SpatialReference(4326))
         fields = kwargs.pop('fields', None)
-        desc = arcpy.Describe(filename)
-        if not fields:
-            fields = [field.name for field in arcpy.ListFields(filename) \
-                      if field.type not in ['Geometry']]
-
-            if hasattr(desc, 'areaFieldName'):
-                afn = desc.areaFieldName
-                if afn in fields:
-                    fields.remove(afn)
-            if hasattr(desc, 'lengthFieldName'):
-                lfn = desc.lengthFieldName
-                if lfn in fields:
-                    fields.remove(lfn)
-        geom_fields = fields + ['SHAPE@']
-        flds = fields + ['SHAPE']
-        vals = []
-        geoms = []
-        geom_idx = flds.index('SHAPE')
-        shape_type = desc.shapeType
-        default_polygon = _types.Geometry(arcpy.Polygon(arcpy.Array([arcpy.Point(0,0)]* 3)))
-        default_polyline = _types.Geometry(arcpy.Polyline(arcpy.Array([arcpy.Point(0,0)]* 2)))
-        default_point = _types.Geometry(arcpy.PointGeometry(arcpy.Point()))
-        default_multipoint = _types.Geometry(arcpy.Multipoint(arcpy.Array([arcpy.Point()])))
-        with arcpy.da.SearchCursor(filename,
-                                   field_names=geom_fields,
-                                   where_clause=where_clause,
-                                   sql_clause=sql_clause,
-                                   spatial_reference=sr) as rows:
-
+        sr = kwargs.pop('sr', None)
+        try:
+            desc = arcpy.da.Describe(filename)
+            area_field = desc.pop('areaFieldName', None)
+            length_field = desc.pop('lengthFieldName', None)
+        except: # for older versions of arcpy
+            desc = arcpy.Describe(filename)
+            desc = {
+                'fields' : desc.fields,
+                'shapeType' : desc.shapeType
+            }
+            area_field = getattr(desc, 'areaFieldName', None)
+            length_field = getattr(desc, 'lengthFieldName', None)
+        shape_name = desc['shapeType']
+        if fields is None:
+            fields = [fld.name for fld in desc['fields'] \
+                      if fld.type not in ['Geometry'] and \
+                      fld.name not in [area_field, length_field]]
+            cursor_fields = fields + ['SHAPE@JSON']
+            df_fields = fields + ['SHAPE']
+        count = 0
+        dfs = []
+        shape_field_idx = cursor_fields.index("SHAPE@JSON")
+        with da.SearchCursor(filename,
+                             field_names=cursor_fields,
+                             where_clause=where_clause,
+                             sql_clause=sql_clause,
+                             spatial_reference=sr) as rows:
+            srows = []
             for row in rows:
-                row = list(row)
-                # Prevent curves/arcs
-                if row[geom_idx] is None:
-                    row.pop(geom_idx)
-                    g = {}
-                elif row[geom_idx].type in ['polyline', 'polygon']:
-                    try:
-                        g = _types.Geometry(row.pop(geom_idx))
-                    except:
-                        g = _types.Geometry(row.pop(geom_idx)).generalize(0)
-                else:
-                    g = _types.Geometry(row.pop(geom_idx))
-                if g == {}:
-                    if shape_type.lower() == 'point':
-                        g = default_point
-                    elif shape_type.lower() == 'polygon':
-                        g = default_polygon
-                    elif shape_type.lower() == 'polyline':
-                        g = default_point
-                    elif shape_type.lower() == 'multipoint':
-                        g = default_multipoint
-                geoms.append(g)
-                vals.append(row)
-                del row
-            del rows
-        df = pd.DataFrame(data=vals, columns=fields)
-        df.spatial.set_geometry(geoms)
-        if df.spatial.sr is None:
-            if sr is not None:
-                df.spatial.sr = sr
-            else:
-                df.spatial.sr = df.spatial._date[df.spatial._name][sdf.geometry.first_valid_index()].spatial_reference
+                srows.append(row)
+                if len(srows) == 25000:
+                    dfs.append( pd.DataFrame(srows,
+                                             columns=df_fields))
+                    srows = []
+            if len(srows):
+                dfs.append( pd.DataFrame(srows,
+                                         columns=df_fields))
+                srows = []
+            del srows
+        if len(dfs) > 0:
+            df = pd.concat(dfs)
+            df = df.reset_index(drop=True)
+        else:
+            df = dfs[0]
+        q = df.SHAPE.notnull()
+        gt = desc['shapeType'].lower()
+        geoms = {
+            "point" : _types.Point,
+            "polygon" : _types.Polygon,
+            "polyline" : _types.Polyline,
+            "multipoint" : _types.MultiPoint,
+            "envelope" : _types.Envelope,
+            "geometry" : _types.Geometry
+        }
+        df.SHAPE = (
+           df.SHAPE[q]
+           .apply(pd.io.json.loads)
+           .apply(geoms[gt])
+        )
+        df.spatial.set_geometry("SHAPE")
         return df
     elif HASARCPY == False and \
          HASPYSHP == True and\
@@ -432,7 +431,8 @@ def from_featureclass(filename, **kwargs):
 #--------------------------------------------------------------------------
 def to_featureclass(geo,
                     location,
-                    overwrite=True):
+                    overwrite=True,
+                    validate=False):
     """
     Exports the DataFrame to a Feature class.
 
@@ -452,12 +452,15 @@ def to_featureclass(geo,
     :returns: string
 
     """
+
+
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
     if geo.name is None:
         raise ValueError("DataFrame must have geometry set.")
-    if geo.validate(strict=True) == False:
+    if validate and \
+       geo.validate(strict=True) == False:
         raise ValueError(("Mixed geometry types detected, "
                          "cannot export to feature class."))
     if HASARCPY:
@@ -472,11 +475,19 @@ def to_featureclass(geo,
         elif overwrite == False and arcpy.Exists(location):
             raise ValueError(('overwrite set to False, Cannot '
                               'overwrite the table. '))
-        sr = geo.sr
-        if isinstance(sr, list):
-            sr = sr[0]
-        sr = sr.as_arcpy
-        gt = pd.unique(geo._data[geo._name].geom.geometry_type).tolist()[0].upper()
+
+        notnull = geo._data[geo._name].notnull()
+        idx = geo._data[geo._name][notnull].first_valid_index()
+        sr = sr = geo._data[geo._name][idx]['spatialReference']
+        gt = geo._data[geo._name][idx].geometry_type.upper()
+        null_geom = {
+            'point': pd.io.json.dumps({'x' : None, 'y': None, 'spatialReference' : sr}),
+            'polyline' : pd.io.json.dumps({'paths' : [], 'spatialReference' : sr}),
+            'polygon' : pd.io.json.dumps({'rings' : [], 'spatialReference' : sr}),
+            'multipoint' : pd.io.json.dumps({'points' : [], 'spatialReference' : sr})
+        }
+        sr = geo._data[geo._name][idx].spatial_reference
+        null_geom = null_geom[gt.lower()]
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,
@@ -500,7 +511,7 @@ def to_featureclass(geo,
                     dtypes.append((col, '<U%s' % int(mlen)))
                 else:
                     try:
-                        dtypes.append((col, type(df[col][s.first_valid_index()])))
+                        dtypes.append((col, type(df[col][idx])))
                     except:
                         dtypes.append((col, '<U254'))
             elif df[col].dtype.name == 'int64':
@@ -524,15 +535,14 @@ def to_featureclass(geo,
         dfcols = [fld.name for fld in fields \
                   if fld.type not in ['OID', 'Geometry'] and\
                   fld.name in df.columns] + [df.spatial.name]
-        import json
         with da.InsertCursor(fc, icols) as irows:
-            for idx, row in df[dfcols].iterrows():
-                try:
-                    r = row.tolist()
-                    r[-1] = json.dumps(r[-1])
-                    irows.insertRow(r)
-                except:
-                    print("row %s could not be inserted." % idx)
+            def _insert_row(row):
+                row[-1] = pd.io.json.dumps(row[-1])
+                irows.insertRow(row)
+            q = df[geo._name].isna()
+            df.loc[q, 'SHAPE'] = null_geom # set null values to proper JSON
+            np.apply_along_axis(_insert_row, 1, df[dfcols].values)
+            df.loc[q, 'SHAPE'] = None # reset null values
         return fc
     elif HASPYSHP:
         if fc_name.endswith('.shp') == False:
@@ -630,6 +640,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
 
         # create the PRJ file
         try:
+            from urllib import request
             wkid = df.spatial.sr['wkid']
 
             prj_filename = out_fc.replace('.shp', '.prj')
