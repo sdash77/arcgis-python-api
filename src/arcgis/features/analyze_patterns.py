@@ -79,6 +79,64 @@ def calculate_density(
         output_name,
         context)
 
+def find_point_clusters(
+        analysis_layer,
+        min_features_cluster,
+        search_distance=None,
+        search_distance_unit=None,
+        output_name=None,
+        context=None,
+        gis=None):
+
+    """
+    The Find Point Clusters function finds clusters of point features in surrounding 
+    noise based on their spatial distribution. Output is a layer containing records 
+    assigned to a cluster or noise. 
+
+    ====================    =========================================================
+    **Argument**            **Description**
+    --------------------    ---------------------------------------------------------
+    analysis_layer          Required layer. The point feature layer for which 
+                            density-based clustering will be calculated.
+    --------------------    ---------------------------------------------------------
+    min_features_cluster    Required integer. The minimum number of features to be 
+                            considered a cluster. Any cluster with fewer features 
+                            than the number provided will be considered noise.
+    --------------------    ---------------------------------------------------------
+    search_distance         Optional double. The maximum distance to consider. The 
+                            Minimum Features per Cluster specified must be found 
+                            within this distance for cluster membership. Individual 
+                            clusters will be separated by at least this distance. If 
+                            a feature is located further than this distance from the 
+                            next closest feature in the cluster, it will not be 
+                            included in the cluster.
+    --------------------    ---------------------------------------------------------
+    search_distance_unit    Optional string. The linear unit to be used for the 
+                            search distance parameter.
+    --------------------    ---------------------------------------------------------
+    output_name             Optional string. Additional properties such as output 
+                            feature service name.
+    --------------------    ---------------------------------------------------------
+    context                 Optional string. Additional settings such as processing 
+                            extent and output spatial reference.
+    --------------------    ---------------------------------------------------------
+    gis                     Optional, the GIS on which this tool runs. If not 
+                            specified, the active GIS is used.                                                      
+    ====================    =========================================================
+
+    :returns: Python dictionary with the following keys:
+        "point_clusters_result_layer" : layer (FeatureCollection)
+        "process_info" : list of messages
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.featureanalysis.find_point_clusters(
+        analysis_layer,
+        min_features_cluster,
+        search_distance,
+        search_distance_unit,
+        output_name,
+        context)    
 
 def find_hot_spots(
         analysis_layer,
