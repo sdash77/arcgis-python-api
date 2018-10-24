@@ -984,7 +984,7 @@ class Portal(object):
 
         return results
 
-    def get_org_users(self, max_users=1000, exclude_system=True):
+    def get_org_users(self, max_users=1000, exclude_system=True, user_type=None, role=None):
         """ Returns all users within the portal organization.
 
         Arguments
@@ -1044,14 +1044,18 @@ class Portal(object):
         # Execute the search and get back the results
         count = 0
         resp = self._org_users_page(1, min(max_users, 100),
-                                    exclude_system=exclude_system)
+                                    exclude_system=exclude_system,
+                                    user_type=user_type,
+                                    role=role)
         resp_users = resp.get('users')
         results = resp_users
         count += int(resp['num'])
         nextstart = int(resp['nextStart'])
         while count < max_users and nextstart > 0:
             resp = self._org_users_page(nextstart, min(max_users - count, 100),
-                                        exclude_system=exclude_system)
+                                        exclude_system=exclude_system,
+                                        user_type=user_type,
+                                        role=role)
             resp_users = resp.get('users')
             results.extend(resp_users)
             count += int(resp['num'])
@@ -1717,7 +1721,8 @@ class Portal(object):
 
     def search_users(self, q, sort_field='username',
                      sort_order='asc', max_users=1000,
-                     outside_org=False, exclude_system=True):
+                     outside_org=False, exclude_system=True,
+                     user_type=None, role=None):
         """ Searches portal users.
 
         This gives you a list of users and some basic information
@@ -1758,6 +1763,11 @@ class Portal(object):
         exclude_system    Optional boolean. Controls if built-in system accounts are
                           returned or not.  True means built-in account are not
                           returned, where as False means that they are.
+        ----------------  --------------------------------------------------------
+        user_type         Optional String. Ability to filter users by the assigned
+                          type of user account.
+        ----------------  --------------------------------------------------------
+        role              Optional String. Filters user by assigned role.
         ================  ========================================================
 
         :return:
@@ -1797,13 +1807,13 @@ class Portal(object):
         count = 0
         resp = self._users_page(q, 1, min(max_users, 100),
                                 sort_field, sort_order,
-                                exclude_system)
+                                exclude_system, user_type, role)
         results = resp.get('results')
         count += int(resp['num'])
         nextstart = int(resp['nextStart'])
         while count < max_users and nextstart > 0:
             resp = self._users_page(q, nextstart, min(max_users - count, 100),
-                                    sort_field, sort_order, exclude_system)
+                                    sort_field, sort_order, exclude_system, user_type, role)
             resp_users = resp.get('results')
             results.extend(resp_users)
             count += int(resp['num'])
@@ -2413,13 +2423,18 @@ class Portal(object):
         return self.con.post('community/groups', postdata)
 
 
-    def _org_users_page(self, start=1, num=10, exclude_system=True):
+    def _org_users_page(self, start=1, num=10, exclude_system=True,
+                        user_type=None,role=None):
         _log.info('Retrieving org users (start=' + str(start) \
                   + ', num=' + str(num) + ')')
         postdata = self._postdata()
         postdata['start'] = start
         postdata['num'] = num
         postdata['excludeSystemUsers'] = exclude_system
+        if user_type:
+            postdata['userLicenseType'] = user_type
+        if role:
+            postdata['role'] = role
         return self.con.post('portals/self/users', postdata)
 
     def _roles_page(self, start=1, num=10):
@@ -2431,13 +2446,20 @@ class Portal(object):
         return self.con.post('portals/self/roles', postdata)
 
 
-    def _users_page(self, q=None, start=1, num=10, sortfield='', sortorder='asc', exclude_system=False):
+    def _users_page(self, q=None, start=1, num=10, sortfield='', sortorder='asc', exclude_system=False,
+                    user_type=None, role=None):
         _log.info('Searching users (q=' + str(q) + ', start=' + str(start) \
                   + ', num=' + str(num) + ')')
         postdata = self._postdata()
         postdata.update({ 'q': q, 'start': start, 'num': num,
                           'sortField': sortfield, 'sortOrder': sortorder,
                           'excludeSystemUsers' : exclude_system})
+        if user_type:
+            postdata['userLicenseType'] = user_type
+            postdata['applyFiltersIntersection'] = json.dumps(True)
+        if role:
+            postdata['role'] = user_type
+            postdata['applyFiltersIntersection'] = json.dumps(True)
         return self.con.post('community/users', postdata)
 
 

@@ -1825,7 +1825,8 @@ class UserManager(object):
         return False
 
     def search(self, query=None, sort_field='username', sort_order='asc',
-               max_users=100, outside_org=False, exclude_system=False):
+               max_users=100, outside_org=False, exclude_system=False,
+               user_type=None, role=None):
         """
         Searches portal users.
 
@@ -1870,15 +1871,37 @@ class UserManager(object):
         exclude_system    Optional boolean. Controls if built-in system accounts are
                           returned or not.  True means built-in account are not
                           returned, where as False means that they are.
+        ----------------  --------------------------------------------------------
+        user_type         Optional String.  These are the user types for the accounts.
+                          This can be any string, but there are two default system
+                          values that can be searched for.
+
+
+                          Default System Values:
+
+                            + viewer
+                            + creator
+        ----------------  --------------------------------------------------------
+        role              Optional String.  This allows for the filtering of user
+                          by the assigned role of a given user.
         ================  ========================================================
 
         :return:
             A list of users.
         """
 
+        ut = {
+            'creator' : 'creatorUT',
+            'viewer' : 'viewerUT'
+        }
+        if user_type and \
+           user_type.lower() in ut:
+            user_type = ut[user_type.lower()]
         if query is None:
             users = self._portal.get_org_users(max_users,
-                                               exclude_system=json.dumps(exclude_system))
+                                               exclude_system=json.dumps(exclude_system),
+                                               user_type=user_type,
+                                               role=role)
             gis = self._gis
             user_storage = []
             for u in users:
@@ -1895,7 +1918,8 @@ class UserManager(object):
             userlist = []
             isinstance(self._portal, portalpy.Portal)
             users = self._portal.search_users(query, sort_field, sort_order,
-                                              max_users, outside_org, json.dumps(exclude_system))
+                                              max_users, outside_org, json.dumps(exclude_system),
+                                              user_type=user_type, role=role)
             for user in users:
                 if 'id' in user and \
                    (user['id'] is None or user['id'] == 'null'):
@@ -1907,6 +1931,14 @@ class UserManager(object):
 
         #TODO: remove org users, invite users
 
+    #----------------------------------------------------------------------
+    @property
+    def license_types(self):
+        """returns a dictionary of license type information that users can be assigned"""
+        url = "/portals/self/userLicenseTypes"
+        return []
+
+    #----------------------------------------------------------------------
     @property
     def me(self):
         """ Gets the logged in user.
@@ -4562,6 +4594,57 @@ class User(dict):
 
     def __repr__(self):
         return '<%s username:%s>' % (type(self).__name__, self.username)
+
+    def app_bundles(self):
+        """returns the current user's assigned app bundles"""
+        url = "%s/community/users/%s/appBundles" % (self._portal.resturl, self.username)
+        params = {
+            'f' : 'json',
+            "start" : 1,
+            "num" : 10
+        }
+        bundles = []
+        res = self._portal.con.post(url, params)
+        bundles = res["appBundles"]
+        while res["nextStart"] > -1:
+            params['start'] = res["nextStart"]
+            res = self._portal.con.post(url, params)
+            bundles += res["appBundles"]
+        return bundles
+
+    def user_types(self):
+        """returns the user type and assigned applications"""
+        url = "%s/community/users/%s/userLicenseType" % (self._portal.resturl, self.username)
+        params = {'f' : 'json'}
+        return self._portal.con.post(url, params)
+
+    #----------------------------------------------------------------------
+    @property
+    def provisions(self):
+        """
+        Returns a list of all items provisioned licenses for the current user.
+
+        :returns: List
+
+        """
+        provs = []
+        url = "%s/community/users/%s/provisionedListings" % (self._portal.resturl, self.username)
+        params = {
+            'f': 'json',
+            'start' :1,
+            'num' : 255
+        }
+        res = self._portal.con.post(url, params)
+        provs = [Item(gis=self._gis, itemid=i["itemId"])for i in res["provisionedListings"]]
+        while res['nextStart'] > -1:
+            params = {
+                'f': 'json',
+                'start' : res['nextStart'],
+                'num' : 255
+            }
+            res = self._portal.con.post(url, params)
+            provs += [Item(gis=self._gis, itemid=i["itemId"])for i in res["provisionedListings"]]
+        return provs
 
     def get_thumbnail_link(self):
         """ Retrieves the URL to the thumbnail image.
