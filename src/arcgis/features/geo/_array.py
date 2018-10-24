@@ -38,6 +38,9 @@ class NumPyBackedExtensionArrayMixin(ExtensionArray):
         result = operator.getitem(self.data, *args)
         if isinstance(result, (dict, Geometry)):
             return result
+        elif isinstance(result, type(None)) or \
+             isinstance(result, type(np.nan)):
+            return None
         elif not isinstance(result, GeoArray):
             return GeoArray(result)
         return result
@@ -81,7 +84,7 @@ class GeoType(ExtensionDtype):
     type = Geometry
     kind = 'O'
     _record_type = np.dtype('O')
-    na_value = None#{}
+    na_value = None
 
     @classmethod
     def construct_from_string(cls, string):
@@ -118,6 +121,8 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         return self.__repr__()
 
     def _format_values(self):
+        if self.data.ndim == 0:
+            return ""
         return [_format(x) if x else None for x in self.data]
 
     @classmethod
@@ -944,5 +949,7 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
                                     'relation' : relation})
 
 def _format(g):
+    if g in {None, np.nan}:
+        return ""
     return json.dumps(g)
 

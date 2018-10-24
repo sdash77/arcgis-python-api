@@ -4683,8 +4683,15 @@ class User(dict):
         =====================  =========================================================
         **Argument**           **Description**
         ---------------------  ---------------------------------------------------------
-        level                  Required string. The values of 1, 1PlusEdit, or 2. This
+        level                  Required string. The values of 1, 11, or 2. This
                                is the user level for the given user.
+
+
+                                    + 1 - View only
+                                    + 11 - View Plus edit
+                                    + 2 - Content creator
+
+
         =====================  =========================================================
 
         :returns:
@@ -4700,7 +4707,7 @@ class User(dict):
             self._hydrated = False
             self._hydrate()
 
-        allowed_roles = {'1', '2', '1PlusEdit'}
+        allowed_roles = {'1', '2', '11'}
 
         if level not in allowed_roles:
             raise ValueError("level must be in %s" % ",".join(allowed_roles))

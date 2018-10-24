@@ -949,6 +949,8 @@ class GeoAccessor(object):
                 except:
                     sr = SpatialReference({'wkid' : 4326})
             self._name = col
+            q = self._data[col].isna()
+            self._data.loc[q, "SHAPE"] = None
             self._data[col] = GeoArray(self._data[col])
         elif isinstance(col, str) and  \
              col in self._data.columns and \
