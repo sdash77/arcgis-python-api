@@ -508,6 +508,83 @@ class _FeatureAnalysisTools(_AsyncService):
             group_summary = arcgis.features.FeatureCollection(job_values['groupSummary'])
             return { "aggregated_layer":aggregated_layer, "group_summary":group_summary, }
 
+	def find_point_clusters(self,
+	                        analysis_layer,
+	                        min_features_cluster,
+	                        search_distance=None,
+	                        search_distance_unit=None,
+	                        output_name=None,
+	                        context=None):
+	    
+		"""
+		The Find Point Clusters task finds clusters of point features in surrounding 
+		noise based on their spatial distribution. Output is a layer containing records 
+		assigned to a cluster or noise.
+
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        analysis_layer          Required layer. The point feature layer for which 
+        						density-based clustering will be calculated.
+        --------------------    ---------------------------------------------------------
+        min_features_cluster    Required integer. The minimum number of features to be 
+        						considered a cluster. Any cluster with fewer features 
+        						than the number provided will be considered noise.
+        --------------------    ---------------------------------------------------------
+        search_distance         Optional double. The maximum distance to consider. The 
+        						Minimum Features per Cluster specified must be found 
+        						within this distance for cluster membership. Individual 
+        						clusters will be separated by at least this distance. If 
+        						a feature is located further than this distance from the 
+        						next closest feature in the cluster, it will not be 
+        						included in the cluster.
+        --------------------    ---------------------------------------------------------
+        search_distance_unit    Optional string. The linear unit to be used for the 
+        						search distance parameter.
+        --------------------    ---------------------------------------------------------
+        output_name         	Optional string. Additional properties such as output 
+        						feature service name.
+        --------------------    ---------------------------------------------------------
+        context    				Optional string. Additional settings such as processing 
+        						extent and output spatial reference.       						
+        ====================    =========================================================
+
+        :returns: Python dictionary with the following keys:
+        	"point_clusters_result_layer" : layer (FeatureCollection)
+        	"process_info" : list of messages
+		"""
+
+	    task ="FindPointClusters"
+
+	    params = {}
+
+	    params["analysisLayer"] = super()._feature_input(analysis_layer)
+	    params["minFeaturesCluster"] = min_features_cluster
+	    if search_distance is not None:
+	        params["searchDistance"] = search_distance
+	    if search_distance_unit is not None:
+	        params["searchDistanceUnit "] = search_distance_unit
+	    if output_name is not None:
+	        params["outputName"] = {"serviceProperties": {"name": output_name }}
+	    if context is not None:
+	        params["context"] = context
+
+	    task_url, job_info, job_id = super()._analysis_job(task, params)
+
+	    job_info = super()._analysis_job_status(task_url, job_info)
+	    job_values = super()._analysis_job_results(task_url, job_info, job_id)
+	    #print(job_values)
+	    if output_name is not None:
+	        itemid = job_values['pointClustersResultLayer ']['itemId']
+	        item = arcgis.gis.Item(self._gis, itemid)
+	        return item
+	    else:
+	        # Feature Collection
+
+	        point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
+
+	        process_info = job_values['processInfo']
+	        return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":process_info}    
 
     def find_hot_spots(self,
                        analysis_layer,
