@@ -180,6 +180,8 @@ class GeometryFactory(type):
         if iterable:
             if hasattr(iterable, "JSON"):
                 iterable = json.loads(getattr(iterable, "JSON"))
+            elif hasattr(iterable, "exportToString"):
+                iterable = {'wkt' : iterable.exportToString()}
             elif isinstance(iterable, str) and\
                  "{" in iterable:
                 iterable = json.loads(iterable)
