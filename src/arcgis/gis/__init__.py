@@ -1825,8 +1825,7 @@ class UserManager(object):
         return False
 
     def search(self, query=None, sort_field='username', sort_order='asc',
-               max_users=100, outside_org=False, exclude_system=False,
-               user_type=None, role=None):
+               max_users=100, outside_org=False, exclude_system=False):
         """
         Searches portal users.
 
@@ -1871,24 +1870,14 @@ class UserManager(object):
         exclude_system    Optional boolean. Controls if built-in system accounts are
                           returned or not.  True means built-in account are not
                           returned, where as False means that they are.
-        ----------------  --------------------------------------------------------
-        user_type         Optional String.  These are the user types for the accounts.
-                          This can be any string, but there are two default system
-                          values that can be searched for.
-
-
-                          Default System Values:
-
-                            + viewer
-                            + creator
-        ----------------  --------------------------------------------------------
-        role              Optional String.  This allows for the filtering of user
-                          by the assigned role of a given user.
         ================  ========================================================
 
         :return:
             A list of users.
         """
+
+        user_type=None
+        role=None
 
         ut = {
             'creator' : 'creatorUT',
@@ -1918,7 +1907,6 @@ class UserManager(object):
             return user_storage
         else:
             userlist = []
-            isinstance(self._portal, portalpy.Portal)
             users = self._portal.search_users(query, sort_field, sort_order,
                                               max_users, outside_org, json.dumps(exclude_system),
                                               user_type=user_type, role=role)
@@ -1932,8 +1920,6 @@ class UserManager(object):
                     un = user['id']
                 userlist.append(User(self._gis, un))
             return userlist
-
-        #TODO: remove org users, invite users
 
     #----------------------------------------------------------------------
     @property
@@ -4599,8 +4585,11 @@ class User(dict):
     def __repr__(self):
         return '<%s username:%s>' % (type(self).__name__, self.username)
 
-    def app_bundles(self):
-        """returns the current user's assigned app bundles"""
+    def _app_bundles(self):
+        """
+        Available in 10.7+
+        returns the current user's assigned app bundles
+        """
         url = "%s/community/users/%s/appBundles" % (self._portal.resturl, self.username)
         params = {
             'f' : 'json',
@@ -4616,18 +4605,21 @@ class User(dict):
             bundles += res["appBundles"]
         return bundles
 
-    def user_types(self):
-        """returns the user type and assigned applications"""
+    def _user_types(self):
+        """
+        Notes: Available in 10.7+
+        returns the user type and assigned applications
+        """
         url = "%s/community/users/%s/userLicenseType" % (self._portal.resturl, self.username)
         params = {'f' : 'json'}
         return self._portal.con.post(url, params)
 
     #----------------------------------------------------------------------
     @property
-    def provisions(self):
+    def _provisions(self):
         """
         Returns a list of all items provisioned licenses for the current user.
-
+        Available in 10.7+
         :returns: List
 
         """
