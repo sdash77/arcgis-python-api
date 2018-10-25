@@ -1907,7 +1907,9 @@ class UserManager(object):
             for u in users:
                 if 'id' in u and \
                    (u['id'] is None or u['id'] == 'null'):
-                    un = user['username']
+                    un = u['username']
+                elif 'id' not in u:
+                    un = u['username']
                 else:
                     un = u['id']
                 if not 'roleId' in u:
@@ -1923,6 +1925,8 @@ class UserManager(object):
             for user in users:
                 if 'id' in user and \
                    (user['id'] is None or user['id'] == 'null'):
+                    un = user['username']
+                elif 'id' not in user:
                     un = user['username']
                 else:
                     un = user['id']
