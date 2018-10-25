@@ -4587,7 +4587,7 @@ class User(dict):
 
     def _app_bundles(self):
         """
-        Available in 10.7+
+        Available in ArcGIS Online and Portal 10.7+
         returns the current user's assigned app bundles
         """
         url = "%s/community/users/%s/appBundles" % (self._portal.resturl, self.username)
