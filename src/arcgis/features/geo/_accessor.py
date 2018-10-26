@@ -979,11 +979,15 @@ class GeoAccessor(object):
         """returns the name of the geometry column"""
         if self._name is None:
             try:
-                name = self._data.dtypes[self._data.dtypes == 'geometry'].index[0]
-                self.set_geometry(name)
+                cols = [c.lower() for c in self._data.columns.tolist()]
+                if any(self._data.dtypes == 'geometry'):
+                    name = self._data.dtypes[self._data.dtypes == 'geometry'].index[0]
+                    self.set_geometry(name)
+                elif "shape" in cols:
+                    idx = cols.index("shape")
+                    self.set_geometry(self._data.columns[idx])
             except:
                 raise Exception("Spatial column not defined, please use `set_geometry`")
-
         return self._name
 
     #----------------------------------------------------------------------
@@ -994,15 +998,15 @@ class GeoAccessor(object):
         if self._name is None:
             return False
         if strict:
-            q = self._data[self._name].notna()
-            gt = pd.unique(self._data[q][self._name].geom.geometry_type)
+            q = self._data[self.name].notna()
+            gt = pd.unique(self._data[q][self.name].geom.geometry_type)
             if len(gt) == 1:
                 return True
             else:
                 return False
         else:
-            q = self._data[self._name].notna()
-            return all(pd.unique(self._data[q][self._name].geom.is_valid))
+            q = self._data[self.name].notna()
+            return all(pd.unique(self._data[q][self.name].geom.is_valid))
         return True
     #----------------------------------------------------------------------
     def join(self, right_df,
@@ -2528,7 +2532,7 @@ class GeoAccessor(object):
 
         """
         q = self._data[self.name].geom.centroid.isnull()
-        df = pd.DataFrame(self._data[~q][self._name].geom.centroid.tolist(), columns=['x','y'])
+        df = pd.DataFrame(self._data[~q][self.name].geom.centroid.tolist(), columns=['x','y'])
         return df['x'].mean(), df['y'].mean()
     #----------------------------------------------------------------------
     @property
