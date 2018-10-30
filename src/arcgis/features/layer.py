@@ -312,7 +312,7 @@ class FeatureLayer(Layer):
             "f": "json",
             "attachmentId": "%s" % attachment_id
         }
-        files = {'attachment': file_path}
+        files = {'file': file_path}
         if self._dynamic_layer is not None:
             url = self.url.split('?')[0] + "/%s/attachments" % oid
             params['layer'] = self._dynamic_layer

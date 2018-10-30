@@ -20,6 +20,10 @@ class NumPyBackedExtensionArrayMixin(ExtensionArray):
         return self._dtype
 
     @classmethod
+    def _from_sequence(cls, scalars):
+        return cls(scalars)
+
+    @classmethod
     def _constructor_from_sequence(cls, scalars):
         return cls(scalars)
 
@@ -78,7 +82,6 @@ class NumPyBackedExtensionArrayMixin(ExtensionArray):
         data = self.data.take(np.sort(indices))
         return self._from_ndarray(data)
 
-
 class GeoType(ExtensionDtype):
     name = 'geometry'
     type = Geometry
@@ -135,7 +138,8 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         return new
 
     def __setitem__(self, key, value):
-        if value is None or value == "":
+        if value is None or  \
+           (isinstance(value, str) and value == ""):
             self.data[key] = value
         else:
             value = Geometry(value)
