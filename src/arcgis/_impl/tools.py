@@ -215,7 +215,7 @@ class _AsyncService(_GISService):
                 if "paramUrl" in param_value:
                     param_url = param_value.get("paramUrl")
                     result_url = "{}/jobs/{}/{}".format(task_url,
-                                                                        job_id,
+                                                        job_id,
                                                                         param_url)
 
                     params = { "f" : "json" }
@@ -231,13 +231,13 @@ class _AsyncService(_GISService):
     def _feature_input(self, input_layer):
 
         point_fs = {
-           "layerDefinition":{
-              "currentVersion":10.11,
+            "layerDefinition":{
+               "currentVersion":10.11,
               "copyrightText":"",
               "defaultVisibility":True,
               "relationships":[
 
-              ],
+                  ],
               "isDataVersioned":False,
               "supportsRollbackOnFailureParameter":True,
               "supportsStatistics":True,
@@ -248,7 +248,7 @@ class _AsyncService(_GISService):
               "objectIdField":"OBJECTID",
               "templates":[
 
-              ],
+                  ],
               "type":"Feature Layer",
               "displayField":"TITLE",
               "visibilityField":"VISIBLE",
@@ -266,64 +266,64 @@ class _AsyncService(_GISService):
               "maxRecordCount":-1,
               "indexes":[
 
-              ],
+                  ],
               "types":[
 
-              ],
+                  ],
               "fields":[
-                 {
-                    "alias":"OBJECTID",
+                  {
+                     "alias":"OBJECTID",
                     "name":"OBJECTID",
                     "type":"esriFieldTypeOID",
                     "editable":False
-                 },
+                    },
                  {
-                    "alias":"Title",
+                     "alias":"Title",
                     "name":"TITLE",
                     "length":50,
                     "type":"esriFieldTypeString",
                     "editable":True
-                 },
+                    },
                  {
-                    "alias":"Visible",
+                     "alias":"Visible",
                     "name":"VISIBLE",
                     "type":"esriFieldTypeInteger",
                     "editable":True
-                 },
+                    },
                  {
-                    "alias":"Description",
+                     "alias":"Description",
                     "name":"DESCRIPTION",
                     "length":1073741822,
                     "type":"esriFieldTypeString",
                     "editable":True
-                 },
+                    },
                  {
-                    "alias":"Type ID",
+                     "alias":"Type ID",
                     "name":"TYPEID",
                     "type":"esriFieldTypeInteger",
                     "editable":True
                  }
               ]
-           },
+              },
            "featureSet":{
-              "features":[
-                 {
-                    "geometry":{
-                       "x":80.27032792000051,
+               "features":[
+                  {
+                     "geometry":{
+                        "x":80.27032792000051,
                        "y":13.085227147000467,
                        "spatialReference":{
-                          "wkid": 4326,
+                           "wkid": 4326,
                           "latestWkid":4326
                        }
-                    },
-                  "attributes":{
-                       "description":"blayer desc",
+                       },
+                    "attributes":{
+                      "description":"blayer desc",
                        "title":"blayer",
                        "OBJECTID":0,
                        "VISIBLE":1
-                    },
-                    "symbol":{
-                       "angle":0,
+                       },
+                  "symbol":{
+                        "angle":0,
                        "xoffset":0,
                        "yoffset":8.15625,
                        "type":"esriPMS",
@@ -334,9 +334,9 @@ class _AsyncService(_GISService):
                        "height":21.75
                     }
                  }
-              ],
+                 ],
               "geometryType":"esriGeometryPoint"
-           },
+              },
            "nextObjectId":1
         }
 
@@ -370,7 +370,7 @@ class _AsyncService(_GISService):
                 geom = arcgis.geometry.Geometry(input_layer['location'])
                 fset = FeatureSet([Feature(geom)])
                 featcoll = {'layerDefinition': {
-                        "geometryType": "esriGeometryPoint",
+                    "geometryType": "esriGeometryPoint",
                         "objectIdField": "OBJECTID",
                         "fields": [
                             {
@@ -380,7 +380,7 @@ class _AsyncService(_GISService):
                                 "editable": False
                             }
                         ]
-                    }, 'featureSet': fset.to_dict()}
+                        }, 'featureSet': fset.to_dict()}
                 input_param = featcoll
             else:
                 input_param =  input_layer
@@ -430,7 +430,7 @@ class _FeatureAnalysisTools(_AsyncService):
         super(_FeatureAnalysisTools, self).__init__(url, gis)
 
     def aggregate_points(self,
-                       point_layer,
+                         point_layer,
                        polygon_layer,
                        keep_boundaries_with_no_points=True,
                        summary_fields=[],
@@ -508,45 +508,45 @@ class _FeatureAnalysisTools(_AsyncService):
             group_summary = arcgis.features.FeatureCollection(job_values['groupSummary'])
             return { "aggregated_layer":aggregated_layer, "group_summary":group_summary, }
 
-	def find_point_clusters(self,
-	                        analysis_layer,
-	                        min_features_cluster,
-	                        search_distance=None,
-	                        search_distance_unit=None,
-	                        output_name=None,
-	                        context=None):
-	    
-		"""
-		The Find Point Clusters task finds clusters of point features in surrounding 
-		noise based on their spatial distribution. Output is a layer containing records 
+        def find_point_clusters(self,
+                                analysis_layer,
+                                min_features_cluster,
+                                search_distance=None,
+                                search_distance_unit=None,
+                                output_name=None,
+                                context=None):
+
+            """
+		The Find Point Clusters task finds clusters of point features in surrounding
+		noise based on their spatial distribution. Output is a layer containing records
 		assigned to a cluster or noise.
 
         ====================    =========================================================
         **Argument**            **Description**
         --------------------    ---------------------------------------------------------
-        analysis_layer          Required layer. The point feature layer for which 
+        analysis_layer          Required layer. The point feature layer for which
         						density-based clustering will be calculated.
         --------------------    ---------------------------------------------------------
-        min_features_cluster    Required integer. The minimum number of features to be 
-        						considered a cluster. Any cluster with fewer features 
+        min_features_cluster    Required integer. The minimum number of features to be
+        						considered a cluster. Any cluster with fewer features
         						than the number provided will be considered noise.
         --------------------    ---------------------------------------------------------
-        search_distance         Optional double. The maximum distance to consider. The 
-        						Minimum Features per Cluster specified must be found 
-        						within this distance for cluster membership. Individual 
-        						clusters will be separated by at least this distance. If 
-        						a feature is located further than this distance from the 
-        						next closest feature in the cluster, it will not be 
+        search_distance         Optional double. The maximum distance to consider. The
+        						Minimum Features per Cluster specified must be found
+        						within this distance for cluster membership. Individual
+        						clusters will be separated by at least this distance. If
+        						a feature is located further than this distance from the
+        						next closest feature in the cluster, it will not be
         						included in the cluster.
         --------------------    ---------------------------------------------------------
-        search_distance_unit    Optional string. The linear unit to be used for the 
+        search_distance_unit    Optional string. The linear unit to be used for the
         						search distance parameter.
         --------------------    ---------------------------------------------------------
-        output_name         	Optional string. Additional properties such as output 
+        output_name         	Optional string. Additional properties such as output
         						feature service name.
         --------------------    ---------------------------------------------------------
-        context    				Optional string. Additional settings such as processing 
-        						extent and output spatial reference.       						
+        context    				Optional string. Additional settings such as processing
+        						extent and output spatial reference.
         ====================    =========================================================
 
         :returns: Python dictionary with the following keys:
@@ -554,37 +554,37 @@ class _FeatureAnalysisTools(_AsyncService):
         	"process_info" : list of messages
 		"""
 
-	    task ="FindPointClusters"
+            task ="FindPointClusters"
 
-	    params = {}
+            params = {}
 
-	    params["analysisLayer"] = super()._feature_input(analysis_layer)
-	    params["minFeaturesCluster"] = min_features_cluster
-	    if search_distance is not None:
-	        params["searchDistance"] = search_distance
-	    if search_distance_unit is not None:
-	        params["searchDistanceUnit "] = search_distance_unit
-	    if output_name is not None:
-	        params["outputName"] = {"serviceProperties": {"name": output_name }}
-	    if context is not None:
-	        params["context"] = context
+            params["analysisLayer"] = super()._feature_input(analysis_layer)
+            params["minFeaturesCluster"] = min_features_cluster
+            if search_distance is not None:
+                params["searchDistance"] = search_distance
+            if search_distance_unit is not None:
+                params["searchDistanceUnit "] = search_distance_unit
+            if output_name is not None:
+                params["outputName"] = {"serviceProperties": {"name": output_name }}
+            if context is not None:
+                params["context"] = context
 
-	    task_url, job_info, job_id = super()._analysis_job(task, params)
+            task_url, job_info, job_id = super()._analysis_job(task, params)
 
-	    job_info = super()._analysis_job_status(task_url, job_info)
-	    job_values = super()._analysis_job_results(task_url, job_info, job_id)
-	    #print(job_values)
-	    if output_name is not None:
-	        itemid = job_values['pointClustersResultLayer ']['itemId']
-	        item = arcgis.gis.Item(self._gis, itemid)
-	        return item
-	    else:
-	        # Feature Collection
+            job_info = super()._analysis_job_status(task_url, job_info)
+            job_values = super()._analysis_job_results(task_url, job_info, job_id)
+            #print(job_values)
+            if output_name is not None:
+                itemid = job_values['pointClustersResultLayer ']['itemId']
+                item = arcgis.gis.Item(self._gis, itemid)
+                return item
+            else:
+                # Feature Collection
 
-	        point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
+                point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
 
-	        process_info = job_values['processInfo']
-	        return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":process_info}    
+                process_info = job_values['processInfo']
+                return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":process_info}
 
     def find_hot_spots(self,
                        analysis_layer,
@@ -657,7 +657,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return { "hot_spots_result_layer":hot_spots_result_layer, "process_info":process_info, }
 
     def find_outliers(self,
-                     analysis_layer,
+                      analysis_layer,
                      analysis_field=None,
                      divided_by_field=None,
                      bounding_polygon_layer=None,
@@ -841,7 +841,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def create_drive_time_areas(self,
-                       input_layer,
+                                input_layer,
                        break_values=[5, 10, 15],
                        break_units="Minutes",
                        travel_mode="Driving",
@@ -916,7 +916,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def dissolve_boundaries(self,
-                       input_layer,
+                            input_layer,
                        dissolve_fields=[],
                        summary_fields=[],
                        output_name=None,
@@ -971,7 +971,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def merge_layers(self,
-                       input_layer,
+                     input_layer,
                        merge_layer,
                        merging_attributes=[],
                        output_name=None,
@@ -1025,7 +1025,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def summarize_within(self,
-                       sum_within_layer,
+                         sum_within_layer,
                        summary_layer,
                        sum_shape=True,
                        shape_units=None,
@@ -1109,7 +1109,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return { "result_layer":result_layer, "group_by_summary":group_by_summary, }
 
     def join_features(self,
-        target_layer,
+                      target_layer,
         join_layer,
         spatial_relationship,
         spatial_relationship_distance,
@@ -1157,7 +1157,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return arcgis.features.FeatureCollection(job_values['outputLayer'])
 
     def enrich_layer(self,
-                       input_layer,
+                     input_layer,
                        data_collections=[],
                        analysis_variables=[],
                        country=None,
@@ -1301,7 +1301,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def extract_data(self,
-                       input_layers=[],
+                     input_layers=[],
                        extent=None,
                        clip=False,
                        data_format=None,
@@ -1358,7 +1358,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def find_existing_locations(self,
-                       input_layers=[],
+                                input_layers=[],
                        expressions=[],
                        output_name=None,
                        context=None):
@@ -1407,7 +1407,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def derive_new_locations(self,
-                       input_layers=[],
+                             input_layers=[],
                        expressions=[],
                        output_name=None,
                        context=None):
@@ -1456,7 +1456,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def field_calculator(self,
-                       input_layer,
+                         input_layer,
                        expressions,
                        output_name=None,
                        context=None):
@@ -1504,7 +1504,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return arcgis.features.FeatureCollection(job_values['resultLayer'])
 
     def find_centroids(self,
-                      input_layer,
+                       input_layer,
                       point_location=False,
                       output_name=None,
                       context=None):
@@ -1558,7 +1558,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return arcgis.features.FeatureCollection(job_values['outputLayer'])
 
     def interpolate_points(self,
-                       input_layer,
+                           input_layer,
                        field,
                        interpolate_option="5",
                        output_prediction_error=False,
@@ -1651,7 +1651,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def calculate_density(self,
-                       input_layer,
+                          input_layer,
                        field=None,
                        cell_size=None,
                        cell_size_units="Meters",
@@ -1741,7 +1741,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def summarize_nearby(self,
-                       sum_nearby_layer,
+                         sum_nearby_layer,
                        summary_layer,
                        near_type="StraightLine",
                        distances=[],
@@ -1855,7 +1855,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def create_viewshed(self,
-                       input_layer,
+                        input_layer,
                        dem_resolution="Finest",
                        maximum_distance=None,
                        max_distance_units="Meters",
@@ -1940,7 +1940,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def find_similar_locations(self,
-                       input_layer,
+                               input_layer,
                        search_layer,
                        analysis_fields=[],
                        input_query=None,
@@ -2009,7 +2009,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def create_watersheds(self,
-                       input_layer,
+                          input_layer,
                        search_distance=None,
                        search_units="Meters",
                        source_database="FINEST",
@@ -2080,7 +2080,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def find_nearest(self,
-                       analysis_layer,
+                     analysis_layer,
                        near_layer,
                        measurement_type="StraightLine",
                        max_count=100,
@@ -2164,7 +2164,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def plan_routes(self,
-                       stops_layer,
+                    stops_layer,
                        route_count,
                        max_stops_per_route,
                        route_start_time,
@@ -2269,7 +2269,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def trace_downstream(self,
-                       input_layer,
+                         input_layer,
                        split_distance=None,
                        split_units="Kilometers",
                        max_distance=None,
@@ -2349,7 +2349,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
 
     def connect_origins_to_destinations(self,
-                       origins_layer,
+                                        origins_layer,
                        destinations_layer,
                        measurement_type="DrivingTime",
                        origins_layer_route_id_field=None,
@@ -2430,7 +2430,7 @@ class _FeatureAnalysisTools(_AsyncService):
             return { "routes_layer":routes_layer, "unassigned_origins_layer":unassigned_origins_layer, "unassigned_destinations_layer":unassigned_destinations_layer, }
 
     def create_route_layers(self,
-                       route_data_item,
+                            route_data_item,
                        delete_route_data_item=False,
                        output_name=None):
         """
@@ -2484,28 +2484,28 @@ class _RasterAnalysisTools(_AsyncService):
             raise RuntimeError("An Image Service by this name already exists: " + output_name)
 
         createParameters = {
-                "name": output_name,
+            "name": output_name,
                 "description": "",
                 "capabilities": "Image",
                 "properties": {
                     "path": "@",
                     "description": "",
                     "copyright": ""
-                    }
                 }
+        }
 
         output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="imageService")
         description = "Image Service generated from running the " + task + " tool."
         item_properties = {
-                "description" : description,
+            "description" : description,
                 "tags" : "Analysis Result, " + task,
                 "snippet": "Analysis Image Service generated from " + task
-                }
+        }
         output_service.update(item_properties)
         return output_service
 
     def generate_raster(self,
-                       raster_function,
+                        raster_function,
                        function_arguments=None,
                        output_raster=None,
                        output_raster_properties=None,
@@ -2583,14 +2583,14 @@ class _RasterAnalysisTools(_AsyncService):
                 "jobType": "GPServer",
                 "jobId": job_info['jobId'],
                 "jobStatus": "completed"
-                }
             }
+        }
         output_service.update(item_properties)
         return output_service
 
 
     def rasterize(self,
-                       input_table,
+                  input_table,
                        output_raster,
                        raster_info,
                        value_field=None,
@@ -2653,20 +2653,20 @@ class _RasterAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
-                "properties":{
+            "properties":{
                     "jobUrl": task_url + '/jobs/' + job_info['jobId'],
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+        }
         output_service.update(item_properties)
         return output_service
 
 
 
     def interpolate(self,
-                       input_table,
+                    input_table,
                        output_raster,
                        raster_info,
                        value_field=None,
@@ -2739,19 +2739,19 @@ class _RasterAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
-                "properties":{
+            "properties":{
                     "jobUrl": task_url + '/jobs/' + job_info['jobId'],
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+        }
         output_service.update(item_properties)
         return output_service
 
 
     def copy_raster(self,
-                       input_raster,
+                    input_raster,
                        output_raster,
                        output_cellsize=None,
                        resampling_method="NEAREST",
@@ -2819,18 +2819,18 @@ class _RasterAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
-                "properties":{
+            "properties":{
                     "jobUrl": task_url + '/jobs/' + job_info['jobId'],
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+        }
         output_service.update(item_properties)
         return output_service
 
     def summarize_raster_within(self,
-                       input_zone_layer,
+                                input_zone_layer,
                        zone_field,
                        input_raster_layerto_summarize,
                        output_name,
@@ -2900,19 +2900,19 @@ class _RasterAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
-                "properties":{
+            "properties":{
                     "jobUrl": task_url + '/jobs/' + job_info['jobId'],
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+        }
         output_service.update(item_properties)
         return output_service
 
 
     def density(self,
-                       input_feature_class,
+                input_feature_class,
                        output_raster,
                        value_field,
                        raster_info=None,
@@ -2984,19 +2984,19 @@ class _RasterAnalysisTools(_AsyncService):
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         item_properties = {
-                "properties":{
+            "properties":{
                     "jobUrl": task_url + '/jobs/' + job_info['jobId'],
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+        }
         output_service.update(item_properties)
         return output_service
 
 
     def classify(self,
-                       input_raster,
+                 input_raster,
                        input_classifier_definition,
                        output_raster,
                        additional_input_raster=None,
@@ -3057,14 +3057,14 @@ class _RasterAnalysisTools(_AsyncService):
                 "jobType": "GPServer",
                 "jobId": job_info['jobId'],
                 "jobStatus": "completed"
-                }
             }
+        }
         output_service.update(item_properties)
         return output_service
 
 
     def segment_mean_shift(self,
-                       input_raster,
+                           input_raster,
                        output_raster,
                        spectral_detail="15.5",
                        spatial_detail="15",
@@ -3136,14 +3136,14 @@ class _RasterAnalysisTools(_AsyncService):
                 "jobType": "GPServer",
                 "jobId": job_info['jobId'],
                 "jobStatus": "completed"
-                }
             }
+        }
         output_service.update(item_properties)
         return output_service
 
 
     def train_classifier(self,
-                       input_raster,
+                         input_raster,
                        input_training_sample_json,
                        segmented_raster,
                        classifier_parameters,
@@ -3192,7 +3192,7 @@ class _RasterAnalysisTools(_AsyncService):
             raise RuntimeError("A Feature Service by this name already exists: " + output_name)
 
         createParameters = {
-                "currentVersion": 10.2,
+            "currentVersion": 10.2,
                 "serviceDescription": "",
                 "hasVersionedData": False,
                 "supportsDisconnectedEditing": False,
@@ -3209,32 +3209,32 @@ class _RasterAnalysisTools(_AsyncService):
                     "enableOwnershipAccessControl": False,
                     "allowOthersToUpdate": True,
                     "allowOthersToDelete": True
-                },
+                    },
                 "xssPreventionInfo": {
                     "xssPreventionEnabled": True,
                     "xssPreventionRule": "InputOnly",
                     "xssInputRule": "rejectInvalid"
-                },
+                    },
                 "tables": [],
                 "name": output_name,
                 "options": {
                     "dataSourceType": "spatiotemporal"
                 }
-            }
+        }
 
         output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
-                "description" : description,
+            "description" : description,
                 "tags" : "Analysis Result, " + task,
                 "snippet": "Analysis Feature Service generated from " + task
-                }
+        }
         output_service.update(item_properties)
         return output_service
 
 
     def convert_raster_to_feature(self,
-                       input_raster,
+                                  input_raster,
                        output_name,
                        field="Value",
                        output_type="Point",
@@ -3287,13 +3287,13 @@ class _RasterAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         item_properties = {
-                "properties":{
+            "properties":{
                     "jobUrl": task_url + '/jobs/' + job_info['jobId'],
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+        }
         output_service.update(item_properties)
         return output_service
 
@@ -3317,7 +3317,7 @@ class _GeoanalyticsTools(_AsyncService):
             raise RuntimeError("A Feature Service by this name already exists: " + output_name)
 
         createParameters = {
-                "currentVersion": 10.2,
+            "currentVersion": 10.2,
                 "serviceDescription": "",
                 "hasVersionedData": False,
                 "supportsDisconnectedEditing": False,
@@ -3334,26 +3334,26 @@ class _GeoanalyticsTools(_AsyncService):
                     "enableOwnershipAccessControl": False,
                     "allowOthersToUpdate": True,
                     "allowOthersToDelete": True
-                },
+                    },
                 "xssPreventionInfo": {
                     "xssPreventionEnabled": True,
                     "xssPreventionRule": "InputOnly",
                     "xssInputRule": "rejectInvalid"
-                },
+                    },
                 "tables": [],
                 "name": output_name,
                 "options": {
                     "dataSourceType": "spatiotemporal"
                 }
-            }
+        }
 
         output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
-                "description" : description,
+            "description" : description,
                 "tags" : "Analysis Result, " + task,
                 "snippet": "Analysis Feature Service generated from " + task
-                }
+        }
         output_service.update(item_properties)
         return output_service
 
@@ -3361,7 +3361,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def aggregate_points(self,
-                       point_layer,
+                         point_layer,
                        output_name,
                        distance_interval=None,
                        distance_interval_unit=None,
@@ -3374,8 +3374,8 @@ class _GeoanalyticsTools(_AsyncService):
                        time_reference=None,
                        summary_fields=None,
                        out_sr=None,
-                         process_sr=None,
-                       out_extent=None,
+                       process_sr=None,
+                         out_extent=None,
                        datastore="GDB"):
         """
 
@@ -3476,8 +3476,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -3486,7 +3486,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def describe_dataset(self,
-                       in_dataset,
+                         in_dataset,
                        out_sr=None,
                        out_extent=None,
                        datastore="GDB",
@@ -3551,7 +3551,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def join_features(self,
-                       target_layer,
+                      target_layer,
                        join_layer,
                        output_name,
                        join_operation="Join one to one",
@@ -3674,8 +3674,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -3788,8 +3788,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -3798,7 +3798,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def calculate_density(self,
-                       input_layer,
+                          input_layer,
                        bin_size,
                        bin_size_unit,
                        radius,
@@ -3814,8 +3814,8 @@ class _GeoanalyticsTools(_AsyncService):
                        time_reference=None,
                        area_units=None,
                        out_sr=None,
-                          process_sr = None,
-                       out_extent=None,
+                       process_sr = None,
+                          out_extent=None,
                        datastore="GDB"):
         """
 
@@ -3922,8 +3922,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4041,8 +4041,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4147,8 +4147,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4157,7 +4157,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def create_panel_data(self,
-                       in_target_features,
+                          in_target_features,
                        in_join_features,
                        time_interval,
                        time_interval_unit,
@@ -4264,8 +4264,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4274,7 +4274,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def generate_manifest(self,
-                       data_store_item_id,
+                          data_store_item_id,
                        update_data_item=False,
                        out_sr=None,
                        out_extent=None,
@@ -4333,8 +4333,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4343,7 +4343,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def create_sample(self,
-                       input_layer,
+                      input_layer,
                        output_layer_name,
                        out_sr=None,
                        out_extent=None,
@@ -4401,8 +4401,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4411,7 +4411,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def copy_to_data_store(self,
-                       input_layer,
+                           input_layer,
                        output_name,
                        out_sr=None,
                        out_extent=None,
@@ -4472,8 +4472,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4482,13 +4482,13 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def summarize_attributes(self,
-                       input_layer,
+                             input_layer,
                        fields,
                        output_name,
                        summary_fields=None,
                        out_sr=None,
-                             process_sr = None,
-                       out_extent=None,
+                       process_sr = None,
+                             out_extent=None,
                        datastore="GDB"):
         """
 
@@ -4556,8 +4556,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4566,7 +4566,7 @@ class _GeoanalyticsTools(_AsyncService):
 
 
     def summarize_within(self,
-                       summary_layer,
+                         summary_layer,
                        output_name,
                        bin_size=None,
                        bin_size_unit=None,
@@ -4580,8 +4580,8 @@ class _GeoanalyticsTools(_AsyncService):
                        summary_fields=None,
                        proportional_weighting=False,
                        out_sr=None,
-                         process_sr=None,
-                       out_extent=None,
+                       process_sr=None,
+                         out_extent=None,
                        datastore="GDB"):
         """
 
@@ -4686,8 +4686,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4799,8 +4799,8 @@ class _GeoanalyticsTools(_AsyncService):
                     "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                    }
                 }
+            }
             output_service.update(item_properties)
             return output_service
         else:
@@ -4845,7 +4845,7 @@ class _GeometryService(_GISService):
 
     #----------------------------------------------------------------------
     def areas_and_lengths(self,
-                        polygons,
+                          polygons,
                         lengthUnit,
                         areaUnit,
                         calculationType,
@@ -5042,7 +5042,7 @@ class _GeometryService(_GISService):
             return results
     #----------------------------------------------------------------------
     def auto_complete(self,
-                     polygons=None,
+                      polygons=None,
                      polylines=None,
                      sr=None
                      ):
@@ -5138,7 +5138,7 @@ class _GeometryService(_GISService):
                                         "geometries" : self.__geomToStringArray(geometries, "list")}
             elif isinstance(g, Polyline):
                 params['geometries'] = {"geometryType": "esriGeometryPolyline",
-                                                        "geometries" : self.__geomToStringArray(geometries, "list")}
+                                        "geometries" : self.__geomToStringArray(geometries, "list")}
             elif isinstance(g, dict):
                 params['geometries'] = geometries
             else:
@@ -5163,7 +5163,7 @@ class _GeometryService(_GISService):
         return self._process_results(results)
     #----------------------------------------------------------------------
     def convex_hull(self,
-                   geometries,
+                    geometries,
                    sr=None):
         """
         The convexHull operation is performed on a geometry service
@@ -5195,7 +5195,7 @@ class _GeometryService(_GISService):
                                         "geometries" : self.__geomToStringArray(geometries, "list")}
             elif isinstance(g, Polyline):
                 params['geometries'] = {"geometryType": "esriGeometryPolyline",
-                                                        "geometries" : self.__geomToStringArray(geometries, "list")}
+                                        "geometries" : self.__geomToStringArray(geometries, "list")}
         else:
             return None
         results = self._con.post(path=url, postdata=params, token=self._token)
@@ -5494,7 +5494,7 @@ class _GeometryService(_GISService):
         return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def from_geo_coordinate_string(self, sr, strings,
-                                conversionType, conversionMode=None):
+                                   conversionType, conversionMode=None):
         """
         The from_geo_coordinate_string operation is performed on a geometry
         service resource. The operation converts an array of well-known
@@ -5622,7 +5622,7 @@ class _GeometryService(_GISService):
         return self._process_results(results)
     #----------------------------------------------------------------------
     def label_points(self,
-                    sr,
+                     sr,
                     polygons,
                     ):
         """
@@ -5697,7 +5697,7 @@ class _GeometryService(_GISService):
             "f" : "json",
             "sr" : sr,
             "polylines": self.__geomToStringArray(geometries=polylines,
-                                                 returnType="list"),
+                                                  returnType="list"),
             "lengthUnit" : lengthUnit,
             "calculationType" : calculationType
         }
@@ -5945,7 +5945,7 @@ class _GeometryService(_GISService):
         return self._process_results(results)
     #----------------------------------------------------------------------
     def to_geo_coordinate_string(self,
-                              sr,
+                                 sr,
                               coordinates,
                               conversionType,
                               conversionMode="mgrsDefault",
@@ -6025,7 +6025,7 @@ class _GeometryService(_GISService):
         return self._con.post(path=url, postdata=params, token=self._token)
     #----------------------------------------------------------------------
     def trim_extend(self,
-                   sr,
+                    sr,
                    polylines,
                    trimExtendTo,
                    extendHow=0):

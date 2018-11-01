@@ -20,6 +20,10 @@ class NumPyBackedExtensionArrayMixin(ExtensionArray):
         return self._dtype
 
     @classmethod
+    def _from_sequence(cls, scalars):
+        return cls(scalars)
+
+    @classmethod
     def _constructor_from_sequence(cls, scalars):
         return cls(scalars)
 
@@ -38,6 +42,9 @@ class NumPyBackedExtensionArrayMixin(ExtensionArray):
         result = operator.getitem(self.data, *args)
         if isinstance(result, (dict, Geometry)):
             return result
+        elif isinstance(result, type(None)) or \
+             isinstance(result, type(np.nan)):
+            return None
         elif not isinstance(result, GeoArray):
             return GeoArray(result)
         return result
@@ -75,13 +82,12 @@ class NumPyBackedExtensionArrayMixin(ExtensionArray):
         data = self.data.take(np.sort(indices))
         return self._from_ndarray(data)
 
-
 class GeoType(ExtensionDtype):
     name = 'geometry'
     type = Geometry
     kind = 'O'
     _record_type = np.dtype('O')
-    na_value = None#{}
+    na_value = None
 
     @classmethod
     def construct_from_string(cls, string):
@@ -118,6 +124,8 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         return self.__repr__()
 
     def _format_values(self):
+        if self.data.ndim == 0:
+            return ""
         return [_format(x) if x else None for x in self.data]
 
     @classmethod
@@ -130,7 +138,8 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         return new
 
     def __setitem__(self, key, value):
-        if value is None or value == "":
+        if value is None or  \
+           (isinstance(value, str) and value == ""):
             self.data[key] = value
         else:
             value = Geometry(value)
@@ -944,5 +953,7 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
                                     'relation' : relation})
 
 def _format(g):
+    if g in {None, np.nan}:
+        return ""
     return json.dumps(g)
 
