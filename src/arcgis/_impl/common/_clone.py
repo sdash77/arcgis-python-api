@@ -1309,9 +1309,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Create a new feature service
                 # In some cases isServiceNameAvailable returns true but fails to create the service with error that a service with the name already exists.
-                # In these cases catch the error and try again with a unique name.
+                #  In these cases catch the error and try again with a unique name.
+                # In some cases create_service fails silently and returns None as the new_item.
+                #  In these cases rasie an exception that will be caught and then try again with a unique name.
                 try:
                     new_item = self.target.content.create_service(name, service_type='featureService', create_params=service_definition, is_view=self.is_view, folder=self.folder)
+                    if new_item is None:
+                        raise RuntimeError('already exists')
                     self.created_items.append(new_item)
                 except RuntimeError as ex:
                     if "already exists" in str(ex):
@@ -1331,6 +1335,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 original_drawing_infos = {}
                 original_templates = {}
                 original_types = {}
+                _layers = []
+                _tables = []
+                _x = 0
+                chunk_size = 20
+                layers_and_tables = []
+                total_size = len(layers_definition['layers'] + layers_definition['tables'])
 
                 for layer in layers_definition['layers'] + layers_definition['tables']:
                     # Need to remove relationships first and add them back individually
@@ -1413,24 +1423,38 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         if capabilities is not None:
                             layer['capabilities'] = ','.join([x for x in capabilities.split(',') if x in supported_capabilities])
 
+                    if layer['type'] == 'Feature Layer':
+                        _layers.append(layer)
+                    if layer['type'] == 'Table':
+                        _tables.append(layer)
+
+                    if (_x + 1) % chunk_size == 0 or (_x + 1) == total_size:
+                        layers_tables = {}
+                        layers = copy.deepcopy(_layers) if len(_layers) > 0 else []
+                        if self.is_view:
+                            for layer in layers:
+                                del layer['fields']
+                        layers_tables['layers'] = layers
+
+                        tables = copy.deepcopy(_tables) if len(_tables) > 0 else []
+                        if self.is_view:
+                            for table in tables:
+                                del table['fields']
+                        layers_tables['tables'] = tables
+
+                        layers_and_tables.append(layers_tables)
+                        _layers = []
+                        _tables = []
+                    _x += 1
+
                 # Add the layer and table definitions to the service
                 # Explicitly add layers first and then tables, otherwise sometimes json.dumps() reverses them and this effects the output service
                 feature_service = FeatureLayerCollection.fromitem(new_item)
                 feature_service_admin = feature_service.manager
-                layers = []
-                tables = []
-                if len(layers_definition['layers']) > 0:
-                    layers = copy.deepcopy(layers_definition['layers'])
-                    if self.is_view:
-                        for layer in layers:
-                            del layer['fields']
-                if len(layers_definition['tables']) > 0:
-                    tables = copy.deepcopy(layers_definition['tables'])
-                    if self.is_view:
-                        for table in tables:
-                            del table['fields']
-                definition = '{{"layers" : {0}, "tables" : {1}}}'.format(json.dumps(layers), json.dumps(tables))
-                _add_to_definition(feature_service_admin, definition)
+                if len(layers_and_tables) > 0:
+                    for o in layers_and_tables:
+                        definition = '{{"layers" : {0}, "tables" : {1}}}'.format(json.dumps(o['layers']), json.dumps(o['tables']))
+                        _add_to_definition(feature_service_admin, definition)
 
                 # Create a lookup between the new and old layer ids
                 layer_id_mapping = {}
