@@ -350,8 +350,11 @@ def from_featureclass(filename, **kwargs):
         if len(dfs) > 0:
             df = pd.concat(dfs)
             df = df.reset_index(drop=True)
-        else:
+        elif len(dfs) == 1:
             df = dfs[0]
+        else:
+            df = pd.DataFrame([],
+                              columns=df_fields)
         q = df.SHAPE.notnull()
         gt = desc['shapeType'].lower()
         geoms = {
