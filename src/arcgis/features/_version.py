@@ -278,7 +278,7 @@ class Version(object):
         self._flc = flc
     #----------------------------------------------------------------------
     @property
-    def parcel_fabric(self):
+    def _parcel_fabric(self):
         """
         Provides access to a parcel fabric manager
 
