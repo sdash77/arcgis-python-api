@@ -42,7 +42,7 @@ class Worker(FeatureModel):
     """
 
     def __init__(self, project, feature=None, geometry=None, contact_number=None,
-                 name=None, notes=None, status=None, title=None, user_id=None):
+                 name=None, notes=None, status="not_working", title=None, user_id=None):
         super().__init__(project, project.workers_layer, feature)
         self._schema = WorkerSchema(project.workers_layer)
         if not feature:

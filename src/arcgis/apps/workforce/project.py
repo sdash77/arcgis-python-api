@@ -56,6 +56,12 @@ class Project:
         self._cached_assignment_types = {a.code: a for a in self.assignment_types.search()}
         self._cached_workers = {w.id: w for w in self.workers.search()}
         self._cached_dispatchers = {d.id: d for d in self.dispatchers.search()}
+        for d in self._cached_dispatchers.values():
+            if d.user_id == self.gis.users.me.username:
+                self._cached_dispatcher = d
+                break
+        else:
+            raise Exception("'{}' is not a dispatcher, please authenticate as a dispatcher".format(self.gis.users.me.username))
 
     def __str__(self):
         return self.title
