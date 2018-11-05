@@ -7,7 +7,6 @@ import shutil
 import logging
 from functools import reduce
 from urllib.parse import urlparse
-import asyncio
 import concurrent.futures
 from arcgis import gis
 from arcgis.features import FeatureLayerCollection
@@ -457,9 +456,9 @@ class _DeepCloner():
 
         return item_definition
 
-    async def _clone(self, excecutor):
+    def _clone(self, excecutor):
         """
-        This processes each node using the asyncio library so we can have some multi-threaded stuff for POST/GET
+        This processes each node using the concurrent.futures so we can have some multi-threaded stuff for POST/GET
         :return:
         """
         # Create folder if it doesn't already exist
@@ -500,7 +499,6 @@ class _DeepCloner():
         # also includes items that already existed and mapped
         while leaf_nodes:
             logging.getLogger().info("Processing Level: {}".format(level))
-            loop = asyncio.get_event_loop()
             # things to execute async
             futures = []
             synchronous_clone = []
@@ -532,33 +530,35 @@ class _DeepCloner():
                     synchronous_clone.append(node)
                 else:
                     futures.append(
-                        loop.run_in_executor(
-                            excecutor,
-                            node.clone,
+                        excecutor.submit(
+                            node.clone
                         )
                     )
 
-            results = []
-            exception = False
+            exceptions = []
             if len(synchronous_clone) > 0:
                 for node in synchronous_clone:
                     try:
-                        results.append(node.clone())
+                        node.clone()
                     except _ItemCreateException as ex:
-                        exception = True
-                        results.append(ex)
+                        exceptions.append(ex)
                         break
-            if not exception and len(futures) > 0:
-                results.extend(await asyncio.gather(*futures, return_exceptions=True))
-                
-            # if any of the results are an _ItemCreate Exception, then delete all created items/groups
-            for result in results:
-                if isinstance(result, _ItemCreateException):
+            if not exceptions and len(futures) > 0:
+                res = concurrent.futures.wait(futures)
+                # check all futures to see if an exception was raised
+                for r in res[0].union(res[1]):
+                    # returns None if there is no exception
+                    if r.exception():
+                        exceptions.append(r.exception())
+
+            # if any of the exceptions are an _ItemCreate Exception, then delete all created items/groups
+            for ex in exceptions:
+                if isinstance(ex, _ItemCreateException):
                     created_items = self._get_created_items()
                     for item in reversed(created_items):
                         if item:
                             item.delete()
-                    raise result
+                    raise ex
 
             level += 1
             leaf_nodes = self._get_leaf_nodes()
@@ -567,10 +567,7 @@ class _DeepCloner():
 
     def clone(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            asyncio.set_event_loop(asyncio.new_event_loop())
-            loop = asyncio.get_event_loop()
-            results = loop.run_until_complete(self._clone(executor))
-            loop.close()
+            results = executor.submit(self._clone, executor).result()
             return results
 
     def _get_group_definition(self, group):
@@ -1306,6 +1303,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     capabilities = _deep_get(service_definition, 'capabilities')
                     if capabilities is not None:
                        service_definition['capabilities'] = ','.join([x for x in capabilities.split(',') if x in supported_capabilities])
+
+                # Preserve layer IDs from the source definition
+                service_definition['preserveLayerIds'] = True
 
                 # Create a new feature service
                 # In some cases isServiceNameAvailable returns true but fails to create the service with error that a service with the name already exists.

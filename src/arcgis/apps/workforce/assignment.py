@@ -4,6 +4,7 @@ from .exceptions import ValidationError
 from .feature_model import FeatureModel
 from .managers import *
 from ._schemas import AssignmentSchema
+from .assignment_type import AssignmentType
 
 
 class Assignment(FeatureModel):
@@ -84,7 +85,7 @@ class Assignment(FeatureModel):
     def __init__(self, project, feature=None, geometry=None, assignment_type=None,
             assigned_date=None, assignment_read=None, completed_date=None, declined_comment=None,
             declined_date=None, description=None, dispatcher=None, due_date=None, in_progress_date=None,
-            location=None, notes=None, paused_date=None, priority=None, status=None,
+            location=None, notes=None, paused_date=None, priority="none", status=None,
             work_order_id=None, worker=None):
         super().__init__(project, project.assignments_layer, feature)
         self._schema = AssignmentSchema(project.assignments_layer)
@@ -247,9 +248,24 @@ class Assignment(FeatureModel):
 
     @assignment_type.setter
     def assignment_type(self, value):
-        self._assignment_type = value
-        if value:
-            self._feature.attributes[self._schema.assignment_type] = value.code
+        if isinstance(value, AssignmentType):
+            self._assignment_type = value
+        elif isinstance(value, int):
+            if value in self.project._cached_assignment_types:
+                self._assignment_type = self.project._cached_assignment_types[value]
+            else:
+                raise ValidationError("Invalid Assignment Type", self)
+        elif isinstance(value, str):
+            for at in self.project._cached_assignment_types.values():
+                if at.name.lower() == value.lower():
+                    self._assignment_type = at
+                    break
+            else:
+                raise ValidationError("Invalid Assignment Type", self)
+        else:
+            raise ValidationError("Invalid Assignment Type", self)
+        if self._assignment_type:
+            self._feature.attributes[self._schema.assignment_type] = self._assignment_type.code
         else:
             self._feature.attributes[self._schema.assignment_type] = None
 
@@ -301,8 +317,11 @@ class Assignment(FeatureModel):
 
     @dispatcher.setter
     def dispatcher(self, value):
-        self._dispatcher = value
-        self._feature.attributes[self._schema.dispatcher_id] = value.object_id if value is not None else None
+        if value is not None:
+            self._dispatcher = value
+        else:
+            self._dispatcher = self.project._cached_dispatcher
+        self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.object_id
 
     @property
     def due_date(self):

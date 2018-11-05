@@ -72,7 +72,7 @@ class AssignmentManager(object):
     def add(self, feature=None, geometry=None, assignment_type=None,
             assigned_date=None, assignment_read=None, completed_date=None, declined_comment=None,
             declined_date=None, description=None, dispatcher=None, due_date=None, in_progress_date=None,
-            location=None, notes=None, paused_date=None, priority=None, status=None,
+            location=None, notes=None, paused_date=None, priority="none", status=None,
             work_order_id=None, worker=None):
         """
         Creates and adds a new assignment to the project
@@ -111,7 +111,7 @@ class AssignmentManager(object):
         dispatcher             Optional :class:`~arcgis.apps.workforce.Dispatcher`.
                                The dispatcher that assigned/created the assignment.
         ------------------     --------------------------------------------------------------------
-        dute_date              Optional :class:`Date`.
+        due_date               Optional :class:`Date`.
                                The date the assignment is due.
         ------------------     --------------------------------------------------------------------
         in_progress_date       Optional :class:`Date`.
@@ -682,7 +682,7 @@ class WorkerManager:
         return add_workers(self.project, workers)
 
     def add(self, feature=None, geometry=None, contact_number=None,
-               name=None, notes=None, status=None, title=None, user_id=None):
+               name=None, notes=None, status="not_working", title=None, user_id=None):
         """
             Creates and adds a new worker to the project.
 
