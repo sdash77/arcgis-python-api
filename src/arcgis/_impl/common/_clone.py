@@ -1304,6 +1304,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     if capabilities is not None:
                        service_definition['capabilities'] = ','.join([x for x in capabilities.split(',') if x in supported_capabilities])
 
+                # Preserve layer IDs from the source definition
+                service_definition['preserveLayerIds'] = True
+
                 # Create a new feature service
                 # In some cases isServiceNameAvailable returns true but fails to create the service with error that a service with the name already exists.
                 #  In these cases catch the error and try again with a unique name.
