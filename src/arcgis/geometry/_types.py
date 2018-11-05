@@ -394,7 +394,7 @@ class Geometry(BaseGeometry):
                 json.dumps(dict(self)),
                 True)
         elif self._ao is None and HASARCPY and \
-           isinstance(self, SpatialReference):
+             isinstance(self, SpatialReference):
             if 'wkid' in self:
                 self._ao = arcpy.SpatialReference(self['wkid'])
             elif 'wkt' in self:
@@ -557,7 +557,7 @@ class Geometry(BaseGeometry):
                         y_angle=y_angle)
             return self
         return skew(geom=self, x_angle=x_angle,
-                        y_angle=y_angle)
+                    y_angle=y_angle)
     #----------------------------------------------------------------------
     def rotate(self, theta,
                inplace=False):
@@ -812,7 +812,7 @@ class Geometry(BaseGeometry):
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY and \
-             isinstance(self, Envelope):
+           isinstance(self, Envelope):
             try:
                 p = getattr(self.as_arcpy, 'polygon', None)
                 return p.area
@@ -863,7 +863,7 @@ class Geometry(BaseGeometry):
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY and \
-             isinstance(self, Envelope):
+           isinstance(self, Envelope):
             try:
                 p = getattr(self.as_arcpy, 'polygon', None)
                 return p.centroid
@@ -880,7 +880,7 @@ class Geometry(BaseGeometry):
                 import arcpy
                 return tuple(Geometry(
                     arcpy.PointGeometry(g,
-                    self.spatial_reference)
+                                        self.spatial_reference)
                 ))
         elif HASSHAPELY:
             c = tuple(list(self.as_shapely.centroid.coords)[0])
@@ -1052,7 +1052,7 @@ class Geometry(BaseGeometry):
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY and \
-               isinstance(self, Envelope):
+           isinstance(self, Envelope):
             return False
         elif HASARCPY:
             return getattr(self.as_arcpy, "isMultipart", None)
@@ -1087,7 +1087,7 @@ class Geometry(BaseGeometry):
         if HASARCPY:
             import arcpy
         if HASARCPY and \
-               isinstance(self, Envelope):
+           isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "labelPoint", None)
         elif HASARCPY:
             import arcpy
@@ -1121,7 +1121,7 @@ class Geometry(BaseGeometry):
         if HASARCPY:
             import arcpy
         if HASARCPY and \
-               isinstance(self, Envelope):
+           isinstance(self, Envelope):
             return Geometry({'x' : self['XMax'], 'y' : self['YMax'],
                              'spatialReference' : self['spatialReference']})
         elif HASARCPY:
@@ -1200,7 +1200,7 @@ class Geometry(BaseGeometry):
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY and \
-               isinstance(self, Envelope):
+           isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "length3D", None)
         elif HASARCPY:
             return getattr(self.as_arcpy, "length3D", None)
@@ -1300,7 +1300,7 @@ class Geometry(BaseGeometry):
         """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY and \
-               isinstance(self, Envelope):
+           isinstance(self, Envelope):
             return getattr(self.polygon.as_arcpy, "spatialReference", None)
         elif HASARCPY:
             return SpatialReference(self['spatialReference']).as_arcpy
@@ -1331,7 +1331,7 @@ class Geometry(BaseGeometry):
         if HASARCPY:
             import arcpy
         if HASARCPY and \
-               isinstance(self, Envelope):
+           isinstance(self, Envelope):
             return Geometry(
                 arcpy.PointGeometry(
                     getattr(self.polygon.as_arcpy, "trueCentroid", None),
@@ -1626,7 +1626,7 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.densify(method=method,
                                                   distance=distance,
-                                         deviation=deviation))
+                                                  deviation=deviation))
         return None
     #----------------------------------------------------------------------
     def difference(self, second_geometry):
@@ -1869,7 +1869,7 @@ class Geometry(BaseGeometry):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
             return Geometry(self.as_arcpy.intersect(other=second_geometry,
-                                           dimension=dimension))
+                                                    dimension=dimension))
         elif HASARCPY and \
              isinstance(self, Envelope):
             if isinstance(second_geometry, Envelope):
@@ -1963,7 +1963,7 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.pointFromAngleAndDistance(angle=angle,
                                                                     distance=distance,
-                                                    method=method))
+                                                                    method=method))
         return None
     #----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
@@ -2278,11 +2278,11 @@ class MultiPoint(Geometry):
         if fill_color is None:
             fill_color = "#66cc99" if self.is_valid else "#ff3333"
         return '<g>' + \
-            ''.join(('<circle cx="{0.x}" cy="{0.y}" r="{1}" '
-            'stroke="#555555" stroke-width="{2}" fill="{3}" opacity="0.6" />'
-            ).format(Point({'x': p[0], 'y': p[1]}), 3 * scale_factor, 1 * scale_factor, fill_color) \
-                    for p in self['points']) + \
-            '</g>'
+               ''.join(('<circle cx="{0.x}" cy="{0.y}" r="{1}" '
+                        'stroke="#555555" stroke-width="{2}" fill="{3}" opacity="0.6" />'
+                        ).format(Point({'x': p[0], 'y': p[1]}), 3 * scale_factor, 1 * scale_factor, fill_color) \
+                       for p in self['points']) + \
+               '</g>'
     #----------------------------------------------------------------------
     def __hash__(self):
         return hash(json.dumps(dict(self)))
@@ -2418,26 +2418,23 @@ class Polygon(Geometry):
         super(Polygon, self).__init__(iterable)
         self.update(kwargs)
     #----------------------------------------------------------------------
-    def svg(self, scale_factor=1, fill_color=None):
-        """Returns SVG path element for the Polygon geometry.
-
-        Parameters
-        ==========
-        scale_factor : float
-            Multiplication factor for the SVG stroke-width.  Default is 1.
-        fill_color : str, optional
-            Hex string for fill color. Default is to use "#66cc99" if
-            geometry is valid, and "#ff3333" if invalid.
-        """
+    def svg(self, scale_factor=1,fill_color=None):
         if self.is_empty:
             return '<g />'
         if fill_color is None:
             fill_color = "#66cc99" if self.is_valid else "#ff3333"
-        polygons = []
+        rings = []
         for ring in self['rings']:
-            polygons.append("""<polygon fill-rule="evenodd" fill="%s" stroke="#555555" stroke-width="2.0" opacity="0.6" points="%s" />""" % \
-                            (fill_color, " ".join(["%s,%s" % (pt[0] * scale_factor, pt[1] * scale_factor) for pt in ring])))
-        return "<g>" + " ".join(polygons) + "</g>"
+            rings += ring
+        exterior_coords = [
+            ["{},{}".format(*c) for c in rings]]
+        path = " ".join([
+            "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
+            for coords in exterior_coords])
+        return (
+            '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
+            'stroke-width="{0}" opacity="0.6" d="{1}" />'
+            ).format(2. * scale_factor, path, fill_color)
     #----------------------------------------------------------------------
     @property
     def type(self):
@@ -2485,7 +2482,7 @@ class Polygon(Geometry):
                 part_list.append(part_item)
         return cls({'rings' : part_list,
                     'spatialReference' : sr
-                })
+                    })
 ########################################################################
 class Polyline(Geometry):
     """
@@ -2528,7 +2525,7 @@ class Polyline(Geometry):
         for path in self['paths']:
             pnt_format = " ".join(["{0},{1}".format(*c) for c in path])
             s = ('<polyline fill="none" stroke="{2}" stroke-width="{1}" '
-             'points="{0}" opacity="0.8" />').format(pnt_format, 2. * scale_factor, stroke_color)
+                 'points="{0}" opacity="0.8" />').format(pnt_format, 2. * scale_factor, stroke_color)
             paths.append(s)
         return "<g>" + "".join(paths) + "</g>"
     #----------------------------------------------------------------------
@@ -2706,7 +2703,7 @@ class SpatialReference(BaseGeometry):
         if HASARCPY:
             import arcpy
         if HASARCPY and \
-             isinstance(iterable, arcpy.SpatialReference):
+           isinstance(iterable, arcpy.SpatialReference):
             if iterable.factoryCode:
                 iterable = {'wkid' : iterable.factoryCode}
             else:
