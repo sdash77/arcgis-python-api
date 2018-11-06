@@ -60,6 +60,7 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         ready: false,
         tab_mode: "auto",
         _js_cdn_override: "",
+        legend: false,
         //end miscellanous modle state
     })
 });
