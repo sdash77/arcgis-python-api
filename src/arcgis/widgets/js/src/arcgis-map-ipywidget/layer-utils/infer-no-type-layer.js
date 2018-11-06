@@ -46,11 +46,6 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                     var renderingRule = 
                         noTypeLayer.options.imageServiceParameters.renderingRule;
                     var rasterFunction = RasterFunction.fromJSON(renderingRule);
-
-//                        functionName: renderingRule.rasterFunction,
-//                        functionArguments: renderingRule.rasterFunctionArguments,
-//                        variableName: renderingRule.
-//                    });
                     typedLayer.renderingRule = rasterFunction;
                 }
                 resolve(typedLayer);}

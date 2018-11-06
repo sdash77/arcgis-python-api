@@ -13,6 +13,7 @@ from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.geometry import *
+import copy
 
 _TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operation View', 'Dashboard',
                           'Image Service', 'Feature Collection', 'Feature Collection Template',
@@ -1525,7 +1526,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             if field['name'] != new_field['name']:
                                 field_mapping[field['name']] = new_field['name']
                         except ValueError:
-                            pass
+                            new_field = next((f for f in new_fields if f['name'][0:len(field['name'])].lower() == field['name'].lower()), None)
+                            if new_field is not None:
+                                field_mapping[field['name']] = new_field['name']
 
                     if len(field_mapping) > 0:
                         layer_field_mapping[layer_id] = field_mapping
@@ -2880,7 +2883,9 @@ def _compare_service(new_item, original_item):
                         if field['name'] != new_field['name']:
                             field_mapping[field['name']] = new_field['name']
                     except ValueError:
-                        pass
+                        new_field = next((f for f in new_fields if f['name'][0:len(field['name'])].lower() == field['name'].lower()), None)
+                        if new_field is not None:
+                            field_mapping[field['name']] = new_field['name']
                 break
         if len(field_mapping) > 0:
             layer_field_mapping[original_id] = field_mapping
