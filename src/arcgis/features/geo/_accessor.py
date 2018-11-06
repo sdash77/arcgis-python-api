@@ -929,6 +929,8 @@ class GeoAccessor(object):
     _sindex = None
     _stype = None
     _sfname = None
+    _HASARCPY = None
+    _HASSHAPELY = None
     #----------------------------------------------------------------------
     def __init__(self, obj):
         self._data = obj
@@ -2242,6 +2244,21 @@ class GeoAccessor(object):
         fs['features'] = features
         return fs
     #----------------------------------------------------------------------
+    def _check_geometry_engine(self):
+        if self._HASARCPY is None:
+            try:
+                import arcpy
+                self._HASARCPY = True
+            except:
+                self._HASARCPY = False
+        if self._HASSHAPELY is None:
+            try:
+                import shapely
+                self._HASSHAPELY = True
+            except:
+                self._HASSHAPELY = False
+        return self._HASARCPY, self._HASSHAPELY
+    #----------------------------------------------------------------------
     @property
     def sr(self):
         """gets/sets the spatial reference of the dataframe"""
@@ -2269,7 +2286,7 @@ class GeoAccessor(object):
     @sr.setter
     def sr(self, ref):
         """Sets the spatial reference"""
-        from arcgis.geometry import HASARCPY
+        HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             sr = self.sr
             if 'wkid' in sr:
