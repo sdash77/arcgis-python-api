@@ -97,6 +97,9 @@ class MapView(widgets.DOMWidget):
 
     @property
     def basemap(self):
+        """What basemap you would like to apply to the widget (‘topo’, 
+        ‘national-geographic’, etc.). See `basemaps` for a full list
+        """
         return self._basemap
 
     @basemap.setter
@@ -313,6 +316,12 @@ class MapView(widgets.DOMWidget):
     in the notebook
     """
     _js_cdn_override = Unicode().tag(sync=True)
+
+    legend = Bool(False).tag(sync=True)
+    """If set to `True`, will display a legend in the widget that will 
+    describe all layers added to the map. If set to `False`, will hide the 
+    legend. Default: `False`.
+    """
 
     _gallery_basemaps = Dict({}).tag(sync=True)
 
@@ -568,6 +577,10 @@ class MapView(widgets.DOMWidget):
             # (i.e., do what was done for ImageryLayer for all major Layers)
             # 'No type' layer just means that we'll figure it out at JS time
             _lyr = _make_jsonable_dict(item._lyr_json)
+            if (_lyr['type'] == 'MapImageLayer') and \
+               ('TilesOnly' in item.properties.capabilities):
+                   # If it's a TilesOnly MapImageLayer, switch to TiledService
+                   _lyr['type'] = 'ArcGISTiledMapServiceLayer'
             if 'options' in _lyr:
                 lyr_options = json.loads(_lyr["options"])
                 lyr_options.update(options)

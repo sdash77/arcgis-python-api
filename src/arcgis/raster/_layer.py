@@ -2404,10 +2404,9 @@ class ImageryLayer(Layer):
 
         :return: output_raster - Image layer item
         """
-        g = self._gis
-
-        if gis is not None:
-            g = gis
+        g  = _arcgis.env.active_gis if gis is None else gis
+        layer_extent_set = False
+        gr_output = None
 
         if for_viz:
 
@@ -2440,18 +2439,31 @@ class ImageryLayer(Layer):
                 raise RuntimeError('You need to be signed in to a GIS to create Items')
         else:
             from .analytics import is_supported, generate_raster, _save_ra
-            if self._extent and _arcgis.env.analysis_extent is None:
-                _arcgis.env.analysis_extent = dict(self._extent)
             if self._fnra is None:
                 from .functions import identity
                 identity_layer = identity(self)
                 self._fnra = identity_layer._fnra
 
             if is_supported(g):
-                if self._uses_gbl_function:
-                    if True in self._other_outputs.values() or self._fnra['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
-                        return _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g)
-                return generate_raster(self._fnra, output_name=output_name, gis=g)
+                if self._extent is not None and _arcgis.env.analysis_extent is None:
+                    _arcgis.env.analysis_extent = dict(self._extent)
+                    layer_extent_set = True
+                try:
+                    if self._uses_gbl_function:
+                        if True in self._other_outputs.values() or self._fnra['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
+                            gr_output = _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g)
+                    gr_output = generate_raster(self._fnra, output_name=output_name, gis=g)
+                except Exception:
+                    if layer_extent_set:
+                         _arcgis.env.analysis_extent = None
+                         layer_extent_set = False
+                    raise 
+
+                if layer_extent_set:
+                         _arcgis.env.analysis_extent = None
+                         layer_extent_set = False
+                if gr_output is not None:
+                    return gr_output
             else:
                 raise RuntimeError('This GIS does not support raster analysis.')
 
@@ -2487,22 +2499,19 @@ class ImageryLayer(Layer):
         :return:  converted feature layer item
 
         """
-        g = self._gis
-
-        if gis is not None:
-            g = gis
+        g = _arcgis.env.active_gis if gis is None else gis
 
         from arcgis.raster.analytics import convert_raster_to_feature
         input_raster_dict=None
-        if self._fnra is None:
-            return convert_raster_to_feature(self._url, field, output_type, simplify, output_name, gis)
-        fnarg_ra = self._fnra['rasterFunctionArguments']
-        fnarg = self._fn
         if "url" in self._lyr_dict:
             url = self._lyr_dict["url"]
         if "serviceToken" in self._lyr_dict:
             url = url+"?token="+ self._lyr_dict["serviceToken"]
-        return convert_raster_to_feature({"url":url,"renderingRule":self._fn}, field, output_type, simplify, output_name, gis)
+        if self._fnra is None:
+            return convert_raster_to_feature(url, field, output_type, simplify, output_name, g)
+        fnarg_ra = self._fnra['rasterFunctionArguments']
+        fnarg = self._fn
+        return convert_raster_to_feature({"url":url,"renderingRule":self._fn}, field, output_type, simplify, output_name, g)
 
 
     def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):

@@ -1876,15 +1876,29 @@ class UserManager(object):
             A list of users.
         """
 
+        user_type=None
+        role=None
+
+        ut = {
+            'creator' : 'creatorUT',
+            'viewer' : 'viewerUT'
+        }
+        if user_type and \
+           user_type.lower() in ut:
+            user_type = ut[user_type.lower()]
         if query is None:
             users = self._portal.get_org_users(max_users,
-                                               exclude_system=json.dumps(exclude_system))
+                                               exclude_system=json.dumps(exclude_system),
+                                               user_type=user_type,
+                                               role=role)
             gis = self._gis
             user_storage = []
             for u in users:
                 if 'id' in u and \
                    (u['id'] is None or u['id'] == 'null'):
-                    un = user['username']
+                    un = u['username']
+                elif 'id' not in u:
+                    un = u['username']
                 else:
                     un = u['id']
                 if not 'roleId' in u:
@@ -1893,20 +1907,28 @@ class UserManager(object):
             return user_storage
         else:
             userlist = []
-            isinstance(self._portal, portalpy.Portal)
             users = self._portal.search_users(query, sort_field, sort_order,
-                                              max_users, outside_org, json.dumps(exclude_system))
+                                              max_users, outside_org, json.dumps(exclude_system),
+                                              user_type=user_type, role=role)
             for user in users:
                 if 'id' in user and \
                    (user['id'] is None or user['id'] == 'null'):
+                    un = user['username']
+                elif 'id' not in user:
                     un = user['username']
                 else:
                     un = user['id']
                 userlist.append(User(self._gis, un))
             return userlist
 
-        #TODO: remove org users, invite users
+    #----------------------------------------------------------------------
+    @property
+    def license_types(self):
+        """returns a dictionary of license type information that users can be assigned"""
+        url = "/portals/self/userLicenseTypes"
+        return []
 
+    #----------------------------------------------------------------------
     @property
     def me(self):
         """ Gets the logged in user.
@@ -4563,6 +4585,63 @@ class User(dict):
     def __repr__(self):
         return '<%s username:%s>' % (type(self).__name__, self.username)
 
+    def _app_bundles(self):
+        """
+        Available in ArcGIS Online and Portal 10.7+
+        returns the current user's assigned app bundles
+        """
+        url = "%s/community/users/%s/appBundles" % (self._portal.resturl, self.username)
+        params = {
+            'f' : 'json',
+            "start" : 1,
+            "num" : 10
+        }
+        bundles = []
+        res = self._portal.con.post(url, params)
+        bundles = res["appBundles"]
+        while res["nextStart"] > -1:
+            params['start'] = res["nextStart"]
+            res = self._portal.con.post(url, params)
+            bundles += res["appBundles"]
+        return bundles
+
+    def _user_types(self):
+        """
+        Notes: Available in 10.7+
+        returns the user type and assigned applications
+        """
+        url = "%s/community/users/%s/userLicenseType" % (self._portal.resturl, self.username)
+        params = {'f' : 'json'}
+        return self._portal.con.post(url, params)
+
+    #----------------------------------------------------------------------
+    @property
+    def _provisions(self):
+        """
+        Returns a list of all items provisioned licenses for the current user.
+        Available in 10.7+
+        :returns: List
+
+        """
+        provs = []
+        url = "%s/community/users/%s/provisionedListings" % (self._portal.resturl, self.username)
+        params = {
+            'f': 'json',
+            'start' :1,
+            'num' : 255
+        }
+        res = self._portal.con.post(url, params)
+        provs = [Item(gis=self._gis, itemid=i["itemId"])for i in res["provisionedListings"]]
+        while res['nextStart'] > -1:
+            params = {
+                'f': 'json',
+                'start' : res['nextStart'],
+                'num' : 255
+            }
+            res = self._portal.con.post(url, params)
+            provs += [Item(gis=self._gis, itemid=i["itemId"])for i in res["provisionedListings"]]
+        return provs
+
     def get_thumbnail_link(self):
         """ Retrieves the URL to the thumbnail image.
 
@@ -4683,8 +4762,15 @@ class User(dict):
         =====================  =========================================================
         **Argument**           **Description**
         ---------------------  ---------------------------------------------------------
-        level                  Required string. The values of 1, 1PlusEdit, or 2. This
+        level                  Required string. The values of 1, 11, or 2. This
                                is the user level for the given user.
+
+
+                                    + 1 - View only
+                                    + 11 - View Plus edit
+                                    + 2 - Content creator
+
+
         =====================  =========================================================
 
         :returns:
@@ -4700,7 +4786,7 @@ class User(dict):
             self._hydrated = False
             self._hydrate()
 
-        allowed_roles = {'1', '2', '1PlusEdit'}
+        allowed_roles = {'1', '2', '11'}
 
         if level not in allowed_roles:
             raise ValueError("level must be in %s" % ",".join(allowed_roles))

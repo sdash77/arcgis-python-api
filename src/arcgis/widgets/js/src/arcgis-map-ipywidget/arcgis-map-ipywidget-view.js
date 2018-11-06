@@ -55,18 +55,20 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                             'esri/views/MapView',
                             'esri/views/SceneView',
                             'esri/core/watchUtils',
-                            'esri/widgets/Compass'], options).then((
+                            'esri/widgets/Compass',
+                            'esri/widgets/Legend'], options).then((
                             [Map,
                              MapView,
                              SceneView,
                              watchUtils,
-                             Compass]) => {
+                             Compass,
+                             Legend]) => {
         loadingProgressDisplay.stop();
         this._setup_custom_buttons();
-        this._instantiate_esri_components(Map, MapView, SceneView, Compass);
+        this._instantiate_esri_components(Map, MapView, SceneView,
+                                          Compass, Legend);
         this._setup_stationary_callback(watchUtils);
         this._miscellanous_setup();
-
         //All model specific change functions. These functions are called
         //whenever that attribute on the model is updated, whether that update
         //comes from Python, from the UI, etc. The callback function is called on change
@@ -97,7 +99,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.model.on('change:hide_mode_switch', this.hide_mode_switch_changed, this);
         this.model.on('change:_trigger_interactive_draw_mode_for', this.interactive_draw_shape, this);
         this.model.on('change:_trigger_new_jlab_window_with_args', this.trigger_jlab_window_changed, this);
-        this.model.on('change:_fallback_cdn_changed', this.fallback_cdn_changed, this);
+        this.model.on('change:_js_cdn_override', this.js_cdn_changed, this);
+        this.model.on('change:legend', this.legend_prop_changed, this);
         //end miscellanous model section
 
         //Last thing to do: update the widget state from the model's
@@ -137,6 +140,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 this.webmap_changed();
                 this.webscene_changed();
                 //end webmap/webscene section
+                this.legend_prop_changed();
                 resolve();
             }).catch((err) => {
                 this._displayErrorBox("Error while authenticating to portal on first load.");
@@ -322,7 +326,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.js_cdn_changed();
     },
 
-    _instantiate_esri_components: function(Map, MapView, SceneView, Compass){
+    _instantiate_esri_components: function(Map, MapView, SceneView,
+                                           Compass, Legend){
         this.map = new Map({ground: "world-elevation"});
         this.container = this.elements.mapElement;
         this._3dMap = new SceneView({map: this.map, container: this.container});
@@ -330,10 +335,15 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this._2dMap = new MapView({
             map: this.map,
             container: this.container});
-        this._2dMap.ui.add(new Compass({view: this._2dMap}), "top-left");
         this._2dMap._parentIPyWidget = this;
         this.activeView = this._2dMap;
-    },
+
+        // Set up widgets like compass and legend
+        this._2dMap.ui.add(new Compass({view: this._2dMap}), "top-left");
+        this._legend = new Legend({
+            view: this.activeView,
+            layerInfos: []});
+   },
 
     _override_right_click_menu: function(){
         //JupyterLab has a right click menu we don't want displaying
@@ -403,6 +413,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
              this.model.set("tilt", 0);
              this.model.save_changes();
         }
+        this.legend_prop_changed(); //Needed to reset the legend's view
     } catch(err){
         this._displayErrorBox();
         console.warn("Error on mode_changed"); console.warn(err); 
@@ -1030,6 +1041,24 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 console.log("Error while setting fallback cdn");
                 console.log(err);
             });
+        }
+    },
+
+    legend_prop_changed: function() {
+        try{
+            console.log("legend changed");
+            var widgetCorner = "bottom-right";
+            var legendProp = this.model.get("legend");
+            if(legendProp){
+                this.activeView.ui.empty(widgetCorner);
+                this._legend.view = this.activeView;
+                this.activeView.ui.add(this._legend, widgetCorner);
+            } else {
+                this.activeView.ui.empty(widgetCorner);
+            }
+        } catch(err) {
+            console.log("Error while trying to show legend.");
+            console.log(err);
         }
     },
 

@@ -79,6 +79,134 @@ def calculate_density(
         output_name,
         context)
 
+def summarize_center_and_dispersion(
+        analysis_layer,
+        summarize_type,
+        ellipse_size=None,
+        weight_field=None,
+        group_field=None,
+        output_name=None,
+        context=None,
+        gis=None):
+
+    """
+    The Summarize Center and Dispersion task finds central features and directional distributions.
+
+    ====================    =========================================================
+    **Argument**            **Description**
+    --------------------    ---------------------------------------------------------
+    analysis_layer          The point, line, or polygon features to be analyzed. This
+                            parameter can be a URL to a feature service layer with an
+                            optional filter to select specific feaures, or a feature
+                            collection
+    --------------------    ---------------------------------------------------------
+    summarize_type          The method with which to summarize the analysis_layer.
+                            Choice List: 
+                            ["CentralFeature", "MeanCenter", "MedianCenter", 
+                            "Ellipse"]
+                            Example: "CentralFeature"
+    --------------------    ---------------------------------------------------------
+    ellipse_size            The size of the output ellipse in standard deviations. 
+                            The default ellipse size is 1. Valid choices are 1, 2, or
+                            3 standard deviations. 
+                            Choice List: [1, 2, 3]
+                            Examples: 
+                            "1"
+                            [1, 2, 3]
+    --------------------    ---------------------------------------------------------
+    weight_field            A numeric field in the analysis_layer to be used to 
+                            weight locations according to their relative importance.
+    --------------------    ---------------------------------------------------------
+    group_field             The field used to group features for separate directional
+                            distribution calculations. The group_field can be of 
+                            integer, date, or string type.
+    --------------------    ---------------------------------------------------------
+    output_name             Optional string. Additional properties such as output 
+                            feature service name.                        
+    --------------------    ---------------------------------------------------------
+    context                 Optional string. Additional settings such as processing 
+                            extent and output spatial reference.
+    --------------------    ---------------------------------------------------------
+    gis                     Optional, the GIS on which this tool runs. If not 
+                            specified, the active GIS is used.                                                      
+    ====================    =========================================================
+
+    :returns: Python dictionary with the following keys:
+        "central_feature_result_layer" : layer (FeatureCollection)
+        "mean_feature_result_layer" : layer (FeatureCollection)
+        "median_feature_result_layer" : layer (FeatureCollection)
+        "ellipse_feature_result_layer" : layer (FeatureCollection)
+        "process_info" : list of messages
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.featureanalysis.summarize_center_and_dispersion(
+        analysis_layer,
+        summarize_type,
+        ellipse_size,
+        weight_field,
+        group_field,
+        output_name,
+        context) 
+
+def find_point_clusters(
+        analysis_layer,
+        min_features_cluster,
+        search_distance=None,
+        search_distance_unit=None,
+        output_name=None,
+        context=None,
+        gis=None):
+
+    """
+    The Find Point Clusters function finds clusters of point features in surrounding 
+    noise based on their spatial distribution. Output is a layer containing records 
+    assigned to a cluster or noise. 
+
+    ====================    =========================================================
+    **Argument**            **Description**
+    --------------------    ---------------------------------------------------------
+    analysis_layer          Required layer. The point feature layer for which 
+                            density-based clustering will be calculated.
+    --------------------    ---------------------------------------------------------
+    min_features_cluster    Required integer. The minimum number of features to be 
+                            considered a cluster. Any cluster with fewer features 
+                            than the number provided will be considered noise.
+    --------------------    ---------------------------------------------------------
+    search_distance         Optional double. The maximum distance to consider. The 
+                            Minimum Features per Cluster specified must be found 
+                            within this distance for cluster membership. Individual 
+                            clusters will be separated by at least this distance. If 
+                            a feature is located further than this distance from the 
+                            next closest feature in the cluster, it will not be 
+                            included in the cluster.
+    --------------------    ---------------------------------------------------------
+    search_distance_unit    Optional string. The linear unit to be used for the 
+                            search distance parameter.
+    --------------------    ---------------------------------------------------------
+    output_name             Optional string. Additional properties such as output 
+                            feature service name.
+    --------------------    ---------------------------------------------------------
+    context                 Optional string. Additional settings such as processing 
+                            extent and output spatial reference.
+    --------------------    ---------------------------------------------------------
+    gis                     Optional, the GIS on which this tool runs. If not 
+                            specified, the active GIS is used.                                                      
+    ====================    =========================================================
+
+    :returns: Python dictionary with the following keys:
+        "point_clusters_result_layer" : layer (FeatureCollection)
+        "process_info" : list of messages
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.featureanalysis.find_point_clusters(
+        analysis_layer,
+        min_features_cluster,
+        search_distance,
+        search_distance_unit,
+        output_name,
+        context)    
 
 def find_hot_spots(
         analysis_layer,

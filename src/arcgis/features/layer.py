@@ -312,7 +312,7 @@ class FeatureLayer(Layer):
             "f": "json",
             "attachmentId": "%s" % attachment_id
         }
-        files = {'attachment': file_path}
+        files = {'file': file_path}
         if self._dynamic_layer is not None:
             url = self.url.split('?')[0] + "/%s/attachments" % oid
             params['layer'] = self._dynamic_layer
@@ -382,7 +382,9 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
-        out_fields                          Optional string. The attribute fields to return. The default is "*".
+        out_fields                          Optional List of field names to return. Field names can be specified
+                                            either as a List of field names or as a comma separated string.
+                                            The default is "*", which returns all the fields.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values are comma seperate string.
@@ -590,6 +592,11 @@ class FeatureLayer(Layer):
         params['returnIdsOnly'] = return_ids_only
         params['returnZ'] = return_z
         params['returnM'] = return_m
+
+        # convert out_fields to a comma spearated string
+        if isinstance(out_fields, (list, tuple)):
+            out_fields = ','.join(out_fields)
+
         if out_fields != '*' and not return_distinct_values:
             try:
                 # Check if object id field is in out_fields.

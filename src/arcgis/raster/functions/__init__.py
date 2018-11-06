@@ -913,7 +913,7 @@ def geometric(raster, geodata_transforms=None, append_geodata_xform=None, z_fact
 
 
 def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_power=None, psz_factor=None,
-              remove_edge_effect=None, astype=None):
+              remove_edge_effect=None, astype=None, hillshade_type=0):
     """
     A hillshade is a grayscale 3D model of the surface taking the sun's relative position into account to shade the image.
     For more information, see
@@ -930,6 +930,7 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     :param psz_factor: new at 10.2. double, used together with SCALED slope type
     :param remove_edge_effect: new at 10.2. boolean, true of false
     :param astype: output pixel type
+    :param hillshade_type: new at 10.5.1 0 = traditional, 1 = multi - directional; default is 0
     :return: the output raster
 
     """
@@ -962,6 +963,8 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
         template_dict["rasterFunctionArguments"]["PSZFactor"] = psz_factor
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
+    if hillshade_type is not None:
+        template_dict["rasterFunctionArguments"]["HillshadeType"] = hillshade_type
 
     return _clone_layer(layer, template_dict, raster_ra)
 
