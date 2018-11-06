@@ -947,9 +947,13 @@ class GeoAccessor(object):
             idx = self._data[col].first_valid_index()
             if sr is None:
                 try:
-                    sr = SpatialReference(Geometry(self._data.iloc[idx][col]).spatial_reference)
+                    g = self._data.iloc[idx][col]
+                    if isinstance(g, dict):
+                        self._sr = SpatialReference(Geometry(g['spatialReference']))
+                    else:
+                        self._sr = SpatialReference(g['spatialReference'])
                 except:
-                    sr = SpatialReference({'wkid' : 4326})
+                    self._sr = SpatialReference({'wkid' : 4326})
             self._name = col
             q = self._data[col].isna()
             self._data.loc[q, "SHAPE"] = None
@@ -1957,8 +1961,16 @@ class GeoAccessor(object):
         :returns: Pandas' `DataFrame`
 
         """
-        from arcgis.features.geo._io.serviceops import from_layer
-        return from_layer(layer=layer)
+        import json
+        try:
+            from arcgis.features.geo._io.serviceops import from_layer
+            return from_layer(layer=layer)
+        except ImportError:
+            raise ImportError("Could not load `from_layer`.")
+        except json.JSONDecodeError as je:
+            raise Exception("Malformed response from server, could not load the dataset: %s" % str(je))
+        except Exception as e:
+            raise Exception("Could not load the dataset: %s" % str(e))
     #----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(location, **kwargs):
