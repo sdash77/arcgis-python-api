@@ -13,6 +13,7 @@ from arcgis.features import FeatureLayerCollection
 from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.geometry import *
+import copy
 
 _TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operation View', 'Dashboard',
                           'Image Service', 'Feature Collection', 'Feature Collection Template',
