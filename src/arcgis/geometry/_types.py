@@ -2696,9 +2696,10 @@ class SpatialReference(BaseGeometry):
     def __init__(self,
                  iterable=None,
                  **kwargs):
+        super(SpatialReference, self)
         if iterable is None:
             iterable = {}
-        super(SpatialReference, self).__init__(iterable)
+
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             import arcpy
@@ -2708,8 +2709,10 @@ class SpatialReference(BaseGeometry):
                 iterable = {'wkid' : iterable.factoryCode}
             else:
                 iterable = {'wkt' : iterable.exportToString()}
-
-        self.update(kwargs)
+        if len(iterable) > 0:
+            self.update(iterable)
+        if len(kwargs) > 0:
+            self.update(kwargs)
     #----------------------------------------------------------------------
     @property
     def type(self):

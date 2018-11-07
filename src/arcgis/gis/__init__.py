@@ -1920,14 +1920,6 @@ class UserManager(object):
                     un = user['id']
                 userlist.append(User(self._gis, un))
             return userlist
-
-    #----------------------------------------------------------------------
-    @property
-    def license_types(self):
-        """returns a dictionary of license type information that users can be assigned"""
-        url = "/portals/self/userLicenseTypes"
-        return []
-
     #----------------------------------------------------------------------
     @property
     def me(self):

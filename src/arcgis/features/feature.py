@@ -674,9 +674,9 @@ class FeatureSet(object):
             from arcgis.features.geo._io.serviceops import from_featureset
             return from_featureset(fset=self)
         except ImportError:
-            raise Exception("Could not find the panda installation, please install it and retry")
-        except:
-            raise Exception("An error occured with exporting the FeatureSet.")
+            raise Exception("Could not find the panda installation, please install Pandas and retry")
+        except Exception as e:
+            raise Exception("An error occured with exporting the FeatureSet with message: %s" % str(e))
     # ----------------------------------------------------------------------
     def __iter__(self):
         """featureset iterator on features in feature set"""
