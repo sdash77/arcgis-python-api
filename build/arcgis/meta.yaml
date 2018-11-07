@@ -25,7 +25,6 @@ requirements:
         - matplotlib
         - keyring
         - pytest
-        - beautifulsoup4
         - winkerberos      [win]
     run:
         - python
@@ -39,7 +38,6 @@ requirements:
         - pyshp
         - matplotlib
         - keyring
-        - beautifulsoup4
         - winkerberos      [win]
 test:
     imports:
