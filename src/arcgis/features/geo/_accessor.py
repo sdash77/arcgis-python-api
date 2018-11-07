@@ -929,6 +929,8 @@ class GeoAccessor(object):
     _sindex = None
     _stype = None
     _sfname = None
+    _HASARCPY = None
+    _HASSHAPELY = None
     #----------------------------------------------------------------------
     def __init__(self, obj):
         self._data = obj
@@ -945,9 +947,13 @@ class GeoAccessor(object):
             idx = self._data[col].first_valid_index()
             if sr is None:
                 try:
-                    sr = SpatialReference(Geometry(self._data.iloc[idx][col]).spatial_reference)
+                    g = self._data.iloc[idx][col]
+                    if isinstance(g, dict):
+                        self._sr = SpatialReference(Geometry(g['spatialReference']))
+                    else:
+                        self._sr = SpatialReference(g['spatialReference'])
                 except:
-                    sr = SpatialReference({'wkid' : 4326})
+                    self._sr = SpatialReference({'wkid' : 4326})
             self._name = col
             q = self._data[col].isna()
             self._data.loc[q, "SHAPE"] = None
@@ -1955,8 +1961,16 @@ class GeoAccessor(object):
         :returns: Pandas' `DataFrame`
 
         """
-        from arcgis.features.geo._io.serviceops import from_layer
-        return from_layer(layer=layer)
+        import json
+        try:
+            from arcgis.features.geo._io.serviceops import from_layer
+            return from_layer(layer=layer)
+        except ImportError:
+            raise ImportError("Could not load `from_layer`.")
+        except json.JSONDecodeError as je:
+            raise Exception("Malformed response from server, could not load the dataset: %s" % str(je))
+        except Exception as e:
+            raise Exception("Could not load the dataset: %s" % str(e))
     #----------------------------------------------------------------------
     @staticmethod
     def from_featureclass(location, **kwargs):
@@ -2242,6 +2256,21 @@ class GeoAccessor(object):
         fs['features'] = features
         return fs
     #----------------------------------------------------------------------
+    def _check_geometry_engine(self):
+        if self._HASARCPY is None:
+            try:
+                import arcpy
+                self._HASARCPY = True
+            except:
+                self._HASARCPY = False
+        if self._HASSHAPELY is None:
+            try:
+                import shapely
+                self._HASSHAPELY = True
+            except:
+                self._HASSHAPELY = False
+        return self._HASARCPY, self._HASSHAPELY
+    #----------------------------------------------------------------------
     @property
     def sr(self):
         """gets/sets the spatial reference of the dataframe"""
@@ -2269,7 +2298,7 @@ class GeoAccessor(object):
     @sr.setter
     def sr(self, ref):
         """Sets the spatial reference"""
-        from arcgis.geometry import HASARCPY
+        HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             sr = self.sr
             if 'wkid' in sr:

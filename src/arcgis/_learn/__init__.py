@@ -1,7 +1,7 @@
-"Functions for calling the Deep Learning Tools." 
+"Functions for calling the Deep Learning Tools."
 
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
-                                          _analysis_job_status, _layer_input
+     _analysis_job_status, _layer_input
 import json as _json
 import arcgis as _arcgis
 import string as _string
@@ -52,7 +52,7 @@ def _set_context(params):
 
     if set_context:
         params["context"] = _json.dumps(context)
-        
+
 def _create_output_image_service(gis, output_name, task):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
     if not ok:
@@ -70,7 +70,7 @@ def _create_output_image_service(gis, output_name, task):
     }
 
     output_service = gis.content.create_service(output_name, create_params=create_parameters,
-                                                      service_type="imageService")
+                                                service_type="imageService")
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
         "description": description,
@@ -86,7 +86,7 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
         raise RuntimeError("A Feature Service by this name already exists: " + output_name)
 
     createParameters = {
-            "currentVersion": 10.2,
+        "currentVersion": 10.2,
             "serviceDescription": "",
             "hasVersionedData": False,
             "supportsDisconnectedEditing": False,
@@ -103,37 +103,37 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
                 "enableOwnershipAccessControl": False,
                 "allowOthersToUpdate": True,
                 "allowOthersToDelete": True
-            },
+                },
             "xssPreventionInfo": {
                 "xssPreventionEnabled": True,
                 "xssPreventionRule": "InputOnly",
                 "xssInputRule": "rejectInvalid"
-            },
+                },
             "tables": [],
             "name": output_service_name.replace(' ', '_')
-        }
+    }
 
     output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
     description = "Feature Service generated from running the " + task + " tool."
     item_properties = {
-            "description" : description,
+        "description" : description,
             "tags" : "Analysis Result, " + task,
             "snippet": output_service_name
-            }
+    }
     output_service.update(item_properties)
     return output_service
 
 
 def detect_objects(input_raster,
-                    model,
+                   model,
                     model_arguments=None,
                     output_name=None,
                     context = None,
                     gis=None):
 
     """
-    Function can be used to generate feature service that contains polygons on detected objects 
-    found in the imagery data using the designated deep learning model. Note that the deep learning 
+    Function can be used to generate feature service that contains polygons on detected objects
+    found in the imagery data using the designated deep learning model. Note that the deep learning
     library needs to be installed separately, in addition to the server’s built in Python 3.x library.
 
     ==================     ====================================================================
@@ -141,7 +141,7 @@ def detect_objects(input_raster,
     ------------------     --------------------------------------------------------------------
     input_raster           Required. raster layer that contains objects that need to be detected.
     ------------------     --------------------------------------------------------------------
-    model                  Required model object. 
+    model                  Required model object.
     ------------------     --------------------------------------------------------------------
     model_arguments        Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
                            eg: {"name1":"value1", "name2": "value2"}
@@ -153,11 +153,11 @@ def detect_objects(input_raster,
                            to be used as the output for the tool.
                            A RuntimeError is raised if a service by that name already exists
     ------------------     --------------------------------------------------------------------
-    context                Optional. Context contains additional settings that affect task execution. 
-                           1. Output Spatial Reference (outSR)—the output features will be projected into 
-                           the output spatial reference. 
-                           2. Snap Raster 
-                           
+    context                Optional. Context contains additional settings that affect task execution.
+                           1. Output Spatial Reference (outSR)—the output features will be projected into
+                           the output spatial reference.
+                           2. Snap Raster
+
                            Syntax: {"outSR" : {spatial reference} }
 
     ------------------     --------------------------------------------------------------------
@@ -175,7 +175,7 @@ def detect_objects(input_raster,
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
-    
+
     params = {}
 
     params["inputRaster"] = _layer_input(input_raster)
@@ -189,7 +189,7 @@ def detect_objects(input_raster,
     output_service = _create_output_feature_service(gis, output_name, output_service_name, 'Convert Raster To Feature')
 
     params["outputObjects"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                       "itemProperties": {"itemId": output_service.itemid}})
+                                           "itemProperties": {"itemId": output_service.itemid}})
 
     if model is None:
         raise RuntimeError('model cannot be None')
@@ -225,8 +225,8 @@ def classify_pixels(input_raster,
                     gis=None):
 
     """
-    Function to classify input imagery data using a deep learning model. 
-    Note that the deep learning library needs to be installed separately, 
+    Function to classify input imagery data using a deep learning model.
+    Note that the deep learning library needs to be installed separately,
     in addition to the server’s built in Python 3.x library.
 
     ==================     ====================================================================
@@ -234,7 +234,7 @@ def classify_pixels(input_raster,
     ------------------     --------------------------------------------------------------------
     input_raster           Required. raster layer that needs to be classified
     ------------------     --------------------------------------------------------------------
-    model                  Required model object. 
+    model                  Required model object.
     ------------------     --------------------------------------------------------------------
     model_arguments        Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
                            eg: {"name1":"value1", "name2": "value2"}
@@ -246,11 +246,11 @@ def classify_pixels(input_raster,
                            to be used as the output for the tool.
                            A RuntimeError is raised if a service by that name already exists
     ------------------     --------------------------------------------------------------------
-    context                Context contains additional settings that affect task execution. 
-                           1. Output Spatial Reference (outSR)—the output features will be projected into 
-                           the output spatial reference. 
-                           2. Snap Raster 
-                           
+    context                Context contains additional settings that affect task execution.
+                           1. Output Spatial Reference (outSR)—the output features will be projected into
+                           the output spatial reference.
+                           2. Snap Raster
+
                            Syntax: {"outSR" : {spatial reference} }
 
     ------------------     --------------------------------------------------------------------
@@ -274,10 +274,10 @@ def classify_pixels(input_raster,
     if output_name is None:
         output_name = task + '_' + _id_generator()
         output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, str):
         output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
+        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
     elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
         output_raster = _json.dumps({"itemId":output_service.itemid})
@@ -316,7 +316,7 @@ def classify_pixels(input_raster,
 
 
 def export_training_data(input_raster,
-                        input_class_data=None,
+                         input_class_data=None,
                         chip_format=None,
                         tile_size=None,
                         stride_size=None,
@@ -324,12 +324,12 @@ def export_training_data(input_raster,
                         classvalue_field = None,
                         buffer_radius = None,
                         output_location = None,
-                        context = None,                
+                        context = None,
                         gis=None):
 
     """
-    Function is designed to generate training sample image chips from the input imagery data with 
-    labeled vector data or classified images. The output of this service tool is the data store string 
+    Function is designed to generate training sample image chips from the input imagery data with
+    labeled vector data or classified images. The output of this service tool is the data store string
     where the output image chips, labels and metadata files are going to be stored.
 
     ==================     ====================================================================
@@ -337,15 +337,15 @@ def export_training_data(input_raster,
     ------------------     --------------------------------------------------------------------
     input_raster           Required. raster layer that needs to be exported for training
     ------------------     --------------------------------------------------------------------
-    input_class_data       Labeled data, either a feature layer or image layer. 
-                           Vector inputs should follow a training sample format as 
-                           generated by the ArcGIS Pro Training Sample Manager. 
+    input_class_data       Labeled data, either a feature layer or image layer.
+                           Vector inputs should follow a training sample format as
+                           generated by the ArcGIS Pro Training Sample Manager.
                            Raster inputs should follow a classified raster format as generated by the Classify Raster tool.
     ------------------     --------------------------------------------------------------------
-    chip_format            Optional String. The raster format for the image chip outputs. 
-                           - TIFF: TIFF format 
+    chip_format            Optional String. The raster format for the image chip outputs.
+                           - TIFF: TIFF format
                            - PNG: PNG format
-                           - JPEG: JPEG format 
+                           - JPEG: JPEG format
                            - MRF: MRF (Meta Raster Format)
 
     ------------------     --------------------------------------------------------------------
@@ -353,56 +353,56 @@ def export_training_data(input_raster,
                            Example: {"x": 256, "y": 256}
     ------------------     --------------------------------------------------------------------
     stride_size            Optional dictionary.
-                           The distance to move in the X and Y when creating the next image chip. 
-                           When stride is equal to the tile size, there will be no overlap. 
+                           The distance to move in the X and Y when creating the next image chip.
+                           When stride is equal to the tile size, there will be no overlap.
                            When stride is equal to half of the tile size, there will be 50% overlap.
                            Example: {"x": 128, "y": 128}
     ------------------     --------------------------------------------------------------------
     metadata_format        Optional string. The format of the output metadata labels. There are 4 options for output metadata labels for the training data,
                            KITTI Rectangles, PASCAL VOCrectangles, Classified Tiles (a class map) and RCNN_Masks. If your input training sample data
-                           is a feature class layer such as building layer or standard classification training sample file, 
-                           use the KITTI or PASCAL VOC rectangle option. 
-                           The output metadata is a .txt file or .xml file containing the training sample data contained 
-                           in the minimum bounding rectangle. The name of the metadata file matches the input source image 
-                           name. If your input training sample data is a class map, use the Classified Tiles as your output metadata format option. 
-                           - KITTI_rectangles: The metadata follows the same format as the Karlsruhe Institute of Technology and Toyota 
-                           Technological Institute (KITTI) Object Detection Evaluation dataset. The KITTI dataset is a vision benchmark suite. 
-                           This is the default.The label files are plain text files. All values, both numerical or strings, are separated by 
-                           spaces, and each row corresponds to one object. 
-                           - PASCAL_VOC_rectangles: The metadata follows the same format as the Pattern Analysis, Statistical Modeling and 
-                           Computational Learning, Visual Object Classes (PASCAL_VOC) dataset. The PASCAL VOC dataset is a standardized 
-                           image data set for object class recognition.The label files are XML files and contain information about image name, 
-                           class value, and bounding box(es). 
-                           - Classified_Tiles: This option will output one classified image chip per input image chip. 
-                           No other meta data for each image chip. Only the statistics output has more information on the 
-                           classes such as class names, class values, and output statistics. 
-                           - RCNN_Masks: This option will output image chips that have a mask on the areas where the sample exists. 
-                           The model generates bounding boxes and segmentation masks for each instance of an object in the image. 
+                           is a feature class layer such as building layer or standard classification training sample file,
+                           use the KITTI or PASCAL VOC rectangle option.
+                           The output metadata is a .txt file or .xml file containing the training sample data contained
+                           in the minimum bounding rectangle. The name of the metadata file matches the input source image
+                           name. If your input training sample data is a class map, use the Classified Tiles as your output metadata format option.
+                           - KITTI_rectangles: The metadata follows the same format as the Karlsruhe Institute of Technology and Toyota
+                           Technological Institute (KITTI) Object Detection Evaluation dataset. The KITTI dataset is a vision benchmark suite.
+                           This is the default.The label files are plain text files. All values, both numerical or strings, are separated by
+                           spaces, and each row corresponds to one object.
+                           - PASCAL_VOC_rectangles: The metadata follows the same format as the Pattern Analysis, Statistical Modeling and
+                           Computational Learning, Visual Object Classes (PASCAL_VOC) dataset. The PASCAL VOC dataset is a standardized
+                           image data set for object class recognition.The label files are XML files and contain information about image name,
+                           class value, and bounding box(es).
+                           - Classified_Tiles: This option will output one classified image chip per input image chip.
+                           No other meta data for each image chip. Only the statistics output has more information on the
+                           classes such as class names, class values, and output statistics.
+                           - RCNN_Masks: This option will output image chips that have a mask on the areas where the sample exists.
+                           The model generates bounding boxes and segmentation masks for each instance of an object in the image.
                            It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
     ------------------     --------------------------------------------------------------------
-    classvalue_field        Optional string. Specifies the field which contains the class values. If all field is specified, 
-                            the system will look for a ‘value’ or ‘classvalue’ field. If this feature does 
+    classvalue_field        Optional string. Specifies the field which contains the class values. If all field is specified,
+                            the system will look for a ‘value’ or ‘classvalue’ field. If this feature does
                             not contain a class field, the system will presume all records belong the 1 class.
 
     ------------------     --------------------------------------------------------------------
     buffer_radius          Optional integer. Specifies a radius for point feature classes to specify training sample area.
 
     ------------------     --------------------------------------------------------------------
-    output_location        This is the output location for training sample data. 
-                           It can be the server data store path or a shared file system path. 
-                           Example: 
-                           Server datastore path - 
-                            /fileshare/deeplearning/rooftoptrainingsamples 
-                            /cloudstore/s3deeplearning/rooftoptrainingsamples 
-                            
+    output_location        This is the output location for training sample data.
+                           It can be the server data store path or a shared file system path.
+                           Example:
+                           Server datastore path -
+                            /fileshare/deeplearning/rooftoptrainingsamples
+                            /cloudstore/s3deeplearning/rooftoptrainingsamples
+
                             File share path – \\\\servername\\deeplearning\\rooftoptrainingsamples
     ------------------     --------------------------------------------------------------------
-    context                Context contains additional settings that affect task execution. 
-                           1. exportAllTiles - Choose if the image chips with overlapped labeled data will be exported. 
-                              true - Export all the image chips, including those that do not overlap labeled data. This is the default. 
-                              false - Export only the image chips that overlap the labelled data. 
-                           2. startIndex - Allows you to set the start index for the sequence of image chips. 
-                              This lets you append more image chips to an existing sequence. The default value is 0. 
+    context                Context contains additional settings that affect task execution.
+                           1. exportAllTiles - Choose if the image chips with overlapped labeled data will be exported.
+                              true - Export all the image chips, including those that do not overlap labeled data. This is the default.
+                              false - Export only the image chips that overlap the labelled data.
+                           2. startIndex - Allows you to set the start index for the sequence of image chips.
+                              This lets you append more image chips to an existing sequence. The default value is 0.
                               Syntax: {"exportAllTiles" : true, "startIndex": 0 }
 
                            3. cellSize - cell size can be set using this key in context parameter
@@ -457,7 +457,7 @@ def export_training_data(input_raster,
 
     if buffer_radius is not None:
         params["bufferRadius"]= buffer_radius
-    
+
     if classvalue_field is not None:
         params["classValueField"]= classvalue_field
 
@@ -534,13 +534,13 @@ class Model:
             self.item = model
 
     def _repr_html_(self):
-       if self._model_package:
+        if self._model_package:
             if  hasattr(self,"item"):
-                self.item._repr_html_() 
-       else:
-            self.__repr__() 
+                self.item._repr_html_()
+        else:
+            self.__repr__()
 
-    def __repr__(self):        
+    def __repr__(self):
         if self._model_package:
             model = _json.loads(self._model)
             if "url" in model.keys():
@@ -559,25 +559,25 @@ class Model:
         Function is used to initialise Model object from model definition JSON
         eg usage:
         model = Model()
-        model.from_json({"Framework" :"TensorFlow", 
-                        "ModelConfiguration":"DeepLab", 
-                        "InferenceFunction":"[functions]System\\DeepLearning\\ImageClassifier.py", 
-                        "ModelFile":"\\\\uaenas1\\CRData\\ArcGIS_Pro_2_3\\ImageClassification\\tensorflow\\model\\frozen_inference_graph.pb", 
-                        "ExtractBands":[0,1,2], 
-                        "ImageWidth":513, 
-                        "ImageHeight":513, 
-                        "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] }, 
-                                    { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] }, 
-                                    { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] }, 
-                                    { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] }, 
-                                    { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] }, 
+        model.from_json({"Framework" :"TensorFlow",
+                        "ModelConfiguration":"DeepLab",
+                        "InferenceFunction":"[functions]System\\DeepLearning\\ImageClassifier.py",
+                        "ModelFile":"\\\\uaenas1\\CRData\\ArcGIS_Pro_2_3\\ImageClassification\\tensorflow\\model\\frozen_inference_graph.pb",
+                        "ExtractBands":[0,1,2],
+                        "ImageWidth":513,
+                        "ImageHeight":513,
+                        "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] },
+                                    { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] },
+                                    { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] },
+                                    { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] },
+                                    { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] },
                                     { "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] } ] })
 
         """
         if isinstance(model, dict):
             self._model = model
             self._model_package = False
-            
+
     def from_model_path(self, model):
         """
         Function is used to initialise Model object from url of model package or path of model definition file
@@ -596,17 +596,17 @@ class Model:
         else:
             self._model = _json.dumps({ 'uri' : model })
             self._model_package = False
-            
+
 
     def install(self, gis=None):
 
         """
-        Function is used to install the uploaded model package (*.dlpk). Optionally after inferencing 
-        the necessary information using the model, the model can be uninstalled by uninstall_model() 
+        Function is used to install the uploaded model package (*.dlpk). Optionally after inferencing
+        the necessary information using the model, the model can be uninstalled by uninstall_model()
 
 
         ==================     ====================================================================
-        **Argument**           **Description**                     
+        **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
         ==================     ====================================================================
@@ -628,7 +628,7 @@ class Model:
 
         if self._model is None:
             raise RuntimeError("For install/uninstall model object should be created from a portal item or portal url")
-        else:   
+        else:
             params["modelPackage"] = self._model
 
         task_url, job_info, job_id = _analysis_job(gptool, task, params)
@@ -690,8 +690,8 @@ class Model:
         }
         output = job_values["outModelInfo"]
         try:
-           dict_output =  _json.loads(output["modelInfo"])
-           return dict_output
+            dict_output =  _json.loads(output["modelInfo"])
+            return dict_output
         except:
             return output
 
@@ -699,7 +699,7 @@ class Model:
     def uninstall(self, gis=None):
 
         """
-        Function is used to uninstall the uploaded model package that was installed using the install_model() 
+        Function is used to uninstall the uploaded model package that was installed using the install_model()
         This function will delete the named deep learning model from the server but not the portal item.
 
         ==================     ====================================================================
@@ -725,7 +725,7 @@ class Model:
 
         if self._model is None:
             raise RuntimeError('model_package cannot be None')
-        else:   
+        else:
             params["modelItemId"] = self._model
 
         task_url, job_info, job_id = _analysis_job(gptool, task, params)

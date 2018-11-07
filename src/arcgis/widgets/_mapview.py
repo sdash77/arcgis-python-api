@@ -97,7 +97,7 @@ class MapView(widgets.DOMWidget):
 
     @property
     def basemap(self):
-        """What basemap you would like to apply to the widget (‘topo’, 
+        """What basemap you would like to apply to the widget (‘topo’,
         ‘national-geographic’, etc.). See `basemaps` for a full list
         """
         return self._basemap
@@ -168,7 +168,7 @@ class MapView(widgets.DOMWidget):
                                 }
         ==================     ====================================================================
 
-       """
+        """
         if self._readonly_extent:
             return self._readonly_extent
         else:
@@ -195,7 +195,7 @@ class MapView(widgets.DOMWidget):
                 raise Exception
         except Exception:
             log.warn("extent must be set to either a 2d list, spatially " \
-                "enabled data frame full_extent, or dict. Values specified " \
+                     "enabled data frame full_extent, or dict. Values specified " \
                 "must include xmin, ymin, xmax, ymax. Please see the API doc for " \
                 "more information")
 
@@ -318,8 +318,8 @@ class MapView(widgets.DOMWidget):
     _js_cdn_override = Unicode().tag(sync=True)
 
     legend = Bool(False).tag(sync=True)
-    """If set to `True`, will display a legend in the widget that will 
-    describe all layers added to the map. If set to `False`, will hide the 
+    """If set to `True`, will display a legend in the widget that will
+    describe all layers added to the map. If set to `False`, will hide the
     legend. Default: `False`.
     """
 
@@ -459,7 +459,7 @@ class MapView(widgets.DOMWidget):
                 _portal_cdn_unreachable = not self._is_reachable(_portal_cdn)
                 if _portal_cdn_unreachable:
                     log.warn("Error: Cannot reach any JS API CDN, widget will"\
-                            " not display".format(DEFAULT_JS_CDN))
+                             " not display".format(DEFAULT_JS_CDN))
                 else:
                     self._js_cdn_override = _portal_cdn
 
@@ -577,10 +577,11 @@ class MapView(widgets.DOMWidget):
             # (i.e., do what was done for ImageryLayer for all major Layers)
             # 'No type' layer just means that we'll figure it out at JS time
             _lyr = _make_jsonable_dict(item._lyr_json)
-            if (_lyr['type'] == 'MapImageLayer') and \
+            if ('type' in _lyr and \
+                _lyr['type'] == 'MapImageLayer') and \
                ('TilesOnly' in item.properties.capabilities):
-                   # If it's a TilesOnly MapImageLayer, switch to TiledService
-                   _lyr['type'] = 'ArcGISTiledMapServiceLayer'
+                # If it's a TilesOnly MapImageLayer, switch to TiledService
+                _lyr['type'] = 'ArcGISTiledMapServiceLayer'
             if 'options' in _lyr:
                 lyr_options = json.loads(_lyr["options"])
                 lyr_options.update(options)
@@ -872,7 +873,7 @@ class MapView(widgets.DOMWidget):
 
     def _check_for_renderer_updates(self):
         js_layers = {layer["id"] : layer
-            for layer in self._readonly_webmap_from_js['layers']}
+                     for layer in self._readonly_webmap_from_js['layers']}
         for wm_layer in self.webmap.layers:
             wm_layer_id = wm_layer["id"]
             if wm_layer_id in js_layers:
@@ -891,7 +892,7 @@ class MapView(widgets.DOMWidget):
                 if 'featureCollection' in wm_layer:
                     wm_layer = wm_layer['featureCollection']['layers'][0]
                 wm_layer['layerDefinition']['drawingInfo'] = \
-                        {'renderer' : renderer}
+                    {'renderer' : renderer}
             else:
                 index += 1
 
@@ -926,7 +927,7 @@ class MapView(widgets.DOMWidget):
 
                     # Add to webmap
                     self.webmap.add_layer(fset,
-                        {'title' : 'Notes from ArcGIS API for Python'})
+                                          {'title' : 'Notes from ArcGIS API for Python'})
 
 
     def _save_as_webscene(self, item_properties, thumbnail=None,
@@ -1055,20 +1056,20 @@ class MapView(widgets.DOMWidget):
         from arcgis.mapping import WebMap
         if not self.webmap.item:
             raise RuntimeError("Webmap Item object missing. You should use "\
-                "`save()` to save a new web scene item")
+                               "`save()` to save a new web scene item")
         self.mode = "2D"
         self.webmap._basemap['baseMapLayers'] = \
             self._readonly_webmap_from_js['basemap']['baseMapLayers']
         self.webmap._extent = self.extent
         self._update_webmap_layers_from_js()
         return self.webmap.item.update(item_properties=item_properties,
-                                           thumbnail=thumbnail,
+                                       thumbnail=thumbnail,
                                            metadata=metadata)
 
     def _update_as_webscene(self, item_properties, thumbnail, metadata):
         if not self.webscene_item:
             raise RuntimeError("Webscene Item object missing. You should use "\
-                "`save()` to save a new web scene item")
+                               "`save()` to save a new web scene item")
         self.mode = "3D"
         result = self.webscene_item.update(item_properties=item_properties,
                                            thumbnail=thumbnail,
@@ -1174,15 +1175,15 @@ class MapView(widgets.DOMWidget):
         from arcgis._impl.common._mixins import PropertyMap
 
         title = attributes['title'] if attributes and \
-                'title' in attributes else "Notebook sketch layer"
+            'title' in attributes else "Notebook sketch layer"
 
         if isinstance(shape, list) and len(shape) == 2:  #  [lat, long] pair
             shape = {'x': shape[1], 'y': shape[0],
-                    "spatialReference": {"wkid": 4326}, 'type': 'point'}
+                     "spatialReference": {"wkid": 4326}, 'type': 'point'}
 
         elif isinstance(shape, tuple):  #  (lat, long) pair
             shape = {'x': shape[1], 'y': shape[0],
-                    "spatialReference": {"wkid": 4326}, 'type': 'point'}
+                     "spatialReference": {"wkid": 4326}, 'type': 'point'}
 
         elif isinstance(shape, dict) and 'location' in shape: #  geocode loc.
             shape = {'x': shape['location']['x'], 'y': shape['location']['y'],
@@ -1232,15 +1233,15 @@ class MapView(widgets.DOMWidget):
 
     def _draw_featureset(self, fset, popup, symbol):
         # FeatureSet needs special case
-            graphics = []
-            for feature in fset.features:
-                graphic = self._get_graphic_from_feature(feature,
+        graphics = []
+        for feature in fset.features:
+            graphic = self._get_graphic_from_feature(feature,
                                                          popup, symbol)
-                graphics.append(graphic)
-                if self.ready:
-                    self._add_this_graphic = {}
-                    self._add_this_graphic = graphic
-            self._draw_these_graphics_on_widget_load += tuple(graphics)
+            graphics.append(graphic)
+            if self.ready:
+                self._add_this_graphic = {}
+                self._add_this_graphic = graphic
+        self._draw_these_graphics_on_widget_load += tuple(graphics)
 
     def _get_graphic_from_feature(self, feature, popup, symbol):
         if popup:
