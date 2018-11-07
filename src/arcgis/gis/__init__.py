@@ -30,8 +30,6 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 
-from six.moves.urllib.error import HTTPError
-_log = logging.getLogger(__name__)
 
 class Error(Exception): pass
 
