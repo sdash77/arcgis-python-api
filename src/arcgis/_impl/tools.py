@@ -508,83 +508,198 @@ class _FeatureAnalysisTools(_AsyncService):
             group_summary = arcgis.features.FeatureCollection(job_values['groupSummary'])
             return { "aggregated_layer":aggregated_layer, "group_summary":group_summary, }
 
-        def find_point_clusters(self,
-                                analysis_layer,
-                                min_features_cluster,
-                                search_distance=None,
-                                search_distance_unit=None,
-                                output_name=None,
-                                context=None):
+    def summarize_center_and_dispersion(self,
+                                        analysis_layer,
+                                        summarize_type,
+                                        ellipse_size=None,
+                                        weight_field=None,
+                                        group_field=None,
+                                        output_name=None,
+                                        context=None):
+        """
+        The Summarize Center and Dispersion task finds central features and directional distributions.
 
-            """
-		The Find Point Clusters task finds clusters of point features in surrounding
-		noise based on their spatial distribution. Output is a layer containing records
-		assigned to a cluster or noise.
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        analysis_layer          The point, line, or polygon features to be analyzed. This
+                              parameter can be a URL to a feature service layer with an
+                              optional filter to select specific feaures, or a feature
+                              collection
+        --------------------    ---------------------------------------------------------
+        summarize_type          The method with which to summarize the analysis_layer.
+                              Choice List: 
+                              ["CentralFeature", "MeanCenter", "MedianCenter", 
+                              "Ellipse"]
+                              Example: "CentralFeature"
+        --------------------    ---------------------------------------------------------
+        ellipse_size            The size of the output ellipse in standard deviations. 
+                              The default ellipse size is 1. Valid choices are 1, 2, or
+                              3 standard deviations. 
+                              Choice List: [1, 2, 3]
+                              Examples: 
+                              "1"
+                              [1, 2, 3]
+        --------------------    ---------------------------------------------------------
+        weight_field            A numeric field in the analysis_layer to be used to 
+                              weight locations according to their relative importance.
+        --------------------    ---------------------------------------------------------
+        group_field             The field used to group features for separate directional
+                              distribution calculations. The group_field can be of 
+                              integer, date, or string type.
+        --------------------    ---------------------------------------------------------
+        output_name             Optional string. Additional properties such as output 
+                              feature service name.                        
+        --------------------    ---------------------------------------------------------
+        context                 Optional string. Additional settings such as processing 
+                              extent and output spatial reference.
+        --------------------    ---------------------------------------------------------
+        gis                     Optional, the GIS on which this tool runs. If not 
+                              specified, the active GIS is used.                                                      
+        ====================    =========================================================
+
+        :returns: 
+        If an output_name is provided, a 
+
+        Python dictionary with the following keys:
+          "central_feature_result_layer" : layer (FeatureCollection)
+          "mean_feature_result_layer" : layer (FeatureCollection)
+          "median_feature_result_layer" : layer (FeatureCollection)
+          "ellipse_feature_result_layer" : layer (FeatureCollection)
+          "process_info" : list of messages
+        """
+
+        task ="SummarizeCenterAndDispersion"
+
+        params = {}
+
+        params["analysisLayer"] = super()._feature_input(analysis_layer)
+        params["summarizeType "] = summarize_type
+
+        if ellipse_size is not None:
+            params["ellipseSize "] = ellipse_size
+        if weight_field is not None:
+            params["weightField"] = weight_field
+        if group_field  is not None:
+            params["groupField "] = group_field           
+        if output_name is not None:
+            params["outputName"] = {"serviceProperties": {"name": output_name }}
+        if context is not None:
+            params["context"] = context
+
+        task_url, job_info, job_id = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
+
+        result_items = []
+        possible_result_layers = ['centralFeatureResultLayer', 
+                                  'meanCenterResultLayer',
+                                  'medianCenterResultLayer',
+                                  'ellipseResultLayer']
+
+        result_layer_dict = {'CentralFeature': 'centralFeatureResultLayer', 
+                             'MeanCenter': 'meanCenterResultLayer',
+                             'MedianCenter': 'medianCenterResultLayer',
+                             'Ellipses': 'ellipseResultLayer'}
+
+        if output_name is not None:
+            output_items = []
+            for summary_type in summarize_type:
+                itemid = job_values[result_layer_dict[summary_type]]['itemId']
+                item = arcgis.gis.Item(self._gis, itemid)
+                output_items.append(item)
+            return output_items
+
+        else:
+            central_feature_result_layer = arcgis.features.FeatureCollection(job_values['centralFeatureResultLayer'])
+            mean_center_result_layer = arcgis.features.FeatureCollection(job_values['meanCenterResultLayer'])
+            median_center_result_layer = arcgis.features.FeatureCollection(job_values['medianCenterResultLayer'])
+            ellipse_result_layer = arcgis.features.FeatureCollection(job_values['ellipseResultLayer'])
+
+            process_info = job_values['processInfo']
+            return {"central_feature_result_layer":central_feature_result_layer, 
+                    "meanCenterResultLayer":mean_center_result_layer, 
+                    "medianCenterResultLayer":median_center_result_layer, 
+                    "ellipseResultLayer":ellipse_result_layer, 
+                    "process_info":process_info}            
+
+    def find_point_clusters(self,
+                            analysis_layer,
+                            min_features_cluster,
+                            search_distance=None,
+                            search_distance_unit=None,
+                            output_name=None,
+                            context=None):
+        """
+        The Find Point Clusters task finds clusters of point features in surrounding
+        noise based on their spatial distribution. Output is a layer containing records
+        assigned to a cluster or noise.
 
         ====================    =========================================================
         **Argument**            **Description**
         --------------------    ---------------------------------------------------------
         analysis_layer          Required layer. The point feature layer for which
-        						density-based clustering will be calculated.
+                                density-based clustering will be calculated.
         --------------------    ---------------------------------------------------------
         min_features_cluster    Required integer. The minimum number of features to be
-        						considered a cluster. Any cluster with fewer features
-        						than the number provided will be considered noise.
+                                considered a cluster. Any cluster with fewer features
+                                than the number provided will be considered noise.
         --------------------    ---------------------------------------------------------
         search_distance         Optional double. The maximum distance to consider. The
-        						Minimum Features per Cluster specified must be found
-        						within this distance for cluster membership. Individual
-        						clusters will be separated by at least this distance. If
-        						a feature is located further than this distance from the
-        						next closest feature in the cluster, it will not be
-        						included in the cluster.
+                                Minimum Features per Cluster specified must be found
+                                within this distance for cluster membership. Individual
+                                clusters will be separated by at least this distance. If
+                                a feature is located further than this distance from the
+                                next closest feature in the cluster, it will not be
+                                included in the cluster.
         --------------------    ---------------------------------------------------------
         search_distance_unit    Optional string. The linear unit to be used for the
-        						search distance parameter.
+                                search distance parameter.
         --------------------    ---------------------------------------------------------
-        output_name         	Optional string. Additional properties such as output
-        						feature service name.
+        output_name             Optional string. Additional properties such as output
+                                feature service name.
         --------------------    ---------------------------------------------------------
-        context    				Optional string. Additional settings such as processing
-        						extent and output spatial reference.
+        context                 Optional string. Additional settings such as processing
+                                extent and output spatial reference.
         ====================    =========================================================
 
         :returns: Python dictionary with the following keys:
-        	"point_clusters_result_layer" : layer (FeatureCollection)
-        	"process_info" : list of messages
-		"""
+            "point_clusters_result_layer" : layer (FeatureCollection)
+            "process_info" : list of messages
+        """
 
-            task ="FindPointClusters"
+        task ="FindPointClusters"
 
-            params = {}
+        params = {}
 
-            params["analysisLayer"] = super()._feature_input(analysis_layer)
-            params["minFeaturesCluster"] = min_features_cluster
-            if search_distance is not None:
-                params["searchDistance"] = search_distance
-            if search_distance_unit is not None:
-                params["searchDistanceUnit "] = search_distance_unit
-            if output_name is not None:
-                params["outputName"] = {"serviceProperties": {"name": output_name }}
-            if context is not None:
-                params["context"] = context
+        params["analysisLayer"] = super()._feature_input(analysis_layer)
+        params["minFeaturesCluster"] = min_features_cluster
+        if search_distance is not None:
+            params["searchDistance"] = search_distance
+        if search_distance_unit is not None:
+            params["searchDistanceUnit "] = search_distance_unit
+        if output_name is not None:
+            params["outputName"] = {"serviceProperties": {"name": output_name }}
+        if context is not None:
+            params["context"] = context
 
-            task_url, job_info, job_id = super()._analysis_job(task, params)
+        task_url, job_info, job_id = super()._analysis_job(task, params)
 
-            job_info = super()._analysis_job_status(task_url, job_info)
-            job_values = super()._analysis_job_results(task_url, job_info, job_id)
-            #print(job_values)
-            if output_name is not None:
-                itemid = job_values['pointClustersResultLayer ']['itemId']
-                item = arcgis.gis.Item(self._gis, itemid)
-                return item
-            else:
-                # Feature Collection
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
+        #print(job_values)
+        if output_name is not None:
+            itemid = job_values['pointClustersResultLayer ']['itemId']
+            item = arcgis.gis.Item(self._gis, itemid)
+            return item
+        else:
+            # Feature Collection
 
-                point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
+            point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
 
-                process_info = job_values['processInfo']
-                return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":process_info}
+            process_info = job_values['processInfo']
+            return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":process_info}
 
     def find_hot_spots(self,
                        analysis_layer,
