@@ -100,7 +100,7 @@ class DataFile(object):
 
 
     def download(self, save_path=None):
-        """Downloads the data to the specified folder or a tempoary folder if a folder isn't provided"""
+        """Downloads the data to the specified folder or a temporary folder if a folder isn't provided"""
         data_path = self.url
         if not save_path:
             save_path = tempfile.gettempdir()

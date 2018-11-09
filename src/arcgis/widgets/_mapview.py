@@ -573,7 +573,7 @@ class MapView(widgets.DOMWidget):
                 self._add_layer_to_widget(layer, options)
         elif isinstance(item, Layer):
             self._add_layer_to_webmap(item, options)
-            # TODO: Expand this to seperate out Layer types on Python side
+            # TODO: Expand this to separate out Layer types on Python side
             # (i.e., do what was done for ImageryLayer for all major Layers)
             # 'No type' layer just means that we'll figure it out at JS time
             _lyr = _make_jsonable_dict(item._lyr_json)
@@ -616,7 +616,7 @@ class MapView(widgets.DOMWidget):
     def _add_notype_layer(self, item, lyr_json):
         # Add the original item to the hashed layers
         self._add_to_hashed_layers(item)
-        # but draw the json reprentation
+        # but draw the json representation
         self._draw_these_notype_layers_on_widget_load += (lyr_json,)
         if self.ready:
             self._add_this_notype_layer = {}
@@ -755,7 +755,7 @@ class MapView(widgets.DOMWidget):
             If you started out with a fresh map widget object, use this method
             to save it as a the webmap/webscene item in your GIS.
             If you started with a map widget object from an existing
-            webmap/webscen object, calling this method will create a new item
+            webmap/webscene object, calling this method will create a new item
             with your changes. If you want to update the existing item with your
             changes, call the `update()` method instead.
 
@@ -1094,7 +1094,7 @@ class MapView(widgets.DOMWidget):
             prompts a user for a password.
 
         .. note::
-            You cannot succesfully authenticate if you open the HTML page in a
+            You cannot successfully authenticate if you open the HTML page in a
             browser locally like file://path/to/file.html. The credentials
             prompt will only properly function if served over a HTTP/HTTPS
             server.
@@ -1122,7 +1122,7 @@ class MapView(widgets.DOMWidget):
         else:
             self._auth_mode = "anonymous"
 
-        # 'extent' is a property with seperate readonly/writeonly fields
+        # 'extent' is a property with separate readonly/writeonly fields
         # The below statement makes the readonly match the writeonly
         # This makes sure the current view is exactly what is saved in the
         # model for the exported HTML
@@ -1307,7 +1307,7 @@ class MapView(widgets.DOMWidget):
         self._click_handlers.register_callback(callback, remove=remove)
 
     def toggle_window_view(self, title="ArcGIS Map", tab_mode=None):
-        """In a JupyterLab environment, calling this function will seperate
+        """In a JupyterLab environment, calling this function will separate
         the drawn map widget to a new window next to the open notebook,
         allowing you to move the widget it, split it, put it in a new tab, etc.
         If the widget is already seperated in a new window, calling this
@@ -1316,7 +1316,7 @@ class MapView(widgets.DOMWidget):
 
         .. raw:: html
 
-            <p>Note that this functionality can also be acheived by pressing
+            <p>Note that this functionality can also be achieved by pressing
             the <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAA
             gCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAA
             AAB3RJTUUH4gcUAAIIxu7mQQAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoI

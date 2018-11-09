@@ -146,7 +146,7 @@ class ServicesDirectory(BaseServer):
                                          key_file=key_file,
                                          cert_file=cert_file,
                                          portal_connection=self._portal_connection,
-                                         verfiy_cert=verify_cert,
+                                         verify_cert=verify_cert,
                                          **kwargs)
         self._gis = kwargs.pop('gis', None)
         if self._is_agol == False and self._con._auth.lower() != "anon":
