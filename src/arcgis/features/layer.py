@@ -198,7 +198,7 @@ class FeatureLayer(Layer):
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
         definition            required dict. The definition using the renderer that is generated.
-                              Use either class breaks or unique value classificatoin definitions.
+                              Use either class breaks or unique value classification definitions.
                               See: https://resources.arcgis.com/en/help/rest/apiref/ms_classification.html
         -----------------     --------------------------------------------------------------------
         where                 optional string. A where clause for which the data needs to be
@@ -325,7 +325,7 @@ class FeatureLayer(Layer):
 
     # ----------------------------------------------------------------------
     def _list_attachments(self, oid):
-        """ list attachements for a given OBJECT ID """
+        """ list attachments for a given OBJECT ID """
 
         params = {
             "f": "json"
@@ -336,6 +336,24 @@ class FeatureLayer(Layer):
         else:
             url = self._url + "/%s/attachments" % oid
         return self._con.get(path=url, params=params, token=self._token)
+
+    # ----------------------------------------------------------------------
+    def get_unique_values(self, attribute, query_string='1=1'):
+        """Return a list of unique values for a given attribute
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        attribute                           Required string. The feature layer attribute to query.
+        -------------------------------     --------------------------------------------------------------------
+        query_string                        Optional string. SQL Query that will be used to filter attributes
+                                            before unique values are returned.
+                                            ex. "name_2 like '%K%'"
+        ===============================     ====================================================================
+        """
+
+        result = self.query(query_string, return_geometry=False, out_fields=attribute,return_distinct_values=True)
+        return [feature.attributes[attribute] for feature in result.features]
 
     # ----------------------------------------------------------------------
     def query(self,
@@ -387,7 +405,7 @@ class FeatureLayer(Layer):
                                             The default is "*", which returns all the fields.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
-                                            The object ID values are comma seperate string.
+                                            The object ID values should be a comma-separated string.
         -------------------------------     --------------------------------------------------------------------
         distance                            Optional integer. The buffer distance for the input geometries.
                                             The distance unit is specified by units. For example, if the
@@ -593,7 +611,7 @@ class FeatureLayer(Layer):
         params['returnZ'] = return_z
         params['returnM'] = return_m
 
-        # convert out_fields to a comma spearated string
+        # convert out_fields to a comma separated string
         if isinstance(out_fields, (list, tuple)):
             out_fields = ','.join(out_fields)
 
@@ -966,7 +984,7 @@ class FeatureLayer(Layer):
                upsert_matching_field=None
                ):
         """
-        Only available in AGOL
+        Only available in ArcGIS Online
 
         Update an existing hosted feature layer using append.
 
@@ -974,8 +992,8 @@ class FeatureLayer(Layer):
         **Argument**               **Description**
         ------------------------   --------------------------------------------------------------------
         source_table_name          optional string. Required only when the source data contains more
-                                   than one tables, e.g., for filegdb.
-                                   Example: source_tabl_name=  "Building"
+                                   than one tables, e.g., for file geodatabase.
+                                   Example: source_table_name=  "Building"
         ------------------------   --------------------------------------------------------------------
         item_id                    optional string. The ID for the Portal item that contains the source
                                    file.
@@ -1181,7 +1199,7 @@ class FeatureLayer(Layer):
                                    features to be added.
            ---------------------   -------------------------------------------
            updates                 Optional FeatureSet/List. The array of
-                                   features to be updateded.
+                                   features to be updated.
            ---------------------   -------------------------------------------
            deletes                 Optional FeatureSet/List. string of OIDs to
                                    remove from service
@@ -1364,7 +1382,6 @@ class FeatureLayer(Layer):
         """ returns results of a query as a pd.DataFrame"""
         import pandas as pd
         from arcgis.features import GeoAccessor, GeoSeriesAccessor
-        from arcgis.geometry import SpatialReference
         import numpy as np
         _fld_lu = {
             "esriFieldTypeSmallInteger" : np.int32,
@@ -1547,7 +1564,7 @@ class FeatureLayerCollection(_GISResource):
                         return_deletes=False,
                         return_ids_only=False,
                         return_extent_only=False,
-                        return_attachements=False,
+                        return_attachments=False,
                         attachments_by_url=False,
                         data_format="json",
                         change_extent_grid_cell=None):
@@ -1604,7 +1621,7 @@ class FeatureLayerCollection(_GISResource):
                                                   for the layer. The default is true. If set to false, features
                                                   from the layer that intersect the geometry are not added.
                                                 + includeRelated - Determines whether or not to add related
-                                                  rows. The defualt is true. The value true is honored only
+                                                  rows. The default is true. The value true is honored only
                                                   for queryOption=none. This is only applicable if your data
                                                   has relationship classes. Relationships are only processed
                                                   in a forward direction from origin to destination.
@@ -1664,7 +1681,7 @@ class FeatureLayerCollection(_GISResource):
         return_ids_only                      Optional Boolean. If true, the response includes an array of object
                                              IDs only. The default is false.
         --------------------------------     --------------------------------------------------------------------
-        return_attachements                  Optional Boolean.  If true, attachments changes are returned in the
+        return_attachments                  Optional Boolean.  If true, attachments changes are returned in the
                                              response. Otherwise, attachments are not included. The default is
                                              false. This parameter is only applicable if the feature service has
                                              attachments.
@@ -1696,10 +1713,9 @@ class FeatureLayerCollection(_GISResource):
             "returnInserts" : return_inserts,
             "returnUpdates" : return_updates,
             "returnDeletes" : return_deletes,
-            "layerServerGens" : servergens,
             "returnIdsOnly" : return_ids_only,
             "returnExtentOnly" : return_extent_only,
-            "returnAttachments" : return_attachements,
+            "returnAttachments" : return_attachments,
             "returnAttachmentsDatabyURL" : attachments_by_url,
             "dataFormat" : data_format,
             "layerServerGens" : servergen,
@@ -2484,7 +2500,7 @@ class FeatureLayerCollection(_GISResource):
         returns the parts uploaded for a given item
 
         ==================   ==============================================
-        Arguements           Description
+        Arguments           Description
         ------------------   ----------------------------------------------
         itemid               required string. Id of the uploaded by parts item.
         ==================   ==============================================

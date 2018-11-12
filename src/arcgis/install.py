@@ -39,7 +39,7 @@ def uninstall():
     try:
         from notebook.nbextensions import uninstall_nbextension
 
-        """Unnstall the widget nbextension from user and system locations
+        """Uninstall the widget nbextension from user and system locations
         """
         print("Uninstalling prior versions of arcgis widget")
         uninstall_nbextension('arcgis', user=True)

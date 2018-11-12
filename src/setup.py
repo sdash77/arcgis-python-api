@@ -22,7 +22,7 @@ import logging
 log = logging.getLogger()
 here = path.abspath(path.dirname(__file__))
 
-# Conda uses this setup file, but we want to supress some functionality
+# Conda uses this setup file, but we want to suppress some functionality
 if "--conda-install-mode" in sys.argv:
     sys.argv.remove("--conda-install-mode")
     conda_install_mode = True
@@ -30,7 +30,7 @@ else:
     conda_install_mode = False
 
 if conda_install_mode:
-    # conda handles its own depedencies, so don't specify any pip-depedencies
+    # conda handles its own dependencies, so don't specify any pip-dependencies
     dependencies = []
 else:
     dependencies = [
@@ -91,7 +91,7 @@ def _post_install():
             try:
                 cmd_output = check_output(potential_cert_script,
                                           stderr=STDOUT)
-                log.warn("OpenSSL workaround for OSX completed succesfully. "\
+                log.warn("OpenSSL workaround for OSX completed successfully. "\
                          "See https://bugs.python.org/issue28150 for info. "\
                          "Output: {}".format(cmd_output.decode("utf-8")))
             except Exception:

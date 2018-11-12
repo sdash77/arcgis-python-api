@@ -240,7 +240,7 @@ class Portal(object):
         ----------------  ----------------------------------------------------------------------------
         type              optional string, indicates type of item.  See URL 1 below for valid values.
         ----------------  ----------------------------------------------------------------------------
-        typeKeywords      optinal string list.  Lists all sub-types.  See URL 1 for valid values.
+        typeKeywords      optional string list.  Lists all sub-types.  See URL 1 for valid values.
         ----------------  ----------------------------------------------------------------------------
         description       optional string.  Description of the item.
         ----------------  ----------------------------------------------------------------------------
@@ -258,7 +258,7 @@ class Portal(object):
         ----------------  ----------------------------------------------------------------------------
         accessInformation optional string.  Information on the source of the content.
         ----------------  ----------------------------------------------------------------------------
-        licenseInfo       optinal string, any license information or restrictions regarding the content.
+        licenseInfo       optional string, any license information or restrictions regarding the content.
         ----------------  ----------------------------------------------------------------------------
         culture           optional string.  Locale, country and language information.
         ----------------  ----------------------------------------------------------------------------
@@ -908,7 +908,7 @@ class Portal(object):
             group_id:     required string, specifies the group's thumbnail
 
         Returns
-            bytes that representt he image.
+            bytes that represent he image.
 
         Example
 
@@ -1194,7 +1194,7 @@ class Portal(object):
             ----------------  --------------------------------------------------------
             culture           string, the item locale information (language and country).
             ----------------  --------------------------------------------------------
-            access            string, ndicates the level of access to this item: private, shared, org, or public.
+            access            string, indicates the level of access to this item: private, shared, org, or public.
             ----------------  --------------------------------------------------------
             size              string, the size of the item.
             ----------------  --------------------------------------------------------
@@ -1296,7 +1296,7 @@ class Portal(object):
         if not self._properties:
             return True
 
-        # If access property doesnt exist, will correctly return false
+        # If access property doesn't exist, will correctly return false
         return self._properties.get('allSSL')
     @property
     def is_multitenant(self):
@@ -2129,7 +2129,7 @@ class Portal(object):
         ----------------  ----------------------------------------------------------------------------
         type              optional string, indicates type of item.  See URL 1 below for valid values.
         ----------------  ----------------------------------------------------------------------------
-        typeKeywords      optinal string list.  Lists all sub-types.  See URL 1 for valid values.
+        typeKeywords      optional string list.  Lists all sub-types.  See URL 1 for valid values.
         ----------------  ----------------------------------------------------------------------------
         description       optional string.  Description of the item.
         ----------------  ----------------------------------------------------------------------------
@@ -2147,7 +2147,7 @@ class Portal(object):
         ----------------  ----------------------------------------------------------------------------
         accessInformation optional string.  Information on the source of the content.
         ----------------  ----------------------------------------------------------------------------
-        licenseInfo       optinal string, any license information or restrictions regarding the content.
+        licenseInfo       optional string, any license information or restrictions regarding the content.
         ----------------  ----------------------------------------------------------------------------
         culture           optional string.  Locale, country and language information.
         ----------------  ----------------------------------------------------------------------------

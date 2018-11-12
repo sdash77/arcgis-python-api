@@ -610,7 +610,7 @@ def project(geometries,
             in_sr,
             out_sr,
             transformation="",
-            transform_foward=False,
+            transform_forward=False,
             gis=None):
     """
     The project function is performed on a geometry service resource.
@@ -650,7 +650,7 @@ def project(geometries,
         in_sr,
         out_sr,
         transformation,
-        transform_foward)
+        transform_forward)
 
 
 def relation(geometries1,
