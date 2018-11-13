@@ -588,7 +588,6 @@ class FeatureSet(object):
             geojson = {}
             features = esrijson["features"]
             esri_geom_type = esrijson["geometryType"]
-            count = len(features)
             geojson["type"] = "FeatureCollection"
             feats = []
             for feat in features:
@@ -676,7 +675,7 @@ class FeatureSet(object):
         except ImportError:
             raise Exception("Could not find the panda installation, please install Pandas and retry")
         except Exception as e:
-            raise Exception("An error occured with exporting the FeatureSet with message: %s" % str(e))
+            raise Exception("An error occurred with exporting the FeatureSet with message: %s" % str(e))
     # ----------------------------------------------------------------------
     def __iter__(self):
         """featureset iterator on features in feature set"""

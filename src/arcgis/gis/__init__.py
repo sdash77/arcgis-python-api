@@ -782,7 +782,7 @@ class GIS(object):
         using the GIS's configured geocoders and if a match is found, the geographic
         extent of the matched address is used as the map extent. If a zoomlevel is also
         provided, the map is centered at the matched address instead and the map is zoomed
-        to the specified zoomlevel. See :class:`~arcgis.widgets` for more inforomation.
+        to the specified zoomlevel. See :class:`~arcgis.widgets` for more information.
 
         Note: The map widget is only supported within Jupyter Notebook.
 
@@ -1646,7 +1646,7 @@ class UserManager(object):
                           must approve of the individual joining the organization. The default is False.
         ----------------  -------------------------------------------------------------------------------
         expiration        Optional string.  The default is '1 Day'. This is the time the emailed user has
-                          to accept the invitiation request until it expires.
+                          to accept the invitation request until it expires.
                           The values are: 1 Day (default), 3 Days, 1 Week, or 2 Weeks.
         ----------------  -------------------------------------------------------------------------------
         validate_email    Optional boolean. If True (default) the Enterprise will ensure that the email

@@ -160,7 +160,7 @@ class OAuth(object):
     def register_device(self, client_id, expiration=None):
         """
         Registers a device, like mobile phone with a client id to access a
-        given portal/AGOL.
+        given Portal or ArcGIS Online Organization.
 
         Parameters:
          :client_id:The ID of the registered application. Also referred to

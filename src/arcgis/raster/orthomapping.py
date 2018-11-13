@@ -12,6 +12,7 @@ import string as _string
 import random as _random
 from arcgis.gis import Item
 import collections
+from ._util import _set_context
 
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
                                           _analysis_job_status, _layer_input
@@ -100,7 +101,7 @@ def is_supported(gis=None):
     Returns True if the GIS supports orthomapping. If a gis isn't specified,
     checks if arcgis.env.active_gis supports raster analytics
     """
-    gis = _arcgis.env.active_gis if gis is None else gis
+    gis = arcgis.env.active_gis if gis is None else gis
     if 'orthoMapping' in gis.properties.helperServices:
         return True
     else:
@@ -191,8 +192,7 @@ def compute_sensor_model(image_collection,
 
     params['locationAccuracy'] = location_accuracy
 
-    if context is not None:
-        params['context'] = json.dumps(context)
+    _set_context(params, context)
 
     task = 'ComputeSensorModel'
     job_values = _execute_task(gis, task, params)
@@ -658,8 +658,7 @@ def color_correction(image_collection,
         else:
             raise TypeError("target_image should be a string (url or uri) or Item")
     
-    if context is not None:
-        params['context'] = json.dumps(context)          
+    _set_context(params, context)        
     
     task = 'ComputeColorCorrection'
     job_values = _execute_task(gis, task, params)
@@ -741,8 +740,7 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
 
     params["imageLocationAccuracy"]=image_location_accuracy
 
-    if context is not None:
-        params['context'] = json.dumps(context)    
+    _set_context(params, context)  
 
     task = 'ComputeControlPoints'
     job_values = _execute_task(gis, task, params)
@@ -831,8 +829,7 @@ def compute_seamlines(image_collection,
             raise RuntimeError('similarity can only be one of the following: '+str(seamlines_method_allowed_values))
     params['seamlinesMethod'] = seamlines_method
 
-    if context is not None:
-        params['context'] = json.dumps(context)
+    _set_context(params, context)
 
     task = 'ComputeSeamlines'
     job_values = _execute_task(gis, task, params)
@@ -1092,8 +1089,7 @@ def generate_dem(image_collection,
     if matching_method is not None:
         params['matchingMethod'] = matching_method
 
-    if context is not None:
-        params['context'] = json.dumps(context)    
+    _set_context(params, context)  
     
     job_values = _execute_task(gis, task, params)
 
@@ -1198,8 +1194,7 @@ def generate_orthomosaic(image_collection,
             raise TypeError("The 'recompute_color_correction' parameter must be a boolean")
         params['recomputeColorCorrection'] = recompute_color_correction    
 
-    if context is not None:
-        params['context'] = json.dumps(context)    
+    _set_context(params, context)   
     
     job_values = _execute_task(gis, task, params)
 
