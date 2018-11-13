@@ -4,8 +4,8 @@ from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, 
      _analysis_job_status, _layer_input
 import json as _json
 import arcgis as _arcgis
-import string as _string
-import random as _random
+from arcgis.raster._layer import ImageryLayer as _ImageryLayer
+from arcgis.raster._util import _set_context, _id_generator
 
 
 def _set_param(gis, params, param_name, input_param):
@@ -27,31 +27,6 @@ def _set_param(gis, params, param_name, input_param):
 
     return
 
-
-def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
-    return ''.join(_random.choice(chars) for _ in range(size))
-
-
-def _set_context(params):
-    out_sr = _arcgis.env.out_spatial_reference
-    process_sr = _arcgis.env.process_spatial_reference
-    out_extent = _arcgis.env.analysis_extent
-
-    context = {}
-    set_context = False
-
-    if out_sr is not None:
-        context['outSR'] = {'wkid': int(out_sr)}
-        set_context = True
-    if out_extent is not None:
-        context['extent'] = out_extent
-        set_context = True
-    if process_sr is not None:
-        context['processSR'] = {'wkid': int(process_sr)}
-        set_context = True
-
-    if set_context:
-        params["context"] = _json.dumps(context)
 
 def _create_output_image_service(gis, output_name, task):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
@@ -79,6 +54,7 @@ def _create_output_image_service(gis, output_name, task):
     }
     output_service.update(item_properties)
     return output_service
+
 
 def _create_output_feature_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics'):
     ok = gis.content.is_service_name_available(output_name, 'Feature Service')
@@ -186,7 +162,7 @@ def detect_objects(input_raster,
     else:
         output_service_name = output_name.replace(' ', '_')
 
-    output_service = _create_output_feature_service(gis, output_name, output_service_name, 'Convert Raster To Feature')
+    output_service = _create_output_feature_service(gis, output_name, output_service_name, 'Detect Objects')
 
     params["outputObjects"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
                                            "itemProperties": {"itemId": output_service.itemid}})
@@ -199,7 +175,7 @@ def detect_objects(input_raster,
     if model_arguments:
         params["modelArguments"] = model_arguments
 
-    _set_context(params)
+    _set_context(params, context)
 
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
@@ -298,7 +274,8 @@ def classify_pixels(input_raster,
     if model_arguments:
         params["modelArguments"] = model_arguments
 
-    _set_context(params)
+    _set_context(params, context)
+
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
@@ -461,8 +438,7 @@ def export_training_data(input_raster,
     if classvalue_field is not None:
         params["classValueField"]= classvalue_field
 
-    if context is not None:
-        params["context"] = context
+    _set_context(params, context)
 
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
