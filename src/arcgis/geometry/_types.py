@@ -654,12 +654,7 @@ class Geometry(BaseGeometry):
     @property
     def as_shapely(self):
         """returns a shapely geometry object"""
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
-        if HASSHAPELY is None:
-            import shapely
-            HASSHAPELY = True
-        else:
-            HASSHAPELY = False
+        _, HASSHAPELY = self._check_geometry_engine()
 
         if HASSHAPELY:
             if isinstance(self,(Point, Polygon, Polyline, MultiPoint)):
