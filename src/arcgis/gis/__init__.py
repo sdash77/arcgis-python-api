@@ -3581,9 +3581,11 @@ class ContentManager(object):
                     grps.append(grp.groupid)
             groups = grps
         if isinstance(items, Item):
-            items = [items.itemid]
-        elif isinstance(items, str):
+            sitems = [items.itemid]
             items = [items]
+        elif isinstance(items, str):
+            sitems = [items]
+            items = [Item(gis=self._gis, itemid=items)]
         else:
             sitems = []
             for i in items:
@@ -3591,13 +3593,16 @@ class ContentManager(object):
                     sitems.append(i.itemid)
                 else:
                     sitems.append(i)
-            items = sitems
-        params['items'] = ",".join(items)
+            #items = sitems
+        params['items'] = ",".join(sitems)
         params['everyone'] = everyone
         params['org'] = org
         params['confirmItemControl'] = allow_members_to_edit
         params['groups'] = ",".join(groups)
-        return self._gis._con.post(url, params)
+        res = self._gis._con.post(url, params)
+        for i in items:
+            i._hydrated = False
+        return res
     #----------------------------------------------------------------------
     def unshare_items(self, items, groups=None, everyone=None, org=None):
         """
@@ -3656,9 +3661,9 @@ class ContentManager(object):
                         sitems.append(i)
                     elif isinstance(i, Item):
                         sitems.append(i.itemid)
-                    items = sitems
+                    #items = sitems
             params['groups'] = ",".join(groups)
-            params['items'] = ",".join(items)
+            params['items'] = ",".join(sitems)
             res = self._gis._con.post(url, params)
         if everyone is not None and \
             org is not None:
@@ -3674,6 +3679,8 @@ class ContentManager(object):
             for item in items:
                 everyone = item.shared_with['everyone']
                 item.share(everyone=everyone, org=org)
+        for item in items:
+            item._hydrated = False
         return res
 
 class ResourceManager(object):
