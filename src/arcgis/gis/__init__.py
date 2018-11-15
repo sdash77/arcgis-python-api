@@ -30,8 +30,6 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 
-from six.moves.urllib.error import HTTPError
-_log = logging.getLogger(__name__)
 
 class Error(Exception): pass
 
@@ -1936,7 +1934,6 @@ class UserManager(object):
         """Helper object to manage custom roles for users"""
         return RoleManager(self._gis)
 
-
 class RoleManager(object):
     """Helper class to manage custom roles for users in a GIS."""
 
@@ -3539,7 +3536,152 @@ class ContentManager(object):
         if 'success' in res:
             return res['success']
         return False
+    #----------------------------------------------------------------------
+    def share_items(self, items, everyone=False, org=False,
+                    groups=None, allow_members_to_edit=False):
+        """
+        Shares a batch of items with everyone, members of the organization, or specified list of groups.
+        Users can only share items with groups to which they belong.
 
+        =====================     ====================================================================
+        **Argument**              **Description**
+        ---------------------     --------------------------------------------------------------------
+        items                     Required List. A list of Item or item ids to modify sharing on.
+        ---------------------     --------------------------------------------------------------------
+        everyone                  Optional boolean. Default is False, don't share with everyone.
+        ---------------------     --------------------------------------------------------------------
+        org                       Optional boolean. Default is False, don't share with the
+                                  organization.
+        ---------------------     --------------------------------------------------------------------
+        groups                    Optional list of group names as strings, or a list of
+                                  arcgis.gis.Group objects, or a comma-separated list of group IDs.
+        ---------------------     --------------------------------------------------------------------
+        allow_members_to_edit     Optional boolean. Default is False, to allow item to be shared with
+                                  groups that allow shared update
+        =====================     ====================================================================
+
+        :returns: dict
+
+        """
+        url = "{base}content/users/{username}/shareItems".format(
+            base=self._portal.resturl,
+            username=self._gis.users.me.username
+        )
+        params = {
+            'f' : 'json'
+        }
+        if groups is None:
+            groups = []
+        elif isinstance(groups, (tuple, list)):
+            grps = []
+            for grp in groups:
+                if isinstance(grp, str):
+                    grps.append(grp)
+                elif isinstance(grp, Group):
+                    grps.append(grp.groupid)
+            groups = grps
+        if isinstance(items, Item):
+            sitems = [items.itemid]
+            items = [items]
+        elif isinstance(items, str):
+            sitems = [items]
+            items = [Item(gis=self._gis, itemid=items)]
+        else:
+            sitems = []
+            for i in items:
+                if isinstance(i, Item):
+                    sitems.append(i.itemid)
+                else:
+                    sitems.append(i)
+            #items = sitems
+        params['items'] = ",".join(sitems)
+        params['everyone'] = everyone
+        params['org'] = org
+        params['confirmItemControl'] = allow_members_to_edit
+        params['groups'] = ",".join(groups)
+        res = self._gis._con.post(url, params)
+        for i in items:
+            i._hydrated = False
+        return res
+    #----------------------------------------------------------------------
+    def unshare_items(self, items, groups=None, everyone=None, org=None):
+        """
+        Unshares a batch of items with the specified list of groups, everyone, or organization.
+        Each item's current sharing will be overwritten with this method.
+
+        =====================     ====================================================================
+        **Argument**              **Description**
+        ---------------------     --------------------------------------------------------------------
+        items                     Required List. A list of Item or item ids to modify sharing on.
+        ---------------------     --------------------------------------------------------------------
+        everyone                  Required Boolean. If provided, the everyone sharing property will be
+                                  updated.  True means it will share the items with anyone. False means
+                                  the item will not be shared with all users.
+        ---------------------     --------------------------------------------------------------------
+        org                       Required Boolean. A true value means that the items will be shared
+                                  with all members of the organization.  A false value means that the
+                                  item will not be shared with all organization users.
+        ---------------------     --------------------------------------------------------------------
+        groups                    Required list of group names as strings, or a list of
+                                  arcgis.gis.Group objects, or a list of group IDs.
+        =====================     ====================================================================
+
+        :returns: dict
+
+        """
+        res = True
+        if groups is None and \
+           everyone is None and\
+           org is None:
+            return True
+        if groups:
+            url = "{base}content/users/{username}/unshareItems".format(
+                base=self._portal.resturl,
+                username=self._gis.users.me.username
+            )
+            params = {
+                'f' : 'json'
+            }
+            if isinstance(groups, (list, tuple)) == False:
+                groups = [groups]
+            if isinstance(items, (list,tuple)) == False:
+                items = [items]
+            if isinstance(groups, (tuple, list)):
+                grps = []
+                for grp in groups:
+                    if isinstance(grp, str):
+                        grps.append(grp)
+                    elif isinstance(grp, Group):
+                        grps.append(grp.groupid)
+                groups = grps
+            if isinstance(items, (tuple, list)):
+                sitems = []
+                for i in items:
+                    if isinstance(i, str):
+                        sitems.append(i)
+                    elif isinstance(i, Item):
+                        sitems.append(i.itemid)
+                    #items = sitems
+            params['groups'] = ",".join(groups)
+            params['items'] = ",".join(sitems)
+            res = self._gis._con.post(url, params)
+        if everyone is not None and \
+            org is not None:
+            for item in items:
+                item.share(everyone=everyone, org=org)
+        elif everyone is not None and \
+            org is None:
+            for item in items:
+                org = item.shared_with['org']
+                item.share(everyone=everyone, org=org)
+        elif everyone is None and \
+            org is not None:
+            for item in items:
+                everyone = item.shared_with['everyone']
+                item.share(everyone=everyone, org=org)
+        for item in items:
+            item._hydrated = False
+        return res
 
 class ResourceManager(object):
     """
@@ -4823,7 +4965,7 @@ class User(dict):
         """
         return self._portal.reset_user(self._user_id, password, new_password,
                                        new_security_question, new_security_answer)
-
+    #----------------------------------------------------------------------
     def update(self, access=None, preferred_view=None, description=None, tags=None,
                thumbnail=None, fullname=None, email=None, culture=None, region=None,
                first_name=None, last_name=None, security_question=None, security_answer=None):

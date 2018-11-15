@@ -44,6 +44,9 @@ class FeatureLayer(Layer):
         :param container: optional, the feature layer collection to which this layer belongs
         :param dynamic_layer: optional dictionary. If the layer is given a dynamic layer definition, this will be added to functions.
         """
+        if gis is None:
+            import arcgis
+            gis = arcgis.env.active_gis
         super(FeatureLayer, self).__init__(url, gis)
         self._storage = container
         self._dynamic_layer = dynamic_layer

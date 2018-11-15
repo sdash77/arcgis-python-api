@@ -8,6 +8,8 @@ import string as _string
 import random as _random
 import collections
 from arcgis.gis import Item
+from arcgis.raster._util import _set_context, _id_generator
+
 
 def get_datastores(gis=None):
     """
@@ -37,27 +39,6 @@ def is_supported(gis=None):
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
     return ''.join(_random.choice(chars) for _ in range(size))
 
-
-def _set_context(params):
-    out_sr = _arcgis.env.out_spatial_reference
-    process_sr = _arcgis.env.process_spatial_reference
-    out_extent = _arcgis.env.analysis_extent
-
-    context = {}
-    set_context = False
-
-    if out_sr is not None:
-        context['outSR'] = {'wkid': int(out_sr)}
-        set_context = True
-    if out_extent is not None:
-        context['extent'] = out_extent
-        set_context = True
-    if process_sr is not None:
-        context['processSR'] = {'wkid': int(process_sr)}
-        set_context = True
-
-    if set_context:
-        params["context"] = _json.dumps(context)
         
 def _create_output_image_service(gis, output_name, task):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
@@ -1630,8 +1611,10 @@ def create_image_collection(image_collection,
     if context is not None:
         if "image_collection_properties" in context:
             image_collection_properties = context["image_collection_properties"]
+            del context["image_collection_properties"]
         if "byref" in context:
             use_input_rasters_by_ref = context["byref"]
+            del context["byref"]
 
     if isinstance(image_collection, Item):
         params["imageCollection"] = _json.dumps({"itemId": image_collection.itemid})
@@ -1655,11 +1638,15 @@ def create_image_collection(image_collection,
 
     # context
 
-    context = {}
     if out_sr is not None:
         if isinstance(out_sr, int):
-            context['outSR'] = out_sr
-            params['context'] = _json.dumps(context) 
+            if context is not None:
+                context.update({'outSR': out_sr})
+            else:
+                context = {}
+                context["outSR"]=out_sr
+
+    _set_context(params, context)
 
     # Create the task to execute   
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
@@ -1752,10 +1739,15 @@ def add_image(image_collection,
     if context is not None:
         if "image_collection_properties" in context:
             image_collection_properties = context["image_collection_properties"]
+            del context["image_collection_properties"]
         if "byref" in context:
             use_input_rasters_by_ref = context["byref"]
+            del context["byref"]
+
     _set_image_collection_param(gis, params, image_collection)
     _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params, image_collection_properties, use_input_rasters_by_ref)
+
+    _set_context(params, context)
 
     # Create the task to execute
     task = 'AddImage'
