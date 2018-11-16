@@ -6823,7 +6823,7 @@ class Item(dict):
         if self.type == 'Feature Service':
             params['stype'] = 'features'
             params['name'] = os.path.basename(os.path.dirname(self.layers[0].container._url))
-        if date_range.lower() == '24h':
+        if date_range.lower() in ['24h', '1d']:
             params['period'] = '1h'
             params['startTime'] = int((end_date - timedelta(days=1)).timestamp() * 1000)
         elif date_range.lower() == '7d':
@@ -6839,11 +6839,77 @@ class Item(dict):
             params['period'] = '1d'
             params['startTime'] = int((end_date - timedelta(days=60)).timestamp() * 1000)
         elif date_range.lower() == '6m':
+            sd = end_date - timedelta(days=int(365/2))
+            ranges = {
+                "1" : [sd, sd + timedelta(days=60)],
+                "2" : [sd + timedelta(days=61), sd + timedelta(days=120)],
+                "3" : [sd + timedelta(days=121), sd + timedelta(days=180)],
+                "4" : [sd + timedelta(days=181), end_date + timedelta(days=1)]
+            }
             params['period'] = '1d'
-            params['startTime'] = int((end_date - timedelta(days=int(365/2))).timestamp() * 1000)
-        elif date_range.lower() == ['12m', '1y']:
+            url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+            results = []
+            for k,v in ranges.items():
+                sd = int(v[0].timestamp() * 1000)
+                ed = int(v[1].timestamp() * 1000)
+                params['startTime'] = sd
+                params['endTime'] = ed
+                res = self._portal.con.post(url, params)
+                if as_df:
+                    import pandas as pd
+
+                    res = pd.DataFrame(res['data'][0]['num'],
+                                       columns=['Date', 'Usage'])
+                    res.Date = res.astype(float) / 1000
+                    res.Date = res.Date.apply(lambda x : datetime.fromtimestamp(x))
+                    res.Usage = res.Usage.astype(int)
+                results.append(res)
+                del k,v
+            if as_df:
+                return (pd.concat(results)
+                        .reset_index(drop=True)
+                        .drop_duplicates(keep='first',
+                                         inplace=False))
+            else:
+                return results
+        elif date_range.lower() in ['12m', '1y']:
+            sd = end_date - timedelta(days=int(365))
+            ranges = {
+                "1" : [sd, sd + timedelta(days=60)],
+                "2" : [sd + timedelta(days=61), sd + timedelta(days=120)],
+                "3" : [sd + timedelta(days=121), sd + timedelta(days=180)],
+                "4" : [sd + timedelta(days=181), sd + timedelta(days=240)],
+                "5" : [sd + timedelta(days=241), sd + timedelta(days=320)],
+                "6" : [sd + timedelta(days=321), sd + timedelta(days=366)]
+            }
             params['period'] = '1d'
-            params['startTime'] = int((end_date - timedelta(days=365)).timestamp() * 1000)
+            url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+            results = []
+            for k,v in ranges.items():
+                sd = int(v[0].timestamp() * 1000)
+                ed = int(v[1].timestamp() * 1000)
+                params['startTime'] = sd
+                params['endTime'] = ed
+                res = self._portal.con.post(url, params)
+                if as_df:
+                    import pandas as pd
+
+                    res = pd.DataFrame(res['data'][0]['num'],
+                                       columns=['Date', 'Usage'])
+                    res.Date = res.astype(float) / 1000
+                    res.Date = res.Date.apply(lambda x : datetime.fromtimestamp(x))
+                    res.Usage = res.Usage.astype(int)
+
+                results.append(res)
+                del k,v
+
+            if as_df:
+                return (pd.concat(results)
+                        .reset_index(drop=True)
+                        .drop_duplicates(keep='first',
+                                         inplace=False))
+            else:
+                return results
         else:
             raise ValueError("Invalid date range.")
 
