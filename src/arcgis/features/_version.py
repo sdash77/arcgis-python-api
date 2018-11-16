@@ -292,6 +292,18 @@ class Version(object):
                                        version=self, flc=self._flc)
         return
     #----------------------------------------------------------------------
+    @property
+    def utility(self):
+        """provides access to the utility service manager"""
+
+        if "controllerDatasetLayers" in self._flc.properties and \
+           "utilityNetworkLayerId" in self._flc.properties.controllerDatasetLayers:
+            from arcgis.features._utility import UtilityServiceManager
+            url = "%s/UtilityNetworkServer" % os.path.dirname(self._flc.url)
+            return UtilityServiceManager(url=url,
+                                         version=self)
+        return None
+    #----------------------------------------------------------------------
     def __str__(self):
         return "<Version {name} @ {guid}>".format(name=self.properties.versionName,
                                                   guid=self.properties.versionGuid)

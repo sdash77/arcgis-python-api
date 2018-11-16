@@ -21,6 +21,8 @@ representation and user experience - on a map, in a 3D scene, as entities with a
 from .feature import Feature, FeatureSet, FeatureCollection
 from .layer import FeatureLayer, Table, FeatureLayerCollection
 from ._data.geodataset import SpatialDataFrame
+from ._parcel import ParcelFabricManager
+from ._utility import UtilityNetworkManager
 
 from . import analyze_patterns
 from . import enrich_data
@@ -29,6 +31,7 @@ from . import manage_data
 from . import summarize_data
 from . import use_proximity
 from . import analysis
+
 
 __all__ = ['Feature', 'FeatureSet',
            'FeatureCollection', 'FeatureLayer',
