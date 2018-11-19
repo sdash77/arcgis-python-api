@@ -17,6 +17,7 @@ from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float
 from arcgis.widgets._webscene_utils import DEFAULT_WEBSCENE_TEXT_PROPERTY
 from arcgis import __version__ as py_api_version
 import arcgis.mapping
+import arcgis
 
 log = logging.getLogger(__name__)
 
@@ -404,6 +405,7 @@ class MapView(widgets.DOMWidget):
         self.layout.width = "100%"
 
         # Set up gis object
+        gis = arcgis.env.active_gis if gis is None else gis
         if gis:
             self._setup_gis_properties(gis)
         else:
