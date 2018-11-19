@@ -30,6 +30,8 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 
+from six.moves.urllib.error import HTTPError
+_log = logging.getLogger(__name__)
 
 class Error(Exception): pass
 
@@ -196,6 +198,8 @@ class GIS(object):
     """
     _server_list = None
     _is_hosted_nb_home = False
+    _product_version = None
+    _is_agol = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
@@ -240,14 +244,14 @@ class GIS(object):
                 # Check if config file is in the old format
                 if not self._config_is_in_new_format(config):
                     answer = input("Warning: profiles in {} appear to be in "\
-                        "the <v1.3 format, and must be deleted before "\
+                                   "the <v1.3 format, and must be deleted before "\
                         "continuing. Delete? [y/n]".format(cfg_file_path))
                     if "y" in answer.lower():
                         os.remove(cfg_file_path)
                         config = configparser.ConfigParser()
                     else:
                         raise RuntimeError("{} not deleted, exiting"\
-                            "".format(cfg_file_path))
+                                           "".format(cfg_file_path))
 
             # Add any __init__() args to config/keyring store
             if profile not in config.keys():
@@ -344,7 +348,7 @@ class GIS(object):
                 self._portal.con.baseurl = self._portal.resturl
                 self._portal.con._token = None
             elif url.lower().find("arcgis.com") > -1 and \
-               self._portal.is_logged_in:
+                 self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
                 props = self._portal.get_properties(force=False)
                 url = "%s://%s.%s" % (urlparse(self._url).scheme,
@@ -443,7 +447,10 @@ class GIS(object):
         self._tools = _Tools(self)
         if set_active:
             arcgis.env.active_gis = self
-
+        if self._product_version is None:
+            self._is_agol = self._portal.is_arcgisonline
+            self._product_version = [int(i) for i in self._portal.get_version().split('.')]
+    #----------------------------------------------------------------------
     def _pfx_to_pem(self, pfx_path, pfx_password):
         """ Decrypts the .pfx file to be used with requests.
 
@@ -618,7 +625,7 @@ class GIS(object):
             # Open that auth file,
             with open(nb_auth_file_path) as nb_auth_file:
                 required_json_keys = set(["privatePortalUrl",
-                    "publicPortalUrl", "token", "referer"])
+                                          "publicPortalUrl", "token", "referer"])
                 json_data = json.load(nb_auth_file)
                 assert required_json_keys.issubset(json_data)
                 self._url = json_data["privatePortalUrl"]
@@ -663,6 +670,7 @@ class GIS(object):
         The resource manager for GIS users. See :class:`~arcgis.gis.UserManager`.
         """
         return UserManager(self)
+
 
     @_lazy_property
     def groups(self):
@@ -760,17 +768,29 @@ class GIS(object):
         if self._is_hosted_nb_home:
             return self._public_portal_url
         else:
-           return self._url
+            return self._url
 
+    #----------------------------------------------------------------------
+    @property
+    def version(self):
+        """returns the GIS version number"""
+        self._is_agol = self._portal.is_arcgisonline
+        self._product_version = [int(i) for i in self._portal.get_version().split('.')]
+        return self._product_version
+    #----------------------------------------------------------------------
     def __str__(self):
-        return 'GIS @ ' + self.url
-
+        return 'GIS @ {url} version:{version}'.format(url=self.url,
+                                    version=".".join([str(i) for i in self._product_version]))
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+    #----------------------------------------------------------------------
     def _repr_html_(self):
         """
         HTML Representation for IPython Notebook
         """
         return 'GIS @ <a href="' + self.url + '">' + self.url + '</a>'
-
+    #----------------------------------------------------------------------
     def _get_properties(self, force=False):
         """ Returns the portal properties (using cache unless force=True). """
         return self._portal.get_properties(force)
@@ -1259,7 +1279,7 @@ class DatastoreManager(object):
         if folder is not None:
             cs['info']['folder'] = folder
         params = {
-        'f' : 'json',
+            'f' : 'json',
         'item' : json.dumps(cs)
         }
 
@@ -1493,9 +1513,231 @@ class UserManager(object):
         self._gis = gis
         self._portal = gis._portal
 
+    def __str__(self):
+        return "<UserManager @ {url}>".format(url=self._gis._url)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def counts(self, type='bundles', as_df=True):
+        """
+        This method returns a simple report on the number of licenses currently used
+        for a given `type`.  A `type` can be a role, app, bundle or user license type.
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        type              Required String. The type of data to return.  The following values are valid:
+
+                            + role - returns counts on user roles
+                            + app - returns counts on registered applications
+                            + bundles - returns counts on application bundles
+                            + user_type - returns counts on the user license types
+        ----------------  -------------------------------------------------------------------------------
+        as_df             Optional boolean. If true, the results are returned as a pandas DataFrame, else
+                          it is returned as a list of dictionaries.
+        ================  ===============================================================================
+
+        :returns: Pandas DataFrame if as_df is True. If False, the result is a list of dictionaries.
+
+
+        **Example as_df=True**
+
+        >>> df = gis.um.counts('user_type', True)
+        >>> df
+            count        key
+         0     12  creatorUT
+         1      2   viewerUT
+
+
+
+        **Example as_df=False**
+
+
+        >>> df = gis.um.counts('user_type', False)
+        >>> df
+        [{'key': 'creatorUT', 'count': 12}, {'key': 'viewerUT', 'count': 2}]
+
+
+        """
+        if self._gis.version < [6,4]:
+            raise NotImplementedError("`counts` is not implemented at version %s of Enterprise" % \
+                                 ".".join([str(i) for i in self._gis.version]))
+
+        url = "portals/self/users/counts"
+        lu = {
+            'roles' : 'role',
+            'role' : 'role',
+            'app' : 'app',
+            'bundles' : 'appBundle',
+            'user_type' : 'userLicenseType',
+            'usertype' : 'userLicenseType'
+        }
+        results = []
+        params = {
+            'f' : 'json',
+            'type' : lu[type.lower()],
+            'num' : 100,
+            'start' : 1
+        }
+        res = self._portal.con.get(url, params, ssl=True)
+        results += res['results']
+        while res['nextStart'] != -1:
+            if res['nextStart'] == -1:
+                break
+            params['start'] = res['nextStart']
+            res = self._portal.con.get(url, params, ssl=True)
+            results += res['results']
+        if as_df:
+            import pandas as pd
+            return pd.DataFrame(data=results)
+        return results
+
+    def send_notification(self,
+                          users,
+                          subject,
+                          message,
+                          type='builtin',
+                          client_id=None):
+        """
+        Creates a user notifcations for a list of users.
+
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        users             Required List. A list of strings or User objects to send notifcations to.
+        ----------------  -------------------------------------------------------------------------------
+        subject           Required String. The notifcation subject line.
+        ----------------  -------------------------------------------------------------------------------
+        message           Required String. The notifcation content. This should be in plain text.
+        ----------------  -------------------------------------------------------------------------------
+        type              Optional String.  The notification can be sent various ways. These include:
+
+                             - builtin - The enterprise built-in system
+                             - push - The push notifcation to send a message to
+                             - email - a notification sent to the user's email account
+        ----------------  -------------------------------------------------------------------------------
+        client_id         Optional String. The client id for push notification.
+        ================  ===============================================================================
+
+        :returns: Boolean
+
+        """
+        if self._gis.version >= [6,4]:
+            susers = []
+            for u in users:
+                if isinstance(u, str):
+                    susers.append(u)
+                elif isinstance(u, User):
+                    susers.append(u.username)
+                del u
+            url = "{base}portals/self/createNotification".format(base=self._gis._portal.resturl)
+            params = {
+                "f" : 'json',
+                "notificationChannelType": type,
+                "subject" : subject,
+                "message" : message,
+                "users" : ",".join(susers),
+                "clientId" : client_id
+            }
+            return self._portal.con.post(url, params)['success']
+        else:
+            raise NotImplementedError("The current version of the enterprise does not support `send_notification`")
+        return False
 
     def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
-               provider='arcgis', idp_username=None, level=2, thumbnail=None):
+               provider='arcgis', idp_username=None, level=2, thumbnail=None, user_type='creator', credits=-1,
+               groups=None):
+        """
+        This operation is used to pre-create built-in or enterprise accounts within the portal,
+        or built-in users in an ArcGIS Online organization account. Only an administrator
+        can call this method.
+
+        To create a viewer account, choose role='org_viewer' and level='viewer'
+
+        .. note:
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        username          Required string. The user name, which must be unique in the Portal, and
+                          6-24 characters long.
+        ----------------  -------------------------------------------------------------------------------
+        password          Required string. The password for the user.  It must be at least 8 characters.
+                          This is a required parameter only if
+                          the provider is arcgis; otherwise, the password parameter is ignored.
+                          If creating an account in an ArcGIS Online org, it can be set as None to let
+                          the user set their password by clicking on a link that is emailed to him/her.
+        ----------------  -------------------------------------------------------------------------------
+        firstname         Required string. The first name for the user
+        ----------------  -------------------------------------------------------------------------------
+        lastname          Required string. The last name for the user
+        ----------------  -------------------------------------------------------------------------------
+        email             Required string. The email address for the user. This is important to have correct.
+        ----------------  -------------------------------------------------------------------------------
+        description       Optional string. The description of the user account.
+        ----------------  -------------------------------------------------------------------------------
+        thumbnail         Optional string. The URL to user's image.
+        ----------------  -------------------------------------------------------------------------------
+        role              Optional string. The role for the user account. The default value is org_user.
+                          Other possible values are org_user, org_publisher, org_admin, viewer,
+                          view_only, viewplusedit or a custom role object (from gis.users.roles).
+        ----------------  -------------------------------------------------------------------------------
+        provider          Optional string. The provider for the account. The default value is arcgis.
+                          The other possible value is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        idp_username      Optional string. The name of the user as stored by the enterprise user store.
+                          This parameter is only required if the provider parameter is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        level             Optional string. The account level. (Pre 10.7 Portal)
+                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+        ----------------  -------------------------------------------------------------------------------
+        user_type         Required string. The account user type. This can be creator or viewer.  The
+                          type effects what applications a user can use and what actions they can do in
+                          the organization. (10.7+)
+                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+        ----------------  -------------------------------------------------------------------------------
+        credits           Optional Float. The number of credits to assign a user.  The default is None,
+                          which means unlimited. (10.7+)
+        ----------------  -------------------------------------------------------------------------------
+        groups            Optional List. An array of Group objects to provide access to for a given
+                          user. (10.7+)
+        ================  ===============================================================================
+
+        :return:
+            The user if successfully created, None if unsuccessful.
+
+        """
+        kwargs = locals()
+        if self._gis.version >= [6,4]:
+            allowed_keys = {'username', 'password', 'firstname', 'lastname',
+                            'email', 'description', 'role', 'provider', 'idp_username',
+                            'user_type', 'thumbnail', 'credits', 'groups'}
+            params = {}
+            for k,v in kwargs.items():
+                if k in allowed_keys:
+                    params[k] = v
+            return self._create64plus(**params)
+        else:
+            allowed_keys = {'username', 'password', 'firstname', 'lastname',
+                            'email', 'description', 'role', 'provider', 'idp_username',
+                            'level', 'thumbnail'}
+            params = {}
+            for k,v in kwargs.items():
+                if k in allowed_keys:
+                    params[k] = v
+            return self._createPre64(**kwargs)
+        return None
+
+    def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
+                     provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
         or built-in users in an ArcGIS Online organization account. Only an administrator
@@ -1613,6 +1855,163 @@ class UserManager(object):
             }
             self._portal.con.post(createuser_url, params)
             user = self.get(username)
+            if thumbnail is not None:
+                ret = user.update(thumbnail=thumbnail)
+                if not ret:
+                    _log.error('Unable to update the thumbnail for  ' + username)
+            return user
+    #----------------------------------------------------------------------
+    def _create64plus(self, username, password, firstname, lastname, email, description=None, role='org_user',
+                      provider='arcgis', idp_username=None, user_type='creator',
+                      thumbnail=None, credits=None, groups=None):
+        """
+        This operation is used to pre-create built-in or enterprise accounts within the portal,
+        or built-in users in an ArcGIS Online organization account. Only an administrator
+        can call this method.
+
+        To create a viewer account, choose role='org_viewer' and level='viewer'
+
+        .. note:
+            When Portal for ArcGIS is connected to an enterprise identity store, enterprise users sign
+            into portal using their enterprise credentials. By default, new installations of Portal for
+            ArcGIS do not allow accounts from an enterprise identity store to be registered to the portal
+            automatically. Only users with accounts that have been pre-created can sign in to the portal.
+            Alternatively, you can configure the portal to register enterprise accounts the first time
+            the user connects to the website.
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        username          Required string. The user name, which must be unique in the Portal, and
+                          6-24 characters long.
+        ----------------  -------------------------------------------------------------------------------
+        password          Required string. The password for the user.  It must be at least 8 characters.
+                          This is a required parameter only if
+                          the provider is arcgis; otherwise, the password parameter is ignored.
+                          If creating an account in an ArcGIS Online org, it can be set as None to let
+                          the user set their password by clicking on a link that is emailed to him/her.
+        ----------------  -------------------------------------------------------------------------------
+        firstname         Required string. The first name for the user
+        ----------------  -------------------------------------------------------------------------------
+        lastname          Required string. The last name for the user
+        ----------------  -------------------------------------------------------------------------------
+        email             Required string. The email address for the user. This is important to have correct.
+        ----------------  -------------------------------------------------------------------------------
+        description       Optional string. The description of the user account.
+        ----------------  -------------------------------------------------------------------------------
+        thumbnail         Optional string. The URL to user's image.
+        ----------------  -------------------------------------------------------------------------------
+        role              Optional string. The role for the user account. The default value is org_user.
+                          Other possible values are org_user, org_publisher, org_admin, viewer,
+                          view_only, viewplusedit or a custom role object (from gis.users.roles).
+        ----------------  -------------------------------------------------------------------------------
+        provider          Optional string. The provider for the account. The default value is arcgis.
+                          The other possible value is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        idp_username      Optional string. The name of the user as stored by the enterprise user store.
+                          This parameter is only required if the provider parameter is enterprise.
+        ----------------  -------------------------------------------------------------------------------
+        user_type         Required string. The account user type. This can be creator or viewer.  The
+                          type effects what applications a user can use and what actions they can do in
+                          the organization.
+                          See http://server.arcgis.com/en/portal/latest/administer/linux/roles.htm
+        ----------------  -------------------------------------------------------------------------------
+        credits           Optional Float. The number of credits to assign a user.  The default is None,
+                          which means unlimited.
+        ----------------  -------------------------------------------------------------------------------
+        groups            Optional List. An array of Group objects to provide access to for a given user.
+        ================  ===============================================================================
+
+        :return:
+            The user if successfully created, None if unsuccessful.
+
+        """
+        #map role parameter of a viewer to the internal value for org viewer.
+        levels = {'creator' : 'creatorUT',
+                  'viewer' : 'viewerUT'}
+        role_lookup = {
+            'admin' : 'org_admin',
+            'user' : 'org_user',
+            'publisher' : 'org_publisher',
+            'view_only' : 'tLST9emLCNfFcejK',
+            'viewer' : 'iAAAAAAAAAAAAAAA',
+            'viewplusedit' : 'iBBBBBBBBBBBBBBB'
+        }
+
+        if groups is None:
+            groups = []
+        if user_type.lower() in levels:
+            user_type = levels[user_type.lower()]
+
+        if isinstance(role, Role):
+            role = role.role_id
+        elif role.lower() in role_lookup:
+            role = role_lookup[role.lower()]
+
+        if self._gis._portal.is_arcgisonline:
+            email_text = '''<html><body><p>''' + self._gis.properties.user.fullName + \
+                ''' has invited you to join an ArcGIS Online Organization, ''' + self._gis.properties.name + \
+                '''</p>
+<p>Please click this link to finish setting up your account and establish your password: <a href="https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@">https://www.arcgis.com/home/newuser.html?invitation=@@invitation.id@@</a></p>
+<p>Note that your account has already been created for you with the username, <strong>@@touser.username@@</strong>.  </p>
+<p>If you have difficulty signing in, please contact ''' + self._gis.properties.user.fullName + \
+                                                         '(' + self._gis.properties.user.email + '''). Be sure to include a description of the problem, the error message, and a screenshot.</p>
+<p>For your reference, you can access the home page of the organization here: <br>''' + self._gis.properties.user.fullName + '''</p>
+<p>This link will expire in two weeks.</p>
+<p style="color:gray;">This is an automated email. Please do not reply.</p>
+</body></html>'''
+            if credits is None:
+                credits = -1
+            params = {
+                'f': 'json',
+                'invitationList' : {'invitations' : [ {
+                    'username': username,
+                    'firstname': firstname,
+                    'lastname': lastname,
+                    'fullname': firstname + ' ' + lastname,
+                    'email': email,
+                    'role': role,
+                    "userLicenseType": user_type,
+                    "groups":",".join(group.id for group in groups),
+                    "userCreditsAssignment": credits
+                    } ] },
+                'message' : email_text
+            }
+            if idp_username is not None:
+                if provider is None:
+                    provider = 'enterprise'
+                params['invitationList']['invitations'][0]['targetUserProvider'] = provider
+                params['invitationList']['invitations'][0]['idpUsername'] = idp_username
+            if password is not None:
+                params['invitationList']['invitations'][0]['password'] = password
+
+            resp = self._portal.con.post('portals/self/invite', params, ssl=True)
+            if resp and resp.get('success'):
+                if username in resp['notInvited']:
+                    print('Unable to create ' + username)
+                    _log.error('Unable to create ' + username)
+                    return None
+                else:
+                    return self.get(username)
+        else:
+            createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
+            params = {
+                'f': 'json',
+                'username' : username,
+                'password' : password,
+                'firstname' : firstname,
+                'lastname' : lastname,
+                'email' : email,
+                'description' : description,
+                'role' : role,
+                'provider' : provider,
+                'idpUsername' : idp_username,
+                "userLicenseTypeId": user_type
+            }
+            self._portal.con.post(createuser_url, params)
+            user = self.get(username)
+            for grp in groups:
+                grp.add_users([username])
             if thumbnail is not None:
                 ret = user.update(thumbnail=thumbnail)
                 if not ret:
@@ -1823,7 +2222,8 @@ class UserManager(object):
         return False
 
     def search(self, query=None, sort_field='username', sort_order='asc',
-               max_users=100, outside_org=False, exclude_system=False):
+               max_users=100, outside_org=False, exclude_system=False,
+               user_type=None, role=None):
         """
         Searches portal users.
 
@@ -1868,15 +2268,17 @@ class UserManager(object):
         exclude_system    Optional boolean. Controls if built-in system accounts are
                           returned or not.  True means built-in account are not
                           returned, where as False means that they are.
+        ----------------  --------------------------------------------------------
+        user_type         Optional String. This parameters allows for the filtering
+                          of the users by their assigned type.
+        ----------------  --------------------------------------------------------
+        role              Optional String.  This parameter allows for the filting
+                          of the users based on a role.
         ================  ========================================================
 
         :return:
             A list of users.
         """
-
-        user_type=None
-        role=None
-
         ut = {
             'creator' : 'creatorUT',
             'viewer' : 'viewerUT'
@@ -1934,6 +2336,48 @@ class UserManager(object):
         """Helper object to manage custom roles for users"""
         return RoleManager(self._gis)
 
+    #----------------------------------------------------------------------
+    def user_groups(self, users, max_results=-1):
+        """
+        Givens a List of Users, the `user_groups` will report back all group ids
+        that each user belongs to.  This method is designed to be a reporting
+        tool for administrators so they can easily manage a user or users groups.
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        users             Required List. An array of User objects or usernames.
+        ----------------  --------------------------------------------------------
+        max_results       Optional Integer. A limitor on the number of groups
+                          returned for each user.
+        ----------------  --------------------------------------------------------
+
+        :returns: List of dictionaries.
+
+        """
+        if max_results == -1 or\
+           max_results is None:
+            max_results = None
+        else:
+            max_results = int(max_results)
+
+        us = []
+        for user in users:
+            if isinstance(user, User):
+                us.append(user.username)
+            else:
+                us.append(user)
+        params = {
+            'f' : 'json',
+            "users": ",".join(us),
+            "limit": max_results
+        }
+        url = "{base}/portals/self/usersGroups".format(base=self._portal.resturl)
+        res = res = self._portal.con.get(url, params)
+        if 'results' in res:
+            return res['results']
+        return res
+
 class RoleManager(object):
     """Helper class to manage custom roles for users in a GIS."""
 
@@ -1967,7 +2411,7 @@ class RoleManager(object):
             if role_id is not None:
                 role_data = {
                     "id": role_id,
-                  "name": name,
+                    "name": name,
                   "description": description
                 }
                 role = Role(self._gis, role_id, role_data)
@@ -2992,7 +3436,7 @@ class ContentManager(object):
                                             "content/users",
                                             self._gis.users.me.username)
         params = {
-        'f' : 'json',
+            'f' : 'json',
         'items' : ""
         }
         ditems = []
@@ -3187,7 +3631,7 @@ class ContentManager(object):
                                                       out_name=name)[0]
                 if isinstance(df, SpatialDataFrame) :
                     ds = df.to_featureclass(out_location=fgdb,
-                                        out_name=os.path.basename(temp_dir))
+                                            out_name=os.path.basename(temp_dir))
                 else:
                     ds =\
                         df.spatial.to_featureclass(location=os.path.join(fgdb,
@@ -4167,7 +4611,7 @@ class Group(dict):
                 file_path = os.path.join(save_folder, file_name)
                 self._portal.con.get(path=thumbnail_url_path, try_json=False,
                                      out_folder=save_folder,
-                                            file_name=file_name)
+                                     file_name=file_name)
                 return file_path
 
         else:
@@ -4712,51 +5156,38 @@ class User(dict):
 
     def __str__(self):
         return self.__repr__()
-        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        # return '\n'.join(state)
-
 
     def __repr__(self):
         return '<%s username:%s>' % (type(self).__name__, self.username)
 
-    def _app_bundles(self):
-        """
-        Available in ArcGIS Online and Portal 10.7+
-        returns the current user's assigned app bundles
-        """
-        url = "%s/community/users/%s/appBundles" % (self._portal.resturl, self.username)
-        params = {
-            'f' : 'json',
-            "start" : 1,
-            "num" : 10
-        }
-        bundles = []
-        res = self._portal.con.post(url, params)
-        bundles = res["appBundles"]
-        while res["nextStart"] > -1:
-            params['start'] = res["nextStart"]
-            res = self._portal.con.post(url, params)
-            bundles += res["appBundles"]
-        return bundles
-
-    def _user_types(self):
+    def user_types(self):
         """
         Notes: Available in 10.7+
         returns the user type and assigned applications
         """
+        if self._gis.version < [6,4]:
+            raise NotImplementedError("`user_types` is not implemented at version %s" % \
+                                 ".".join([str(i) for i in self._gis.version]))
+
         url = "%s/community/users/%s/userLicenseType" % (self._portal.resturl, self.username)
         params = {'f' : 'json'}
         return self._portal.con.post(url, params)
 
     #----------------------------------------------------------------------
     @property
-    def _provisions(self):
+    def provisions(self):
         """
-        Returns a list of all items provisioned licenses for the current user.
+        Returns a list of all provisioned licenses for the current user.
+
         Available in 10.7+
+
         :returns: List
 
         """
+        if self._gis.version < [6,4]:
+            raise NotImplementedError("Provisions is not implemented at version %s" % \
+                                 ".".join([str(i) for i in self._gis.version]))
+
         provs = []
         url = "%s/community/users/%s/provisionedListings" % (self._portal.resturl, self.username)
         params = {
@@ -4775,7 +5206,41 @@ class User(dict):
             res = self._portal.con.post(url, params)
             provs += [Item(gis=self._gis, itemid=i["itemId"])for i in res["provisionedListings"]]
         return provs
+    #----------------------------------------------------------------------
+    @property
+    def bundles(self):
+        """
 
+        Provides the current user's assigned application bundles.
+
+        Available in ArcGIS Online and Portal 10.7+
+
+        :returns: List of Bundle objects
+        """
+        if self._gis.version < [6,4]:
+            raise NotImplementedError("`bundles` is not implemented at version %s" % \
+                                 ".".join([str(i) for i in self._gis.version]))
+
+        from arcgis.gis.admin._license import Bundle
+        url = "%s/community/users/%s/appBundles" % (self._portal.resturl, self.username)
+        params = {
+            'f' : 'json',
+            "start" : 1,
+            "num" : 10
+        }
+        bundles = []
+        res = self._portal.con.post(url, params)
+        bundles = res["appBundles"]
+        while res["nextStart"] > -1:
+            params['start'] = res["nextStart"]
+            res = self._portal.con.post(url, params)
+            bundles += res["appBundles"]
+        return [Bundle(url="{base}content/listings/{id}".format(base=self._gis._portal.resturl,
+                                                                id=b["id"]),
+                       properties=b,
+                    gis=self._gis)
+                for b in bundles]
+    #----------------------------------------------------------------------
     def get_thumbnail_link(self):
         """ Retrieves the URL to the thumbnail image.
 
@@ -4855,87 +5320,51 @@ class User(dict):
         """Gets a list of Group objects the current user belongs to."""
         return [Group(self._gis, group['id']) for group in self['groups']]
     #----------------------------------------------------------------------
-    def update_level(self, level):
+    def update_license_type(self, user_type):
         """
-        Allows only administrators
-        of an organization to update the level of a user. Administrators can
-        leverage two levels of membership when assigning roles and
-        privileges to members. Membership levels allow organizations to
-        control access to some ArcGIS capabilities for some members while
-        granting more complete access to other members. Level 1 membership
-        is designed for members who need privileges to view and interact
-        with existing content, while Level 2 membership is for those who
-        contribute, create, and share content and groups, in addition to
-        other tasks.
 
-        Maximum user quota of an organization at the given level is checked
-        before allowing the update.
+        Allows for the updating of the user's licensing type. This allows
+        administrators to change a user from a creator to a viewer or any
+        other custom user license type.
 
-        Built-in roles including organization administrator, publisher, and
-        user are assigned as Level 2, members with custom roles can be
-        assigned as Level 1, 1PlusEdit, or Level 2.
-
-        Level 1 membership allows for limited capabilities given through a
-        maximum of 8 privileges: `portal:user:joinGroup,
-        portal:user:viewOrgGroups, portal:user:viewOrgItems,
-        portal:user:viewOrgUsers, premium:user:geocode,
-        premium:user:networkanalysis, premium:user:demographics, and
-        premium:user:elevation`. If updating the role of a Level 1 user with
-        a custom role that has more privileges than the eight, additional
-        privileges will be disabled for the user to ensure restriction.
-
-        Level 1 users are not allowed to own any content or group which can
-        be reassigned to other users through the Reassign Item and Reassign
-        Group operations before downgrading them. The operation will also
-        fail if the user being updated has got licenses assigned to premium
-        apps that are not allowed at the targeting level.
-
-        Level 1PlusEdit has all the features of level one, plus it can edit
-        Feature Layer data.
+        **Available in ArcGIS Online and Portal 10.7+**
 
         =====================  =========================================================
         **Argument**           **Description**
         ---------------------  ---------------------------------------------------------
-        level                  Required string. The values of 1, 11, or 2. This
-                               is the user level for the given user.
+        user_type              Required string. The user license type to assign a user.
 
-
-                                    + 1 - View only
-                                    + 11 - View Plus edit
-                                    + 2 - Content creator
-
-
+                               Built-in Types: creator or viewer
         =====================  =========================================================
 
-        :returns:
-           A boolean indicating success (True) or failure (False).
+        :returns: Boolean
+
         """
-        if 'roleId' in self and \
-           self['roleId'] != 'iAAAAAAAAAAAAAAA':
-            self.update_role('iAAAAAAAAAAAAAAA')
-            self._hydrated = False
-            self._hydrate()
-        elif not ('roleId' in self) and level == 1:
-            self.update_role('iAAAAAAAAAAAAAAA')
-            self._hydrated = False
-            self._hydrate()
+        if self._gis.version < [6,4]:
+            raise NotImplementedError("`update_license_type` is not implemented at version %s" % \
+                                      ".".join([str(i) for i in self._gis.version]))
 
-        allowed_roles = {'1', '2', '11'}
+        builtin = {
+            'creator' : 'creatorUT',
+            'viewer' : 'viewerUT'
+        }
+        if user_type.lower() in builtin:
+            user_type = builtin[user_type.lower()]
 
-        if level not in allowed_roles:
-            raise ValueError("level must be in %s" % ",".join(allowed_roles))
-
-        url = "%s/portals/self/updateUserLevel" % self._portal.resturl
+        url = "%s/portals/self/updateUserLicenseType" % self._portal.resturl
         params = {
-            'user' : self.username,
-            'level' : level,
+            'users' : [self.username],
+            'userLicenseType' : user_type,
             'f' : 'json'
         }
         res = self._gis._con.post(url, params)
-        if 'success' in res:
-            return res['success']
+        status = [r['status'] for r in res['results']]
+        self._hydrated = False
+        self._hydrate()
+        if all(status):
+            return all(status)
         return res
-
+    #----------------------------------------------------------------------
     def reset(self, password, new_password=None, new_security_question=None, new_security_answer=None):
         """ Resets a user's password, security question, and/or security answer.
 
@@ -4965,7 +5394,7 @@ class User(dict):
         """
         return self._portal.reset_user(self._user_id, password, new_password,
                                        new_security_question, new_security_answer)
-    #----------------------------------------------------------------------
+
     def update(self, access=None, preferred_view=None, description=None, tags=None,
                thumbnail=None, fullname=None, email=None, culture=None, region=None,
                first_name=None, last_name=None, security_question=None, security_answer=None):
@@ -5273,9 +5702,90 @@ class User(dict):
             return res['success']
         return False
     #----------------------------------------------------------------------
+    def update_level(self, level):
+        """
+        Allows only administrators
+        of an organization to update the level of a user. Administrators can
+        leverage two levels of membership when assigning roles and
+        privileges to members. Membership levels allow organizations to
+        control access to some ArcGIS capabilities for some members while
+        granting more complete access to other members. Level 1 membership
+        is designed for members who need privileges to view and interact
+        with existing content, while Level 2 membership is for those who
+        contribute, create, and share content and groups, in addition to
+        other tasks.
+
+        Maximum user quota of an organization at the given level is checked
+        before allowing the update.
+
+        Built-in roles including organization administrator, publisher, and
+        user are assigned as Level 2, members with custom roles can be
+        assigned as Level 1, 1PlusEdit, or Level 2.
+
+        Level 1 membership allows for limited capabilities given through a
+        maximum of 8 privileges: `portal:user:joinGroup,
+        portal:user:viewOrgGroups, portal:user:viewOrgItems,
+        portal:user:viewOrgUsers, premium:user:geocode,
+        premium:user:networkanalysis, premium:user:demographics, and
+        premium:user:elevation`. If updating the role of a Level 1 user with
+        a custom role that has more privileges than the eight, additional
+        privileges will be disabled for the user to ensure restriction.
+
+        Level 1 users are not allowed to own any content or group which can
+        be reassigned to other users through the Reassign Item and Reassign
+        Group operations before downgrading them. The operation will also
+        fail if the user being updated has got licenses assigned to premium
+        apps that are not allowed at the targeting level.
+
+        =====================  =========================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------
+        level                  Required string. The values of 1 or 2. This
+                               is the user level for the given user.
+
+
+                                    + 1 - View only
+                                    + 2 - Content creator
+
+
+        =====================  =========================================================
+
+        :returns:
+           A boolean indicating success (True) or failure (False).
+        """
+        if self._gis.version >= [6,4]:
+            raise NotImplementedError("`update_level` is not applicable at version %s" % \
+                                      ".".join([str(i) for i in self._gis.version]))
+        if 'roleId' in self and \
+           self['roleId'] != 'iAAAAAAAAAAAAAAA':
+            self.update_role('iAAAAAAAAAAAAAAA')
+            self._hydrated = False
+            self._hydrate()
+        elif not ('roleId' in self) and level == 1:
+            self.update_role('iAAAAAAAAAAAAAAA')
+            self._hydrated = False
+            self._hydrate()
+
+        allowed_roles = {'1', '2', '11'}
+
+        if level not in allowed_roles:
+            raise ValueError("level must be in %s" % ",".join(allowed_roles))
+
+        url = "%s/portals/self/updateUserLevel" % self._portal.resturl
+        params = {
+            'user' : self.username,
+            'level' : level,
+            'f' : 'json'
+        }
+        res = self._gis._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     def update_role(self, role):
         """
-        Updates this user's role to org_user, org_publisher, org_admin, or a custom role.
+        Updates this user's role to org_user, org_publisher, org_admin, viewer, view_only,
+        viewplusedit, or a custom role.
 
         .. note::
             There are four types of roles in Portal - user, publisher, administrator and custom roles.
@@ -5287,7 +5797,7 @@ class User(dict):
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
         role              Required string. Value must be either org_user,
-                          org_publisher, org_admin,
+                          org_publisher, org_admin, viewer, view_only, viewplusedit
                           or a custom role object (from gis.users.roles).
         ================  ========================================================
 
@@ -5295,10 +5805,23 @@ class User(dict):
             A boolean indicating success (True) or failure (False).
 
         """
+        lookup = {
+            'admin' : 'org_admin',
+            'user' : 'org_user',
+            'publisher' : 'org_publisher',
+            'view_only' : 'tLST9emLCNfFcejK',
+            'viewer' : 'iAAAAAAAAAAAAAAA',
+            'viewplusedit' : 'iBBBBBBBBBBBBBBB'
+        }
+
         if isinstance(role, Role):
             role = role.role_id
-        passed = self._portal.update_user_role(self._user_id, role)
+        elif isinstance(role, str):
+            if role.lower() in lookup:
+                role = lookup[role.lower()]
+        passed = self._portal.update_user_role(self.username, role)
         if passed:
+            self._hydrated = False
             self._hydrate()
             self.role = role
         return passed
@@ -5308,10 +5831,11 @@ class User(dict):
         Deletes this user from the portal, optionally deleting or reassigning groups and items.
 
         .. note::
-            You can not delete a user in Portal if that user owns groups or items.  If you
-            specify someone in the reassign_to argument, then items and groups will be
-            transferred to that user.  If that argument is not set then the method
-            will fail if the user has items or groups that need to be reassigned.
+            You can not delete a user in Portal if that user owns groups or items and/or is
+            assigned an application bundle.  If you specify someone in the reassign_to
+            argument, then items and groups will be transferred to that user.  If that
+            argument is not set then the method will fail if the user has items or groups
+            that need to be reassigned.
 
         ================  ========================================================
         **Argument**      **Description**
@@ -5406,7 +5930,7 @@ class User(dict):
                 file_path = os.path.join(save_folder, file_name)
                 return self._portal.con.get(path=thumbnail_url_path, try_json=False,
                                             out_folder=save_folder,
-                                     file_name=file_name)
+                                            file_name=file_name)
         else:
             return None
 
@@ -5520,7 +6044,7 @@ class Item(dict):
     def _has_layers(self):
         return self.type ==  'Feature Collection' or \
                self.type == 'Feature Service' or \
-            self.type == 'Big Data File Share' or \
+               self.type == 'Big Data File Share' or \
             self.type == 'Image Service' or \
             self.type == 'Map Service' or \
             self.type == 'Globe Service' or \
@@ -6153,7 +6677,7 @@ class Item(dict):
             file_path = os.path.join(save_folder, file_name)
             self._portal.con.get(path=metadataurlpath,
                                  out_folder=save_folder,
-                                     file_name=file_name, try_json=False)
+                                 file_name=file_name, try_json=False)
             return file_path
 
         # If the get operation returns a 400 HTTP/IO Error then the metadata
@@ -6634,7 +7158,7 @@ class Item(dict):
         else:
             return None
         if isinstance(self._gis._portal, portalpy.Portal) and \
-                   self._gis._portal.is_arcgisonline:
+           self._gis._portal.is_arcgisonline:
             tbx = Toolbox(url=gp_url)
         else:
             tbx = Toolbox(url=gp_url, gis=self._gis)
@@ -7459,7 +7983,7 @@ class Item(dict):
     #----------------------------------------------------------------------
     def create_tile_service(self,
                             title,
-                             min_scale,
+                            min_scale,
                              max_scale,
                              cache_info=None,
                              build_cache=False):
@@ -7525,7 +8049,7 @@ class Item(dict):
             pp = {"minScale":min_scale,"maxScale":max_scale,"name":title,
                   "tilingSchema":{"tileCacheInfo": cache_info,
                                   "tileImageInfo":{"format":"PNG32","compressionQuality":0,"antialiasing":True},
-                  "cacheStorageInfo":{"storageFormat":"esriMapCacheStorageModeExploded",
+                                  "cacheStorageInfo":{"storageFormat":"esriMapCacheStorageModeExploded",
                                       "packetSize":128}},"cacheOnDemand":True,
                   "cacheOnDemandMinScale":144448,
                   "capabilities":"Map,ChangeTracking"}
@@ -7730,7 +8254,7 @@ class Item(dict):
 
         """
         url = "%s/sharing/rest/content/items/%s/addRating" % (self._portal.url,
-                                                 self.id)
+                                                              self.id)
         params = {"f" : "json",
                   'rating' : float(value)}
         self._portal.con.post(url, params)
@@ -7740,7 +8264,7 @@ class Item(dict):
         Removes the rating the calling user added for the specified item.
         """
         url = "%s/sharing/rest/content/items/%s/deleteRating" % (self._portal.url,
-                                                    self.id)
+                                                                 self.id)
         params = {"f" : "json"}
         res = self._portal.con.post(url, params)
         if 'success' in res:
@@ -7755,7 +8279,7 @@ class Item(dict):
         available to the item owner and the organization administrator.
         """
         url = "%s/sharing/rest/content/users/%s/items/%s/proxies" % (self._portal.url,
-                                                        self._user_id,
+                                                                     self._user_id,
                                                         self.id)
         params = {"f" : "json"}
         ps = []
@@ -7769,7 +8293,7 @@ class Item(dict):
         return ps
     #----------------------------------------------------------------------
     def _create_proxy(self,
-                     url:str=None,
+                      url:str=None,
                      hit_interval:int=None,
                      interval_length:int=60,
                      proxy_params:dict=None) -> dict:
@@ -8081,7 +8605,7 @@ class Item(dict):
             redirect_uris = []
         if app_type not in ["browser", "native", "server", "multiple"]:
             raise ValueError(("Invalid app_type of : %s. Allowed values"
-                             ": browser, native, server or multiple." % app_type))
+                              ": browser, native, server or multiple." % app_type))
         params = {
             "f" : 'json',
             "itemId" : self.id,

@@ -593,11 +593,11 @@ def enrich(study_areas,
     =========================     ====================================================================
     **Argument**                  **Description**
     -------------------------     --------------------------------------------------------------------
-    study_areas                   Required list, FeatureSet or SpatialDataFrame containing the input
-                                  areas to be enriched.
+    study_areas                   Required list, FeatureSet or SpatiallyEnabledDataFrame containing
+                                  the input areas to be enriched.
 
-                                  study_areas can be a SpatialDataFrame, FeatureSet or a lists of the
-                                  following types:
+                                  study_areas can be a SpatiallyEnabledDataFrame, FeatureSet or a
+                                  lists of the following types:
                                   * addresses, points of interest, place names or other
                                   supported locations as strings.
                                   * dicts such as [{"address":{"Address":"380 New York St.",
@@ -661,7 +661,7 @@ def enrich(study_areas,
     :returns: Spatial DataFrame or Panda's DataFrame with the requested information for the study areas
     """
     import pandas as pd
-    from arcgis.features import SpatialDataFrame, FeatureSet
+    from arcgis.features import SpatialDataFrame, FeatureSet, GeoAccessor, GeoSeriesAccessor
 
     def _chunks(l, n):
         """yield successive n-sized chunks from l."""
@@ -746,7 +746,7 @@ def enrich(study_areas,
             areas.append(area_dict)
 
     # chunking if len > 100
-    if isinstance(areas, (SpatialDataFrame, list)) and len(areas) > 100:
+    if isinstance(areas, (SpatialDataFrame, pd.DataFrame, list)) and len(areas) > 100:
         parts = []
         for chunk in _chunks(l=areas, n=100):
             parts.append(ge.enrich(study_areas=chunk.copy(),

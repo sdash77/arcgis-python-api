@@ -149,7 +149,7 @@ class GeoSeriesAccessor:
     @property
     def geometry_type(self):
         """
-        A returns the geometry types
+        returns the geometry types
 
         :returns: Series of strings
         """
@@ -744,7 +744,7 @@ class GeoSeriesAccessor:
                             0.0 (0%) to 1.0 (100%).
         ===============     ====================================================================
 
-        :return: arcgis.gis.Geometry
+        :return: Geometry
 
         """
         return self._data.position_along_line(**{'value' : value,
