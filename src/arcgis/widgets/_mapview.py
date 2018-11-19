@@ -407,6 +407,9 @@ class MapView(widgets.DOMWidget):
         if gis:
             self._setup_gis_properties(gis)
         else:
+            from arcgis.gis import GIS
+            gis = GIS()
+            self._setup_gis_properties(gis)
             self._auth_mode = "anonymous"
 
         # Set up miscellanous properties needed on startup
