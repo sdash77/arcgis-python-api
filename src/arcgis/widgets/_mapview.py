@@ -534,7 +534,7 @@ class MapView(widgets.DOMWidget):
         global _js_cdn_override_global
         _js_cdn_override_global = js_cdn
 
-    def add_layer(self, item, options={}):
+    def add_layer(self, item, options=None):
         """
         Adds the specified layer or item to the map widget.
 
@@ -559,6 +559,8 @@ class MapView(widgets.DOMWidget):
                                                       'opacity':0.75})
 
         """
+        if options is None:
+            options = {}
         self._add_layer_to_widget(item, options)
 
     def _add_layer_to_webmap(self, item, options):
