@@ -84,7 +84,10 @@ class SocialProviders(object):
         ---------------------  ---------------------------------------------------------------------
         groups                 optional string. A comma seperated list of group ids to assign new
                                users to when they login to using a social provider.
+        ---------------------  ---------------------------------------------------------------------
+        user_type              optional string. A default user license type.
         =====================  =====================================================================
+
         """
         if 'config' in self.properties:
             return self.properties['config']
@@ -125,6 +128,8 @@ class SocialProviders(object):
         ---------------------  ---------------------------------------------------------------------
         groups                 optional string. A comma seperated list of group ids to assign new
                                users to when they login to using a social provider.
+        ---------------------  ---------------------------------------------------------------------
+        user_type              optional string. A default user license type.
         =====================  =====================================================================
         """
         if value is None:

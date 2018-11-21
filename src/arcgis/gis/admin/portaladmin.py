@@ -249,3 +249,37 @@ class PortalAdminManager(BasePortalAdmin):
             url = self._url + "/system/content/livingatlas"
             self._livingatlas = LivingAtlas(url=url, gis=self._gis)
         return self._livingatlas
+    #----------------------------------------------------------------------
+    def history(self, start_date, num=100, save_folder=None):
+        """
+        Returns a CSV file containing the login history from a start_date to the present.
+
+        ================  ===============================================================================
+        **Argument**      **Description**
+        ----------------  -------------------------------------------------------------------------------
+        start_date        Required datetime.datetime object. The beginning date.
+        ----------------  -------------------------------------------------------------------------------
+        num               Optional Integer. The maximum number of records to return.
+        ----------------  -------------------------------------------------------------------------------
+        save_folder       Optional String. The save location of the CSV file.
+        ================  ===============================================================================
+
+        :returns: string
+
+        """
+        if self._gis.version >= [6.4]:
+            import tempfile, json
+            from arcgis._impl.common._utils import _date_handler
+            if save_folder is None:
+                save_folder = tempfile.gettempdir()
+            url = "{url}portals/self/history".format(url=self._gis._portal.resturl)
+            params = {
+                'f' : 'csv',
+                'num' : num,
+                'all' : True,
+                'fromDate' : json.dumps(start_date, default=_date_handler)
+            }
+            return self._gis._con.post(url, params,
+                                       file_name="history.csv",
+                                       out_folder=save_folder)
+        return None
