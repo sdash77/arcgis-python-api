@@ -5,16 +5,20 @@ This module includes the MapView Jupyter notebook widget for visualizing maps an
 import json
 import random
 import string
-from uuid import uuid4
-from collections import OrderedDict
 import time
 import logging
+import base64
+import urllib.request
+from uuid import uuid4
+from collections import OrderedDict
 
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
-from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float
+from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float, observe
+from IPython.display import display, HTML
 
 from arcgis.widgets._webscene_utils import DEFAULT_WEBSCENE_TEXT_PROPERTY
+from arcgis.widgets._loading_icon_str import _loading_icon_str
 from arcgis import __version__ as py_api_version
 import arcgis.mapping
 
@@ -351,6 +355,8 @@ class MapView(widgets.DOMWidget):
         else:
             return list(self._gallery_basemaps.keys())
 
+    _uuid = Unicode("").tag(sync=True)
+
     # end miscellanous model state
     # End model specific state
 
@@ -398,6 +404,7 @@ class MapView(widgets.DOMWidget):
         item    web map item from portal with which to initialize the map widget
         """
         super(MapView, self).__init__(**kwargs)
+        self._uuid = str(uuid4())
 
         # Set up the visual display of the layout
         self.layout.height = DEFAULT_ELEMENT_HEIGHT
@@ -432,6 +439,178 @@ class MapView(widgets.DOMWidget):
         self.on_msg(self._handle_map_msg)
         self._draw_end_handlers = widgets.CallbackDispatcher()
         self._click_handlers = widgets.CallbackDispatcher()
+
+    # Start screenshot specific section
+
+    def _ipython_display_(self):
+        """Override the parent ipython display function that is called
+        whenever is displayed in the notebook. Display a blank area
+        below the map widget that can be controlled via a display handler
+        set to self._preview_image_display_handler.
+        """
+        super(MapView, self)._ipython_display_()
+        self._preview_image_display_handler = display(
+            HTML(self._assemble_img_preview_html_str("")),
+            display_id = "preview-" + str(self._uuid))
+
+    def _assemble_img_preview_html_str(self, img_src):
+        """Helper function that creates an HTML string of the <img> tag
+        to add to the notebook with the correct <div> class to be hidden
+        """
+        img_html = '<img src="' + img_src + '"></img>'
+        class_id = 'map-static-img-preview-' + self._uuid
+        return '<div class="' + class_id + '">' + img_html + '</div>'
+
+    _preview_screenshot_callback_resp = Unicode("").tag(sync=True)
+
+    @observe('_preview_screenshot_callback_resp')
+    def _preview_image_update_callback(self, change):
+        """Called every time the front end takes a screenshot for a
+        map preview
+        """
+        img_data_uri_str = self._parse_js_resp(change['new'])
+        self._preview_image_display_handler.update(
+           HTML(self._assemble_img_preview_html_str(img_data_uri_str)))
+
+    _cell_output_screenshot_callback_resp = Unicode("").tag(sync=True)
+
+    @observe('_cell_output_screenshot_callback_resp')
+    def _cell_output_screenshot_update_callback(self, change):
+        """Called every time the front end takes a screenshot for a 
+        cell output"""
+        if self._cell_output_display_handler:
+            img_data_uri_str = self._parse_js_resp(change['new'])
+            self._cell_output_display_handler.update(
+                HTML("<img src=" + img_data_uri_str + "></img>"))
+
+    _file_output_screenshot_callback_resp = Unicode("").tag(sync=True)
+
+    @observe('_file_output_screenshot_callback_resp')
+    def _file_output_screenshot_update_callback(self, change):
+        """Called every time the front end takes a screenshot for a file
+        write"""
+        if self._screenshot_file_output_path:
+            img_data_uri_str = self._parse_js_resp(change['new'])
+            img_data_raw_str = img_data_uri_str.split('base64,')[-1]
+            with open(self._screenshot_file_output_path, "wb") as f:
+                img_data_raw_bytes = base64.b64decode(img_data_raw_str)
+                f.write(img_data_raw_bytes)
+
+
+    def _parse_js_resp(self, change_new):
+        """In 3D mode, the Data URI is returned from JS. In 2D mode, a URL
+        to a png is returned. This function will always return a base64
+        data URI of the image represented
+        """
+        if not change_new.startswith("http"):
+            # Already is a data URI
+            return change_new
+        else:
+            # It's a URL: download and parse to base64 data URI, return it
+            with urllib.request.urlopen(change_new) as resp:
+                encoded_body = base64.b64encode(resp.read())
+                return 'data:image/png;base64,{}'.format(encoded_body.decode())
+
+    print_service_url = Unicode("").tag(sync=True)
+    """The print service URL used when taking 2D screenshots. This member will
+    be auto populated with the value from
+    `gis.properties.helperServices.printTask['url']`. If it can't find that 
+    value, it will use the default value of
+    `"https://utility.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task"`.
+
+    You can set this value to a valid Export Web Map Task URL, which will
+    be used as the override for all future `take_screenshot()` calls in 2D
+    mode.
+    """
+
+    def _setup_screenshot_print_service_url(self):
+        """If using anon GIS, use the public Export Web Map Task. If portal,
+        try to use the portal's Export Web Map Task. If you can't find the
+        portal's Export Web Map task, fallback to AGOL's service
+        """
+        default_print_service_url = 'https://utility.arcgisonline.com/arcgis'\
+            '/rest/services/Utilities/PrintingTools/GPServer'\
+            '/Export%20Web%20Map%20Task'
+        try:
+            self.print_service_url = \
+                self.gis.properties.helperServices.printTask['url']
+        except Exception:
+            self.print_service_url = default_print_service_url
+
+    _trigger_screenshot_with_args = Dict({}).tag(sync=True)
+
+    def take_screenshot(self, output_in_cell=True, set_as_preview=True,
+                        file_path = ""):
+        """Takes a screenshot of the current widget view. Only works in a 
+        Jupyter Notebook environment.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        output_in_cell         Optional bool, default `True`. Will display the screenshot in the
+                               output area of the cell where this function is called.
+        ------------------     --------------------------------------------------------------------
+        set_as_preview         Optional bool, default `True`. Will set the screenshot as the static
+                               image preview in the cell where the map widget is being displayed.
+                               Use this flag if you want the generated HTML previews of your 
+                               notebook to have a map image visible.
+        ------------------     --------------------------------------------------------------------
+        file_path              Optional String, default `""`. To output the screenshot to a `.png`
+                               file on disk, set this String to a writeable location file path
+                               (Ex. `file_path = "/path/to/documents/my_screenshot.png"`).
+        ==================     ====================================================================
+
+        In all notebook outputs, each image will be encoded to a base64
+        data URI and wrapped in an HTML <img> tag, like
+        `<img src="base64Str">`. This means that the data for the image lives
+        inside the notebook file itself, allowing for easy sharing of 
+        notebooks and generated HTML previews of notebooks.
+
+        .. note::
+            This function acts asyncronously, meaning that the Python function
+            will return right away, with the notebook outputs/files being 
+            written after an indeterminate amount of time. Avoid calling this 
+            function  multiple times in a row if the asyncronous portion of 
+            the function hasn't finished yet.
+
+        .. note::
+            Some limitations exist for taking screenshots in 2D mode, since
+            the underlying screenshot mechanism is the ArcGIS JS API's
+            PrintTask object (https://bit.ly/2qRKGJG). If this function fails
+            to create a screenshot, try a slightly different extent and try
+            again. Non-published features with client-side graphics like 
+            Spatially Enabled DataFrames might not display in a 2D mode 
+            screenshot. 
+        """
+        if not self.ready:
+            log.warn("Cannot take screenshot if widget is not visible in "\
+                     "notebook: Please try again when widget is visible.");
+            return False
+
+        if not self.print_service_url:
+            # If the print task URL hasn't been figured out yet, find it
+            self._setup_screenshot_print_service_url()
+
+        if output_in_cell:
+            self._cell_output_screenshot_callback_resp = "" # Clear existing
+            loading_html = HTML('<img style="float: left; padding-right: '\
+                                '5px" src="' + _loading_icon_str + '"></img>'\
+                                'Taking Screenshot: Please wait... </div>')
+            self._cell_output_display_handler = display(loading_html,
+                display_id = "cell-output-" + str(uuid4()))
+        if file_path:
+            self._file_output_screenshot_callback_resp = "" # Clear existing
+            if not file_path.endswith(".png"):
+                file_path = file_path + ".png"
+            self._screenshot_file_output_path = file_path
+
+        self._trigger_screenshot_with_args = \
+            { '_' : str(uuid4()),
+              'set_as_preview' : set_as_preview,
+              'output_in_cell' : output_in_cell,
+              'file_path' : bool(file_path) }
+
+    # End screenshot specific section
 
     def _setup_gis_properties(self, gis):
         self.gis = gis

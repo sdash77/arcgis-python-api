@@ -2,7 +2,7 @@ var arcgisMapIPyWidget = require('./arcgis-map-ipywidget/arcgis-map-ipywidget.js
 var base = require('@jupyter-widgets/base');
 var version = require('../package.json').version;
 var PhosphorWidgets = require("@phosphor/widgets");
-var icons = require('./arcgis-map-ipywidget/icons/icons');
+var images = require('./arcgis-map-ipywidget/images/images');
 
 class IPythonExtensionWidgetContainer extends PhosphorWidgets.Widget{
     constructor(element, title) {
@@ -26,7 +26,7 @@ class IPythonExtensionWidgetContainer extends PhosphorWidgets.Widget{
         this.mapForAllChildrenOfIPyWidgetElement((childNode) => {
             if(childNode.id && /.*new.*window/i.test(childNode.id)){
                 ///For the icon that was previously hidden, redisplay it
-                childNode.src = icons.toNewWindowEncoded;
+                childNode.src = images.toNewWindowEncoded;
                 this.ipywidgetElement.style.height = this.ipywidgetElement.prevElementHeight;
                 }
         });
