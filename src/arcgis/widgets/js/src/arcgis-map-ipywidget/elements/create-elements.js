@@ -1,7 +1,7 @@
 /*All elements that either contain the widget or add onto it*/
 var loadingProgress = require("./loading-progress-display");
 var config = require("config");
-var icons = require("../icons/icons");
+var images = require("../images/images");
 
 var createElements = function(uuid){
     //The parent 'viewElement' that contains the map, info, etc.
@@ -41,7 +41,7 @@ var createElements = function(uuid){
         newWindowButton.classList.add('newWindowButton');
         newWindowButton.id = 'newWindowButtonId' + uuid;
         newWindowButton.type = "image";
-        newWindowButton.src = icons.toNewWindowEncoded;
+        newWindowButton.src = images.toNewWindowEncoded;
         newWindowButton.classList.add("esri-component");
         newWindowButton.classList.add("esri-widget--button");
         newWindowButton.classList.add("esri-widget"); 

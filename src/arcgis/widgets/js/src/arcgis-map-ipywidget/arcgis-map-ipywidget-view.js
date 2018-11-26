@@ -9,7 +9,7 @@ var createElements = require('./elements/create-elements');
 var displayPureJSErrorBox = require('./elements/display-purejs-error-box');
 var loadingProgressDisplay = require('./elements/loading-progress-display');
 var inferNoTypeLayer = require('./layer-utils/infer-no-type-layer');
-var icons = require('./icons/icons');
+var images = require('./images/images');
 var mainCssString = require('../css/main.css').toString();
 var configureCDN = require("../config/configure-cdn");
 
@@ -93,6 +93,12 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.model.on('change:_webscene', this.webscene_changed, this);
         this.model.on('change:_trigger_webscene_save_to_this_portal_id', this.save_webscene, this);
         //end webmap/webscene section
+
+        //start screenshot section
+        this.model.on('change:_trigger_screenshot_with_args', this._trigger_screenshot_with_args_changed, this);
+
+        //end screenshot section
+
         //start miscellanous model section
         this.model.on('change:_portal_token', this.portal_token_changed, this);
         this.model.on('change:_custom_msg', this.custom_msg_changed, this);
@@ -181,7 +187,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     },
 
     _setup_elements: function(){
-        this.uuid = Math.random().toString(36).substring(7);
+        this.uuid = this.model.get('_uuid');
         this.elements = createElements(this.uuid);
         this.el.className = "arcgisMapIPyWidgetDiv";
         this.el.style.height = "100%";
@@ -318,6 +324,17 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this.send({ event: 'mouseclick', message: event_.mapPoint });
         });
 
+        // Apply CSS to hide any image preview in the live notebook (but keep
+        // it in the underlying notebook file)
+        this._hidePreviewImageEl();
+    },
+
+    _hidePreviewImageEl: function(){
+        var cssEl = document.createElement('style');
+        cssEl.type = 'text/css';
+        cssEl.innerHTML = 'div.map-static-img-preview-' +
+            this.uuid + ' { display: none }';
+        document.head.appendChild(cssEl);
     },
 
     _setup_js_cdn: function(){
@@ -392,7 +409,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         console.log("updating mode...");
         this.activeView.container = null;
         if(this.model.get("mode") === "3D"){
-            this.elements.switchButton.src = icons.sceneToMapEncoded;
+            this.elements.switchButton.src = images.sceneToMapEncoded;
             if(this.activeView.viewpoint){
                 this._3dMap.viewpoint = this.activeView.viewpoint.clone();
             }
@@ -401,7 +418,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this._3dMap.map = this.map
             this._2dMap.map = null;
         } else {
-            this.elements.switchButton.src = icons.mapToSceneEncoded;
+            this.elements.switchButton.src = images.mapToSceneEncoded;
             if(this.activeView.viewpoint){
                 this._2dMap.viewpoint = this.activeView.viewpoint.clone();
              }
@@ -643,7 +660,6 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this._displayErrorBox("Error on loading webscene from portal");
         console.warn("Error on loading webscene"); console.warn(err);
     });
- 
     },
 
     save_webscene: function(){
@@ -908,7 +924,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                                   element: childMapElement,
                                   tab_mode: tab_mode});
             //hide the icon when you're in seperate window mode
-            this.elements.newWindowButton.src = icons.toOriginalWindowEncoded;
+            this.elements.newWindowButton.src = images.toOriginalWindowEncoded;
             //Store the previous height of the element
             this.prevElementHeight = this.el.style.height;
             this.el.style.height = "0px";
@@ -918,7 +934,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             var activeMapElement = document.getElementById(
                 this.elements.viewdivElement.id);
             window.closeJLabWindow({element: activeMapElement});
-            this.elements.newWindowButton.src = icons.toNewWindowEncoded;
+            this.elements.newWindowButton.src = images.toNewWindowEncoded;
             this.el.style.height = this.prevElementHeight;
         }
     },
@@ -1061,6 +1077,99 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log(err);
         }
     },
+
+    // Start screenshot section
+    _trigger_screenshot_with_args_changed: function() {
+        var args = this.model.get('_trigger_screenshot_with_args');
+        console.log("Triggering Screenshot with args ");
+        console.log(args);
+        modelStrsToSendTo = [];
+        if(args.set_as_preview){
+            modelStrsToSendTo.push('_preview_screenshot_callback_resp');
+        }
+        if(args.output_in_cell){
+            modelStrsToSendTo.push("_cell_output_screenshot_callback_resp");
+        }
+        if(args.file_path){
+            modelStrsToSendTo.push("_file_output_screenshot_callback_resp");
+        }
+        this._capture_screenshot_send_to(modelStrsToSendTo);
+    },
+
+    _capture_screenshot_send_to: function(modelStrsToSendTo) {
+        var mode = this.model.get('mode');
+        var funcToCall = "";
+        if(mode === "3D"){
+            funcToCall = this._get_3d_screenshot;
+        } else if(mode === "2D"){
+            funcToCall = this._get_2d_screenshot;
+        }
+        funcToCall(this).then((base64Str) => {
+            for(var i in modelStrsToSendTo){
+                var modelStr = modelStrsToSendTo[i];
+                this.model.set(modelStr, base64Str);
+            }
+            this.touch();
+        }).catch((err) => {
+            console.log("Could not take screenshot"); console.log(err);
+            this._displayErrorBox("Could not take screenshot.");
+            for(var i in modelStrsToSendTo){
+                console.log("sending " + modelStr + " to ");
+                var modelStr = modelStrsToSendTo[i];
+                this.model.set(modelStr, images.screenshotErrorEncoded);
+            }
+            this.touch();
+        });
+    },
+
+    _get_2d_screenshot: function(widget_inst) {
+        return new Promise((resolve, reject) => {
+        esriLoader.loadModules(['esri/tasks/PrintTask',
+                                'esri/tasks/support/PrintTemplate',
+                                'esri/tasks/support/PrintParameters'],
+        options).then(([PrintTask,
+                        PrintTemplate,
+                        PrintParameters]) => {
+            var printTaskUrl = widget_inst.model.get("print_service_url");
+            console.log("Using " + printTaskUrl + " as Print Task URL");
+            var printTask = new PrintTask({
+                url: printTaskUrl});
+            var template = new PrintTemplate({
+                format: "png32",
+                exportOptions: {
+                    width: widget_inst.el.clientWidth,
+                    height: widget_inst.el.clientHeight
+                },
+                forceFeatureAttributes: true,
+                attributionVisible: true, //change to false to remove attrs
+               layout: 'map-only'});
+           var params = new PrintParameters({
+                view: widget_inst._2dMap,
+                template: template});
+            printTask.execute(params).then((printResult) => {
+                console.log("Print resultant URL:");
+                console.log(printResult.url);
+                resolve(printResult.url);
+          }).catch((printError) => {
+                reject(printError);
+            });
+        }).catch((err) => {
+            reject(err);
+        });
+        });
+    },
+
+    _get_3d_screenshot: function(widget_inst) {
+        return new Promise((resolve, reject) => {
+            widget_inst._3dMap.takeScreenshot().then((screenshot) => {
+                resolve(screenshot.dataUrl);
+            }).catch((err) => {
+                reject(err);
+           });
+        });
+    },
+
+    // End screenshot section
 
     _check_js_api_version_loaded: function(fallback_cdn){
         this._httpGetAsync(fallback_cdn).then((response) => {
