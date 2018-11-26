@@ -46,6 +46,15 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         _trigger_webscene_save_to_this_portal_id: "",
         _readonly_webmap_from_js: {},
         //end webmap/webscene state
+
+        //Start screenshot section
+        _preview_screenshot_callback_resp: "",
+        _cell_output_screenshot_callback_resp: "",
+        _file_output_screenshot_callback_resp: "",
+        _trigger_screenshot_with_args: {},
+        print_service_url: "",
+        //end screenshot section
+
         //start miscellanous model state
         _portal_token: "",
         _auth_mode: "",
@@ -61,6 +70,7 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         tab_mode: "auto",
         _js_cdn_override: "",
         legend: false,
+        _uuid: "",
         //end miscellanous modle state
     })
 });
