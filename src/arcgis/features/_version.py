@@ -298,9 +298,9 @@ class Version(object):
 
         if "controllerDatasetLayers" in self._flc.properties and \
            "utilityNetworkLayerId" in self._flc.properties.controllerDatasetLayers:
-            from arcgis.features._utility import UtilityServiceManager
+            from arcgis.features._utility import UtilityNetworkManager
             url = "%s/UtilityNetworkServer" % os.path.dirname(self._flc.url)
-            return UtilityServiceManager(url=url,
+            return UtilityNetworkManager(url=url,
                                          version=self)
         return None
     #----------------------------------------------------------------------
