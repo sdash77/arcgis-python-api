@@ -12,9 +12,17 @@ def _filter(geometry, sr, rel):
     if not isinstance(geometry, Geometry):
         geometry = Geometry(geometry)
 
+    gt = {
+        "point" : "Point",
+        "multipoint" : "Multipoint",
+        "polygon" : "Polygon",
+        "polyline" : "Polyline",
+        "envelope" : "Envelope"
+    }
+
     filter = {
         'geometry': geometry,
-        'geometryType': 'esriGeometry' + geometry.type,
+        'geometryType': 'esriGeometry' + gt[str(geometry.type).lower()] ,
         'spatialRel': rel,
     }
 
