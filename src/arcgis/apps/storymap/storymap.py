@@ -454,8 +454,9 @@ class JournalStoryMap(object):
             if self._gis._portal.is_arcgisonline:
                 url = "%s://%s/apps/MapJournal/index.html?appid=%s" % (parse.scheme, parse.netloc, item.itemid)
             else:
+                import os
                 wa = os.path.dirname(parse.path[1:])
-                url = "%s://%s/%s/apps/MapJournal/index.html?appid=%s" % (parse.scheme, parse.netloc, wa, item.itemid)
+                url = "%s://%s/%s/sharing/rest/apps/MapJournal/index.html?appid=%s" % (parse.scheme, parse.netloc, wa, item.itemid)
             return item.update(item_properties={
                 'url' : url
             })
