@@ -2245,12 +2245,18 @@ class GeoAccessor(object):
                     row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
                 except:
                     row[f] = None
-            features.append(
-                {
-                    "geometry" : dict(geom),
-                    "attributes" : row
-                }
-            )
+            if geom:
+                features.append(
+                    {
+                        "geometry" : dict(geom),
+                        "attributes" : row
+                    })
+            else:
+                features.append(
+                    {
+                        "geometry" : geom,
+                        "attributes" : row
+                    })
             del row
             del geom
         fs['features'] = features

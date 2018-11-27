@@ -21,6 +21,7 @@ from arcgis.widgets._webscene_utils import DEFAULT_WEBSCENE_TEXT_PROPERTY
 from arcgis.widgets._loading_icon_str import _loading_icon_str
 from arcgis import __version__ as py_api_version
 import arcgis.mapping
+import arcgis
 
 log = logging.getLogger(__name__)
 
@@ -411,6 +412,7 @@ class MapView(widgets.DOMWidget):
         self.layout.width = "100%"
 
         # Set up gis object
+        gis = arcgis.env.active_gis if gis is None else gis
         if gis:
             self._setup_gis_properties(gis)
         else:
@@ -711,7 +713,7 @@ class MapView(widgets.DOMWidget):
         global _js_cdn_override_global
         _js_cdn_override_global = js_cdn
 
-    def add_layer(self, item, options={}):
+    def add_layer(self, item, options=None):
         """
         Adds the specified layer or item to the map widget.
 
@@ -736,6 +738,8 @@ class MapView(widgets.DOMWidget):
                                                       'opacity':0.75})
 
         """
+        if options is None:
+            options = {}
         self._add_layer_to_widget(item, options)
 
     def _add_layer_to_webmap(self, item, options):

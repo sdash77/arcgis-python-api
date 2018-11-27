@@ -2,6 +2,18 @@
 class CreditManager(object):
     """
     Manages an AGOL Site's Credits for users and sites
+
+    **Example Usage**
+
+    .. code-block:: python
+
+        from arcgis.gis import GIS
+        gis = GIS(profile='agol_account')
+        cm = gis.admin.credits
+        cm.allocate("user1", 100)
+
+
+
     """
     _gis = None
     _con = None
@@ -74,6 +86,8 @@ class CreditManager(object):
         :returns: boolean
 
         """
+        if hasattr(username, 'username'):
+            username = getattr(username, "username")
         if credits:
             params = {
                 "f" : "json",
@@ -101,6 +115,8 @@ class CreditManager(object):
         :returns: boolean
 
         """
+        if hasattr(username, 'username'):
+            username = getattr(username, "username")
         params = {"usernames" : [username],
                   "f" : 'json'}
         path = "portals/self/unassignUserCredits"
