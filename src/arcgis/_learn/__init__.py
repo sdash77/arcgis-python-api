@@ -102,43 +102,62 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
 
 def detect_objects(input_raster,
                    model,
-                    model_arguments=None,
-                    output_name=None,
-                    context = None,
-                    gis=None):
+                   model_arguments=None,
+                   output_name=None,
+                   run_nms=False,
+                   confidence_score_field=None,
+                   class_value_field=None,
+                   max_overlap_ratio=0,
+                   context=None,
+                   gis=None):
 
     """
     Function can be used to generate feature service that contains polygons on detected objects
     found in the imagery data using the designated deep learning model. Note that the deep learning
     library needs to be installed separately, in addition to the server’s built in Python 3.x library.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    input_raster           Required. raster layer that contains objects that need to be detected.
-    ------------------     --------------------------------------------------------------------
-    model                  Required model object.
-    ------------------     --------------------------------------------------------------------
-    model_arguments        Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                           eg: {"name1":"value1", "name2": "value2"}
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required. raster layer that contains objects that need to be detected.
+    ------------------------------------     --------------------------------------------------------------------
+    model                                    Required model object. 
+    ------------------------------------     --------------------------------------------------------------------
+    model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+                                             eg: {"name1":"value1", "name2": "value2"}
 
-    ------------------     --------------------------------------------------------------------
-    output_name            Optional. If not provided, an Feature layer is created by the method and used as the output .
-                           You can pass in an existing Feature Service Item from your GIS to use that instead.
-                           Alternatively, you can pass in the name of the output Feature Service that should be created by this method
-                           to be used as the output for the tool.
-                           A RuntimeError is raised if a service by that name already exists
-    ------------------     --------------------------------------------------------------------
-    context                Optional. Context contains additional settings that affect task execution.
-                           1. Output Spatial Reference (outSR)—the output features will be projected into
-                           the output spatial reference.
-                           2. Snap Raster
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. If not provided, an Feature layer is created by the method and used as the output .
+                                             You can pass in an existing Feature Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+                                             to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    run_nms                                  Optional bool. Default value is False. If set to True, runs the Non Maximum Suppression tool.
+    ------------------------------------     --------------------------------------------------------------------
+    confidence_score_field                   Optional string. The field in the feature class that contains the confidence scores as output by the object detection method.
+                                             This parameter is required when you set the run_nms to True
+    ------------------------------------     --------------------------------------------------------------------
+    class_value_field                        Optional string. The class value field in the input feature class. 
+                                             If not specified, the function will use the standard class value fields 
+                                             Classvalue and Value. If these fields do not exist, all features will 
+                                             be treated as the same object class.
+                                             Set only if run_nms  is set to True
+    ------------------------------------     --------------------------------------------------------------------
+    max_overlap_ratio                        Optional integer. The maximum overlap ratio for two overlapping features. 
+                                             Defined as the ratio of intersection area over union area. 
+                                             Set only if run_nms  is set to True
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional. Context contains additional settings that affect task execution. 
+                                               1. Output Spatial Reference (outSR)—the output features will be projected into 
+                                               the output spatial reference. 
+                                               2. Snap Raster 
+                           
+                                               Syntax: {"outSR" : {spatial reference} }
 
-                           Syntax: {"outSR" : {spatial reference} }
-
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
 
     :return:
         The feature layer
@@ -175,6 +194,23 @@ def detect_objects(input_raster,
     if model_arguments:
         params["modelArguments"] = model_arguments
 
+    if isinstance(run_nms, bool):
+        if run_nms:
+            params["runNMS"] = True
+
+            if confidence_score_field is not None:
+                params["confidenceScoreField"] = confidence_score_field
+
+            if class_value_field is not None:
+                params["classValueField"] = class_value_field
+    
+            if max_overlap_ratio is not None:
+                params["maxOverlapRatio"] = max_overlap_ratio
+        else:
+            params["runNMS"] = False
+    else:
+        raise RuntimeError("run_nms value should be an instance of bool")
+    
     _set_context(params, context)
 
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
@@ -297,11 +333,11 @@ def export_training_data(input_raster,
                         chip_format=None,
                         tile_size=None,
                         stride_size=None,
-                        metadata_format = None,
-                        classvalue_field = None,
-                        buffer_radius = None,
-                        output_location = None,
-                        context = None,
+                        metadata_format=None,
+                        classvalue_field=None,
+                        buffer_radius=None,
+                        output_location=None,
+                        context=None,
                         gis=None):
 
     """
