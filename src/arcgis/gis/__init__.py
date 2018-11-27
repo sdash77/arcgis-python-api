@@ -9068,6 +9068,9 @@ class Layer(_GISResource):
 
         lyr_dict = {'type': type(self).__name__, 'url': url}
 
+        if self.filter is not None:
+            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
+
         return lyr_dict
 
     @property
