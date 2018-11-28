@@ -53,9 +53,12 @@ class ServerManager(object):
         for server in servers:
             try:
                 admin_url = server['adminUrl']
-                c = ServicesDirectory(url=admin_url, portal_connection=self._gis._portal.con,)
-                self._server_list.append(c.admin)
-                self._catalog_list.append(c)
+                #c = ServicesDirectory(url=admin_url, portal_connection=self._gis._portal.con,)
+                from .admin.administration import Server
+                c = Server(url=admin_url, gis= self._gis)
+                self._server_list.append(c)
+                #self._server_list.append(c.admin)
+                #self._catalog_list.append(c)
             except:
                 _log.warning("Could not access the server at " + admin_url)
 
