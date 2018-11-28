@@ -120,7 +120,7 @@ def from_layer(layer,
         res.reset_index(drop=True, inplace=True)
         res.spatial.set_geometry("SHAPE")
     else:
-        return layer.query(where=query, as_df=True)
+        return layer.query(where=query, as_df=True)#.sdf
     return res
 #----------------------------------------------------------------------
 def to_layer(df,
