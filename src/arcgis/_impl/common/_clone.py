@@ -1288,6 +1288,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 new_extent = service_definition['initialExtent']
                 if self._service_extent:
                     new_extent = json.loads(self._service_extent.JSON)
+                    if 'maintain-spatial-ref' in original_item['tags']:
+                        new_extent = json.loads(project([Geometry(new_extent)], in_sr=new_extent['spatialReference'], out_sr=service_definition['initialExtent']['spatialReference'])[0].JSON)
+                        new_extent['spatialReference'] = service_definition['initialExtent']['spatialReference']
                 service_definition['initialExtent'] = new_extent
                 service_definition['spatialReference'] = new_extent['spatialReference']
 
@@ -2409,13 +2412,14 @@ class _FormDefinition(_ItemDefinition):
                     with open(os.path.join(zip_dir, path), 'r', encoding="utf8") as file:
                         data = json.loads(file.read())
 
-                    original_url = data['serviceInfo']['url']
-                    for key, value in clone_mapping['Services'].items():
-                        if _compare_url(original_url, key):
-                            data['serviceInfo']['itemId'] = value['id']
-                            data['serviceInfo']['url'] = value['url']
-                            feature_service_url = value['url']
-                            break
+                    original_url = _deep_get(data, 'serviceInfo', 'url')
+                    if original_url is not None:
+                        for key, value in clone_mapping['Services'].items():
+                            if _compare_url(original_url, key):
+                                data['serviceInfo']['itemId'] = value['id']
+                                data['serviceInfo']['url'] = value['url']
+                                feature_service_url = value['url']
+                                break
 
                     with open(os.path.join(zip_dir, path), 'w', encoding="utf8") as file:
                         file.write(json.dumps(data))
