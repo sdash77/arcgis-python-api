@@ -6024,15 +6024,18 @@ class Item(dict):
         self.itemid = itemid
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
-        self._hydrated = False
-        self.resources = ResourceManager(self, self._gis)
-
+        if itemdict:
+            self._hydrated = True
+        else:
+            self._hydrated = False
 
         if itemdict:
             if 'size' in itemdict and itemdict['size'] == -1:
                 del itemdict['size'] # remove nonsensical size
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
+        self.resources = ResourceManager(self, self._gis)
+
 
         try:
             self._depend = ItemDependency(item=self)
