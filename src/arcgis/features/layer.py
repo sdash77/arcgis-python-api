@@ -1427,21 +1427,27 @@ class FeatureLayer(Layer):
         dtypes = None
         geom = None
         names = None
-        if 'fields' in featureset_dict:
-            dtypes = {}
-            names = []
-            fields = featureset_dict['fields']
-            for fld in fields:
 
-                if fld['type'] != "esriFieldTypeGeometry":
-                    dtypes[fld['name']] = _fld_lu[fld['type']]
-                    names.append(fld['name'])
+
         rows = [feature_to_row(row, sr) \
                 for row in featureset_dict['features']]
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
-
+        if 'fields' in featureset_dict:
+            dtypes = {}
+            names = []
+            fields = featureset_dict['fields']
+            for fld in fields:
+                if fld['type'] != "esriFieldTypeGeometry":
+                    dtypes[fld['name']] = _fld_lu[fld['type']]
+                    names.append(fld['name'])
+                if fld['type'] in {"esriFieldTypeSmallInteger",
+                                   "esriFieldTypeInteger",
+                                   "esriFieldTypeSingle",
+                                   "esriFieldTypeDouble"}:
+                    q = df[fld['name']].isnull()
+                    df.loc[q, fld['name']] = 0
         isinstance(df, pd.DataFrame)
         df = df.astype(dtypes, False)
         if 'geometryType' in featureset_dict:

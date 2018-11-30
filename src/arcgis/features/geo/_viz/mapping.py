@@ -145,6 +145,7 @@ def plot(df,
 
 
     """
+    renderer = kwargs.pop("renderer", None)
     if not hasattr(df, 'spatial') and \
        not hasattr(df, 'geom'):
         raise ValueError("DataFrame or Series must be spatially enabled.")
@@ -173,7 +174,16 @@ def plot(df,
 
     fc = df.spatial.to_feature_collection(name=name)
     gt = [el for el in df.spatial.geometry_type if el is not None]
-    if renderer_type in [None, 's']:
+    if renderer_type is None and \
+       not renderer is None:
+        fc.layer['layerDefinition']['drawingInfo']['renderer'] = renderer
+        if map_exists:
+            map_widget.add_layer(fc, options={'title':name})
+        else:
+            map_widget.add_layer(fc, options={'title':name})
+            return map_widget
+        return
+    elif renderer_type in [None, 's']:
         renderer_type = 's' # simple (default)
         r = generate_renderer(
                    geometry_type=gt[0].lower(),
@@ -255,6 +265,7 @@ def plot(df,
                               alpha=alpha,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
+
     if map_exists:
         map_widget.add_layer(fc, options={'title':name})
     else:
