@@ -2494,6 +2494,21 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm">statistics function</a>.
     The arguments for the statistics function are as follows:
 
+    
+    The focal_statistics() is different from focal_stats() in the following aspects:
+
+    focal_statistics() supports  Minimum, Maximum, Mean and Standard Deviation.
+    while focal_stats() supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, Variety
+
+    focal_statistics() supports only Rectangle,
+    while focal_stats() supports Rectangle, Circle, Annulus, Wedge, Irregular, Weight neighbourhoods, 
+
+    Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
+    This option is not present in focal_stats()    
+
+    Option to determine whether NoData values are ignored or not is available in focal_stats() by setting bool value for ignore_no_data param.
+    This option is not present in focal_statistics()
+
     :param raster: input raster
     :param kernel_columns: int (e.g. 3)
     :param kernel_rows: int (e.g. 3)
@@ -2504,8 +2519,8 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
 				      -Max-Calculates the maximum value of the pixels within the neighborhood
 				      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
 				      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
-    :param columns: int (e.g. 3)
-    :param rows: int (e.g. 3)
+    :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
+    :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
     :param astype: output pixel type
     :return: the output raster
@@ -3435,3 +3450,135 @@ def weighted_sum(rasters, fields, weights):
     }   
     
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
+
+
+def focal_stats(raster, stat_type=3, percentile=50, neighborhood_type=1 , width=3, height=3, 
+                     inner_radius=1 , outer_radius=3, radius=3, start_angle=0, end_angle=90, neighborhood_values=None, ignore_no_data=True):
+    """
+    Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
+    For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
+
+    The focal_stats() is different from focal_statistics() in the following aspects:
+
+    focal_stats() supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, Variety,
+    while the focal_statistics() supports only Minimum, Maximum, Mean and Standard Deviation.
+
+    focal_stats() supports Rectangle, Circle, Annulus, Wedge, Irregular, Weight neighbourhoods, focal_statistics() supports only Rectangle.
+
+    Option to determine whether NoData values are ignored or not is available in focal_stats() by setting bool value for ignore_no_data param.
+    This option is not present in focal_statistics()
+
+    Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
+    This option is not present in focal_stats()
+
+    
+
+    :param raster: input raster
+    :param stat_type: int
+					  There are 10 types of focal statistical functions:
+					  1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
+                      7=Range, 8=Standard deviation, 9=Sum, 10=Variety
+                      Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
+                      Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
+                      Mean = Calculates the mean (average value) of the cells in the neighborhood.
+                      Median = Calculates the median of the cells in the neighborhood.
+                      Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
+                      Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
+                      Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
+                      Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
+                      Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
+                      Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
+
+                      Default is 3(Mean)
+
+    :param percentile: int, default is 50. 
+    :param neighborhood_type: int, default is 1. The shape of the area around each cell used to calculate the statistic.
+                               1 = Rectangle
+                               2 = Circle
+                               3 = Annulus
+                               4 = Wedge
+                               5 = Irregular
+                               6 = Weight
+                               
+    :param width: int, default is 3 - specified when neighborhood_type is Rectangle
+    :param height: int, default is 3 - specified when neighborhood_type is Rectangle
+    :param inner_radius: int, default is 1 - specified when neighborhood_type is Annulus
+    :param outer_radius:int, default is 3 - specified when neighborhood_type is Annulus
+    :param radius:int default is 3 - specified when neighborhood_type is Circle
+    :param start_angle: int, default is 0
+    :param end_angle:int, default is 90
+    :param neighborhood_values: - specified when neighborhood_type is Irregular or Weight
+    :param ignore_no_data: boolean
+                           True. Specifies that if a NoData value exists within a neighborhood, 
+                           the NoData value will be ignored. Only cells within the neighborhood 
+                           that have data values will be used in determining the output value. 
+                           This is the default.
+                           False - Specifies that if any cell in a neighborhood has a value of 
+                           NoData, the output for the processing cell will be NoData
+
+    :return: the output raster
+
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction": "Focal",
+        "rasterFunctionArguments": {
+            "Raster": raster
+        },
+        "variableName": "Raster"
+    }
+
+    if stat_type is not None:
+        template_dict["rasterFunctionArguments"]["StatisticType"] = stat_type
+    if percentile is not None:
+        template_dict["rasterFunctionArguments"]["Percentile"] = percentile
+    if neighborhood_type is not None:
+        template_dict["rasterFunctionArguments"]["NeighborhoodType"] = neighborhood_type
+    if width is not None:
+        template_dict["rasterFunctionArguments"]["Width"] = width
+    if height is not None:
+        template_dict["rasterFunctionArguments"]["Height"] = height
+    if inner_radius is not None:
+        template_dict["rasterFunctionArguments"]["InnerRadius"] = inner_radius
+    if outer_radius is not None:
+        template_dict["rasterFunctionArguments"]["OuterRadius"] = outer_radius
+    if radius is not None:
+        template_dict["rasterFunctionArguments"]["Radius"] = radius
+    if start_angle is not None:
+        template_dict["rasterFunctionArguments"]["StartAngle"] = start_angle
+    if end_angle is not None:
+        template_dict["rasterFunctionArguments"]["EndAngle"] = end_angle
+    if neighborhood_values is not None:
+        template_dict["rasterFunctionArguments"]["NeighborhoodValues"] = neighborhood_values
+    if ignore_no_data is not None:
+        template_dict["rasterFunctionArguments"]["NoDataPolicy"] = ignore_no_data
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def lookup(raster, field=None):
+    """
+    Creates a new raster by looking up values found in another field in the table of the input raster. 
+    For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/lookup-function.htm
+
+    :param raster: The input raster that contains a field from which to create a new raster.
+    :param field: Field containing the desired values for the new raster.
+
+    :return: the output raster with this function applied to it
+    """
+ 
+    layer, raster, raster_ra = _raster_input(raster)
+       
+    template_dict = {
+        "rasterFunction" : "Lookup",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+    
+    if field is not None:
+        template_dict["rasterFunctionArguments"]['Field'] = field
+
+    return _clone_layer(layer, template_dict, raster_ra)

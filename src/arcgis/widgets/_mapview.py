@@ -1459,6 +1459,7 @@ class MapView(widgets.DOMWidget):
         Clear the graphics drawn on the map widget. Graphics are shapes drawn
         using the 'draw()' method.
         """
+        self._layers_to_remove = ("nonexistant_layer_id",)
         # All graphics are saved to a layer with the below id
         self._layers_to_remove = ("graphicsLayerId31195",)
 

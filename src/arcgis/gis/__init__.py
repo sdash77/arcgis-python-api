@@ -770,6 +770,10 @@ class GIS(object):
         else:
             return self._url
 
+    @property
+    def _public_rest_url(self):
+        return self.url + "/sharing/rest/"
+
     #----------------------------------------------------------------------
     @property
     def version(self):
@@ -4464,9 +4468,9 @@ class Group(dict):
         """ URL to the thumbnail image """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return self._portal.url + '/home/images/group-no-image.png'
+            return self._gis.url + '/home/images/group-no-image.png'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
+            thumbnail_url_path = self._gis._public_rest_url + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     @property
@@ -5249,9 +5253,9 @@ class User(dict):
         """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return self._portal.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg'
+            return self._gis.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + 'community/users/' + self._user_id + '/info/' + thumbnail_file
+            thumbnail_url_path = self._gis._public_rest_url + 'community/users/' + self._user_id + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     @property
@@ -6604,9 +6608,9 @@ class Item(dict):
             if self._gis.properties.portalName == 'ArcGIS Online':
                 return 'http://static.arcgis.com/images/desktopapp.png'
             else:
-                return self._portal.url + '/portalimages/desktopapp.png'
+                return self._gis.url + '/portalimages/desktopapp.png'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + '/content/items/' + self.itemid + '/info/' + thumbnail_file
+            thumbnail_url_path = self._gis._public_rest_url + '/content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     @property
@@ -6731,7 +6735,7 @@ class Item(dict):
         else:
             icon = "layers16.png"
 
-        icon = self._portal.url + '/home/js/jsapi/esri/css/images/item_type_icons/' + icon
+        icon = self._gis.url + '/home/js/jsapi/esri/css/images/item_type_icons/' + icon
         return icon
 
     def _ux_item_type(self):
@@ -6760,7 +6764,7 @@ class Item(dict):
                 if self._gis.properties.portalName == 'ArcGIS Online':
                     thumbnail = 'http://static.arcgis.com/images/desktopapp.png'
                 else:
-                    thumbnail = self._portal.url + '/portalimages/desktopapp.png'
+                    thumbnail = self._gis.url + '/portalimages/desktopapp.png'
 
         snippet = self.snippet
         if snippet is None:
