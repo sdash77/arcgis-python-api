@@ -106,6 +106,56 @@ class _DeepCloner():
                 processed_nodes.append(node)
         return created_items
 
+    def _get_properties(self, layer, data, is_multi_services_view, is_view):
+        """Get the layer or table properties
+        Verify if we have access to adminLayerInfo to support joined views
+        When we have credentials for a given layer access via the admin api
+        Will also test if adminLayerInfo has been added to the items data to support anonymous access
+        :return: <Dict> of layer properties
+        """
+        layer_properties = dict(layer.properties)
+
+        if is_view:
+            admin_layer_info = None
+            
+            has_admin_info = layer._token and layer.manager and layer.manager.properties and 'adminLayerInfo' in layer.manager.properties
+            if has_admin_info:
+                admin_layer_info = layer.manager.properties['adminLayerInfo']
+
+            if admin_layer_info is None:
+                data_layers = []
+                if data is not None and 'layers' in data and data['layers'] is not None:
+                    data_layers.extend(data['layers'])
+                if data is not None and 'tables' in data and data['tables'] is not None:
+                    data_layers.extend(data['tables'])
+                data_layer = next((i for i in data_layers if 'id' in i and i['id'] == layer_properties['id']), None)
+                if data_layer is not None and 'adminLayerInfo' in data_layer and data_layer['adminLayerInfo'] is not None:
+                    admin_layer_info = data_layer['adminLayerInfo']
+
+            if admin_layer_info is not None:
+                if _deep_get(admin_layer_info, 'viewLayerDefinition', 'table', 'geometryField') is not None:
+                    admin_layer_info['geometryField']['name'] = admin_layer_info['viewLayerDefinition']['table']['name'] + '.' + admin_layer_info['geometryField']['name']
+
+                if 'tableName' in admin_layer_info:
+                    del(admin_layer_info['tableName'])
+                if 'xssTrustedFields' in admin_layer_info:
+                    del(admin_layer_info['xssTrustedFields'])
+                if 'viewLayerDefinition' in admin_layer_info and 'table' in admin_layer_info['viewLayerDefinition']:
+                    if 'sourceId' in admin_layer_info['viewLayerDefinition']['table']:
+                        del(admin_layer_info['viewLayerDefinition']['table']['sourceId'])
+                    if 'relatedTables' in admin_layer_info['viewLayerDefinition']['table'] and len(admin_layer_info['viewLayerDefinition']['table']['relatedTables']) > 0:
+                        for related_table in admin_layer_info['viewLayerDefinition']['table']['relatedTables']:
+                            if 'sourceId' in related_table:
+                                del(related_table['sourceId'])
+           
+                layer_properties['adminLayerInfo'] = admin_layer_info
+            else:
+                # Multi service views with no adminLayerInfo cannot be cloned currently.
+                # This will be the case when accessing a view anonymously that does not have adminLayerInfo appended to the item data
+                if is_multi_services_view:
+                    raise Exception("You must be the owner of a view with multiple sources to clone it.")
+        return layer_properties
+
     def _get_item_definitions(self, item):
         """" Get a list of definitions for the specified item.
         This method differs from get_item_definition in that it is run recursively to return the definitions of dependent items depending on the type.
@@ -249,54 +299,76 @@ class _DeepCloner():
             svc = FeatureLayerCollection.fromitem(item)
             service_definition = dict(svc.properties)
 
+            is_multi_services_view = False
+            if 'isMultiServicesView' in service_definition:
+                is_multi_services_view = service_definition['isMultiServicesView']
+
             is_view = False
             if "isView" in service_definition and service_definition["isView"] is not None:
                 is_view = service_definition["isView"]
 
-            # Get the definitions of the the layers and tables
-            layers_definition = {'layers': [], 'tables': []}
-            for layer in svc.layers:
-                layers_definition['layers'].append(dict(layer.properties))
-            for table in svc.tables:
-                layers_definition['tables'].append(dict(table.properties))
-
             # Get the item data, for example any popup definition associated with the item
             data = item.get_data()
+
+            # Get the definitions of the the layers and tables
+            layers_definition = {'layers': [], 'tables': []}
+
+            for layer in svc.layers:
+                properties = self._get_properties(layer, data, is_multi_services_view, is_view)
+                layers_definition['layers'].append(properties)
+
+            for table in svc.tables:
+                properties = self._get_properties(table, data, is_multi_services_view, is_view)
+                layers_definition['tables'].append(properties)
 
             # Process the feature service if it is a view
             view_sources = {}
             view_source_fields = {}
+            supporting_services = []
             if is_view:
                 try:
-                    multiple_source_error = "Views based on multiple source layers are not supported."
                     sources = source._portal.con.get(svc.url + '/sources')
-                    if len(sources['services']) != 1:
-                        raise Exception(multiple_source_error)
-                    source_service = sources['services'][0]
-                    source_item = source.content.get(source_service['serviceItemId'])
-                    source_fs_definition = self._get_item_definitions(source_item)
+                    
+                    for source_service in sources['services']:
+                        supporting_service = {}
+                        source_item = source.content.get(source_service['serviceItemId'])
+                        source_fs_definition = self._get_item_definitions(source_item)
+                        supporting_service['source_fs_definition'] = source_fs_definition
+                        supporting_service['layer_sources'] = []
+                        for layer in svc.layers + svc.tables:
+                            layer_sources = source._portal.con.get(svc.url + '/' + str(layer.properties['id']) + '/sources')
+                            layer_source = None                  
+                            if 'layers' in layer_sources:
+                                for layer_source in layer_sources['layers']:
+                                    supporting_service['layer_sources'].append(layer_source)
+                            elif 'tables' in layer_sources:
+                                for layer_source in layer_sources['tables']:
+                                    supporting_service['layer_sources'].append(layer_source)
 
-                    for layer in svc.layers + svc.tables:
-                        layer_sources = source._portal.con.get(svc.url + '/' + str(layer.properties['id']) + '/sources')
-                        layer_source = None
-                        if 'layers' in layer_sources and len(layer_sources['layers']) == 1:
-                            layer_source = layer_sources['layers'][0]
-                        elif 'tables' in layer_sources and len(layer_sources['tables']) == 1:
-                            layer_source = layer_sources['tables'][0]
-                        else:
-                            raise Exception(multiple_source_error)
-                        view_sources[layer.properties['id']] = layer_source['url']
-                        feature_layer = FeatureLayer(layer_source['url'], source)
-                        view_source_fields[layer.properties['id']] = feature_layer.properties.fields
+                            for layer_source in supporting_service['layer_sources']:
+                                source_index = supporting_service['layer_sources'].index(layer_source)
+                                view_sources[source_index] = layer_source['url']
+                                feature_layer = FeatureLayer(layer_source['url'], source)
+                                view_source_fields[source_index] = feature_layer.properties.fields
+
+                        supporting_service['view_sources'] = view_sources
+                        supporting_service['view_source_fields'] = view_source_fields
+                        supporting_services.append(supporting_service)
                 except RuntimeError:
                     raise
+            else:
+                supporting_service = {}
+                supporting_service['view_sources'] = view_sources
+                supporting_service['view_source_fields'] = view_source_fields
+                supporting_services.append(supporting_service)
 
-            item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view,
-                                                        view_sources, view_source_fields, features=None, data=data, folder=self.folder,
-                                                        thumbnail=None, portal_item=item, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items)
-            self._graph[item.id] = item_definition
-            if is_view and source_fs_definition:
-                item_definition.add_child(source_fs_definition)
+            for s in supporting_services:
+                item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view,
+                                                            s['view_sources'], s['view_source_fields'], features=None, data=data, folder=self.folder,
+                                                            thumbnail=None, portal_item=item, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items)
+                self._graph[item.id] = item_definition
+                if is_view and 'source_fs_definition' in s:
+                    item_definition.add_child(s['source_fs_definition'])
 
         # If the item is a workforce find the group, maps and services that support the project
         elif item['type'] == 'Workforce Project':
@@ -1014,7 +1086,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         self._view_source_fields = view_source_fields
         self.copy_data = copy_data
 
-
     @property
     def service_definition(self):
         """Gets the definition of the service"""
@@ -1285,17 +1356,18 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         del service_definition[key]
 
                 # Set the extent and spatial reference of the service
-                new_extent = service_definition['initialExtent']
-                if self._service_extent:
-                    new_extent = json.loads(self._service_extent.JSON)
-                    if 'maintain-spatial-ref' in original_item['tags']:
-                        new_extent = json.loads(project([Geometry(new_extent)], in_sr=new_extent['spatialReference'], out_sr=service_definition['initialExtent']['spatialReference'])[0].JSON)
-                        new_extent['spatialReference'] = service_definition['initialExtent']['spatialReference']
-                service_definition['initialExtent'] = new_extent
-                service_definition['spatialReference'] = new_extent['spatialReference']
+                new_extent = _deep_get(service_definition, 'initialExtent')
+                if new_extent is not None:
+                    if self._service_extent:
+                        new_extent = json.loads(self._service_extent.JSON)
+                        if 'maintain-spatial-ref' in original_item['tags']:
+                            new_extent = json.loads(project([Geometry(new_extent)], in_sr=new_extent['spatialReference'], out_sr=service_definition['initialExtent']['spatialReference'])[0].JSON)
+                            new_extent['spatialReference'] = service_definition['initialExtent']['spatialReference']
+                    service_definition['initialExtent'] = new_extent
+                    service_definition['spatialReference'] = new_extent['spatialReference']
 
                 if self.is_view:
-                    properties = ['name', 'isView', 'sourceSchemaChangesAllowed', 'isUpdatableView', 'capabilities']
+                    properties = ['name', 'isView', 'sourceSchemaChangesAllowed', 'isUpdatableView', 'capabilities', 'isMultiServicesView']
                     service_definition_copy = copy.deepcopy(service_definition)
                     for key, value in service_definition_copy.items():
                         if key not in properties:
@@ -1395,17 +1467,28 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         url = self.view_sources[layer['id']]
                         original_feature_service = os.path.dirname(url)
                         original_id = os.path.basename(url)
-                        admin_layer_info = {}
-                        layer['adminLayerInfo'] = admin_layer_info
 
                         for key, value in self._clone_mapping['Services'].items():
                             if _compare_url(key, original_feature_service):
                                 new_service = value
-                                view_layer_definition = {}
-                                view_layer_definition['sourceServiceName'] = os.path.basename(os.path.dirname(new_service['url']))
-                                view_layer_definition['sourceLayerId'] = new_service['layer_id_mapping'][int(original_id)]
-                                view_layer_definition['sourceLayerFields'] = '*'
-                                admin_layer_info['viewLayerDefinition'] = view_layer_definition
+                                if 'adminLayerInfo' in layer and 'viewLayerDefinition' in layer['adminLayerInfo']:
+                                    layer['adminLayerInfo']['viewLayerDefinition']['table']['sourceServiceName'] = os.path.basename(os.path.dirname(new_service['url']))
+                                    if 'relatedTables' in layer['adminLayerInfo']['viewLayerDefinition']['table']:
+                                        # Update the name of the related table to use the new items name
+                                        for related_table in layer['adminLayerInfo']['viewLayerDefinition']['table']['relatedTables']:
+                                            name = related_table['sourceServiceName']
+                                            for k, v in self._clone_mapping['Services'].items():
+                                                if os.path.basename(os.path.dirname(k)) == name:
+                                                    related_table['sourceServiceName'] = os.path.basename(os.path.dirname(v['url']))
+                                else:
+                                    #retain this previous logic when admin_layer_info is not already avalible
+                                    admin_layer_info = {}              
+                                    view_layer_definition = {}
+                                    view_layer_definition['sourceServiceName'] = os.path.basename(os.path.dirname(new_service['url']))
+                                    view_layer_definition['sourceLayerId'] = new_service['layer_id_mapping'][int(original_id)]
+                                    view_layer_definition['sourceLayerFields'] = '*'
+                                    admin_layer_info['viewLayerDefinition'] = view_layer_definition
+                                    layer['adminLayerInfo'] = admin_layer_info
                                 break
 
                         if self.target.properties.isPortal:
@@ -1724,6 +1807,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Set the data to the text properties of the item
                 if data:
+                    if self._is_view:
+                        # Remove any adminLayerInfo from the layers data
+                        if data and 'layers' in data:
+                            for layer_data in data['layers']:
+                                if 'adminLayerInfo' in layer_data:
+                                    del(layer_data['adminLayerInfo'])                
                     item_properties['text'] = json.dumps(data)
 
                 # If the item title has a guid, check if it is in the clone_mapping and replace if it is.
