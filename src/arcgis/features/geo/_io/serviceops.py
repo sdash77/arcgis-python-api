@@ -95,6 +95,8 @@ def from_layer(layer,
     >>> print(df.head())
 
     """
+    if not layer.filter is None:
+        query = layer.filter
     from arcgis.geometry import Geometry, SpatialReference
     fields = []
     records = []
@@ -113,31 +115,12 @@ def from_layer(layer,
             ids = [str(i) for i in ids]
             sql = "%s in (%s)" % (oid_info['objectIdFieldName'],
                                   ",".join(ids))
-            frames.append(layer.query(where=sql).sdf)
+            frames.append(layer.query(where=sql, as_df=True))
         res = pd.concat(frames, ignore_index=True)
         res.reset_index(drop=True, inplace=True)
         res.spatial.set_geometry("SHAPE")
     else:
-        sr = SpatialReference(dict(layer.container.properties)['spatialReference'])
-        res = layer.query(where=query).to_dict()['features']
-        geoms = []
-        for idx, feature in enumerate(res):
-            r = feature['attributes']
-            g = feature['geometry']
-            g['spatialReference'] = sr
-            g = Geometry(g)
-            geoms.append(g)
-            res[idx] = r
-            del r, g
-        res = pd.DataFrame.from_dict(res)
-        res.spatial.set_geometry(geoms)
-        #res.reset_index(drop=True, inplace=True)
-    dtypes = {}
-    for field in layer.properties.fields:
-        dtypes[field['name']] = _look_up_types[field['type']]
-        if _look_up_types[field['type']] == 'datetime64':
-            res[field['name']] = pd.to_datetime(res[field['name']]/1000, unit='s')
-        del field
+        return layer.query(where=query, as_df=True)#.sdf
     return res
 #----------------------------------------------------------------------
 def to_layer(df,
