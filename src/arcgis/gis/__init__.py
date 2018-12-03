@@ -1513,6 +1513,7 @@ class UserManager(object):
     An instance of this class, called 'users', is available as a property of the Gis object.
     Users call methods on this 'users' object to manipulate (create, get, search, etc) users.
     """
+    _me = None
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
@@ -2329,13 +2330,15 @@ class UserManager(object):
     def me(self):
         """ Gets the logged in user.
         """
-        meuser = self._portal.logged_in_user()
-        if meuser is not None:
-            return User(self._gis, meuser['username'], meuser)
-        else:
-            return None
+        if self._me is None:
+            meuser = self._portal.logged_in_user()
+            if meuser is not None:
+                self._me = User(self._gis, meuser['username'], meuser)
+            else:
+                self._me = None
+        return self._me
 
-    @property
+    @_lazy_property
     def roles(self):
         """Helper object to manage custom roles for users"""
         return RoleManager(self._gis)
