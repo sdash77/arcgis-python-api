@@ -53,13 +53,13 @@ class ServerManager(object):
         for server in servers:
             try:
                 admin_url = server['adminUrl']
-                if server['serverType'] == 'ARCGIS_NOTEBOOK_SERVER':
+                if server['serverFunction'] == 'NotebookServer':
                      self._server_list.append(
                           Server(url=admin_url, gis=self._gis)
                      )
                 else:
                       c = ServicesDirectory(url=admin_url, portal_connection=self._gis._portal.con, )
-                      self._server_list.append(s)
+                      self._server_list.append(c.admin)
                       self._catalog_list.append(c)
             except:
                 _log.warning("Could not access the server at " + admin_url)
