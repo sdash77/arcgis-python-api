@@ -714,11 +714,13 @@ class FeatureLayer(Layer):
                     df.spatial.set_geometry('SHAPE')
                 for fld in dt_fields:
                     try:
-                        df[fld] = pd.to_datetime(df[fld]/1000,
+                        if fld in df.columns:
+                            df[fld] = pd.to_datetime(df[fld]/1000,
                                                  infer_datetime_format=True,
                                                  unit='s')
                     except:
-                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                        if fld in df.columns:
+                            df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
                 return df
 
             return self._query(url, params, raw=as_raw)
@@ -1448,7 +1450,6 @@ class FeatureLayer(Layer):
                                    "esriFieldTypeDouble"}:
                     q = df[fld['name']].isnull()
                     df.loc[q, fld['name']] = 0
-        isinstance(df, pd.DataFrame)
         df = df.astype(dtypes, False)
         if 'geometryType' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
