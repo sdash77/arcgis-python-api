@@ -6025,18 +6025,13 @@ class Item(dict):
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
         if itemdict:
-            self._hydrated = True
-        else:
             self._hydrated = False
-
-        if itemdict:
             if 'size' in itemdict and itemdict['size'] == -1:
                 del itemdict['size'] # remove nonsensical size
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
-        self.resources = ResourceManager(self, self._gis)
-
-
+        else:
+            self._hydrated = False
         try:
             self._depend = ItemDependency(item=self)
         except: pass
@@ -6047,6 +6042,14 @@ class Item(dict):
             self['layers'] = None
             self['tables'] = None
 
+    @_lazy_property
+    def resources(self):
+        """
+        Returns the Item's Resource Manager
+
+        :returns: ResourceManager
+        """
+        return ResourceManager(self, self._gis)
 
     def _has_layers(self):
         return self.type ==  'Feature Collection' or \
