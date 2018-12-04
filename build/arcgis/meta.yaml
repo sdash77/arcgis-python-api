@@ -5,7 +5,7 @@
 
 package:
     name: arcgis
-    version: '1.5.1'
+    version: '1.5.2'
 source:
     path: ../../src
 build:
