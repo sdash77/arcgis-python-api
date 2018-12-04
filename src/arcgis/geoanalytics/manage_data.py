@@ -15,9 +15,9 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def _describe_data(input_layer,
+def describe_data(input_layer,
                   extent_output=True,
-                  sample_size=100,
+                  sample_size=None,
                   output_name=None,
                   gis=None):
     """
@@ -45,7 +45,7 @@ def _describe_data(input_layer,
                       the number of sample features to return. If the input value is
                       0 or empty then no sample layer will be created. The output
                       will have the same schema, geometry, and time type as the input
-                      layer. The default is 100.
+                      layer. The default is None.
     ----------------  ---------------------------------------------------------------
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
