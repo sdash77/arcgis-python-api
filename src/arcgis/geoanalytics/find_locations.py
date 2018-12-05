@@ -195,6 +195,9 @@ def detect_incidents(input_layer,
                      start_condition_expression,
                      end_condition_expression=None,
                      output_mode="AllFeatures",
+                     time_boundary_split=None,
+                     time_split_unit=None,
+                     time_reference=None,
                      output_name=None,
                      gis=None):
     """
@@ -263,6 +266,12 @@ def detect_incidents(input_layer,
                                  - AllFeatures - All of the input features are returned.
                                  - Incidents - Only features that were found to be incidents
                                    are returned.
+    --------------------------   ---------------------------------------------------------------
+    time_boundary_split          Optional Int.
+    --------------------------   ---------------------------------------------------------------
+    time_split_unit              Optional String.
+    --------------------------   ---------------------------------------------------------------
+    time_reference               Optional Datetime.
     --------------------------   ---------------------------------------------------------------
     output_name                  optional string, The task will create a feature service of the
                                  results. You define the name of the service.
