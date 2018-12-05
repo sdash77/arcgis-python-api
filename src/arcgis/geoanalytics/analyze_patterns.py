@@ -20,7 +20,15 @@ _use_async=True
 def forest_based_regression(input_layer,
                             prediction_type,
                             features_to_predict,
-
+                            variable_predict,
+                            explanatory_variable_match,
+                            return_importance_table,
+                            number_of_trees=100,
+                            min_leaf_size=5,
+                            max_tree_depth=5,
+                            sample_size=100,
+                            random_vars=3,
+                            percentage_for_validation=30,
                             output_name=None,
                             gis=None):
     """
@@ -33,9 +41,19 @@ def forest_based_regression(input_layer,
 
     The following are examples:
 
-        + Given data on occurrence of seagrass, as well as a number of environmental explanatory variables represented as both attributes which has been enriched using a multi-variable grid to calculate distances to factories upstream and major ports, future seagrass occurrence can be predicted based on future projections for those same environmental explanatory variables.
-        + Suppose you have crop yield data at hundreds of farms across the country along with other attributes at each of those farms (number of employees, acreage, and so on). Using these pieces of data, you can provide a set of features representing farms where you don't have crop yield (but you do have all of the other variables), and make a prediction about crop yield.
-        + Housing values can be predicted based on the prices of houses that have been sold in the current year. The sale price of homes sold along with information about the number of bedrooms, distance to schools, proximity to major highways, average income, and crime counts can be used to predict sale prices of similar homes.
+        + Given data on occurrence of seagrass, as well as a number of environmental explanatory
+          variables represented as both attributes which has been enriched using a multi-variable grid
+          to calculate distances to factories upstream and major ports, future seagrass occurrence can
+          be predicted based on future projections for those same environmental explanatory variables.
+        + Suppose you have crop yield data at hundreds of farms across the country along with other
+          attributes at each of those farms (number of employees, acreage, and so on). Using these
+          pieces of data, you can provide a set of features representing farms where you don't have
+          crop yield (but you do have all of the other variables), and make a prediction about crop
+          yield.
+        + Housing values can be predicted based on the prices of houses that have been sold in the
+          current year. The sale price of homes sold along with information about the number of
+          bedrooms, distance to schools, proximity to major highways, average income, and crime counts
+          can be used to predict sale prices of similar homes.
 
 
     **Forest Based Classification and Regression is available at ArcGIS Enterprise 10.7.**
@@ -46,9 +64,21 @@ def forest_based_regression(input_layer,
     input_layer                  required FeatureSet, The table, point, line or polygon features
                                  containing potential incidents.
     --------------------------   ---------------------------------------------------------------
-    prediction_type              Specifies the operation mode of the tool. The tool can be run to train a model to only assess performance, or train a model and predict features. Prediction types are as follows:
-                                    + Train - This is the default. A model will be trained, but no predictions will be generated. Use this option to assess the accuracy of your model before generating predictions. This option will output model diagnostics in the messages window and a chart of variable importance.
-                                    + TrainAndPredict - Predictions or classifications will be generated for features. Explanatory variables must be provided for both the training features and the features to be predicted. The output of this option will be a feature service, model diagnostics, and an optional table of variable importance.
+    prediction_type              Specifies the operation mode of the tool. The tool can be run to
+                                 train a model to only assess performance, or train a model and
+                                 predict features. Prediction types are as follows:
+
+                                    + Train - This is the default. A model will be trained, but
+                                      no predictions will be generated. Use this option to
+                                      assess the accuracy of your model before generating
+                                      predictions. This option will output model diagnostics in
+                                      the messages window and a chart of variable importance.
+                                    + TrainAndPredict - Predictions or classifications will be
+                                      generated for features. Explanatory variables must be
+                                      provided for both the training features and the features
+                                      to be predicted. The output of this option will be a
+                                      feature service, model diagnostics, and an optional
+                                      table of variable importance.
     --------------------------   ---------------------------------------------------------------
     features_to_predict          Optional dict. The variable from the `input_layer` parameter
                                  containing the values to be used to train the model, and a
@@ -56,27 +86,90 @@ def forest_based_regression(input_layer,
                                  (training) values of the variable that will be used to predict
                                  at unknown locations.
     --------------------------   ---------------------------------------------------------------
-    variable_predict
+    variable_predict             Required dict. The variable from the input_layer parameter
+                                 containing the values to be used to train the model, and a
+                                 boolean denoting if it's categorical. This field contains known
+                                 (training) values of the variable that will be used to predict
+                                 at unknown locations.
+
+                                 REST scripting example: "variable_predict":[{"fieldName":"isSunny",
+                                                         "categorical":true},{"fieldName":"isWeekend",
+                                                         "categorical":true}, {"fieldName":"hoursOutside",
+                                                         "categorical":false}]
     --------------------------   ---------------------------------------------------------------
-    explanatory_variable_match
+    explanatory_variable_match   A list of fields representing the explanatory variables and a
+                                 boolean values denoting if the fields are categorical. The
+                                 explanatory variables help predict the value or category of the
+                                 variable_predict. Use the categorical parameter for any
+                                 variables that represent classes or categories (such as
+                                 landcover or presence or absence). Specify the variable as
+                                 true for any that represent classes or categories such as
+                                 landcover or presence or absence and false if the variable is
+                                 continuous.
+
+                                 Syntax: [{"fieldName":"<explanatory field name>", "categorical":true},
+
+                                    + fieldname is the name of the field in the inFeatures used
+                                      to predict the variable_predict.
+                                    + categorical is one of: true or false. A string field should
+                                      always be true, and a continue value should always be set as false.
+
+
     --------------------------   ---------------------------------------------------------------
-    return_importance_table
+    return_importance_table      Optional List. A list of the explanatory_variables specified
+                                 from the inFeatures and their corresponding fields from the
+                                 features_to_predict. By default, if an eexplanatory_variables is
+                                 not mapped, it will match to a field with the same name in the
+                                 features_to_predict. This parameter is only used if there is a
+                                 features_to_predict input. You do not need to use it if the
+                                 names and types of the fields match between your two input
+                                 datasets.
+
+                                 Syntax: [{"predictionLayerField":"<field name>", "trainingLayerField": "<field nane>"},...]
+
     --------------------------   ---------------------------------------------------------------
-    number_of_trees
+    number_of_trees              Optional int. The number of trees to create in the forest model.
+                                 More trees will generally result in more accurate model
+                                 prediction, but the model will take longer to calculate. The
+                                 default number of trees is 100.
     --------------------------   ---------------------------------------------------------------
-    min_leaf_size
+    min_leaf_size                Optional int. The minimum number of observations required to
+                                 keep a leaf (that is the terminal node on a tree without
+                                 further splits). The default minimum for regression is 5 and
+                                 the default for classification is 1. For very large data,
+                                 increasing these numbers will decrease the run time of the
+                                 tool.
     --------------------------   ---------------------------------------------------------------
-    max_tree_depth
+    max_tree_depth               Optional int. The maximum number of splits that will be made
+                                 down a tree. Using a large maximum depth, more splits will be
+                                 created, which may increase the chances of overfitting the
+                                 model. The default is data driven and depends on the number of
+                                 trees created and the number of variables included.
     --------------------------   ---------------------------------------------------------------
-    sample_size
+    sample_size                  Optional int. Specifies the percentage of the input_layer used
+                                 for each decision tree. The default is 100 percent of the data.
+                                 Samples for each tree are taken randomly from two-thirds of the
+                                 data specified.
     --------------------------   ---------------------------------------------------------------
-    random_vars
+    random_vars                  Optional Int. Specifies the number of explanatory variables
+                                 used to create each decision tree.Each of the decision trees in
+                                 the forest is created using a random subset of the explanatory
+                                 variables specified. Increasing the number of variables used in
+                                 each decision tree will increase the chances of overfitting
+                                 your model particularly if there is one or a couple dominant
+                                 variables. A common practice is to use the square root of the
+                                 total number of explanatory variables (fields, distances, and
+                                 rasters combined) if your variablePredict is numeric or divide
+                                 the total number of explanatory variables (fields, distances,
+                                 and rasters combined) by 3 if variable_predict is categorical.
     --------------------------   ---------------------------------------------------------------
-    percentage_for_validation
+    percentage_for_validation    Optional Int. Specifies the percentage (between 10 percent
+                                 and 50 percent) of inFeatures to reserve as the test dataset
+                                 for validation. The model will be trained without this random
+                                 subset of data, and the observed values for those features will
+                                 be compared to the predicted value. The default is 10 percent.
     --------------------------   ---------------------------------------------------------------
-    output_trained_name
-    --------------------------   ---------------------------------------------------------------
-    output_name                  optional string, The task will create a feature service of the
+    output_trained_name          optional String, The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
     gis                          optional GIS, the GIS on which this tool runs. If not
