@@ -734,7 +734,7 @@ class MapView(widgets.DOMWidget):
             # a definition expression to limit the features drawn.
             map1 = gis.map("Seattle, WA")
             map1.add_layer(wa_streets_feature_layer, {'renderer':'ClassedSizeRenderer',
-                                                      'filed_name':'DistMiles',
+                                                      'field_name':'DistMiles',
                                                       'opacity':0.75})
 
         """
