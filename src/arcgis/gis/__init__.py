@@ -6018,7 +6018,7 @@ class Item(dict):
     the dynamic `layers` and `tables` properties to get to the individual layers/tables in this item.
     """
 
-    _user_id = None
+    _uid = None
 
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
@@ -6053,7 +6053,20 @@ class Item(dict):
         :returns: ResourceManager
         """
         return ResourceManager(self, self._gis)
-
+    #----------------------------------------------------------------------
+    @property
+    def _user_id(self):
+        """gets/sets the _user_id property"""
+        if self._uid is None:
+            user = self._gis.users.get(self.owner)
+            self._uid = user.id
+        return self._uid
+    #----------------------------------------------------------------------
+    @_user_id.setter
+    def _user_id(self, value):
+        """gets/sets the user id property"""
+        self._uid = value
+    #----------------------------------------------------------------------
     def _has_layers(self):
         return self.type ==  'Feature Collection' or \
                self.type == 'Feature Service' or \
@@ -6940,9 +6953,14 @@ class Item(dict):
             group_ids = groups
 
         if self.access == 'public' and not everyone and not org:
-            return self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
+            res = self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
+            self._hydrated = False
+            self._hydrate()
         else:
-            return self._portal.share_item(self.itemid, self._user_id, folder, everyone, org, group_ids, allow_members_to_edit)
+            res = self._portal.share_item(self.itemid, self.owner, folder, everyone, org, group_ids, allow_members_to_edit)
+            self._hydrated = False
+            self._hydrate()
+        return res
 
     def unshare(self, groups):
         """
