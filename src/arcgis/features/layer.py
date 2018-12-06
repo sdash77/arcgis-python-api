@@ -704,7 +704,33 @@ class FeatureLayer(Layer):
             max_records = 1000
 
         params['returnCountOnly'] = False
-        if record_count <= max_records:
+        if record_count == 0:
+            import numpy as np
+            import pandas as pd
+            _fld_lu = {
+                "esriFieldTypeSmallInteger" : np.int32,
+                "esriFieldTypeInteger" : np.int64,
+                "esriFieldTypeSingle" : np.int32,
+                "esriFieldTypeDouble" : float,
+                "esriFieldTypeString" : str,
+                "esriFieldTypeDate" : pd.datetime,
+                "esriFieldTypeOID" : np.int64,
+                "esriFieldTypeGeometry" : object,
+                "esriFieldTypeBlob" : object,
+                "esriFieldTypeRaster" : object,
+                "esriFieldTypeGUID" : str,
+                "esriFieldTypeGlobalID" : str,
+                "esriFieldTypeXML" : object
+            }
+            columns = {}
+            for fld in self.properties.fields:
+                fld = dict(fld)
+                columns[fld['name']] = _fld_lu[fld['type']]
+            columns['SHAPE'] = object
+            df =  pd.DataFrame([], columns=columns.keys()).astype(columns, False)
+            df.spatial.set_geometry("SHAPE")
+            return df
+        elif record_count <= max_records:
             if as_df:
                 import pandas as pd
                 df = self._query_df(url, params)
@@ -1424,13 +1450,13 @@ class FeatureLayer(Layer):
             return attribs
         #------------------------------------------------------------------
         featureset_dict = self._con.post(url, params)
+        if len(featureset_dict['features']) == 0:
+            return pd.DataFrame([])
         sr = featureset_dict['spatialReference']
         df = None
         dtypes = None
         geom = None
         names = None
-
-
         rows = [feature_to_row(row, sr) \
                 for row in featureset_dict['features']]
         if len(rows) == 0:
