@@ -524,7 +524,6 @@ def reconstruct_tracks(input_layer,
                        distance_split=None,
                        distance_split_unit=None,
                        time_boundary_split=None,
-                       time_split_unit=None,
                        time_reference=None,
                        output_name = None,
                        gis=None):
