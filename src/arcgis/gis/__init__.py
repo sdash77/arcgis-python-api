@@ -5126,12 +5126,11 @@ class User(dict):
                 del userdict['groups']
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
-        if hasattr(self, 'id'):
+        if hasattr(self, 'id') and \
+           self.id !='null':
             self._user_id = self.id
         else:
             self._user_id = self.username
-        #if hasattr(self, 'username'):
-            #self.username =
 
     # Using http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/?in=user-97991
 
@@ -6059,7 +6058,11 @@ class Item(dict):
         """gets/sets the _user_id property"""
         if self._uid is None:
             user = self._gis.users.get(self.owner)
-            self._uid = user.id
+            if hasattr(user, 'id') and \
+               getattr(user, 'id') != 'null':
+                self._uid = user.id
+            else:
+                self._uid = user.username
         return self._uid
     #----------------------------------------------------------------------
     @_user_id.setter
@@ -6500,11 +6503,7 @@ class Item(dict):
                    'GeoJson',
                    'Scene Package',
                    'KML']
-        user = self._gis.users.me
-        if hasattr(user, 'id'):
-            user_id = user.id
-        else:
-            user_id = user.username
+        user_id = self._user_id
         data_path = 'content/users/%s/export' % user_id
         params = {
             "f" : "json",
@@ -6926,6 +6925,8 @@ class Item(dict):
             A dictionary with key "notSharedWith" containing array of groups with which the item could not be shared.
 
         """
+        if everyone:
+            org = True
         try:
             folder = self.ownerFolder
         except:
@@ -6952,14 +6953,24 @@ class Item(dict):
             #old API - groups sent as comma separated group ids
             group_ids = groups
 
-        if self.access == 'public' and not everyone and not org:
-            res = self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
-            self._hydrated = False
-            self._hydrate()
-        else:
-            res = self._portal.share_item(self.itemid, self.owner, folder, everyone, org, group_ids, allow_members_to_edit)
-            self._hydrated = False
-            self._hydrate()
+        #if self.access == 'public' and not everyone and not org:
+        #    res = self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
+        #    self._hydrated = False
+        #    self._hydrate()
+        #else:
+        shared_with = self.shared_with
+        url = "{resturl}/content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
+                                                                  owner=self.owner)
+        params = {
+            'f' : 'json',
+            'items' : self.id,
+            "groups": group_ids,
+            "everyone": everyone,
+            "account": org
+        }
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
         return res
 
     def unshare(self, groups):
@@ -7007,11 +7018,7 @@ class Item(dict):
         if self.access == 'public':
             return self._portal.unshare_item_as_group_admin(self.itemid, group_ids)
         else:
-            owner = self._gis.users.get(self.owner)
-            if hasattr(owner, 'id'):
-                owner = owner.id
-            else:
-                owner = owner.username
+            owner = self._user_id
             return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
 
     def delete(self, force=False, dry_run=False):
@@ -7273,12 +7280,13 @@ class Item(dict):
         :return:
            A boolean indicating success (True) or failure (False).
         """
-        owner = self._gis.users.get(self.owner)
-        if hasattr(owner, 'id') and \
-           owner.id != 'null':
-            owner = owner.id
-        else:
-            owner = owner.username
+        #owner = self._gis.users.get(self.owner)
+        owner = self._user_id
+        #if hasattr(owner, 'id') and \
+        #   owner.id != 'null':
+        #    owner = owner.id
+        #else:
+        #    owner = owner.username
         try:
             folder = self.ownerFolder
         except:
@@ -7911,7 +7919,7 @@ class Item(dict):
         ret = self._portal.publish_item(self.itemid, None,
                                         None, fileType,
                                         publish_parameters, output_type,
-                                        overwrite, self._user_id,
+                                        overwrite, self.owner,
                                         folder, buildInitialCache)
 
         #Check publishing job status
@@ -7972,25 +7980,7 @@ class Item(dict):
                "folder": "<folder id>"}
 
         """
-        if isinstance(owner, User):
-            if hasattr(owner, 'id'):
-                owner_name = owner.id
-            else:
-                owner_name = owner.username
-        elif isinstance(owner, str):
-            owner = self._gis.users.get(owner)
-            if owner is None:
-                owner = self._portal.logged_in_user()
-            if hasattr(owner, 'id'):
-                owner_name = owner.id
-            else:
-                owner_name = owner.username
-        else:
-            if 'id' in self._gis.properties.user:
-                owner_name = self._gis.properties.user.id
-            else:
-                owner_name = self._gis.properties.user.username
-
+        owner_name = self._user_id
         folder_id = None
         if folder is not None:
             if isinstance(folder, str):
