@@ -6952,13 +6952,6 @@ class Item(dict):
         elif isinstance(groups, str):
             #old API - groups sent as comma separated group ids
             group_ids = groups
-
-        #if self.access == 'public' and not everyone and not org:
-        #    res = self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
-        #    self._hydrated = False
-        #    self._hydrate()
-        #else:
-        shared_with = self.shared_with
         url = "{resturl}/content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
                                                                   owner=self.owner)
         params = {
