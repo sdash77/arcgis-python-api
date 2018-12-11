@@ -704,7 +704,7 @@ class FeatureLayer(Layer):
             max_records = 1000
 
         params['returnCountOnly'] = False
-        if record_count == 0:
+        if record_count == 0 and as_df:
             import numpy as np
             import pandas as pd
             _fld_lu = {
