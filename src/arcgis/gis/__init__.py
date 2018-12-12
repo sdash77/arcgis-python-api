@@ -3131,6 +3131,8 @@ class ContentManager(object):
                 elif str(d).lower().endswith('.xls') or \
                      str(d).lower().endswith('.xlsx'):
                     params['fileType'] = 'excel'
+        elif str(file_type).lower() in ['excel', 'csv']:
+            params['fileType'] = file_type
         if source_country:
             params['analyzeParameters']['sourceCountry'] = source_country
         if country_hint:
