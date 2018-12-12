@@ -2245,12 +2245,18 @@ class GeoAccessor(object):
                     row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
                 except:
                     row[f] = None
-            features.append(
-                {
-                    "geometry" : dict(geom),
-                    "attributes" : row
-                }
-            )
+            if geom:
+                features.append(
+                    {
+                        "geometry" : dict(geom),
+                        "attributes" : row
+                    })
+            else:
+                features.append(
+                    {
+                        "geometry" : geom,
+                        "attributes" : row
+                    })
             del row
             del geom
         fs['features'] = features
@@ -2300,12 +2306,20 @@ class GeoAccessor(object):
         """Sets the spatial reference"""
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
-            sr = self.sr
-            if 'wkid' in sr:
+            try:
+                sr = self.sr
+            except:
+                sr = None
+            if sr and \
+               'wkid' in sr:
                 wkid = sr['wkid']
-            if 'wkt' in sr:
+            if sr and \
+               'wkt' in sr:
                 wkt = sr['wkt']
-            if isinstance(ref, SpatialReference):
+            if isinstance(ref, (dict, SpatialReference)) and \
+               sr is None:
+                self._data[self.name] = self._data[self.name].geom.project_as(ref)
+            elif isinstance(ref, SpatialReference):
                 if ref != sr:
                     self._data[self.name] = self._data[self.name].geom.project_as(ref)
             elif isinstance(ref, int):
@@ -2318,6 +2332,13 @@ class GeoAccessor(object):
                 nsr = SpatialReference(ref)
                 if sr != nsr:
                     self._data[self.name] = self._data[self.name].geom.project_as(ref)
+        else:
+            if ref:
+                if isinstance(ref, str):
+                    ref = {"wkt" : ref}
+                elif isinstance(ref, int):
+                    ref = {"wkid" : ref}
+                self._data[self.name].apply(lambda x: x.update({'spatialReference': ref}))
     #----------------------------------------------------------------------
     def to_featureset(self):
         """

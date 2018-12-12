@@ -64,7 +64,8 @@ class JournalStoryMap(object):
     def add(self, title,
             url_or_item, content=None,
             actions=None, visible=True,
-            alt_text="", display='stretch'):
+            alt_text="", display='stretch',
+            **kwargs):
         """
         Adds a new section to the StoryMap
 
@@ -89,14 +90,67 @@ class JournalStoryMap(object):
         ===============     ====================================================================
 
 
+        **WebMap Options**
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        show_legend              Optional boolean. If True, the legend will be visible.
+        --------------------     --------------------------------------------------------------------
+        show_default_legend      Optional boolean. Shows the legend on default.
+        --------------------     --------------------------------------------------------------------
+        extent                   Optional dict/Envelope. The extent of the webmap.
+        --------------------     --------------------------------------------------------------------
+        layer_visibility         Optional list. The visibility of the layers in a webmap.  This is a
+                                 list of dictionaries where the syntax is as follows:
+
+                                 Syntax:
+
+                                 [
+                                    {
+                                       "id" : "<id>",
+                                       "visibility" : "<true/false>"
+                                    }
+                                 ]
+
+                                 Example:
+
+                                 [
+                                 {
+                                    "id" : "csv_6005_0",
+                                    "visibility" : False,
+                                 },
+                                 {
+                                    "id" : "csv_6006_0",
+                                    "visibility" : True,
+                                 }
+                                 ]
+        --------------------     --------------------------------------------------------------------
+        popup                    Optional dict. The popup definition for the webmap.
+        ====================     ====================================================================
+
+
+
         :return: Boolean
 
 
         """
         if isinstance(url_or_item, Item):
+            show_legend = kwargs.pop("show_legend", False)
+            show_default_legend = kwargs.pop("show_default_legend", False)
+            extent = kwargs.pop("extent", None)
+            layer_visibility = kwargs.pop("layer_visibility", None)
+            popup = kwargs.pop("popup", None)
+            if layer_visibility:
+                layer_visibility = json.dumps(layer_visibility)
             return self._add_webmap(item=url_or_item, title=title, content=content,
                                     actions=actions, visible=visible, alt_text=alt_text,
-                                    display=display)
+                                    display=display,
+                                    show_legend=show_legend,
+                                    show_default_legend=show_default_legend,
+                                    extent=extent,
+                                    layer_visibility=layer_visibility,
+                                    popup=popup)
         elif isinstance(url_or_item, str):
             mt = mimetypes.guess_type(url=url_or_item)
             if mt[0].lower().find('video') > -1:
@@ -248,7 +302,13 @@ class JournalStoryMap(object):
                    actions=None,
                    visible=True,
                    alt_text="",
-                   display='stretch'):
+                   display='stretch',
+                   show_legend=False,
+                   show_default_legend=False,
+                   extent=None,
+                   layer_visibility=None,
+                   popup=None
+                   ):
         """
         Adds a WebMap to the Section.
 
@@ -298,16 +358,16 @@ class JournalStoryMap(object):
                 "type": "webmap",
                 "webmap": {
                     "id": item,
-                    "extent": None,
-                    "layers": None,
-                    "popup": None,
+                    "extent": extent,
+                    "layers": layer_visibility,
+                    "popup": popup,
                     "overview": {
                         "enable": False,
                         "openByDefault": True
                         },
                     "legend": {
-                        "enable": False,
-                        "openByDefault": False
+                        "enable": show_legend,
+                        "openByDefault": show_default_legend
                         },
                     "geocoder": {
                         "enable": False
@@ -450,7 +510,13 @@ class JournalStoryMap(object):
                 'type' : "Web Mapping Application",
             })
             parse = urlparse(self._gis._con.baseurl)
-            url = "%s://%s/apps/MapJournal/index.html?appid=%s" % (parse.scheme, parse.netloc, item.itemid)
+            isinstance(self._gis, GIS)
+            if self._gis._portal.is_arcgisonline:
+                url = "%s://%s/apps/MapJournal/index.html?appid=%s" % (parse.scheme, parse.netloc, item.itemid)
+            else:
+                import os
+                wa = os.path.dirname(parse.path[1:])
+                url = "%s://%s/%s/sharing/rest/apps/MapJournal/index.html?appid=%s" % (parse.scheme, parse.netloc, wa, item.itemid)
             return item.update(item_properties={
                 'url' : url
             })

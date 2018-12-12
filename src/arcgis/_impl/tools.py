@@ -1427,7 +1427,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         Parameters
         ----------
-        input_layers : Required list of strings
+        input_layers : Required list of Feature Layers
             The layers from which you can extract features.
         extent : Optional string
             The area that defines which features will be included in the output zip file or layer package.
@@ -1482,7 +1482,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         Parameters
         ----------
-        input_layers : Required list of strings
+        input_layers : Required list of Feature Layers
             A list of layers that will be used in the expressions parameter.
         expressions : Required string
             Specify a list of expressions. Please refer documentation at http://developers.arcgis.com for more information on creating expressions.
@@ -1500,7 +1500,11 @@ class _FeatureAnalysisTools(_AsyncService):
 
         params = {}
 
-        params["inputLayers"] = input_layers
+        input_layers_param = []
+        for input_lyr in input_layers:
+            input_layers_param.append(super()._feature_input(input_lyr))
+
+        params["inputLayers"] = input_layers_param
         params["expressions"] = expressions
         if output_name is not None:
             params["outputName"] = {"serviceProperties": {"name": output_name }}
@@ -1531,7 +1535,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         Parameters
         ----------
-        input_layers : Required list of strings
+        input_layers : Required list of Feature Layers
             A list of layers that will be used in the expressions parameter.
         expressions : Required string
             Specify a list of expressions. Please refer documentation at http://developers.arcgis.com for more information on expressions.
@@ -1548,8 +1552,12 @@ class _FeatureAnalysisTools(_AsyncService):
         task ="DeriveNewLocations"
 
         params = {}
+        
+        input_layers_param = []
+        for input_lyr in input_layers:
+            input_layers_param.append(super()._feature_input(input_lyr))
 
-        params["inputLayers"] = input_layers
+        params["inputLayers"] = input_layers_param
         params["expressions"] = expressions
         if output_name is not None:
             params["outputName"] = {"serviceProperties": {"name": output_name }}

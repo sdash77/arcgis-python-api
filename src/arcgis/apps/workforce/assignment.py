@@ -248,7 +248,7 @@ class Assignment(FeatureModel):
 
     @assignment_type.setter
     def assignment_type(self, value):
-        if isinstance(value, AssignmentType):
+        if isinstance(value, AssignmentType) or value is None:
             self._assignment_type = value
         elif isinstance(value, int):
             if value in self.project._cached_assignment_types:

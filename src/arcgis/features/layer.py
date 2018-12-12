@@ -704,7 +704,33 @@ class FeatureLayer(Layer):
             max_records = 1000
 
         params['returnCountOnly'] = False
-        if record_count <= max_records:
+        if record_count == 0 and as_df:
+            import numpy as np
+            import pandas as pd
+            _fld_lu = {
+                "esriFieldTypeSmallInteger" : np.int32,
+                "esriFieldTypeInteger" : np.int64,
+                "esriFieldTypeSingle" : np.int32,
+                "esriFieldTypeDouble" : float,
+                "esriFieldTypeString" : str,
+                "esriFieldTypeDate" : pd.datetime,
+                "esriFieldTypeOID" : np.int64,
+                "esriFieldTypeGeometry" : object,
+                "esriFieldTypeBlob" : object,
+                "esriFieldTypeRaster" : object,
+                "esriFieldTypeGUID" : str,
+                "esriFieldTypeGlobalID" : str,
+                "esriFieldTypeXML" : object
+            }
+            columns = {}
+            for fld in self.properties.fields:
+                fld = dict(fld)
+                columns[fld['name']] = _fld_lu[fld['type']]
+            columns['SHAPE'] = object
+            df =  pd.DataFrame([], columns=columns.keys()).astype(columns, False)
+            df.spatial.set_geometry("SHAPE")
+            return df
+        elif record_count <= max_records:
             if as_df:
                 import pandas as pd
                 df = self._query_df(url, params)
@@ -714,11 +740,13 @@ class FeatureLayer(Layer):
                     df.spatial.set_geometry('SHAPE')
                 for fld in dt_fields:
                     try:
-                        df[fld] = pd.to_datetime(df[fld]/1000,
+                        if fld in df.columns:
+                            df[fld] = pd.to_datetime(df[fld]/1000,
                                                  infer_datetime_format=True,
                                                  unit='s')
                     except:
-                        df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
+                        if fld in df.columns:
+                            df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
                 return df
 
             return self._query(url, params, raw=as_raw)
@@ -1422,27 +1450,32 @@ class FeatureLayer(Layer):
             return attribs
         #------------------------------------------------------------------
         featureset_dict = self._con.post(url, params)
+        if len(featureset_dict['features']) == 0:
+            return pd.DataFrame([])
         sr = featureset_dict['spatialReference']
         df = None
         dtypes = None
         geom = None
         names = None
-        if 'fields' in featureset_dict:
-            dtypes = {}
-            names = []
-            fields = featureset_dict['fields']
-            for fld in fields:
-
-                if fld['type'] != "esriFieldTypeGeometry":
-                    dtypes[fld['name']] = _fld_lu[fld['type']]
-                    names.append(fld['name'])
         rows = [feature_to_row(row, sr) \
                 for row in featureset_dict['features']]
         if len(rows) == 0:
             return None
         df = pd.DataFrame.from_records(data=rows)
-
-        isinstance(df, pd.DataFrame)
+        if 'fields' in featureset_dict:
+            dtypes = {}
+            names = []
+            fields = featureset_dict['fields']
+            for fld in fields:
+                if fld['type'] != "esriFieldTypeGeometry":
+                    dtypes[fld['name']] = _fld_lu[fld['type']]
+                    names.append(fld['name'])
+                if fld['type'] in {"esriFieldTypeSmallInteger",
+                                   "esriFieldTypeInteger",
+                                   "esriFieldTypeSingle",
+                                   "esriFieldTypeDouble"}:
+                    q = df[fld['name']].isnull()
+                    df.loc[q, fld['name']] = 0
         df = df.astype(dtypes, False)
         if 'geometryType' in featureset_dict:
             df.spatial.set_geometry('SHAPE')

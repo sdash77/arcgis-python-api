@@ -21,6 +21,7 @@ from arcgis.widgets._webscene_utils import DEFAULT_WEBSCENE_TEXT_PROPERTY
 from arcgis.widgets._loading_icon_str import _loading_icon_str
 from arcgis import __version__ as py_api_version
 import arcgis.mapping
+import arcgis
 
 log = logging.getLogger(__name__)
 
@@ -411,6 +412,7 @@ class MapView(widgets.DOMWidget):
         self.layout.width = "100%"
 
         # Set up gis object
+        gis = arcgis.env.active_gis if gis is None else gis
         if gis:
             self._setup_gis_properties(gis)
         else:
@@ -711,7 +713,7 @@ class MapView(widgets.DOMWidget):
         global _js_cdn_override_global
         _js_cdn_override_global = js_cdn
 
-    def add_layer(self, item, options={}):
+    def add_layer(self, item, options=None):
         """
         Adds the specified layer or item to the map widget.
 
@@ -732,10 +734,12 @@ class MapView(widgets.DOMWidget):
             # a definition expression to limit the features drawn.
             map1 = gis.map("Seattle, WA")
             map1.add_layer(wa_streets_feature_layer, {'renderer':'ClassedSizeRenderer',
-                                                      'filed_name':'DistMiles',
+                                                      'field_name':'DistMiles',
                                                       'opacity':0.75})
 
         """
+        if options is None:
+            options = {}
         self._add_layer_to_widget(item, options)
 
     def _add_layer_to_webmap(self, item, options):
@@ -1455,6 +1459,7 @@ class MapView(widgets.DOMWidget):
         Clear the graphics drawn on the map widget. Graphics are shapes drawn
         using the 'draw()' method.
         """
+        self._layers_to_remove = ("nonexistant_layer_id",)
         # All graphics are saved to a layer with the below id
         self._layers_to_remove = ("graphicsLayerId31195",)
 

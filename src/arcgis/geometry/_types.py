@@ -2316,7 +2316,7 @@ class Point(Geometry):
     field is present and has the value null or the string "NaN". An empty
     point has no location in space.
     """
-    _type = "point"
+    _type = "Point"
     #----------------------------------------------------------------------
     def __init__(self, iterable=None):
         """Constructor"""

@@ -145,6 +145,7 @@ def plot(df,
 
 
     """
+    renderer = kwargs.pop("renderer", None)
     if not hasattr(df, 'spatial') and \
        not hasattr(df, 'geom'):
         raise ValueError("DataFrame or Series must be spatially enabled.")
@@ -172,10 +173,20 @@ def plot(df,
         map_widget = MapView()
 
     fc = df.spatial.to_feature_collection(name=name)
-    if renderer_type in [None, 's']:
+    gt = [el for el in df.spatial.geometry_type if el is not None]
+    if renderer_type is None and \
+       not renderer is None:
+        fc.layer['layerDefinition']['drawingInfo']['renderer'] = renderer
+        if map_exists:
+            map_widget.add_layer(fc, options={'title':name})
+        else:
+            map_widget.add_layer(fc, options={'title':name})
+            return map_widget
+        return
+    elif renderer_type in [None, 's']:
         renderer_type = 's' # simple (default)
         r = generate_renderer(
-                   geometry_type=df.spatial.geometry_type[0].lower(),
+                   geometry_type=gt[0].lower(),
                    sdf_or_series=df,
                    label=name,
                    symbol_type=symbol_type,
@@ -200,7 +211,7 @@ def plot(df,
                 idx += 1
         elif renderer_type == 'c':
             kwargs['field'] = col[0]
-        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', gt[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=symbol_type,
@@ -211,7 +222,7 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type in ['u', 'u-a']:
-        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', gt[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=symbol_type,
@@ -222,7 +233,7 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 'h':
-        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', gt[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=symbol_type,
@@ -233,7 +244,7 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 'str':
-        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', gt[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=None,
@@ -244,7 +255,7 @@ def plot(df,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
     elif renderer_type == 't':
-        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', df.spatial.geometry_type[0].lower()),
+        r = generate_renderer(geometry_type=kwargs.pop('geometry_type', gt[0].lower()),
                               sdf_or_series=df,
                               label=name,
                               symbol_type=None,
@@ -254,6 +265,7 @@ def plot(df,
                               alpha=alpha,
                               **kwargs)
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r
+
     if map_exists:
         map_widget.add_layer(fc, options={'title':name})
     else:

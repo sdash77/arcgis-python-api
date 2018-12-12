@@ -21,6 +21,7 @@ _log = logging.getLogger(__name__)
 
 
 def _layer_input(input_layer):
+    #Will be used exclusively by RA tools
     input_param = input_layer
 
     input_layer_url = ""
@@ -38,13 +39,47 @@ def _layer_input(input_layer):
 
     elif isinstance(input_layer, arcgis.gis.Layer):
         input_param = input_layer._lyr_dict
-        from arcgis.raster import ImageryLayer
-        if isinstance(input_layer, ImageryLayer):
-            if "url" in input_param:
-                url = input_param["url"]
-            if "serviceToken" in input_param:
-                url = url+"?token="+ input_param["serviceToken"]
-            input_param = {"url":url}
+
+    elif isinstance(input_layer, dict):
+        input_param = input_layer
+
+    elif isinstance(input_layer, str):
+        if 'http:' in input_layer or 'https:' in input_layer:
+            input_param = {"url": input_layer}
+        else:
+            input_param = {"uri": input_layer}
+
+    else:
+        raise Exception("Invalid format of input layer. url string, layer Item, layer instance or dict supported")
+
+
+    if "url" in input_param:
+        url = input_param["url"]
+    if "serviceToken" in input_param:
+        url = url+"?token="+ input_param["serviceToken"]
+    input_param.update({"url":url})
+
+    return input_param
+
+
+def _layer_input_gp(input_layer):
+    input_param = input_layer
+
+    input_layer_url = ""
+    if isinstance(input_layer, arcgis.gis.Item):
+        if 'layers' in input_layer:
+            input_param = input_layer.layers[0]._lyr_dict
+        else:
+            raise TypeError("No layers in input layer Item")
+
+    elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
+        input_param = input_layer.layers[0]._lyr_dict
+
+    elif isinstance(input_layer, arcgis.features.FeatureCollection):
+        input_param = input_layer.properties
+
+    elif isinstance(input_layer, arcgis.gis.Layer):
+        input_param = input_layer._lyr_dict
 
     elif isinstance(input_layer, dict):
         input_param = input_layer
@@ -59,6 +94,7 @@ def _layer_input(input_layer):
         raise Exception("Invalid format of input layer. url string, layer Item, layer instance or dict supported")
 
     return input_param
+
 
 def _feature_input(input_layer):
 
@@ -217,9 +253,9 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             if py_type == FeatureSet:
                 if webtool:
                     if isinstance(param_value, (tuple, list)):
-                        gp_params[gp_param_name] = [_layer_input(p) for p in param_value]
+                        gp_params[gp_param_name] = [_layer_input_gp(p) for p in param_value]
                     else:
-                        gp_params[gp_param_name] = _layer_input(param_value)
+                        gp_params[gp_param_name] = _layer_input_gp(param_value)
 
                 else:
                     try:

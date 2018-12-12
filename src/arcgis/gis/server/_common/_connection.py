@@ -727,7 +727,7 @@ class ServerConnection(object):
                            urlparts.fragment))
     #----------------------------------------------------------------------
     def get_handlers(self):
-
+        handlers = []
         if self._verify_cert == False:
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
@@ -739,7 +739,7 @@ class ServerConnection(object):
         redirect_handler = HTTPRedirectHandler()
         redirect_handler.max_redirections = 30
         redirect_handler.max_repeats = 30
-        handlers = [redirect_handler]
+        handlers.append(redirect_handler)
         if self._username and self._password:
 
             passman = request.HTTPPasswordMgrWithDefaultRealm()

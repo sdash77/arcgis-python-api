@@ -770,6 +770,10 @@ class GIS(object):
         else:
             return self._url
 
+    @property
+    def _public_rest_url(self):
+        return self.url + "/sharing/rest/"
+
     #----------------------------------------------------------------------
     @property
     def version(self):
@@ -1509,6 +1513,7 @@ class UserManager(object):
     An instance of this class, called 'users', is available as a property of the Gis object.
     Users call methods on this 'users' object to manipulate (create, get, search, etc) users.
     """
+    _me = None
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
@@ -2325,13 +2330,15 @@ class UserManager(object):
     def me(self):
         """ Gets the logged in user.
         """
-        meuser = self._portal.logged_in_user()
-        if meuser is not None:
-            return User(self._gis, meuser['username'], meuser)
-        else:
-            return None
+        if self._me is None:
+            meuser = self._portal.logged_in_user()
+            if meuser is not None:
+                self._me = User(self._gis, meuser['username'], meuser)
+            else:
+                self._me = None
+        return self._me
 
-    @property
+    @_lazy_property
     def roles(self):
         """Helper object to manage custom roles for users"""
         return RoleManager(self._gis)
@@ -4464,9 +4471,9 @@ class Group(dict):
         """ URL to the thumbnail image """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return self._portal.url + '/home/images/group-no-image.png'
+            return self._gis.url + '/home/images/group-no-image.png'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
+            thumbnail_url_path = self._gis._public_rest_url + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     @property
@@ -5249,9 +5256,9 @@ class User(dict):
         """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return self._portal.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg'
+            return self._gis.url + '/home/js/arcgisonline/css/images/no-user-thumb.jpg'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + 'community/users/' + self._user_id + '/info/' + thumbnail_file
+            thumbnail_url_path = self._gis._public_rest_url + 'community/users/' + self._user_id + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     @property
@@ -6011,7 +6018,7 @@ class Item(dict):
     the dynamic `layers` and `tables` properties to get to the individual layers/tables in this item.
     """
 
-    _user_id = None
+    _uid = None
 
     def __init__(self, gis, itemid, itemdict=None):
         dict.__init__(self)
@@ -6020,16 +6027,14 @@ class Item(dict):
         self.itemid = itemid
         self.thumbnail = None
         self._workdir = tempfile.gettempdir()
-        self._hydrated = False
-        self.resources = ResourceManager(self, self._gis)
-
-
         if itemdict:
+            self._hydrated = False
             if 'size' in itemdict and itemdict['size'] == -1:
                 del itemdict['size'] # remove nonsensical size
             self.__dict__.update(itemdict)
             super(Item, self).update(itemdict)
-
+        else:
+            self._hydrated = False
         try:
             self._depend = ItemDependency(item=self)
         except: pass
@@ -6040,7 +6045,28 @@ class Item(dict):
             self['layers'] = None
             self['tables'] = None
 
+    @_lazy_property
+    def resources(self):
+        """
+        Returns the Item's Resource Manager
 
+        :returns: ResourceManager
+        """
+        return ResourceManager(self, self._gis)
+    #----------------------------------------------------------------------
+    @property
+    def _user_id(self):
+        """gets/sets the _user_id property"""
+        if self._uid is None:
+            user = self._gis.users.get(self.owner)
+            self._uid = user.id
+        return self._uid
+    #----------------------------------------------------------------------
+    @_user_id.setter
+    def _user_id(self, value):
+        """gets/sets the user id property"""
+        self._uid = value
+    #----------------------------------------------------------------------
     def _has_layers(self):
         return self.type ==  'Feature Collection' or \
                self.type == 'Feature Service' or \
@@ -6604,9 +6630,9 @@ class Item(dict):
             if self._gis.properties.portalName == 'ArcGIS Online':
                 return 'http://static.arcgis.com/images/desktopapp.png'
             else:
-                return self._portal.url + '/portalimages/desktopapp.png'
+                return self._gis.url + '/portalimages/desktopapp.png'
         else:
-            thumbnail_url_path = self._portal.con.baseurl + '/content/items/' + self.itemid + '/info/' + thumbnail_file
+            thumbnail_url_path = self._gis._public_rest_url + '/content/items/' + self.itemid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
     @property
@@ -6731,7 +6757,7 @@ class Item(dict):
         else:
             icon = "layers16.png"
 
-        icon = self._portal.url + '/home/js/jsapi/esri/css/images/item_type_icons/' + icon
+        icon = self._gis.url + '/home/js/jsapi/esri/css/images/item_type_icons/' + icon
         return icon
 
     def _ux_item_type(self):
@@ -6760,7 +6786,7 @@ class Item(dict):
                 if self._gis.properties.portalName == 'ArcGIS Online':
                     thumbnail = 'http://static.arcgis.com/images/desktopapp.png'
                 else:
-                    thumbnail = self._portal.url + '/portalimages/desktopapp.png'
+                    thumbnail = self._gis.url + '/portalimages/desktopapp.png'
 
         snippet = self.snippet
         if snippet is None:
@@ -6927,9 +6953,14 @@ class Item(dict):
             group_ids = groups
 
         if self.access == 'public' and not everyone and not org:
-            return self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
+            res = self._portal.share_item_as_group_admin(self.itemid, group_ids, allow_members_to_edit)
+            self._hydrated = False
+            self._hydrate()
         else:
-            return self._portal.share_item(self.itemid, self._user_id, folder, everyone, org, group_ids, allow_members_to_edit)
+            res = self._portal.share_item(self.itemid, self.owner, folder, everyone, org, group_ids, allow_members_to_edit)
+            self._hydrated = False
+            self._hydrate()
+        return res
 
     def unshare(self, groups):
         """
@@ -9067,6 +9098,9 @@ class Layer(_GISResource):
             url += '?token=' + self._token
 
         lyr_dict = {'type': type(self).__name__, 'url': url}
+
+        if self.filter is not None:
+            lyr_dict['options'] = json.dumps({ "definition_expression": self.filter })
 
         return lyr_dict
 
