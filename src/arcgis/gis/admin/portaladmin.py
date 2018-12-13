@@ -250,6 +250,17 @@ class PortalAdminManager(BasePortalAdmin):
             self._livingatlas = LivingAtlas(url=url, gis=self._gis)
         return self._livingatlas
     #----------------------------------------------------------------------
+    @property
+    def webhooks(self):
+        """Provides access to Portal's WebHook Manager"""
+        if self._whm is None and \
+           self._gis.version >= [6,4]:
+            from .___wh import WebHookManager
+            url = self._gis._portal.resturl + "portals/self/webhooks"
+            self._whm = WebHookManager(url=url, gis=self._gis)
+        return self._whm
+
+    #----------------------------------------------------------------------
     def history(self, start_date, num=100, save_folder=None):
         """
         Returns a CSV file containing the login history from a start_date to the present.
