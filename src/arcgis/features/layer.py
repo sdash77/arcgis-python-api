@@ -1470,13 +1470,13 @@ class FeatureLayer(Layer):
                 if fld['type'] != "esriFieldTypeGeometry":
                     dtypes[fld['name']] = _fld_lu[fld['type']]
                     names.append(fld['name'])
-                if fld['type'] in {"esriFieldTypeSmallInteger",
-                                   "esriFieldTypeInteger",
-                                   "esriFieldTypeSingle",
-                                   "esriFieldTypeDouble"}:
-                    q = df[fld['name']].isnull()
-                    df.loc[q, fld['name']] = 0
-        df = df.astype(dtypes, False)
+                #if fld['type'] in {"esriFieldTypeSmallInteger",
+                                   #"esriFieldTypeInteger",
+                                   #"esriFieldTypeSingle",
+                                   #"esriFieldTypeDouble"}:
+                    #q = df[fld['name']].isnull()
+                    #df.loc[q, fld['name']] = 0
+        #df = df.astype(dtypes, False)
         if 'geometryType' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
 

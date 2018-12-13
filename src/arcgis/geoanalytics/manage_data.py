@@ -15,9 +15,9 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def _describe_data(input_layer,
+def describe_data(input_layer,
                   extent_output=True,
-                  sample_size=100,
+                  sample_size=None,
                   output_name=None,
                   gis=None):
     """
@@ -45,7 +45,7 @@ def _describe_data(input_layer,
                       the number of sample features to return. If the input value is
                       0 or empty then no sample layer will be created. The output
                       will have the same schema, geometry, and time type as the input
-                      layer. The default is 100.
+                      layer. The default is None.
     ----------------  ---------------------------------------------------------------
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
@@ -566,6 +566,9 @@ def calculate_fields(input_layer,
                      expression,
                      track_aware=False,
                      track_fields=None,
+                     time_boundary_split=None,
+                     time_split_unit=None,
+                     time_reference=None,
                      output_name=None,
                      gis=None
                      ):
@@ -574,37 +577,45 @@ def calculate_fields(input_layer,
     new field. The output is a new feature layer, that is the same as the
     input features, with the additional field added.
 
-    ================  ===============================================================
-    **Argument**      **Description**
-    ----------------  ---------------------------------------------------------------
-    input_layer       required service , The table, point, line or polygon features
-                      containing potential incidents.
-    ----------------  ---------------------------------------------------------------
-    field_name        required string, A string representing the name of the new
-                      field. If the name already exists in the dataset, then a
-                      numeric value will be appended to the field name.
-    ----------------  ---------------------------------------------------------------
-    data_type         required string, the type for the new field.
-                      Values: Date |Double | Integer | String
-    ----------------  ---------------------------------------------------------------
-    expression        required string, An Arcade expression used to calculate the new
-                      field values. You can use any of the Date, Logical,
-                      Mathematical or Text function available with Arcade.
-    ----------------  ---------------------------------------------------------------
-    track_aware       optional boolean, Boolean value denoting if the expression is
-                      track aware.
-                      Default: False
-    ----------------  ---------------------------------------------------------------
-    track_fields      optional string, The fields used to identify distinct tracks.
-                      There can be multiple track_fields. track_fields are only
-                      required when track_aware is true.
-    ----------------  ---------------------------------------------------------------
-    output_name       optional string, The task will create a feature service of the
-                      results. You define the name of the service.
-    ----------------  ---------------------------------------------------------------
-    gis               optional GIS, the GIS on which this tool runs. If not
-                      specified, the active GIS is used.
-    ================  ===============================================================
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    input_layer                  required service , The table, point, line or polygon features
+                                 containing potential incidents.
+    --------------------------   ---------------------------------------------------------------
+    field_name                   required string, A string representing the name of the new
+                                 field. If the name already exists in the dataset, then a
+                                 numeric value will be appended to the field name.
+    --------------------------   ---------------------------------------------------------------
+    data_type                    required string, the type for the new field.
+                                 Values: Date, Double, Integer, String
+    --------------------------   ---------------------------------------------------------------
+    expression                   required string, An Arcade expression used to calculate the new
+                                 field values. You can use any of the Date, Logical,
+                                 Mathematical or Text function available with Arcade.
+    --------------------------   ---------------------------------------------------------------
+    track_aware                  optional boolean, Boolean value denoting if the expression is
+                                 track aware.
+                                 Default: False
+    --------------------------   ---------------------------------------------------------------
+    track_fields                 optional string, The fields used to identify distinct tracks.
+                                 There can be multiple track_fields. track_fields are only
+                                 required when track_aware is true.
+    --------------------------   ---------------------------------------------------------------
+    time_boundary_split          Optional Int.  A time boundary to detect and incident.
+    --------------------------   ---------------------------------------------------------------
+    time_split_unit              Optional String.  The unit to detect an incident is `time_boundary_split` is used.
+                                 Allowed values: Years, Months, Weeks, Days, Hours, Minutes, Seconds, Milliseconds
+    --------------------------   ---------------------------------------------------------------
+    time_reference               Optional Datetime. The starting date/time where analysis will
+                                 begin from.
+    --------------------------   ---------------------------------------------------------------
+    output_name                  optional string, The task will create a feature service of the
+                                 results. You define the name of the service.
+    --------------------------   ---------------------------------------------------------------
+    gis                          optional GIS, the GIS on which this tool runs. If not
+                                 specified, the active GIS is used.
+    ==========================  ================================================================
 
     :returns:
        Feature Layer
@@ -641,6 +652,9 @@ def calculate_fields(input_layer,
         "expression" : (str, "expression"),
         "track_aware" : (bool, "trackAware"),
         "track_fields" : (str, "trackFields"),
+        "time_boundary_split" : (int, "timeBoundarySplit"),
+        "time_split_unit" : (str, "timeBoundarySplitUnit"),
+        "time_reference" : (datetime.datetime, "timeBoundaryReference"),
         "output_name": (str, "outputName"),
         "output": (_FeatureSet, "output"),
         "context": (str, "context")

@@ -10,7 +10,7 @@ import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service
-
+import datetime
 _log = _logging.getLogger(__name__)
 
 # url = "https://dev003153.esri.com/gax/rest/services/System/GeoAnalyticsTools/GPServer"
@@ -195,6 +195,9 @@ def detect_incidents(input_layer,
                      start_condition_expression,
                      end_condition_expression=None,
                      output_mode="AllFeatures",
+                     time_boundary_split=None,
+                     time_split_unit=None,
+                     time_reference=None,
                      output_name=None,
                      gis=None):
     """
@@ -264,6 +267,14 @@ def detect_incidents(input_layer,
                                  - Incidents - Only features that were found to be incidents
                                    are returned.
     --------------------------   ---------------------------------------------------------------
+    time_boundary_split          Optional Int.  A time boundary to detect and incident.
+    --------------------------   ---------------------------------------------------------------
+    time_split_unit              Optional String.  The unit to detect an incident is `time_boundary_split` is used.
+                                 Allowed values: Years, Months, Weeks, Days, Hours, Minutes, Seconds, Milliseconds
+    --------------------------   ---------------------------------------------------------------
+    time_reference               Optional Datetime. The starting date/time where analysis will
+                                 begin from.
+    --------------------------   ---------------------------------------------------------------
     output_name                  optional string, The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
@@ -305,6 +316,9 @@ def detect_incidents(input_layer,
         "start_condition_expression": (str, "startConditionExpression"),
         "end_condition_expression": (str, "endConditionExpression"),
         "output_mode": (str, "outputMode"),
+        "time_boundary_split" : (int, "timeBoundarySplit"),
+        "time_split_unit" : (str, "timeBoundarySplitUnit"),
+        "time_reference" : (datetime.datetime, "timeBoundaryReference"),
         "output_name": (str, "outputName"),
         "output": (_FeatureSet, "output"),
         "context": (str, "context")
