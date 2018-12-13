@@ -16,7 +16,7 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 def describe_data(input_layer,
-                  extent_output=True,
+                  extent_output=False,
                   sample_size=None,
                   output_name=None,
                   gis=None):
@@ -38,7 +38,7 @@ def describe_data(input_layer,
     ----------------  ---------------------------------------------------------------
     extent_output     Optional Boolean. The task will output a single rectangle
                       feature representing the extent of the input_layer if this value
-                      is set to true. The default is true.
+                      is set to true. The default is False.
     ----------------  ---------------------------------------------------------------
     sample_size       Optional integer. The task will output a feature layer
                       representing a sample of features from the input_layer. Specify
