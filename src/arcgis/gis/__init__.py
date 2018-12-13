@@ -5126,6 +5126,12 @@ class User(dict):
         if userdict:
             if 'groups' in userdict and len(userdict['groups']) == 0: # groups aren't set unless hydrated
                 del userdict['groups']
+            if 'role' in userdict and \
+               'roleId' not in userdict:
+                userdict['roleId'] = userdict['role']
+            elif 'roleId' in userdict and \
+                 'role' not in userdict:
+                userdict['role'] = userdict['roleId']
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
         if hasattr(self, 'id') and \
