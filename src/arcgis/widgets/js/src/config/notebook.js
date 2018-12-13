@@ -4,12 +4,13 @@ var configureCdn = require("./configure-cdn");
 //This section is a workaround for notebooks.esri.com, since it uses tmpnb
 var strnb = location.href.lastIndexOf("/notebooks");
 var nbextensionPath = "";
-if ((strnb > 0) && (location.href.match(/.*notebooks.*esri.*com.*/))) {
+if ((strnb > 0) && !(location.href.match(/.*localhost.*/))) {
     nbextensionPath = location.href.substring(0, strnb) + "/nbextensions/arcgis/";
 } else {
     nbextensionPath = "/nbextensions/arcgis/";
 }
 //end section
+
 config.JupyterTarget = "notebook"; 
 config.BaseRequireJSConfig = {
     map : {
