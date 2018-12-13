@@ -358,6 +358,8 @@ class MapView(widgets.DOMWidget):
 
     _uuid = Unicode("").tag(sync=True)
 
+    _trigger_print_js_debug_info = Unicode("").tag(sync=True)
+
     # end miscellanous model state
     # End model specific state
 
@@ -412,14 +414,7 @@ class MapView(widgets.DOMWidget):
         self.layout.width = "100%"
 
         # Set up gis object
-        gis = arcgis.env.active_gis if gis is None else gis
-        if gis:
-            self._setup_gis_properties(gis)
-        else:
-            from arcgis.gis import GIS
-            gis = GIS(set_active=False)
-            self._setup_gis_properties(gis)
-            self._auth_mode = "anonymous"
+        self._setup_gis_properties(gis)
 
         # Set up miscellanous properties needed on startup
         self.mode = mode
@@ -450,6 +445,7 @@ class MapView(widgets.DOMWidget):
         below the map widget that can be controlled via a display handler
         set to self._preview_image_display_handler.
         """
+        self._setup_gis_properties(self.gis)
         super(MapView, self)._ipython_display_()
         self._preview_image_display_handler = display(
             HTML(self._assemble_img_preview_html_str("")),
@@ -497,7 +493,6 @@ class MapView(widgets.DOMWidget):
             with open(self._screenshot_file_output_path, "wb") as f:
                 img_data_raw_bytes = base64.b64decode(img_data_raw_str)
                 f.write(img_data_raw_bytes)
-
 
     def _parse_js_resp(self, change_new):
         """In 3D mode, the Data URI is returned from JS. In 2D mode, a URL
@@ -615,19 +610,28 @@ class MapView(widgets.DOMWidget):
     # End screenshot specific section
 
     def _setup_gis_properties(self, gis):
+        # This function is called during __init__, as well as during any 
+        # subsequent draw in a notebook. Priority of how the GIS properties 
+        # of the widget are set:
+        # - Always use the gis object passed in as an arg in __init__
+        # - Fallback to the active_gis if no arg passed in
+        # - Fallback to anon AGOL non-active if neither of the above specified
+        gis = arcgis.env.active_gis if gis is None else gis
+        if gis is None:
+            from arcgis.gis import GIS
+            gis = GIS(set_active=False)
         self.gis = gis
-        if gis._portal.con._token:
-            self._portal_token = str(gis._portal.con._token)
+
+        # Now that self.gis property is properly set, determine the auth mode
+        if self.gis._portal.con.token:
+            self._portal_token = str(self.gis._portal.con.token)
             self._auth_mode = "tokenBased"
         else:
             self._auth_mode = "anonymous"
-        if gis._is_hosted_nb_home:
-            #A GIS('home') conn needs to connect to public URL
-            self._portal_url = str(gis._public_portal_url)
-            self._portal_sharing_rest_url = self._portal_url + '/sharing/rest/'
-        else:
-            self._portal_url = str(gis._url)
-            self._portal_sharing_rest_url = str(gis._con.baseurl)
+
+        # Set the properties that aren't dependent on auth mode
+        self._portal_url = self.gis.url
+        self._portal_sharing_rest_url = self.gis._public_rest_url
         self._username = str(gis._username)
 
     def _setup_js_cdn(self):

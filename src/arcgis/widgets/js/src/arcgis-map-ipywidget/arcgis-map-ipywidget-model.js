@@ -71,6 +71,7 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         _js_cdn_override: "",
         legend: false,
         _uuid: "",
+        _trigger_print_js_debug_info: "",
         //end miscellanous modle state
     })
 });
