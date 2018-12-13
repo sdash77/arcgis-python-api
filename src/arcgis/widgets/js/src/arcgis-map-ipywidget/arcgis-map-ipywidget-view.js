@@ -42,8 +42,17 @@ _applyCssFromUrl(config.CdnMainCssUrl);
 //The arbitrary layer ID for all custom drawn graphics
 const graphicsLayerId = "graphicsLayerId31195";
 
-var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
+// Each new widget instantiated on the Python side has a uuid field
+// If a python widget displays in a notebook twice, there will be two
+// instances of the JS widget with the same uuid, but still the 1 python inst.
+// This global dictionary will have each key be the uuid, and each value
+// be the token associated with the portal. This is needed due to security 
+// concerns of not storing the token in the model (which can be persisted on 
+// disk), and due to the unpredictable nature of traitlets/backbone.
+// TODO: find a more elegant solution to this
+var globalTokenLookup = {};
 
+var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     render: function() {
     ///This is called once the first time the widget is drawn in the notebook
     this._override_right_click_menu();
@@ -107,6 +116,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.model.on('change:_trigger_new_jlab_window_with_args', this.trigger_jlab_window_changed, this);
         this.model.on('change:_js_cdn_override', this.js_cdn_changed, this);
         this.model.on('change:legend', this.legend_prop_changed, this);
+        this.model.on('change:_trigger_print_js_debug_info', this.trigger_print_js_debug_info_changed, this);
         //end miscellanous model section
 
         //Last thing to do: update the widget state from the model's
@@ -399,9 +409,13 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this._displayErrorBox("Error while changing basemap.");
             console.warn("Error on basemap_change: "); console.warn(err)
         });
-        //This print is useful for debugging purposes
+    },
+
+    trigger_print_js_debug_info_changed: function(){
         console.log("Widget = ");
         console.log(this);
+        console.log("Global token lookup = ");
+        console.log(globalTokenLookup);
     },
 
     mode_changed: function(){
@@ -944,7 +958,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         var _portal_token = this.model.get("_portal_token");
         if(_portal_token){
             console.log("updating _portal_token...");
-            this._portalToken = _portal_token
+            this._portalToken = _portal_token;
+            globalTokenLookup[this.uuid] = _portal_token;
             this.model.set("_portal_token", "");
             this.model.save_changes();
         }
@@ -952,6 +967,19 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this._displayErrorBox("Error storing token.");
         console.warn("Error storing token."); console.warn(err);
     }
+    },
+
+    get_portal_token: function(){
+        // The portal token doesn't exist in the model for long due to security
+        // concerns: this function should return the string of any token,
+        // regardless of what state the token transfer is in
+        if(this._portalToken){
+            return this._portalToken;
+        } else if (this.uuid in globalTokenLookup){
+            return globalTokenLookup[this.uuid];
+        } else {
+            return this.model.get("_portal_token");
+        }
     },
 
     authenticate_to_portal: function(){
@@ -989,9 +1017,13 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 //If we specified token based authentication, attempt to resolve it
                 var _portal_url = this.model.get("_portal_url");
                 var _portal_sharing_rest_url = this.model.get("_portal_sharing_rest_url");
-                if(!(_portal_url && _portal_sharing_rest_url && this._portalToken)){
-                    reject("_portal_url, _portal_sharing_rest_url, and _portal_token " + 
-                           "must be specified to authenticate in 'tokenBased' auth mode");
+                var _portal_token = this.get_portal_token();
+                if(!(_portal_url && _portal_sharing_rest_url && _portal_token)){
+                    var rejMsg = "_portal_url, _portal_sharing_rest_url, and _portal_token " + 
+                        "must be specified to authenticate in 'tokenBased' auth mode. " +
+                        "_portal_url = " + _portal_url + ", _portal_sharing_rest_url = " +
+                        _portal_sharing_rest_url + ", _portal_token = " + this._portalToken;
+                    reject(rejMsg);
                 } else {
                     var serverInfo = new ServerInfo();
                     serverInfo.server = _portal_sharing_rest_url;
@@ -999,7 +1031,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                     IdentityManager.registerServers([serverInfo]);
                     IdentityManager.registerToken({"server": _portal_sharing_rest_url,
                                                   "userId": this.model.get("_username"),
-                                                  "token": this._portalToken});
+                                                  "token": _portal_token});
                     this._portal = new Portal({
                         url: _portal_url});
                     this._portal.load().then(() => {

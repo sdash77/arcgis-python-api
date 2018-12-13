@@ -9,6 +9,7 @@ summarize_within calculates statistics for area features and attributes that ove
 """
 
 import json as _json
+import datetime
 from datetime import datetime as _datetime
 import logging as _logging
 import arcgis as _arcgis
@@ -522,6 +523,8 @@ def reconstruct_tracks(input_layer,
                        time_split_unit = None,
                        distance_split=None,
                        distance_split_unit=None,
+                       time_boundary_split=None,
+                       time_reference=None,
                        output_name = None,
                        gis=None):
     """
@@ -561,6 +564,8 @@ def reconstruct_tracks(input_layer,
 
    time_split_unit: Duration Split Threshold Unit (str). Optional parameter.
       Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+
+   time_reference: Starting time location (datetime.datetime). Optional parameter.
 
    distance_split: A distance used to split tracks. Any features in the inputLayer that are in the same track and are greater than this distance apart will be split into a new track. The units of the distance values are supplied by the distance_unit parameter.
 
@@ -615,6 +620,7 @@ Returns:
         "time_split_unit": (str, "timeSplitUnit"),
         "distance_split": (int, "distanceSplit"),
         "distance_split_unit": (str, "distanceSplitUnit"),
+        "time_reference" : (datetime.datetime, "timeBoundaryReference"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
