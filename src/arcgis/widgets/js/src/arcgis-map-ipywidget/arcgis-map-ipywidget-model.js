@@ -21,7 +21,7 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         _basemap: "topo",
         _gallery_basemaps: {},
         mode: "2D",
-        zoom: 2,
+        zoom: -1,
         rotation: 0,
         heading: 0,
         tilt: 0,
@@ -52,7 +52,6 @@ var ArcGISMapIPyWidgetModel = widgets.DOMWidgetModel.extend({
         _cell_output_screenshot_callback_resp: "",
         _file_output_screenshot_callback_resp: "",
         _trigger_screenshot_with_args: {},
-        print_service_url: "",
         //end screenshot section
 
         //start miscellanous model state

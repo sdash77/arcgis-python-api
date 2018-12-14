@@ -76,7 +76,7 @@ class MapView(widgets.DOMWidget):
 
     # Start model specific state
     # Start map specific drawing state
-    zoom = Float(2).tag(sync=True)
+    zoom = Float(-1).tag(sync=True)
     """What level of zoom you want to apply: the higher the number, the more
     zoomed in you are.
     """
@@ -509,30 +509,14 @@ class MapView(widgets.DOMWidget):
                 return 'data:image/png;base64,{}'.format(encoded_body.decode())
 
     print_service_url = Unicode("").tag(sync=True)
-    """The print service URL used when taking 2D screenshots. This member will
-    be auto populated with the value from
-    `gis.properties.helperServices.printTask['url']`. If it can't find that 
-    value, it will use the default value of
-    `"https://utility.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task"`.
-
-    You can set this value to a valid Export Web Map Task URL, which will
-    be used as the override for all future `take_screenshot()` calls in 2D
-    mode.
     """
-
-    def _setup_screenshot_print_service_url(self):
-        """If using anon GIS, use the public Export Web Map Task. If portal,
-        try to use the portal's Export Web Map Task. If you can't find the
-        portal's Export Web Map task, fallback to AGOL's service
-        """
-        default_print_service_url = 'https://utility.arcgisonline.com/arcgis'\
-            '/rest/services/Utilities/PrintingTools/GPServer'\
-            '/Export%20Web%20Map%20Task'
-        try:
-            self.print_service_url = \
-                self.gis.properties.helperServices.printTask['url']
-        except Exception:
-            self.print_service_url = default_print_service_url
+    .. note::
+        Note: this property is obselete as of >v1.6 of the Python API, since
+        the underlying JavaScript code ran during a `take_screenshot()` Python
+        call has been has been changed to `MapView.takeScreenshot()` instead
+        of calling a Print Service URL. Any value you set to this property 
+        will be ignored (2D screenshots will still be taken successfully).
+    """
 
     _trigger_screenshot_with_args = Dict({}).tag(sync=True)
 
@@ -570,23 +554,11 @@ class MapView(widgets.DOMWidget):
             function  multiple times in a row if the asyncronous portion of 
             the function hasn't finished yet.
 
-        .. note::
-            Some limitations exist for taking screenshots in 2D mode, since
-            the underlying screenshot mechanism is the ArcGIS JS API's
-            PrintTask object (https://bit.ly/2qRKGJG). If this function fails
-            to create a screenshot, try a slightly different extent and try
-            again. Non-published features with client-side graphics like 
-            Spatially Enabled DataFrames might not display in a 2D mode 
-            screenshot. 
         """
         if not self.ready:
             log.warn("Cannot take screenshot if widget is not visible in "\
                      "notebook: Please try again when widget is visible.");
             return False
-
-        if not self.print_service_url:
-            # If the print task URL hasn't been figured out yet, find it
-            self._setup_screenshot_print_service_url()
 
         if output_in_cell:
             self._cell_output_screenshot_callback_resp = "" # Clear existing
@@ -712,8 +684,13 @@ class MapView(widgets.DOMWidget):
         the  ArcGIS API for JavaScript CDN URL instead of the default
         http://js.arcgis.com/4.X/. This functionality is necessary in
         disconnected  environments if the portal you are connecting to doesn't
-        ship with the minimum necessary JavaScript API version. See the guide
-        page on disconnected environments for more information."""
+        ship with the minimum necessary JavaScript API version. 
+        
+        You may not need to call this function to view the widget in
+        disconnected environments: if your computer cannot reach js.arcgis.com,
+        and you have a GIS() connection to a portal, the widget will 
+        automatically attempt to use that portal's JS API that it ships with.
+        """
         global _js_cdn_override_global
         _js_cdn_override_global = js_cdn
 
@@ -1148,9 +1125,9 @@ class MapView(widgets.DOMWidget):
     def update(self, mode=None, item_properties=None,
                thumbnail=None, metadata=None):
         """
-        Updates the web map item that was used to create the MapWidget object.
-        In addition, you can update other item properties, thumbnail and
-        metadata.
+        Updates the WebMap/Web Scene item that was used to create the MapWidget
+        object. In addition, you can update other item properties, thumbnail 
+        and metadata.
 
         .. note::
             If you started out a MapView object from an existing
@@ -1559,7 +1536,7 @@ class MapView(widgets.DOMWidget):
 
     @property
     def end_time(self):
-        """This feature is not supported in v1.5."""
+        """This feature is not supported in >v1.5."""
         self._raise_time_extent_exception()
 
     @end_time.setter
@@ -1567,12 +1544,12 @@ class MapView(widgets.DOMWidget):
         self._raise_time_extent_exception()
 
     def set_time_extent(self, start_time, end_time):
-        """This feature is not supported in v1.5."""
+        """This feature is not supported in >v1.5."""
         self._raise_time_extent_exception()
 
     @property
     def start_time(self):
-        """This feature is not supported in v1.5."""
+        """This feature is not supported in >v1.5."""
         self._raise_time_extent_exception()
 
     @start_time.setter
