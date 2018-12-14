@@ -3131,6 +3131,8 @@ class ContentManager(object):
                 elif str(d).lower().endswith('.xls') or \
                      str(d).lower().endswith('.xlsx'):
                     params['fileType'] = 'excel'
+        elif str(file_type).lower() in ['excel', 'csv']:
+            params['fileType'] = file_type
         if source_country:
             params['analyzeParameters']['sourceCountry'] = source_country
         if country_hint:
@@ -5124,6 +5126,12 @@ class User(dict):
         if userdict:
             if 'groups' in userdict and len(userdict['groups']) == 0: # groups aren't set unless hydrated
                 del userdict['groups']
+            if 'role' in userdict and \
+               'roleId' not in userdict:
+                userdict['roleId'] = userdict['role']
+            elif 'roleId' in userdict and \
+                 'role' not in userdict:
+                userdict['role'] = userdict['roleId']
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
         if hasattr(self, 'id') and \
