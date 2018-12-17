@@ -76,7 +76,6 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this._setup_custom_buttons();
         this._instantiate_esri_components(Map, MapView, SceneView,
                                           Compass, Legend);
-        this._setup_stationary_callback(watchUtils);
         this._miscellanous_setup();
         //All model specific change functions. These functions are called
         //whenever that attribute on the model is updated, whether that update
@@ -121,7 +120,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
         //Last thing to do: update the widget state from the model's
         this.update_widget_from_model().then(() => {
-            this._postLoadSetup();
+            this._postLoadSetup(watchUtils);
         });
     }).catch((err) => {
        this._displayErrorBox();
@@ -227,8 +226,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         }
     },
 
-    _setup_stationary_callback: function(watchUtils){
-        //The moment the mouse enters the arcgis js api 2d/3d view (not parent element),
+    _setup_2d_stationary_callback: function(watchUtils){
+        //The moment the mouse enters the arcgis js api 2d view (not parent element),
         //Set up responses to the 'stationary' callback (i.e., what logic to run
         //when the user clicks the map, zooms, changes extent, etc.). Only set this up once
         this._2dMap._pointerMoveHandler = this._2dMap.on(
@@ -238,6 +237,10 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 watchUtils.when(this._2dMap, "stationary", this._2dStationaryCallback)
                 this._2dMap._pointerMoveHandler.remove();
         });
+    },
+
+    _setup_3d_stationary_callback: function(watchUtils){
+        //Same as above, but for the 3D SceneView
         this._3dMap._pointerMoveHandler = this._3dMap.on(
             ['pointer-move', 'key-down'], (event) => {
                 console.log("Started interacting with the 3D map, " + 
@@ -305,7 +308,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         });
     },
 
-    _postLoadSetup: function(){
+    _postLoadSetup: function(watchUtils){
         //Whenever either the 2d or 3d view loads, set model var 'ready' to
         //true for python to consume
         console.log("Calling postLoad");
@@ -315,6 +318,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this.model.set('_readonly_extent', this._2dMap.extent);
             this.model.set('_readonly_center', this._2dMap.center);
             this.model.save_changes();
+            this.zoom_changed(); //Fixes quick redraw bug of zoom not honored
+            this._setup_2d_stationary_callback(watchUtils);
         });
 
         this._3dMap.when(() => {
@@ -323,6 +328,9 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this.model.set('_readonly_extent', this._3dMap.extent);
             this.model.set('_readonly_center', this._3dMap.center);
             this.model.save_changes();
+            this.zoom_changed(); //Fixes quick redraw bug of zoom not honored
+            this.tilt_changed(); //'' '' '' '' '' '' ''' ''  tilt not honored
+            this._setup_3d_stationary_callback(watchUtils);
         });
 
         //Whenever you click on the map, send an event for python to listen to
@@ -364,6 +372,10 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             container: this.container});
         this._2dMap._parentIPyWidget = this;
         this.activeView = this._2dMap;
+
+        //Set the default zoom to a model-less number that looks a bit nicer
+        this._2dMap.zoom = 2;
+        this._3dMap.zoom = 2;
 
         // Set up widgets like compass and legend
         this._2dMap.ui.add(new Compass({view: this._2dMap}), "top-left");
@@ -453,8 +465,10 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     zoom_changed: function(){
         try{
-            var zoom = this.model.get("zoom")
-            this.activeView.zoom = zoom;
+            var zoom = this.model.get("zoom");
+            if(zoom >= 0){
+                this.activeView.zoom = zoom;
+            }
         } catch(err){
             this._displayErrorBox("Error while modifying zoom.");
             console.warn("Error on zoom"); console.warn(err);
@@ -886,18 +900,15 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 var view = this.activeView;
                 var graphicsLayer = this.getGraphicsLayer(GraphicsLayer);
                 var sketch = new SketchViewModel({
+                  layer: graphicsLayer,
                   view: view,
                 });
                 sketch.create(shape);
-                sketch.on("create-complete", (event) => {
-                    var graphic = new Graphic({
-                        geometry: event.geometry,
-                        symbol: sketch.graphic.symbol});
-                    graphic.shape = shape;
-                    graphicsLayer.add(graphic)
-                    this.update_readonly_webmap();
-                    console.log("Sending draw-end event...");
-                    this.send({ event: 'draw-end', message: graphic.geometry.toJSON() })
+                sketch.on("create", (event) => {
+                    if(event.state == "complete"){
+                        this.send({ event: 'draw-end',
+                                    message: event.graphic.geometry.toJSON() });
+                    }
                 });
             }
         }).catch((err) => {
@@ -1156,38 +1167,11 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _get_2d_screenshot: function(widget_inst) {
         return new Promise((resolve, reject) => {
-        esriLoader.loadModules(['esri/tasks/PrintTask',
-                                'esri/tasks/support/PrintTemplate',
-                                'esri/tasks/support/PrintParameters'],
-        options).then(([PrintTask,
-                        PrintTemplate,
-                        PrintParameters]) => {
-            var printTaskUrl = widget_inst.model.get("print_service_url");
-            console.log("Using " + printTaskUrl + " as Print Task URL");
-            var printTask = new PrintTask({
-                url: printTaskUrl});
-            var template = new PrintTemplate({
-                format: "png32",
-                exportOptions: {
-                    width: widget_inst.el.clientWidth,
-                    height: widget_inst.el.clientHeight
-                },
-                forceFeatureAttributes: true,
-                attributionVisible: true, //change to false to remove attrs
-               layout: 'map-only'});
-           var params = new PrintParameters({
-                view: widget_inst._2dMap,
-                template: template});
-            printTask.execute(params).then((printResult) => {
-                console.log("Print resultant URL:");
-                console.log(printResult.url);
-                resolve(printResult.url);
-          }).catch((printError) => {
-                reject(printError);
+            widget_inst._2dMap.takeScreenshot().then((screenshot) => {
+                resolve(screenshot.dataUrl);
+            }).catch((err) => {
+                reject(err);
             });
-        }).catch((err) => {
-            reject(err);
-        });
         });
     },
 
