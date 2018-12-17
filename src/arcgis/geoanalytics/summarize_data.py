@@ -519,12 +519,11 @@ def reconstruct_tracks(input_layer,
                        method = """Planar""",
                        buffer_field = None,
                        summary_fields = None,
-                       time_split = None,
-                       time_split_unit = None,
                        distance_split=None,
                        distance_split_unit=None,
                        time_boundary_split=None,
-                       time_reference=None,
+                       time_boundary_split_unit=None,
+                       time_boundary_reference=None,
                        output_name = None,
                        gis=None):
     """
@@ -560,12 +559,12 @@ def reconstruct_tracks(input_layer,
 
    summary_fields: Summary Statistics (str/list). Optional parameter.
 
-   time_split: Duration Split Threshold (int). Optional parameter.
+   time_boundary_split: Duration Split Threshold (int). Optional parameter.
 
-   time_split_unit: Duration Split Threshold Unit (str). Optional parameter.
+   time_boundary_split_unit: Duration Split Threshold Unit (str). Optional parameter.
       Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
-   time_reference: Starting time location (datetime.datetime). Optional parameter.
+   time_boundary_reference: Starting time location (datetime.datetime). Optional parameter.
 
    distance_split: A distance used to split tracks. Any features in the inputLayer that are in the same track and are greater than this distance apart will be split into a new track. The units of the distance values are supplied by the distance_unit parameter.
 
@@ -609,18 +608,17 @@ Returns:
     if isinstance(summary_fields, list):
         import json
         summary_fields = json.dumps(summary_fields)
-
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "track_fields": (str, "trackFields"),
         "method": (str, "method"),
         "buffer_field": (str, "bufferField"),
         "summary_fields": (str, "summaryFields"),
-        "time_split": (int, "timeSplit"),
-        "time_split_unit": (str, "timeSplitUnit"),
+        "time_boundary_split" : (int, "timeBoundarySplit"),
+        "time_boundary_split_unit" : (str, "timeBoundarySplitUnit"),
+        "time_boundary_reference" : (datetime.datetime, "timeBoundaryReference"),
         "distance_split": (int, "distanceSplit"),
         "distance_split_unit": (str, "distanceSplitUnit"),
-        "time_reference" : (datetime.datetime, "timeBoundaryReference"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
