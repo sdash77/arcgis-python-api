@@ -47,7 +47,7 @@ class AdminServiceFactory(type):
                 os.path.dirname(url).lower().replace(
                     "/rest/", "/admin/"),
                 os.path.basename(url))
-            return AdminService(url=admin_url, connection=connection, server=gis)
+            return AdminService(url=admin_url, gis=gis)
         return type.__call__(cls, service, gis, False)
 ###########################################################################
 @add_metaclass(AdminServiceFactory)
