@@ -8571,7 +8571,7 @@ class Item(dict):
         return
     #----------------------------------------------------------------------
     @property
-    def _dependencies(self):
+    def dependencies(self):
         """returns a class to management Item dependencies"""
         if self._depend is None:
             self._depend = ItemDependency(self)
