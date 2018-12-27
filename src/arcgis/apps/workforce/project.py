@@ -9,6 +9,7 @@ import json
 
 from ._schemas import *
 from .managers import *
+from arcgis.apps.workforce.exceptions import WorkforceError
 
 
 class Project:
@@ -65,7 +66,7 @@ class Project:
                 self._cached_dispatcher = d
                 break
         else:
-            raise Exception("'{}' is not a dispatcher, please authenticate as a dispatcher".format(self.gis.users.me.username))
+            raise WorkforceError("'{}' is not a dispatcher, please authenticate as a dispatcher".format(self.gis.users.me.username))
 
     def __str__(self):
         return self.title
