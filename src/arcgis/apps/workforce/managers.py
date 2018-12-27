@@ -493,6 +493,8 @@ class TrackManager:
      ==================     ====================================================================
     """
     def __init__(self, project):
+        if not project._supports_tracks:
+            raise WorkforceError("This Workforce Project does not support tracks.")
         self.project = project
 
     def get(self, object_id=None, global_id=None):

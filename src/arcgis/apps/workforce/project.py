@@ -4,6 +4,7 @@ import arcgis
 from arcgis.features import FeatureLayer
 from arcgis.gis import Group
 from arcgis._impl.common._utils import _lazy_property
+from warnings import warn
 import json
 
 from ._schemas import *
@@ -43,7 +44,10 @@ class Project:
         self._item = item
         self._item_data = item.get_data()
         self._assignment_schema = AssignmentSchema(self.assignments_layer)
-        self._track_schema = TrackSchema(self.tracks_layer)
+        if self._supports_tracks:
+            self._track_schema = TrackSchema(self.tracks_layer)
+        else:
+            self._track_schema = None
         self._worker_schema = WorkerSchema(self.workers_layer)
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         self._update_cached_objects()
@@ -77,8 +81,9 @@ class Project:
         owner = self._item.owner
         self.assignments_item.protect(False)
         self.assignments_item.delete()
-        self.tracks_item.protect(False)
-        self.tracks_item.delete()
+        if self._supports_tracks:
+            self.tracks_item.protect(False)
+            self.tracks_item.delete()
         self.workers_item.protect(False)
         self.workers_item.delete()
         self.dispatchers_item.protect(False)
@@ -115,22 +120,30 @@ class Project:
         self._item.update(item_properties)
 
     @property
+    def _supports_tracks(self):
+        return bool(self._item_data.get("tracks", None) is not None)
+
+    @property
     def _tracking_enabled(self):
-        return self._item_data["tracks"]["enabled"]
+        if self._supports_tracks:
+            return self._item_data["tracks"]["enabled"]
 
     @_tracking_enabled.setter
     def _tracking_enabled(self, value):
-        self._item_data["tracks"]["enabled"] = value
-        self._update_data()
+        if self._supports_tracks:
+            self._item_data["tracks"]["enabled"] = value
+            self._update_data()
 
     @property
     def _tracking_interval(self):
-        return self._item_data["tracks"]["updateInterval"]
+        if self._supports_tracks:
+            return self._item_data["tracks"]["updateInterval"]
 
     @_tracking_interval.setter
     def _tracking_interval(self, value):
-        self._item_data["tracks"]["updateInterval"] = value
-        self._update_data()
+        if self._supports_tracks:
+            self._item_data["tracks"]["updateInterval"] = value
+            self._update_data()
 
     @property
     def integrations(self):
@@ -189,12 +202,18 @@ class Project:
     @_lazy_property
     def tracks_item(self):
         """The tracks :class:`~arcgis.gis.Item`"""
-        return self.gis.content.get(self._item_data['tracks']['serviceItemId'])
+        if self._supports_tracks:
+            return self.gis.content.get(self._item_data['tracks']['serviceItemId'])
+        else:
+            warn("This Workforce Project does not support tracks.", WorkforceWarning)
 
     @property
     def tracks_layer_url(self):
         """The tracks feature layer url"""
-        return self._item_data['tracks']['url']
+        if self._supports_tracks:
+            return self._item_data['tracks']['url']
+        else:
+            warn("This Workforce Project does not support tracks.", WorkforceWarning)
 
     @property
     def workers_layer_url(self):
@@ -234,7 +253,10 @@ class Project:
     @_lazy_property
     def tracks_layer(self):
         """The tracks :class:`~arcgis.features.FeatureLayer`"""
-        return FeatureLayer(self.tracks_layer_url, self.gis)
+        if self._supports_tracks:
+            return FeatureLayer(self.tracks_layer_url, self.gis)
+        else:
+            warn("This Workforce Project does not support tracks.", WorkforceWarning)
 
     @_lazy_property
     def workers_item(self):
@@ -279,7 +301,10 @@ class Project:
     @property
     def tracks(self):
         """The :class:`~arcgis.apps.workforce.managers.TrackManager` for the project"""
-        return TrackManager(self)
+        if self._item_data.get("tracks", None) is not None:
+            return TrackManager(self)
+        else:
+            warn("This Workforce Project does not support tracks.", WorkforceWarning)
 
     @property
     def assignment_types(self):

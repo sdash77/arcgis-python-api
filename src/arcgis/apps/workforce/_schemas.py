@@ -71,7 +71,9 @@ class AssignmentSchema(FeatureSchema):
     @property
     def assignment_read(self):
         """Gets the assignment read field name"""
-        return self._field_called('assignmentRead')['name']
+        field = self._field_called('assignmentRead')
+        if field is not None:
+            return field['name']
 
     @property
     def assignment_type(self):

@@ -1,10 +1,11 @@
 """ Defines the Assignment object.
 """
-from .exceptions import ValidationError
 from .feature_model import FeatureModel
 from .managers import *
 from ._schemas import AssignmentSchema
 from .assignment_type import AssignmentType
+from .exceptions import WorkforceWarning, ValidationError
+from warnings import warn
 
 
 class Assignment(FeatureModel):
@@ -214,6 +215,10 @@ class Assignment(FeatureModel):
         delete_assignments(self.project, [self])
 
     @property
+    def _supports_assignment_read_field(self):
+        return bool(self._schema.assignment_read)
+
+    @property
     def attachments(self):
         """Gets the :class:`~arcgis.apps.workforce.managers.AssignmentAttachmentManager` of the assignment"""
         return AssignmentAttachmentManager(self)
@@ -230,11 +235,17 @@ class Assignment(FeatureModel):
     @property
     def assignment_read(self):
         """Gets/Sets the assignment read field"""
-        return bool(self._feature.attributes.get(self._schema.assignment_read))
+        if self._supports_assignment_read_field:
+            return bool(self._feature.attributes.get(self._schema.assignment_read))
+        else:
+            warn("This Workforce Project does not support the assignment_read field.", WorkforceWarning)
 
     @assignment_read.setter
     def assignment_read(self, value):
-        self._feature.attributes[self._schema.assignment_read] = 1 if value else 0
+        if self._supports_assignment_read_field:
+            self._feature.attributes[self._schema.assignment_read] = 1 if value else 0
+        elif value is not None:
+            warn("This Workforce Project does not support the assignment_read field.", WorkforceWarning)
 
     @property
     def assignment_type_code(self):
