@@ -346,7 +346,8 @@ class GIS(object):
                                                                     url)
                 self._portal.url = url
                 self._portal.con.baseurl = self._portal.resturl
-                self._portal.con._token = None
+                if self._portal.con._auth != "OAUTH":
+                    self._portal.con._token = None
             elif url.lower().find("arcgis.com") > -1 and \
                  self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
