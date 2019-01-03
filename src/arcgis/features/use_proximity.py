@@ -259,6 +259,7 @@ def plan_routes(
         travel_mode="Driving",
         stop_service_time=0,
         max_route_time=525600,
+        include_route_layers=False,
         output_name=None,
         context=None,
         gis=None):
@@ -296,6 +297,8 @@ def plan_routes(
 
     max_route_time : Optional float
 
+    include_route_layers : Optional bool
+
     output_name : Optional string
 
     context : Optional string
@@ -325,5 +328,6 @@ def plan_routes(
         travel_mode,
         stop_service_time,
         max_route_time,
+        include_route_layers,
         output_name,
         context)
