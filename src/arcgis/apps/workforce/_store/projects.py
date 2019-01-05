@@ -64,6 +64,10 @@ def _v2_create_project(gis, summary, title):
 
 def _v1_create_project(gis, summary, title):
 
+    for f in gis.users.me.folders:
+        if f['title'].lower() == title.lower():
+            raise WorkforceError("A folder named '{}' already exists.".format(title))
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         future_folder = executor.submit(gis.content.create_folder, title)
         future_group = executor.submit(gis.groups.create,
