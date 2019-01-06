@@ -2320,3 +2320,165 @@ def list_datastore_content(datastore, filter=None, *, gis=None, **kwargs):
         return None
     return _json.loads(job_values["contentList"]["contentList"])
 
+def build_footprints(image_collection,
+                     computation_method="RADIOMETRY",
+                     value_range=None,
+                     context=None,
+                     *,
+                     gis=None,
+                     **kwargs):
+    """
+
+    Computes the extent of every raster in a mosaic dataset. 
+
+    Parameters
+    ----------
+    image_collection : Required. The input image collection.The image_collection can be a 
+                       portal Item or an image service URL or a URI.
+                       The image_collection must exist.
+
+    computation_method : Optional. Refine the footprints using one of the following methods: 
+                         RADIOMETRY, GEOMETRY
+                         Default: RADIOMETRY
+
+    value_range: Optional. Parameter to specify the value range.
+
+    context : Optional dictionary. Can be used to specify values for keys like:
+              whereClause, minValue, maxValue, numVertices, shrinkDistance, maintainEdge,
+              skipDerivedImages, updateBoundary, requestSize, minRegionSize, simplification,
+              edgeTorelance, maxSliverSize, minThinnessRatio
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "BuildFootprints"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+
+    computation_method_values = ["RADIOMETRY","GEOMETRY"]
+    if not computation_method.upper() in computation_method_values:
+        raise RuntimeError("computation_method can only be one of the following: RADIOMETRY, GEOMETRY")
+
+    params["computationMethod"] = computation_method
+
+    if value_range is not None:
+        params["valueRange"] = value_range
+    
+    _set_context(params, context)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+
+    return job_values["outCollection"]["url"]
+
+
+def build_overview(image_collection,
+                   cell_size=None,
+                   context=None,
+                    *,
+                    gis=None,
+                    **kwargs):
+    """
+
+    Parameters
+    ----------
+    image_collection : Required. The input image collection.The image_collection can be a 
+                       portal Item or an image service URL or a URI.
+                       The image_collection must exist.
+
+    cell_size : optional float or int, to set the cell size for overview.
+
+    context : optional dictionary
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "BuildOverview"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+
+    if cell_size is not None:
+        params["cellSize"] = cell_size
+    
+    _set_context(params, context)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+
+    return job_values["outCollection"]["url"]
+
+
+def calculate_statistics(image_collection,
+                         skip_factors=None,
+                         context=None,
+                          *,
+                          gis=None,
+                          **kwargs):
+    """
+    Calculates statistics for an image collection
+
+    Parameters
+    ----------
+    image_collection : Required. The input image collection.The image_collection can be a 
+                       portal Item or an image service URL or a URI.
+                       The image_collection must exist.
+
+    skip_factors : optional dictionary, Controls the portion of the raster that is used when calculating the statistics.
+                    eg: {"x":5,"y":5} x value represents - the number of horizontal pixels between samples
+                                      y value represents - the number of vertical pixels between samples.
+
+    context : optional dictionary. Can be used to specify parameters for calculating statistics. Keys can be 
+             ignoreValues, skipExisting, areaOfInterest
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "CalculateStatistics"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+
+    if skip_factors is not None:
+        params["skipfactors"] = skip_factors
+    
+    _set_context(params, context)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+
+    return job_values["outCollection"]["url"]
