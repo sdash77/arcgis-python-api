@@ -79,7 +79,7 @@ class Test_Navigator_Integrations(unittest.TestCase):
 
     def test_navigator_no_params(self):
         try:
-            self.assertEqual(build_navigator_url(), "arcgis-navigator://")
+            self.assertEqual(build_navigator_url(), "https://navigator.arcgis.app")
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
@@ -90,10 +90,37 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_one_stop_with_non_name(self):
+    def test_navigator_no_params_as_weblink(self):
+        try:
+            self.assertEqual(build_navigator_url(url_type="Web"), "https://navigator.arcgis.app")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_navigator_no_params_as_applink(self):
+        try:
+            url = build_navigator_url(url_type="App")
+            self.assertEqual(url, "arcgis-navigator://")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_navigator_one_stop_with_non_name_as_applink(self):
         try:
             stop = ("-123.456,67.87",)
-            url = build_navigator_url(stops=[stop])
+            url = build_navigator_url(stops=[stop], url_type="App")
             self.assertEqual(url, "arcgis-navigator://?stop={}".format(
                 "-123.456,67.87"
             ))
@@ -107,10 +134,10 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_one_stop_with_name(self):
+    def test_navigator_one_stop_with_name_as_applink(self):
         try:
             stop = ("-123.456,67.87", "esri")
-            url = build_navigator_url(stops=[stop])
+            url = build_navigator_url(stops=[stop], url_type="App")
             self.assertEqual(url, "arcgis-navigator://?stop={}&stopname={}".format(
                 "-123.456,67.87",
                 stop[1]
@@ -125,10 +152,10 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_with_names(self):
+    def test_navigator_two_stops_with_names_as_applink(self):
         try:
             stops = [("-123.456,67.87", "esri office"), ("-123.654,34.45", "portland maine")]
-            url = build_navigator_url(stops=stops)
+            url = build_navigator_url(stops=stops, url_type="App")
             self.assertEqual(url, "arcgis-navigator://?stop={}&stopname={}&stop={}&stopname={}".format(
                 "-123.456,67.87",
                 "esri%20office",
@@ -145,11 +172,15 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_one_name(self):
+    def test_navigator_two_stops_one_name_as_applink(self):
         try:
             stops = [("-123.456,67.87", "esri"), ("-123.654,34.45",)]
-            with self.assertRaises(ValueError):
-                build_navigator_url(stops=stops)
+            url = build_navigator_url(stops=stops, url_type="App")
+            self.assertEqual(url, "arcgis-navigator://?stop={}&stopname={}&stop={}".format(
+                "-123.456,67.87",
+                "esri",
+                "-123.654,34.45"
+            ))
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
@@ -160,10 +191,10 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_no_names(self):
+    def test_navigator_two_stops_no_names_as_applink(self):
         try:
             stops = [("-123.456,67.87",), ("-123.654,34.45",)]
-            url = build_navigator_url(stops=stops)
+            url = build_navigator_url(stops=stops, url_type="App")
             self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
@@ -178,10 +209,10 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_optimize(self):
+    def test_navigator_two_stops_optimize_as_applink(self):
         try:
             stops = [("-123.456,67.87",), ("-123.654,34.45",)]
-            url = build_navigator_url(stops=stops, optimize=True)
+            url = build_navigator_url(stops=stops, optimize=True, url_type="App")
             self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}&optimize={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
@@ -197,11 +228,11 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_navigate(self):
+    def test_navigator_two_stops_navigate_as_weblink(self):
         try:
             stops = [("-123.456,67.87",), ("-123.654,34.45",)]
             url = build_navigator_url(stops=stops, navigate=True)
-            self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}&navigate={}".format(
+            self.assertEqual(url, "https://navigator.arcgis.app?stop={}&stop={}&navigate={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
                 "true"
@@ -216,11 +247,11 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_navigate_optimize(self):
+    def test_navigator_two_stops_navigate_optimize_as_weblink(self):
         try:
             stops = [("-123.456,67.87",), ("-123.654,34.45",)]
             url = build_navigator_url(stops=stops, navigate=True, optimize=True)
-            self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}&optimize={}&navigate={}".format(
+            self.assertEqual(url, "https://navigator.arcgis.app?stop={}&stop={}&optimize={}&navigate={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
                 "true",
@@ -236,11 +267,11 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_callback(self):
+    def test_navigator_two_stops_callback_as_weblink(self):
         try:
             stops = [("-123.456,67.87",), ("-123.654,34.45",)]
             url = build_navigator_url(stops=stops, callback="arcgis-collector://", callback_prompt="Collector for ArcGIS")
-            self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}&callback={}&callbackprompt={}".format(
+            self.assertEqual(url, "https://navigator.arcgis.app?stop={}&stop={}&callback={}&callbackprompt={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
                 "arcgis-collector://",
@@ -256,11 +287,11 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_callback_no_prompt(self):
+    def test_navigator_two_stops_callback_no_prompt_as_weblink(self):
         try:
             stops = [("-123.456,67.87",), ("-123.654,34.45",)]
             url = build_navigator_url(stops=stops, callback="arcgis-collector://")
-            self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}&callback={}".format(
+            self.assertEqual(url, "https://navigator.arcgis.app?stop={}&stop={}&callback={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
                 "arcgis-collector://"
@@ -275,11 +306,11 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_travel_mode(self):
+    def test_navigator_two_stops_travel_mode_as_weblink(self):
         try:
             stops = [("-123.456,67.87",), ("-123.654,34.45",)]
             url = build_navigator_url(stops=stops, travel_mode="Driving Time")
-            self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}&travelmode={}".format(
+            self.assertEqual(url, "https://navigator.arcgis.app?stop={}&stop={}&travelmode={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
                 "Driving%20Time"
@@ -294,11 +325,11 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_two_stops_custom_travel_mode(self):
+    def test_navigator_two_stops_custom_travel_mode_as_weblink(self):
         try:
             stops = ["-123.456,67.87", "-123.654,34.45"]
             url = build_navigator_url(stops=stops, travel_mode="Custom Driving Time")
-            self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}&travelmode={}".format(
+            self.assertEqual(url, "https://navigator.arcgis.app?stop={}&stop={}&travelmode={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
                 "Custom%20Driving%20Time"
@@ -313,14 +344,28 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_navigator_stop_with_no_name(self):
+    def test_navigator_stop_with_no_name_as_weblink(self):
         try:
             stops = ["-123.456,67.87", "-123.654,34.45"]
             url = build_navigator_url(stops=stops)
-            self.assertEqual(url, "arcgis-navigator://?stop={}&stop={}".format(
+            self.assertEqual(url, "https://navigator.arcgis.app?stop={}&stop={}".format(
                 "-123.456,67.87",
                 "-123.654,34.45",
             ))
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_navigator_exception_incorrect_url_type(self):
+        try:
+            with self.assertRaises(ValueError):
+                build_navigator_url(url_type="Fake")
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException

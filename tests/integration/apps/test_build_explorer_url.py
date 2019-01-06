@@ -90,6 +90,33 @@ class Test_Explorer_Integrations(unittest.TestCase):
     def test_explorer_no_params(self):
         try:
             url = build_explorer_url()
+            self.assertEqual(url, "https://explorer.arcgis.app")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_navigator_no_params_as_weblink(self):
+        try:
+            self.assertEqual(build_explorer_url(url_type="Web"), "https://explorer.arcgis.app")
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_navigator_no_params_as_applink(self):
+        try:
+            url = build_explorer_url(url_type="App")
             self.assertEqual(url, "arcgis-explorer://")
         except AssertionError as assertErrorException:
             test_skip = True
@@ -101,9 +128,9 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id(self):
+    def test_explorer_item_id_as_applink(self):
         try:
-            url = build_explorer_url(webmap=self.item_id)
+            url = build_explorer_url(webmap=self.item_id, url_type="App")
             self.assertEqual(url, "arcgis-explorer://?itemID={}".format(
                 self.item_id
             ))
@@ -117,10 +144,11 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_search(self):
+    def test_explorer_item_id_search_as_applink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
-                                     search=self.search)
+                                     search=self.search,
+                                     url_type="App")
             self.assertEqual(url, "arcgis-explorer://?itemID={}&search={}".format(
                 self.item_id,
                 "Portland%20ME"
@@ -135,19 +163,21 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_bookmark(self):
+    def test_explorer_item_id_bookmark_as_applink(self):
         url = build_explorer_url(webmap=self.item_id,
-                                 bookmark=self.bookmark)
+                                 bookmark=self.bookmark,
+                                 url_type="App")
         self.assertEqual(url, "arcgis-explorer://?itemID={}&bookmark={}".format(
             self.item_id,
             "Greater%20Portland,%20ME"
         ))
 
-    def test_explorer_item_id_center_scale(self):
+    def test_explorer_item_id_center_scale_as_applink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
                                      center=self.center,
-                                     scale=self.scale)
+                                     scale=self.scale,
+                                     url_type="App")
             self.assertEqual(url, "arcgis-explorer://?itemID={}&center={}&scale={}".format(
                 self.item_id,
                 self.center,
@@ -163,13 +193,13 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_center_scale_wkid(self):
+    def test_explorer_item_id_center_scale_wkid_as_weblink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
                                      center=self.center,
                                      scale=self.scale,
                                      wkid=self.wkid)
-            self.assertEqual(url, "arcgis-explorer://?itemID={}&center={}&scale={}&wkid={}".format(
+            self.assertEqual(url, "https://explorer.arcgis.app?itemID={}&center={}&scale={}&wkid={}".format(
                 self.item_id,
                 self.center,
                 self.scale,
@@ -185,13 +215,13 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_center_scale_rotation(self):
+    def test_explorer_item_id_center_scale_rotation_as_weblink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
                                      center=self.center,
                                      scale=self.scale,
                                      rotation=self.rotation)
-            self.assertEqual(url, "arcgis-explorer://?itemID={}&center={}&scale={}&rotation={}".format(
+            self.assertEqual(url, "https://explorer.arcgis.app?itemID={}&center={}&scale={}&rotation={}".format(
                 self.item_id,
                 self.center,
                 self.scale,
@@ -207,13 +237,13 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_center_scale_markup(self):
+    def test_explorer_item_id_center_scale_markup_as_weblink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
                                      center=self.center,
                                      scale=self.scale,
                                      markup=self.markup)
-            self.assertEqual(url, "arcgis-explorer://?itemID={}&center={}&scale={}&markup={}".format(
+            self.assertEqual(url, "https://explorer.arcgis.app?itemID={}&center={}&scale={}&markup={}".format(
                 self.item_id,
                 self.center,
                 self.scale,
@@ -229,14 +259,14 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_center_scale_wkid_rotation(self):
+    def test_explorer_item_id_center_scale_wkid_rotation_as_weblink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
                                      center=self.center,
                                      scale=self.scale,
                                      wkid=self.wkid,
                                      rotation=self.rotation)
-            self.assertEqual(url, "arcgis-explorer://?itemID={}&center={}&scale={}&wkid={}&rotation={}".format(
+            self.assertEqual(url, "https://explorer.arcgis.app?itemID={}&center={}&scale={}&wkid={}&rotation={}".format(
                 self.item_id,
                 self.center,
                 self.scale,
@@ -253,14 +283,14 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_center_scale_wkid_markup(self):
+    def test_explorer_item_id_center_scale_wkid_markup_as_weblink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
                                      center=self.center,
                                      scale=self.scale,
                                      wkid=self.wkid,
                                      markup=self.markup)
-            self.assertEqual(url, "arcgis-explorer://?itemID={}&center={}&scale={}&wkid={}&markup={}".format(
+            self.assertEqual(url, "https://explorer.arcgis.app?itemID={}&center={}&scale={}&wkid={}&markup={}".format(
                 self.item_id,
                 self.center,
                 self.scale,
@@ -277,7 +307,7 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_center_scale_wkid_rotation_markup(self):
+    def test_explorer_item_id_center_scale_wkid_rotation_markup_as_weblink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
                                      center=self.center,
@@ -285,7 +315,7 @@ class Test_Explorer_Integrations(unittest.TestCase):
                                      wkid=self.wkid,
                                      rotation=self.rotation,
                                      markup=self.markup)
-            self.assertEqual(url, "arcgis-explorer://?itemID={}&center={}&scale={}&wkid={}&rotation={}&markup={}".format(
+            self.assertEqual(url, "https://explorer.arcgis.app?itemID={}&center={}&scale={}&wkid={}&rotation={}&markup={}".format(
                 self.item_id,
                 self.center,
                 self.scale,
@@ -303,20 +333,34 @@ class Test_Explorer_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-    def test_explorer_item_id_center_scale_rotation_markup(self):
+    def test_explorer_item_id_center_scale_rotation_markup_as_weblink(self):
         try:
             url = build_explorer_url(webmap=self.item_id,
                                      center=self.center,
                                      scale=self.scale,
                                      rotation=self.rotation,
                                      markup=self.markup)
-            self.assertEqual(url, "arcgis-explorer://?itemID={}&center={}&scale={}&rotation={}&markup={}".format(
+            self.assertEqual(url, "https://explorer.arcgis.app?itemID={}&center={}&scale={}&rotation={}&markup={}".format(
                 self.item_id,
                 self.center,
                 self.scale,
                 self.rotation,
                 str(self.markup).lower()
             ))
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_explorer_exception_incorrect_url_type(self):
+        try:
+            with self.assertRaises(ValueError):
+                build_explorer_url(url_type="Fake")
         except AssertionError as assertErrorException:
             test_skip = True
             raise assertErrorException
