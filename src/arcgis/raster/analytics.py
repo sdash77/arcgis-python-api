@@ -40,7 +40,7 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
     return ''.join(_random.choice(chars) for _ in range(size))
 
         
-def _create_output_image_service(gis, output_name, task):
+def _create_output_image_service(gis, output_name, task, folder=None):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
     if not ok:
         raise RuntimeError("An Image Service by this name already exists: " + output_name)
@@ -57,7 +57,7 @@ def _create_output_image_service(gis, output_name, task):
     }
 
     output_service = gis.content.create_service(output_name, create_params=create_parameters,
-                                                      service_type="imageService")
+                                                      service_type="imageService", folder=folder)
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
         "description": description,
@@ -67,7 +67,7 @@ def _create_output_image_service(gis, output_name, task):
     output_service.update(item_properties)
     return output_service
 
-def _create_output_feature_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics'):
+def _create_output_feature_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics', folder=None):
     ok = gis.content.is_service_name_available(output_name, 'Feature Service')
     if not ok:
         raise RuntimeError("A Feature Service by this name already exists: " + output_name)
@@ -100,7 +100,7 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
             "name": output_service_name.replace(' ', '_')
         }
 
-    output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
+    output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService", folder=folder)
     description = "Feature Service generated from running the " + task + " tool."
     item_properties = {
             "description" : description,
@@ -111,7 +111,7 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
     return output_service
 
 
-def _flow_direction_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None):
+def _flow_direction_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
     input_surface_raster = forceFlow = flowDirectionType = output_flow_direction_raster = output_drop_name = None
 
     input_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
@@ -122,9 +122,9 @@ def _flow_direction_analytics_converter(raster_function,output_name=None, other_
     output_flow_direction_raster = output_name
     if "out_drop_raster" in other_outputs.keys():
         output_drop_name = "out_drop_raster" + '_' + _id_generator()
-    return _flow_direction(input_surface_raster, forceFlow, flowDirectionType, output_flow_direction_raster, output_drop_name, gis=gis)
+    return _flow_direction(input_surface_raster, forceFlow, flowDirectionType, output_flow_direction_raster, output_drop_name, gis=gis, **kwargs)
 
-def _calculate_travel_cost_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None):
+def _calculate_travel_cost_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
     input_source = None
     input_cost_raster=None
     input_surface_raster=None
@@ -201,33 +201,57 @@ def _return_output(num_returns, output_dict ,return_value_names):
         function_output = NamedTuple(**output_dict)
         return function_output
 
-def _set_output_raster(output_name, task, gis):
+def _set_output_raster(output_name, task, gis, output_properties=None):
     output_service = None
     output_raster = None
+    
+    if task == "GenerateRaster":
+        task_name = "GeneratedRasterProduct"
+    else:
+        task_name = task
+
+    folder = None
+    folderId = None
+
+    if output_properties is not None:
+        if "folder" in output_properties:
+            folder = output_properties["folder"]
+    if folder is not None:
+        if isinstance(folder, dict):
+            if "id" in folder:
+                folderId = folder["id"]
+                folder=folder["title"]
+        else:
+            owner = gis.properties.user.username
+            folderId = gis._portal.get_folder_id(owner, folder)
+        if folderId is None:
+            folder_dict = gis.content.create_folder(folder, owner)
+            folder = folder_dict["title"]
+            folderId = folder_dict["id"]
 
     if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-
+        output_name = str(task_name) + '_' + _id_generator()
+        output_service = _create_output_image_service(gis, output_name, task, folder=folder)
+        output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
     elif isinstance(output_name, str):
-            output_service = _create_output_image_service(gis, output_name, task)
-            output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-
-    elif isinstance(output_name, _arcgis.gis.Item):        
+        output_service = _create_output_image_service(gis, output_name, task, folder=folder)
+        output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+    elif isinstance(output_name, _arcgis.gis.Item):
         output_service = output_name
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
-
+        output_raster = {"itemProperties":{"itemId":output_service.itemid}}
     else:
-        raise TypeError("output name should be a string (service name) or Item")
+        raise TypeError("output_raster should be a string (service name) or Item") 
 
+    if folderId is not None:
+        output_raster["itemProperties"].update({"folderId":folderId})
+    output_raster = _json.dumps(output_raster)
     return output_raster, output_service
 
-def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None):
+def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
     if raster_function['rasterFunctionArguments']['toolName'] is "FlowDirection_sa":
-        return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis)
+        return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
     if raster_function['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
-        return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis)
+        return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
 
 def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None, image_collection_properties = None, use_input_rasters_by_ref = False):
     
@@ -336,6 +360,7 @@ def _set_image_collection_param(gis, params, image_collection):
 
     return
 
+
 # def monitor_vegetation(input_raster,
 #                        method_to_use='NDVI',
 #                        nir_band=1,
@@ -428,7 +453,9 @@ def generate_raster(raster_function,
                     function_arguments=None,
                     output_raster_properties=None,
                     output_name=None,
-                    gis=None):
+                    *,
+                    gis=None,
+                    **kwargs):
     """
 
 
@@ -461,21 +488,8 @@ def generate_raster(raster_function,
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
-    
-    output_service = None
 
-    if output_name is None:
-        output_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item") 
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     if isinstance(function_arguments, _arcgis.gis.Item):
         if function_arguments.type.lower() == 'image service':
@@ -493,7 +507,6 @@ def generate_raster(raster_function,
     if output_raster_properties is not None:
         params["outputRasterProperties"] = output_raster_properties
     _set_context(params)
-
 
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
@@ -515,7 +528,9 @@ def convert_feature_to_raster(input_feature,
                               output_cell_size,
                               value_field=None,
                               output_name=None,
-                              gis=None):
+                              *,
+                              gis=None,
+                              **kwargs):
     """
     Creates a new raster dataset from an existing feature dataset.
     Any feature class containing point, line, or polygon features can be converted to a raster dataset.
@@ -554,18 +569,7 @@ def convert_feature_to_raster(input_feature,
 
     output_service = None
 
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -599,7 +603,9 @@ def copy_raster(input_raster,
                 resampling_method="NEAREST",
                 clip_setting=None,
                 output_name=None,
-                gis=None):
+                *,
+                gis=None,
+                **kwargs):
     """
 
 
@@ -634,18 +640,7 @@ def copy_raster(input_raster,
 
     output_service = None
 
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}) 
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -683,7 +678,9 @@ def summarize_raster_within(input_zone_layer,
                             statistic_type="Mean",
                             ignore_missing_values=True,
                             output_name=None,
-                            gis=None):
+                            *,
+                            gis=None,
+                            **kwargs):
     """
 
 
@@ -736,20 +733,8 @@ def summarize_raster_within(input_zone_layer,
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
-    output_service = None
 
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -788,7 +773,9 @@ def convert_raster_to_feature(input_raster,
                               output_type="Polygon",
                               simplify=True,
                               output_name=None,
-                              gis=None):
+                              *,
+                              gis=None,
+                              **kwargs):
     """
     This service tool converts imagery data to feature class vector data.
 
@@ -838,11 +825,33 @@ def convert_raster_to_feature(input_raster,
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
+    folderId = None
+    folder = None
+    if kwargs is not None:
+        if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
 
-    output_service = _create_output_feature_service(gis, output_name, output_service_name, 'Convert Raster To Feature')
+    output_service = _create_output_feature_service(gis, output_name, output_service_name, 'Convert Raster To Feature', folder)
 
-    params["outputName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+    if folderId is not None:
+        params["outputName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                       "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+    else:
+        params["outputName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
                                        "itemProperties": {"itemId": output_service.itemid}})
+
     if field is not None:
         params["field"] = field
     if output_type is not None:
@@ -873,7 +882,9 @@ def calculate_density(input_point_or_line_features,
                       output_area_units=None,
                       output_cell_size=None,
                       output_name=None,
-                      gis=None):
+                      *,
+                      gis=None,
+                      **kwargs):
     """
     Density analysis takes known quantities of some phenomenon and creates a density map by spreading
     these quantities across the map. You can use this tool, for example, to show concentrations of
@@ -954,20 +965,7 @@ def calculate_density(input_point_or_line_features,
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
-    output_service = None
-
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -1019,7 +1017,9 @@ def create_viewshed(input_elevation_surface,
                     target_height_field=None,
                     above_ground_level_output_name=None,
                     output_name=None,
-                    gis=None):
+                    *,
+                    gis=None,
+                    **kwargs):
     """
     Compute visibility for an input elevation raster using geodesic method.
 
@@ -1075,21 +1075,9 @@ def create_viewshed(input_elevation_surface,
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
+    return_value_names = ["output_raster"]
 
-    output_service = None
-
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -1124,7 +1112,9 @@ def create_viewshed(input_elevation_surface,
     if target_height_field is not None:
         params["targetHeightField"] = target_height_field
     if above_ground_level_output_name is not None:
-        params["aboveGroundLevelOutputName"] = above_ground_level_output_name
+        above_ground_level_raster, above_ground_level_service = _set_output_raster(above_ground_level_output_name, task, gis, kwargs)
+        params["aboveGroundLevelOutputName"] = above_ground_level_raster
+        return_value_names.extend(["output_above_ground_level_raster"])
     _set_context(params)
 
 
@@ -1132,24 +1122,24 @@ def create_viewshed(input_elevation_surface,
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
-    if output_name is not None:
-        item_properties = {
-            "properties": {
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                "jobId": job_info['jobId'],
-                "jobStatus": "completed"
-            }
+    
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
         }
-        output_service.update(item_properties)
-        return output_service
-    else:
-        # Feature Collection
+    }
+    output_service.update(item_properties)
+    outputs = {"output_raster" : output_service}
+    if above_ground_level_output_name is not None:
+        above_ground_level_service.update(item_properties)
+        outputs.update({"output_above_ground_level_raster" : above_ground_level_service})
 
-        output_raster = job_values['outputRaster']
+    num_returns = len(outputs)
 
-        output_above_ground_level_raster = job_values['outputAboveGroundLevelRaster']
-        return {"output_raster": output_raster, "output_above_ground_level_raster": output_above_ground_level_raster, }
+    return _return_output(num_returns,outputs,return_value_names)
 
 
 def interpolate_points(input_point_features,
@@ -1161,7 +1151,9 @@ def interpolate_points(input_point_features,
                        output_cell_size=None,
                        output_prediction_error=False,
                        output_name=None,
-                       gis=None):
+                       *,
+                       gis=None,
+                       **kwargs):
     """
     This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
     takes point data with values at each point and returns a raster of predicted values:
@@ -1242,20 +1234,8 @@ def interpolate_points(input_point_features,
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
-    output_service = None
 
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -1311,7 +1291,9 @@ def classify(input_raster,
              input_classifier_definition,
              additional_input_raster=None,
              output_name=None,
-             gis=None):
+             *,
+             gis=None,
+             **kwargs):
     """
 
 
@@ -1342,20 +1324,7 @@ def classify(input_raster,
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
-    output_service = None
-
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -1391,7 +1360,9 @@ def segment(input_raster,
             band_indexes="0,1,2",
             remove_tiling_artifacts="false",
             output_name=None,
-            gis=None):
+            *,
+            gis=None,
+            **kwargs):
     """
 
 
@@ -1427,20 +1398,7 @@ def segment(input_raster,
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
-    output_service = None
-
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -1476,7 +1434,9 @@ def train_classifier(input_raster,
                      classifier_parameters,
                      segmented_raster=None,
                      segment_attributes="COLOR;MEAN",
-                     gis=None):
+                     *,
+                     gis=None,
+                     **kwargs):
     """
 
 
@@ -1531,7 +1491,9 @@ def create_image_collection(image_collection,
                             raster_type_params = None,
                             out_sr = None,
                             context = None,
-                            gis = None):
+                            *,
+                            gis=None,
+                            **kwargs):
                             
     """
     Create a collection of images that will participate in the ortho-mapping project.
@@ -1602,6 +1564,8 @@ def create_image_collection(image_collection,
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
+    folder = None
+    folderId = None
 
     params = {}
     image_collection_properties = None
@@ -1633,7 +1597,25 @@ def create_image_collection(image_collection,
             else:
                 doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service") 
                 if doesnotexist:
-                    params["imageCollection"] = _json.dumps({"serviceProperties": {"name" : image_collection}})
+                    if kwargs is not None:
+                        if "folder" in kwargs:
+                            folder = kwargs["folder"]
+                    if folder is not None:
+                        if isinstance(folder, dict):
+                            if "id" in folder:
+                                folderId = folder["id"]
+                                folder=folder["title"]
+                        else:
+                            owner = gis.properties.user.username
+                            folderId = gis._portal.get_folder_id(owner, folder)
+                        if folderId is None:
+                            folder_dict = gis.content.create_folder(folder, owner)
+                            folder = folder_dict["title"]
+                            folderId = folder_dict["id"]
+                        params["imageCollection"] =  _json.dumps({"serviceProperties": {"name" : image_collection}, "itemProperties": {"folderId" : folderId}})
+                    else:
+                        params["imageCollection"] = _json.dumps({"serviceProperties": {"name" : image_collection}})
+                    
     _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params, image_collection_properties, use_input_rasters_by_ref)
 
     # context
@@ -1674,7 +1656,9 @@ def add_image(image_collection,
               raster_type_name=None, 
               raster_type_params=None, 
               context = None,
-              gis =None):
+              *,
+              gis=None,
+              **kwargs):
     """
     Add a collection of images to an existing image_collection. Provides provision to use input rasters by reference 
     and to specify image collection properties through context parameter.
@@ -1772,7 +1756,9 @@ def add_image(image_collection,
 ###################################################################################################
 def delete_image(image_collection, 
                  where, 
-                 gis = None):
+                 *,
+                 gis=None,
+                 **kwargs):
     """
     delete_image allows users to remove existing images from the image collection (mosaic dataset). 
     The function will only delete the raster item in the mosaic dataset and will not remove the
@@ -1828,7 +1814,9 @@ def delete_image(image_collection,
 ## Delete image collection
 ###################################################################################################
 def delete_image_collection(image_collection,
-                            gis = None):
+                            *,
+                            gis=None,
+                            **kwargs):
     '''
     Delete the image collection. This service tool will delete the image collection
     image service, that is, the portal-hosted image layer item. It will not delete 
@@ -1883,7 +1871,9 @@ def _flow_direction(input_surface_raster,
                    flow_direction_type= "D8",
                    output_flow_direction_name=None,
                    output_drop_name=None,
-                   gis=None):
+                   *,
+                   gis=None,
+                   **kwargs):
     """
     Replaces cells of a raster corresponding to a mask 
     with the values of the nearest neighbors.
@@ -1923,13 +1913,13 @@ def _flow_direction(input_surface_raster,
     return_value_names = ["output_flow_direction_service"]
     params = {}
 
-    output_flow_direction_raster, output_flow_direction_service = _set_output_raster(output_flow_direction_name, task, gis)  
+    output_flow_direction_raster, output_flow_direction_service = _set_output_raster(output_flow_direction_name, task, gis, kwargs)  
     params["outputFlowDirectionName"] = output_flow_direction_raster 
 
     params["inputSurfaceRaster"] = _layer_input(input_surface_raster)
     
     if output_drop_name is not None:
-        output_drop_raster, output_drop_service = _set_output_raster(output_drop_name, task, gis) 
+        output_drop_raster, output_drop_service = _set_output_raster(output_drop_name, task, gis, kwargs) 
         params["outputDropName"] = output_drop_raster
         return_value_names.extend(["output_drop_service"])
 
@@ -1990,7 +1980,9 @@ def _calculate_travel_cost(input_source,
                           output_distance_name=None,
                           output_backlink_name=None,
                           output_allocation_name=None,
-                          gis=None):
+                          *,
+                          gis=None,
+                          **kwargs):
     """
 
     Parameters
@@ -2053,7 +2045,7 @@ def _calculate_travel_cost(input_source,
     return_value_names = ["output_distance_service"]
     params = {}
 
-    output_distance_raster, output_distance_service = _set_output_raster(output_distance_name, task, gis)  
+    output_distance_raster, output_distance_service = _set_output_raster(output_distance_name, task, gis, kwargs)  
     params["outputDistanceName"] = output_distance_raster 
 
     if input_source is not None:
@@ -2109,7 +2101,7 @@ def _calculate_travel_cost(input_source,
         
         #output_backlink_raster = _json.dumps({"serviceProperties": {"name" : output_backlink_name, "serviceUrl" : output_backlink_service.url}, "itemProperties": {"itemId" : output_backlink_service.itemid}}) 
         #output_backlink_raster = _json.dumps({"serviceProperties": {"name" : output_backlink_name}})
-        output_backlink_raster, output_backlink_service = _set_output_raster(output_backlink_name, task, gis)
+        output_backlink_raster, output_backlink_service = _set_output_raster(output_backlink_name, task, gis, kwargs)
         params["outputBacklinkName"] = output_backlink_raster
         return_value_names.extend(["output_backlink_service"])
 
@@ -2123,7 +2115,7 @@ def _calculate_travel_cost(input_source,
         #    raise TypeError("output_allocation_name should be a string (service name) or Item")
         
         #output_allocation_raster = _json.dumps({"serviceProperties": {"name" : output_allocation_name, "serviceUrl" : output_allocation_service.url}, "itemProperties": {"itemId" : output_allocation_service.itemid}}) 
-        output_allocation_raster, out_allocation_service = _set_output_raster(output_allocation_name, task, gis) 
+        output_allocation_raster, out_allocation_service = _set_output_raster(output_allocation_name, task, gis, kwargs) 
         params["outputAllocationName"] = output_allocation_raster
         return_value_names.extend(["output_allocation_service"])
 
@@ -2159,7 +2151,9 @@ def optimum_travel_cost_network(input_regions_raster,
                                 output_optimum_network_name=None,
                                 output_neighbor_network_name=None,
                                 context=None,
-                                gis=None):
+                                *,
+                                gis=None,
+                                **kwargs):
 
     """
     calculates the optimum cost network from a set of input regions.
@@ -2203,13 +2197,33 @@ def optimum_travel_cost_network(input_regions_raster,
     else:
         output_optimum_network_service_name = output_optimum_network_name.replace(' ', '_')
 
-    output_optimum_network_service = _create_output_feature_service(gis, output_optimum_network_name, 
-                                                                    output_optimum_network_service_name, 
-                                                                    'DetermineOptimumTravelCostNetwork') 
+    folder = None
+    folderId = None
+    if kwargs is not None:
+        if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
 
-    params["outputOptimumNetworkName"] = _json.dumps({"serviceProperties": {"name": output_optimum_network_service_name, 
-                                                                            "serviceUrl": output_optimum_network_service.url},
-                                                                            "itemProperties": {"itemId": output_optimum_network_service.itemid}})
+    output_optimum_network_service = _create_output_feature_service(gis, output_optimum_network_name, output_optimum_network_service_name, folder)
+
+    if folderId is not None:
+        params["outputOptimumNetworkName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                       "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+    else:
+        params["outputOptimumNetworkName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                       "itemProperties": {"itemId": output_service.itemid}})
+
 
     params["inputRegionsRasterOrFeatures"] = _layer_input(input_regions_raster)
     #primary output end
@@ -2224,11 +2238,17 @@ def optimum_travel_cost_network(input_regions_raster,
     else:
         output_neighbor_network_service_name = output_neighbor_network_name.replace(' ', '_')
 
+    
+
     output_neighbor_network_service = _create_output_feature_service(gis, output_neighbor_network_name, 
                                                                      output_neighbor_network_service_name, 
-                                                                     'DetermineOptimumTravelCostNetwork') 
+                                                                     'DetermineOptimumTravelCostNetwork', folder) 
 
-    params["outputNeighborNetworkName"] = _json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, 
+    if folderId is not None:
+        params["outputNeighborNetworkName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                       "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+    else:
+        params["outputNeighborNetworkName"] = _json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, 
                                                                              "serviceUrl": output_neighbor_network_service.url},
                                                                              "itemProperties": {"itemId": output_neighbor_network_service.itemid}})
     return_value_names.extend(["output_neighbor_network_service"])
@@ -2257,7 +2277,7 @@ def optimum_travel_cost_network(input_regions_raster,
     return _return_output(num_returns, outputs, return_value_names)
 
 
-def list_datastore_content(datastore, filter=None, gis = None):
+def list_datastore_content(datastore, filter=None, *, gis=None, **kwargs):
     """
     Parameters
     ----------
@@ -2300,3 +2320,165 @@ def list_datastore_content(datastore, filter=None, gis = None):
         return None
     return _json.loads(job_values["contentList"]["contentList"])
 
+def build_footprints(image_collection,
+                     computation_method="RADIOMETRY",
+                     value_range=None,
+                     context=None,
+                     *,
+                     gis=None,
+                     **kwargs):
+    """
+
+    Computes the extent of every raster in a mosaic dataset. 
+
+    Parameters
+    ----------
+    image_collection : Required. The input image collection.The image_collection can be a 
+                       portal Item or an image service URL or a URI.
+                       The image_collection must exist.
+
+    computation_method : Optional. Refine the footprints using one of the following methods: 
+                         RADIOMETRY, GEOMETRY
+                         Default: RADIOMETRY
+
+    value_range: Optional. Parameter to specify the value range.
+
+    context : Optional dictionary. Can be used to specify values for keys like:
+              whereClause, minValue, maxValue, numVertices, shrinkDistance, maintainEdge,
+              skipDerivedImages, updateBoundary, requestSize, minRegionSize, simplification,
+              edgeTorelance, maxSliverSize, minThinnessRatio
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "BuildFootprints"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+
+    computation_method_values = ["RADIOMETRY","GEOMETRY"]
+    if not computation_method.upper() in computation_method_values:
+        raise RuntimeError("computation_method can only be one of the following: RADIOMETRY, GEOMETRY")
+
+    params["computationMethod"] = computation_method
+
+    if value_range is not None:
+        params["valueRange"] = value_range
+    
+    _set_context(params, context)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+
+    return job_values["outCollection"]["url"]
+
+
+def build_overview(image_collection,
+                   cell_size=None,
+                   context=None,
+                    *,
+                    gis=None,
+                    **kwargs):
+    """
+
+    Parameters
+    ----------
+    image_collection : Required. The input image collection.The image_collection can be a 
+                       portal Item or an image service URL or a URI.
+                       The image_collection must exist.
+
+    cell_size : optional float or int, to set the cell size for overview.
+
+    context : optional dictionary
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "BuildOverview"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+
+    if cell_size is not None:
+        params["cellSize"] = cell_size
+    
+    _set_context(params, context)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+
+    return job_values["outCollection"]["url"]
+
+
+def calculate_statistics(image_collection,
+                         skip_factors=None,
+                         context=None,
+                          *,
+                          gis=None,
+                          **kwargs):
+    """
+    Calculates statistics for an image collection
+
+    Parameters
+    ----------
+    image_collection : Required. The input image collection.The image_collection can be a 
+                       portal Item or an image service URL or a URI.
+                       The image_collection must exist.
+
+    skip_factors : optional dictionary, Controls the portion of the raster that is used when calculating the statistics.
+                    eg: {"x":5,"y":5} x value represents - the number of horizontal pixels between samples
+                                      y value represents - the number of vertical pixels between samples.
+
+    context : optional dictionary. Can be used to specify parameters for calculating statistics. Keys can be 
+             ignoreValues, skipExisting, areaOfInterest
+
+    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    task = "CalculateStatistics"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    _set_image_collection_param(gis, params, image_collection)
+
+    if skip_factors is not None:
+        params["skipfactors"] = skip_factors
+    
+    _set_context(params, context)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+
+    return job_values["outCollection"]["url"]

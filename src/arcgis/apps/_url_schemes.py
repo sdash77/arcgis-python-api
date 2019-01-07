@@ -1,7 +1,6 @@
 import urllib.parse
 import arcgis
 
-
 def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None):
     """
     Creates a url that can be used to open Collector for ArcGIS
@@ -11,6 +10,7 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
     ------------------     --------------------------------------------------------------------
     webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Collector.
+                           Item can be of type Web Map.
     ------------------     --------------------------------------------------------------------
     center                 Optional :class:`String`. The "lat,long" in WGS84 of where to center the map
     ------------------     --------------------------------------------------------------------
@@ -72,7 +72,7 @@ def _validate_collector_url(webmap, center, feature_layer, fields):
 
 
 def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, scale=None, wkid=None, rotation=None,
-                       markup=None):
+                       markup=None, url_type="Web"):
     """
     Creates a url that can be used to open Explorer for ArcGIS
 
@@ -81,6 +81,7 @@ def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, sca
     ------------------     --------------------------------------------------------------------
     webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Explorer.
+                           Item can be of type Web Map or Mobile Map Package.
     ------------------     --------------------------------------------------------------------
     search                 Optional :class:`String`. The location to search for.
     ------------------     --------------------------------------------------------------------
@@ -93,15 +94,20 @@ def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, sca
     rotation               Optional :class:`Int`. The rotation, in degrees, at which to open the map.
     ------------------     --------------------------------------------------------------------
     markup                 Optional :class:`Boolean`. Determines if the app should open in markup mode.
+    ------------------     --------------------------------------------------------------------
+    url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
     ==================     ====================================================================
 
     Additional info can be found here: https://github.com/Esri/explorer-integration
 
     :return: :class:`String`
     """
-    _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotation, markup)
+    _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotation, markup, url_type)
+    if url_type == "Web":
+        url = "https://explorer.arcgis.app"
+    else:
+        url = "arcgis-explorer://"
     params = []
-    url = "arcgis-explorer://"
     item_id = webmap
     if webmap is not None:
         if isinstance(webmap, arcgis.mapping.WebMap):
@@ -128,7 +134,9 @@ def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, sca
     return url
 
 
-def _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotation, markup):
+def _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotation, markup, url_type):
+    if url_type not in {'Web', 'App'}:
+        raise ValueError("Invalid type -- url_type must be 'Web' or 'App'")
     if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item), isinstance(webmap, arcgis.mapping.WebMap)]):
         raise ValueError("Invalid type for webmap parameter")
     if search and webmap is None:
@@ -149,8 +157,8 @@ def _validate_explorer_url(webmap, search, bookmark, center, scale, wkid, rotati
         raise ValueError("Invalid parameters -- wkid, rotation, or markup requires center and scale")
 
 
-def build_navigator_url(start=None, stops=None, optimize=None, navigate=None, travel_mode=None, callback=None,
-                        callback_prompt=None):
+def build_navigator_url(start=None, stops=None, optimize=None, navigate=None,
+                        travel_mode=None, callback=None, callback_prompt=None, url_type="Web", webmap=None, route_item=None):
     """
     Creates a url that can be used to open Navigator for ArcGIS
 
@@ -175,15 +183,33 @@ def build_navigator_url(start=None, stops=None, optimize=None, navigate=None, tr
     ------------------     --------------------------------------------------------------------
     callback_prompt        Optional :class:`String`. The text to show when the route finishes and the
                            callback is about to be invoked.
+    ------------------     --------------------------------------------------------------------
+    url_type               Optional :class:`String`. The type of url to be returned (e.g. 'Web' or 'App')
+    ------------------     --------------------------------------------------------------------
+    webmap                 Optional :class:`String`, :class:`~arcgis.gis.Item`.
+                           The item id or item representing the map to open in Navigator.
+                           Item can be of type Mobile Map Package.
+    ------------------     --------------------------------------------------------------------
+    route_item             Optional :class:`String`, :class:`~arcgis.gis.Item`.
+                           The item id or item representing the route layer to open.
     ==================     ====================================================================
 
     Additional info can be found here: https://github.com/Esri/navigator-integration
 
     :return: :class:`String`
     """
-    _validate_navigator_url(start, stops, optimize, navigate, travel_mode, callback, callback_prompt)
+    _validate_navigator_url(start, stops, optimize, navigate, travel_mode, callback, callback_prompt, url_type, webmap, route_item)
+    if url_type == "Web":
+        url = "https://navigator.arcgis.app"
+    else:
+        url = "arcgis-navigator://"
     params = []
-    url = "arcgis-navigator://"
+    item_id = webmap
+    if webmap is not None:
+        if isinstance(webmap, arcgis.mapping.WebMap):
+            item_id = webmap.item.id
+        elif isinstance(webmap, arcgis.gis.Item):
+            item_id = webmap.id
     if stops:
         params.extend(_encode_navigator_stops(stops))
     if start:
@@ -194,6 +220,12 @@ def build_navigator_url(start=None, stops=None, optimize=None, navigate=None, tr
         params.append("navigate=" + str(navigate).lower())
     if travel_mode:
         params.append("travelmode=" + _encode_string(travel_mode))
+    if route_item:
+        if isinstance(route_item, arcgis.gis.Item):
+            route_id = route_item.id
+        else:
+            route_id = route_item
+        params.append("routeItemID=" + route_id)
     if callback:
         params.append("callback=" + callback)
     if callback_prompt:
@@ -203,16 +235,22 @@ def build_navigator_url(start=None, stops=None, optimize=None, navigate=None, tr
     return url
 
 
-def _validate_navigator_url(start, stops, optimize, navigate, travel_mode, callback, callback_prompt):
+def _validate_navigator_url(start, stops, optimize, navigate, travel_mode, callback, callback_prompt, url_type, webmap, route_item):
+    if url_type not in {'Web', 'App'}:
+        raise ValueError("Invalid type -- url_type must be 'Web' or 'App'")
+    if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item)]):
+        raise ValueError("Invalid type for webmap parameter")
     if stops:
-        if len(set([len(stop) for stop in stops if isinstance(stop, list) or isinstance(stop, tuple)])) > 1:
-            raise ValueError("Invalid parameters -- stopname must be specified for all or none of the stops")
+        if len([stop for stop in stops if not isinstance(stop, tuple) and not isinstance(stop, str)]) > 0:
+            raise ValueError("Invalid parameters -- stops must be a single string or tuple containing strings")
     if navigate and not stops:
         raise ValueError("Invalid parameters -- navigate param requires stops")
     if optimize and not stops:
         raise ValueError("Invalid parameters --- optimize param requires stops")
     if travel_mode and not stops:
         raise ValueError("Invalid parameters --- travel mode param requires stops")
+    if route_item and any([start, stops, optimize, travel_mode]):
+        raise ValueError("Invalid parameters -- cannot provide route_item and stop list params")
     if callback and not stops:
         raise ValueError("Invalid parameters -- callback param requires stops")
 
