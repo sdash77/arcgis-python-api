@@ -2892,7 +2892,30 @@ class ContentManager(object):
         self._portal = gis._portal
 
     def _add_by_part(self, file_path, itemid, item_properties, size=1e7):
-        """adds an item by chunking it up"""
+        """
+        Performs a special add operation that chunks up a file and loads it piece by piece.
+        This is an internal method used by `add`
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file_path           Required String.  The path to the file to load into Portal.
+        ---------------     --------------------------------------------------------------------
+        itemid              Required String. The unique ID of the Item to load the data to.
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required Dict.  The properties for the item.
+        ---------------     --------------------------------------------------------------------
+        size                Optional Integer.  The chunk size off the parts in bytes.  The
+                            smallest size allowed is 5 MB or 5e6.
+        ---------------     --------------------------------------------------------------------
+        multipart           Optional Boolean.  Loads a file by chunks to the Enterprise. The
+                            default is False.
+        ===============     ====================================================================
+
+
+        """
+        if size < 5e6:
+            size = 5e6
         def read_in_chunks(file_object, chunk_size=10000000):
             """Generate file chunks of 10MB"""
             while True:
