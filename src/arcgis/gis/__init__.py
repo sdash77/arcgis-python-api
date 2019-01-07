@@ -2978,7 +2978,7 @@ class ContentManager(object):
         return False
 
     def add(self, item_properties, data=None, thumbnail=None,
-            metadata=None, owner=None, folder=None, multipart=False):
+            metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
 
         .. note::
@@ -3011,9 +3011,6 @@ class ContentManager(object):
         owner               Optional string. Defaults to the logged in user.
         ---------------     --------------------------------------------------------------------
         folder              Optional string. Name of the folder where placing item.
-        ---------------     --------------------------------------------------------------------
-        multipart           Optional Boolean.  Loads a file by chunks to the Enterprise. The
-                            default is False.
         ===============     ====================================================================
 
 
@@ -3066,6 +3063,7 @@ class ContentManager(object):
         :return:
            The item if successfully added, None if unsuccessful.
         """
+        import os
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
@@ -3121,14 +3119,18 @@ class ContentManager(object):
             if type(item_properties['tags']) is list:
                 item_properties['tags'] = ",".join(item_properties['tags'])
         try:
-            os.path.isfile(data)
-            is_file = True
+            from arcgis._impl.common._utils import bytesto
+            is_file = os.path.isfile(data)
+            if is_file and \
+               bytesto(os.stat(data).st_size) < 15:
+                multipart = False
+            else:
+                multipart = True
         except:
             is_file = False
-        from arcgis._impl.common._utils import bytesto
+            multipart = False
         if multipart and \
-           is_file and \
-           bytesto(os.stat(data).st_size):
+           is_file:
             import copy
             item_properties['multipart'] = True
             params = {}
