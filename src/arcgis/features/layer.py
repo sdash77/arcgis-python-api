@@ -1491,7 +1491,14 @@ class Table(FeatureLayer):
     Working with tables is similar to working with feature layers, except that the rows (Features) in a table do not
     have a geometry, and tables ignore any geometry related operation.
     """
-    pass
+    @classmethod
+    def fromitem(cls, item, table_id=0):
+        """
+        Creates a Table from a GIS Item.
+        The type of item should be a 'Feature Service' that represents a FeatureLayerCollection.
+        The layer_id is the id of the layer in feature layer collection (feature service).
+        """
+        return item.tables[table_id]
 
 
 class FeatureLayerCollection(_GISResource):
