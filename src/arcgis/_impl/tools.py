@@ -690,7 +690,7 @@ class _FeatureAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
-            itemid = job_values['pointClustersResultLayer ']['itemId']
+            itemid = job_values['pointClustersResultLayer']['itemId']
             item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
@@ -698,8 +698,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
             point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
 
-            process_info = job_values['processInfo']
-            return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":process_info}
+            return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":None}
 
     def find_hot_spots(self,
                        analysis_layer,
