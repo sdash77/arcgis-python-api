@@ -984,14 +984,19 @@ class Service(BaseServer):
 
 
         """
-        super(Service, self).__init__(gis=gis,
-                                      url=url)
+        from arcgis.gis import GIS
+        if isinstance(gis, GIS):
+            con = gis._con
+        else:
+            con = gis
+        super(Service, self)
+
         self._service_manager = kwargs.pop('service_manager', None)
         self._url = url
         self._currentURL = url
-        self._con = gis
+        self._con = con
         if initialize:
-            self._init(gis)
+            self._init(self._con)
     #----------------------------------------------------------------------
     def _init(self, connection=None):
         """ populates server admin information """

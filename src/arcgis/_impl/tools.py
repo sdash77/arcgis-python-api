@@ -690,7 +690,7 @@ class _FeatureAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
-            itemid = job_values['pointClustersResultLayer ']['itemId']
+            itemid = job_values['pointClustersResultLayer']['itemId']
             item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
@@ -698,8 +698,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
             point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
 
-            process_info = job_values['processInfo']
-            return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":process_info}
+            return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":None}
 
     def find_hot_spots(self,
                        analysis_layer,
@@ -2299,6 +2298,7 @@ class _FeatureAnalysisTools(_AsyncService):
                        travel_mode="Driving",
                        stop_service_time=0,
                        max_route_time=525600,
+                       include_route_layers=False,
                        output_name=None,
                        context=None):
         """
@@ -2330,6 +2330,8 @@ class _FeatureAnalysisTools(_AsyncService):
 
         max_route_time : Optional float
 
+        include_route_layers : Optional bool
+
         output_name : Optional string
 
         context : Optional string
@@ -2352,6 +2354,7 @@ class _FeatureAnalysisTools(_AsyncService):
         params["maxStopsPerRoute"] = max_stops_per_route
         params["routeStartTime"] = route_start_time
         params["startLayer"] = super()._feature_input(start_layer)
+        params["includeRouteLayers"] = include_route_layers
         if start_layer_route_id_field is not None:
             params["startLayerRouteIDField"] = start_layer_route_id_field
         if return_to_start is not None:
@@ -2375,7 +2378,6 @@ class _FeatureAnalysisTools(_AsyncService):
 
         job_info = super()._analysis_job_status(task_url, job_info)
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
         if output_name is not None:
             itemid = job_values['routesLayer']['itemId']
             item = arcgis.gis.Item(self._gis, itemid)

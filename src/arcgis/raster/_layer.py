@@ -2372,7 +2372,7 @@ class ImageryLayer(Layer):
         return self._mosaic_operation('sum')
 
 
-    def save(self, output_name=None, for_viz=False, gis=None):
+    def save(self, output_name=None, for_viz=False,*, gis=None, **kwargs):
         """
         Persists this imagery layer to the GIS as an Imagery Layer item. If for_viz is True, a new Item is created that
         uses the applied raster functions for visualization at display resolution using on-the-fly image processing.
@@ -2449,10 +2449,10 @@ class ImageryLayer(Layer):
                     _arcgis.env.analysis_extent = dict(self._extent)
                     layer_extent_set = True
                 try:
-                    if self._uses_gbl_function:
-                        if True in self._other_outputs.values() or self._fnra['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
-                            gr_output = _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g)
-                    gr_output = generate_raster(self._fnra, output_name=output_name, gis=g)
+                    if (self._uses_gbl_function) and (True in self._other_outputs.values() or self._fnra['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa"):
+                        gr_output = _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g, **kwargs)
+                    else:
+                        gr_output = generate_raster(self._fnra, output_name=output_name, gis=g, **kwargs)
                 except Exception:
                     if layer_extent_set:
                          _arcgis.env.analysis_extent = None
@@ -2472,7 +2472,9 @@ class ImageryLayer(Layer):
                     output_type="Polygon",
                     simplify=True,
                     output_name=None,
-                    gis=None):
+                    *,
+                    gis=None,
+                    **kwargs):
         """
         Converts this raster to a persisted feature layer of the specified type using Raster Analytics.
 
@@ -2508,10 +2510,10 @@ class ImageryLayer(Layer):
         if "serviceToken" in self._lyr_dict:
             url = url+"?token="+ self._lyr_dict["serviceToken"]
         if self._fnra is None:
-            return convert_raster_to_feature(url, field, output_type, simplify, output_name, g)
+            return convert_raster_to_feature(url, field, output_type, simplify, output_name, gis=g, **kwargs)
         fnarg_ra = self._fnra['rasterFunctionArguments']
         fnarg = self._fn
-        return convert_raster_to_feature({"url":url,"renderingRule":self._fn}, field, output_type, simplify, output_name, g)
+        return convert_raster_to_feature({"url":url,"renderingRule":self._fn}, field, output_type, simplify, output_name, gis=g, **kwargs)
 
 
     def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):

@@ -28,7 +28,7 @@ def _set_param(gis, params, param_name, input_param):
     return
 
 
-def _create_output_image_service(gis, output_name, task):
+def _create_output_image_service(gis, output_name, task, folder = None):
     ok = gis.content.is_service_name_available(output_name, "Image Service")
     if not ok:
         raise RuntimeError("An Image Service by this name already exists: " + output_name)
@@ -45,7 +45,7 @@ def _create_output_image_service(gis, output_name, task):
     }
 
     output_service = gis.content.create_service(output_name, create_params=create_parameters,
-                                                service_type="imageService")
+                                                service_type="imageService", folder = folder)
     description = "Image Service generated from running the " + task + " tool."
     item_properties = {
         "description": description,
@@ -56,7 +56,7 @@ def _create_output_image_service(gis, output_name, task):
     return output_service
 
 
-def _create_output_feature_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics'):
+def _create_output_feature_service(gis, output_name, output_service_name='Analysis feature service', task='GeoAnalytics', folder = None):
     ok = gis.content.is_service_name_available(output_name, 'Feature Service')
     if not ok:
         raise RuntimeError("A Feature Service by this name already exists: " + output_name)
@@ -89,7 +89,7 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
             "name": output_service_name.replace(' ', '_')
     }
 
-    output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
+    output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService", folder =  folder)
     description = "Feature Service generated from running the " + task + " tool."
     item_properties = {
         "description" : description,
@@ -98,6 +98,49 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
     }
     output_service.update(item_properties)
     return output_service
+
+def _set_output_raster(output_name, task, gis, output_properties =None):
+    output_service = None
+    output_raster = None
+    
+    task_name = task
+
+    folder = None
+    folderId = None
+
+    if output_properties is not None:
+        if "folder" in output_properties:
+            folder = output_properties["folder"]
+    if folder is not None:
+        if isinstance(folder, dict):
+            if "id" in folder:
+                folderId = folder["id"]
+                folder=folder["title"]
+        else:
+            owner = gis.properties.user.username
+            folderId = gis._portal.get_folder_id(owner, folder)
+        if folderId is None:
+            folder_dict = gis.content.create_folder(folder, owner)
+            folder = folder_dict["title"]
+            folderId = folder_dict["id"]
+
+    if output_name is None:
+        output_name = str(task_name) + '_' + _id_generator()
+        output_service = _create_output_image_service(gis, output_name, task, folder = folder)
+        output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+    elif isinstance(output_name, str):
+        output_service = _create_output_image_service(gis, output_name, task,folder = folder)
+        output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+    elif isinstance(output_name, _arcgis.gis.Item):
+        output_service = output_name
+        output_raster = {"itemProperties":{"itemId":output_service.itemid}}
+    else:
+        raise TypeError("output_raster should be a string (service name) or Item") 
+
+    if folderId is not None:
+        output_raster["itemProperties"].update({"folderId":folderId})
+    output_raster = _json.dumps(output_raster)
+    return output_raster, output_service
 
 
 def detect_objects(input_raster,
@@ -109,7 +152,9 @@ def detect_objects(input_raster,
                    class_value_field=None,
                    max_overlap_ratio=0,
                    context=None,
-                   gis=None):
+                   *,
+                   gis=None,
+                   **kwargs):
 
     """
     Function can be used to generate feature service that contains polygons on detected objects
@@ -181,10 +226,32 @@ def detect_objects(input_raster,
     else:
         output_service_name = output_name.replace(' ', '_')
 
-    output_service = _create_output_feature_service(gis, output_name, output_service_name, 'Detect Objects')
+    folder = None
+    folderId = None
+    if kwargs is not None:
+        if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
 
-    params["outputObjects"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                           "itemProperties": {"itemId": output_service.itemid}})
+    output_service = _create_output_feature_service(gis, output_name, output_service_name, 'Detect Objects', folder)
+
+    if folderId is not None:
+        params["outputObjects"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                               "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+    else:
+        params["outputObjects"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                               "itemProperties": {"itemId": output_service.itemid}})
 
     if model is None:
         raise RuntimeError('model cannot be None')
@@ -234,7 +301,9 @@ def classify_pixels(input_raster,
                     model_arguments=None,
                     output_name=None,
                     context=None,
-                    gis=None):
+                    *,
+                    gis=None,
+                    **kwargs):
 
     """
     Function to classify input imagery data using a deep learning model.
@@ -283,18 +352,7 @@ def classify_pixels(input_raster,
 
     output_service = None
 
-    if output_name is None:
-        output_name = task + '_' + _id_generator()
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, str):
-        output_service = _create_output_image_service(gis, output_name, task)
-        output_raster = _json.dumps({"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-    elif isinstance(output_name, _arcgis.gis.Item):
-        output_service = output_name
-        output_raster = _json.dumps({"itemId":output_service.itemid})
-    else:
-        raise TypeError("output_raster should be a string (service name) or Item")
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
 
@@ -338,7 +396,9 @@ def export_training_data(input_raster,
                         buffer_radius=None,
                         output_location=None,
                         context=None,
-                        gis=None):
+                        *,
+                        gis=None,
+                        **kwargs):
 
     """
     Function is designed to generate training sample image chips from the input imagery data with
@@ -491,7 +551,9 @@ def export_training_data(input_raster,
     return job_values["outLocation"]
 
 
-def list_models(gis=None):
+def list_models(*,
+                gis=None,
+                **kwargs):
     """
     Function is used to list all the installed deep learning models.
 
@@ -610,7 +672,10 @@ class Model:
             self._model_package = False
 
 
-    def install(self, gis=None):
+    def install(self,
+                *,
+                gis=None,
+                **kwargs):
 
         """
         Function is used to install the uploaded model package (*.dlpk). Optionally after inferencing
@@ -659,8 +724,10 @@ class Model:
         return job_values["installSucceed"]
 
 
-    def query_info(self, gis=None):
-
+    def query_info(self,
+                   *,
+                   gis=None,
+                   **kwargs):
         """
         Function is used to extract the deep learning model specific settings from the model package item or model definition file.
 
@@ -708,7 +775,10 @@ class Model:
             return output
 
 
-    def uninstall(self, gis=None):
+    def uninstall(self,
+                  *,
+                  gis=None,
+                  **kwargs):
 
         """
         Function is used to uninstall the uploaded model package that was installed using the install_model()
@@ -754,6 +824,4 @@ class Model:
         }
 
         return job_values["uninstallSucceed"]
-
-
 

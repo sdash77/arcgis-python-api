@@ -2037,7 +2037,7 @@ class GeoAccessor(object):
         return from_table(filename, **kwargs)
 
     #----------------------------------------------------------------------
-    def sindex(self, stype, reset=False, **kwargs):
+    def sindex(self, stype='quadtree', reset=False, **kwargs):
         """
         Creates a spatial index for the given dataset.
 

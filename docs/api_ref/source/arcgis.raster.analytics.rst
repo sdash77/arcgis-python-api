@@ -86,3 +86,17 @@ delete_image_collection
 -----------------------
 .. automethod:: arcgis.raster.analytics.delete_image_collection
 
+
+build_footprints
+-----------------------
+.. automethod:: arcgis.raster.analytics.build_footprints
+
+
+build_overview
+-----------------------
+.. automethod:: arcgis.raster.analytics.build_overview
+
+
+calculate_statistics
+-----------------------
+.. automethod:: arcgis.raster.analytics.calculate_statistics

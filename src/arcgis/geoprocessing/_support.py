@@ -39,6 +39,19 @@ def _layer_input(input_layer):
 
     elif isinstance(input_layer, arcgis.gis.Layer):
         input_param = input_layer._lyr_dict
+        from arcgis.raster import ImageryLayer
+        import json
+        if isinstance(input_layer, ImageryLayer):
+            if 'options' in input_layer._lyr_json:
+                if isinstance(input_layer._lyr_json['options'], str): #sometimes the rendering info is a string
+                    #load json
+                    layer_options = json.loads(input_layer._lyr_json['options'])
+                else:
+                    layer_options = input_layer._lyr_json['options']
+
+                if 'imageServiceParameters' in layer_options:
+                    #get renderingRule and mosaicRule
+                    input_param.update(layer_options['imageServiceParameters'])
 
     elif isinstance(input_layer, dict):
         input_param = input_layer
@@ -57,7 +70,7 @@ def _layer_input(input_layer):
         url = input_param["url"]
     if "serviceToken" in input_param:
         url = url+"?token="+ input_param["serviceToken"]
-    input_param.update({"url":url})
+        input_param.update({"url":url})
 
     return input_param
 

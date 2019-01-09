@@ -346,7 +346,8 @@ class GIS(object):
                                                                     url)
                 self._portal.url = url
                 self._portal.con.baseurl = self._portal.resturl
-                self._portal.con._token = None
+                if self._portal.con._auth != "OAUTH":
+                    self._portal.con._token = None
             elif url.lower().find("arcgis.com") > -1 and \
                  self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
@@ -2890,7 +2891,94 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
+    def _add_by_part(self, file_path, itemid, item_properties, size=1e7):
+        """
+        Performs a special add operation that chunks up a file and loads it piece by piece.
+        This is an internal method used by `add`
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file_path           Required String.  The path to the file to load into Portal.
+        ---------------     --------------------------------------------------------------------
+        itemid              Required String. The unique ID of the Item to load the data to.
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required Dict.  The properties for the item.
+        ---------------     --------------------------------------------------------------------
+        size                Optional Integer.  The chunk size off the parts in bytes.  The
+                            smallest size allowed is 5 MB or 5e6.
+        ---------------     --------------------------------------------------------------------
+        multipart           Optional Boolean.  Loads a file by chunks to the Enterprise. The
+                            default is False.
+        ===============     ====================================================================
+
+
+        """
+        if size < 5e6:
+            size = 5e6
+        def read_in_chunks(file_object, chunk_size=10000000):
+            """Generate file chunks of 10MB"""
+            while True:
+                data = file_object.read(chunk_size)
+                if not data:
+                    break
+                yield data
+        user = self._gis.users.me.username
+        url = "{base}content/users/{user}/items/{itemid}/addPart".format(base=self._gis._portal.resturl,
+                                                                          user=user,
+                                                                          itemid=itemid)
+        file = {'file': None}
+        params = {
+            'f': 'json',
+            'partNum' : None
+        }
+        messages = []
+        with open(file_path, 'rb') as f:
+            for part_num, piece in enumerate(read_in_chunks(f), start=1):
+                params['partNum'] = part_num
+                temp_file = os.path.join(tempfile.gettempdir(), "split.part%s" % part_num)
+                files = {'file' : temp_file}
+                with open(temp_file, 'wb') as writer:
+                    writer.write(piece)
+                    del writer
+                res = self._gis._con.post(url, params, files=files)
+                if os.path.isfile(temp_file):
+                    os.remove(temp_file)
+                del part_num, piece, files
+                messages.append(res['success'])
+        if all(messages):
+            # commit the addition
+            url = "{base}content/users/{user}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
+                                                                             user=user,
+                                                                             itemid=itemid)
+            params = {
+                'f' : "json",
+                'id' : itemid,
+                'type' : item_properties['type'],
+                'async' : True
+            }
+            params.update(item_properties)
+            res = self._gis._con.post(url, params)
+            if 'success' in res:
+                url = "{base}content/users/{user}/items/{itemid}/status".format(base=self._gis._portal.resturl,
+                                                                                user=user,
+                                                                                itemid=itemid)
+                import time
+                params = {'f' : 'json'}
+                res = self._gis._portal.con.post(url, params)
+                while res["status"] != "completed":
+                    if 'fail' in res['status']:
+                        return False
+                    time.sleep(1)
+                    res = self._gis._portal.con.post(url, {'f': 'json'})
+
+                return res['status']
+            else:
+                return False
+        return False
+
+    def add(self, item_properties, data=None, thumbnail=None,
+            metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
 
         .. note::
@@ -2974,8 +3062,8 @@ class ContentManager(object):
 
         :return:
            The item if successfully added, None if unsuccessful.
-            """
-
+        """
+        import os
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
@@ -3030,8 +3118,41 @@ class ContentManager(object):
         if 'tags' in item_properties:
             if type(item_properties['tags']) is list:
                 item_properties['tags'] = ",".join(item_properties['tags'])
-
-        itemid = self._portal.add_item(item_properties, data, thumbnail, metadata, owner_name, folder)
+        try:
+            from arcgis._impl.common._utils import bytesto
+            is_file = os.path.isfile(data)
+            if is_file and \
+               bytesto(os.stat(data).st_size) < 15:
+                multipart = False
+            else:
+                multipart = True
+        except:
+            is_file = False
+            multipart = False
+        if multipart and \
+           is_file:
+            import copy
+            item_properties['multipart'] = True
+            params = {}
+            params.update(item_properties)
+            params['fileName'] = os.path.basename(data)
+            # Create an empty Item
+            itemid = self._portal.add_item(params, None,
+                                           thumbnail, metadata,
+                                           owner_name, folder)
+            # check the status and commit the final result
+            status = self._add_by_part(
+                file_path=data,
+                itemid=itemid,
+                item_properties=item_properties,
+                size=1e7)
+            # return the item
+            item = Item(gis=self._gis, itemid=itemid)
+            return item
+        else:
+            itemid = self._portal.add_item(item_properties, data,
+                                           thumbnail, metadata,
+                                           owner_name, folder)
 
         if itemid is not None:
             return Item(self._gis, itemid)
@@ -3131,6 +3252,8 @@ class ContentManager(object):
                 elif str(d).lower().endswith('.xls') or \
                      str(d).lower().endswith('.xlsx'):
                     params['fileType'] = 'excel'
+        elif str(file_type).lower() in ['excel', 'csv']:
+            params['fileType'] = file_type
         if source_country:
             params['analyzeParameters']['sourceCountry'] = source_country
         if country_hint:
@@ -5124,6 +5247,12 @@ class User(dict):
         if userdict:
             if 'groups' in userdict and len(userdict['groups']) == 0: # groups aren't set unless hydrated
                 del userdict['groups']
+            if 'role' in userdict and \
+               'roleId' not in userdict:
+                userdict['roleId'] = userdict['role']
+            elif 'roleId' in userdict and \
+                 'role' not in userdict:
+                userdict['role'] = userdict['roleId']
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
         if hasattr(self, 'id') and \
@@ -8563,7 +8692,7 @@ class Item(dict):
         return
     #----------------------------------------------------------------------
     @property
-    def _dependencies(self):
+    def dependencies(self):
         """returns a class to management Item dependencies"""
         if self._depend is None:
             self._depend = ItemDependency(self)
