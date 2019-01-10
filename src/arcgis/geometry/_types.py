@@ -2,7 +2,10 @@
 New Geometries Classes
 """
 import json
-import numpy as np
+try:
+    import numpy as np
+except ImportError as e:
+    pass
 from six import add_metaclass
 #--------------------------------------------------------------------------
 def _is_valid(value):
