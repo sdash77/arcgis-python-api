@@ -98,7 +98,8 @@ class CollaborationManager(object):
             "hostContactFirstname" : host_contact_first_name,
             "hostContactLastname" : host_contact_last_name,
             "hostContactEmailAddress" : host_contact_email_address,
-            "accessMode" : access_mode
+            "accessMode" : access_mode,
+            "config" : {}
         }
 
         data_path = "%s/createCollaboration" % self._basepath
