@@ -900,6 +900,9 @@ def flow_direction(input_surface_raster,
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_surface_raster"] = raster_ra    
+
+    if generate_out_drop_raster is True:
+        return _gbl_clone_layer(layer, template_dict, function_chain_ra, out_drop_raster = generate_out_drop_raster, use_ra=True)
     
     return _gbl_clone_layer(layer, template_dict, function_chain_ra, out_drop_raster = generate_out_drop_raster)
 
@@ -1265,9 +1268,9 @@ def calculate_travel_cost(in_source_data,
         function_chain_ra['rasterFunctionArguments']["in_vertical_raster"] = raster_ra5
 
     if isinstance(in_source_data, ImageryLayer):
-        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_backlink_raster = generate_out_backlink_raster)
+        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_backlink_raster = generate_out_backlink_raster, use_ra=True)
     else:
-        return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_backlink_raster = generate_out_backlink_raster)
+        return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_backlink_raster = generate_out_backlink_raster, use_ra=True)
         
 def kernel_density(in_features,
                    population_field,

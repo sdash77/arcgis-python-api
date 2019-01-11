@@ -186,7 +186,7 @@ def _calculate_travel_cost_analytics_converter(raster_function,output_name=None,
                                   input_vertical_raster, vertical_factor, source_cost_multiplier,
                                   source_start_cost, source_resistance_rate, source_capacity,
                                   source_direction, allocation_field, output_distance_name,
-                                  output_backlink_name, output_allocation_name, gis=gis)
+                                  output_backlink_name, output_allocation_name, gis=gis,  **kwargs)
 
 
 def _return_output(num_returns, output_dict ,return_value_names):
@@ -2215,14 +2215,14 @@ def optimum_travel_cost_network(input_regions_raster,
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
-    output_optimum_network_service = _create_output_feature_service(gis, output_optimum_network_name, output_optimum_network_service_name, folder)
+    output_optimum_network_service = _create_output_feature_service(gis, output_optimum_network_name, output_optimum_network_service_name, 'DetermineOptimumTravelCostNetwork', folder)
 
     if folderId is not None:
-        params["outputOptimumNetworkName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                       "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+        params["outputOptimumNetworkName"] = _json.dumps({"serviceProperties": {"name": output_optimum_network_service_name, "serviceUrl": output_optimum_network_service.url},
+                                       "itemProperties": {"itemId": output_optimum_network_service.itemid}, "folderId":folderId})
     else:
-        params["outputOptimumNetworkName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                       "itemProperties": {"itemId": output_service.itemid}})
+        params["outputOptimumNetworkName"] = _json.dumps({"serviceProperties": {"name": output_optimum_network_service_name, "serviceUrl": output_optimum_network_service.url},
+                                       "itemProperties": {"itemId": output_optimum_network_service.itemid}})
 
 
     params["inputRegionsRasterOrFeatures"] = _layer_input(input_regions_raster)
@@ -2245,8 +2245,8 @@ def optimum_travel_cost_network(input_regions_raster,
                                                                      'DetermineOptimumTravelCostNetwork', folder) 
 
     if folderId is not None:
-        params["outputNeighborNetworkName"] = _json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
-                                       "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+        params["outputNeighborNetworkName"] = _json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, "serviceUrl": output_neighbor_network_service.url},
+                                       "itemProperties": {"itemId": output_neighbor_network_service.itemid}, "folderId":folderId})
     else:
         params["outputNeighborNetworkName"] = _json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, 
                                                                              "serviceUrl": output_neighbor_network_service.url},

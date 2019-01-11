@@ -24,7 +24,7 @@ def _layer_input(input_layer):
     #Will be used exclusively by RA tools
     input_param = input_layer
 
-    input_layer_url = ""
+    url = ""
     if isinstance(input_layer, arcgis.gis.Item):
         if 'layers' in input_layer:
             input_param = input_layer.layers[0]._lyr_dict
@@ -68,9 +68,10 @@ def _layer_input(input_layer):
 
     if "url" in input_param:
         url = input_param["url"]
-    if "serviceToken" in input_param:
-        url = url+"?token="+ input_param["serviceToken"]
-        input_param.update({"url":url})
+    if "ImageServer" in url or "MapServer" in url:
+        if "serviceToken" in input_param:
+            url = url+"?token="+ input_param["serviceToken"]
+            input_param.update({"url":url})
 
     return input_param
 
