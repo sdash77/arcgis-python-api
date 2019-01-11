@@ -2498,7 +2498,7 @@ class ImageryLayer(Layer):
                     _arcgis.env.analysis_extent = dict(self._extent)
                     layer_extent_set = True
                 try:
-                    if (self._uses_gbl_function) and (True in self._other_outputs.values() or self._fnra['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa"):
+                    if (self._uses_gbl_function) and (("use_ra" in self._other_outputs.keys()) and self._other_outputs["use_ra"]==True):
                         gr_output = _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g, **kwargs)
                     else:
                         gr_output = generate_raster(self._fnra, output_name=output_name, gis=g, **kwargs)

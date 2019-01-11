@@ -562,7 +562,7 @@ def export_training_data(input_raster,
             "jobStatus": "completed"
         }
     }
-    return job_values["outLocation"]
+    return job_values["outLocation"]["uri"]
 
 
 def list_models(*,
@@ -709,7 +709,7 @@ class Model:
         ==================     ====================================================================
 
         :return:
-            Path where model in installed
+            Path where model is installed
 
         """
         if self._model_package is False:
