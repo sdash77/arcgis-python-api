@@ -1339,6 +1339,55 @@ class ImageryLayer(Layer):
         return files
 
     # ----------------------------------------------------------------------
+    def compute_pixel_location(self,
+                             raster_id,
+                             geometries,
+                             spatial_reference):
+        """
+
+        With given input geometries, it calculates corresponding pixel location 
+        in column and row on specific raster catalog item.
+        A prerequisite is that the raster catalog item has valid icsToPixel resource. 
+        
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        raster_id             required integer. Specifies the objectId of image service's raster 
+                              catalog. This integer rasterId number will determine which raster's 
+                              image coordinate system will be used during the calculation and 
+                              which raster does the column and row of results represent.
+        -----------------     --------------------------------------------------------------------
+        geometries            The array of geometries for computing pixel locations.
+                              All geometries in this array should be of the type defined by geometryType.
+
+        -----------------     --------------------------------------------------------------------
+        spatial_reference     required string, dictionary,
+                              This specifies the spatial reference of the Geometries parameter above. 
+                              It can accept a multitudes of values.  These can be a WKID, 
+                              image coordinate system (ICSID), or image coordinate system in json/dict format.
+                              Additionally the arcgis.geometry.SpatialReference object is also a
+                              valid entry.
+                              .. note :: An image coordinate system ID can be specified
+                              using 0:icsid; for example, 0:64. The extra 0: is used to avoid
+                              conflicts with wkid
+        -----------------     --------------------------------------------------------------------
+
+        :returns: dictionary, The result of this operation includes x and y values for the column 
+                  and row of each input geometry. It also includes a z value for the height at given 
+                  location based on elevation info that the catalog raster item has.
+
+
+        """
+        url = "%s/computePixelLocation" % self._url
+        params = {'f': 'json',
+                  'rasterId':raster_id,
+                  'geometries' : geometries,
+                  'spatialReference' : spatial_reference
+                  }
+        return self._con.post(path=url,
+                              postdata=params)
+
+    # ----------------------------------------------------------------------
     def _add_rasters(self,
                     raster_type,
                     item_ids=None,
@@ -2449,7 +2498,7 @@ class ImageryLayer(Layer):
                     _arcgis.env.analysis_extent = dict(self._extent)
                     layer_extent_set = True
                 try:
-                    if (self._uses_gbl_function) and (True in self._other_outputs.values() or self._fnra['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa"):
+                    if (self._uses_gbl_function) and (("use_ra" in self._other_outputs.keys()) and self._other_outputs["use_ra"]==True):
                         gr_output = _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g, **kwargs)
                     else:
                         gr_output = generate_raster(self._fnra, output_name=output_name, gis=g, **kwargs)
@@ -3547,6 +3596,19 @@ class RasterCatalogItem(object):
         out_file = "metadata.xml"
         return self._con.get(path=url, params={}, try_json=False,
                              file_name=out_file, out_folder=out_folder)
+
+    #----------------------------------------------------------------------
+    @property
+    def ics_to_pixel(self):
+        """
+        returns coefficients to build up mathematic model for geometric 
+        transformation. With this transformation, ICS coordinates based 
+        from the catalog item raster can be used to calculate the original 
+        column and row numbers on the corresponding image.
+
+        """
+        url = "%s/info/icsToPixel" % self._url
+        return self._con.get(path=url, params={'f': 'json'})
 ########################################################################
 class RasterManager(object):
     """
