@@ -4809,7 +4809,7 @@ class Group(dict):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         Required string. The users to invite as a list.
+        usernames         Required list of strings. The users to invite.
         ----------------  --------------------------------------------------------
         role              Optional string. Either group_member (the default) or group_admin.
         ----------------  --------------------------------------------------------
