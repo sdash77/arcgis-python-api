@@ -619,7 +619,7 @@ class MapView(widgets.DOMWidget):
                 _portal_cdn_unreachable = not self._is_reachable(_portal_cdn)
                 if _portal_cdn_unreachable:
                     log.warn("Error: Cannot reach any JS API CDN, widget will"\
-                             " not display".format(DEFAULT_JS_CDN))
+                             " not display")
                 else:
                     self._js_cdn_override = _portal_cdn
 
