@@ -1452,7 +1452,10 @@ class FeatureLayer(Layer):
         featureset_dict = self._con.post(url, params)
         if len(featureset_dict['features']) == 0:
             return pd.DataFrame([])
-        sr = featureset_dict['spatialReference']
+        sr = None
+        if 'spatialReference' in featureset_dict:
+            sr = featureset_dict['spatialReference']
+
         df = None
         dtypes = None
         geom = None
