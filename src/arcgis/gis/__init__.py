@@ -774,7 +774,20 @@ class GIS(object):
     @property
     def _public_rest_url(self):
         return self.url + "/sharing/rest/"
+    #----------------------------------------------------------------------
+    @property
+    def _subscription_information(self):
+        """
+        Returns the ArcGIS Online Subscription Information for a Site.
 
+        :returns: dictionary
+        """
+        if self.version > [6,4] and \
+           self._portal.is_arcgisonline:
+            url = "%sportals/self/subscriptionInfo" % self._portal.resturl
+            params = {'f': 'json'}
+            return self._con.get(url, params)
+        return None
     #----------------------------------------------------------------------
     @property
     def version(self):
