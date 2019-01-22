@@ -5638,7 +5638,8 @@ class User(dict):
                   'culture' : culture,
                   'region' : region,
                   'firstName' : first_name,
-                  'lastName' : last_name
+                  'lastName' : last_name,
+                  "clearEmptyFields" : True
                   }
         if security_answer and security_question:
             params['securityQuestionIdx'] = security_question
