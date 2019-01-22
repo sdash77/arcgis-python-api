@@ -514,7 +514,10 @@ def to_featureclass(geo,
                     dtypes.append((col, '<U%s' % int(mlen)))
                 else:
                     try:
-                        dtypes.append((col, type(df[col][idx])))
+                        if df[col][idx] is None:
+                            dtypes.append((col, '<U254'))
+                        else:
+                            dtypes.append((col, type(df[col][idx])))
                     except:
                         dtypes.append((col, '<U254'))
             elif df[col].dtype.name == 'int64':
