@@ -281,10 +281,14 @@ class SingleShotDetector(object):
         """
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
-            name = path.parts[-1]
             # to make fastai from both path and with name
             temp = self.learn.path
-            self.learn.path = path
+            if path.is_file():
+                name = path.stem
+                self.learn.path = path.parent
+            else:
+                name = path.parts[-1]
+                self.learn.path = path
             self.learn.model_dir = ''
             self.learn.load(name)
             # undoing changes to self.learn.path and self.learn.model_dir
