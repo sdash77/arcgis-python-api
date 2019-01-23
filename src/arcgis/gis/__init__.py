@@ -1752,7 +1752,7 @@ class UserManager(object):
             for k,v in kwargs.items():
                 if k in allowed_keys:
                     params[k] = v
-            return self._createPre64(**kwargs)
+            return self._createPre64(**params)
         return None
 
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
