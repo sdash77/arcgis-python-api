@@ -207,7 +207,12 @@ class ServiceManager(BaseServer):
                                   params=params)
         if "services" in json_dict.keys():
             for s in json_dict['services']:
+                from urllib.parse import quote, quote_plus, urlparse, urljoin
                 u_url = self._currentURL + "/%s.%s" % (s['serviceName'], s['type'])
+                parsed = urlparse(u_url)
+                u_url = "{scheme}://{netloc}{path}".format(scheme=parsed.scheme,
+                                                           netloc=parsed.netloc,
+                                                           path=quote(parsed.path))
                 self._services.append(
                     Service(url=u_url,
                             gis=self._con)

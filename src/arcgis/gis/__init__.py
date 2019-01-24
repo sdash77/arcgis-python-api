@@ -29,7 +29,7 @@ import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
-
+from arcgis._impl.common._deprecate import deprecated
 from six.moves.urllib.error import HTTPError
 _log = logging.getLogger(__name__)
 
@@ -4836,6 +4836,9 @@ class Group(dict):
         return self._portal.invite_group_users(usernames, self.groupid, role, expiration)
 
     #----------------------------------------------------------------------
+    @deprecated(deprecated_in="v1.5.1", removed_in=None,
+                current_version=None,
+                details="Use `Group.invite` instead.")
     def invite_by_email(self, email, message, role='member', expiration='1 Day'):
         """
         ** Deprecated: This function is supported **
@@ -4860,8 +4863,7 @@ class Group(dict):
         """
 
         if self._gis.version >= [6,4]:
-            raise Exception(("`invite_by_email` is deprecated. Please use `invite` "
-                             "to add new users to a group."))
+            return False
 
         time_lookup = {
             '1 Day'.upper() : 1440,
