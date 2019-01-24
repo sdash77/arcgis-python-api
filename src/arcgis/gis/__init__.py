@@ -4838,6 +4838,8 @@ class Group(dict):
     #----------------------------------------------------------------------
     def invite_by_email(self, email, message, role='member', expiration='1 Day'):
         """
+        ** Deprecated: This function is supported **
+
         Invites a user by email to the existing group.
 
         ================  ========================================================
@@ -4856,6 +4858,11 @@ class Group(dict):
 
         :returns: boolean
         """
+
+        if self._gis.version >= [6,4]:
+            raise Exception(("`invite_by_email` is deprecated. Please use `invite` "
+                             "to add new users to a group."))
+
         time_lookup = {
             '1 Day'.upper() : 1440,
             '3 Days'.upper() : 4320,
