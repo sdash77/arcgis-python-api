@@ -45,7 +45,7 @@ class OutConv(nn.Module):
                 flatten_conv(self.oconv2(x), self.k)]
     
 class SSDHead(nn.Module):
-    def __init__(self, grids, anchors_per_cell, num_classes, drop=0.3, bias=-4.):
+    def __init__(self, grids, anchors_per_cell, num_classes, num_features=7, drop=0.3, bias=-4.):
         super().__init__()
         self.drop = nn.Dropout(drop)
         
@@ -63,7 +63,7 @@ class SSDHead(nn.Module):
         for i in range(len(grids)):
             
             if i == 0:
-                stride, pad, filter_size = conv_params(7, grids[i]) # get '7' by base model
+                stride, pad, filter_size = conv_params(num_features, grids[i])
             else:
                 stride, pad, filter_size = conv_params(grids[i-1], grids[i])
             
@@ -194,4 +194,3 @@ def analyze_pred(pred, thresh=0.5, nms_overlap=0.1, ssd=None):
         return torch.Tensor(size=(0,4)), torch.Tensor()
 
     return torch.cat(bbox_list, dim=0), torch.cat(class_list, dim=0) # torch.cat(out1, dim=0), 
-

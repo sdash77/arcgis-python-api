@@ -1,6 +1,8 @@
 try:
     import torch
     from fastai.vision.learner import create_cnn
+    from fastai.callbacks.hooks import model_sizes
+    from fastai.vision.learner import create_body
     from torchvision.models import resnet34
     import numpy as np
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, analyze_pred
@@ -63,8 +65,10 @@ class SingleShotDetector(object):
             backbone = resnet34
             
         self._create_anchors(grids, zooms, ratios)
-        
-        ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, drop=drop, bias=bias)
+
+        num_features = model_sizes(create_body(backbone), size=(data.chip_size, data.chip_size))[-1][-1] # get size of output feature map for specific chip_size
+
+        ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias)
 
         self._data = data
         self.learn = create_cnn(data=data, arch=backbone, custom_head=ssd_head)
