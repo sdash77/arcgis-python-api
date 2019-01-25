@@ -451,6 +451,33 @@ class GIS(object):
         if self._product_version is None:
             self._is_agol = self._portal.is_arcgisonline
             self._product_version = [int(i) for i in self._portal.get_version().split('.')]
+
+    #----------------------------------------------------------------------
+    def _private_service_url(self, service_url):
+        """
+        returns the public and private URL for a given registered service
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        service_url         Required string.  The URL to the service.
+        ===============     ====================================================================
+
+        :return: dict
+
+        """
+        if self.version < [5,3]:
+            return { "serviceUrl" : service_url }
+        url = ("{base}portals/self"
+               "/servers/computePrivateServiceUrl").format(
+                   base=self._portal.resturl)
+        params = {
+            'f' : 'json',
+            'serviceUrl' : service_url
+        }
+
+        return self._con.post(url, params)
+
     #----------------------------------------------------------------------
     def _pfx_to_pem(self, pfx_path, pfx_password):
         """ Decrypts the .pfx file to be used with requests.
