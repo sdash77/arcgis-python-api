@@ -47,12 +47,45 @@ class _EmptyData():
         self.loss_func = loss_func
 
 class SingleShotDetector(object):
+
+    """
+    Creates a Single Shot Detector with the specified grid sizes, zoom scales 
+    and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    data                    Required fastai Databunch. Returned data object from
+                            `prepare_data` function.
+    ---------------------   -------------------------------------------
+    grids                   Required list. Grid sizes used for creating anchor 
+                            boxes.
+    ---------------------   -------------------------------------------
+    zooms                   Optional list. Zooms of anchor boxes.
+    ---------------------   -------------------------------------------
+    ratios                  Optional list of tuples. Aspect ratios of anchor 
+                            boxes.
+    ---------------------   -------------------------------------------
+    backbone                Optional function. Backbone CNN model to be used for
+                            creating the base of the `SingleShotDetector`, which
+                            is `resnet34` by default.
+    ---------------------   -------------------------------------------
+    dropout                 Optional float. Dropout propbability. Increase it to
+                            reduce overfitting.
+    ---------------------   -------------------------------------------
+    bias                    Optional float. Bias for SSD head.
+    ---------------------   -------------------------------------------
+    focal_loss              Optional boolean. Uses Focal Loss if True.
+    ---------------------   -------------------------------------------
+    pretrained_path         Optional string. Path where pre-trained model is 
+                            saved.                
+    =====================   ===========================================    
+
+    :returns: `SingleShotDetector` Object        
+    """    
     
     def __init__(self, data, grids=[4, 2, 1], zooms=[0.7, 1., 1.3], ratios=[[1., 1.], [1., 0.5], [0.5, 1.]], 
                  backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None):
-        """
-        Creates a Single Shot Detector with the specified grid sizes, zoom scales and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
-        """
         
         super().__init__()
 
@@ -88,6 +121,19 @@ class SingleShotDetector(object):
     def from_emd(cls, data, emd_path):
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for 
+                                inferencing.
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition 
+                                file.              
+        =====================   ===========================================    
+
+        :returns: `SingleShotDetector` Object            
         """
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
@@ -105,7 +151,8 @@ class SingleShotDetector(object):
     
     def lr_find(self):
         """
-        Runs the Learning Rate Finder, and displays the graph of it's output. Helps in choosing the optimum learning rate for training the model.
+        Runs the Learning Rate Finder, and displays the graph of it's output. 
+        Helps in choosing the optimum learning rate for training the model.
         """
         from IPython.display import clear_output
         self.learn.lr_find()
@@ -114,7 +161,19 @@ class SingleShotDetector(object):
         
     def fit(self, epochs=10, lr=slice(1e-4,3e-3)):
         """
-        Train the model for the specified number of epocs and using the specified learning rates
+        Train the model for the specified number of epocs and using the 
+        specified learning rates
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        epochs                  Required integer. Number of cycles of training 
+                                on the data. Increase it if underfitting.
+        ---------------------   -------------------------------------------
+        lr                      Required float or slice of floats. Learning rate 
+                                to be used for training the model. Select from
+                                the `lr_find` plot.
+        =====================   ===========================================               
         """
         self.learn.fit(epochs, lr)
 
@@ -245,7 +304,21 @@ class SingleShotDetector(object):
     
     def save(self, name_or_path):
         """
-        Saves the model weights, creates an Esri Model Definition and Deep Learning Package zip for deployment to Image Server or ArcGIS Pro
+        Saves the model weights, creates an Esri Model Definition and Deep 
+        Learning Package zip for deployment to Image Server or ArcGIS Pro
+
+        Train the model for the specified number of epocs and using the 
+        specified learning rates
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name of the model to save. It 
+                                stores it at the pre-defined location. If path 
+                                is passed then it stores at the specified path 
+                                with model name as directory name. and creates 
+                                all the intermediate directories.                                
+        =====================   ===========================================             
         """
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
@@ -281,7 +354,18 @@ class SingleShotDetector(object):
 
     def load(self, name_or_path):
         """
-        Loads a saved model for inferencing or fine tuning from the specified path or model name.
+        Loads a saved model for inferencing or fine tuning from the specified 
+        path or model name.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name of the model to load from
+                                the pre-defined location. If path is passed then
+                                it loads from the specified path with model name  
+                                as directory name. Path to ".pth" file can also
+                                be passed                                
+        =====================   ===========================================        
         """
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
