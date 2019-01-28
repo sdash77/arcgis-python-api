@@ -2112,7 +2112,7 @@ class UserManager(object):
         elif not isinstance(expiration, int):
             raise ValueError("Invalid expiration.")
 
-        url = self._portal.url + "/portals/self/inviteByEmail"
+        url = self._portal.resturl + "/portals/self/inviteByEmail"
         msg = "You have been invited you to join an ArcGIS Online Organization, %s" % (self._gis.properties['name'])
         params = {
             "f" : "json",
