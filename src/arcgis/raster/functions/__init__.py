@@ -828,7 +828,7 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
     multiband image. The arguments for the extract_band function are as follows:
 
     :param raster: input raster
-    :param band_ids: array of int
+    :param band_ids: array of int, band_ids uses one-based indexing.
     :param band_names: array of string
     :param band_wavelengths: array of double
     :param missing_band_action: int, 0 = esriMissingBandActionFindBestMatch, 1 = esriMissingBandActionFail
@@ -852,7 +852,12 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
         template_dict["outputPixelType"] = astype.upper()
 
     if band_ids is not None:
-        template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids
+        if isinstance(band_ids,list):
+            for index, item in enumerate(band_ids):
+                band_ids[index] = item-1
+            template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids
+        else:
+            raise RuntimeError("band_ids should be of type list")
     if band_names is not None:
         template_dict["rasterFunctionArguments"]["BandNames"] = band_names
     if band_wavelengths is not None:
