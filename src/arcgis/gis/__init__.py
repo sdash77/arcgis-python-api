@@ -4868,7 +4868,7 @@ class Group(dict):
                 details="Use `Group.invite` instead.")
     def invite_by_email(self, email, message, role='member', expiration='1 Day'):
         """
-        ** Deprecated: This function is supported **
+        ** Deprecated: This function is not supported **
 
         Invites a user by email to the existing group.
 
