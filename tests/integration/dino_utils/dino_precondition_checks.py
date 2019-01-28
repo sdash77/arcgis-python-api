@@ -119,6 +119,20 @@ class PortalUtils():
             return None
 
     @staticmethod
+    def report_portal_version(gis):
+        """
+        Utility to search content on portal
+        :param gis: The GIS connection object to the portal
+        :return: Version number as string
+        """
+        try:
+            return gis.admin.properties.version
+
+        except Exception as search_Ex:
+            print("Exception. You might not have admin permission to get version: ", search_Ex.__str__())
+        return ""
+
+    @staticmethod
     def delete_portal_item(gis, item):
         """
         Utility to delete the portal item. Validates the item is deleted by searching for it after delete.

@@ -80,10 +80,11 @@ class Test_UserManager_portal_builtin(unittest.TestCase):
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
 
+        print("Portal version: " + PortalUtils.report_portal_version(cls.gis))
         print("==================================================================")
         print("Beginning tests in Test_UserManager_portal_builtin class")
         #endregion
@@ -121,7 +122,8 @@ class Test_UserManager_portal_builtin(unittest.TestCase):
                 print("Creating user: " + user_name, end=" ")
                 user_obj_list = self.gis.users.get(user_name)
                 if user_obj_list is None:
-                    created_user = self.gis.users.create(user_name, user_password, user_name, last_name, email,thumbnail=thumbnail,
+                    created_user = self.gis.users.create(user_name, user_password, user_name,
+                                                         last_name, email,thumbnail=thumbnail,
                                                     role=role_list[0])
                     if created_user is not None:
                         print("Created new user: " + user_name)
@@ -190,7 +192,10 @@ class Test_UserManager_portal_builtin(unittest.TestCase):
             except Exception as testException:
                 self.fail("Error during test: " + testException.__str__())
 
+    @classmethod
+    def tearDownClass(cls):
+        print("\n==================================================================")
 
-
-
-
+# TestModule
+def tearDownModule():
+    print("**End User Manager Tests**")
