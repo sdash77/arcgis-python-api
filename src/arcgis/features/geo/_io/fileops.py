@@ -72,9 +72,17 @@ def _geojson_to_esrijson(geojson):
             "points" : geojson['coordinates'],
             'spatialReference' : {'wkid' : 4326}
         }
-    elif geojson['type'] in ['LineString', 'MultiLineString']:
+    elif geojson['type'] in ['LineString']:#, 'MultiLineString']:
         return {
-            "paths" : geojson['coordinates'],
+            "paths" : [[list(gj) for gj in geojson['coordinates']]],
+            'spatialReference' : {'wkid' : 4326}
+        }
+    elif geojson['type'] in ['MultiLineString']:
+        coords = []
+        for pts in geojson['coordinates']:
+            coords.append(list([list(pt) for pt in pts]))
+        return {
+            "paths" : coords,
             'spatialReference' : {'wkid' : 4326}
         }
     return geojson
