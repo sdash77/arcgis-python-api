@@ -549,9 +549,15 @@ def to_featureclass(geo,
         dfcols = [fld.name for fld in fields \
                   if fld.type not in ['OID', 'Geometry'] and\
                   fld.name in df.columns] + [df.spatial.name]
+
         with da.InsertCursor(fc, icols) as irows:
+            dt_fld_idx = [irows.fields.index(col) for col in df.columns \
+                          if df[col].dtype.name == 'datetime64[ns]']
             def _insert_row(row):
                 row[-1] = pd.io.json.dumps(row[-1])
+                for idx in dt_fld_idx:
+                    if isinstance(row[idx], type(pd.NaT)):
+                        row[idx] = None
                 irows.insertRow(row)
             q = df[geo._name].isna()
             df.loc[q, 'SHAPE'] = null_geom # set null values to proper JSON
