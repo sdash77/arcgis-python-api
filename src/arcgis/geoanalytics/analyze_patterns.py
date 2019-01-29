@@ -18,32 +18,6 @@ _log=_logging.getLogger(__name__)
 _use_async=True
 
 def forest_based_regression(input_layer,
-                            ):
-    kwargs=locals()
-
-    gis=_arcgis.env.active_gis if gis is None else gis
-    url=gis.properties.helperServices.geoanalytics.url
-
-    params={}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key]=value
-
-    if output_name is None:
-        output_service_name='Forest Based Regression_' + _id_generator()
-        output_name=output_service_name.replace(' ', '_')
-    else:
-        output_service_name=output_name.replace(' ', '_')
-
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression')
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
-
-
-
-def forest_based_regression(input_layer,
                             prediction_type,
                             explanatory_variables,
                             features_to_predict,
