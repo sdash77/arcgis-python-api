@@ -5,13 +5,13 @@ try:
     from fastai.vision.learner import create_body
     from torchvision.models import resnet34
     import numpy as np
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, analyze_pred
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
     from .._data import prepare_data
     import json
     import os
     from pathlib import Path
-    HAS_FASTAI = True
     from ._codetemplate import code
+    HAS_FASTAI = True    
 except Exception as e:
     HAS_FASTAI = False
 

@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from fastai.vision.image import ImageBBox
+from fastai.vision.data import ObjectCategoryList, ObjectItemList
 
 def conv_params(in_size, out_size):
     filters = [3,2,5,4]
@@ -164,33 +166,47 @@ def nms(boxes, scores, overlap=0.5, top_k=100):
         idx = idx[IoU.le(overlap)]
     return keep, count
 
-def analyze_pred(pred, thresh=0.5, nms_overlap=0.1, ssd=None):
-    # def analyze_pred(pred, anchors, grid_sizes, thresh=0.5, nms_overlap=0.1, ssd=None):
-    b_clas, b_bb = pred
-    a_ic = ssd._actn_to_bb(b_bb, ssd._anchors.cpu(), ssd._grid_sizes.cpu())
-    conf_scores, clas_ids = b_clas[:, 1:].max(1)
-    conf_scores = b_clas.t().sigmoid()
+class SSDObjectCategoryList(ObjectCategoryList):
+    "`ItemList` for labelled bounding boxes detected using SSD."
+    def analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ssd=None):
+        # def analyze_pred(pred, anchors, grid_sizes, thresh=0.5, nms_overlap=0.1, ssd=None):
+        b_clas, b_bb = pred
+        a_ic = ssd._actn_to_bb(b_bb, ssd._anchors.cpu(), ssd._grid_sizes.cpu())
+        conf_scores, clas_ids = b_clas[:, 1:].max(1)
+        conf_scores = b_clas.t().sigmoid()
 
-    out1, bbox_list, class_list = [], [], []
+        out1, bbox_list, class_list = [], [], []
 
-    for cl in range(1, len(conf_scores)):
-        c_mask = conf_scores[cl] > thresh
-        if c_mask.sum() == 0: 
-            continue
-        scores = conf_scores[cl][c_mask]
-        l_mask = c_mask.unsqueeze(1)
-        l_mask = l_mask.expand_as(a_ic)
-        boxes = a_ic[l_mask].view(-1, 4) # boxes are now in range[ 0, 1]
-        boxes = (boxes-0.5) * 2.0        # putting boxes in range[-1, 1]
-        ids, count = nms(boxes.data, scores, nms_overlap, 50) # FIX- NMS overlap hardcoded
-        ids = ids[:count]
-        out1.append(scores[ids])
-        bbox_list.append(boxes.data[ids])
-        class_list.append(torch.tensor([cl]*count))
+        for cl in range(1, len(conf_scores)):
+            c_mask = conf_scores[cl] > thresh
+            if c_mask.sum() == 0: 
+                continue
+            scores = conf_scores[cl][c_mask]
+            l_mask = c_mask.unsqueeze(1)
+            l_mask = l_mask.expand_as(a_ic)
+            boxes = a_ic[l_mask].view(-1, 4) # boxes are now in range[ 0, 1]
+            boxes = (boxes-0.5) * 2.0        # putting boxes in range[-1, 1]
+            ids, count = nms(boxes.data, scores, nms_overlap, 50) # FIX- NMS overlap hardcoded
+            ids = ids[:count]
+            out1.append(scores[ids])
+            bbox_list.append(boxes.data[ids])
+            class_list.append(torch.tensor([cl]*count))
 
-    # out2 = [(out-0.5) * 2.0 for out in out2]
+        if len(bbox_list) == 0:
+            return None #torch.Tensor(size=(0,4)), torch.Tensor()
 
-    if len(bbox_list) == 0:
-        return torch.Tensor(size=(0,4)), torch.Tensor()
+        return torch.cat(bbox_list, dim=0), torch.cat(class_list, dim=0) # torch.cat(out1, dim=0), 
 
-    return torch.cat(bbox_list, dim=0), torch.cat(class_list, dim=0) # torch.cat(out1, dim=0), 
+    
+    def reconstruct(self, t, x):
+        if t is None: return None
+        bboxes, labels = t
+        if len((labels - self.pad_idx).nonzero()) == 0: return ImageBBox.create(*x.size, bboxes, labels=labels, classes=self.classes, scale=False)
+        i = (labels - self.pad_idx).nonzero().min()
+        bboxes,labels = bboxes[i:],labels[i:]
+        return ImageBBox.create(*x.size, bboxes, labels=labels, classes=self.classes, scale=False)
+
+    
+class SSDObjectItemList(ObjectItemList):
+    "`ItemList` suitable for object detection."
+    _label_cls,_square_show_res = SSDObjectCategoryList,False

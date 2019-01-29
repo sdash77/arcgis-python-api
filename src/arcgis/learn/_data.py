@@ -1,10 +1,11 @@
 try:
-    from fastai.vision.data import ObjectItemList, imagenet_stats
+    from fastai.vision.data import imagenet_stats
     from fastai.vision.transform import crop, dihedral_affine
     import torch
     from pathlib import Path
     from functools import partial
     import xml.etree.ElementTree as ET
+    from .models._ssd_utils import SSDObjectItemList
     HAS_FASTAI = True
 except:
     HAS_FASTAI = False
@@ -106,7 +107,7 @@ def prepare_data(path, class_mapping, chip_size=224, val_split_pct=0.1, batch_si
     
     get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping)
 
-    src = (ObjectItemList.from_folder(path/images)
+    src = (SSDObjectItemList.from_folder(path/images)
        .random_split_by_pct(val_split_pct, seed=seed)
        .label_from_func(get_y_func))
     
