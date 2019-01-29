@@ -5,13 +5,13 @@ try:
     from fastai.vision.learner import create_body
     from torchvision.models import resnet34
     import numpy as np
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, analyze_pred
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
     from .._data import prepare_data
     import json
     import os
     from pathlib import Path
-    HAS_FASTAI = True
     from ._codetemplate import code
+    HAS_FASTAI = True    
 except Exception as e:
     HAS_FASTAI = False
 
@@ -42,7 +42,7 @@ _CLASS_TEMPLATE = {
 class _EmptyData():
     def __init__(self, path, c, loss_func: None):
         self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available else torch.device('cpu')
+        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.c = c
         self.loss_func = loss_func
 
@@ -89,7 +89,7 @@ class SingleShotDetector(object):
         
         super().__init__()
 
-        self._device = torch.device('cuda') if torch.cuda.is_available else torch.device('cpu')
+        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
         if not HAS_FASTAI:
             _raise_fastai_import_error()
@@ -256,7 +256,7 @@ class SingleShotDetector(object):
     def _ssd_loss(self, pred, targ1, targ2, print_it=False):
         lcs,lls = 0.,0.
         for b_c,b_bb,bbox,clas in zip(*pred, targ1, targ2):
-            loc_loss,clas_loss = self._ssd_1_loss(b_c,b_bb,bbox.cuda(),clas.cuda(),print_it)
+            loc_loss,clas_loss = self._ssd_1_loss(b_c,b_bb,bbox.to(self._device),clas.to(self._device),print_it)
             lls += loc_loss
             lcs += clas_loss
         if print_it: print(f'loc: {lls}, clas: {lcs}') #CHANGE

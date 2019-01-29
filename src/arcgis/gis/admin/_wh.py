@@ -9,7 +9,6 @@ class WebHookManager(object):
     automatically notified when events associated with items, groups, and
     users occur. Once a webhook has been triggered, an HTTP request is
     made to a user-defined URL to provide information regarding the event.
-
     """
     _con = None
     _gis = None
@@ -230,7 +229,7 @@ class WebHookManager(object):
         return hooks
 ########################################################################
 class Webhook(object):
-    """a signle webhhook"""
+    """a single webhook"""
     _con = None
     _gis = None
     _url =  None
