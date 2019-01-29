@@ -100,7 +100,7 @@ class BCE_Loss(nn.Module):
 
     def forward(self, pred, targ):
         t = one_hot_embedding(targ, self.num_classes)
-        t = torch.Tensor(t[:,1:].contiguous()).cuda()
+        t = torch.Tensor(t[:,1:].contiguous()).to(pred.device)
         x = pred[:,1:]
         w = self.get_weight(x,t)
         return F.binary_cross_entropy_with_logits(x, t, w, size_average=False)/(self.num_classes-1)
