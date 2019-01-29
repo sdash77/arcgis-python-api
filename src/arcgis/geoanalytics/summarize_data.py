@@ -332,7 +332,7 @@ aggregate_points.__annotations__ = {
                      'output_name': str
                 }
 
-def _describe_dataset(input_layer,
+def describe_dataset(input_layer,
                      gis=None):
     """
 
@@ -372,7 +372,7 @@ Returns:
 
     return _execute_gp_tool(gis, "DescribeDataset", params, param_db, return_values, _use_async, url, True)
 
-_describe_dataset.__annotations__ = {'return': str}
+describe_dataset.__annotations__ = {'return': str}
 
 def join_features(target_layer,
                   join_layer,
