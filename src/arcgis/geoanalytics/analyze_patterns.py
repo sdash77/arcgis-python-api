@@ -17,8 +17,35 @@ _log=_logging.getLogger(__name__)
 
 _use_async=True
 
-def _forest_based_regression(input_layer,
+def forest_based_regression(input_layer,
+                            ):
+    kwargs=locals()
+
+    gis=_arcgis.env.active_gis if gis is None else gis
+    url=gis.properties.helperServices.geoanalytics.url
+
+    params={}
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key]=value
+
+    if output_name is None:
+        output_service_name='Forest Based Regression_' + _id_generator()
+        output_name=output_service_name.replace(' ', '_')
+    else:
+        output_service_name=output_name.replace(' ', '_')
+
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression')
+
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+
+
+def forest_based_regression(input_layer,
                             prediction_type,
+                            explanatory_variables,
                             features_to_predict,
                             variable_predict,
                             explanatory_variable_match,
@@ -199,13 +226,18 @@ def _forest_based_regression(input_layer,
 
     output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression')
 
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+
     _set_context(params)
 
     param_db={
         "input_layer": (_FeatureSet, "inFeatures"),
         "prediction_type" : (str, "predictionType"),
         "features_to_predict" : (_FeatureSet, "featuresToPredict"),
-        "variable_predict" : (_FeatureSet, "featuresToPredict"),
+        "variable_predict" : (dict, "variablePredict"),
         "explanatory_variables" : (list, "explanatoryVariables"),
         "explanatory_variable_match" : (list, "explanatoryVariableMatching"),
         "return_importance_table" : (bool, "returnVariableOfImportanceTable"),
@@ -214,12 +246,14 @@ def _forest_based_regression(input_layer,
         "sample_size" : (int, "sampleSize"),
         "random_vars" : (str, "randomVariables"),
         "percentage_for_validation" : (int, "percentageForValidation"),
-        "outputTrainedName" : (str, "output_name"),
+        "output_name" : (str, "outputTrainedName"),
         "context": (str, "context"),
-        "outputTrainedName": (_FeatureSet, "Output Features"),
+        #"outputTrainedName": (_FeatureSet, "Output Features"),
     }
     return_values=[
         {"name": "outputTrainedName", "display_name": "Output Features", "type": _FeatureSet},
+        {"name" : "outputPredicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
+        {"name" : "variableOfImportance", "display_name" : "Variable of Importance", "type" : _FeatureSet}
     ]
 
     try:
