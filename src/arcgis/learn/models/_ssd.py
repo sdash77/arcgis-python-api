@@ -396,12 +396,7 @@ class SingleShotDetector(object):
         """
         Displays the results of a trained model on a part of the validation set.
         """
-        oldpred = self.learn.data.valid_ds.y.analyze_pred 
-        self.learn.data.valid_ds.y.analyze_pred = analyze_pred
-        # self.learn.show_results(anchors=self._anchors.cpu(), grid_sizes=self._grid_sizes.cpu(), thresh=thresh, nms_overlap=nms_overlap, ssd=self)
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
-        # Restoring old analyze pred
-        self.learn.data.valid_ds.y.analyze_pred = oldpred
         
 
         
