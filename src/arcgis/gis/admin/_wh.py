@@ -3,7 +3,7 @@ import json
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 
-class WebHookManager(object):
+class WebhookManager(object):
     """
     Creates and manages ArcGIS Portal WebHooks.  Webhooks allow you to be
     automatically notified when events associated with items, groups, and
@@ -28,7 +28,7 @@ class WebHookManager(object):
     #----------------------------------------------------------------------
     def __str__(self):
         from urllib.parse import urlparse
-        return "<WebHookManager @ {id}>".format(id=urlparse(self._url).netloc)
+        return "<WebhookManager @ {id}>".format(id=urlparse(self._url).netloc)
     #----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
@@ -132,7 +132,6 @@ class WebHookManager(object):
         """
         Creates a WebHook to monitor REST endpoints and report activities
 
-
         =================================  ===============================================================================
         **Argument**                       **Description**
         ---------------------------------  -------------------------------------------------------------------------------
@@ -144,38 +143,76 @@ class WebHookManager(object):
                                            monitored. This is done by passing "ALL" in as the events.  If a list is
                                            provided, a specific endpoint can be monitored.
 
-                                           **Trigger Events**
+                                            **Item Trigger Events**
 
-                                            |Item Trigger Events|URI|
-                                            |----------------|-------|
-                                            |All trigger events for all Items in the Portal | /items|
-                                            |Add Item to the Portal |/items/add |
-                                            |All trigger events for a specific Item |/items/`<itemID>` |
-                                            |Deleting a specific Item |/items/`<itemID>`/delete |
-                                            |Updating a specific Item's properties |/items/`<itemID>`/update |
-                                            |Moving an Item or changing ownership of the item |/items/`<itemID>`/move |
-                                            |Publish a specific Item |/items/`<itemID>`/publish |
-                                            |Share a specific Item |/items/`<itemID>`/share |
-                                            |Unshare a specific Item |/items/`<itemID>`/unshare|
+                                            +------------------------------------------------+-------------------------+
+                                            | **Trigger event**                              | **URI example**         |
+                                            +------------------------------------------------+-------------------------+
+                                            | All trigger events for all items               | /items                  |
+                                            +------------------------------------------------+-------------------------+
+                                            | Add item to the portal                         | /items/add              |
+                                            +------------------------------------------------+-------------------------+
+                                            | All trigger events for a specific item         | /items/<itemID>         |
+                                            +------------------------------------------------+-------------------------+
+                                            | Delete a specific item                         | /items/<itemID>/delete  |
+                                            +------------------------------------------------+-------------------------+
+                                            | Update a specific item's properties            | /items/<itemID>/update  |
+                                            +------------------------------------------------+-------------------------+
+                                            | Move an item or changing ownership of the item | /items/<itemID>/move    |
+                                            +------------------------------------------------+-------------------------+
+                                            | Publish a specific item                        | /items/<itemID>/publish |
+                                            +------------------------------------------------+-------------------------+
+                                            | Share a specific item                          | /items/<itemID>/share   |
+                                            +------------------------------------------------+-------------------------+
+                                            | Unshare a specific item                        | /items/<itemID>/unshare |
+                                            +------------------------------------------------+-------------------------+
 
-                                            |Group Trigger Events|URI|
-                                            |--------------------|---|
-                                            |All trigger events for all Groups in the Portal |/groups|
-                                            |Add Group |/groups/add |
-                                            |All trigger events for a specific group |/groups/`<groupID>`|
-                                            |Update a specific group |/groups/`<groupID>`/|
-                                            |update Delete a specific group| /groups/`<groupID>`/delete|
-                                            |Enable Delete Protection for a specific group | /groups/`<groupID>`/protect |
-                                            |Disable Delete Protection for a specific group| /groups/`<groupID>`/unprotect|
+                                            **Group Trigger Events**
 
-                                            |User Trigger Events|URI|
-                                            |--------------------|---|
-                                            |All trigger events for all users in the Portal | /users |
-                                            |All trigger events associated with a specific user | /users/`<userId>` |
-                                            |Deleting a specific user | /users/`<userId>`/delete |
-                                            |Updating a specific user's profile | /users/`<userId>`/update|
-                                            |Disabling a specific user's account | /users/`<userId>`/disable |
-                                            |Enabling a specific user's account | /users/`<userId>`/enable|
+                                            +------------------------------------------------+-------------------------------+
+                                            | **Trigger event**                              | **URI example**               |
+                                            +------------------------------------------------+-------------------------------+
+                                            | All trigger events for all groups              | /groups                       |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Add group                                      | /groups/add                   |
+                                            +------------------------------------------------+-------------------------------+
+                                            | All trigger events for a specific group        | /groups/<groupID>             |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Update a specific group                        | /groups/<groupID>/update      |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Delete a specific group                        | /groups/<groupID>/delete      |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Enable Delete Protection for a specific group  | /groups/<groupID>/protect     |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Disable Delete Protection for a specific group | /groups/<groupID>/unprotect   |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Invite a user to a specific group              | /groups/<groupID>/invite      |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Add a user to a specific group                 | /groups/<groupID>/addUsers    |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Remove a user from a specific group            | /groups/<groupID>/removeUsers |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Update a user's role in a specific group       | /groups/<groupID>/updateUsers |
+                                            +------------------------------------------------+-------------------------------+
+
+
+                                            **User Trigger Events**
+
+                                            +----------------------------------------------------+---------------------------+
+                                            | **Trigger event**                                  | **URI example**           |
+                                            +----------------------------------------------------+---------------------------+
+                                            | All trigger events for all users in the portal     | /users                    |
+                                            +----------------------------------------------------+---------------------------+
+                                            | All trigger events associated with a specific user | /users/<username>         |
+                                            +----------------------------------------------------+---------------------------+
+                                            | Delete a specific user                             | /users/<username>/delete  |
+                                            +----------------------------------------------------+---------------------------+
+                                            | Update a specific user's profile                   | /users/<username>/update  |
+                                            +----------------------------------------------------+---------------------------+
+                                            | Disable a specific user's account                  | /users/<username>/disable |
+                                            +----------------------------------------------------+---------------------------+
+                                            | Enable a specific user's account                   | /users/<username>/enable  |
+                                            +----------------------------------------------------+---------------------------+
 
                                            Example Syntax: ['/users', '/groups/abcd1234....']
 
@@ -345,42 +382,80 @@ class Webhook(object):
         ---------------------------------  -------------------------------------------------------------------------------
         url                                Required String. This is the URL to which the webhook will deliver payloads to.
         ---------------------------------  -------------------------------------------------------------------------------
-        events                             Otional List or String.  The events accepts a list or all events can be
+        events                             Otional List or String.  The events accepts a list of all events that can be
                                            monitored. This is done by passing "ALL" in as the events.  If a list is
                                            provided, a specific endpoint can be monitored.
 
-                                           **Trigger Events**
+                                           **Item Trigger Events**
 
-                                            |Item Trigger Events|URI|
-                                            |----------------|-------|
-                                            |All trigger events for all Items in the Portal | /items|
-                                            |Add Item to the Portal |/items/add |
-                                            |All trigger events for a specific Item |/items/`<itemID>` |
-                                            |Deleting a specific Item |/items/`<itemID>`/delete |
-                                            |Updating a specific Item's properties |/items/`<itemID>`/update |
-                                            |Moving an Item or changing ownership of the item |/items/`<itemID>`/move |
-                                            |Publish a specific Item |/items/`<itemID>`/publish |
-                                            |Share a specific Item |/items/`<itemID>`/share |
-                                            |Unshare a specific Item |/items/`<itemID>`/unshare|
+                                            +------------------------------------------------+-------------------------+
+                                            | **Trigger event**                              | **URI example**         |
+                                            +------------------------------------------------+-------------------------+
+                                            | All trigger events for all items               | /items                  |
+                                            +------------------------------------------------+-------------------------+
+                                            | Add item to the portal                         | /items/add              |
+                                            +------------------------------------------------+-------------------------+
+                                            | All trigger events for a specific item         | /items/<itemID>         |
+                                            +------------------------------------------------+-------------------------+
+                                            | Delete a specific item                         | /items/<itemID>/delete  |
+                                            +------------------------------------------------+-------------------------+
+                                            | Update a specific item's properties            | /items/<itemID>/update  |
+                                            +------------------------------------------------+-------------------------+
+                                            | Move an item or changing ownership of the item | /items/<itemID>/move    |
+                                            +------------------------------------------------+-------------------------+
+                                            | Publish a specific item                        | /items/<itemID>/publish |
+                                            +------------------------------------------------+-------------------------+
+                                            | Share a specific item                          | /items/<itemID>/share   |
+                                            +------------------------------------------------+-------------------------+
+                                            | Unshare a specific item                        | /items/<itemID>/unshare |
+                                            +------------------------------------------------+-------------------------+
 
-                                            |Group Trigger Events|URI|
-                                            |--------------------|---|
-                                            |All trigger events for all Groups in the Portal |/groups|
-                                            |Add Group |/groups/add |
-                                            |All trigger events for a specific group |/groups/`<groupID>`|
-                                            |Update a specific group |/groups/`<groupID>`/|
-                                            |update Delete a specific group| /groups/`<groupID>`/delete|
-                                            |Enable Delete Protection for a specific group | /groups/`<groupID>`/protect |
-                                            |Disable Delete Protection for a specific group| /groups/`<groupID>`/unprotect|
+                                            **Group Trigger Events**
 
-                                            |User Trigger Events|URI|
-                                            |--------------------|---|
-                                            |All trigger events for all users in the Portal | /users |
-                                            |All trigger events associated with a specific user | /users/`<userId>` |
-                                            |Deleting a specific user | /users/`<userId>`/delete |
-                                            |Updating a specific user's profile | /users/`<userId>`/update|
-                                            |Disabling a specific user's account | /users/`<userId>`/disable |
-                                            |Enabling a specific user's account | /users/`<userId>`/enable|
+                                            +------------------------------------------------+-------------------------------+
+                                            | **Trigger event**                              | **URI example**               |
+                                            +------------------------------------------------+-------------------------------+
+                                            | All trigger events for all groups              | /groups                       |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Add group                                      | /groups/add                   |
+                                            +------------------------------------------------+-------------------------------+
+                                            | All trigger events for a specific group        | /groups/<groupID>             |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Update a specific group                        | /groups/<groupID>/update      |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Delete a specific group                        | /groups/<groupID>/delete      |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Enable Delete Protection for a specific group  | /groups/<groupID>/protect     |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Disable Delete Protection for a specific group | /groups/<groupID>/unprotect   |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Invite a user to a specific group              | /groups/<groupID>/invite      |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Add a user to a specific group                 | /groups/<groupID>/addUsers    |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Remove a user from a specific group            | /groups/<groupID>/removeUsers |
+                                            +------------------------------------------------+-------------------------------+
+                                            | Update a user's role in a specific group       | /groups/<groupID>/updateUsers |
+                                            +------------------------------------------------+-------------------------------+
+
+
+                                            **User Trigger Events**
+
+                                            +----------------------------------------------------+---------------------------+
+                                            | **Trigger event**                                  | **URI example**           |
+                                            +----------------------------------------------------+---------------------------+
+                                            | All trigger events for all users in the portal     | /users                    |
+                                            +----------------------------------------------------+---------------------------+
+                                            | All trigger events associated with a specific user | /users/<username>         |
+                                            +----------------------------------------------------+---------------------------+
+                                            | Delete a specific user                             | /users/<username>/delete  |
+                                            +----------------------------------------------------+---------------------------+
+                                            | Update a specific user's profile                   | /users/<username>/update  |
+                                            +----------------------------------------------------+---------------------------+
+                                            | Disable a specific user's account                  | /users/<username>/disable |
+                                            +----------------------------------------------------+---------------------------+
+                                            | Enable a specific user's account                   | /users/<username>/enable  |
+                                            +----------------------------------------------------+---------------------------+
 
                                            Example Syntax: ['/users', '/groups/abcd1234....']
 
@@ -430,11 +505,10 @@ class Webhook(object):
 
 #if __name__ == "__main__":
     #from arcgis.gis import GIS
-    #gis = GIS(url="https://dev0005215.esri.com/portal", username="andrewC",
-              #password="esri.agp2", profile="webhooks_profile", verify_cert=False)
+    #gis = GIS(url="https://dev0005215.esri.com/portal")
     #print(gis)
     #url = "{baseurl}portals/self/webhooks".format(baseurl=gis._portal.resturl)
-    #whm = WebHookManager(url=url, gis=gis)
+    #whm = WebhookManager(url=url, gis=gis)
     #hook1 = whm.create(name="update_test", url="https://JJEYARAJAH.esri.com:8001", number_of_failures=5)
     #hook1.update(name='thisisupdated')
     #hook1.update(events='/users')
@@ -446,7 +520,7 @@ class Webhook(object):
     #assert hook.update(name="update_test", url="https://JJEYARAJAH.esri.com:8001", events="/users")
     #print(hook.properties)
     #print(hook.delete())
-    ##assert isinstance(whm, WebHookManager)
+    ##assert isinstance(whm, WebhookManager)
     ##assert isinstance(whm.list(), list)
     ##assert isinstance(whm.properties, PropertyMap)
 

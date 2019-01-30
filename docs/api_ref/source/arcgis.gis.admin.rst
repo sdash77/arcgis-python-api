@@ -91,12 +91,6 @@ PortalResourceManager
     :undoc-members:
     :show-inheritance:
 
-WebHookManager
----------------
-.. autoclass:: arcgis.gis.admin.WebHookManager
-   :members:
-   :undoc-members:
-   
 UX
 ---------------
 .. autoclass:: arcgis.gis.admin.UX
@@ -205,6 +199,12 @@ WebAdaptor
 WebAdaptors
 ---------------
 .. autoclass:: arcgis.gis.admin.WebAdaptors
+   :members:
+   :undoc-members:
+
+WebhookManager
+---------------
+.. autoclass:: arcgis.gis.admin.WebhookManager
    :members:
    :undoc-members:
 
