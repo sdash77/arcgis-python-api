@@ -256,9 +256,9 @@ class PortalAdminManager(BasePortalAdmin):
         """Provides access to Portal's WebHook Manager"""
         if self._whm is None and \
            self._gis.version >= [6,4]:
-            from ._wh import WebHookManager
+            from ._wh import WebhookManager
             url = self._gis._portal.resturl + "portals/self/webhooks"
-            self._whm = WebHookManager(url=url, gis=self._gis)
+            self._whm = WebhookManager(url=url, gis=self._gis)
         return self._whm
 
     #----------------------------------------------------------------------
