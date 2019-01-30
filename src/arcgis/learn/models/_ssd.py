@@ -40,11 +40,12 @@ _CLASS_TEMPLATE = {
       }
 
 class _EmptyData():
-    def __init__(self, path, c, loss_func: None):
+    def __init__(self, path, c, loss_func, chip_size):
         self.path = path
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.c = c
         self.loss_func = loss_func
+        self.chip_size = chip_size
 
 class SingleShotDetector(object):
 
@@ -99,7 +100,7 @@ class SingleShotDetector(object):
             
         self._create_anchors(grids, zooms, ratios)
 
-        num_features = model_sizes(create_body(backbone), size=(data.chip_size, data.chip_size))[-1][-1] # get size of output feature map for specific chip_size
+        num_features = model_sizes(create_body(backbone), size=(data.chip_size, data.chip_size))[-1][-1] 
 
         ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias)
 
@@ -143,7 +144,7 @@ class SingleShotDetector(object):
 
         class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
         if data is None:
-            empty_data = _EmptyData(path='str', loss_func=None, c=len(class_mapping) + 1)
+            empty_data = _EmptyData(path='str', loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
             return cls(empty_data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
         else:
             return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
@@ -247,7 +248,7 @@ class SingleShotDetector(object):
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
         pos_idx = torch.nonzero(pos)[:,0]
-        gt_clas[1-pos] = 0 #data.c - 1 # CHANGE
+        gt_clas[1-pos] = 0 
         gt_bbox = bbox[gt_idx]
         loc_loss = ((a_ic[pos_idx] - gt_bbox[pos_idx]).abs()).mean()
         clas_loss  = self._loss_f(b_c, gt_clas)
@@ -259,7 +260,7 @@ class SingleShotDetector(object):
             loc_loss,clas_loss = self._ssd_1_loss(b_c,b_bb,bbox.to(self._device),clas.to(self._device),print_it)
             lls += loc_loss
             lcs += clas_loss
-        if print_it: print(f'loc: {lls}, clas: {lcs}') #CHANGE
+        if print_it: print(f'loc: {lls}, clas: {lcs}')
         return lls+lcs
     
     def _intersect(self,box_a, box_b):
