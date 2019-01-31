@@ -115,7 +115,7 @@ def _create_application_properties():
     }
 
 
-def _build_operational_layers(item, popup_def=None, visibility=True, layer_index=0):
+def _build_operational_layers(item, popup_def=None, visibility=True, layer_index=0, editable=False):
     """
     Helper method to build operational layers
     :param item: The item containing the layer (at index 0)
@@ -126,7 +126,6 @@ def _build_operational_layers(item, popup_def=None, visibility=True, layer_index
     layer = item.layers[layer_index]
     op_layer = {
         "layerType": 'ArcGISFeatureLayer',
-        "capabilities": 'Query,Sync',
         "opacity": 1,
         "itemId": item.id,
         "id": "{}_0".format(layer.properties["name"]),
@@ -134,6 +133,8 @@ def _build_operational_layers(item, popup_def=None, visibility=True, layer_index
         "url": layer.url,
         "visibility": visibility
     }
+    if not editable:
+        op_layer["capabilities"] = "Query,Sync"
     if popup_def:
         op_layer["popupInfo"] = popup_def
     return op_layer
@@ -172,15 +173,15 @@ def _v2_create_project(gis, summary, title):
                                                 gis,
                                                 folder_name,
                                                 workforce_service_item,
-                                                assignment_layer_popup_definition_v1,
-                                                worker_layer_popup_definition_v1,
+                                                assignment_layer_popup_definition_v2,
+                                                worker_layer_popup_definition_v2,
                                                 title)
         dispatchers_webmap_future = executor.submit(_v2_create_dispatcher_webmap,
                                                     gis,
                                                     folder_name,
                                                     workforce_service_item,
-                                                    assignment_layer_popup_definition_v1,
-                                                    worker_layer_popup_definition_v1,
+                                                    assignment_layer_popup_definition_v2,
+                                                    worker_layer_popup_definition_v2,
                                                     title)
     workers_webmap = workers_webmap_future.result()
     dispatchers_webmap = dispatchers_webmap_future.result()
@@ -363,7 +364,7 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
         "tags": "workforce-workers",
         "extent": array_extent,
         "type": 'Web Map',
-        "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Project'
+        "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Project,Data Editing'
     }
 
     webmap_data = {
@@ -395,8 +396,8 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
         },
         "version": "2.11"
     }
-    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, assignments_popup_def, layer_index=0))
-    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1))
+    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, assignments_popup_def, layer_index=0, editable=True))
+    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1, editable=True))
     item_properties["text"] = json.dumps(webmap_data)
 
     item = gis.content.add(item_properties, folder=folder_name)
@@ -467,7 +468,7 @@ def _v2_create_service(gis, service_name, folder_name, spatial_ref):
     )
 
 
-def _v2_create_service_with_layers(gis, service_name, folder_name, assignments_layer_def, workers_layer_def, dispatchers_layer_def, title):
+def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_layer_def, workers_layer_def, dispatchers_layer_def, title):
     """
        Creates a service, adds, and layer and optionally enables attachments
        :param gis: An authenticated GIS
@@ -482,7 +483,7 @@ def _v2_create_service_with_layers(gis, service_name, folder_name, assignments_l
     spatial_reference = default_extent["spatialReference"]
     layer_defs = [assignments_layer_def, workers_layer_def, dispatchers_layer_def]
     if gis.content.is_service_name_available(service_name, "featureService"):
-        item = _v1_create_service(gis, service_name, folder_name, spatial_reference)
+        item = _v2_create_service(gis, service_name, folder_name, spatial_reference)
         item.update({
             "title": "{} Layers".format(title),
             "tags": "workforce"
@@ -497,18 +498,16 @@ def _v2_create_service_with_layers(gis, service_name, folder_name, assignments_l
             "layers": [layer_def]
         })
 
-        # enabled editor tracking
-        feature_layer_collection.manager.update_definition({
-            "editorTrackingInfo": {
-                "enableEditorTracking": True,
-                "enableOwnershipAccessControl": False,
-                "allowOthersToUpdate": True,
-                "allowOthersToDelete": True
-            }
-        })
-        return item
-    else:
-        raise Exception("Service name already exists.")
+    # enabled editor tracking
+    feature_layer_collection.manager.update_definition({
+        "editorTrackingInfo": {
+            "enableEditorTracking": True,
+            "enableOwnershipAccessControl": False,
+            "allowOthersToUpdate": True,
+            "allowOthersToDelete": True
+        }
+    })
+    return item
 
 
 def _get_default_extent(gis):
