@@ -47,7 +47,8 @@ from .dispatchers import (
 )
 
 from .projects import (
-    get_project
+    get_project,
+    create_project
 )
 
 from .tracks import (
