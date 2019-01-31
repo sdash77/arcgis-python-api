@@ -2,7 +2,10 @@
 New Geometries Classes
 """
 import json
-import numpy as np
+try:
+    import numpy as np
+except ImportError as e:
+    pass
 from six import add_metaclass
 #--------------------------------------------------------------------------
 def _is_valid(value):
@@ -61,6 +64,7 @@ def _is_line(coords):
     checks to see if the line has at
     least 2 points in the list
     """
+    list_types = (list, tuple, set)
     if isinstance(coords, list_types) and \
        len(coords) > 0: # list of lists
         return all(_is_point(elem) for elem in coords)
@@ -73,6 +77,7 @@ def _is_point(coords):
     checks to see if the point has at
     least 2 coordinates in the list
     """
+    number_type = (int, float)
     if isinstance(coords, (list, tuple)) and \
        len(coords) > 1:
         for coord in coords:

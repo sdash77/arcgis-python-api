@@ -7,11 +7,21 @@ calculate_density
 --------------
 .. automethod:: arcgis.geoanalytics.analyze_patterns.calculate_density
 
+create_space_time_cube
+----------------------
+.. automethod:: arcgis.geoanalytics.analyze_patterns.create_space_time_cube
+
 find_hot_spots
 --------------
 .. automethod:: arcgis.geoanalytics.analyze_patterns.find_hot_spots
 
-create_space_time_cube
-----------------------
-.. automethod:: arcgis.geoanalytics.analyze_patterns.create_space_time_cube
+forest_based_regression
+--------------
+.. automethod:: arcgis.geoanalytics.analyze_patterns.forest_based_regression
+
+generalized_linear_regression
+-----------------------------
+.. automethod:: arcgis.geoanalytics.analyze_patterns.generalized_linear_regression
+
+
 

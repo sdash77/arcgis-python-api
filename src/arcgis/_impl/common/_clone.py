@@ -14,6 +14,7 @@ from arcgis.features import FeatureLayer
 from arcgis.mapping import MapImageLayer
 from arcgis.geometry import *
 import copy
+import urllib
 
 _TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operation View', 'Dashboard',
                           'Image Service', 'Feature Collection', 'Feature Collection Template',
@@ -518,11 +519,12 @@ class _DeepCloner():
 
         return item_definition
 
-    def _clone(self, excecutor):
+    def _clone_init(self):
         """
-        This processes each node using the concurrent.futures so we can have some multi-threaded stuff for POST/GET
+        Initialize the cloning environment
         :return:
         """
+
         # Create folder if it doesn't already exist
         user = self.target.users.me
         target_folder = None
@@ -550,11 +552,48 @@ class _DeepCloner():
                 raise Exception('Source item type {0} {1} does not match the target item type {2} {3}'.format(original_item['type'], original_item['title'], new_item['type'], new_item['title']))
 
             if new_item.type in ['Feature Service', 'Map Service']:
-                layer_field_mapping, layer_id_mapping, relationship_field_mapping = _compare_service(new_item, original_item)
+                currentVersion = 0
+                if 'currentVersion' in self.target.properties:
+                    currentVersion = self.target.properties.currentVersion
+                layer_field_mapping, layer_id_mapping, relationship_field_mapping = _compare_service(new_item, original_item, currentVersion)
                 self._clone_mapping['Services'][original_item['url'].rstrip('/')] = {'id' : new_item['id'], 'url' : new_item['url'].rstrip('/'), 'layer_field_mapping' : layer_field_mapping,
                                                                                     'layer_id_mapping' : layer_id_mapping, 'relationship_field_mapping' : relationship_field_mapping}
 
-        # Then use graph to clone rest of things
+    def _clone_synchronous(self):
+        """
+        This processes each node synchronously to workaround issues with Pro Project Packages when called within ArcGIS Pro
+        :return:
+        """
+        self._clone_init()
+
+        leaf_nodes = self._get_leaf_nodes()
+        level = 0
+
+        # also includes items that already existed and mapped
+        while leaf_nodes:           
+            # Resolve any nodes that were provided in the item or group mapping
+            for node in [node for node in leaf_nodes if node.info['id'] in self._clone_mapping['Item IDs'] or node.info['id'] in self._clone_mapping['Group IDs']]:
+                node.resolved = True
+                leaf_nodes.remove(node)
+
+            # Process remaining nodes
+            for node in leaf_nodes:
+                try:
+                    node.clone()
+                except _ItemCreateException as ex:
+                    raise ex
+
+            level += 1
+            leaf_nodes = self._get_leaf_nodes()
+        return [i for i in self._get_created_items() if isinstance(i, arcgis.gis.Item)]
+
+    def _clone(self, excecutor):
+        """
+        This processes each node using the concurrent.futures so we can have some multi-threaded stuff for POST/GET
+        :return:
+        """
+        self._clone_init()
+
         leaf_nodes = self._get_leaf_nodes()
         level = 0
 
@@ -574,11 +613,12 @@ class _DeepCloner():
             if self.target.properties.isPortal:
                 view_sources = {}
                 for hosted_view in [node for node in leaf_nodes if isinstance(node, _FeatureServiceDefinition) and node.is_view]:
-                    for id, source in hosted_view.view_sources.items():
-                        if source not in view_sources:
-                            view_sources[source] = [hosted_view]
-                        else:
-                            view_sources[source].append(hosted_view)
+                    for id, sources in hosted_view.view_sources.items():
+                        for source in sources:
+                            if source not in view_sources:
+                                view_sources[source] = [hosted_view]
+                            else:
+                                view_sources[source].append(hosted_view)
                 for source, nodes in view_sources.items():
                     if len(nodes) > 1:
                         for node in nodes:
@@ -628,9 +668,13 @@ class _DeepCloner():
         return [i for i in self._get_created_items() if isinstance(i, arcgis.gis.Item)]
 
     def clone(self):
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            results = executor.submit(self._clone, executor).result()
-            return results
+        # If we are cloning any Pro Projects that require swizzling we need to process everyting synchronously.
+        if len([node for node in self._graph.values() if isinstance(node, _ProProjectPackageDefinition) and "copy-only" not in node.info['tags']]) > 0:
+            return self._clone_synchronous()
+        else:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+                results = executor.submit(self._clone, executor).result()
+                return results
 
     def _get_group_definition(self, group):
         """Get an instance of the group definition for the specified item. This definition can be used to clone or download the group.
@@ -1323,8 +1367,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
                 if new_item:
+                    currentVersion = 0
+                    if 'currentVersion' in self.target.properties:
+                        currentVersion = self.target.properties.currentVersion
                     # build the mappings
-                    layer_field_mapping, layer_id_mapping, relationship_field_mapping = _compare_service(new_item, self.portal_item)
+                    layer_field_mapping, layer_id_mapping, relationship_field_mapping = _compare_service(new_item, self.portal_item, currentVersion)
 
             if not new_item:
 
@@ -2822,7 +2869,6 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                         aprx_files = [f for f in os.listdir(project_dir) if f.endswith('.aprx')]
                         if len(aprx_files) == 1:
                             service_version_infos = {}
-
                             aprx_file = os.path.join(project_dir, aprx_files[0])
                             aprx = arcpy.mp.ArcGISProject(aprx_file)
                             maps = aprx.listMaps()
@@ -2856,6 +2902,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                         del new_connection_properties['connection_info'][value]
 
                                                 lyr.updateConnectionProperties(connection_properties, new_connection_properties, validate=False)
+
                             aprx.save()
 
                             additional_files = None
@@ -2921,7 +2968,7 @@ def _get_feature_service_related_item(service_url, source):
     return
 
 
-def _compare_service(new_item, original_item):
+def _compare_service(new_item, original_item, currentVersion):
     layer_field_mapping = {}
     layer_id_mapping = {}
     relationship_field_mapping = {}
@@ -2951,9 +2998,19 @@ def _compare_service(new_item, original_item):
     original_layer_ids = [original_layer['id'] for original_layer in original_layers]
     new_layer_ids = [new_layer['id'] for new_layer in new_layers]
     new_layer_names = [new_layer['name'] for new_layer in new_layers]
+    
     for layer in original_layers:
         try:
-            new_layer = new_layers[new_layer_names.index(layer['name'])]
+            # When portal is 6.4 or greator compare based on ID rather than layer name
+            if currentVersion is not None and float(currentVersion) >= 6.4:
+                _test_id_search = [p for p in new_layers if p['id'] == layer['id']]
+            else:
+                _test_id_search = []
+            if len(_test_id_search) == 1:
+                new_layer = _test_id_search[0]
+            else:
+                new_layer = new_layers[new_layer_names.index(layer['name'])]
+
             layer_id_mapping[layer['id']] = new_layer['id']
             new_layer_ids.remove(new_layer['id'])
             original_layer_ids.remove(layer['id'])

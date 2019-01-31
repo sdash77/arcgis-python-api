@@ -114,7 +114,9 @@ def compute_sensor_model(image_collection,
                          mode='QUICK', 
                          location_accuracy='High', 
                          context=None,
-                         gis = None):
+                         *,
+                         gis=None,
+                         **kwargs):
     """
     compute_sensor_model computes the bundle block adjustment for the image collection 
     and applies the frame xform to the images. It will also generate the control point 
@@ -202,7 +204,7 @@ def compute_sensor_model(image_collection,
 ###################################################################################################
 ## Alter processing states
 ###################################################################################################
-def alter_processing_states(image_collection, new_states, gis = None):
+def alter_processing_states(image_collection, new_states, *, gis=None, **kwargs):
     '''
     Alter the processing states of the image collection.
     The states are stored as key property "Orthomapping". 
@@ -268,7 +270,7 @@ def alter_processing_states(image_collection, new_states, gis = None):
 ###################################################################################################
 ## Get processing states
 ###################################################################################################
-def get_processing_states(image_collection, gis = None):
+def get_processing_states(image_collection, *, gis=None, **kwargs):
     '''
     Retrieve the processing states of the image collection
 
@@ -376,12 +378,13 @@ def append_control_points(image_collection, control_points, gis = None):
 ###################################################################################################
 ## Match control points
 ###################################################################################################
-def match_control_points(image_collection, control_points, similarity=None, context=None, gis = None):
+def match_control_points(image_collection, control_points, similarity=None, context=None, *, gis=None, **kwargs):
     '''
-    If each of the ground control point has at least one matching tie point. 
-    Then, this function will help find all remaining tie points on all other image items of the 
-    image collection.
-
+    The match_control_points is a function that takes a collection of ground control points
+    as input (control points to be specified as a list of dictionary objects), and each of the 
+    ground control points needs at least one matching tie point in the control point sets. 
+    The function will compute the remaining matching tie points for all control point sets.
+    
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
@@ -531,7 +534,9 @@ def color_correction(image_collection,
                   dodging_surface_type,
                   target_image=None,
                   context = None,
-                  gis = None):
+                   *, 
+                   gis=None, 
+                   **kwargs):
     '''
     Color balance the image collection. 
     Refer to the "Color Balance Mosaic Dataset" GP tool for 
@@ -671,7 +676,7 @@ def color_correction(image_collection,
 ###################################################################################################
 ## Compute Control Points
 ###################################################################################################
-def compute_control_points(image_collection, reference_image=None, image_location_accuracy="High", context = None, gis=None):
+def compute_control_points(image_collection, reference_image=None, image_location_accuracy="High", context = None, *, gis=None, **kwargs):
     '''
     This service tool is used for computing matching control points between images
     within an image collection and/or matching control points between the image 
@@ -753,7 +758,9 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
 def compute_seamlines(image_collection,
                       seamlines_method,
                       context = None,
-                      gis = None):
+                      *, 
+                      gis=None, 
+                      **kwargs):
     '''
     Compute seamlines on the image collection. This service tool is used to compute
     seamlines for the image collection, usually after the image collection has been
@@ -840,7 +847,7 @@ def compute_seamlines(image_collection,
 ###################################################################################################
 ## Edit control points
 ###################################################################################################
-def edit_control_points(image_collection, control_points, gis = None):
+def edit_control_points(image_collection, control_points, *, gis=None, **kwargs):
     '''
     This service can be used to append additional ground control point sets to
     the image collection's control points. It is recommended that a ground control point (GCP) set 
@@ -956,7 +963,9 @@ def generate_dem(image_collection,
                  surface_type,
                  matching_method = None,
                  context = None,
-                 gis = None):
+                 *,
+                 gis = None,
+                 **kwargs):
     '''
     Generate a DEM from the image collection. Refer to "Interpolate From Point Cloud"
     GP tool for more documentation
@@ -1056,7 +1065,8 @@ def generate_dem(image_collection,
                             "maxGSDDif", "numImagePairs", "adjQualityThreshold", "method", "smoothingMethod", "applyToOrtho"]
     context = {}
     params = {}
-
+    folder = None
+    folderId = None
     _set_image_collection_param(gis, params, image_collection)
 
     if isinstance(out_dem, Item):
@@ -1076,9 +1086,27 @@ def generate_dem(image_collection,
             else:
                 doesnotexist = gis.content.is_service_name_available(out_dem, "Image Service") 
                 if doesnotexist:
-                    params["outputDEM"] = json.dumps({"serviceProperties": {"name" : out_dem}})
+                    if kwargs is not None:
+                        if "folder" in kwargs:
+                            folder = kwargs["folder"]
+                    if folder is not None:
+                        if isinstance(folder, dict):
+                            if "id" in folder:
+                                folderId = folder["id"]
+                                folder=folder["title"]
+                        else:
+                            owner = gis.properties.user.username
+                            folderId = gis._portal.get_folder_id(owner, folder)
+                        if folderId is None:
+                            folder_dict = gis.content.create_folder(folder, owner)
+                            folder = folder_dict["title"]
+                            folderId = folder_dict["id"]
+                        params["outputDEM"] = json.dumps({"serviceProperties": {"name" : out_dem}, "itemProperties": {"folderId" : folderId}})
+                    else:
+                        params["outputDEM"] = json.dumps({"serviceProperties": {"name" : out_dem}})
               
-    
+
+
     params['cellSize'] = cell_size
 
     surfaceTypeAllowedValues = ['DTM', 'DSM']
@@ -1106,7 +1134,9 @@ def generate_orthomosaic(image_collection,
                          regen_seamlines=True,
                          recompute_color_correction=True,
                          context=None,
-                         gis=None):
+                         *,
+                         gis=None,
+                         **kwargs):
     '''
     Function can be used for generating single ortho-rectified mosaicked image from image collection after 
     the block adjustment.  
@@ -1161,7 +1191,8 @@ def generate_orthomosaic(image_collection,
     task = 'GenerateOrthomosaic'
 
     params = {}
-
+    folder = None
+    folderId = None
     _set_image_collection_param(gis, params, image_collection)
         
     if isinstance(out_ortho, Item):
@@ -1181,7 +1212,24 @@ def generate_orthomosaic(image_collection,
             else:
                 doesnotexist = gis.content.is_service_name_available(out_ortho, "Image Service") 
                 if doesnotexist:
-                    params["outputOrthoImage"] = json.dumps({"serviceProperties": {"name" : out_ortho}})
+                    if kwargs is not None:
+                        if "folder" in kwargs:
+                            folder = kwargs["folder"]
+                    if folder is not None:
+                        if isinstance(folder, dict):
+                            if "id" in folder:
+                                folderId = folder["id"]
+                                folder=folder["title"]
+                        else:
+                            owner = gis.properties.user.username
+                            folderId = gis._portal.get_folder_id(owner, folder)
+                        if folderId is None:
+                            folder_dict = gis.content.create_folder(folder, owner)
+                            folder = folder_dict["title"]
+                            folderId = folder_dict["id"]
+                        params["outputOrthoImage"] = json.dumps({"serviceProperties": {"name" : out_ortho}, "itemProperties": {"folderId" : folderId}})
+                    else:
+                        params["outputOrthoImage"] = json.dumps({"serviceProperties": {"name" : out_ortho}})
             
 
     if regen_seamlines is not None:
@@ -1206,7 +1254,7 @@ def generate_orthomosaic(image_collection,
 ###################################################################################################
 ## Generate report
 ###################################################################################################
-def generate_report(image_collection, gis = None):
+def generate_report(image_collection, report_format="PDF", *, gis=None, **kwargs):
     """
     This function is used to generate orthomapping report with image collection 
     that has been block adjusted. The report would contain information about 
@@ -1221,6 +1269,8 @@ def generate_report(image_collection, gis = None):
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
     -------------------    --------------------------------------------------------------------
+    report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
+    -------------------    --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ===================    ====================================================================
 
@@ -1234,6 +1284,11 @@ def generate_report(image_collection, gis = None):
 
     _set_image_collection_param(gis, params, image_collection)
 
+    report_format_allowed_values = ['PDF', 'HTML']
+    if not report_format in report_format_allowed_values:
+        raise RuntimeError('report_format can only be one of the following: '+ str(report_format_allowed_values))
+    params['reportFormat'] = report_format
+
     task = 'GenerateReport'
     job_values = _execute_task(gis, task, params)
 
@@ -1243,7 +1298,9 @@ def generate_report(image_collection, gis = None):
 ## query camera info
 ###################################################################################################
 def query_camera_info(camera_query=None,
-                      gis = None):
+                      *, 
+                      gis=None,
+                      **kwargs):
     ''' 
     This service tool is used to query specific or the entire digital camera 
     database. The digital camera database contains the specs
@@ -1289,7 +1346,9 @@ def query_camera_info(camera_query=None,
 ###################################################################################################
 def query_control_points(image_collection,
                          query,
-                         gis = None):
+                         *, 
+                         gis=None, 
+                         **kwargs):
     '''
     Query for control points in an image collection. It allows users to query 
     among certain control point sets that has ground control points inside.
@@ -1343,7 +1402,9 @@ def query_control_points(image_collection,
 ## Reset image collection
 ###################################################################################################
 def reset_image_collection(image_collection,
-                           gis = None):
+                            *, 
+                            gis=None, 
+                            **kwargs):
     '''
     Reset the image collection. It is used to reset the image collection to its 
     original state. The image collection could be adjusted during the orthomapping 

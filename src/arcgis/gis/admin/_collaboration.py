@@ -101,6 +101,7 @@ class CollaborationManager(object):
             "accessMode" : access_mode,
             "config" : {}
         }
+
         data_path = "%s/createCollaboration" % self._basepath
         res = self._portal.con.post(data_path, params)
         if 'collaboration' in res and \
@@ -430,6 +431,14 @@ class Collaboration(dict):
         if datadict:
             self.__dict__.update(datadict)
             super(Collaboration, self).update(datadict)
+    def _refresh(self):
+        """refreshes the properties"""
+        params = {"f" : "json"}
+        datadict = self._portal.con.post(self._basepath, params, verify_cert=False)
+
+        if datadict:
+            self.__dict__.update(datadict)
+            super(Collaboration, self).update(datadict)
     #----------------------------------------------------------------------
     def __getattr__(self, name): # support group attributes as group.access, group.owner, group.phone etc
         try:
@@ -468,6 +477,9 @@ class Collaboration(dict):
         :returns: dict
 
         """
+        from arcgis.gis import Group
+        if isinstance(portal_group_id, Group):
+            portal_group_id = portal_group_id.groupid
         params = {
             "f": "json",
             "collaborationWorkspaceName" : name,
@@ -777,6 +789,37 @@ class Collaboration(dict):
         return con.get(data_path,
                        params)
     #----------------------------------------------------------------------
+    def update_item_delete_policy(self,
+                                  participant_id,
+                                  delete_contributed_items=False,
+                                  delete_received_items=False):
+        """
+        The participants resource provides information about all of the
+        participants in a portal-to-portal collaboration.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        participant_id                  Required String. The participant unique id to update.
+        ---------------------------     --------------------------------------------------------------------
+        delete_contributed_items        Optional Boolean.  When a participant leaves or deletes a collaboration, this property determines whether contributed items will be deleted or maintained.
+        ---------------------------     --------------------------------------------------------------------
+        delete_received_items           Optional Boolean.  When a participant leaves or deletes a collaboration, this property determines whether received items will be deleted or maintained.
+        ===========================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        data_path = "%s/participants/%s/updateItemDeletePolicy" % (self._basepath, participant_id)
+        params = {
+            "f" : "json",
+            "deleteContributedItems" : delete_contributed_items,
+            "deleteReceivedItems" : delete_received_items
+        }
+        con = self._portal.con
+        return con.post(data_path,
+                        params)
+    #----------------------------------------------------------------------
     def add_group_to_workspace(self, portal_group, workspace):
         """
         This operation adds a group to a workspace that participates in a portal-to-portal collaboration. Content shared
@@ -907,6 +950,127 @@ class Collaboration(dict):
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
     #----------------------------------------------------------------------
+    def schedule(self, workspace_id):
+        """
+        Collaboration guests can use the schedule resource to return a job
+        schedule for synchronized items in a collaboration workspace. The
+        response is a single JSON object that represents a job schedule.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ===========================     ====================================================================
+
+
+        :returns: dict
+
+        """
+        params = {'f' : 'json'}
+        data_path = "%s/workspaces/%s/schedule" % (self._basepath, workspace_id)
+        con = self._portal.con
+        return con.get(path=data_path, postdata=params)
+    #----------------------------------------------------------------------
+    def update_schedule(self, workspace_id, start_time,
+                        interval=24, repeat_count=-1):
+        """
+        Collaboration guests can use the schedule resource to return a job
+        schedule for synchronized items in a collaboration workspace. The
+        response is a single JSON object that represents a job schedule.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ---------------------------     --------------------------------------------------------------------
+        start_time                      Required Integer. A job's scheduled start time. The startTime is in Unix time in milliseconds. The default is the current time of the request call.
+        ---------------------------     --------------------------------------------------------------------
+        interval                        Optional Integer. A positive integer that represents time (in hours) between each job trigger. The default interval is 24 hours.
+        ---------------------------     --------------------------------------------------------------------
+        repeat_count                    Optional Integer. A positive integer or -1 which represents how many times to keep re-triggering this job after which it will be automatically deleted. The default is -1 which means repeat indefinitely.
+        ===========================     ====================================================================
+
+
+        :returns: Boolean
+
+        """
+        params = {
+            'f' : 'json',
+            'startTime' : start_time,
+            'interval' : interval,
+            'repeatCount' : repeat_count
+        }
+        data_path = "%s/workspaces/%s/schedule/update" % (self._basepath, workspace_id)
+        con = self._portal.con
+        res = con.post(path=data_path, postdata=params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def sync(self, workspace_id, run_async=False):
+        """
+        The sync endpoint is provided to allow execution of a data sync on
+        a particular workspace. The operation is allowed on the participant
+        that is designated to initiate sync operations as determined during
+        trust establishment between the collaboration host and a guest
+        participant. Typically, the guest participant is designated to
+        initiate sync operations. Note that if a scheduled sync operation
+        is already in progress a new sync is not started unless the current
+        sync operation is finished.
+
+        When running sync in synchronous mode, the client will be blocked
+        until the operation is completed. Invoking sync in synchronous mode
+        is good for quickly syncing an item (that is not large) if the
+        client does not want to wait for the next scheduled sync.
+
+        Asynchronous mode allows a client to get response immediately so it
+        does not have to wait and is not blocked from performing other
+        tasks.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ---------------------------     --------------------------------------------------------------------
+        run_async                       Optional Boolean.  When true, the job will run asynchronously.
+        ===========================     ====================================================================
+
+
+        :returns: dict
+
+        """
+        params = {
+            'f' : 'json',
+            'async' : run_async
+        }
+        data_path = "%s/workspaces/%s/sync" % (self._basepath, workspace_id)
+        con = self._portal.con
+        return con.post(path=data_path, postdata=params)
+    #----------------------------------------------------------------------
+    def sync_details(self, workspace_id, sync_id):
+        """
+        Provides a detailed description of status for a selected sync ID.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        workspace_id                    Required string. Workspace ID to remove from the link.
+        ---------------------------     --------------------------------------------------------------------
+        sync_id                         Required String. When a sync is performed, an ID is generated to
+                                        track the status of the synchronization of the collaboration.
+        ===========================     ====================================================================
+
+
+        :returns: dict
+
+        """
+        params = {
+            'f' : 'json'
+        }
+        data_path = "%s/workspaces/%s/syncStatus/%s" % (self._basepath, workspace_id, sync_id)
+        con = self._portal.con
+        return con.post(path=data_path, postdata=params)
+    #----------------------------------------------------------------------
     def update_collaboration(self, name=None,
                              description=None, config=None):
         """
@@ -941,7 +1105,9 @@ class Collaboration(dict):
     #----------------------------------------------------------------------
     def update_workspace(self,
                          workspace_id, name=None,
-                         description=None, config=None):
+                         description=None, config=None,
+                         max_item_size=None, max_replication_size=None,
+                         copy_by_ref_on_fail=False, ):
         """
         The updateInfo operation updates certain collaboration workspace
         properties.
@@ -955,7 +1121,16 @@ class Collaboration(dict):
         ---------------------------     --------------------------------------------------------------------
         description                     Optional string. A brief set of texts that explains the workspace
         ---------------------------     --------------------------------------------------------------------
-        config                          Optional dict. The configuration details of the new workspace
+        config                          Optional dict. The configuration details of the new workspace.
+                                        Removed at 10.6.
+        ---------------------------     --------------------------------------------------------------------
+        max_item_size                   Optional Integer.  The maximum item size in MBs.
+        ---------------------------     --------------------------------------------------------------------
+        max_replication_size            Optional Integer.  The maximum replication item size in MBs.
+        ---------------------------     --------------------------------------------------------------------
+        copy_by_ref_on_fail             Optional Boolean.  Determines whether a failed attempt to copy
+                                        should revert to sharing by reference. For example, in cases where
+                                        the imposed size limit has been exceeded.
         ===========================     ====================================================================
 
         :returns: dict
@@ -964,11 +1139,16 @@ class Collaboration(dict):
         data_path = "%s/workspaces/%s/updateInfo" % (self._basepath, workspace_id)
         params = {"f" : 'json'}
         if name:
-            params['collaborationWorkspaceName'] = name
+            params['name'] = name
         if description:
-            params['collaborationWorkspaceDescription'] = description
+            params['description'] = description
         if config:
             params['config'] = config
+        if max_item_size:
+            params['maxItemSizeInMB'] = max_item_size
+        if max_replication_size:
+            params['maxReplicationPackageSizeInMB'] = max_replication_size
+        params['copyByRefIfCopyFail'] = copy_by_ref_on_fail
         con = self._portal.con
         return con.post(path=data_path, postdata=params)
     #----------------------------------------------------------------------
@@ -999,9 +1179,9 @@ class Collaboration(dict):
     def update_portal_group_link(self, workspace_id,
                                  portal_id,
                                  enable_realtime_sync=True,
-                                 interval_hours=1):
+                                 copy_feature_service_data=True):
         """
-        The updatePortalGroupLink operation updates the group linked with a
+        The `update_portal_group_link` operation updates the group linked with a
         workspace for a participant in a portal-to-portal collaboration.
         Content shared to the portal group is shared to other participants
         in the collaboration.
@@ -1018,7 +1198,10 @@ class Collaboration(dict):
                                         updating whenever changes are made, or whether the content is
                                         shared based on a schedule set by the collaboration host.
         ---------------------------     --------------------------------------------------------------------
-        interval_hours                  Optional integer. sets the sharing schedule for the group
+        copy_feature_service_data       Optional boolean.  Boolean value used when Feature Service data is
+                                        shared in a group that is linked to a distributed collaboration
+                                        workspace. When set to "true" Feature Service data will be copied
+                                        to collaboration participants.
         ===========================     ====================================================================
 
         :returns: dict
@@ -1029,7 +1212,7 @@ class Collaboration(dict):
             'f': 'json',
             'portalGroupId' : portal_id,
             'enableRealtimeSync' : enable_realtime_sync,
-            'syncIntervalHours' : interval_hours
+            "copyFeatureServiceData" : copy_feature_service_data
         }
 
         con = self._portal.con
@@ -1053,6 +1236,6 @@ class Collaboration(dict):
         """
         files = {'invitationResponseFile' : response_file}
         params = {'f':'json'}
-        data_path = "%s/validatInvitationResponse" % self._basepath
+        data_path = "%s/validateInvitationResponse" % self._basepath
         con = self._portal.con
-        return con.post(path=data_path, postdata=params)
+        return con.post(path=data_path, postdata=params, files=files)

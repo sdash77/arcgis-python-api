@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 DEFAULT_ELEMENT_HEIGHT = "400px"
 
-_DEFAULT_JS_CDN = "https://js.arcgis.com/4.8/"
+_DEFAULT_JS_CDN = "https://js.arcgis.com/4.10/"
 _js_cdn_override_global = ""
 
 def _is_iterable(obj):
@@ -616,12 +616,11 @@ class MapView(widgets.DOMWidget):
             if default_cdn_unreachable:
                 _portal_cdn = "{}/jsapi/jsapi4/".format(
                     getattr(self, "_portal_url", ""))
-                _portal_cdn_unreachable = not self._is_reachable(_portal_cdn)
-                if _portal_cdn_unreachable:
-                    log.warn("Error: Cannot reach any JS API CDN, widget will"\
-                             " not display".format(DEFAULT_JS_CDN))
-                else:
-                    self._js_cdn_override = _portal_cdn
+                self._js_cdn_override = _portal_cdn
+                log.debug("Disconnected environment detected: " + 
+                    "using JS API CDN from {}. ".format(_portal_cdn) + 
+                    "Make sure you have a JSAPI4 compatible basemap " +
+                    "set as the default basemap in your portal.")
 
     def _setup_default_basemap(self):
         """This method gets called once on startup, it populates the 'default'

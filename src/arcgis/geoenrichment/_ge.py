@@ -114,6 +114,8 @@ class _GeoEnrichment(object):
                 self._base_url = hs['geoenrichment']['url']
             else:
                 self._base_url = 'http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver'
+            if self._gis._is_hosted_nb_home:
+                self._base_url = self._validate_url(self._base_url)
         else:
             self._base_url = url
         if product is None:
@@ -131,6 +133,14 @@ class _GeoEnrichment(object):
                                                                'communityanalyst'])
         if language_code is None:
             self._langCode = language_code
+    #----------------------------------------------------------------------
+    def _validate_url(self, url):
+        res = self._gis._private_service_url(url)
+        if "privateServiceUrl" in res:
+            return res["privateServiceUrl"]
+        else:
+            return res["serviceUrl"]
+        return url
     #----------------------------------------------------------------------
     def _explode(self, df, lst_cols, fill_value=''):
         """internal method to help flatten out data sources"""

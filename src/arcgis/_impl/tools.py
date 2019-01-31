@@ -528,38 +528,38 @@ class _FeatureAnalysisTools(_AsyncService):
                               collection
         --------------------    ---------------------------------------------------------
         summarize_type          The method with which to summarize the analysis_layer.
-                              Choice List: 
-                              ["CentralFeature", "MeanCenter", "MedianCenter", 
+                              Choice List:
+                              ["CentralFeature", "MeanCenter", "MedianCenter",
                               "Ellipse"]
                               Example: "CentralFeature"
         --------------------    ---------------------------------------------------------
-        ellipse_size            The size of the output ellipse in standard deviations. 
+        ellipse_size            The size of the output ellipse in standard deviations.
                               The default ellipse size is 1. Valid choices are 1, 2, or
-                              3 standard deviations. 
+                              3 standard deviations.
                               Choice List: [1, 2, 3]
-                              Examples: 
+                              Examples:
                               "1"
                               [1, 2, 3]
         --------------------    ---------------------------------------------------------
-        weight_field            A numeric field in the analysis_layer to be used to 
+        weight_field            A numeric field in the analysis_layer to be used to
                               weight locations according to their relative importance.
         --------------------    ---------------------------------------------------------
         group_field             The field used to group features for separate directional
-                              distribution calculations. The group_field can be of 
+                              distribution calculations. The group_field can be of
                               integer, date, or string type.
         --------------------    ---------------------------------------------------------
-        output_name             Optional string. Additional properties such as output 
-                              feature service name.                        
+        output_name             Optional string. Additional properties such as output
+                              feature service name.
         --------------------    ---------------------------------------------------------
-        context                 Optional string. Additional settings such as processing 
+        context                 Optional string. Additional settings such as processing
                               extent and output spatial reference.
         --------------------    ---------------------------------------------------------
-        gis                     Optional, the GIS on which this tool runs. If not 
-                              specified, the active GIS is used.                                                      
+        gis                     Optional, the GIS on which this tool runs. If not
+                              specified, the active GIS is used.
         ====================    =========================================================
 
-        :returns: 
-        If an output_name is provided, a 
+        :returns:
+        If an output_name is provided, a
 
         Python dictionary with the following keys:
           "central_feature_result_layer" : layer (FeatureCollection)
@@ -581,7 +581,7 @@ class _FeatureAnalysisTools(_AsyncService):
         if weight_field is not None:
             params["weightField"] = weight_field
         if group_field  is not None:
-            params["groupField "] = group_field           
+            params["groupField "] = group_field
         if output_name is not None:
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
@@ -593,12 +593,12 @@ class _FeatureAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
 
         result_items = []
-        possible_result_layers = ['centralFeatureResultLayer', 
+        possible_result_layers = ['centralFeatureResultLayer',
                                   'meanCenterResultLayer',
                                   'medianCenterResultLayer',
                                   'ellipseResultLayer']
 
-        result_layer_dict = {'CentralFeature': 'centralFeatureResultLayer', 
+        result_layer_dict = {'CentralFeature': 'centralFeatureResultLayer',
                              'MeanCenter': 'meanCenterResultLayer',
                              'MedianCenter': 'medianCenterResultLayer',
                              'Ellipses': 'ellipseResultLayer'}
@@ -618,11 +618,11 @@ class _FeatureAnalysisTools(_AsyncService):
             ellipse_result_layer = arcgis.features.FeatureCollection(job_values['ellipseResultLayer'])
 
             process_info = job_values['processInfo']
-            return {"central_feature_result_layer":central_feature_result_layer, 
-                    "meanCenterResultLayer":mean_center_result_layer, 
-                    "medianCenterResultLayer":median_center_result_layer, 
-                    "ellipseResultLayer":ellipse_result_layer, 
-                    "process_info":process_info}            
+            return {"central_feature_result_layer":central_feature_result_layer,
+                    "meanCenterResultLayer":mean_center_result_layer,
+                    "medianCenterResultLayer":median_center_result_layer,
+                    "ellipseResultLayer":ellipse_result_layer,
+                    "process_info":process_info}
 
     def find_point_clusters(self,
                             analysis_layer,
@@ -690,7 +690,7 @@ class _FeatureAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         #print(job_values)
         if output_name is not None:
-            itemid = job_values['pointClustersResultLayer ']['itemId']
+            itemid = job_values['pointClustersResultLayer']['itemId']
             item = arcgis.gis.Item(self._gis, itemid)
             return item
         else:
@@ -698,8 +698,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
             point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
 
-            process_info = job_values['processInfo']
-            return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":process_info}
+            return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":None}
 
     def find_hot_spots(self,
                        analysis_layer,
@@ -1552,7 +1551,7 @@ class _FeatureAnalysisTools(_AsyncService):
         task ="DeriveNewLocations"
 
         params = {}
-        
+
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(super()._feature_input(input_lyr))
@@ -6246,7 +6245,13 @@ class _Tools(object):
         self._analysis = None
         self._raster_analysis = None
         self._geoanalytics = None
-
+    def _validate_url(self, url):
+        res = self._gis._private_service_url(url)
+        if "privateServiceUrl" in res:
+            return res["privateServiceUrl"]
+        else:
+            return res["serviceUrl"]
+        return url
     @property
     def geocoders(self):
         """the geocoders, if available and configured"""
@@ -6257,7 +6262,11 @@ class _Tools(object):
             geocode_services = self._gis.properties['helperServices']['geocode']
             for geocode_service in geocode_services:
                 try:
-                    self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
+                    if self._gis._is_hosted_nb_home:
+                        url = self._validate_url(geocode_service['url'])
+                        self._geocoders.append(Geocoder(url, self._gis))
+                    else:
+                        self._geocoders.append(Geocoder(geocode_service['url'], self._gis))
                 except RuntimeError as re:
                     _log.warning('Unable to use Geocoder at ' + geocode_service['url'])
                     _log.warning(str(re))
@@ -6271,7 +6280,11 @@ class _Tools(object):
         if self._geometry is not None:
             return self._geometry
         try:
-            svcurl = self._gis.properties['helperServices']['geometry']['url']
+            if self._gis._is_hosted_nb_home:
+                svcurl = self._validate_url(
+                    self._gis.properties['helperServices']['geometry']['url'])
+            else:
+                svcurl = self._gis.properties['helperServices']['geometry']['url']
             self._geometry = _GeometryService(svcurl, self._gis)
             return self._geometry
         except KeyError:
@@ -6284,7 +6297,11 @@ class _Tools(object):
             return self._raster_analysis
         try:
             try:
-                svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
+                if self._gis._is_hosted_nb_home:
+                    svcurl = self._validate_url(
+                        self._gis.properties['helperServices']['rasterAnalytics']['url'])
+                else:
+                    svcurl = self._gis.properties['helperServices']['rasterAnalytics']['url']
             except:
                 print("This GIS does not support raster analysis.")
                 return None
@@ -6302,6 +6319,8 @@ class _Tools(object):
         try:
             try:
                 svcurl = self._gis.properties['helperServices']['geoanalytics']['url']
+                if self._gis._is_hosted_nb_home:
+                    svcurl = self._validate_url(svcurl)
             except:
                 print("This GIS does not support geoanalytics.")
                 return None
@@ -6319,6 +6338,8 @@ class _Tools(object):
         try:
             try:
                 svcurl = self._gis.properties['helperServices']['analysis']['url']
+                if self._gis._is_hosted_nb_home:
+                    svcurl = self._validate_url(svcurl)
             except:
                 if self._gis._con.token is None:
                     print("You need to be signed in to use spatial analysis.")

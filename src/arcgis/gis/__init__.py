@@ -29,7 +29,7 @@ import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
-
+from arcgis._impl.common._deprecate import deprecated
 from six.moves.urllib.error import HTTPError
 _log = logging.getLogger(__name__)
 
@@ -346,7 +346,8 @@ class GIS(object):
                                                                     url)
                 self._portal.url = url
                 self._portal.con.baseurl = self._portal.resturl
-                self._portal.con._token = None
+                if self._portal.con._auth != "OAUTH":
+                    self._portal.con._token = None
             elif url.lower().find("arcgis.com") > -1 and \
                  self._portal.is_logged_in:
                 from six.moves.urllib_parse import urlparse
@@ -450,6 +451,33 @@ class GIS(object):
         if self._product_version is None:
             self._is_agol = self._portal.is_arcgisonline
             self._product_version = [int(i) for i in self._portal.get_version().split('.')]
+
+    #----------------------------------------------------------------------
+    def _private_service_url(self, service_url):
+        """
+        returns the public and private URL for a given registered service
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        service_url         Required string.  The URL to the service.
+        ===============     ====================================================================
+
+        :return: dict
+
+        """
+        if self.version < [5,3]:
+            return { "serviceUrl" : service_url }
+        url = ("{base}portals/self"
+               "/servers/computePrivateServiceUrl").format(
+                   base=self._portal.resturl)
+        params = {
+            'f' : 'json',
+            'serviceUrl' : service_url
+        }
+
+        return self._con.post(url, params)
+
     #----------------------------------------------------------------------
     def _pfx_to_pem(self, pfx_path, pfx_password):
         """ Decrypts the .pfx file to be used with requests.
@@ -773,7 +801,20 @@ class GIS(object):
     @property
     def _public_rest_url(self):
         return self.url + "/sharing/rest/"
+    #----------------------------------------------------------------------
+    @property
+    def _subscription_information(self):
+        """
+        Returns the ArcGIS Online Subscription Information for a Site.
 
+        :returns: dictionary
+        """
+        if self.version > [6,4] and \
+           self._portal.is_arcgisonline:
+            url = "%sportals/self/subscriptionInfo" % self._portal.resturl
+            params = {'f': 'json'}
+            return self._con.get(url, params)
+        return None
     #----------------------------------------------------------------------
     @property
     def version(self):
@@ -1738,7 +1779,7 @@ class UserManager(object):
             for k,v in kwargs.items():
                 if k in allowed_keys:
                     params[k] = v
-            return self._createPre64(**kwargs)
+            return self._createPre64(**params)
         return None
 
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
@@ -2071,7 +2112,7 @@ class UserManager(object):
         elif not isinstance(expiration, int):
             raise ValueError("Invalid expiration.")
 
-        url = self._portal.url + "/portals/self/inviteByEmail"
+        url = self._portal.resturl + "/portals/self/inviteByEmail"
         msg = "You have been invited you to join an ArcGIS Online Organization, %s" % (self._gis.properties['name'])
         params = {
             "f" : "json",
@@ -2890,7 +2931,94 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def add(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
+    def _add_by_part(self, file_path, itemid, item_properties, size=1e7):
+        """
+        Performs a special add operation that chunks up a file and loads it piece by piece.
+        This is an internal method used by `add`
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file_path           Required String.  The path to the file to load into Portal.
+        ---------------     --------------------------------------------------------------------
+        itemid              Required String. The unique ID of the Item to load the data to.
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required Dict.  The properties for the item.
+        ---------------     --------------------------------------------------------------------
+        size                Optional Integer.  The chunk size off the parts in bytes.  The
+                            smallest size allowed is 5 MB or 5e6.
+        ---------------     --------------------------------------------------------------------
+        multipart           Optional Boolean.  Loads a file by chunks to the Enterprise. The
+                            default is False.
+        ===============     ====================================================================
+
+
+        """
+        if size < 5e6:
+            size = 5e6
+        def read_in_chunks(file_object, chunk_size=10000000):
+            """Generate file chunks of 10MB"""
+            while True:
+                data = file_object.read(chunk_size)
+                if not data:
+                    break
+                yield data
+        user = self._gis.users.me.username
+        url = "{base}content/users/{user}/items/{itemid}/addPart".format(base=self._gis._portal.resturl,
+                                                                          user=user,
+                                                                          itemid=itemid)
+        file = {'file': None}
+        params = {
+            'f': 'json',
+            'partNum' : None
+        }
+        messages = []
+        with open(file_path, 'rb') as f:
+            for part_num, piece in enumerate(read_in_chunks(f), start=1):
+                params['partNum'] = part_num
+                temp_file = os.path.join(tempfile.gettempdir(), "split.part%s" % part_num)
+                files = {'file' : temp_file}
+                with open(temp_file, 'wb') as writer:
+                    writer.write(piece)
+                    del writer
+                res = self._gis._con.post(url, params, files=files)
+                if os.path.isfile(temp_file):
+                    os.remove(temp_file)
+                del part_num, piece, files
+                messages.append(res['success'])
+        if all(messages):
+            # commit the addition
+            url = "{base}content/users/{user}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
+                                                                             user=user,
+                                                                             itemid=itemid)
+            params = {
+                'f' : "json",
+                'id' : itemid,
+                'type' : item_properties['type'],
+                'async' : True
+            }
+            params.update(item_properties)
+            res = self._gis._con.post(url, params)
+            if 'success' in res:
+                url = "{base}content/users/{user}/items/{itemid}/status".format(base=self._gis._portal.resturl,
+                                                                                user=user,
+                                                                                itemid=itemid)
+                import time
+                params = {'f' : 'json'}
+                res = self._gis._portal.con.post(url, params)
+                while res["status"] != "completed":
+                    if 'fail' in res['status']:
+                        return False
+                    time.sleep(1)
+                    res = self._gis._portal.con.post(url, {'f': 'json'})
+
+                return res['status']
+            else:
+                return False
+        return False
+
+    def add(self, item_properties, data=None, thumbnail=None,
+            metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
 
         .. note::
@@ -2974,8 +3102,8 @@ class ContentManager(object):
 
         :return:
            The item if successfully added, None if unsuccessful.
-            """
-
+        """
+        import os
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
@@ -3030,8 +3158,41 @@ class ContentManager(object):
         if 'tags' in item_properties:
             if type(item_properties['tags']) is list:
                 item_properties['tags'] = ",".join(item_properties['tags'])
-
-        itemid = self._portal.add_item(item_properties, data, thumbnail, metadata, owner_name, folder)
+        try:
+            from arcgis._impl.common._utils import bytesto
+            is_file = os.path.isfile(data)
+            if is_file and \
+               bytesto(os.stat(data).st_size) < 15:
+                multipart = False
+            else:
+                multipart = True
+        except:
+            is_file = False
+            multipart = False
+        if multipart and \
+           is_file:
+            import copy
+            item_properties['multipart'] = True
+            params = {}
+            params.update(item_properties)
+            params['fileName'] = os.path.basename(data)
+            # Create an empty Item
+            itemid = self._portal.add_item(params, None,
+                                           thumbnail, metadata,
+                                           owner_name, folder)
+            # check the status and commit the final result
+            status = self._add_by_part(
+                file_path=data,
+                itemid=itemid,
+                item_properties=item_properties,
+                size=1e7)
+            # return the item
+            item = Item(gis=self._gis, itemid=itemid)
+            return item
+        else:
+            itemid = self._portal.add_item(item_properties, data,
+                                           thumbnail, metadata,
+                                           owner_name, folder)
 
         if itemid is not None:
             return Item(self._gis, itemid)
@@ -4688,7 +4849,7 @@ class Group(dict):
         ================  ========================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------
-        usernames         Required string. The users to invite as a list.
+        usernames         Required list of strings. The users to invite.
         ----------------  --------------------------------------------------------
         role              Optional string. Either group_member (the default) or group_admin.
         ----------------  --------------------------------------------------------
@@ -4702,8 +4863,13 @@ class Group(dict):
         return self._portal.invite_group_users(usernames, self.groupid, role, expiration)
 
     #----------------------------------------------------------------------
+    @deprecated(deprecated_in="v1.5.1", removed_in=None,
+                current_version=None,
+                details="Use `Group.invite` instead.")
     def invite_by_email(self, email, message, role='member', expiration='1 Day'):
         """
+        ** Deprecated: This function is not supported **
+
         Invites a user by email to the existing group.
 
         ================  ========================================================
@@ -4722,6 +4888,10 @@ class Group(dict):
 
         :returns: boolean
         """
+
+        if self._gis.version >= [6,4]:
+            return False
+
         time_lookup = {
             '1 Day'.upper() : 1440,
             '3 Days'.upper() : 4320,
@@ -5504,7 +5674,8 @@ class User(dict):
                   'culture' : culture,
                   'region' : region,
                   'firstName' : first_name,
-                  'lastName' : last_name
+                  'lastName' : last_name,
+                  "clearEmptyFields" : True
                   }
         if security_answer and security_question:
             params['securityQuestionIdx'] = security_question

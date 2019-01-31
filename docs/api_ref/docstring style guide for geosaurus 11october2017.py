@@ -446,6 +446,118 @@ def create_tile_service(self,
         =================  =====================================================================
 
 """
+
+## Another way to embed table within a table
+def create(self,
+           name,
+           url,
+           events="ALL",
+           number_of_failures=5,
+           days_in_past=5,
+           secret=None):
+    """
+    Creates a WebHook to monitor REST endpoints and report activities
+
+    =================================  ===============================================================================
+    **Argument**                       **Description**
+    ---------------------------------  -------------------------------------------------------------------------------
+    name                               Required String. The name of the webhook.
+    ---------------------------------  -------------------------------------------------------------------------------
+    url                                Required String. This is the URL to which the webhook will deliver payloads to.
+    ---------------------------------  -------------------------------------------------------------------------------
+    events                             Otional List or String.  The events accepts a list or all events can be
+                                       monitored. This is done by passing "ALL" in as the events.  If a list is
+                                       provided, a specific endpoint can be monitored.
+
+                                       To create tables like below, use this web tool: http://www.tablesgenerator.com/text_tables
+                                       and choose to generate in "plain english"
+
+                                        **Item Trigger Events**
+
+                                        +------------------------------------------------+-------------------------+
+                                        | **Trigger event**                              | **URI example**         |
+                                        +------------------------------------------------+-------------------------+
+                                        | All trigger events for all items               | /items                  |
+                                        +------------------------------------------------+-------------------------+
+                                        | Add item to the portal                         | /items/add              |
+                                        +------------------------------------------------+-------------------------+
+                                        | All trigger events for a specific item         | /items/<itemID>         |
+                                        +------------------------------------------------+-------------------------+
+                                        | Delete a specific item                         | /items/<itemID>/delete  |
+                                        +------------------------------------------------+-------------------------+
+                                        | Update a specific item's properties            | /items/<itemID>/update  |
+                                        +------------------------------------------------+-------------------------+
+                                        | Move an item or changing ownership of the item | /items/<itemID>/move    |
+                                        +------------------------------------------------+-------------------------+
+                                        | Publish a specific item                        | /items/<itemID>/publish |
+                                        +------------------------------------------------+-------------------------+
+                                        | Share a specific item                          | /items/<itemID>/share   |
+                                        +------------------------------------------------+-------------------------+
+                                        | Unshare a specific item                        | /items/<itemID>/unshare |
+                                        +------------------------------------------------+-------------------------+
+
+                                        **Group Trigger Events**
+
+                                        +------------------------------------------------+-------------------------------+
+                                        | **Trigger event**                              | **URI example**               |
+                                        +------------------------------------------------+-------------------------------+
+                                        | All trigger events for all groups              | /groups                       |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Add group                                      | /groups/add                   |
+                                        +------------------------------------------------+-------------------------------+
+                                        | All trigger events for a specific group        | /groups/<groupID>             |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Update a specific group                        | /groups/<groupID>/update      |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Delete a specific group                        | /groups/<groupID>/delete      |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Enable Delete Protection for a specific group  | /groups/<groupID>/protect     |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Disable Delete Protection for a specific group | /groups/<groupID>/unprotect   |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Invite a user to a specific group              | /groups/<groupID>/invite      |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Add a user to a specific group                 | /groups/<groupID>/addUsers    |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Remove a user from a specific group            | /groups/<groupID>/removeUsers |
+                                        +------------------------------------------------+-------------------------------+
+                                        | Update a user's role in a specific group       | /groups/<groupID>/updateUsers |
+                                        +------------------------------------------------+-------------------------------+
+
+
+                                        **User Trigger Events**
+
+                                        +----------------------------------------------------+---------------------------+
+                                        | **Trigger event**                                  | **URI example**           |
+                                        +----------------------------------------------------+---------------------------+
+                                        | All trigger events for all users in the portal     | /users                    |
+                                        +----------------------------------------------------+---------------------------+
+                                        | All trigger events associated with a specific user | /users/<username>         |
+                                        +----------------------------------------------------+---------------------------+
+                                        | Delete a specific user                             | /users/<username>/delete  |
+                                        +----------------------------------------------------+---------------------------+
+                                        | Update a specific user's profile                   | /users/<username>/update  |
+                                        +----------------------------------------------------+---------------------------+
+                                        | Disable a specific user's account                  | /users/<username>/disable |
+                                        +----------------------------------------------------+---------------------------+
+                                        | Enable a specific user's account                   | /users/<username>/enable  |
+                                        +----------------------------------------------------+---------------------------+
+
+                                       Example Syntax: ['/users', '/groups/abcd1234....']
+
+    ---------------------------------  -------------------------------------------------------------------------------
+    number_of_failures                 Optional Integer. The number of failures to allow before the service
+    ---------------------------------  -------------------------------------------------------------------------------
+    days_in_past                       Option Integer. The number of days to report back on.
+    ---------------------------------  -------------------------------------------------------------------------------
+    secret                             Optional String. Add a Secret to your payload that can be used to authenticate
+                                       the message on your receiver.
+    =================================  ===============================================================================
+
+    :returns WebHook
+
+    """
+    pass
         
 ## 11 ## How to do bulleted lists
 

@@ -25,8 +25,8 @@ def _is_geoenabled(df):
     try:
         if isinstance(df, pd.DataFrame) and \
            hasattr(df, 'spatial') and \
-           df.spatial._name and \
-           df[df.spatial._name].dtype.name.lower() == 'geometry':
+           df.spatial.name and \
+           df[df.spatial.name].dtype.name.lower() == 'geometry':
             return True
         else:
             return False
@@ -2037,7 +2037,7 @@ class GeoAccessor(object):
         return from_table(filename, **kwargs)
 
     #----------------------------------------------------------------------
-    def sindex(self, stype, reset=False, **kwargs):
+    def sindex(self, stype='quadtree', reset=False, **kwargs):
         """
         Creates a spatial index for the given dataset.
 

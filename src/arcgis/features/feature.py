@@ -568,7 +568,7 @@ class FeatureSet(object):
                 elif esri_type == "esriGeometryMultiPoint":
                     return "MultiPoint"
                 elif esri_type == "esriGeometryPolyline":
-                    return "LineString"
+                    return "MultiLineString"
                 elif esri_type == "esriGeometryPolygon":
                     return "Polygon"
                 else:
@@ -579,7 +579,7 @@ class FeatureSet(object):
                 GeoJSON structure"""
                 if geom_type == "Polygon":
                     return geom["rings"]
-                elif geom_type == "LineString":
+                elif geom_type == "MultiLineString":
                     return geom["paths"]
                 elif geom_type == "Point":
                     return [ geom["x"], geom["y"] ]

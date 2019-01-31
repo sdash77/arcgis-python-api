@@ -24,4 +24,5 @@ from ._security import PasswordPolicy
 from ._resources import PortalResourceManager
 from ._catagoryschema import CategoryManager
 from ._idp import IdentityProviderManager
+from ._wh import WebhookManager, Webhook
 __all__ = ['PortalAdminManager', 'AGOLAdminManager']

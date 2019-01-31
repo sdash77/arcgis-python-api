@@ -828,7 +828,7 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
     multiband image. The arguments for the extract_band function are as follows:
 
     :param raster: input raster
-    :param band_ids: array of int
+    :param band_ids: array of int, band_ids uses one-based indexing.
     :param band_names: array of string
     :param band_wavelengths: array of double
     :param missing_band_action: int, 0 = esriMissingBandActionFindBestMatch, 1 = esriMissingBandActionFail
@@ -852,7 +852,12 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
         template_dict["outputPixelType"] = astype.upper()
 
     if band_ids is not None:
-        template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids
+        if isinstance(band_ids,list):
+            for index, item in enumerate(band_ids):
+                band_ids[index] = item-1
+            template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids
+        else:
+            raise RuntimeError("band_ids should be of type list")
     if band_names is not None:
         template_dict["rasterFunctionArguments"]["BandNames"] = band_names
     if band_wavelengths is not None:
@@ -3451,11 +3456,10 @@ def weighted_sum(rasters, fields, weights):
     
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
-    """
 
-def focal_stats(raster, stat_type=3, percentile=50, neighborhood_type=1 , width=3, height=3, 
-                     inner_radius=1 , outer_radius=3, radius=3, start_angle=0, end_angle=90, neighborhood_values=None, ignore_no_data=True):
-    """
+def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3, 
+                inner_radius=1 , outer_radius=3, radius=3, start_angle=0, end_angle=90, neighborhood_values=None,
+                stat_type=3, ignore_no_data=True):
     """
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
@@ -3476,23 +3480,6 @@ def focal_stats(raster, stat_type=3, percentile=50, neighborhood_type=1 , width=
     
 
     :param raster: input raster
-    :param stat_type: int
-					  There are 10 types of focal statistical functions:
-					  1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
-                      7=Range, 8=Standard deviation, 9=Sum, 10=Variety
-                      Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
-                      Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
-                      Mean = Calculates the mean (average value) of the cells in the neighborhood.
-                      Median = Calculates the median of the cells in the neighborhood.
-                      Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
-                      Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
-                      Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
-                      Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
-                      Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
-                      Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
-
-                      Default is 3(Mean)
-
     :param percentile: int, default is 50. 
     :param neighborhood_type: int, default is 1. The shape of the area around each cell used to calculate the statistic.
                                1 = Rectangle
@@ -3510,6 +3497,22 @@ def focal_stats(raster, stat_type=3, percentile=50, neighborhood_type=1 , width=
     :param start_angle: int, default is 0
     :param end_angle:int, default is 90
     :param neighborhood_values: - specified when neighborhood_type is Irregular or Weight
+    :param stat_type: int
+                      There are 10 types of focal statistical functions:
+                      1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
+                      7=Range, 8=Standard deviation, 9=Sum, 10=Variety
+                      Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
+                      Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
+                      Mean = Calculates the mean (average value) of the cells in the neighborhood.
+                      Median = Calculates the median of the cells in the neighborhood.
+                      Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
+                      Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
+                      Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
+                      Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
+                      Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
+                      Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
+
+                      Default is 3(Mean)
     :param ignore_no_data: boolean
                            True. Specifies that if a NoData value exists within a neighborhood, 
                            the NoData value will be ignored. Only cells within the neighborhood 
@@ -3520,7 +3523,6 @@ def focal_stats(raster, stat_type=3, percentile=50, neighborhood_type=1 , width=
 
     :return: the output raster
 
-    """
     """
 
     layer, raster, raster_ra = _raster_input(raster)
@@ -3560,10 +3562,8 @@ def focal_stats(raster, stat_type=3, percentile=50, neighborhood_type=1 , width=
 
     return _clone_layer(layer, template_dict, raster_ra)
 
-    """
-    """
+
 def lookup(raster, field=None):
-    """
     """
     Creates a new raster by looking up values found in another field in the table of the input raster. 
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/lookup-function.htm
@@ -3573,8 +3573,7 @@ def lookup(raster, field=None):
 
     :return: the output raster with this function applied to it
     """
-    """
- 
+
     layer, raster, raster_ra = _raster_input(raster)
        
     template_dict = {
@@ -3588,5 +3587,3 @@ def lookup(raster, field=None):
         template_dict["rasterFunctionArguments"]['Field'] = field
 
     return _clone_layer(layer, template_dict, raster_ra)
-
-    """
