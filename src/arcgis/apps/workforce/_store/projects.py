@@ -251,7 +251,7 @@ def _v2_create_project_item(gis, folder_name, workforce_service_item, dispatcher
         "snippet": summary,
         "tags": 'workforce',
         "type": 'Workforce Project',
-        "typeKeywords": 'Workforce Project'
+        "typeKeywords": 'Workforce Project, Workforce Project 2.0'
     }
     project_data = {
         "workerWebMapId": workers_webmap.id,
@@ -306,7 +306,7 @@ def _v1_create_project_item(gis, folder_name, assignments_item, dispatchers_item
         "snippet": summary,
         "tags": 'workforce',
         "type": 'Workforce Project',
-        "typeKeywords": 'Workforce Project, Workforce Project 2.0'
+        "typeKeywords": 'Workforce Project'
     }
     project_data = {
         "workerWebMapId": workers_webmap.id,
