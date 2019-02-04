@@ -2360,11 +2360,13 @@ class UserManager(object):
                 if 'id' in user and \
                    (user['id'] is None or user['id'] == 'null'):
                     un = user['username']
+                elif self._gis.version <= [6,4]:
+                    un = user['username']
                 elif 'id' not in user:
                     un = user['username']
                 else:
                     un = user['id']
-                userlist.append(User(self._gis, un))
+                userlist.append(User(self._gis, un, userdict=user))
             return userlist
     #----------------------------------------------------------------------
     @property
