@@ -210,6 +210,7 @@ def build_navigator_url(start=None, stops=None, optimize=None, navigate=None,
             item_id = webmap.item.id
         elif isinstance(webmap, arcgis.gis.Item):
             item_id = webmap.id
+        params.append("itemID=" + item_id)
     if stops:
         params.extend(_encode_navigator_stops(stops))
     if start:
