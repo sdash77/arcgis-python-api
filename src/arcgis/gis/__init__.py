@@ -4130,7 +4130,8 @@ class ContentManager(object):
         """
         user = self._gis.users.me
         if 'id' in user:
-            user = user.id
+            #user = user.id
+            user = user.username
         else:
             user = user.username
         url = "%s/content/users/%s/replaceService" % (self._portal.resturl, user)
@@ -4314,7 +4315,8 @@ class ResourceManager(object):
         owner = self._item.owner
         user = gis.users.get(owner)
         if (hasattr(user, 'id')) and (user.id != 'null'):
-            self._user_id = user.id
+            self._user_id = user.username
+            #self._user_id = user.id
         else:
             self._user_id = user.username
 
@@ -5308,7 +5310,8 @@ class User(dict):
             super(User, self).update(userdict)
         if hasattr(self, 'id') and \
            self.id !='null':
-            self._user_id = self.id
+            #self._user_id = self.id
+            self._user_id = self.username
         else:
             self._user_id = self.username
 
@@ -6241,7 +6244,8 @@ class Item(dict):
             user = self._gis.users.get(self.owner)
             if hasattr(user, 'id') and \
                getattr(user, 'id') != 'null':
-                self._uid = user.id
+                #self._uid = user.id
+                self._uid = user.username
             else:
                 self._uid = user.username
         return self._uid
@@ -6356,7 +6360,8 @@ class Item(dict):
         user = self._gis.users.get(self.owner)
         if hasattr(user, 'id') and \
            user.id != 'null':
-            self._user_id = user.id
+            self._user_id = user.username
+            #self._user_id = user.id
         else:
             self._user_id = user.username
 
