@@ -627,7 +627,6 @@ class _DeepCloner():
                                 leaf_nodes.remove(node)
 
             # Process remaining nodes
-            import arcpy
             for node in leaf_nodes:
                 if isinstance(node, _ProProjectPackageDefinition):
                     synchronous_clone.append(node)

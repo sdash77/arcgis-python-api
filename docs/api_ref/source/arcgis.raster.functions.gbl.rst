@@ -19,6 +19,10 @@ euclidean_distance
 _______________
 .. automethod:: arcgis.raster.functions.gbl.euclidean_distance
 
+euclidean_direction
+_______________
+.. automethod:: arcgis.raster.functions.gbl.euclidean_direction
+
 fill
 _______________
 .. automethod:: arcgis.raster.functions.gbl.fill

@@ -153,6 +153,7 @@ class SystemManager(BaseServer):
         """
         url = self._url + "/directories/register"
         params = {
+            'f' : 'json',
             "name" : name,
             "physicalPath" : physical_path,
             "directoryType" : directory_type,

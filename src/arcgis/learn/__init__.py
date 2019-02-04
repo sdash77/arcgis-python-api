@@ -6,7 +6,8 @@ import json as _json
 import arcgis as _arcgis
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 from arcgis.raster._util import _set_context, _id_generator
-
+from .models import SingleShotDetector
+from ._data import prepare_data
 
 def _set_param(gis, params, param_name, input_param):
     if isinstance(input_param, str):
@@ -193,14 +194,21 @@ def detect_objects(input_raster,
                                              Defined as the ratio of intersection area over union area. 
                                              Set only if run_nms  is set to True
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional. Context contains additional settings that affect task execution. 
-                                             
-                                             - Output Spatial Reference (outSR)-the output features will be projected into 
-                                               the output spatial reference.
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                             Dictionary can contain value for following keys:
 
-                                             - Snap Raster 
-                           
-                                               Syntax: {"outSR" : {spatial reference}}
+                                             - cellSize - Set the output raster cell size, or resolution
+
+                                             - extent - Sets the processing extent used by the function
+
+                                             - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                             - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                             Eg: {"processorType" : "CPU"}
+
+                                             Setting context parameter will override the values set using arcgis.env 
+                                             variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ====================================     ====================================================================
@@ -328,14 +336,26 @@ def classify_pixels(input_raster,
                            to be used as the output for the tool.
                            A RuntimeError is raised if a service by that name already exists
     ------------------     --------------------------------------------------------------------
-    context                Context contains additional settings that affect task execution.
+    context                Optional dictionary. Context contains additional settings that affect task execution.
+                           Dictionary can contain value for following keys:
 
-                           - Output Spatial Reference (outSR)-the output features will be projected into
-                           the output spatial reference.
+                           - outSR - (Output Spatial Reference) Saves the result in the specified spatial reference
 
-                           - Snap Raster
+                           - snapRaster - Function will adjust the extent of output rasters so that they 
+                             match the cell alignment of the specified snap raster.
 
-                           Syntax: {"outSR" : {spatial reference}}
+                           - cellSize - Set the output raster cell size, or resolution
+
+                           - extent - Sets the processing extent used by the function
+
+                           - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                           - processorType - Sets the processor type. "CPU" or "GPU"
+
+                           Eg: {"outSR" : {spatial reference}}
+
+                           Setting context parameter will override the values set using arcgis.env 
+                           variable for this particular function.
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -435,6 +455,7 @@ def export_training_data(input_raster,
                            The distance to move in the X and Y when creating the next image chip.
                            When stride is equal to the tile size, there will be no overlap.
                            When stride is equal to half of the tile size, there will be 50% overlap.
+
                            Example: {"x": 128, "y": 128}
     ------------------     --------------------------------------------------------------------
     metadata_format        Optional string. The format of the output metadata labels. There are 4 options for output metadata labels for the training data,
@@ -464,9 +485,9 @@ def export_training_data(input_raster,
                              The model generates bounding boxes and segmentation masks for each instance of an object in the image.
                              It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
     ------------------     --------------------------------------------------------------------
-    classvalue_field        Optional string. Specifies the field which contains the class values. If all field is specified,
-                            the system will look for a 'value' or 'classvalue' field. If this feature does
-                            not contain a class field, the system will presume all records belong the 1 class.
+    classvalue_field       Optional string. Specifies the field which contains the class values. If no field is specified,
+                           the system will look for a 'value' or 'classvalue' field. If this feature does
+                           not contain a class field, the system will presume all records belong the 1 class.
     ------------------     --------------------------------------------------------------------
     buffer_radius          Optional integer. Specifies a radius for point feature classes to specify training sample area.
     ------------------     --------------------------------------------------------------------
@@ -477,22 +498,30 @@ def export_training_data(input_raster,
 
                            Server datastore path -
                             ``/fileShares/deeplearning/rooftoptrainingsamples``
+                            ``/rasterStores/rasterstorename/rooftoptrainingsamples``
                             ``/cloudStores/cloudstorename/rooftoptrainingsamples``
 
                            File share path - 
                             ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
     ------------------     --------------------------------------------------------------------
-    context                Context contains additional settings that affect task execution.
+    context                Optional dictionary. Context contains additional settings that affect task execution.
+                           Dictionary can contain value for following keys:
 
                            - exportAllTiles - Choose if the image chips with overlapped labeled data will be exported.
-                             true - Export all the image chips, including those that do not overlap labeled data. This is the default.
-                             false - Export only the image chips that overlap the labelled data.
+                             True - Export all the image chips, including those that do not overlap labeled data. 
+                             False - Export only the image chips that overlap the labelled data. This is the default.
 
                            - startIndex - Allows you to set the start index for the sequence of image chips.
                              This lets you append more image chips to an existing sequence. The default value is 0.
-                             Syntax: {"exportAllTiles" : true, "startIndex": 0 }
 
                            - cellSize - cell size can be set using this key in context parameter
+
+                           - extent - Sets the processing extent used by the function
+
+                           Setting context parameter will override the values set using arcgis.env 
+                           variable for this particular function.(cellSize, extent)
+
+                           eg: {"exportAllTiles" : False, "startIndex": 0 }
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================

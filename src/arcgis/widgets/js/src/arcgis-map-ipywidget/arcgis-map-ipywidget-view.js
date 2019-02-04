@@ -1043,6 +1043,11 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                     IdentityManager.registerToken({"server": _portal_sharing_rest_url,
                                                   "userId": this.model.get("_username"),
                                                   "token": _portal_token});
+                    //Needed for IWA authentication in DSX mode - dv
+                    esriConfig.request.trustedServers.push(_portal_url);
+                    console.log("esriConfig.request.trustedServers = ");
+                    console.log(esriConfig.request.trustedServers);
+                    //End IWA workaround section
                     this._portal = new Portal({
                         url: _portal_url});
                     this._portal.load().then(() => {

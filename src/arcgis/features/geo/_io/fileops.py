@@ -72,9 +72,17 @@ def _geojson_to_esrijson(geojson):
             "points" : geojson['coordinates'],
             'spatialReference' : {'wkid' : 4326}
         }
-    elif geojson['type'] in ['LineString', 'MultiLineString']:
+    elif geojson['type'] in ['LineString']:#, 'MultiLineString']:
         return {
-            "paths" : geojson['coordinates'],
+            "paths" : [[list(gj) for gj in geojson['coordinates']]],
+            'spatialReference' : {'wkid' : 4326}
+        }
+    elif geojson['type'] in ['MultiLineString']:
+        coords = []
+        for pts in geojson['coordinates']:
+            coords.append(list([list(pt) for pt in pts]))
+        return {
+            "paths" : coords,
             'spatialReference' : {'wkid' : 4326}
         }
     return geojson
@@ -514,7 +522,10 @@ def to_featureclass(geo,
                     dtypes.append((col, '<U%s' % int(mlen)))
                 else:
                     try:
-                        dtypes.append((col, type(df[col][idx])))
+                        if df[col][idx] is None:
+                            dtypes.append((col, '<U254'))
+                        else:
+                            dtypes.append((col, type(df[col][idx])))
                     except:
                         dtypes.append((col, '<U254'))
             elif df[col].dtype.name == 'int64':
@@ -538,9 +549,15 @@ def to_featureclass(geo,
         dfcols = [fld.name for fld in fields \
                   if fld.type not in ['OID', 'Geometry'] and\
                   fld.name in df.columns] + [df.spatial.name]
+
         with da.InsertCursor(fc, icols) as irows:
+            dt_fld_idx = [irows.fields.index(col) for col in df.columns \
+                          if df[col].dtype.name == 'datetime64[ns]']
             def _insert_row(row):
                 row[-1] = pd.io.json.dumps(row[-1])
+                for idx in dt_fld_idx:
+                    if isinstance(row[idx], type(pd.NaT)):
+                        row[idx] = None
                 irows.insertRow(row)
             q = df[geo._name].isna()
             df.loc[q, 'SHAPE'] = null_geom # set null values to proper JSON

@@ -19,7 +19,7 @@ def get_datastores(gis=None):
     gis = _arcgis.env.active_gis if gis is None else gis
 
     for ds in gis._datastores:
-        if ds._server['serverFunction'] == 'RasterAnalytics':
+        if 'RasterAnalytics' in ds._server['serverFunction']:
             return ds
 
     return None
@@ -2281,9 +2281,10 @@ def list_datastore_content(datastore, filter=None, *, gis=None, **kwargs):
     """
     Parameters
     ----------
-    datastore: Required. datastore from which the contents are to be listed. 
-               It can be string specfying the datastore path eg "/fileShares/SensorData" 
-               or it can be a Datastore object.
+    datastore: Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed. 
+               It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
+               "/rasterStores/rasterstore"
+               or it can be a Datastore object containing a fileshare, rasterstore  or a cloudstore path.
                eg:
                ds=analytics.get_datastores()
                ds_items =ds.search()

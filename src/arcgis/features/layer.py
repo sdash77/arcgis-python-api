@@ -1449,10 +1449,14 @@ class FeatureLayer(Layer):
                 attribs['SHAPE'] = Geometry(geom)
             return attribs
         #------------------------------------------------------------------
-        featureset_dict = self._con.post(url, params)
+        featureset_dict = self._con.post(url, params,
+                                         token=self._token)
         if len(featureset_dict['features']) == 0:
             return pd.DataFrame([])
-        sr = featureset_dict['spatialReference']
+        sr = None
+        if 'spatialReference' in featureset_dict:
+            sr = featureset_dict['spatialReference']
+
         df = None
         dtypes = None
         geom = None

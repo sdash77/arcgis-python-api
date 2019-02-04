@@ -19,6 +19,7 @@ _use_async=True
 
 def _forest_based_regression(input_layer,
                             prediction_type,
+                            explanatory_variables,
                             features_to_predict,
                             variable_predict,
                             explanatory_variable_match,
@@ -199,13 +200,18 @@ def _forest_based_regression(input_layer,
 
     output_service=_create_output_service(gis, output_name, output_service_name, 'Forest Based Classification And Regression')
 
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+
     _set_context(params)
 
     param_db={
         "input_layer": (_FeatureSet, "inFeatures"),
         "prediction_type" : (str, "predictionType"),
         "features_to_predict" : (_FeatureSet, "featuresToPredict"),
-        "variable_predict" : (_FeatureSet, "featuresToPredict"),
+        "variable_predict" : (dict, "variablePredict"),
         "explanatory_variables" : (list, "explanatoryVariables"),
         "explanatory_variable_match" : (list, "explanatoryVariableMatching"),
         "return_importance_table" : (bool, "returnVariableOfImportanceTable"),
@@ -214,12 +220,14 @@ def _forest_based_regression(input_layer,
         "sample_size" : (int, "sampleSize"),
         "random_vars" : (str, "randomVariables"),
         "percentage_for_validation" : (int, "percentageForValidation"),
-        "outputTrainedName" : (str, "output_name"),
+        "output_name" : (str, "outputTrainedName"),
         "context": (str, "context"),
-        "outputTrainedName": (_FeatureSet, "Output Features"),
+        #"outputTrainedName": (_FeatureSet, "Output Features"),
     }
     return_values=[
         {"name": "outputTrainedName", "display_name": "Output Features", "type": _FeatureSet},
+        {"name" : "outputPredicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
+        {"name" : "variableOfImportance", "display_name" : "Variable of Importance", "type" : _FeatureSet}
     ]
 
     try:
@@ -231,18 +239,119 @@ def _forest_based_regression(input_layer,
 
     return
 
-
 def _generalized_linear_regression(input_layer,
-                                features_to_predict,
-                                dependent_variable,
-                                explanatory_variables,
-                                regression_family="Continuous",
-                                generate_coef_table=False,
-                                variable_matching=None,
-                                output_name=None,
-                                gis=None):
+                                  features_to_predict,
+                                  dependent_variable,
+                                  explanatory_variables,
+                                  regression_family="Continuous",
+                                  generate_coef_table=False,
+                                  variable_matching=None,
+                                  dependent_mapping=None,
+                                  output_name=None,
+                                  gis=None):
     """
-    TODO: need the docstring
+    This tool performs Generalized Linear Regression (GLR) to generate
+    predictions or to model a dependent variable's relationship to a set of
+    explanatory variables. This tool can be used to fit continuous
+    (Gaussian/OLS), binary (logistic), and count (Poisson) models.
+
+    The following are examples of the tool's utility:
+
+        + What demographic characteristics contribute to high rates of public transportation usage?
+        + Is there a positive relationship between vandalism and burglary?
+        + Which variables effectively predict 911 call volume? Given future projections, what is the expected demand for emergency response resources?
+        + What variables affect low birth rates?
+
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    input_layer                  Required FeatureSet. The table, point, line or polygon features.
+    --------------------------   ---------------------------------------------------------------
+    features_to_predict          Required FeatureSet. A layer containing features representing
+                                 locations where estimates should be computed. Each feature in
+                                 this dataset should contain values for all the explanatory
+                                 variables specified. The dependent variable for these features
+                                 will be estimated using the model calibrated for the input
+                                 layer data.
+
+                                 Syntax: As described in Feature input, this parameter can be
+                                         one of the following:
+
+                                    + A URL to a feature service layer with an optional filter
+                                      to select specific features
+                                    + A URL to a big data catalog service layer with an
+                                      optional filter to select specific features
+                                    + A feature collection
+
+    --------------------------   ---------------------------------------------------------------
+    dependent_variable           Required String. The numeric field containing the observed
+                                 values you want to model.
+    --------------------------   ---------------------------------------------------------------
+    explanatory_variables        Required String. One or more fields representing independent
+                                 explanatory variables in your regression model.
+    --------------------------   ---------------------------------------------------------------
+    regression_family            Required String. This field specifies the type of data you are
+                                 modeling.
+
+                                 regression_family is one of the following:
+
+                                    + Continuous - The dependent_variable is continuous. The
+                                                   model used is Gaussian, and the tool performs
+                                                   ordinary least squares regression.
+                                    + Binary - The dependent_variable represents presence or
+                                               absence. Values must be 0 (absence) or 1 (presence)
+                                               values, or mapped to 0 and 1 values using the
+                                               parameter.
+                                    + Count - The dependent_variable is discrete and represents
+                                              events, such as crime counts, disease incidents,
+                                              or traffic accidents. The model used is Poisson
+                                              regression.
+    --------------------------   ---------------------------------------------------------------
+    generate_coef_table          Optional Boolean. Determines if a table with coefficient values
+                                 will be returned. By default, the coefficient table is not
+                                 returned.
+    --------------------------   ---------------------------------------------------------------
+    variable_matching            Optional List. A list of the explanatoryVariables specified from
+                                 the input_layer and their corresponding fields from the
+                                 features_to_predict. By default, if an explanatory_variables is
+                                 not mapped, it will match to a field with the same name in the
+                                 features_to_predict. This parameter is only used if there is a
+                                 features_to_predict input. You do not need to use it if the
+                                 names and types of the fields match between your two input
+                                 datasets.
+
+                                 Syntax: [{"predictionLayerField":"<field name>",
+                                          "trainingLayerField": "<field name>"},...]
+
+                                    + predictionLayerField is the name of a field specified in the
+                                      explanatory_variables parameter.
+                                    + trainingLayerField is the field that will match to the field
+                                      in the explanatory_variables parameter.
+
+                                 REST scripting example:
+
+                                 "variablePredict":[{"predictionLayerField":"isSunny",
+                                                    "trainingLayerField": "isSunny2010"}]
+
+    --------------------------   ---------------------------------------------------------------
+    dependent_mapping            Optional List. A list representing the values used to map to 0
+                                 (absence) and 1 (presence) for binary regression.
+
+                                 Syntax: [{"value0":"<false value>"},{"value1":"<true value>"}]
+
+                                    + value0 is the string that will be used to represent 0
+                                      (absence values).
+                                    + value1 is the string that will be used to represent 1
+                                      (presence values).
+
+                                 REST scripting example: [{"value0":"Fail"},{"value1":"Pass"}]
+    --------------------------   ---------------------------------------------------------------
+    output_name                  Optional String. The task will create a feature service of the
+                                 results. You define the name of the service.
+    --------------------------   ---------------------------------------------------------------
+    gis                          optional GIS, the GIS on which this tool runs. If not
+                                 specified, the active GIS is used.
+    ==========================   ===============================================================
     """
     kwargs=locals()
 
@@ -255,33 +364,56 @@ def _generalized_linear_regression(input_layer,
             params[key]=value
 
     if output_name is None:
-        output_service_name='Find Point Clusters_' + _id_generator()
+        output_service_name='Generalize_Regression' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
 
-    output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters')
+    output_service=_create_output_service(gis, output_name, output_service_name,
+                                          'Generalized Linear Regression')
+
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
 
     _set_context(params)
 
     param_db={
         "input_layer": (_FeatureSet, "inputLayer"),
-        "output_name": (str, "outputName"),
+        #"output_name": (str, "outputName"),
         "features_to_predict" : (_FeatureSet, "featuresToPredict"),
         "dependent_variable" : (str, "dependentVariable"),
         "explanatory_variables" : (str, "explanatoryVariables"),
         "regression_family" : (str, "regressionFamily"),
         "generate_coef_table" : (bool, "generateCoefficientTable"),
-        "variable_matching" : (str, "explanatoryVariableMatching"),
+        "variable_matching" : (list, "explanatoryVariableMatching"),
+        "dependent_mapping" : (list, "dependentMapping"),
+        #"context": (str, "context"),
+        "output_name": (_FeatureSet, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
+        #"output_name": (_FeatureSet, "OutputName")
     }
+    #    "output_name": (_FeatureSet, "outputName"),
+    #}
+
+
+    #return_values=[
+    #    {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+    #]
+
+
     return_values=[
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
 
+
     try:
-        _execute_gp_tool(gis, "FindPointClusters", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "GeneralizedLinearRegression",
+                         params, param_db,
+                         return_values, _use_async,
+                         url, True)
         return output_service
     except:
         output_service.delete()
