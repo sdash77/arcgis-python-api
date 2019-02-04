@@ -11,13 +11,13 @@ try:
     import os
     from pathlib import Path
     from ._codetemplate import code
-    HAS_FASTAI = True    
+    HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
 
 def _raise_fastai_import_error():
     raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai pytorch torchvision"')
-    
+
 _EMD_TEMPLATE = {
     "Framework": "arcgis.learn.models._inferencing",
     "InferenceFunction":"ArcGISObjectDetector.py",
@@ -50,7 +50,7 @@ class _EmptyData():
 class SingleShotDetector(object):
 
     """
-    Creates a Single Shot Detector with the specified grid sizes, zoom scales 
+    Creates a Single Shot Detector with the specified grid sizes, zoom scales
     and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
 
     =====================   ===========================================
@@ -59,12 +59,12 @@ class SingleShotDetector(object):
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
-    grids                   Required list. Grid sizes used for creating anchor 
+    grids                   Required list. Grid sizes used for creating anchor
                             boxes.
     ---------------------   -------------------------------------------
     zooms                   Optional list. Zooms of anchor boxes.
     ---------------------   -------------------------------------------
-    ratios                  Optional list of tuples. Aspect ratios of anchor 
+    ratios                  Optional list of tuples. Aspect ratios of anchor
                             boxes.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used for
@@ -78,16 +78,16 @@ class SingleShotDetector(object):
     ---------------------   -------------------------------------------
     focal_loss              Optional boolean. Uses Focal Loss if True.
     ---------------------   -------------------------------------------
-    pretrained_path         Optional string. Path where pre-trained model is 
-                            saved.                
-    =====================   ===========================================    
+    pretrained_path         Optional string. Path where pre-trained model is
+                            saved.
+    =====================   ===========================================
 
-    :returns: `SingleShotDetector` Object        
-    """    
-    
-    def __init__(self, data, grids=[4, 2, 1], zooms=[0.7, 1., 1.3], ratios=[[1., 1.], [1., 0.5], [0.5, 1.]], 
+    :returns: `SingleShotDetector` Object
+    """
+
+    def __init__(self, data, grids=[4, 2, 1], zooms=[0.7, 1., 1.3], ratios=[[1., 1.], [1., 0.5], [0.5, 1.]],
                  backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None):
-        
+
         super().__init__()
 
         self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -97,10 +97,10 @@ class SingleShotDetector(object):
 
         if backbone is None:
             backbone = resnet34
-            
+
         self._create_anchors(grids, zooms, ratios)
 
-        num_features = model_sizes(create_body(backbone), size=(data.chip_size, data.chip_size))[-1][-1] 
+        num_features = model_sizes(create_body(backbone), size=(data.chip_size, data.chip_size))[-1][-1]
 
         ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias)
 
@@ -110,12 +110,12 @@ class SingleShotDetector(object):
 
         if pretrained_path is not None:
             self.load(pretrained_path)
-        
+
         if focal_loss:
             self._loss_f = FocalLoss(data.c)
         else:
             self._loss_f = BCE_Loss(data.c)
-            
+
         self.learn.loss_func = self._ssd_loss
 
     @classmethod
@@ -127,14 +127,14 @@ class SingleShotDetector(object):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for 
+                                object from `prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition 
-                                file.              
-        =====================   ===========================================    
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        =====================   ===========================================
 
-        :returns: `SingleShotDetector` Object            
+        :returns: `SingleShotDetector` Object
         """
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
@@ -149,32 +149,32 @@ class SingleShotDetector(object):
         else:
             return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
 
-    
+
     def lr_find(self):
         """
-        Runs the Learning Rate Finder, and displays the graph of it's output. 
+        Runs the Learning Rate Finder, and displays the graph of it's output.
         Helps in choosing the optimum learning rate for training the model.
         """
         from IPython.display import clear_output
         self.learn.lr_find()
         clear_output()
         self.learn.recorder.plot()
-        
+
     def fit(self, epochs=10, lr=slice(1e-4,3e-3)):
         """
-        Train the model for the specified number of epocs and using the 
+        Train the model for the specified number of epocs and using the
         specified learning rates
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        epochs                  Required integer. Number of cycles of training 
+        epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
         ---------------------   -------------------------------------------
-        lr                      Required float or slice of floats. Learning rate 
+        lr                      Required float or slice of floats. Learning rate
                                 to be used for training the model. Select from
                                 the `lr_find` plot.
-        =====================   ===========================================               
+        =====================   ===========================================
         """
         self.learn.fit(epochs, lr)
 
@@ -183,17 +183,17 @@ class SingleShotDetector(object):
         Unfreezes the earlier layers of the detector for fine-tuning.
         """
         self.learn.unfreeze()
-        
+
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
-        
+
         self.grids = anc_grids
         self.zooms = anc_zooms
         self.ratios =  anc_ratios
 
         anchor_scales = [(anz*i, anz*j) for anz in anc_zooms for (i,j) in anc_ratios]
-        
+
         self._anchors_per_cell = len(anchor_scales)
-        
+
         anc_offsets = [1/(o*2) for o in anc_grids]
 
         anc_x = np.concatenate([np.repeat(np.linspace(ao, 1-ao, ag), ag)
@@ -204,15 +204,15 @@ class SingleShotDetector(object):
 
         anc_sizes  =   np.concatenate([np.array([[o/ag,p/ag] for i in range(ag*ag) for o,p in anchor_scales])
                        for ag in anc_grids])
-        
+
         self._grid_sizes = torch.Tensor(np.concatenate([np.array([ 1/ag  for i in range(ag*ag) for o,p in anchor_scales])
                        for ag in anc_grids])).unsqueeze(1).to(self._device)
-        
+
         self._anchors = torch.Tensor(np.concatenate([anc_ctrs, anc_sizes], axis=1)).float().to(self._device)
-        
+
         self._anchor_cnr = self._hw2corners(self._anchors[:,:2], self._anchors[:,2:])
-        
-    def _hw2corners(self, ctr, hw): 
+
+    def _hw2corners(self, ctr, hw):
         return torch.cat([ctr-hw/2, ctr+hw/2], dim=1)
 
     def _get_y(self, bbox, clas):
@@ -233,8 +233,8 @@ class SingleShotDetector(object):
         gt_overlap[prior_idx] = 1.99
         for i,o in enumerate(prior_idx): gt_idx[o] = i
         return gt_overlap, gt_idx
-        
-        
+
+
     def _ssd_1_loss(self, b_c, b_bb, bbox, clas, print_it=False):
         bbox,clas = self._get_y(bbox,clas)
         bbox = self._normalize_bbox(bbox)
@@ -248,36 +248,36 @@ class SingleShotDetector(object):
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
         pos_idx = torch.nonzero(pos)[:,0]
-        gt_clas[1-pos] = 0 
+        gt_clas[1-pos] = 0
         gt_bbox = bbox[gt_idx]
         loc_loss = ((a_ic[pos_idx] - gt_bbox[pos_idx]).abs()).mean()
         clas_loss  = self._loss_f(b_c, gt_clas)
         return loc_loss, clas_loss
-    
+
     def _ssd_loss(self, pred, targ1, targ2, print_it=False):
         lcs,lls = 0.,0.
         for b_c,b_bb,bbox,clas in zip(*pred, targ1, targ2):
             loc_loss,clas_loss = self._ssd_1_loss(b_c,b_bb,bbox.to(self._device),clas.to(self._device),print_it)
             lls += loc_loss
             lcs += clas_loss
-        if print_it: print(f'loc: {lls}, clas: {lcs}')
+        if print_it: print('loc: {lls}, clas: {lcs}'.format(lls=lls, lcs=lcs))
         return lls+lcs
-    
+
     def _intersect(self,box_a, box_b):
         max_xy = torch.min(box_a[:, None, 2:], box_b[None, :, 2:])
         min_xy = torch.max(box_a[:, None, :2], box_b[None, :, :2])
         inter = torch.clamp((max_xy - min_xy), min=0)
         return inter[:, :, 0] * inter[:, :, 1]
 
-    def _box_sz(self, b): 
+    def _box_sz(self, b):
         return ((b[:, 2]-b[:, 0]) * (b[:, 3]-b[:, 1]))
 
     def _jaccard(self, box_a, box_b):
         inter = self._intersect(box_a, box_b)
         union = self._box_sz(box_a).unsqueeze(1) + self._box_sz(box_b).unsqueeze(0) - inter
         return inter / union
-    
-    def _normalize_bbox(self, bbox): 
+
+    def _normalize_bbox(self, bbox):
         return (bbox+1.)/2.
 
     def _create_zip(self, zipname, path):
@@ -302,24 +302,24 @@ class SingleShotDetector(object):
 
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
-    
+
     def save(self, name_or_path):
         """
-        Saves the model weights, creates an Esri Model Definition and Deep 
+        Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro
 
-        Train the model for the specified number of epocs and using the 
+        Train the model for the specified number of epocs and using the
         specified learning rates
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to save. It 
-                                stores it at the pre-defined location. If path 
-                                is passed then it stores at the specified path 
-                                with model name as directory name. and creates 
-                                all the intermediate directories.                                
-        =====================   ===========================================             
+        name_or_path            Required string. Name of the model to save. It
+                                stores it at the pre-defined location. If path
+                                is passed then it stores at the specified path
+                                with model name as directory name. and creates
+                                all the intermediate directories.
+        =====================   ===========================================
         """
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
@@ -329,7 +329,7 @@ class SingleShotDetector(object):
             self.learn.path = path
             self.learn.model_dir = ''
             if not os.path.exists(self.learn.path):
-                os.makedirs(self.learn.path)            
+                os.makedirs(self.learn.path)
             saved_path = self.learn.save(name, return_path=True)
             # undoing changes to self.learn.path and self.learn.model
             self.learn.path = temp
@@ -340,7 +340,7 @@ class SingleShotDetector(object):
             self.learn.path = self.learn.path.parent
             self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
             if not os.path.exists(self.learn.path / self.learn.model_dir):
-                os.makedirs(self.learn.path / self.learn.model_dir)        
+                os.makedirs(self.learn.path / self.learn.model_dir)
             saved_path = self.learn.save(name_or_path,  return_path=True)
             # undoing changes to self.learn.path
             self.learn.path = temp
@@ -350,12 +350,12 @@ class SingleShotDetector(object):
         with open(saved_path.parent / _EMD_TEMPLATE['InferenceFunction'], 'w') as f:
             f.write(code)
         self._create_zip(zip_name, str(saved_path.parent))
-        print(f'Created model files at {saved_path.parent}')
-        
+        print('Created model files at {spp}'.format(saved_path.parent))
+
 
     def load(self, name_or_path):
         """
-        Loads a saved model for inferencing or fine tuning from the specified 
+        Loads a saved model for inferencing or fine tuning from the specified
         path or model name.
 
         =====================   ===========================================
@@ -363,10 +363,10 @@ class SingleShotDetector(object):
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to load from
                                 the pre-defined location. If path is passed then
-                                it loads from the specified path with model name  
+                                it loads from the specified path with model name
                                 as directory name. Path to ".pth" file can also
-                                be passed                                
-        =====================   ===========================================        
+                                be passed
+        =====================   ===========================================
         """
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
@@ -386,18 +386,18 @@ class SingleShotDetector(object):
         else:
             temp = self.learn.path
             # fixing fastai bug
-            self.learn.path = self.learn.path.parent 
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path           
+            self.learn.path = self.learn.path.parent
+            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
             self.learn.load(name_or_path)
             # undoing changes to self.learn.path
             self.learn.path = temp
             self.learn.model_dir = 'models'
-        
+
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
         Displays the results of a trained model on a part of the validation set.
         """
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
-        
 
-        
+
+
