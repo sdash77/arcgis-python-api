@@ -880,9 +880,10 @@ class FeatureLayerCollectionManager(_GISResource):
             url = gis._url
 
         if 'id' in gis.properties.user:
-            me = gis.properties.user.id
+            me = gis.users.me.username
+            #me = gis.properties.user.id
         else:
-            me = gis.user.me.username
+            me = gis.users.me.username
         url = "%s/content/users/%s/createService" % (url, me)
         params = {
             "f" : "json",
