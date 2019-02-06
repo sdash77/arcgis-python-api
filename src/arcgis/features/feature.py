@@ -1080,8 +1080,6 @@ class FeatureSet(object):
                 json.dump(self.value, writer, sort_keys=True, indent=4, ensure_ascii=False)
             del writer
         else:
-            import json
-
             temp_dir = tempfile.gettempdir()
             temp_file = os.path.join(temp_dir, "%s.json" % uuid.uuid4().hex)
             with open(temp_file, access, **kwargs) as writer:
