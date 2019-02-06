@@ -173,16 +173,35 @@ class Country(object):
                     raise ValueError('Unable to find country with the specified name, id, ISO 3 country code')
 
     # noinspection PyMissingConstructor
-    def __init__(self, dictdata, gis):
+    def __init__(self, dictdata, gis, purl=None):
         self._gis = gis
-        hs = dict(self._gis.properties['helperServices'])
-        if 'geoenrichment' in hs:
-            self._base_url = hs['geoenrichment']['url']
+        if self._gis._is_hosted_nb_home == False:
+            hs = dict(self._gis.properties['helperServices'])
+            if 'geoenrichment' in hs:
+                self._base_url = hs['geoenrichment']['url']
+            else:
+                self._base_url = 'http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver'
+        elif self._gis._is_hosted_nb_home and purl:
+            self._base_url = purl
         else:
-            self._base_url = 'http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver'
+            hs = dict(self._gis.properties['helperServices'])
+            if 'geoenrichment' in hs:
+                self._base_url = hs['geoenrichment']['url']
+            else:
+                self._base_url = 'http://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver'
+            if self._gis._is_hosted_nb_home:
+                self._base_url = self._validate_url(self._base_url)
         self.properties = PropertyMap(dictdata)
         self._dataset_id = self.properties.defaultDatasetID
-
+    #----------------------------------------------------------------------
+    def _validate_url(self, url):
+        res = self._gis._private_service_url(url)
+        if "privateServiceUrl" in res:
+            return res["privateServiceUrl"]
+        else:
+            return res["serviceUrl"]
+        return url
+    #----------------------------------------------------------------------
     def __str__(self):
         return '<%s name:%s>' % (type(self).__name__, self.properties.name)
 
@@ -329,7 +348,10 @@ def get_countries(gis=None):
     if gis is None:
         gis = env.active_gis
     ge = _GeoEnrichment(gis=gis)
-    return [Country(c, gis) for c in ge.countries(as_df=False)]
+    if gis._is_hosted_nb_home:
+        return [Country(c, gis, purl=ge._base_url) for c in ge.countries(as_df=False)]
+    else:
+        return [Country(c, gis, purl=None) for c in ge.countries(as_df=False)]
 
 def create_report(study_areas,
                   report=None,

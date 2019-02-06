@@ -17,7 +17,7 @@ _log=_logging.getLogger(__name__)
 
 _use_async=True
 
-def forest_based_regression(input_layer,
+def _forest_based_regression(input_layer,
                             prediction_type,
                             explanatory_variables,
                             features_to_predict,
@@ -239,7 +239,7 @@ def forest_based_regression(input_layer,
 
     return
 
-def generalized_linear_regression(input_layer,
+def _generalized_linear_regression(input_layer,
                                   features_to_predict,
                                   dependent_variable,
                                   explanatory_variables,

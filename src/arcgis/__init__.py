@@ -1,6 +1,7 @@
 __version__ = '1.6.0'
 
-from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, mapping, apps
+from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, \
+    mapping, apps, learn
 
 from .gis import GIS
 from .features.analysis import *
@@ -15,7 +16,7 @@ except:
 __all__ = ['GIS', 'geocode', 'features',
            'geoanalytics', 'geocoding', 'geometry',
            'geoprocessing', 'network', 'raster', 'apps',
-           'realtime', 'schematics', 'mapping',
+           'realtime', 'schematics', 'mapping', 'learn',
            'aggregate_points',
            'calculate_density',
            'connect_origins_to_destinations',

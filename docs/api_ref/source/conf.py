@@ -34,6 +34,7 @@ sys.path.insert(0, os.path.abspath('../../../src'))
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -52,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'arcgis'
-copyright = '2016-2017, Esri'
+copyright = '2016-2019, Esri'
 author = 'Esri'
 
 # The version info for the project you're documenting, acts as replacement for

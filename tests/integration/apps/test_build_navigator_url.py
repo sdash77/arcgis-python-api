@@ -152,6 +152,25 @@ class Test_Navigator_Integrations(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    def test_navigator_one_stop_with_name_as_applink_with_webmap(self):
+        try:
+            stop = ("-123.456,67.87", "esri")
+            url = build_navigator_url(stops=[stop], url_type="App", webmap="da5fdb60b7854b2881f80e275bb802da")
+            self.assertEqual(url, "arcgis-navigator://?itemID={}&stop={}&stopname={}".format(
+                "da5fdb60b7854b2881f80e275bb802da",
+                "-123.456,67.87",
+                stop[1]
+            ))
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
     def test_navigator_two_stops_with_names_as_applink(self):
         try:
             stops = [("-123.456,67.87", "esri office"), ("-123.654,34.45", "portland maine")]
