@@ -130,7 +130,7 @@ class NotebookManager(object):
                      shared_memory=None,
                      shared_memory_unit='m',
                      docker_runtime="",
-                     manifest=None
+                     manifest=None,
                      **kwargs):
         """
         **WARNING: private method, this will change in future releases**

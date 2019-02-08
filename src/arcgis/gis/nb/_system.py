@@ -398,6 +398,7 @@ class WebAdaptorManager(object):
         description            Optional String. The optional web adapter description.
         ==================     ====================================================================
 
+        :returns: Boolean
 
         """
         params = {
@@ -428,12 +429,14 @@ class WebAdaptorManager(object):
         params = {
             "f" : "json"
         }
-        return self._con.post(path=url,
-                              postdata=params)
+        return self._con.get(url,
+                             params)
     #----------------------------------------------------------------------
     @config.setter
     def config(self, config):
         """
+        This is a property that allows for the retreival and manipulation of web adaptors.
+
         You can use this operation to change the Web Adaptor configuration
         and the sharedkey attribute. The sharedkey attribute must be present
         in the request.
@@ -441,7 +444,7 @@ class WebAdaptorManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        config                 Required string. The configuration items to be updated for this web
+        config                 Required dict. The configuration items to be updated for this web
                                adaptor. Always include the web adaptor's sharedkey attribute.
         ==================     ====================================================================
 
