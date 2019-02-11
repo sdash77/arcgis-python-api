@@ -350,7 +350,7 @@ class SingleShotDetector(object):
         with open(saved_path.parent / _EMD_TEMPLATE['InferenceFunction'], 'w') as f:
             f.write(code)
         self._create_zip(zip_name, str(saved_path.parent))
-        print('Created model files at {spp}'.format(saved_path.parent))
+        print('Created model files at {spp}'.format(spp=saved_path.parent))
 
 
     def load(self, name_or_path):
