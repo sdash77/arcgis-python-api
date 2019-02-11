@@ -276,6 +276,7 @@ class DirectoryManager(object):
         :return: List
 
         """
+        self._properties = None
         val = dict(self.properties)
         return val['directories']
     #----------------------------------------------------------------------
@@ -326,7 +327,7 @@ class DirectoryManager(object):
 
         """
         params = {'f' : 'json'}
-        url = self._url + "{uid}/unregister" .format(uid=directory_id)
+        url = self._url + "/{uid}/unregister" .format(uid=directory_id)
         res = self._con.post(url, params)
         if 'status' in res:
             return res['status'] == 'success'
