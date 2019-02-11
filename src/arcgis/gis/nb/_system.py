@@ -475,7 +475,7 @@ class WebAdaptorManager(object):
         res = self._con.get(url, params)
         if "webAdaptors" in res:
             return [WebAdaptor(self._url + "/{wa}".format(wa=wa['id']),
-                               gis) for wa in res["webAdaptors"]]
+                               gis=self._gis) for wa in res["webAdaptors"]]
         return res
 ########################################################################
 class WebAdaptor(object):
