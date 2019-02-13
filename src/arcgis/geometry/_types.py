@@ -196,7 +196,9 @@ class GeometryFactory(type):
             iterable = {}
 
         if iterable:
-            if 'coordinates' in iterable:
+            if isinstance(iterable, (bytearray, bytes)): # WKB
+                iterable = cls._from_wkb(iterable)
+            elif 'coordinates' in iterable:
                 iterable = cls._from_gj(iterable)
             elif hasattr(iterable, "JSON"):
                 iterable = json.loads(getattr(iterable, "JSON"))
@@ -207,8 +209,8 @@ class GeometryFactory(type):
                 iterable = json.loads(iterable)
             elif isinstance(iterable, str): # WKT
                 iterable = cls._from_wkt(iterable)
-            elif isinstance(iterable, (bytearray, bytes)): # WKB
-                iterable = cls._from_wkb(iterable)
+            #elif isinstance(iterable, (bytearray, bytes)): # WKB
+            #    iterable = cls._from_wkb(iterable)
 
             if 'x' in iterable:
                 cls = Point
