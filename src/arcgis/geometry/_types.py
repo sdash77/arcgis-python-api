@@ -178,12 +178,27 @@ class GeometryFactory(type):
             return json.loads(arcpy.FromWKT(iterable).JSON)
         return {}
     #----------------------------------------------------------------------
+    def _from_gj(self, iterable):
+        try:
+            import arcpy
+            HASARCPY = True
+        except:
+            HASARCPY = False
+        if HASARCPY:
+            gj = json.loads(arcpy.AsShape(iterable, False).JSON)
+            gj['spatialReference']['wkid'] = 4326
+            return gj
+        return {}
+
+    #----------------------------------------------------------------------
     def __call__(cls, iterable=None, **kwargs):
         if iterable is None:
             iterable = {}
 
         if iterable:
-            if hasattr(iterable, "JSON"):
+            if 'coordinates' in iterable:
+                iterable = cls._from_gj(iterable)
+            elif hasattr(iterable, "JSON"):
                 iterable = json.loads(getattr(iterable, "JSON"))
             elif hasattr(iterable, "exportToString"):
                 iterable = {'wkt' : iterable.exportToString()}
@@ -191,9 +206,9 @@ class GeometryFactory(type):
                  "{" in iterable:
                 iterable = json.loads(iterable)
             elif isinstance(iterable, str): # WKT
-                iterable = _from_wkt(iterable)
+                iterable = cls._from_wkt(iterable)
             elif isinstance(iterable, (bytearray, bytes)): # WKB
-                iterable = _from_wkt(iterable)
+                iterable = cls._from_wkb(iterable)
 
             if 'x' in iterable:
                 cls = Point
@@ -722,7 +737,22 @@ class Geometry(BaseGeometry):
             )
 
         """
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
+        def _check_geometry_engine():
+            _HASARCPY, _HASSHAPELY = None, None
+            if _HASARCPY is None:
+                try:
+                    import arcpy
+                    _HASARCPY = True
+                except:
+                    _HASARCPY = False
+            if _HASSHAPELY is None:
+                try:
+                    import shapely
+                    _HASSHAPELY = True
+                except:
+                    _HASSHAPELY = False
+            return _HASARCPY, _HASSHAPELY
+        HASARCPY, HASSHAPELY = _check_geometry_engine()
         if HASSHAPELY:
             geometry = cls(shapely_geometry.__geo_interface__)
             if spatial_reference:
