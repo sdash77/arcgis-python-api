@@ -1135,7 +1135,7 @@ class OfflineMapAreaManager(object):
 
         if isinstance(area, str):  # bookmark specified
             _bookmark = area
-        elif isinstance(area, list):  # extent specified as list
+        elif isinstance(area, (list, tuple)):  # extent specified as list
             _extent = {'xmin': area[0][0],
                        'ymin': area[0][1],
                        'xmax': area[1][0],
@@ -1279,12 +1279,12 @@ class OfflineMapAreaManager(object):
             'title' : item_properties['title'] if 'title' in item_properties else None,
             'typeKeywords' : "Map, Map Area",
             'clearEmptyFields' : True,
-            'text' : json.dumps({
+            'text' : json.dumps({"mapAreas": {
                 'mapAreaTileScale' : {
                     'minScale': min_scale,
                     'maxScale' : max_scale},
                 "mapAreaRefreshParams": map_area_refresh_params
-            })
+            }})
         }
         item.update(item_properties=update_items)
         update_items = {
