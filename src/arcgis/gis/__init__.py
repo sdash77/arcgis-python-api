@@ -840,7 +840,7 @@ class GIS(object):
         """ Returns the portal properties (using cache unless force=True). """
         return self._portal.get_properties(force)
 
-    def map(self, location=None, zoomlevel=None, mode="2D"):
+    def map(self, location=None, zoomlevel=None, mode="2D", geocoder=None):
         """
         Creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
@@ -859,6 +859,8 @@ class GIS(object):
         zoomlevel              Optional integer. The desired zoom level.
         ------------------     --------------------------------------------------------------------
         mode                   Optional string of either '2D' or '3D' to specify map mode. Defaults to '2D'.
+        ------------------     --------------------------------------------------------------------
+        geocoder               Optional Geocoder. Allows users to specify a geocoder to find a given location.
         ==================     ====================================================================
 
 
@@ -867,7 +869,7 @@ class GIS(object):
         """
         try:
             from arcgis.widgets import MapView
-            from arcgis.geocoding import get_geocoders, geocode
+            from arcgis.geocoding import get_geocoders, geocode, Geocoder
         except Error as err:
             _log.error("ipywidgets packages is required for the map widget.")
             _log.error("Please install it:\n\tconda install ipywidgets")
@@ -879,7 +881,8 @@ class GIS(object):
 
             # Geocode the location
             if isinstance(location, str):
-                for geocoder in get_geocoders(self):
+                if geocoder and \
+                   isinstance(geocoder, Geocoder):
                     locations = geocode(location, out_sr=4326, max_locations=1, geocoder=geocoder)
                     if len(locations) > 0:
                         if zoomlevel is not None:
@@ -888,7 +891,18 @@ class GIS(object):
                             mapwidget.zoom = zoomlevel
                         else:
                             mapwidget.extent = locations[0]['extent']
-                        break
+                else:
+                    for geocoder in get_geocoders(self):
+                        locations = geocode(location, out_sr=4326, max_locations=1, geocoder=geocoder)
+                        if len(locations) > 0:
+                            if zoomlevel is not None:
+                                loc = locations[0]['location']
+                                mapwidget.center = loc['y'], loc['x']
+                                mapwidget.zoom = zoomlevel
+                            else:
+                                if 'extent' in locations[0]:
+                                    mapwidget.extent = locations[0]['extent']
+                            break
 
             # Center the map at the location
             elif isinstance(location, (tuple, list)):
