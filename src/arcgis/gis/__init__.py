@@ -2024,7 +2024,8 @@ class UserManager(object):
                 credits = -1
             params = {
                 'f': 'json',
-                'invitationList' : {'invitations' : [ {
+                'invitationList' : {'invitations' : [
+                    {
                     'username': username,
                     'firstname': firstname,
                     'lastname': lastname,
@@ -2033,10 +2034,17 @@ class UserManager(object):
                     'role': role,
                     "userLicenseType": user_type,
                     "groups":",".join(group.id for group in groups),
-                    "userCreditsAssignment": credits
-                    } ] },
-                'message' : email_text
+                    "userCreditsAssignment": credits,
+
+                    }
+                    ],
+                        "apps":[],
+                        "appBundles":[]
+                },
+                #'message' : email_text
             }
+            if self._gis._portal.is_arcgisonline:
+                params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
             if idp_username is not None:
                 if provider is None:
                     provider = 'enterprise'
