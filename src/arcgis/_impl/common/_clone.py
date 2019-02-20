@@ -42,7 +42,7 @@ class _DeepCloner():
         self._use_org_basemap = use_org_basemap
         self._copy_data = copy_data
         self._search_existing_items=search_existing_items
-        self._clone_mapping = {'Item IDs': {}, 'Group IDs': {}, 'Services': {}}
+        self._clone_mapping = {'Item IDs': {}, 'Group IDs': {}, 'Services': {}, 'Web Tools' : {}}
         if item_mapping is not None:
             self._clone_mapping['Item IDs'] = item_mapping
         if group_mapping is not None:
@@ -558,6 +558,9 @@ class _DeepCloner():
                 layer_field_mapping, layer_id_mapping, relationship_field_mapping = _compare_service(new_item, original_item, currentVersion)
                 self._clone_mapping['Services'][original_item['url'].rstrip('/')] = {'id' : new_item['id'], 'url' : new_item['url'].rstrip('/'), 'layer_field_mapping' : layer_field_mapping,
                                                                                     'layer_id_mapping' : layer_id_mapping, 'relationship_field_mapping' : relationship_field_mapping}
+            elif new_item.type == 'Geoprocessing Service':
+                self._clone_mapping['Web Tools'][original_item['url'].rstrip('/')] = new_item['url'].rstrip('/')
+
 
     def _clone_synchronous(self):
         """
@@ -1801,7 +1804,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Add the relationships back to the layers
                 relationship_field_mapping = {}
-                if len(relationships) > 0 and self.is_view == False:
+                if len(relationships) > 0:
                     for layer_id in relationships:
                         for relationship in relationships[layer_id]:
                             if layer_id in layer_field_mapping:
@@ -1815,23 +1818,24 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     relationship_field_mapping[layer_id] = {}
                                 relationship_field_mapping[layer_id][relationship['id']] = field_mapping
 
-                    relationships_copy = copy.deepcopy(relationships)
-                    for layer_id in relationships_copy:
-                        for relationship in relationships_copy[layer_id]:
-                            relationship['relatedTableId'] = layer_id_mapping[relationship['relatedTableId']]
-
-                    if self.target.properties.isPortal:
-                        relationships_definition = {'layers' : []}
-                        for key, value in layer_id_mapping.items():
-                            if key in relationships_copy:
-                                relationships_definition['layers'].append({'id' : value, 'relationships' : relationships_copy[key]})
-                            else:
-                                relationships_definition['layers'].append({'id' : value, 'relationships' : []})
-                        feature_service_admin.add_to_definition(relationships_definition)
-                    else:
+                    if self.is_view == False:
+                        relationships_copy = copy.deepcopy(relationships)
                         for layer_id in relationships_copy:
-                            layer = new_layers[layer_id]
-                            layer.manager.add_to_definition({'relationships' : relationships_copy[layer_id]})
+                            for relationship in relationships_copy[layer_id]:
+                                relationship['relatedTableId'] = layer_id_mapping[relationship['relatedTableId']]
+
+                        if self.target.properties.isPortal:
+                            relationships_definition = {'layers' : []}
+                            for key, value in layer_id_mapping.items():
+                                if key in relationships_copy:
+                                    relationships_definition['layers'].append({'id' : value, 'relationships' : relationships_copy[key]})
+                                else:
+                                    relationships_definition['layers'].append({'id' : value, 'relationships' : []})
+                            feature_service_admin.add_to_definition(relationships_definition)
+                        else:
+                            for layer_id in relationships_copy:
+                                layer = new_layers[layer_id]
+                                layer.manager.add_to_definition({'relationships' : relationships_copy[layer_id]})
 
                 # Get the item properties from the original item
                 item_properties = self._get_item_properties(self.item_extent)
@@ -2429,6 +2433,8 @@ class _ApplicationDefinition(_TextItemDefinition):
                             app_json_text = re.sub(original_url, service['url'], app_json_text, 0, re.IGNORECASE)
                         for original_id in self._clone_mapping['Item IDs']:
                             app_json_text = re.sub(original_id, self._clone_mapping['Item IDs'][original_id], app_json_text, 0, re.IGNORECASE)
+                        for original_web_tool in self._clone_mapping['Web Tools']:
+                            app_json_text = re.sub(original_web_tool, self._clone_mapping['Web Tools'][original_web_tool], app_json_text, 0, re.IGNORECASE)
 
                         # Replace any references to default print service
                         new_print_url = _deep_get(self.target.properties, 'helperServices', 'printTask', 'url')
