@@ -11,7 +11,7 @@ except:
     HAS_FASTAI = False
 
 def _raise_fastai_import_error():
-    raise Exception('This class requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai pytorch torchvision"')
+    raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai=1.0.39 pytorch=1.0.0 torchvision"')
 
 def _bb_pad_collate(samples, pad_idx=0):
     "Function that collect `samples` of labelled bboxes and adds padding with `pad_idx`."
