@@ -403,8 +403,19 @@ class _DeepCloner():
             integrations = _deep_get(workforce_json, 'assignmentIntegrations')
             if integrations is not None:
                 for integration in integrations:
+                    url_templates = []
                     url_template = _deep_get(integration, 'urlTemplate')
                     if url_template is not None:
+                        url_templates.append(url_template)
+
+                    assignment_types = _deep_get(integration, 'assignmentTypes')
+                    if assignment_types is not None:
+                        for key, value in assignment_types.items():
+                            url_template = _deep_get(value, 'urlTemplate')
+                            if url_template is not None:
+                                url_templates.append(url_template)
+                    
+                    for url_template in url_templates:
                         item_ids = re.findall('itemID=[0-9A-F]{32}', url_template, re.IGNORECASE)
                         for item_id in item_ids:
                             integration_item = source.content.get(item_id[7:])
@@ -2744,11 +2755,30 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                     for integration in integrations:
                         url_template = _deep_get(integration, 'urlTemplate')
                         if url_template is not None:
-                            item_references = re.findall('itemID=[0-9A-F]{32}', url_template, re.IGNORECASE)
-                            for item_reference in item_references:
-                                item_id = item_reference[7:]
-                                if item_id in self._clone_mapping['Item IDs']:
-                                    integration['urlTemplate'] = url_template.replace(item_id, self._clone_mapping['Item IDs'][item_id])
+                            for item_id in self._clone_mapping['Item IDs']:
+                                integration['urlTemplate'] = re.sub(item_id, self._clone_mapping['Item IDs'][item_id], integration['urlTemplate'], 0, re.IGNORECASE)
+                            
+                            for original_url in self._clone_mapping['Services']:
+                                service = self._clone_mapping['Services'][original_url]
+                                for key, value in service['layer_id_mapping'].items():
+                                    integration['urlTemplate'] = re.sub("{0}/{1}".format(original_url, key),
+                                                           "{0}/{1}".format(service['url'], value),
+                                                           integration['urlTemplate'], 0, re.IGNORECASE)
+
+                        assignment_types = _deep_get(integration, 'assignmentTypes')
+                        if assignment_types is not None:
+                            for key, value in assignment_types.items():
+                                url_template = _deep_get(value, 'urlTemplate')
+                                if url_template is not None:
+                                    for item_id in self._clone_mapping['Item IDs']:
+                                        value['urlTemplate'] = re.sub(item_id, self._clone_mapping['Item IDs'][item_id], value['urlTemplate'], 0, re.IGNORECASE)
+                            
+                                for original_url in self._clone_mapping['Services']:
+                                    service = self._clone_mapping['Services'][original_url]
+                                    for old_id, new_id in service['layer_id_mapping'].items():
+                                        value['urlTemplate'] = re.sub("{0}/{1}".format(original_url, old_id),
+                                                               "{0}/{1}".format(service['url'], new_id),
+                                                               value['urlTemplate'], 0, re.IGNORECASE)                   
 
                 item_properties['text'] = json.dumps(workforce_json)
                 # Add the new item
