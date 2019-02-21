@@ -10,17 +10,17 @@ plan_routes determines the best way to route a fleet of vehicles to visit many s
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 
-def connect_origins_to_destinations(
-        origins_layer,
-        destinations_layer,
-        measurement_type="DrivingTime",
-        origins_layer_route_id_field=None,
-        destinations_layer_route_id_field=None,
-        time_of_day=None,
-        time_zone_for_time_of_day="GeoLocal",
-        output_name=None,
-        context=None,
-        gis=None):
+def connect_origins_to_destinations(origins_layer,
+                                    destinations_layer,
+                                    measurement_type="DrivingTime",
+                                    origins_layer_route_id_field=None,
+                                    destinations_layer_route_id_field=None,
+                                    time_of_day=None,
+                                    time_zone_for_time_of_day="GeoLocal",
+                                    output_name=None,
+                                    context=None,
+                                    gis=None,
+                                    estimate=False):
     """
     Calculates routes between pairs of points.
 
@@ -68,7 +68,8 @@ def connect_origins_to_destinations(
         _date_handler(time_of_day),
         time_zone_for_time_of_day,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def create_buffers(
@@ -82,7 +83,8 @@ def create_buffers(
         end_type="Round",
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Creates buffer polygon(s) around input features.
 
@@ -116,30 +118,30 @@ def create_buffers(
     buffer_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.featureanalysis.create_buffers(
-        input_layer,
-        distances,
-        field,
-        units,
-        dissolve_type,
-        ring_type,
-        side_type,
-        end_type,
-        output_name,
-        context)
+    return gis._tools.featureanalysis.create_buffers(input_layer,
+                                                     distances,
+                                                     field,
+                                                     units,
+                                                     dissolve_type,
+                                                     ring_type,
+                                                     side_type,
+                                                     end_type,
+                                                     output_name,
+                                                     context,
+                                                     estimate=estimate)
 
 
-def create_drive_time_areas(
-        input_layer,
-        break_values=[5, 10, 15],
-        break_units="Minutes",
-        travel_mode="Driving",
-        overlap_policy="Overlap",
-        time_of_day=None,
-        time_zone_for_time_of_day="GeoLocal",
-        output_name=None,
-        context=None,
-        gis=None):
+def create_drive_time_areas(input_layer,
+                            break_values=[5, 10, 15],
+                            break_units="Minutes",
+                            travel_mode="Driving",
+                            overlap_policy="Overlap",
+                            time_of_day=None,
+                            time_zone_for_time_of_day="GeoLocal",
+                            output_name=None,
+                            context=None,
+                            gis=None,
+                            estimate=False):
     """
 
 
@@ -180,7 +182,8 @@ def create_drive_time_areas(
         _date_handler(time_of_day),
         time_zone_for_time_of_day,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def find_nearest(
@@ -194,7 +197,8 @@ def find_nearest(
         time_zone_for_time_of_day="GeoLocal",
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to
     features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer
@@ -243,7 +247,8 @@ def find_nearest(
         _date_handler(time_of_day),
         time_zone_for_time_of_day,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def plan_routes(
@@ -262,7 +267,8 @@ def plan_routes(
         include_route_layers=False,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     You provide a set of stops and the number of vehicles available to visit the stops, and Plan Routes determines how
     to efficiently assign the stops to the vehicles and route the vehicles to the stops.
@@ -330,4 +336,5 @@ def plan_routes(
         max_route_time,
         include_route_layers,
         output_name,
-        context)
+        context,
+        estimate=estimate)

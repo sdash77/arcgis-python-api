@@ -17,7 +17,8 @@ def enrich_layer(input_layer,
                  units=None,
                  output_name=None,
                  context=None,
-                 gis=None):
+                 gis=None,
+                 estimate=False):
     """
     The enrich_layer function enriches your data by getting facts about the people, places, and businesses that surround
     your data locations. For example: What kind of people live here? What do people like to do in this area? What are
@@ -65,4 +66,5 @@ def enrich_layer(input_layer,
                  distance,
                  units,
                  output_name,
-                 context)
+                 context,
+                 estimate=estimate)
