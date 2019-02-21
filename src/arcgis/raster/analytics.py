@@ -1223,10 +1223,8 @@ def interpolate_points(input_point_features,
 
     Returns
     -------
-    dict with the following keys:
-       "output_raster" : layer
-       "output_error_raster" : layer
-       "process_info" : layer
+    named tuple with name values being output_raster, output_error_raster and
+    process_info
     """
 
     task = "InterpolatePoints"
@@ -1234,7 +1232,7 @@ def interpolate_points(input_point_features,
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
-
+    return_value_names = ["output_raster"]
     output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
 
     params = {}
@@ -1264,16 +1262,6 @@ def interpolate_points(input_point_features,
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
-    item_properties = {
-        "properties": {
-            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-            "jobType": "GPServer",
-            "jobId": job_info['jobId'],
-            "jobStatus": "completed"
-        }
-    }
-    output_service.update(item_properties)
-
 
     #return output_service
 
@@ -1283,8 +1271,44 @@ def interpolate_points(input_point_features,
 
     process_info = job_values['processInfo']
 
-    return {"output_raster": output_raster, "output_error_raster": output_error_raster,
-            "process_info": process_info, }
+    outputs={}
+
+    if output_raster is not None:
+        outputs.update({"output_raster":output_raster})
+
+    if output_error_raster is not None:
+        output_error_raster_item = gis.content.get(output_error_raster["itemId"])
+        outputs.update({"output_error_raster":output_error_raster_item})
+        return_value_names.extend(["output_error_raster"])
+
+    if process_info is not None:
+        html_final="<b>The following table contains cross validation statistics:</b><br></br><table style='width: 250px;margin-left: 2.5em;'><tbody>"
+        import json
+        for row in process_info:
+            temp_dict=json.loads(row)
+            if isinstance(temp_dict["message"],list):
+                html_final+="<tr><td>"+temp_dict["message"][0]+"</td><td style='float:right'>"+temp_dict["params"][temp_dict["message"][1].split("${")[1].split("}")[0]]+"</td></tr>"
+        
+        html_final+="</tbody></table><br></br>"
+        from IPython.display import HTML
+        process_info_html = HTML(html_final)
+        outputs.update({"process_info":process_info_html})
+        return_value_names.extend(["process_info"])
+
+    num_returns = len(outputs)
+
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        },
+        "description":html_final
+    }
+    output_service.update(item_properties)
+
+    return _return_output(num_returns, outputs, return_value_names)
 
 
 def classify(input_raster,
