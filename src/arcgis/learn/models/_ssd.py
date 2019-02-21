@@ -16,7 +16,7 @@ except Exception as e:
     HAS_FASTAI = False
 
 def _raise_fastai_import_error():
-    raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai pytorch torchvision"')
+    raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai=1.0.39 pytorch=1.0.0 torchvision"')
 
 _EMD_TEMPLATE = {
     "Framework": "arcgis.learn.models._inferencing",
@@ -80,17 +80,30 @@ class SingleShotDetector(object):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    location_loss_factor    Optional float. Sets the weight of the bounding box
+                            loss. This should be strictly between 0 and 1. This 
+                            is default `None` which gives equal weight to both 
+                            location and classification loss. This factor
+                            adjusts the focus of model on the location of 
+                            bounding box.
     =====================   ===========================================
 
     :returns: `SingleShotDetector` Object
     """
 
     def __init__(self, data, grids=[4, 2, 1], zooms=[0.7, 1., 1.3], ratios=[[1., 1.], [1., 0.5], [0.5, 1.]],
-                 backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None):
+                 backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None, location_loss_factor=None):
 
         super().__init__()
 
         self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+        # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
+        if location_loss_factor is not None:
+            if not ((location_loss_factor > 0) and (location_loss_factor < 1)):
+                raise Exception('`location_loss_factor` should be greater than 0 and less than 1')
+        self.location_loss_factor = location_loss_factor
 
         if not HAS_FASTAI:
             _raise_fastai_import_error()
@@ -255,13 +268,17 @@ class SingleShotDetector(object):
         return loc_loss, clas_loss
 
     def _ssd_loss(self, pred, targ1, targ2, print_it=False):
-        lcs,lls = 0.,0.
+        lcs, lls = 0., 0.
         for b_c,b_bb,bbox,clas in zip(*pred, targ1, targ2):
-            loc_loss,clas_loss = self._ssd_1_loss(b_c,b_bb,bbox.to(self._device),clas.to(self._device),print_it)
+            loc_loss, clas_loss = self._ssd_1_loss(b_c, b_bb,bbox.to(self._device), clas.to(self._device), print_it)
             lls += loc_loss
             lcs += clas_loss
         if print_it: print('loc: {lls}, clas: {lcs}'.format(lls=lls, lcs=lcs))
-        return lls+lcs
+        if self.location_loss_factor is None:
+            return lls + lcs
+        else:
+            return self.location_loss_factor * lls + (1 - self.location_loss_factor) * lcs
+
 
     def _intersect(self,box_a, box_b):
         max_xy = torch.min(box_a[:, None, 2:], box_b[None, :, 2:])
