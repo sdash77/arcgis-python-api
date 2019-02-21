@@ -2024,7 +2024,8 @@ class UserManager(object):
                 credits = -1
             params = {
                 'f': 'json',
-                'invitationList' : {'invitations' : [ {
+                'invitationList' : {'invitations' : [
+                    {
                     'username': username,
                     'firstname': firstname,
                     'lastname': lastname,
@@ -2033,10 +2034,17 @@ class UserManager(object):
                     'role': role,
                     "userLicenseType": user_type,
                     "groups":",".join(group.id for group in groups),
-                    "userCreditsAssignment": credits
-                    } ] },
-                'message' : email_text
+                    "userCreditsAssignment": credits,
+
+                    }
+                    ],
+                        "apps":[],
+                        "appBundles":[]
+                },
+                #'message' : email_text
             }
+            if self._gis._portal.is_arcgisonline:
+                params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
             if idp_username is not None:
                 if provider is None:
                     provider = 'enterprise'
@@ -2211,7 +2219,7 @@ class UserManager(object):
         """
         This is a bulk operation that allows administrators to quickly enable large number of users
         in a single call.  It is useful to do this operation if you have multiple users that need
-        to be enabled.
+        to be enabled. Supported on ArcGIS REST API 6.4+.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -2222,33 +2230,34 @@ class UserManager(object):
         :returns: Boolean
 
         """
-        url = "{base}/portals/self/enableUsers".format(base=self._portal.resturl)
-        params = {
-            'f' : 'json',
-            'users' : None
-        }
-        if isinstance(users, User) or \
-           isinstance(users, str):
-            users = [users]
-        if isinstance(users, (list, tuple)):
-            ul = []
-            for user in users:
-                if isinstance(user, User):
-                    ul.append(user.username)
-                else:
-                    ul.append(user)
-            params['users'] = ",".join(ul)
-            res = self._portal.con.post(url, params)
-            return any([r['status'] for r in res['results']])
-        else:
-            raise ValueError('Invalid input: must be of type list.')
+        if self._gis.version >= [6,4]:
+            url = "{base}/portals/self/enableUsers".format(base=self._portal.resturl)
+            params = {
+                'f' : 'json',
+                'users' : None
+            }
+            if isinstance(users, User) or \
+               isinstance(users, str):
+                users = [users]
+            if isinstance(users, (list, tuple)):
+                ul = []
+                for user in users:
+                    if isinstance(user, User):
+                        ul.append(user.username)
+                    else:
+                        ul.append(user)
+                params['users'] = ",".join(ul)
+                res = self._portal.con.post(url, params)
+                return any([r['status'] for r in res['results']])
+            else:
+                raise ValueError('Invalid input: must be of type list.')
         return False
 
     def disable_users(self, users):
         """
         This is a bulk disables user operation that allows administrators to quickly disable large
         number of users in a single call.  It is useful to do this operation if you have multiple
-        users that need to be disabled.
+        users that need to be disabled.  Supported on ArcGIS REST API 6.4+.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -2259,26 +2268,27 @@ class UserManager(object):
         :returns: Boolean
 
         """
-        url = "{base}/portals/self/disableUsers".format(base=self._portal.resturl)
-        params = {
-            'f' : 'json',
-            'users' : None
-        }
-        if isinstance(users, User) or \
-           isinstance(users, str):
-            users = [users]
-        if isinstance(users, (list, tuple)):
-            ul = []
-            for user in users:
-                if isinstance(user, User):
-                    ul.append(user.username)
-                else:
-                    ul.append(user)
-            params['users'] = ",".join(ul)
-            res = self._portal.con.post(url, params)
-            return any([r['status'] for r in res['results']])
-        else:
-            raise ValueError('Invalid input: must be of type list.')
+        if self._gis.version >= [6,4]:
+            url = "{base}/portals/self/disableUsers".format(base=self._portal.resturl)
+            params = {
+                'f' : 'json',
+                'users' : None
+            }
+            if isinstance(users, User) or \
+               isinstance(users, str):
+                users = [users]
+            if isinstance(users, (list, tuple)):
+                ul = []
+                for user in users:
+                    if isinstance(user, User):
+                        ul.append(user.username)
+                    else:
+                        ul.append(user)
+                params['users'] = ",".join(ul)
+                res = self._portal.con.post(url, params)
+                return any([r['status'] for r in res['results']])
+            else:
+                raise ValueError('Invalid input: must be of type list.')
         return False
 
     def search(self, query=None, sort_field='username', sort_order='asc',
