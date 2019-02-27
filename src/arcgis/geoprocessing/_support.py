@@ -68,6 +68,10 @@ def _layer_input(input_layer):
 
     if "url" in input_param:
         url = input_param["url"]
+        if "/RasterRendering/" in url:
+            url = input_layer._uri
+            input_param = {"uri":url}
+            return input_param
     if "ImageServer" in url or "MapServer" in url:
         if "serviceToken" in input_param:
             url = url+"?token="+ input_param["serviceToken"]

@@ -9148,6 +9148,9 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
+        if hasattr(self, "_uri"):
+            if self._uri:
+                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
