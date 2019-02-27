@@ -3457,9 +3457,9 @@ def weighted_sum(rasters, fields, weights):
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
 
-def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3, 
+def focal_stats(raster, neighborhood_type=1 , width=3, height=3, 
                 inner_radius=1 , outer_radius=3, radius=3, start_angle=0, end_angle=90, neighborhood_values=None,
-                stat_type=3, ignore_no_data=True):
+                stat_type=3, percentile_value=50, ignore_no_data=True):
     """
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
@@ -3477,10 +3477,8 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
     Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
     This option is not present in focal_stats()
 
-    
 
     :param raster: input raster
-    :param percentile: int, default is 50. 
     :param neighborhood_type: int, default is 1. The shape of the area around each cell used to calculate the statistic.
                                1 = Rectangle
                                2 = Circle
@@ -3513,6 +3511,7 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
                       Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
 
                       Default is 3(Mean)
+    :param percentile_value: int, default is 50. 
     :param ignore_no_data: boolean
                            True. Specifies that if a NoData value exists within a neighborhood, 
                            the NoData value will be ignored. Only cells within the neighborhood 
@@ -3537,8 +3536,8 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
 
     if stat_type is not None:
         template_dict["rasterFunctionArguments"]["StatisticType"] = stat_type
-    if percentile is not None:
-        template_dict["rasterFunctionArguments"]["Percentile"] = percentile
+    if percentile_value is not None:
+        template_dict["rasterFunctionArguments"]["Percentile"] = percentile_value
     if neighborhood_type is not None:
         template_dict["rasterFunctionArguments"]["NeighborhoodType"] = neighborhood_type
     if width is not None:
