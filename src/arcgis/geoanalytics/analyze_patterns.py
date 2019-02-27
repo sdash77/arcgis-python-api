@@ -218,6 +218,8 @@ def forest(input_layer,
 
     _set_context(params)
 
+
+
     param_db={
         "input_layer": (_FeatureSet, "inFeatures"),
         "prediction_type" : (str, "predictionType"),
@@ -244,7 +246,9 @@ def forest(input_layer,
         {"name" : "output_predicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
         {"name" : "variable_of_importance", "display_name" : "Variable of Importance", "type" : _FeatureSet}
     ]
-
+    if features_to_predict is None and prediction_type == 'TrainAndPredict':
+        kwargs["features_to_predict"] = input_layer
+        #param_db.pop("features_to_predict")
     try:
         res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True)
         return output_service
