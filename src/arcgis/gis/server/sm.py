@@ -54,8 +54,9 @@ class ServerManager(object):
             try:
                 admin_url = server['adminUrl']
                 if server['serverFunction'] == 'NotebookServer':
+                    from arcgis.gis.nb import NotebookServer
                     self._server_list.append(
-                          Server(url=admin_url, gis=self._gis)
+                          NotebookServer(url=admin_url, gis=self._gis)
                      )
                 else:
                     c = ServicesDirectory(url=admin_url, portal_connection=self._gis._portal.con, )

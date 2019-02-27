@@ -840,7 +840,7 @@ class GIS(object):
         """ Returns the portal properties (using cache unless force=True). """
         return self._portal.get_properties(force)
 
-    def map(self, location=None, zoomlevel=None, mode="2D"):
+    def map(self, location=None, zoomlevel=None, mode="2D", geocoder=None):
         """
         Creates a map widget centered at the declared location with the specified
         zoom level. If an address is provided, it is geocoded
@@ -859,6 +859,8 @@ class GIS(object):
         zoomlevel              Optional integer. The desired zoom level.
         ------------------     --------------------------------------------------------------------
         mode                   Optional string of either '2D' or '3D' to specify map mode. Defaults to '2D'.
+        ------------------     --------------------------------------------------------------------
+        geocoder               Optional Geocoder. Allows users to specify a geocoder to find a given location.
         ==================     ====================================================================
 
 
@@ -867,7 +869,7 @@ class GIS(object):
         """
         try:
             from arcgis.widgets import MapView
-            from arcgis.geocoding import get_geocoders, geocode
+            from arcgis.geocoding import get_geocoders, geocode, Geocoder
         except Error as err:
             _log.error("ipywidgets packages is required for the map widget.")
             _log.error("Please install it:\n\tconda install ipywidgets")
@@ -879,7 +881,8 @@ class GIS(object):
 
             # Geocode the location
             if isinstance(location, str):
-                for geocoder in get_geocoders(self):
+                if geocoder and \
+                   isinstance(geocoder, Geocoder):
                     locations = geocode(location, out_sr=4326, max_locations=1, geocoder=geocoder)
                     if len(locations) > 0:
                         if zoomlevel is not None:
@@ -888,7 +891,18 @@ class GIS(object):
                             mapwidget.zoom = zoomlevel
                         else:
                             mapwidget.extent = locations[0]['extent']
-                        break
+                else:
+                    for geocoder in get_geocoders(self):
+                        locations = geocode(location, out_sr=4326, max_locations=1, geocoder=geocoder)
+                        if len(locations) > 0:
+                            if zoomlevel is not None:
+                                loc = locations[0]['location']
+                                mapwidget.center = loc['y'], loc['x']
+                                mapwidget.zoom = zoomlevel
+                            else:
+                                if 'extent' in locations[0]:
+                                    mapwidget.extent = locations[0]['extent']
+                            break
 
             # Center the map at the location
             elif isinstance(location, (tuple, list)):
@@ -2010,7 +2024,8 @@ class UserManager(object):
                 credits = -1
             params = {
                 'f': 'json',
-                'invitationList' : {'invitations' : [ {
+                'invitationList' : {'invitations' : [
+                    {
                     'username': username,
                     'firstname': firstname,
                     'lastname': lastname,
@@ -2019,10 +2034,17 @@ class UserManager(object):
                     'role': role,
                     "userLicenseType": user_type,
                     "groups":",".join(group.id for group in groups),
-                    "userCreditsAssignment": credits
-                    } ] },
-                'message' : email_text
+                    "userCreditsAssignment": credits,
+
+                    }
+                    ],
+                        "apps":[],
+                        "appBundles":[]
+                },
+                #'message' : email_text
             }
+            if self._gis._portal.is_arcgisonline:
+                params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
             if idp_username is not None:
                 if provider is None:
                     provider = 'enterprise'
@@ -2197,7 +2219,7 @@ class UserManager(object):
         """
         This is a bulk operation that allows administrators to quickly enable large number of users
         in a single call.  It is useful to do this operation if you have multiple users that need
-        to be enabled.
+        to be enabled. Supported on ArcGIS REST API 6.4+.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -2208,33 +2230,34 @@ class UserManager(object):
         :returns: Boolean
 
         """
-        url = "{base}/portals/self/enableUsers".format(base=self._portal.resturl)
-        params = {
-            'f' : 'json',
-            'users' : None
-        }
-        if isinstance(users, User) or \
-           isinstance(users, str):
-            users = [users]
-        if isinstance(users, (list, tuple)):
-            ul = []
-            for user in users:
-                if isinstance(user, User):
-                    ul.append(user.username)
-                else:
-                    ul.append(user)
-            params['users'] = ",".join(ul)
-            res = self._portal.con.post(url, params)
-            return any([r['status'] for r in res['results']])
-        else:
-            raise ValueError('Invalid input: must be of type list.')
+        if self._gis.version >= [6,4]:
+            url = "{base}/portals/self/enableUsers".format(base=self._portal.resturl)
+            params = {
+                'f' : 'json',
+                'users' : None
+            }
+            if isinstance(users, User) or \
+               isinstance(users, str):
+                users = [users]
+            if isinstance(users, (list, tuple)):
+                ul = []
+                for user in users:
+                    if isinstance(user, User):
+                        ul.append(user.username)
+                    else:
+                        ul.append(user)
+                params['users'] = ",".join(ul)
+                res = self._portal.con.post(url, params)
+                return any([r['status'] for r in res['results']])
+            else:
+                raise ValueError('Invalid input: must be of type list.')
         return False
 
     def disable_users(self, users):
         """
         This is a bulk disables user operation that allows administrators to quickly disable large
         number of users in a single call.  It is useful to do this operation if you have multiple
-        users that need to be disabled.
+        users that need to be disabled.  Supported on ArcGIS REST API 6.4+.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -2245,26 +2268,27 @@ class UserManager(object):
         :returns: Boolean
 
         """
-        url = "{base}/portals/self/disableUsers".format(base=self._portal.resturl)
-        params = {
-            'f' : 'json',
-            'users' : None
-        }
-        if isinstance(users, User) or \
-           isinstance(users, str):
-            users = [users]
-        if isinstance(users, (list, tuple)):
-            ul = []
-            for user in users:
-                if isinstance(user, User):
-                    ul.append(user.username)
-                else:
-                    ul.append(user)
-            params['users'] = ",".join(ul)
-            res = self._portal.con.post(url, params)
-            return any([r['status'] for r in res['results']])
-        else:
-            raise ValueError('Invalid input: must be of type list.')
+        if self._gis.version >= [6,4]:
+            url = "{base}/portals/self/disableUsers".format(base=self._portal.resturl)
+            params = {
+                'f' : 'json',
+                'users' : None
+            }
+            if isinstance(users, User) or \
+               isinstance(users, str):
+                users = [users]
+            if isinstance(users, (list, tuple)):
+                ul = []
+                for user in users:
+                    if isinstance(user, User):
+                        ul.append(user.username)
+                    else:
+                        ul.append(user)
+                params['users'] = ",".join(ul)
+                res = self._portal.con.post(url, params)
+                return any([r['status'] for r in res['results']])
+            else:
+                raise ValueError('Invalid input: must be of type list.')
         return False
 
     def search(self, query=None, sort_field='username', sort_order='asc',

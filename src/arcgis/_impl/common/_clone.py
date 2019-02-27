@@ -42,7 +42,7 @@ class _DeepCloner():
         self._use_org_basemap = use_org_basemap
         self._copy_data = copy_data
         self._search_existing_items=search_existing_items
-        self._clone_mapping = {'Item IDs': {}, 'Group IDs': {}, 'Services': {}}
+        self._clone_mapping = {'Item IDs': {}, 'Group IDs': {}, 'Services': {}, 'Web Tools' : {}}
         if item_mapping is not None:
             self._clone_mapping['Item IDs'] = item_mapping
         if group_mapping is not None:
@@ -403,8 +403,19 @@ class _DeepCloner():
             integrations = _deep_get(workforce_json, 'assignmentIntegrations')
             if integrations is not None:
                 for integration in integrations:
+                    url_templates = []
                     url_template = _deep_get(integration, 'urlTemplate')
                     if url_template is not None:
+                        url_templates.append(url_template)
+
+                    assignment_types = _deep_get(integration, 'assignmentTypes')
+                    if assignment_types is not None:
+                        for key, value in assignment_types.items():
+                            url_template = _deep_get(value, 'urlTemplate')
+                            if url_template is not None:
+                                url_templates.append(url_template)
+                    
+                    for url_template in url_templates:
                         item_ids = re.findall('itemID=[0-9A-F]{32}', url_template, re.IGNORECASE)
                         for item_id in item_ids:
                             integration_item = source.content.get(item_id[7:])
@@ -558,6 +569,9 @@ class _DeepCloner():
                 layer_field_mapping, layer_id_mapping, relationship_field_mapping = _compare_service(new_item, original_item, currentVersion)
                 self._clone_mapping['Services'][original_item['url'].rstrip('/')] = {'id' : new_item['id'], 'url' : new_item['url'].rstrip('/'), 'layer_field_mapping' : layer_field_mapping,
                                                                                     'layer_id_mapping' : layer_id_mapping, 'relationship_field_mapping' : relationship_field_mapping}
+            elif new_item.type == 'Geoprocessing Service':
+                self._clone_mapping['Web Tools'][original_item['url'].rstrip('/')] = new_item['url'].rstrip('/')
+
 
     def _clone_synchronous(self):
         """
@@ -1801,7 +1815,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Add the relationships back to the layers
                 relationship_field_mapping = {}
-                if len(relationships) > 0 and self.is_view == False:
+                if len(relationships) > 0:
                     for layer_id in relationships:
                         for relationship in relationships[layer_id]:
                             if layer_id in layer_field_mapping:
@@ -1815,23 +1829,24 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     relationship_field_mapping[layer_id] = {}
                                 relationship_field_mapping[layer_id][relationship['id']] = field_mapping
 
-                    relationships_copy = copy.deepcopy(relationships)
-                    for layer_id in relationships_copy:
-                        for relationship in relationships_copy[layer_id]:
-                            relationship['relatedTableId'] = layer_id_mapping[relationship['relatedTableId']]
-
-                    if self.target.properties.isPortal:
-                        relationships_definition = {'layers' : []}
-                        for key, value in layer_id_mapping.items():
-                            if key in relationships_copy:
-                                relationships_definition['layers'].append({'id' : value, 'relationships' : relationships_copy[key]})
-                            else:
-                                relationships_definition['layers'].append({'id' : value, 'relationships' : []})
-                        feature_service_admin.add_to_definition(relationships_definition)
-                    else:
+                    if self.is_view == False:
+                        relationships_copy = copy.deepcopy(relationships)
                         for layer_id in relationships_copy:
-                            layer = new_layers[layer_id]
-                            layer.manager.add_to_definition({'relationships' : relationships_copy[layer_id]})
+                            for relationship in relationships_copy[layer_id]:
+                                relationship['relatedTableId'] = layer_id_mapping[relationship['relatedTableId']]
+
+                        if self.target.properties.isPortal:
+                            relationships_definition = {'layers' : []}
+                            for key, value in layer_id_mapping.items():
+                                if key in relationships_copy:
+                                    relationships_definition['layers'].append({'id' : value, 'relationships' : relationships_copy[key]})
+                                else:
+                                    relationships_definition['layers'].append({'id' : value, 'relationships' : []})
+                            feature_service_admin.add_to_definition(relationships_definition)
+                        else:
+                            for layer_id in relationships_copy:
+                                layer = new_layers[layer_id]
+                                layer.manager.add_to_definition({'relationships' : relationships_copy[layer_id]})
 
                 # Get the item properties from the original item
                 item_properties = self._get_item_properties(self.item_extent)
@@ -2429,6 +2444,8 @@ class _ApplicationDefinition(_TextItemDefinition):
                             app_json_text = re.sub(original_url, service['url'], app_json_text, 0, re.IGNORECASE)
                         for original_id in self._clone_mapping['Item IDs']:
                             app_json_text = re.sub(original_id, self._clone_mapping['Item IDs'][original_id], app_json_text, 0, re.IGNORECASE)
+                        for original_web_tool in self._clone_mapping['Web Tools']:
+                            app_json_text = re.sub(original_web_tool, self._clone_mapping['Web Tools'][original_web_tool], app_json_text, 0, re.IGNORECASE)
 
                         # Replace any references to default print service
                         new_print_url = _deep_get(self.target.properties, 'helperServices', 'printTask', 'url')
@@ -2738,11 +2755,30 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                     for integration in integrations:
                         url_template = _deep_get(integration, 'urlTemplate')
                         if url_template is not None:
-                            item_references = re.findall('itemID=[0-9A-F]{32}', url_template, re.IGNORECASE)
-                            for item_reference in item_references:
-                                item_id = item_reference[7:]
-                                if item_id in self._clone_mapping['Item IDs']:
-                                    integration['urlTemplate'] = url_template.replace(item_id, self._clone_mapping['Item IDs'][item_id])
+                            for item_id in self._clone_mapping['Item IDs']:
+                                integration['urlTemplate'] = re.sub(item_id, self._clone_mapping['Item IDs'][item_id], integration['urlTemplate'], 0, re.IGNORECASE)
+                            
+                            for original_url in self._clone_mapping['Services']:
+                                service = self._clone_mapping['Services'][original_url]
+                                for key, value in service['layer_id_mapping'].items():
+                                    integration['urlTemplate'] = re.sub("{0}/{1}".format(original_url, key),
+                                                           "{0}/{1}".format(service['url'], value),
+                                                           integration['urlTemplate'], 0, re.IGNORECASE)
+
+                        assignment_types = _deep_get(integration, 'assignmentTypes')
+                        if assignment_types is not None:
+                            for key, value in assignment_types.items():
+                                url_template = _deep_get(value, 'urlTemplate')
+                                if url_template is not None:
+                                    for item_id in self._clone_mapping['Item IDs']:
+                                        value['urlTemplate'] = re.sub(item_id, self._clone_mapping['Item IDs'][item_id], value['urlTemplate'], 0, re.IGNORECASE)
+                            
+                                for original_url in self._clone_mapping['Services']:
+                                    service = self._clone_mapping['Services'][original_url]
+                                    for old_id, new_id in service['layer_id_mapping'].items():
+                                        value['urlTemplate'] = re.sub("{0}/{1}".format(original_url, old_id),
+                                                               "{0}/{1}".format(service['url'], new_id),
+                                                               value['urlTemplate'], 0, re.IGNORECASE)                   
 
                 item_properties['text'] = json.dumps(workforce_json)
                 # Add the new item

@@ -25,6 +25,7 @@ except:
 try:
     import shapefile
     HASPYSHP = True
+    SHPVERSION = [int(i) for i in shapefile.__version__.split('.')]
 except:
     HASPYSHP = False
 #--------------------------------------------------------------------------
@@ -567,9 +568,14 @@ def to_featureclass(geo,
     elif HASPYSHP:
         if fc_name.endswith('.shp') == False:
             fc_name = "%s.shp" % fc_name
-        return _pyshp_to_shapefile(df=df,
+        if SHPVERSION < [2]:
+            return _pyshp_to_shapefile(df=df,
                             out_path=out_location,
                             out_name=fc_name)
+        else:
+            return _pyshp2(df=df,
+                           out_path=out_location,
+                           out_name=fc_name)
     elif HASARCPY == False and HASPYSHP == False:
         raise Exception(("Cannot Export the data without ArcPy or PyShp modules."
                         " Please install them and try again."))
@@ -601,7 +607,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
         out_fc = os.path.join(out_path, out_name)
         if out_fc.lower().endswith('.shp') == False:
             out_fc += ".shp"
-        geom_field = df.spatial._name
+        geom_field = df.spatial.name
         if geom_field is None:
             return
         geom_type = "null"
@@ -656,6 +662,113 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             del row
             del geom
         shpfile.save(out_fc)
+
+
+        # create the PRJ file
+        try:
+            from urllib import request
+            wkid = df.spatial.sr['wkid']
+
+            prj_filename = out_fc.replace('.shp', '.prj')
+
+            url = 'http://epsg.io/{}.esriwkt'.format(wkid)
+
+            opener = request.build_opener()
+            opener.addheaders = [('User-Agent', 'geosaurus')]
+            resp = opener.open(url)
+
+            wkt = resp.read().decode('utf-8')
+            if len(wkt) > 0:
+                prj = open(prj_filename, "w")
+                prj.write(wkt)
+                prj.close()
+        except:
+            # Unable to write PRJ file.
+            pass
+
+        del shpfile
+        return out_fc
+    return None
+#--------------------------------------------------------------------------
+def _pyshp2(df, out_path, out_name):
+    """
+    Saves a SpatialDataFrame to a Shapefile using pyshp v2.0
+
+    :Parameters:
+     :df: spatial dataframe
+     :out_path: folder location to save the data
+     :out_name: name of the shapefile
+    :Output:
+     path to the shapefile or None if pyshp isn't installed or
+     spatial dataframe does not have a geometry column.
+    """
+    from arcgis.geometry._types import Geometry
+    if HASPYSHP:
+        GEOMTYPELOOKUP = {
+            "Polygon" : shapefile.POLYGON,
+            "Point" : shapefile.POINT,
+            "Polyline" : shapefile.POLYLINE,
+            'null' : shapefile.NULL
+        }
+        if os.path.isdir(out_path) == False:
+            os.makedirs(out_path)
+        out_fc = os.path.join(out_path, out_name)
+        if out_fc.lower().endswith('.shp') == False:
+            out_fc += ".shp"
+        geom_field = df.spatial.name
+        if geom_field is None:
+            return
+        geom_type = "null"
+        idx = df[geom_field].first_valid_index()
+        if idx > -1:
+            geom_type = df.loc[idx][geom_field].type
+        shpfile = shapefile.Writer(target=out_fc, shapeType=GEOMTYPELOOKUP[geom_type], autoBalance=True)
+        dfields = []
+        cfields = []
+        for c in df.columns:
+            idx = df[c].first_valid_index()
+            if idx > -1:
+                if isinstance(df[c].loc[idx],
+                              Geometry):
+                    geom_field = (c, "GEOMETRY")
+                else:
+                    cfields.append(c)
+                    if isinstance(df[c].loc[idx], (str)):
+                        shpfile.field(name=c, size=255)
+                    elif isinstance(df[c].loc[idx], (int)):
+                        shpfile.field(name=c, fieldType="N", size=5)
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                        shpfile.field(name=c, fieldType="N", size=10)
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                        shpfile.field(name=c, fieldType="F", size=19, decimal=11)
+                    elif isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64)) or \
+                         df[c].dtype.name == 'datetime64[ns]':
+                        shpfile.field(name=c, fieldType="D", size=8)
+                        dfields.append(c)
+                    elif isinstance(df[c].loc[idx], (bool, np.bool)):
+                        shpfile.field(name=c, fieldType="L", size=1)
+            del c
+            del idx
+        for idx, row in df.iterrows():
+            geom = row[df.spatial._name]
+            if geom.type == "Polygon":
+                shpfile.poly(geom['rings'])
+            elif geom.type == "Polyline":
+                shpfile.line(geom['paths'])
+            elif geom.type == "Point":
+                shpfile.point(x=geom.x, y=geom.y)
+            else:
+                shpfile.null()
+            row = row[cfields].tolist()
+            for fld in dfields:
+                idx = df[cfields].columns.tolist().index(fld)
+                if row[idx]:
+                    row[idx] = row[idx].to_pydatetime()
+            shpfile.record(*row)
+            del idx
+            del row
+            del geom
+        shpfile.close()
 
 
         # create the PRJ file

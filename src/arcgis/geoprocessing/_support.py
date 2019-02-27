@@ -250,7 +250,7 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
         raise Exception("Unable to get analysis job results.")
 
 
-def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False):
+def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False, add_token=True):
     if gis is None:
         gis = arcgis.env.active_gis
 
@@ -321,8 +321,10 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
     if use_async:
         task_url = "{}/{}".format(url, task_name)
         submit_url = "{}/submitJob".format(task_url)
-
-        job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+        if add_token:
+            job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+        else:
+            job_info = gptool._con.post(submit_url, gp_params)
         job_id = job_info['jobId']
         job_info = _analysis_job_status(gptool, task_url, job_info)
         resp = _analysis_job_results(gptool, task_url, job_info, job_id)
@@ -350,7 +352,10 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
 
     else: # synchronous
         exec_url = url + "/" + task_name + "/execute"
-        resp = gptool._con.post(exec_url, gp_params, token=gptool._token)
+        if add_token:
+            resp = gptool._con.post(exec_url, gp_params, token=gptool._token)
+        else:
+            resp = gptool._con.post(exec_url, gp_params)
 
         output_dict = {}
 

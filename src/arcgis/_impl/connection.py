@@ -169,7 +169,15 @@ class MultiPartForm(object):
                 with open(filepath, "rb") as f:
                     shutil.copyfileobj(f, buf)
                 textwriter.write('\r\n')
-
+            elif filepath == '':
+                textwriter.write(
+                            '--{boundary}\r\n'
+                            'Content-Disposition: form-data; name="{key}"; '
+                            'filename="{filename}"\r\n'
+                            'Content-Type: {content_type}\r\n\r\n'.format(
+                                boundary=boundary, key=key, filename=filename,
+                                content_type=mimetype))
+                textwriter.write('\r\n')
         for (key, value) in self.form_fields:
             textwriter.write(
                 '--{boundary}\r\n'
