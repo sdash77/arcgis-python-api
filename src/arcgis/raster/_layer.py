@@ -29,7 +29,7 @@ def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
                 fnarg_ra[key]={}
                 fnarg_ra[key]["url"] = url
                 fnarg_ra[key]["mosaicRule"] = mosaic_rule
-                 
+
     return fnarg_ra
 
 class ImageryLayer(Layer):
@@ -43,7 +43,7 @@ class ImageryLayer(Layer):
         self._filtered = False
         self._mosaic_rule = None
         self._extent = None
-        self._uses_gbl_function = False               
+        self._uses_gbl_function = False
         self._other_outputs = {}
         # self._extent = self.properties.initialExtent
 
@@ -357,7 +357,7 @@ class ImageryLayer(Layer):
             params['mosaicRule'] = mosaic_rule
         elif self._mosaic_rule is not None:
             params['mosaicRule'] = self._mosaic_rule
-        
+
         if rendering_rules is not None:
             if isinstance(rendering_rules, dict):
                 params['renderingRule'] = rendering_rules
@@ -1345,16 +1345,16 @@ class ImageryLayer(Layer):
                              spatial_reference):
         """
 
-        With given input geometries, it calculates corresponding pixel location 
+        With given input geometries, it calculates corresponding pixel location
         in column and row on specific raster catalog item.
-        A prerequisite is that the raster catalog item has valid icsToPixel resource. 
-        
+        A prerequisite is that the raster catalog item has valid icsToPixel resource.
+
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
-        raster_id             required integer. Specifies the objectId of image service's raster 
-                              catalog. This integer rasterId number will determine which raster's 
-                              image coordinate system will be used during the calculation and 
+        raster_id             required integer. Specifies the objectId of image service's raster
+                              catalog. This integer rasterId number will determine which raster's
+                              image coordinate system will be used during the calculation and
                               which raster does the column and row of results represent.
         -----------------     --------------------------------------------------------------------
         geometries            The array of geometries for computing pixel locations.
@@ -1362,8 +1362,8 @@ class ImageryLayer(Layer):
 
         -----------------     --------------------------------------------------------------------
         spatial_reference     required string, dictionary,
-                              This specifies the spatial reference of the Geometries parameter above. 
-                              It can accept a multitudes of values.  These can be a WKID, 
+                              This specifies the spatial reference of the Geometries parameter above.
+                              It can accept a multitudes of values.  These can be a WKID,
                               image coordinate system (ICSID), or image coordinate system in json/dict format.
                               Additionally the arcgis.geometry.SpatialReference object is also a
                               valid entry.
@@ -1372,8 +1372,8 @@ class ImageryLayer(Layer):
                               conflicts with wkid
         -----------------     --------------------------------------------------------------------
 
-        :returns: dictionary, The result of this operation includes x and y values for the column 
-                  and row of each input geometry. It also includes a z value for the height at given 
+        :returns: dictionary, The result of this operation includes x and y values for the column
+                  and row of each input geometry. It also includes a z value for the height at given
                   location based on elevation info that the catalog raster item has.
 
 
@@ -2092,7 +2092,7 @@ class ImageryLayer(Layer):
         if not out_fields is None:
             params["outFields"] = out_fields
 
-        sample_data = self._con.get(url, params, token=self._token)['samples']
+        sample_data = self._con.post(url, params, token=self._token)['samples']
         from copy import deepcopy
         new_sample_data = deepcopy(sample_data)
         # region: Try to convert values to list of numbers if it makes sense
@@ -2254,7 +2254,7 @@ class ImageryLayer(Layer):
 
         :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
         """
-                
+
         url = self._url + "/validate"
 
         params = {
@@ -2271,22 +2271,22 @@ class ImageryLayer(Layer):
     def calculate_volume(self, geometries, base_type = None, mosaic_rule = None, constant_z = None, pixel_size = None):
         """
         Performs volumetric calculation on an elevation service. Results are always in square meters (area) and cubic
-        meters (volume). If a service does not have vertical spatial reference and z unit is not in meters, user 
+        meters (volume). If a service does not have vertical spatial reference and z unit is not in meters, user
         needs to apply a conversion factor when interpreting results.
 
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        geometries            required a list of Polygon geometry objects or a list of envelope geometry objects. 
+        geometries            required a list of Polygon geometry objects or a list of envelope geometry objects.
                               A geometry that defines the geometry
                               within which the volume is computed. The geometry can be an
                               envelope or a polygon
         -----------------     --------------------------------------------------------------------
         base_type              optional integer.
                                0 - constant z;
-                               1 - best fitting plane; 
-                               2 - lowest elevation on the perimeter; 
-                               3 - highest elevation on the perimeter; 
+                               1 - best fitting plane;
+                               2 - lowest elevation on the perimeter;
+                               3 - highest elevation on the perimeter;
                                4 - average elevation on the perimeter
         -----------------     --------------------------------------------------------------------
         mosaic_rule           Optional dictionary. Used to select different DEMs in a mosaic dataset
@@ -2506,7 +2506,7 @@ class ImageryLayer(Layer):
                     if layer_extent_set:
                          _arcgis.env.analysis_extent = None
                          layer_extent_set = False
-                    raise 
+                    raise
 
                 if layer_extent_set:
                          _arcgis.env.analysis_extent = None
@@ -2627,7 +2627,7 @@ class ImageryLayer(Layer):
 
         def _raster_function_graph(rfa_value,rfa_key,root,**kwargs):
             global nodenumber
-            
+
             if isinstance(rfa_value,dict):
                 if "rasterFunction" in rfa_value.keys():
                     if "url" in kwargs.keys():
@@ -2649,7 +2649,7 @@ class ImageryLayer(Layer):
                                     _function_graph(rfa_value_search_dict,rfa_key,root, url=kwargs["url"])
                                 else:
                                     _function_graph(rfa_value_search_dict,rfa_key,root)
-                           
+
                     elif isinstance(rfa_value_search_dict, numbers.Number) :
                         nodenumber+=1
                         rastername=str(rfa_value_search_dict)
@@ -2692,13 +2692,13 @@ class ImageryLayer(Layer):
                         if (dvalue=="Identity" and "renderingRule" in dictionary["rasterFunctionArguments"]["Raster"]):
                             if "rasterFunction" in dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"]:
                                 _function_graph(dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"],"Raster",connect,url=dictionary["rasterFunctionArguments"]["Raster"]["url"])
-                        
+
                         else:
                             nodenumber+=1
                             G.node(str(nodenumber), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
                             if childnode != None:
                                 G.edge(str(nodenumber), str(connect),color="silver", arrowsize="0.9", penwidth="1")
-                            connect=nodenumber  
+                            connect=nodenumber
                             for dkey, dvalue in dictionary.items():  # Check dictionary again for rasterFunctionArguments
                                 if dkey == "rasterFunctionArguments":
                                     for key, value in dvalue.items():
@@ -2736,7 +2736,7 @@ class ImageryLayer(Layer):
                         _function_graph(function_dictionary["rasterFunctionArguments"]["Raster"]["renderingRule"],None,root,url=function_dictionary["rasterFunctionArguments"]["Raster"]["url"])
                     else:
                         return "No raster function applied"
-                else: 
+                else:
                     root+=1
                     G.node(str(root), dvalue, style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")  #create first rasterFunction graph node
                     nodenumber = root
@@ -3601,9 +3601,9 @@ class RasterCatalogItem(object):
     @property
     def ics_to_pixel(self):
         """
-        returns coefficients to build up mathematic model for geometric 
-        transformation. With this transformation, ICS coordinates based 
-        from the catalog item raster can be used to calculate the original 
+        returns coefficients to build up mathematic model for geometric
+        transformation. With this transformation, ICS coordinates based
+        from the catalog item raster can be used to calculate the original
         column and row numbers on the corresponding image.
 
         """
