@@ -19,14 +19,14 @@ _use_async = True
 #--------------------------------------------------------------------------
 def forest(input_layer,
            var_prediction,
-           explanatory_var,
+           var_explanatory,
            trees,
-           tree_depth=None,
+           max_tree_depth=None,
            random_vars=None,
            sample_size=100,
            min_leaf_size=None,
            prediction_type="train",
-           feature_to_predict=None,
+           features_to_predict=None,
            validation=10,
            importance_tbl=False,
            exp_var_matching=None,
@@ -34,7 +34,7 @@ def forest(input_layer,
            gis=None):
     """
     The 'forest' method is a forest-based classification and regression
-    task creates models and generates predictions using an adaptation of
+    task that creates models and generates predictions using an adaptation of
     Leo Breiman's random forest algorithm, which is a supervised machine
     learning method. Predictions can be performed for both categorical
     variables (classification) and continuous variables (regression).
@@ -75,13 +75,21 @@ def forest(input_layer,
                                  (training) values of the variable that will be used to predict
                                  at unknown locations.
     --------------------------   ---------------------------------------------------------------
-    explanatory_var
+    var_explanatory              Required List. A list of fields representing the explanatory
+                                 variables and a Boolean value denoting whether the fields are
+                                 categorical. The explanatory variables help predict the value
+                                 or category of the `var_prediction` parameter. Use the
+                                 categorical parameter for any variables that represent classes
+                                 or categories (such as land cover or presence or absence).
+                                 Specify the variable as true for any that represent classes or
+                                 categories such as land cover or presence or absence and false
+                                 if the variable is continuous.
     --------------------------   ---------------------------------------------------------------
     trees                        Required int. The number of trees to create in the forest model.
                                  More trees will generally result in more accurate model
                                  prediction, but the model will take longer to calculate.
     --------------------------   ---------------------------------------------------------------
-    tree_depth                   Optional int. The maximum number of splits that will be made
+    max_tree_depth               Optional int. The maximum number of splits that will be made
                                  down a tree. Using a large maximum depth, more splits will be
                                  created, which may increase the chances of overfitting the
                                  model. The default is data driven and depends on the number of
@@ -139,16 +147,9 @@ def forest(input_layer,
                                  subset of data, and the observed values for those features will
                                  be compared to the predicted value. The default is 10 percent.
     --------------------------   ---------------------------------------------------------------
-    importance_tbl               Optional List. A list of the explanatory_variables specified
-                                 from the inFeatures and their corresponding fields from the
-                                 features_to_predict. By default, if an eexplanatory_variables is
-                                 not mapped, it will match to a field with the same name in the
-                                 features_to_predict. This parameter is only used if there is a
-                                 features_to_predict input. You do not need to use it if the
-                                 names and types of the fields match between your two input
-                                 datasets.
-
-                                 Syntax: [{"predictionLayerField":"<field name>", "trainingLayerField": "<field nane>"},...]
+    importance_tbl               Optional Boolean. Specifies whether an output table will be
+                                 generated that contains information describing the importance
+                                 of each explanatory variable used in the model created.
     --------------------------   ---------------------------------------------------------------
     exp_var_matching             A list of fields representing the explanatory variables and a
                                  boolean values denoting if the fields are categorical. The
@@ -222,11 +223,11 @@ def forest(input_layer,
         "prediction_type" : (str, "predictionType"),
         "features_to_predict" : (_FeatureSet, "featuresToPredict"),
         "var_prediction" : (dict, "variablePredict"),
-        "explanatory_var" : (list, "explanatoryVariables"),
+        "var_explanatory" : (list, "explanatoryVariables"),
         "exp_var_matching" : (list, "explanatoryVariableMatching"),
         "return_importance_table" : (bool, "returnVariableOfImportanceTable"),
         "trees" : (int, "numberOfTrees"),
-        "tree_depth" : (int, "maximumTreeDepth"),
+        "max_tree_depth" : (int, "maximumTreeDepth"),
         "min_leaf_size" : (int, "minimumLeafSize"),
         "sample_size" : (int, "sampleSize"),
         "random_vars" : (int, "randomVariables"),
@@ -254,8 +255,8 @@ def forest(input_layer,
     return
 #--------------------------------------------------------------------------
 def glr(input_layer,
-        dep_variable,
-        explanatory_var,
+        dep_var,
+        var_explanatory,
         regression_family="Continuous",
         features_to_predict=None,
         gen_coeff_table=False,
@@ -280,13 +281,13 @@ def glr(input_layer,
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  required FeatureSet, The table, point, line or polygon features
-                                 containing potential incidents.
+    input_layer                  Required FeatureSet. The layer containing the dependent and
+                                 independent variables.
     --------------------------   ---------------------------------------------------------------
-    dep_variable                 Required String. The numeric field containing the observed
+    dep_var                      Required String. The numeric field containing the observed
                                  values you want to model.
     --------------------------   ---------------------------------------------------------------
-    explanatory_var              Required String. One or more fields representing independent
+    var_explanatory              Required String. One or more fields representing independent
                                  explanatory variables in your regression model.
     --------------------------   ---------------------------------------------------------------
     regression_family            Required String. This field specifies the type of data you are
@@ -328,7 +329,7 @@ def glr(input_layer,
     --------------------------   ---------------------------------------------------------------
     exp_var_matching             Optional List. A list of the explanatoryVariables specified from
                                  the input_layer and their corresponding fields from the
-                                 features_to_predict. By default, if an explanatory_variables is
+                                 features_to_predict. By default, if an var_explanatoryiables is
                                  not mapped, it will match to a field with the same name in the
                                  features_to_predict. This parameter is only used if there is a
                                  features_to_predict input. You do not need to use it if the
@@ -339,9 +340,9 @@ def glr(input_layer,
                                           "trainingLayerField": "<field name>"},...]
 
                                     + predictionLayerField is the name of a field specified in the
-                                      explanatory_variables parameter.
+                                      var_explanatoryiables parameter.
                                     + trainingLayerField is the field that will match to the field
-                                      in the explanatory_variables parameter.
+                                      in the var_explanatoryiables parameter.
 
                                  REST scripting example:
 
@@ -357,10 +358,10 @@ def glr(input_layer,
                                       (presence values).
 
     --------------------------   ---------------------------------------------------------------
-    output_name                  optional String, The task will create a feature service of the
+    output_name                  Optional String. The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    gis                          optional GIS, the GIS on which this tool runs. If not
+    gis                          Optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     ==========================   ===============================================================
 
@@ -397,7 +398,7 @@ def glr(input_layer,
             params[key]=value
 
     if output_name is None:
-        output_service_name='Gen_Lin_Regress_' + _id_generator()
+        output_service_name='GLR_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
@@ -416,8 +417,8 @@ def glr(input_layer,
         "regression_family" : (str, "regressionFamily"),
         "gen_coeff_table" : (bool, "generateCoefficientTable"),
         "exp_var_matching" : (list, "explanatoryVariableMatching"),
-        "dep_variable" : (list, "dependentVariable"),
-        "explanatory_var" : (list, "explanatoryVariables"),
+        "dep_var" : (list, "dependentVariable"),
+        "var_explanatory" : (list, "explanatoryVariables"),
         "features_to_predict" : (_FeatureSet, "featuresToPredict"),
         "dep_mapping" : (list, "dependentMapping"),
         "output_name" : (str, "outputName"),
