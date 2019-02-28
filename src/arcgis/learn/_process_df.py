@@ -1,4 +1,4 @@
-try: 
+try:
     import pandas as pd
     import numpy as np
     import re
@@ -23,12 +23,12 @@ def add_datepart(df, col_name, drop=True, errors="raise"):
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
     df                  Required DataFrame.
-    col_name            Required String.               
+    col_name            Required String.
     drop                Optional Boolean. If True drop the original col_name.
     errors              Optional
     ===============     ====================================================================
 
-    :return: None    
+    :return: None
     '''
     if not has_deps:
         _raise_deps_error()
@@ -52,8 +52,8 @@ def _scale(df, mapper=None):
     df                  DataFrame to be scaled.
     mapper              Parameters used for scaling.
     ===============     ====================================================================
-    
-    :return: mapper if passed as None    
+
+    :return: mapper if passed as None
     '''
     if mapper is None:
         map_f = [([n], StandardScaler()) for n in df.columns if is_numeric_dtype(df[n])]
@@ -63,7 +63,7 @@ def _scale(df, mapper=None):
 
 def process_df(df, target=None, do_scale=False, add_date_feats=False, mapper=None, test_sz=0.2):
     '''
-    This function preprocess the dataframe in following order : 
+    This function preprocess the dataframe in following order :
     a. drops SHAPE column,
     b. creates target feature,
     c. fill missing values,
@@ -80,8 +80,8 @@ def process_df(df, target=None, do_scale=False, add_date_feats=False, mapper=Non
     --------------   --------------------------------------------------------------------
     do_scale         Optional Boolean. If True scales the numerical features else do not.
     --------------   --------------------------------------------------------------------
-    mapper           Optional.  Works if do_scale is True, it contains the 
-                     parameters(mean and standard deviation) obtained from training set 
+    mapper           Optional.  Works if do_scale is True, it contains the
+                     parameters(mean and standard deviation) obtained from training set
                      and can be used for  test set.
     --------------   --------------------------------------------------------------------
 
@@ -116,11 +116,11 @@ def process_df(df, target=None, do_scale=False, add_date_feats=False, mapper=Non
                 _add_datepart(df, i)
     if do_scale:
         mapper = _scale(df, mapper)
-    cat_cols = df.select_dtypes(include=['object','category']).columns    
+    cat_cols = df.select_dtypes(include=['object','category']).columns
     for i in cat_cols:
         if df[i].nunique()>50:
             df.drop(i, inplace=True, axis=1)
-            logging.warning(f'feature {i} contains more than 50 categories, dropping!!')
+            logging.warning('feature {i} contains more than 50 categories, dropping!!'.format(i=i))
     df = pd.get_dummies(df)
     if (type_y=='num'): #regression type
         X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2, random_state=42)
@@ -133,4 +133,3 @@ def process_df(df, target=None, do_scale=False, add_date_feats=False, mapper=Non
             X_test = df.loc[test_index]
             y_test = y[test_index]
         return X_train,  X_test, y_train, y_test, mapper
-            
