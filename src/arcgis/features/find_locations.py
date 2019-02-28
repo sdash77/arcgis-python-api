@@ -93,6 +93,8 @@ def derive_new_locations(
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -180,6 +182,8 @@ def find_centroids(input_layer,
     output_name       Optional String. Output feature service name.
     ----------------  ---------------------------------------------------------------
     context           Optional String. Additional settings such as processing extent and output spatial reference.
+    ----------------  ---------------------------------------------------------------
+    estimate          Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     ================  ===============================================================
 
     :Returns: FeatureCollection or Item
@@ -246,6 +250,8 @@ def create_viewshed(
 
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
 
     Returns
@@ -299,6 +305,8 @@ def create_watersheds(
 
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
 
     Returns
@@ -359,6 +367,9 @@ def trace_downstream(
 
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------

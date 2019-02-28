@@ -50,6 +50,8 @@ def connect_origins_to_destinations(origins_layer,
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -112,6 +114,8 @@ def create_buffers(
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -167,6 +171,8 @@ def create_drive_time_areas(input_layer,
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -229,6 +235,8 @@ def find_nearest(
         Additional settings such as processing extent and output spatial reference
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -312,6 +320,8 @@ def plan_routes(
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------

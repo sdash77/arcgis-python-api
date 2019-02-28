@@ -131,6 +131,8 @@ def summarize_center_and_dispersion(
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
                             specified, the active GIS is used.
+    --------------------    ---------------------------------------------------------
+    estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     ====================    =========================================================
 
     :returns: Python dictionary with the following keys:
@@ -322,6 +324,7 @@ def find_outliers(analysis_layer,
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
     gis : The GIS used for running this analysis
+    estimate : Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -402,6 +405,8 @@ def interpolate_points(
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------

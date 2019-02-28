@@ -50,6 +50,8 @@ def enrich_layer(input_layer,
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------

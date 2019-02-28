@@ -15,11 +15,11 @@ find_hot_spots
 --------------
 .. automethod:: arcgis.geoanalytics.analyze_patterns.find_hot_spots
 
-Forest-Based Classification and Regression
+forest
 --------------
 .. automethod:: arcgis.geoanalytics.analyze_patterns.forest
 
 
-Generalized Linear Regression
+glr
 --------------
 .. automethod:: arcgis.geoanalytics.analyze_patterns.glr

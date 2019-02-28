@@ -51,6 +51,8 @@ def aggregate_points(
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -150,6 +152,8 @@ def summarize_nearby(sum_nearby_layer,
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -230,6 +234,8 @@ def summarize_within(sum_within_layer,
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -292,6 +298,7 @@ def join_features(target_layer,
 
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+        estimate: Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns:
        output_layer - outputLayer as a str
