@@ -19,6 +19,21 @@ from arcgis.gis import Item
 import copy
 import numbers
 from . import gbl
+import arcgis as _arcgis
+import json as _json
+from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
+                                          _analysis_job_status
+from .utility import _raster_input_rft, _get_raster_ra_rft, _input_rft, _find_object_ref, \
+                     _python_variable_name
+from arcgis.features.layer import FeatureLayer as _FeatureLayer
+import logging
+_LOGGER = logging.getLogger(__name__)
+from datetime import datetime
+import time
+
+key_value_dict={}
+hidden_inputs = ["ToolName","PrimaryInputParameterName", "OutputRasterParameterName"]
+
 
 #
 # def _raster_input(raster):
@@ -47,8 +62,15 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     function_chain_ra = copy.deepcopy(function_chain)
     function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
     if raster_ra2 is not None:
-        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2    
-    newlyr = ImageryLayer(layer._url, layer._gis)
+        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
+    if layer._datastore_raster:
+        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+            newlyr = ImageryLayer(function_chain_ra, layer._gis)
+        else:
+            newlyr = ImageryLayer(layer._uri, layer._gis)
+
+    else:
+        newlyr = ImageryLayer(layer._url, layer._gis)
 
     newlyr._lazy_properties = layer.properties
     newlyr._hydrated = True
@@ -3146,7 +3168,7 @@ def grayscale(raster, conversion_parameters=None):
     """
  
     layer, raster, raster_ra = _raster_input(raster)
-       
+
     template_dict = {
         "rasterFunction" : "Grayscale",
         "rasterFunctionArguments": {
@@ -3457,9 +3479,9 @@ def weighted_sum(rasters, fields, weights):
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
 
-def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3, 
+def focal_stats(raster, neighborhood_type=1 , width=3, height=3, 
                 inner_radius=1 , outer_radius=3, radius=3, start_angle=0, end_angle=90, neighborhood_values=None,
-                stat_type=3, ignore_no_data=True):
+                stat_type=3, percentile_value=50, ignore_no_data=True):
     """
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
@@ -3477,10 +3499,8 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
     Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
     This option is not present in focal_stats()
 
-    
 
     :param raster: input raster
-    :param percentile: int, default is 50. 
     :param neighborhood_type: int, default is 1. The shape of the area around each cell used to calculate the statistic.
                                1 = Rectangle
                                2 = Circle
@@ -3513,6 +3533,7 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
                       Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
 
                       Default is 3(Mean)
+    :param percentile_value: int, default is 50. 
     :param ignore_no_data: boolean
                            True. Specifies that if a NoData value exists within a neighborhood, 
                            the NoData value will be ignored. Only cells within the neighborhood 
@@ -3537,8 +3558,8 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
 
     if stat_type is not None:
         template_dict["rasterFunctionArguments"]["StatisticType"] = stat_type
-    if percentile is not None:
-        template_dict["rasterFunctionArguments"]["Percentile"] = percentile
+    if percentile_value is not None:
+        template_dict["rasterFunctionArguments"]["Percentile"] = percentile_value
     if neighborhood_type is not None:
         template_dict["rasterFunctionArguments"]["NeighborhoodType"] = neighborhood_type
     if width is not None:
@@ -3587,3 +3608,781 @@ def lookup(raster, field=None):
         template_dict["rasterFunctionArguments"]['Field'] = field
 
     return _clone_layer(layer, template_dict, raster_ra)
+
+
+def raster_collection_function(raster, item_function, aggregation_function, processing_function):
+    """
+    Creates a new raster by applying item, aggregation and processing function
+
+    :param raster: Input Imagery Layer. The image service the layer is based on should be a mosaic dataset
+    :param item_function: The raster function template to be applied on each item of the mosaic dataset. 
+                          Create an RFT object out of the raster function template item on the portal and 
+                          specify that as the input to item_function 
+    :param aggregation_function: The aggregation function to be applied on the mosaic dataset.
+                                 Create an RFT object out of the raster function template item on the portal and 
+                                 specify that as the input to aggregation_function 
+    :param processing_function: The processing template to be applied on the imagery layer.
+                                Create an RFT object out of the raster function template item on the portal and 
+                                specify that as the input to processing_function 
+
+    :return: the output raster with function applied on it
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "name" : "collection_raster_function",
+        "function" : {"name":"RasterCollectionFunction"},
+        "arguments" : {
+        "RasterCollection":{  
+             "name":"RasterCollection",
+             "value":raster,
+             "isDataset":True,
+             "isPublic":False,
+             "type":"RasterFunctionVariable"
+          },
+        "type" : "RasterCollectionFunctionArguments"
+         },
+        "functionType" : 3
+    }
+    if item_function is not None:
+        if isinstance(item_function, RFT):
+            template_dict["function"]["itemFunction"]=item_function._rft_json
+        else:
+            template_dict["function"]["itemFunction"]=item_function
+
+    if aggregation_function is not None:
+        if isinstance(aggregation_function, RFT):
+            template_dict["function"]["aggregationFunction"]=aggregation_function._rft_json
+        else:
+            template_dict["function"]["aggregationFunction"]=aggregation_function
+
+    if processing_function is not None:
+        if isinstance(processing_function, RFT):
+            template_dict["function"]["processingFunction"]=processing_function._rft_json
+        else:
+            template_dict["function"]["processingFunction"]=processing_function
+
+    #if mosaic_operation is not None:
+        #template_dict["function"]["mosaicOperation"] = mosaic_operation
+    template_dict["function"]["type"] = "RasterCollectionFunction"
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["arguments"]["RasterCollection"]["value"] = raster_ra
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
+
+class RFT:
+    """
+    Represents a callable object created from a Raster Function Template(RFT) portal item. 
+    This object serves as a python function corresponding to the Raster Function Template. 
+
+    Once an RFT class object has been created, a single question mark before, or after the 
+    RFT object will show help relative to it. The help document would display the parameters
+    that were marked as public by the author of the RFT. 
+
+    If any of the input values need to be given or overriden, the values maybe specified 
+    as inputs directly to the RFT object. RFT objects can only be called using keyword 
+    arguments. 
+
+    .. code-block:: python
+
+        # Usage Example 1
+
+        rft_item_object = RFT(rft_item)
+        rft_item_object?
+        imagery_layer_output = rft_item_object(param1=<ImageryLayer object>, param2=<value>)
+        # In the above rft object, it is assumed that param1 represents the ImageryLayer input to the RFT.
+        imagery_layer_output #This would display a new ImageryLayer object with the RFT applied on it.
+
+    .. code-block:: python
+
+        # Usage Example 2 
+
+        # If the RFT is capable of working with an array of rasters
+
+        rft_item_object = RFT(rft_item)
+        rft_item_object?
+        imagery_layer_output = rft_item_object(param1=[<ImageryLayer object1>,<ScalarValue>,<ImageryLayer object2>], param2=<value>)
+        imagery_layer_output #This would display a new ImageryLayer object with the RFT applied on it.
+
+    ========================  ====================================================================
+    **Arguments**             **Description**
+    ------------------------  --------------------------------------------------------------------
+    raster_function_template  required, input portal raster function template item.
+    ------------------------  --------------------------------------------------------------------
+    gis                       optional, GIS on which the RFT object is based on. 
+    ========================  ====================================================================
+
+    """
+    def __init__(self, raster_function_template,gis=None):
+        self._is_public_flag = False
+        self._rft=raster_function_template
+        self._gis = _arcgis.env.active_gis if gis is None else gis
+        key_value_dict={}
+        if(".rft.xml" in self._rft.name):
+            _rft_json = self.to_json(self._gis)
+        else:
+            file_path = self._rft.get_data()
+            f=open(file_path, "r")
+            file_content = f.read()
+            file_content = file_content.replace("false", "False")
+            file_content = file_content.replace("true", "True")
+            _rft_json = eval(file_content)
+        self._rft_json = _find_object_ref(_rft_json, {}, self)
+        global node, end_node 
+        node = 0
+        end_node=0
+        self._rft_dict, self._raster_dict = self._find_arguments_()
+        if self._rft_dict.keys() & hidden_inputs:
+            for key in hidden_inputs:
+                self._rft_dict.pop(key,None)
+        self._arguments=copy.deepcopy(self._rft_dict)
+        self.arguments = copy.deepcopy(self._arguments)
+
+    @property
+    def __doc__(self):
+        tab_value =-1
+        help="\"\"\"\n"
+        if("description" in self._rft_json):
+            help=help+self._rft_json["description"]
+        else:
+            help=help+self._rft_json["function"]["description"]
+        help = help+"\n\nParameters\n----------\n"
+        for key,value in self._rft_dict.items():
+            help=help+"\n"+(str(key)+" : "+str(value))
+
+        help=help+("\n\nReturns\n-------\n")
+        help=help+("Imagery Layer, on which the function chain is applied \n")
+        help=help+"\"\"\""
+        print(help)
+
+    @property
+    def __signature__(self):
+        from inspect import Signature, Parameter
+        signature_list=[]
+        for name,value in self.arguments.items():
+            signature_list.append(Parameter(name, Parameter.POSITIONAL_OR_KEYWORD, default=value))
+        sig = Signature(signature_list)
+        return sig
+
+
+    def __call__(self,*args,**kwargs):
+        i=0
+        key_list=list(self._arguments.keys())
+        for pos_arg in args:
+            kwargs.update({key_list[i]:pos_arg})
+            i=i+1
+            
+        if(len(kwargs)==1):
+            for k,v in self._raster_dict.items():
+                self._raster_dict.update({k:kwargs[list(kwargs.keys())[0]]})	
+            return self._apply_rft(self._raster_dict, self._gis)	           
+
+        for key in kwargs.keys():
+            for k in self._arguments.keys():
+                if(k==key):
+                    self._arguments[k]=kwargs[key]
+        return self._apply_rft(self._arguments, self._gis)
+
+        
+    def to_json(self, gis =None):
+        """
+        Converts the raster function template into a dictionary.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        gis                   optional, GIS on which the RFT object is based on. 
+        =================     ====================================================================
+
+        :return: dictionary
+        """
+        task = "ConvertRasterFunctionTemplate"
+        gis = _arcgis.env.active_gis if gis is None else gis
+        url = gis.properties.helperServices.rasterUtilities.url
+
+        gptool = _arcgis.gis._GISResource(url, gis)
+        params = {}
+        params["inputRasterFunction"] = {"itemId": self._rft.itemid}
+        params["outputFormat"]="json"
+        task_url, job_info, job_id = _analysis_job(gptool, task, params)
+        job_info = _analysis_job_status(gptool, task_url, job_info)
+        job_values = _analysis_job_results(gptool, task_url, job_info)
+        result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        return result
+
+    def _apply_argument(self, input_dict,arg_dict):
+        if "arguments" in input_dict.keys():
+            if "isDataset" in input_dict["arguments"].keys():
+                if(input_dict["arguments"]["isDataset"] == False):
+                    if(("value" in input_dict["arguments"]) and "elements" in input_dict["arguments"]["value"]):
+                        for arg_element in input_dict["arguments"]["value"]["elements"]:
+                            self._apply_argument(arg_element["arguments"],arg_dict)
+                else:
+                    if(("value" in input_dict["arguments"]) and "arguments" in input_dict["arguments"]["value"]):
+                        self._apply_argument(input_dict["arguments"]["value"]["arguments"],arg_dict)
+            self._apply_argument(input_dict["arguments"],arg_dict)
+        flag_rasters = -1
+        for key, value in input_dict.items():
+            if isinstance(value, dict):
+                if (("type" in value) and value["type"]=="RasterFunctionTemplate") and "arguments" in value.keys():
+                    if "isDataset" in value["arguments"].keys():
+                        if(value["arguments"]["isDataset"] == False):
+                            for arg_element in value["arguments"]["value"]["elements"]:
+                                self._apply_argument(arg_element["arguments"],arg_dict)
+                        else:
+                            if "arguments" in value["arguments"]["value"]:
+                                self._apply_argument(value["arguments"]["value"]["arguments"],arg_dict)
+                    self._apply_argument(value["arguments"],arg_dict)
+                    flag_rasters = 1
+                if(("type" in value) and value["type"]=="RasterFunctionVariable"):
+                    for k,v in arg_dict.items():
+                        if(value["name"]==k):
+                            if isinstance(v,ImageryLayer) or isinstance(v, _FeatureLayer):
+                                raster = _raster_input_rft(v)
+                                v =_input_rft(raster)
+                                if isinstance(raster,str):
+                                    value["value"]=v
+                                    flag_rasters=1
+                                elif isinstance(raster,dict):
+                                    if raster.keys() & {"mosaicRule"}:
+                                        value["value"]=v
+                                    else:
+                                        input_dict.update({key:v})
+                                break
+                            else:
+                                if("value" in value):
+                                    if isinstance(value["value"],dict):
+                                        if "type" in value["value"]:
+                                            if value["value"]["type"]=="Scalar":
+                                                value["value"]={"type":"Scalar","value":v}
+                                                break
+                                            elif value["value"]["type"]=="RasterDatasetName":
+                                                value["value"]=v
+                                                break
+                                                
+                                        else:
+                                            value["value"]=v
+                                            break
+                                    else:
+                                        value["value"]=v
+                                        break
+                                else:
+                                    value["value"]=v
+                                    if (isinstance(value["value"], numbers.Number) and value["isDataset"]==True):
+                                        value["value"]={"type":"Scalar","value":v}
+                                        break
+
+                            if "name" in value and "value" in value:
+                                if isinstance(value["value"], dict):
+                                    if("elements" in value["value"].keys()):
+                                        raster = _raster_input_rft(v)
+                                        v =_input_rft(raster)
+                                        if isinstance(raster,list):
+                                            value["value"]=v
+                                            flag_rasters=1
+                                            break
+                            else:
+                                if("value" in value):
+                                    if isinstance(value["value"],dict):
+                                        if "type" in value["value"]:
+                                            if value["value"]["type"]=="Scalar":
+                                                value["value"]={"type":"Scalar","value":v}
+                                                break
+                                            elif value["value"]["type"]=="RasterDatasetName":
+                                                value["value"]=v
+                                                break
+                                        else:
+                                            value["value"]=v
+                                            break
+                                    else:
+                                        value["value"]=v
+                                        break
+                                else:
+                                    value["value"]=v
+                                    if isinstance(value["value"], numbers.Number) and value["isDataset"]==True:
+                                        value["value"]={"type":"Scalar","value":v}
+                                        break
+                    if(flag_rasters==-1) and "Rasters" in input_dict.keys():
+                        elements_structure = []
+                        if (isinstance (input_dict["Rasters"]["value"], dict)) and "elements" in input_dict["Rasters"]["value"]:
+                            elements_structure = input_dict["Rasters"]["value"]["elements"]
+                        elif isinstance(input_dict["Rasters"]["value"],list):
+                            elements_structure = input_dict["Rasters"]["value"]
+                        for element in elements_structure:
+                            if isinstance(element,dict):
+                                if (("type" in element) and element["type"]=="RasterFunctionTemplate") and "arguments" in element.keys():
+                                    if "isDataset" in element["arguments"].keys():
+                                        if(element["arguments"]["isDataset"] == False):
+                                            for arg_element in element["arguments"]["value"]["elements"]:
+                                                self._apply_argument(arg_element["arguments"],arg_dict)
+                                        else:
+                                            if(("value" in element["arguments"]) and "arguments" in element["arguments"]["value"]):
+                                                self._apply_argument(element["arguments"]["value"]["arguments"],arg_dict)
+                                    self._apply_argument(element["arguments"],arg_dict)
+                                    flag_rasters = 1
+                            for k,v in arg_dict.items():
+                                if "name" in element:
+                                    if(element["name"]==k):
+                                        if isinstance(v,ImageryLayer) or isinstance(v, _FeatureLayer):
+                                            raster = _raster_input_rft(v)
+                                            v =_input_rft(raster)
+                                            if isinstance(raster,str):
+                                                element.clear()
+                                                element.update(v)
+                                            elif isinstance(raster,dict):
+                                                if raster.keys() & {"mosaicRule"}:
+                                                    element.update(v)
+                                                else:
+                                                    input_dict.update({key:v})
+                                            flag_rasters=1
+                                        else:
+                                            if("value" in element):
+                                                if isinstance(element["value"],dict):
+                                                    if "type" in element["value"]:
+                                                        if element["value"]["type"]=="Scalar":
+                                                            element.clear()
+                                                            element.update({"type":"Scalar","value":v})
+                                                            break
+                                                else:
+                                                    element["value"]=v
+                                                    break
+                                            else:
+                                                element["value"]=v
+                                                if isinstance(element["value"], numbers.Number) and element["isDataset"]==True:
+                                                    element.clear()
+                                                    element.update({"type":"Scalar","value":v})
+                                                    break
+                        if (flag_rasters==1 and "Rasters" in input_dict.keys()):
+                            if "value" in input_dict["Rasters"]:
+                                if "elements" in input_dict["Rasters"]["value"]:
+                                    input_dict["Rasters"]["value"]=input_dict["Rasters"]["value"]["elements"]
+                if((("type" in value) and value["type"]=="RasterFunctionVariable") and ("value" in value)) and isinstance(value["value"],dict):
+                    if "function" in value["value"]:
+                        self._apply_argument(value["value"]["arguments"],arg_dict)
+
+        return input_dict
+
+    def _query_rasters(self, rft_dict, raster_dict):
+        if "arguments" in rft_dict.keys():
+            self._query_rasters(rft_dict["arguments"],raster_dict)
+        for key, value in rft_dict.items():
+            if isinstance(value, dict):
+                if (value["type"]=="RasterFunctionTemplate") and "arguments" in value.keys():
+                    self._query_rasters( value["arguments"],raster_dict)
+                if "isDataset" in value.keys():
+                    if (value["isDataset"]==True) and (value["type"]=="RasterFunctionVariable"):
+                        if "name" in value and "value" not in value:
+                            raster_dict.update({value["name"]:None})
+                    if(value["isDataset"]==False) and (value["type"]=="RasterFunctionVariable"):
+                        if "value" in value.keys():
+                            if(isinstance(value["value"],dict)):
+                                if "type" in value["value"].keys():
+                                    if value["value"]["type"] == "ArgumentArray":
+                                        if value["value"]["elements"]:
+                                            for element in value["value"]["elements"]:
+                                                if (element["type"]=="RasterFunctionTemplate") and "arguments" in element.keys():
+                                                    self._query_rasters( element["arguments"],raster_dict)
+                                                if isinstance(element, dict):
+                                                    if "isDataset" in element and "type" in element:
+                                                        if (element["isDataset"]==True) and (element["type"]=="RasterFunctionVariable"):
+                                                            if "name" in element and "value" not in element:
+                                                                raster_dict.update({element["name"]:None})
+                                        else:
+                                            raster_dict.update({value["name"]:None})
+
+        return raster_dict
+
+    def _find_arguments_(self):
+        from operator import eq
+        import numbers
+        gdict = self._rft_json
+        key_value_dict =  {}
+        raster_dictionary = {}
+
+        def _function_create(value): #Create new node for the function if it doesn't exist yet
+            if "isDataset" in value["arguments"].keys():
+                if(value["arguments"]["isDataset"] == False):
+                    for arg_element in value["arguments"]["value"]["elements"]:
+                        _function_traversal(arg_element)
+                else:
+                    if("value" in value["arguments"]):
+                        _raster_function_traversal(value["arguments"])
+            _function_traversal(value["arguments"])
+
+        def _raster_function_traversal(raster_dict, index=1, scalar_name="Raster", ispublic=False): #If isDataset=True
+            if "value" in raster_dict.keys(): #Handling Scalar rasters
+                if raster_dict["value"] is None:
+                    if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                        raster_name = _python_variable_name(raster_dict["name"])
+                        raster_dict.update({"name":raster_name})
+                        key_value_dict.update({raster_name:None})
+                elif isinstance(raster_dict["value"], dict):
+                    if "value" in raster_dict["value"]:
+                        if isinstance(raster_dict["value"]["value"], numbers.Number):
+                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                if "name" in raster_dict.keys():
+                                    raster_name = _python_variable_name(raster_dict["name"])
+                                    raster_dict.update({"name":raster_name})
+                                    key_value_dict.update({raster_name:raster_dict["value"]["value"]})
+                                    raster_dictionary.update({raster_name:raster_dict["value"]["value"]})
+                                else:
+                                    scalar_name = scalar_name+"_scalar_"+str(index)
+                                    raster_dict.update({"name":scalar_name})
+                                    key_value_dict.update({scalar_name:raster_dict["value"]["value"]}) 
+
+                    elif "elements" in raster_dict["value"]:  #Handling Raster arrays
+                        if raster_dict["value"]["elements"]:  #if elements has any value in the list
+                            for e in raster_dict["value"]["elements"]:
+                                index = (raster_dict["value"]["elements"].index(e))+1
+                                if "name" in raster_dict:
+                                    scalar_name = _python_variable_name(raster_dict["name"])
+                                if ("type" in e) and e["type"]=="FunctionRasterDatasetName":
+                                    if self._is_public_flag is False or  ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                        raster_name = _python_variable_name(raster_dict["name"])
+                                        raster_dict.update({"name":raster_name})
+                                        key_value_dict.update({raster_name:e["arguments"]["Raster"]["datasetName"]["name"]})
+                                        raster_dictionary.update({raster_name:e["arguments"]["Raster"]["datasetName"]["name"]})
+                                elif "function" in e.keys(): # if function template inside
+                                    _function_traversal(e)
+                                else:  #if raster dataset inside raster array
+                                    if self._is_public_flag is False or ispublic==True or ("isPublic" not in raster_dict.keys()) or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
+                                        _raster_function_traversal(e,  index, scalar_name, ispublic=True)
+                        else: # If elements is empty i.e Rasters has no value when rft was created
+                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                raster_name = _python_variable_name(raster_dict["name"])
+                                raster_dict.update({"name":raster_name})
+                                key_value_dict.update({raster_name:None})
+                                raster_dictionary.update({raster_name:None})
+                    elif "name" in raster_dict["value"]: #if raster properties are preserved
+                        if "function" in raster_dict["value"]:
+                            _function_traversal(raster_dict["value"])
+                        else:
+                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                raster_name = _python_variable_name(raster_dict["name"])
+                                raster_dict.update({"name":raster_name})
+                                key_value_dict.update({raster_name:raster_dict["value"]["name"]})
+                                raster_dictionary.update({raster_name:raster_dict["value"]["name"]})
+
+                    elif ("type" in raster_dict["value"]) and raster_dict["value"]["type"]=="FunctionRasterDatasetName":
+                        if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                            raster_name = _python_variable_name(raster_dict["name"])
+                            raster_dict.update({"name":raster_name})
+                            key_value_dict.update({raster_name:raster_dict["value"]["arguments"]["Raster"]["datasetName"]["name"]})
+                            raster_dictionary.update({raster_name:raster_dict["value"]["arguments"]["Raster"]["datasetName"]["name"]})
+                    elif ("type" in raster_dict["value"]) and raster_dict["value"]["type"]=="RasterBandCollectionName":
+                        if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                            raster_name = _python_variable_name(raster_dict["name"])
+                            raster_dict.update({"name":raster_name})
+                            key_value_dict.update({raster_name:raster_dict["value"]["datasetName"]["name"]})
+                            raster_dictionary.update({raster_name:raster_dict["value"]["datasetName"]["name"]})
+                    elif "datasetName" in raster_dict["value"]: #local image location
+                        if "name" in raster_dict["value"]["datasetName"]:
+                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict["value"]["datasetName"]) and raster_dict["value"]["datasetName"]["isPublic"] is True):
+                                raster_name = _python_variable_name(raster_dict["value"]["datasetName"]["name"])
+                                raster_dict["value"]["datasetName"].update({"name":raster_name})
+                                key_value_dict.update({raster_name:None})
+
+                    elif "function" in raster_dict["value"].keys(): # if function template inside
+                        _function_traversal(raster_dict["value"])
+                elif isinstance (raster_dict["value"], list): #raster_dict"value" does not have "value" or "elements" in it (ArcMap scalar rft case)
+                        for x in raster_dict["value"]:
+                            if isinstance(x, numbers.Number):  #Check if scalar float value
+                                if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                     if "name" in raster_dict.keys():
+                                         raster_name = _python_variable_name(raster_dict["name"])
+                                         raster_dict.update({"name":raster_name})
+                                         key_value_dict.update({raster_name:x}) 
+                                     #else:
+                                         #time.sleep(.00000001)scalar_name+"scalar"+str(index))
+                                         #scalar_name = "scalar"+''.join(e for e in str(datetime.now()) if e.isalnum())
+                                         #raster_dict.update({"name":scalar_name})
+                                         #key_value_dict.update({scalar_name:x}) 
+                elif isinstance (raster_dict["value"], numbers.Number):
+                    if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
+                        if "name" in raster_dict.keys():
+                            raster_name = _python_variable_name(raster_dict["name"])
+                            raster_dict.update({"name":raster_name})
+                            key_value_dict.update({raster_name:raster_dict["value"]})
+                        else:
+                            scalar_name = scalar_name+"_scalar_"+str(index)
+                            raster_dict.update({"name":scalar_name})
+                            key_value_dict.update({scalar_name:raster_dict["value"]}) 
+            else:
+                if self._is_public_flag is False  or ispublic==True or  (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                    raster_name = _python_variable_name(raster_dict["name"])
+                    raster_dict.update({"name":raster_name})
+                    key_value_dict.update({raster_name:None})
+                    raster_dictionary.update({raster_name:None})
+
+        def _function_traversal(dictionary):
+            if "function" in dictionary.keys():
+                _function_create(dictionary)
+            for key,value in dictionary.items():
+                if isinstance(value , dict):
+                    if "isDataset" in value.keys():
+                        if (value["isDataset"] == True) or key == "raster" or key == "Raster2" or key == "Rasters" or key == "Raster":
+                            _raster_function_traversal(value)
+                        elif (value["isDataset"] == False):  #Parameters
+                            if "value" in value:                                
+                                if value["value"] is not None or isinstance(value["value"],bool):
+                                    if (isinstance(value["value"],dict)) and "elements" in value["value"]:
+                                        if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
+                                            raster_name = _python_variable_name(value["name"])
+                                            value.update({"name":raster_name})
+                                            key_value_dict.update({raster_name:value["value"]["elements"]})
+                                    else:                                        
+                                        if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
+                                            raster_name = _python_variable_name(value["name"])
+                                            value.update({"name":raster_name})
+                                            key_value_dict.update({raster_name:value["value"]})
+                            else:
+                                if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
+                                    raster_name = _python_variable_name(value["name"])
+                                    value.update({"name":raster_name})
+                                    key_value_dict.update({raster_name:None})
+                    elif "datasetName" in value.keys():
+                        if self._is_public_flag is False or  (("isPublic" in value["datasetName"]) and value["datasetName"]["isPublic"] is True):
+                            key_value_dict.update({key:value["datasetName"]["name"]})
+                    elif "function" in value.keys():  #Function Chain inside Raster
+                        _function_create(value)
+
+        if "function" in gdict.keys():
+            if "isDataset" in gdict["arguments"].keys():
+                if(gdict["arguments"]["isDataset"] == False):
+                    if ("value" in gdict["arguments"]):
+                        if "elements" in gdict["arguments"]["value"]:
+                            if gdict["arguments"]["value"]["elements"]:
+                                for arg_element in gdict["arguments"]["value"]["elements"]:
+                                    _function_traversal(arg_element)
+                            else: # when gdict["arguments"]["value"]["elements"]=[]
+                                _raster_function_traversal(gdict["arguments"])
+                    else:
+                        _raster_function_traversal(gdict["arguments"])
+            
+                else:
+                    if "value" in gdict["arguments"]:
+                        _function_traversal(gdict["arguments"]["value"])
+                    elif (gdict["arguments"]["isDataset"] == True): #Aspect function with only raster parameter
+                        _raster_function_traversal(gdict["arguments"])
+            _function_traversal(gdict["arguments"])
+        return key_value_dict, raster_dictionary
+
+
+    def _apply_rft(self, arg_dict=None, gis = None):
+        rft_dict = copy.deepcopy(self._rft_json)
+        arg_dict_copy=copy.copy(arg_dict)
+        if arg_dict_copy is not None:
+            for key in list(arg_dict_copy.keys()):
+                if(arg_dict_copy[key] is None):
+                    arg_dict_copy.pop(key,None)
+            complete_rft_dict = self._apply_argument(rft_dict,arg_dict_copy)
+
+        newlyr = ImageryLayer(complete_rft_dict, self._gis)
+        _LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+        newlyr._fn = complete_rft_dict
+        newlyr._fnra = complete_rft_dict
+        return newlyr
+
+    def draw_graph(self,show_attributes=False, graph_size="14.25, 15.25"):
+
+        """
+        Displays a structural representation of the function chain and it's raster input values. If
+        show_attributes is set to True, then the draw_graph function also displays the attributes
+        of all the functions in the function chain, representing the rasters in a blue rectangular
+        box, attributes in green rectangular box and the raster function names in yellow.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        show_attributes       optional boolean. If True, the graph displayed includes all the
+                              attributes of the function and not only it's function name and raster
+                              inputs
+                              Set to False by default, to display only he raster function name and
+                              the raster inputs to it.
+        -----------------     --------------------------------------------------------------------
+        graph_size            optional string. Maximum width and height of drawing, in inches,
+                              seperated by a comma. If only a single number is given, this is used
+                              for both the width and the height. If defined and the drawing is
+                              larger than the given size, the drawing is uniformly scaled down so
+                              that it fits within the given size.
+        =================     ====================================================================
+
+        :return: Graph
+        """
+        from operator import eq
+        import numbers
+        try:
+            from graphviz import Digraph
+        except:
+            print("Graphviz needs to be installed. pip install graphviz")
+
+        G = Digraph(comment='Raster Function Chain', format = 'svg') # To declare the graph
+        G.clear() #clear all previous cases of the same name
+        G.attr(rankdir='LR', len='1',overlap="false",splines='ortho', nodesep='0.5',size=graph_size)   #Display graph from Left to Right
+        root=0
+        gdict = self._rft_json
+        global nodenumber,dict_arg
+        dict_arg={}
+        
+        def _function_create(value,childnode): #Create new node for the function if it doesn't exist yet
+            global nodenumber
+            dict_temp_arg={}
+            list_arg=[]
+            flag=0
+            for k_arg, v_arg in value["arguments"].items():
+                list_arg.append(k_arg+str(v_arg))
+ 
+            list_arg.sort()
+            list_arg_str=str(list_arg)
+            if dict_arg is not None:
+                for k_check in dict_arg.keys():
+                    if k_check == list_arg_str:
+                        G.edge(str(dict_arg.get(k_check)),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                        flag=1
+                                    
+            if flag == 0:
+                nodenumber+=1
+                G.node(str(nodenumber),value["function"]["name"], style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
+                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                connect = nodenumber
+                dict_temp_arg={list_arg_str:connect}
+                dict_arg.update(dict_temp_arg)
+                if "isDataset" in value["arguments"].keys():
+                    if(value["arguments"]["isDataset"] == False):
+                        for arg_element in value["arguments"]["value"]["elements"]:
+                            _function_graph(arg_element,connect)
+                    elif (value["arguments"]["isDataset"] == True):
+                        _raster_function_graph(value["arguments"],connect)
+                _function_graph(value["arguments"],connect)
+
+        def _raster_function_graph(raster_dict, childnode): #If isDataset=True
+            global nodenumber,connect
+            if "value" in raster_dict.keys(): #Handling Scalar rasters
+                if raster_dict["value"] is not None:
+                    if not (isinstance(raster_dict["value"],dict)):
+                        if isinstance(raster_dict["value"], numbers.Number): 
+                            nodenumber+=1
+                            G.node(str(nodenumber), str(raster_dict["value"]) , style=('filled'),fontsize="12", shape='circle',fixedsize="shape",color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "value" in raster_dict["value"]:
+                        if isinstance(raster_dict["value"]["value"], numbers.Number): 
+                            nodenumber+=1
+                            G.node(str(nodenumber), str(raster_dict["value"]["value"]) , style=('filled'),fontsize="12", shape='circle',fixedsize="shape",color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "elements" in raster_dict["value"]:  #Handling Raster arrays
+                        if raster_dict["value"]["elements"]:  #if elements has any value in the list
+                            for e in raster_dict["value"]["elements"]:
+                                if "function" in e.keys(): # if function template inside
+                                    _function_graph(e,childnode)
+                                else:  #if raster dataset inside raster array
+                                    _raster_function_graph(e, childnode)
+                        else: # If elements is empty i.e Rasters has no value when rft was created
+                            nodenumber+=1
+                            G.node(str(nodenumber),str(raster_dict["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "function" in raster_dict["value"]: # If function in value[]
+                        _function_graph(raster_dict,childnode)
+
+                    elif "name" in raster_dict["value"]: #if raster properties are preserved
+                        if "function" in raster_dict["value"]:
+                            _function_graph(raster_dict["value"],childnode)
+                        else:
+                            nodenumber+=1
+                            G.node(str(nodenumber),str(raster_dict["value"]["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "datasetName" in raster_dict["value"]: #local image location
+                        if "name" in raster_dict["value"]["datasetName"]:
+                            nodenumber+=1
+                            G.node(str(nodenumber),str(raster_dict["value"]["datasetName"]["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "function" in raster_dict["value"].keys(): # if function template inside
+                        _function_graph(raster_dict["value"],childnode)
+                    #raster_dict"value" does not have "value" or "elements" in it (ArcMap scalar rft case)
+                    elif isinstance (raster_dict["value"], list):
+                        for x in raster_dict["value"]:
+                            if isinstance(x, numbers.Number):  #Check if scalar float value
+                                nodenumber+=1
+                                G.node(str(nodenumber), str(x), style=('filled'), fontsize="12", shape='circle',fixedsize="shape", color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                        
+                elif "name" in raster_dict.keys():      
+                    rastername = str(raster_dict["name"]) #Handling Raster
+                    nodenumber+=1
+                    G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                    G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                
+
+            elif "datasetName" in raster_dict.keys():
+                rastername = str(raster_dict["datasetName"]["name"]) #Handling Raster
+                nodenumber+=1
+                G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+
+            elif "name" in raster_dict: 
+                rastername = str(raster_dict["name"]) #Handling Raster
+                nodenumber+=1
+                G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+
+
+        def _function_graph(dictionary, childnode): 
+            global nodenumber,connect
+            count=0
+            if "function" in dictionary.keys():
+                _function_create(dictionary,childnode)
+
+            for key,value in dictionary.items():
+                if isinstance(value , dict):
+                    if "isDataset" in value.keys():
+                        if (value["isDataset"] == True) or key == "Raster" or key == "Raster2" or key == "Rasters":
+                            _raster_function_graph(value, childnode)
+                        elif (value["isDataset"] == False) and show_attributes == True:  #Parameters
+                            nodenumber+=1
+                            if "name" in value and value["name"] not in hidden_inputs:
+                                if "value" in value:
+                                    if value["value"] is not None or isinstance(value["value"],bool):
+                                        atrr_name=str(value["name"])+" = "+str(value["value"])
+                                else:
+                                    atrr_name=str(value["name"])
+
+                                G.node(str(nodenumber), atrr_name, style=('filled'), shape='rectangle',color='antiquewhite',fillcolor='antiquewhite', fontname="sans-serif")
+                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "datasetName" in value.keys():
+                        _raster_function_graph(value, childnode)
+
+                    elif "function" in value.keys():  #Function Chain inside Raster
+                        _function_create(value,childnode)
+
+        if "function" in gdict.keys():
+            G.node(str(root),gdict["function"]["name"], style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
+            nodenumber=root
+            if "isDataset" in gdict["arguments"].keys():
+                if(gdict["arguments"]["isDataset"] == False):
+                    if "value" in gdict["arguments"]:
+                        if "elements" in gdict["arguments"]["value"]:
+                            if gdict["arguments"]["value"]["elements"]:
+                                for arg_element in gdict["arguments"]["value"]["elements"]:
+                                    _function_graph(arg_element,root)
+                            else: # when gdict["arguments"]["value"]["elements"]=[]
+                                _raster_function_graph(gdict["arguments"],root)
+                    else:
+                        _raster_function_graph(gdict["arguments"],root)
+                else:
+                    if "value" in gdict["arguments"]:
+                        _function_graph(gdict["arguments"]["value"],root)
+                    elif (gdict["arguments"]["isDataset"] == True):
+                        _raster_function_graph(gdict["arguments"],root)
+            _function_graph(gdict["arguments"],root)
+        return G
+  
+    def _repr_svg_(self):
+        graph=self.draw_graph()
+        svg_graph=graph.pipe().decode('utf-8')
+        return svg_graph
+

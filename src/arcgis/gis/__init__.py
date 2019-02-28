@@ -680,6 +680,8 @@ class GIS(object):
         mitigation_msg =  "You can still connect to your portal by creating "\
             "a GIS() object with the standard user/password, cert_file, etc. "\
             "See https://bit.ly/2DT1156 for more information."
+        _log.warning('Authenticating in GIS("home") mode failed.'\
+                    '{}'.format(mitigation_msg))
         raise RuntimeError("{}\n-----\n{}".format(err_msg, mitigation_msg))
 
     def _uri_validator(self, x):
@@ -9148,6 +9150,9 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
+        if hasattr(self, "_uri"):
+            if self._uri:
+                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)

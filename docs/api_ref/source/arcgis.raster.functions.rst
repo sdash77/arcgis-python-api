@@ -358,6 +358,10 @@ raster_calculator
 _________________
 .. automethod:: arcgis.raster.functions.raster_calculator
 
+raster_collection_function
+_________________
+.. automethod:: arcgis.raster.functions.raster_collection_function
+
 remap
 _____
 .. automethod:: arcgis.raster.functions.remap
@@ -494,3 +498,9 @@ _____________________
 weighted_sum
 _____________________
 .. automethod:: arcgis.raster.functions.weighted_sum
+
+RFT
+------
+.. autoclass:: arcgis.raster.functions.RFT
+    :members:
+    :undoc-members:

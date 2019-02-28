@@ -936,7 +936,7 @@ class _ItemDefinition(CloneNode):
         self._item_property_names = ['title', 'type', 'description',
                                      'snippet', 'tags', 'culture',
                                      'accessInformation', 'licenseInfo',
-                                     'typeKeywords', 'extent', 'url']
+                                     'typeKeywords', 'extent', 'url', 'properties']
         self.portal_item = portal_item
         self.folder = folder
         self.item_extent = item_extent
@@ -1406,15 +1406,18 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         del service_definition[key]
 
                 # Set the extent and spatial reference of the service
-                new_extent = _deep_get(service_definition, 'initialExtent')
-                if new_extent is not None:
-                    if self._service_extent:
-                        new_extent = json.loads(self._service_extent.JSON)
-                        if 'maintain-spatial-ref' in original_item['tags']:
-                            new_extent = json.loads(project([Geometry(new_extent)], in_sr=new_extent['spatialReference'], out_sr=service_definition['initialExtent']['spatialReference'])[0].JSON)
-                            new_extent['spatialReference'] = service_definition['initialExtent']['spatialReference']
-                    service_definition['initialExtent'] = new_extent
-                    service_definition['spatialReference'] = new_extent['spatialReference']
+                if 'spatialReference' in service_definition:
+                    new_extent = _deep_get(service_definition, 'initialExtent')
+                    if new_extent is not None:
+                        if 'spatialReference' not in new_extent:
+                            new_extent['spatialReference'] = service_definition['spatialReference']
+                        if self._service_extent:
+                            new_extent = json.loads(self._service_extent.JSON)
+                            if 'maintain-spatial-ref' in original_item['tags']:
+                                new_extent = json.loads(project([Geometry(new_extent)], in_sr=new_extent['spatialReference'], out_sr=service_definition['spatialReference'])[0].JSON)
+                                new_extent['spatialReference'] = service_definition['spatialReference']
+                        service_definition['initialExtent'] = new_extent
+                        service_definition['spatialReference'] = new_extent['spatialReference']
 
                 if self.is_view:
                     properties = ['name', 'isView', 'sourceSchemaChangesAllowed', 'isUpdatableView', 'capabilities', 'isMultiServicesView']
@@ -1445,7 +1448,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     self.created_items.append(new_item)
                 except RuntimeError as ex:
                     if "already exists" in str(ex):
-                        name = self._get_unique_name(self.target, name)
+                        name = self._get_unique_name(self.target, name, True)
                         service_definition['name'] = name
                         new_item = self.target.content.create_service(name, service_type='featureService', create_params=service_definition, folder=self.folder)
                         self.created_items.append(new_item)
