@@ -259,7 +259,7 @@ def forest(input_layer,
     return
 #--------------------------------------------------------------------------
 def glr(input_layer,
-        dep_var,
+        var_dependent,
         var_explanatory,
         regression_family="Continuous",
         features_to_predict=None,
@@ -288,7 +288,7 @@ def glr(input_layer,
     input_layer                  Required FeatureSet. The layer containing the dependent and
                                  independent variables.
     --------------------------   ---------------------------------------------------------------
-    dep_var                      Required String. The numeric field containing the observed
+    var_dependent                      Required String. The numeric field containing the observed
                                  values you want to model.
     --------------------------   ---------------------------------------------------------------
     var_explanatory              Required String. One or more fields representing independent
@@ -421,7 +421,7 @@ def glr(input_layer,
         "regression_family" : (str, "regressionFamily"),
         "gen_coeff_table" : (bool, "generateCoefficientTable"),
         "exp_var_matching" : (list, "explanatoryVariableMatching"),
-        "dep_var" : (list, "dependentVariable"),
+        "var_dependent" : (list, "dependentVariable"),
         "var_explanatory" : (list, "explanatoryVariables"),
         "features_to_predict" : (_FeatureSet, "featuresToPredict"),
         "dep_mapping" : (list, "dependentMapping"),

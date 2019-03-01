@@ -332,11 +332,11 @@ aggregate_points.__annotations__ = {
                      'output_name': str
                 }
 
-def describe_data(input_layer,
-                  extent_output=False,
-                  sample_size=None,
-                  output_name=None,
-                  gis=None):
+def describe_dataset(input_layer,
+                     extent_output=False,
+                     sample_size=None,
+                     output_name=None,
+                     gis=None):
     """
     The Describe Dataset task provides an overview of your big data. The tool outputs a JSON
     detailing the input layer's geometry and time settings, schema, and summary statistics for each
@@ -418,48 +418,6 @@ def describe_data(input_layer,
         raise
     return
 
-
-
-
-def _describe_dataset(input_layer,
-                     gis=None):
-    """
-
-
-Parameters:
-
-   input_layer: Input Dataset (feature layer). Required parameter.
-
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-Returns:
-   output - Output JSON as a str
-
-
-    """
-    kwargs = locals()
-
-    gis = _arcgis.env.active_gis if gis is None else gis
-    url = gis.properties.helperServices.geoanalytics.url
-
-    params = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
-
-    _set_context(params)
-
-    param_db = {
-        "input_layer": (_FeatureSet, "inputLayer"),
-        "context": (str, "context"),
-        "output": (str, "Output JSON"),
-    }
-    return_values = [
-        {"name": "output", "display_name": "Output JSON", "type": str},
-    ]
-
-    return _execute_gp_tool(gis, "DescribeDataset", params, param_db, return_values, _use_async, url, True)
 
 def join_features(target_layer,
                   join_layer,
