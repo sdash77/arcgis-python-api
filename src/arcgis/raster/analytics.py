@@ -1558,12 +1558,8 @@ def create_image_collection(image_collection,
 
                                          The raster type parameters argument is a dictionary.
     ------------------                   --------------------------------------------------------------------
-    out_sr                               Optional, additional parameters of the service.
-                            
-                                         The following additional parameters can be specified:
-                                         - Spatial reference of the image_collection; The well-known ID of 
-                                         the spatial reference or a spatial reference dictionary object for the 
-                                         input geometries.
+    out_sr                               Optional integer. The well-known ID of the spatial reference. Sets
+                                         the image collection spatial reference. 
     ------------------                   --------------------------------------------------------------------
     context                               Optional, The context parameter is used to provide additional input parameters
                                             {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
@@ -1647,10 +1643,10 @@ def create_image_collection(image_collection,
     if out_sr is not None:
         if isinstance(out_sr, int):
             if context is not None:
-                context.update({'outSR': out_sr})
+                context.update({'outSR':{'wkid': out_sr}})
             else:
                 context = {}
-                context["outSR"]=out_sr
+                context["outSR"]={'wkid': out_sr}
 
     _set_context(params, context)
 
