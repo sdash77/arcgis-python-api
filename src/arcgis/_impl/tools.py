@@ -216,7 +216,7 @@ class _AsyncService(_GISService):
                     param_url = param_value.get("paramUrl")
                     result_url = "{}/jobs/{}/{}".format(task_url,
                                                         job_id,
-                                                                        param_url)
+                                                        param_url)
 
                     params = { "f" : "json" }
                     param_result = self._con.post(result_url, params, token=self._token)
@@ -232,9 +232,9 @@ class _AsyncService(_GISService):
 
         point_fs = {
             "layerDefinition":{
-               "currentVersion":10.11,
-              "copyrightText":"",
-              "defaultVisibility":True,
+                "currentVersion":10.11,
+                "copyrightText":"",
+               "defaultVisibility":True,
               "relationships":[
 
                   ],
@@ -272,60 +272,60 @@ class _AsyncService(_GISService):
                   ],
               "fields":[
                   {
-                     "alias":"OBJECTID",
-                    "name":"OBJECTID",
-                    "type":"esriFieldTypeOID",
+                      "alias":"OBJECTID",
+                      "name":"OBJECTID",
+                     "type":"esriFieldTypeOID",
                     "editable":False
                     },
-                 {
-                     "alias":"Title",
-                    "name":"TITLE",
-                    "length":50,
+                  {
+                      "alias":"Title",
+                     "name":"TITLE",
+                     "length":50,
                     "type":"esriFieldTypeString",
                     "editable":True
                     },
-                 {
+                  {
                      "alias":"Visible",
-                    "name":"VISIBLE",
-                    "type":"esriFieldTypeInteger",
+                     "name":"VISIBLE",
+                     "type":"esriFieldTypeInteger",
                     "editable":True
                     },
                  {
                      "alias":"Description",
-                    "name":"DESCRIPTION",
-                    "length":1073741822,
+                     "name":"DESCRIPTION",
+                     "length":1073741822,
                     "type":"esriFieldTypeString",
                     "editable":True
                     },
                  {
                      "alias":"Type ID",
-                    "name":"TYPEID",
-                    "type":"esriFieldTypeInteger",
+                     "name":"TYPEID",
+                     "type":"esriFieldTypeInteger",
                     "editable":True
                  }
               ]
               },
-           "featureSet":{
-               "features":[
-                  {
-                     "geometry":{
-                        "x":80.27032792000051,
-                       "y":13.085227147000467,
-                       "spatialReference":{
+            "featureSet":{
+                "features":[
+                   {
+                       "geometry":{
+                          "x":80.27032792000051,
+                         "y":13.085227147000467,
+                        "spatialReference":{
                            "wkid": 4326,
-                          "latestWkid":4326
+                           "latestWkid":4326
                        }
                        },
-                    "attributes":{
-                      "description":"blayer desc",
-                       "title":"blayer",
-                       "OBJECTID":0,
+                      "attributes":{
+                         "description":"blayer desc",
+                        "title":"blayer",
+                      "OBJECTID":0,
                        "VISIBLE":1
                        },
-                  "symbol":{
+                     "symbol":{
                         "angle":0,
-                       "xoffset":0,
-                       "yoffset":8.15625,
+                      "xoffset":0,
+                        "yoffset":8.15625,
                        "type":"esriPMS",
                        "url":"https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
                        "imageData":"iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
@@ -333,11 +333,11 @@ class _AsyncService(_GISService):
                        "width":15.75,
                        "height":21.75
                     }
-                 }
-                 ],
-              "geometryType":"esriGeometryPoint"
-              },
-           "nextObjectId":1
+                   }
+                   ],
+               "geometryType":"esriGeometryPoint"
+               },
+            "nextObjectId":1
         }
 
         input_layer_url = ""
@@ -371,8 +371,8 @@ class _AsyncService(_GISService):
                 fset = FeatureSet([Feature(geom)])
                 featcoll = {'layerDefinition': {
                     "geometryType": "esriGeometryPoint",
-                        "objectIdField": "OBJECTID",
-                        "fields": [
+                    "objectIdField": "OBJECTID",
+                    "fields": [
                             {
                                 "alias": "OBJECTID",
                                 "name": "OBJECTID",
@@ -431,14 +431,15 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def aggregate_points(self,
                          point_layer,
-                       polygon_layer,
-                       keep_boundaries_with_no_points=True,
-                       summary_fields=[],
-                       group_by_field=None,
-                       minority_majority=False,
-                       percent_points=False,
-                       output_name=None,
-                       context=None):
+                         polygon_layer,
+                         keep_boundaries_with_no_points=True,
+                         summary_fields=[],
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_points=False,
+                         output_name=None,
+                         context=None,
+                         estimate=False):
         """
         Aggregate points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points.
 
@@ -462,6 +463,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the estimated number of credits for the current task.
 
         Returns
         -------
@@ -491,6 +494,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -515,7 +524,8 @@ class _FeatureAnalysisTools(_AsyncService):
                                         weight_field=None,
                                         group_field=None,
                                         output_name=None,
-                                        context=None):
+                                        context=None,
+                                        estimate=False):
         """
         The Summarize Center and Dispersion task finds central features and directional distributions.
 
@@ -523,39 +533,42 @@ class _FeatureAnalysisTools(_AsyncService):
         **Argument**            **Description**
         --------------------    ---------------------------------------------------------
         analysis_layer          The point, line, or polygon features to be analyzed. This
-                              parameter can be a URL to a feature service layer with an
-                              optional filter to select specific feaures, or a feature
-                              collection
+                                parameter can be a URL to a feature service layer with an
+                                optional filter to select specific feaures, or a feature
+                                collection
         --------------------    ---------------------------------------------------------
         summarize_type          The method with which to summarize the analysis_layer.
-                              Choice List:
-                              ["CentralFeature", "MeanCenter", "MedianCenter",
-                              "Ellipse"]
-                              Example: "CentralFeature"
+                                Choice List:
+                                ["CentralFeature", "MeanCenter", "MedianCenter",
+                                "Ellipse"]
+                                Example: "CentralFeature"
         --------------------    ---------------------------------------------------------
         ellipse_size            The size of the output ellipse in standard deviations.
-                              The default ellipse size is 1. Valid choices are 1, 2, or
-                              3 standard deviations.
-                              Choice List: [1, 2, 3]
-                              Examples:
-                              "1"
-                              [1, 2, 3]
+                                The default ellipse size is 1. Valid choices are 1, 2, or
+                                3 standard deviations.
+                                Choice List: [1, 2, 3]
+                                Examples:
+                                "1"
+                                [1, 2, 3]
         --------------------    ---------------------------------------------------------
         weight_field            A numeric field in the analysis_layer to be used to
-                              weight locations according to their relative importance.
+                                weight locations according to their relative importance.
         --------------------    ---------------------------------------------------------
         group_field             The field used to group features for separate directional
-                              distribution calculations. The group_field can be of
-                              integer, date, or string type.
+                                distribution calculations. The group_field can be of
+                                integer, date, or string type.
         --------------------    ---------------------------------------------------------
         output_name             Optional string. Additional properties such as output
-                              feature service name.
+                                feature service name.
         --------------------    ---------------------------------------------------------
         context                 Optional string. Additional settings such as processing
-                              extent and output spatial reference.
+                                extent and output spatial reference.
         --------------------    ---------------------------------------------------------
         gis                     Optional, the GIS on which this tool runs. If not
-                              specified, the active GIS is used.
+                                specified, the active GIS is used.
+        --------------------    ---------------------------------------------------------
+        estimate                Optional Boolean.  Returns the estimated number of
+                                credits for the current task.
         ====================    =========================================================
 
         :returns:
@@ -586,6 +599,12 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
@@ -630,7 +649,8 @@ class _FeatureAnalysisTools(_AsyncService):
                             search_distance=None,
                             search_distance_unit=None,
                             output_name=None,
-                            context=None):
+                            context=None,
+                            estimate=False):
         """
         The Find Point Clusters task finds clusters of point features in surrounding
         noise based on their spatial distribution. Output is a layer containing records
@@ -662,6 +682,9 @@ class _FeatureAnalysisTools(_AsyncService):
         --------------------    ---------------------------------------------------------
         context                 Optional string. Additional settings such as processing
                                 extent and output spatial reference.
+        --------------------    ---------------------------------------------------------
+        estimate                Optional Boolean.  Returns the estimated number of
+                                credits for the current task.
         ====================    =========================================================
 
         :returns: Python dictionary with the following keys:
@@ -683,6 +706,12 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
@@ -707,7 +736,8 @@ class _FeatureAnalysisTools(_AsyncService):
                        bounding_polygon_layer=None,
                        aggregation_polygon_layer=None,
                        output_name=None,
-                       context=None):
+                       context=None,
+                       estimate=False):
         """
         The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
 
@@ -727,6 +757,9 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the credit usage for the current task.
+
 
         Returns
         -------
@@ -753,6 +786,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -772,8 +811,8 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def find_outliers(self,
                       analysis_layer,
-                     analysis_field=None,
-                     divided_by_field=None,
+                      analysis_field=None,
+                      divided_by_field=None,
                      bounding_polygon_layer=None,
                      aggregation_polygon_layer=None,
                      permutations=None,
@@ -783,7 +822,8 @@ class _FeatureAnalysisTools(_AsyncService):
                      distance_band=None,
                      band_units=None,
                      output_name=None,
-                     context=None):
+                     context=None,
+                     estimate=False):
         """
         The Find Outliers task analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
 
@@ -860,6 +900,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -884,7 +930,8 @@ class _FeatureAnalysisTools(_AsyncService):
                        side_type="Full",
                        end_type="Round",
                        output_name=None,
-                       context=None):
+                       context=None,
+                       estimate=False):
         """
         Creates buffer polygon(s) around input features.
 
@@ -940,6 +987,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -956,14 +1009,15 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def create_drive_time_areas(self,
                                 input_layer,
-                       break_values=[5, 10, 15],
-                       break_units="Minutes",
-                       travel_mode="Driving",
-                       overlap_policy="Overlap",
-                       time_of_day=None,
-                       time_zone_for_time_of_day="GeoLocal",
-                       output_name=None,
-                       context=None):
+                                break_values=[5, 10, 15],
+                                break_units="Minutes",
+                                travel_mode="Driving",
+                                overlap_policy="Overlap",
+                                time_of_day=None,
+                                time_zone_for_time_of_day="GeoLocal",
+                                output_name=None,
+                                context=None,
+                                estimate=False):
         """
 
 
@@ -1015,6 +1069,14 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1031,10 +1093,11 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def dissolve_boundaries(self,
                             input_layer,
-                       dissolve_fields=[],
-                       summary_fields=[],
-                       output_name=None,
-                       context=None):
+                            dissolve_fields=[],
+                            summary_fields=[],
+                            output_name=None,
+                            context=None,
+                            estimate=False):
         """
         Dissolve features based on specified fields.
 
@@ -1070,6 +1133,14 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1086,10 +1157,11 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def merge_layers(self,
                      input_layer,
-                       merge_layer,
-                       merging_attributes=[],
-                       output_name=None,
-                       context=None):
+                     merge_layer,
+                     merging_attributes=[],
+                     output_name=None,
+                     context=None,
+                     estimate=False):
         """
         Combines two inputs of the same feature data type into a new output.
 
@@ -1124,6 +1196,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1140,15 +1218,16 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def summarize_within(self,
                          sum_within_layer,
-                       summary_layer,
-                       sum_shape=True,
-                       shape_units=None,
-                       summary_fields=[],
-                       group_by_field=None,
-                       minority_majority=False,
-                       percent_shape=False,
-                       output_name=None,
-                       context=None):
+                         summary_layer,
+                         sum_shape=True,
+                         shape_units=None,
+                         summary_fields=[],
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_shape=False,
+                         output_name=None,
+                         context=None,
+                         estimate=False):
         """
         The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
 
@@ -1205,6 +1284,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1224,15 +1309,16 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def join_features(self,
                       target_layer,
-        join_layer,
-        spatial_relationship,
-        spatial_relationship_distance,
-        spatial_relationship_distance_units,
-        attribute_relationship,
-        join_operation,
-        summary_fields,
-        output_name,
-        context):
+                      join_layer,
+                      spatial_relationship,
+                      spatial_relationship_distance,
+                      spatial_relationship_distance_units,
+                      attribute_relationship,
+                      join_operation,
+                      summary_fields,
+                      output_name,
+                      context,
+                      estimate=False):
 
         task ="JoinFeatures"
 
@@ -1257,6 +1343,14 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1272,14 +1366,15 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def enrich_layer(self,
                      input_layer,
-                       data_collections=[],
-                       analysis_variables=[],
-                       country=None,
-                       buffer_type=None,
-                       distance=None,
-                       units=None,
-                       output_name=None,
-                       context=None):
+                     data_collections=[],
+                     analysis_variables=[],
+                     country=None,
+                     buffer_type=None,
+                     distance=None,
+                     units=None,
+                     output_name=None,
+                     context=None,
+                     estimate=False):
         """
         The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
@@ -1331,6 +1426,14 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1353,7 +1456,8 @@ class _FeatureAnalysisTools(_AsyncService):
                        output_type="Input",
                        tolerance=None,
                        output_name=None,
-                       context=None):
+                       context=None,
+                       estimate=False):
         """
         Overlays the input layer with the overlay layer. Overlay operations supported are Intersect, Union, and Erase.
 
@@ -1400,6 +1504,14 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1416,11 +1528,12 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def extract_data(self,
                      input_layers=[],
-                       extent=None,
-                       clip=False,
-                       data_format=None,
-                       output_name=None,
-                       context=None):
+                     extent=None,
+                     clip=False,
+                     data_format=None,
+                     output_name=None,
+                     context=None,
+                     estimate=False):
         """
         Select and download data for a specified area of interest. Layers that you select will be added to a zip file or layer package.
 
@@ -1464,6 +1577,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1473,9 +1593,10 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def find_existing_locations(self,
                                 input_layers=[],
-                       expressions=[],
-                       output_name=None,
-                       context=None):
+                                expressions=[],
+                                output_name=None,
+                                context=None,
+                                estimate=False):
         """
         The Find Existing Locations task selects features in the input layer that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
@@ -1510,6 +1631,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1526,9 +1653,10 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def derive_new_locations(self,
                              input_layers=[],
-                       expressions=[],
-                       output_name=None,
-                       context=None):
+                             expressions=[],
+                             output_name=None,
+                             context=None,
+                             estimate=False):
         """
         The Derive New Locations task derives new features from the input layers that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).The Derive New Locations task is very similar to the Find Existing Locations task, the main difference is that the result of Derive New Locations can contain partial features.In both tasks, the attribute expression  where and the spatial relationships within and contains return the same result. This is because these relationships return entire features.When intersects or withinDistance is used, Derive New Locations creates new features in the result. For example, when intersecting a parcel feature and a flood zone area that partially overlap each other, Find Existing Locations will return the entire parcel whereas Derive New Locations will return just the portion of the parcel that is within the flood zone.
 
@@ -1563,6 +1691,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1579,9 +1713,10 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def field_calculator(self,
                          input_layer,
-                       expressions,
-                       output_name=None,
-                       context=None):
+                         expressions,
+                         output_name=None,
+                         context=None,
+                         estimate=False):
         """
         Calculates existing fields or creates and calculates new fields.
 
@@ -1612,6 +1747,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1627,9 +1769,10 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def find_centroids(self,
                        input_layer,
-                      point_location=False,
-                      output_name=None,
-                      context=None):
+                       point_location=False,
+                       output_name=None,
+                       context=None,
+                       estimate=False):
         """
         The Find Centroids task that finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical workflows where the resulting points can then be used in other analytic workflows.
 
@@ -1666,6 +1809,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1681,16 +1831,17 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def interpolate_points(self,
                            input_layer,
-                       field,
-                       interpolate_option="5",
-                       output_prediction_error=False,
-                       classification_type="GeometricInterval",
-                       num_classes=10,
-                       class_breaks=[],
-                       bounding_polygon_layer=None,
-                       predict_at_point_layer=None,
-                       output_name=None,
-                       context=None):
+                           field,
+                           interpolate_option="5",
+                           output_prediction_error=False,
+                           classification_type="GeometricInterval",
+                           num_classes=10,
+                           class_breaks=[],
+                           bounding_polygon_layer=None,
+                           predict_at_point_layer=None,
+                           output_name=None,
+                           context=None,
+                           estimate=False):
         """
         The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of points. The task takes point data with values at each point and returns areas classified by predicted values.
 
@@ -1752,6 +1903,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1774,17 +1931,18 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def calculate_density(self,
                           input_layer,
-                       field=None,
-                       cell_size=None,
-                       cell_size_units="Meters",
-                       radius=None,
-                       radius_units=None,
-                       bounding_polygon_layer=None,
-                       area_units=None,
-                       classification_type="EqualInterval",
-                       num_classes=10,
-                       output_name=None,
-                       context=None):
+                          field=None,
+                          cell_size=None,
+                          cell_size_units="Meters",
+                          radius=None,
+                          radius_units=None,
+                          bounding_polygon_layer=None,
+                          area_units=None,
+                          classification_type="EqualInterval",
+                          num_classes=10,
+                          output_name=None,
+                          context=None,
+                          estimate=False):
         """
         The Calculate Density task creates a density map from point or line features by spreading known quantities of some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas classified from least dense to most dense.
 
@@ -1848,6 +2006,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1864,21 +2029,22 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def summarize_nearby(self,
                          sum_nearby_layer,
-                       summary_layer,
-                       near_type="StraightLine",
-                       distances=[],
-                       units="Meters",
-                       time_of_day=None,
-                       time_zone_for_time_of_day="GeoLocal",
-                       return_boundaries=True,
-                       sum_shape=True,
-                       shape_units=None,
-                       summary_fields=[],
-                       group_by_field=None,
-                       minority_majority=False,
-                       percent_shape=False,
-                       output_name=None,
-                       context=None):
+                         summary_layer,
+                         near_type="StraightLine",
+                         distances=[],
+                         units="Meters",
+                         time_of_day=None,
+                         time_zone_for_time_of_day="GeoLocal",
+                         return_boundaries=True,
+                         sum_shape=True,
+                         shape_units=None,
+                         summary_fields=[],
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_shape=False,
+                         output_name=None,
+                         context=None,
+                         estimate=False):
         """
         The SummarizeNearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:Calculate the total population within five minutes of driving time of a proposed new store location.Calculate the number of freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of store accessibility.
 
@@ -1958,6 +2124,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -1978,16 +2151,17 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def create_viewshed(self,
                         input_layer,
-                       dem_resolution="Finest",
-                       maximum_distance=None,
-                       max_distance_units="Meters",
-                       observer_height=None,
-                       observer_height_units="Meters",
-                       target_height=None,
-                       target_height_units="Meters",
-                       generalize=True,
-                       output_name=None,
-                       context=None):
+                        dem_resolution="Finest",
+                        maximum_distance=None,
+                        max_distance_units="Meters",
+                        observer_height=None,
+                        observer_height_units="Meters",
+                        target_height=None,
+                        target_height_units="Meters",
+                        generalize=True,
+                        output_name=None,
+                        context=None,
+                        estimate=False):
         """
 
 
@@ -2047,6 +2221,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -2063,12 +2243,13 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def find_similar_locations(self,
                                input_layer,
-                       search_layer,
-                       analysis_fields=[],
-                       input_query=None,
-                       number_of_results=0,
-                       output_name=None,
-                       context=None):
+                               search_layer,
+                               analysis_fields=[],
+                               input_query=None,
+                               number_of_results=0,
+                               output_name=None,
+                               context=None,
+                               estimate=False):
         """
 
 
@@ -2112,6 +2293,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -2132,12 +2320,13 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def create_watersheds(self,
                           input_layer,
-                       search_distance=None,
-                       search_units="Meters",
-                       source_database="FINEST",
-                       generalize=True,
-                       output_name=None,
-                       context=None):
+                          search_distance=None,
+                          search_units="Meters",
+                          source_database="FINEST",
+                          generalize=True,
+                          output_name=None,
+                          context=None,
+                          estimate=False):
         """
 
 
@@ -2183,6 +2372,12 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -2203,15 +2398,16 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def find_nearest(self,
                      analysis_layer,
-                       near_layer,
-                       measurement_type="StraightLine",
-                       max_count=100,
-                       search_cutoff=2147483647,
-                       search_cutoff_units=None,
-                       time_of_day=None,
-                       time_zone_for_time_of_day="GeoLocal",
-                       output_name=None,
-                       context=None):
+                     near_layer,
+                     measurement_type="StraightLine",
+                     max_count=100,
+                     search_cutoff=2147483647,
+                     search_cutoff_units=None,
+                     time_of_day=None,
+                     time_zone_for_time_of_day="GeoLocal",
+                     output_name=None,
+                     context=None,
+                     estimate=False):
         """
         Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations.
 
@@ -2266,6 +2462,11 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
@@ -2287,20 +2488,21 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def plan_routes(self,
                     stops_layer,
-                       route_count,
-                       max_stops_per_route,
-                       route_start_time,
-                       start_layer,
-                       start_layer_route_id_field=None,
-                       return_to_start=True,
-                       end_layer=None,
-                       end_layer_route_id_field=None,
-                       travel_mode="Driving",
-                       stop_service_time=0,
-                       max_route_time=525600,
-                       include_route_layers=False,
-                       output_name=None,
-                       context=None):
+                    route_count,
+                    max_stops_per_route,
+                    route_start_time,
+                    start_layer,
+                    start_layer_route_id_field=None,
+                    return_to_start=True,
+                    end_layer=None,
+                    end_layer_route_id_field=None,
+                    travel_mode="Driving",
+                    stop_service_time=0,
+                    max_route_time=525600,
+                    include_route_layers=False,
+                    output_name=None,
+                    context=None,
+                    estimate=False):
         """
 
 
@@ -2374,6 +2576,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -2395,15 +2604,16 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def trace_downstream(self,
                          input_layer,
-                       split_distance=None,
-                       split_units="Kilometers",
-                       max_distance=None,
-                       max_distance_units="Kilometers",
-                       bounding_polygon_layer=None,
-                       source_database=None,
-                       generalize=True,
-                       output_name=None,
-                       context=None):
+                         split_distance=None,
+                         split_units="Kilometers",
+                         max_distance=None,
+                         max_distance_units="Kilometers",
+                         bounding_polygon_layer=None,
+                         source_database=None,
+                         generalize=True,
+                         output_name=None,
+                         context=None,
+                         estimate=False):
         """
 
 
@@ -2459,6 +2669,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
 
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -2475,8 +2692,8 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def connect_origins_to_destinations(self,
                                         origins_layer,
-                       destinations_layer,
-                       measurement_type="DrivingTime",
+                                        destinations_layer,
+                                        measurement_type="DrivingTime",
                        origins_layer_route_id_field=None,
                        destinations_layer_route_id_field=None,
                        time_of_day=None,
@@ -2556,8 +2773,8 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def create_route_layers(self,
                             route_data_item,
-                       delete_route_data_item=False,
-                       output_name=None):
+                            delete_route_data_item=False,
+                            output_name=None):
         """
 
 
@@ -2610,8 +2827,8 @@ class _RasterAnalysisTools(_AsyncService):
 
         createParameters = {
             "name": output_name,
-                "description": "",
-                "capabilities": "Image",
+            "description": "",
+            "capabilities": "Image",
                 "properties": {
                     "path": "@",
                     "description": "",
@@ -2623,16 +2840,16 @@ class _RasterAnalysisTools(_AsyncService):
         description = "Image Service generated from running the " + task + " tool."
         item_properties = {
             "description" : description,
-                "tags" : "Analysis Result, " + task,
-                "snippet": "Analysis Image Service generated from " + task
+            "tags" : "Analysis Result, " + task,
+            "snippet": "Analysis Image Service generated from " + task
         }
         output_service.update(item_properties)
         return output_service
 
     def generate_raster(self,
                         raster_function,
-                       function_arguments=None,
-                       output_raster=None,
+                        function_arguments=None,
+                        output_raster=None,
                        output_raster_properties=None,
                        context=None,
                        num_instances=None):
@@ -2716,8 +2933,8 @@ class _RasterAnalysisTools(_AsyncService):
 
     def rasterize(self,
                   input_table,
-                       output_raster,
-                       raster_info,
+                  output_raster,
+                  raster_info,
                        value_field=None,
                        context=None,
                        num_instances=None):
@@ -2779,11 +2996,11 @@ class _RasterAnalysisTools(_AsyncService):
         #print(job_values)
         item_properties = {
             "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                    "jobType": "GPServer",
+                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                }
+            }
         }
         output_service.update(item_properties)
         return output_service
@@ -2792,8 +3009,8 @@ class _RasterAnalysisTools(_AsyncService):
 
     def interpolate(self,
                     input_table,
-                       output_raster,
-                       raster_info,
+                    output_raster,
+                    raster_info,
                        value_field=None,
                        interpolation_method="Nearest",
                        radius=None,
@@ -2865,11 +3082,11 @@ class _RasterAnalysisTools(_AsyncService):
         #print(job_values)
         item_properties = {
             "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                    "jobType": "GPServer",
+                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                }
+            }
         }
         output_service.update(item_properties)
         return output_service
@@ -2877,8 +3094,8 @@ class _RasterAnalysisTools(_AsyncService):
 
     def copy_raster(self,
                     input_raster,
-                       output_raster,
-                       output_cellsize=None,
+                    output_raster,
+                    output_cellsize=None,
                        resampling_method="NEAREST",
                        clipping_geometry=None,
                        context=None,
@@ -2945,19 +3162,19 @@ class _RasterAnalysisTools(_AsyncService):
         #print(job_values)
         item_properties = {
             "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                    "jobType": "GPServer",
+                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                }
+            }
         }
         output_service.update(item_properties)
         return output_service
 
     def summarize_raster_within(self,
                                 input_zone_layer,
-                       zone_field,
-                       input_raster_layerto_summarize,
+                                zone_field,
+                                input_raster_layerto_summarize,
                        output_name,
                        statistic_type="Mean",
                        ignore_missing_values=True,
@@ -3026,11 +3243,11 @@ class _RasterAnalysisTools(_AsyncService):
         #print(job_values)
         item_properties = {
             "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                    "jobType": "GPServer",
+                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                }
+            }
         }
         output_service.update(item_properties)
         return output_service
@@ -3038,8 +3255,8 @@ class _RasterAnalysisTools(_AsyncService):
 
     def density(self,
                 input_feature_class,
-                       output_raster,
-                       value_field,
+                output_raster,
+                value_field,
                        raster_info=None,
                        method="Point_Density",
                        neighborhood=None,
@@ -3110,11 +3327,11 @@ class _RasterAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
         item_properties = {
             "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                    "jobType": "GPServer",
+                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                }
+            }
         }
         output_service.update(item_properties)
         return output_service
@@ -3122,8 +3339,8 @@ class _RasterAnalysisTools(_AsyncService):
 
     def classify(self,
                  input_raster,
-                       input_classifier_definition,
-                       output_raster,
+                 input_classifier_definition,
+                 output_raster,
                        additional_input_raster=None,
                        number_of_instances="4"):
         """
@@ -3190,8 +3407,8 @@ class _RasterAnalysisTools(_AsyncService):
 
     def segment_mean_shift(self,
                            input_raster,
-                       output_raster,
-                       spectral_detail="15.5",
+                           output_raster,
+                           spectral_detail="15.5",
                        spatial_detail="15",
                        minimum_segment_size_in_pixels="20",
                        band_indexes="1,2,3",
@@ -3269,8 +3486,8 @@ class _RasterAnalysisTools(_AsyncService):
 
     def train_classifier(self,
                          input_raster,
-                       input_training_sample_json,
-                       segmented_raster,
+                         input_training_sample_json,
+                         segmented_raster,
                        classifier_parameters,
                        segment_attributes="COLOR;MEAN"):
         """
@@ -3318,8 +3535,8 @@ class _RasterAnalysisTools(_AsyncService):
 
         createParameters = {
             "currentVersion": 10.2,
-                "serviceDescription": "",
-                "hasVersionedData": False,
+            "serviceDescription": "",
+            "hasVersionedData": False,
                 "supportsDisconnectedEditing": False,
                 "hasStaticData": True,
                 "maxRecordCount": 2000,
@@ -3351,8 +3568,8 @@ class _RasterAnalysisTools(_AsyncService):
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
             "description" : description,
-                "tags" : "Analysis Result, " + task,
-                "snippet": "Analysis Feature Service generated from " + task
+            "tags" : "Analysis Result, " + task,
+            "snippet": "Analysis Feature Service generated from " + task
         }
         output_service.update(item_properties)
         return output_service
@@ -3360,8 +3577,8 @@ class _RasterAnalysisTools(_AsyncService):
 
     def convert_raster_to_feature(self,
                                   input_raster,
-                       output_name,
-                       field="Value",
+                                  output_name,
+                                  field="Value",
                        output_type="Point",
                        simplify_lines_or_polygons=True,
                        context=None):
@@ -3413,11 +3630,11 @@ class _RasterAnalysisTools(_AsyncService):
         #print(job_values)
         item_properties = {
             "properties":{
-                    "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                    "jobType": "GPServer",
+                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+                "jobType": "GPServer",
                     "jobId": job_info['jobId'],
                     "jobStatus": "completed"
-                }
+            }
         }
         output_service.update(item_properties)
         return output_service
@@ -3443,8 +3660,8 @@ class _GeoanalyticsTools(_AsyncService):
 
         createParameters = {
             "currentVersion": 10.2,
-                "serviceDescription": "",
-                "hasVersionedData": False,
+            "serviceDescription": "",
+            "hasVersionedData": False,
                 "supportsDisconnectedEditing": False,
                 "hasStaticData": True,
                 "maxRecordCount": 2000,
@@ -3476,8 +3693,8 @@ class _GeoanalyticsTools(_AsyncService):
         description = "Feature Service generated from running the " + task + " tool."
         item_properties = {
             "description" : description,
-                "tags" : "Analysis Result, " + task,
-                "snippet": "Analysis Feature Service generated from " + task
+            "tags" : "Analysis Result, " + task,
+            "snippet": "Analysis Feature Service generated from " + task
         }
         output_service.update(item_properties)
         return output_service
@@ -3487,8 +3704,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def aggregate_points(self,
                          point_layer,
-                       output_name,
-                       distance_interval=None,
+                         output_name,
+                         distance_interval=None,
                        distance_interval_unit=None,
                        bin_type="SQUARE",
                        polygon_layer=None,
@@ -3500,7 +3717,7 @@ class _GeoanalyticsTools(_AsyncService):
                        summary_fields=None,
                        out_sr=None,
                        process_sr=None,
-                         out_extent=None,
+                       out_extent=None,
                        datastore="GDB"):
         """
 
@@ -3612,8 +3829,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def describe_dataset(self,
                          in_dataset,
-                       out_sr=None,
-                       out_extent=None,
+                         out_sr=None,
+                         out_extent=None,
                        datastore="GDB",
                        context=None):
         """
@@ -3677,8 +3894,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def join_features(self,
                       target_layer,
-                       join_layer,
-                       output_name,
+                      join_layer,
+                      output_name,
                        join_operation="Join one to one",
                        join_fields=None,
                        summary_fields=None,
@@ -3924,8 +4141,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def calculate_density(self,
                           input_layer,
-                       bin_size,
-                       bin_size_unit,
+                          bin_size,
+                          bin_size_unit,
                        radius,
                        radius_unit,
                        output_name,
@@ -3940,7 +4157,7 @@ class _GeoanalyticsTools(_AsyncService):
                        area_units=None,
                        out_sr=None,
                        process_sr = None,
-                          out_extent=None,
+                       out_extent=None,
                        datastore="GDB"):
         """
 
@@ -4283,8 +4500,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def create_panel_data(self,
                           in_target_features,
-                       in_join_features,
-                       time_interval,
+                          in_join_features,
+                          time_interval,
                        time_interval_unit,
                        time_repeat,
                        time_repeat_unit,
@@ -4400,8 +4617,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def generate_manifest(self,
                           data_store_item_id,
-                       update_data_item=False,
-                       out_sr=None,
+                          update_data_item=False,
+                          out_sr=None,
                        out_extent=None,
                        datastore="GDB",
                        context=None):
@@ -4469,8 +4686,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def create_sample(self,
                       input_layer,
-                       output_layer_name,
-                       out_sr=None,
+                      output_layer_name,
+                      out_sr=None,
                        out_extent=None,
                        datastore="GDB",
                        context=None):
@@ -4537,8 +4754,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def copy_to_data_store(self,
                            input_layer,
-                       output_name,
-                       out_sr=None,
+                           output_name,
+                           out_sr=None,
                        out_extent=None,
                        datastore="GDB",
                        context=None):
@@ -4608,12 +4825,12 @@ class _GeoanalyticsTools(_AsyncService):
 
     def summarize_attributes(self,
                              input_layer,
-                       fields,
-                       output_name,
+                             fields,
+                             output_name,
                        summary_fields=None,
                        out_sr=None,
                        process_sr = None,
-                             out_extent=None,
+                       out_extent=None,
                        datastore="GDB"):
         """
 
@@ -4692,8 +4909,8 @@ class _GeoanalyticsTools(_AsyncService):
 
     def summarize_within(self,
                          summary_layer,
-                       output_name,
-                       bin_size=None,
+                         output_name,
+                         bin_size=None,
                        bin_size_unit=None,
                        bin_type="SQUARE",
                        sum_within_layer=None,
@@ -4706,7 +4923,7 @@ class _GeoanalyticsTools(_AsyncService):
                        proportional_weighting=False,
                        out_sr=None,
                        process_sr=None,
-                         out_extent=None,
+                       out_extent=None,
                        datastore="GDB"):
         """
 
@@ -4971,8 +5188,8 @@ class _GeometryService(_GISService):
     #----------------------------------------------------------------------
     def areas_and_lengths(self,
                           polygons,
-                        lengthUnit,
-                        areaUnit,
+                          lengthUnit,
+                          areaUnit,
                         calculationType,
                         sr=4326):
         """
@@ -5168,8 +5385,8 @@ class _GeometryService(_GISService):
     #----------------------------------------------------------------------
     def auto_complete(self,
                       polygons=None,
-                     polylines=None,
-                     sr=None
+                      polylines=None,
+                      sr=None
                      ):
         """
            The autoComplete operation simplifies the process of
@@ -5289,7 +5506,7 @@ class _GeometryService(_GISService):
     #----------------------------------------------------------------------
     def convex_hull(self,
                     geometries,
-                   sr=None):
+                    sr=None):
         """
         The convexHull operation is performed on a geometry service
         resource. It returns the convex hull of the input geometry. The
@@ -5748,8 +5965,8 @@ class _GeometryService(_GISService):
     #----------------------------------------------------------------------
     def label_points(self,
                      sr,
-                    polygons,
-                    ):
+                     polygons,
+                     ):
         """
         The label_points operation is performed on a geometry service
         resource. The labelPoints operation calculates an interior point
@@ -6071,8 +6288,8 @@ class _GeometryService(_GISService):
     #----------------------------------------------------------------------
     def to_geo_coordinate_string(self,
                                  sr,
-                              coordinates,
-                              conversionType,
+                                 coordinates,
+                                 conversionType,
                               conversionMode="mgrsDefault",
                               numOfDigits=None,
                               rounding=True,
@@ -6151,8 +6368,8 @@ class _GeometryService(_GISService):
     #----------------------------------------------------------------------
     def trim_extend(self,
                     sr,
-                   polylines,
-                   trimExtendTo,
+                    polylines,
+                    trimExtendTo,
                    extendHow=0):
         """
         The trim_extend operation is performed on a geometry service

@@ -15,30 +15,33 @@ from ._util import _id_generator, _feature_input, _set_context, _create_output_s
 
 _log=_logging.getLogger(__name__)
 
-_use_async=True
-
-def _forest_based_regression(input_layer,
-                            prediction_type,
-                            explanatory_variables,
-                            features_to_predict,
-                            variable_predict,
-                            explanatory_variable_match,
-                            return_importance_table,
-                            number_of_trees=100,
-                            min_leaf_size=5,
-                            max_tree_depth=5,
-                            sample_size=100,
-                            random_vars=3,
-                            percentage_for_validation=30,
-                            output_name=None,
-                            gis=None):
+_use_async = True
+#--------------------------------------------------------------------------
+def forest(input_layer,
+           var_prediction,
+           var_explanatory,
+           trees,
+           max_tree_depth=None,
+           random_vars=None,
+           sample_size=100,
+           min_leaf_size=None,
+           prediction_type="train",
+           features_to_predict=None,
+           validation=10,
+           importance_tbl=False,
+           exp_var_matching=None,
+           output_name=None,
+           gis=None):
     """
-    Creates models and generates predictions using an adaptation of Leo Breiman's random forest
-    algorithm, which is a supervised machine learning method. Predictions can be performed for both
-    categorical variables (classification) and continuous variables (regression). Explanatory
-    variables can take the form of fields in the attribute table of the training features. In
-    addition to validation of model performance based on the training data, predictions can be made
-    to another feature dataset.
+    The 'forest' method is a forest-based classification and regression
+    task that creates models and generates predictions using an adaptation of
+    Leo Breiman's random forest algorithm, which is a supervised machine
+    learning method. Predictions can be performed for both categorical
+    variables (classification) and continuous variables (regression).
+    Explanatory variables can take the form of fields in the attribute
+    table of the training features. In addition to validation of model
+    performance based on the training data, predictions can be made to
+    another feature dataset.
 
     The following are examples:
 
@@ -59,11 +62,62 @@ def _forest_based_regression(input_layer,
 
     **Forest Based Classification and Regression is available at ArcGIS Enterprise 10.7.**
 
+
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  required FeatureSet, The table, point, line or polygon features
                                  containing potential incidents.
+    --------------------------   ---------------------------------------------------------------
+    var_prediction               Required dict. The variable from the input_layer parameter
+                                 containing the values to be used to train the model, and a
+                                 boolean denoting if it's categorical. This field contains known
+                                 (training) values of the variable that will be used to predict
+                                 at unknown locations.
+    --------------------------   ---------------------------------------------------------------
+    var_explanatory              Required List. A list of fields representing the explanatory
+                                 variables and a Boolean value denoting whether the fields are
+                                 categorical. The explanatory variables help predict the value
+                                 or category of the `var_prediction` parameter. Use the
+                                 categorical parameter for any variables that represent classes
+                                 or categories (such as land cover or presence or absence).
+                                 Specify the variable as true for any that represent classes or
+                                 categories such as land cover or presence or absence and false
+                                 if the variable is continuous.
+    --------------------------   ---------------------------------------------------------------
+    trees                        Required int. The number of trees to create in the forest model.
+                                 More trees will generally result in more accurate model
+                                 prediction, but the model will take longer to calculate.
+    --------------------------   ---------------------------------------------------------------
+    max_tree_depth               Optional int. The maximum number of splits that will be made
+                                 down a tree. Using a large maximum depth, more splits will be
+                                 created, which may increase the chances of overfitting the
+                                 model. The default is data driven and depends on the number of
+                                 trees created and the number of variables included.
+    --------------------------   ---------------------------------------------------------------
+    random_vars                  Optional Int. Specifies the number of explanatory variables
+                                 used to create each decision tree.Each of the decision trees in
+                                 the forest is created using a random subset of the explanatory
+                                 variables specified. Increasing the number of variables used in
+                                 each decision tree will increase the chances of overfitting
+                                 your model particularly if there is one or a couple dominant
+                                 variables. A common practice is to use the square root of the
+                                 total number of explanatory variables (fields, distances, and
+                                 rasters combined) if your variablePredict is numeric or divide
+                                 the total number of explanatory variables (fields, distances,
+                                 and rasters combined) by 3 if var_prediction is categorical.
+    --------------------------   ---------------------------------------------------------------
+    sample_size                  Optional int. Specifies the percentage of the input_layer used
+                                 for each decision tree. The default is 100 percent of the data.
+                                 Samples for each tree are taken randomly from two-thirds of the
+                                 data specified.
+    --------------------------   ---------------------------------------------------------------
+    min_leaf_size                Optional int. The minimum number of observations required to
+                                 keep a leaf (that is the terminal node on a tree without
+                                 further splits). The default minimum for regression is 5 and
+                                 the default for classification is 1. For very large data,
+                                 increasing these numbers will decrease the run time of the
+                                 tool.
     --------------------------   ---------------------------------------------------------------
     prediction_type              Specifies the operation mode of the tool. The tool can be run to
                                  train a model to only assess performance, or train a model and
@@ -87,18 +141,17 @@ def _forest_based_regression(input_layer,
                                  (training) values of the variable that will be used to predict
                                  at unknown locations.
     --------------------------   ---------------------------------------------------------------
-    variable_predict             Required dict. The variable from the input_layer parameter
-                                 containing the values to be used to train the model, and a
-                                 boolean denoting if it's categorical. This field contains known
-                                 (training) values of the variable that will be used to predict
-                                 at unknown locations.
-
-                                 REST scripting example: "variable_predict":[{"fieldName":"isSunny",
-                                                         "categorical":true},{"fieldName":"isWeekend",
-                                                         "categorical":true}, {"fieldName":"hoursOutside",
-                                                         "categorical":false}]
+    validation                   Optional Int. Specifies the percentage (between 10 percent
+                                 and 50 percent) of inFeatures to reserve as the test dataset
+                                 for validation. The model will be trained without this random
+                                 subset of data, and the observed values for those features will
+                                 be compared to the predicted value. The default is 10 percent.
     --------------------------   ---------------------------------------------------------------
-    explanatory_variable_match   A list of fields representing the explanatory variables and a
+    importance_tbl               Optional Boolean. Specifies whether an output table will be
+                                 generated that contains information describing the importance
+                                 of each explanatory variable used in the model created.
+    --------------------------   ---------------------------------------------------------------
+    exp_var_matching             A list of fields representing the explanatory variables and a
                                  boolean values denoting if the fields are categorical. The
                                  explanatory variables help predict the value or category of the
                                  variable_predict. Use the categorical parameter for any
@@ -114,63 +167,8 @@ def _forest_based_regression(input_layer,
                                       to predict the variable_predict.
                                     + categorical is one of: true or false. A string field should
                                       always be true, and a continue value should always be set as false.
-
-
     --------------------------   ---------------------------------------------------------------
-    return_importance_table      Optional List. A list of the explanatory_variables specified
-                                 from the inFeatures and their corresponding fields from the
-                                 features_to_predict. By default, if an eexplanatory_variables is
-                                 not mapped, it will match to a field with the same name in the
-                                 features_to_predict. This parameter is only used if there is a
-                                 features_to_predict input. You do not need to use it if the
-                                 names and types of the fields match between your two input
-                                 datasets.
-
-                                 Syntax: [{"predictionLayerField":"<field name>", "trainingLayerField": "<field nane>"},...]
-
-    --------------------------   ---------------------------------------------------------------
-    number_of_trees              Optional int. The number of trees to create in the forest model.
-                                 More trees will generally result in more accurate model
-                                 prediction, but the model will take longer to calculate. The
-                                 default number of trees is 100.
-    --------------------------   ---------------------------------------------------------------
-    min_leaf_size                Optional int. The minimum number of observations required to
-                                 keep a leaf (that is the terminal node on a tree without
-                                 further splits). The default minimum for regression is 5 and
-                                 the default for classification is 1. For very large data,
-                                 increasing these numbers will decrease the run time of the
-                                 tool.
-    --------------------------   ---------------------------------------------------------------
-    max_tree_depth               Optional int. The maximum number of splits that will be made
-                                 down a tree. Using a large maximum depth, more splits will be
-                                 created, which may increase the chances of overfitting the
-                                 model. The default is data driven and depends on the number of
-                                 trees created and the number of variables included.
-    --------------------------   ---------------------------------------------------------------
-    sample_size                  Optional int. Specifies the percentage of the input_layer used
-                                 for each decision tree. The default is 100 percent of the data.
-                                 Samples for each tree are taken randomly from two-thirds of the
-                                 data specified.
-    --------------------------   ---------------------------------------------------------------
-    random_vars                  Optional Int. Specifies the number of explanatory variables
-                                 used to create each decision tree.Each of the decision trees in
-                                 the forest is created using a random subset of the explanatory
-                                 variables specified. Increasing the number of variables used in
-                                 each decision tree will increase the chances of overfitting
-                                 your model particularly if there is one or a couple dominant
-                                 variables. A common practice is to use the square root of the
-                                 total number of explanatory variables (fields, distances, and
-                                 rasters combined) if your variablePredict is numeric or divide
-                                 the total number of explanatory variables (fields, distances,
-                                 and rasters combined) by 3 if variable_predict is categorical.
-    --------------------------   ---------------------------------------------------------------
-    percentage_for_validation    Optional Int. Specifies the percentage (between 10 percent
-                                 and 50 percent) of inFeatures to reserve as the test dataset
-                                 for validation. The model will be trained without this random
-                                 subset of data, and the observed values for those features will
-                                 be compared to the predicted value. The default is 10 percent.
-    --------------------------   ---------------------------------------------------------------
-    output_trained_name          optional String, The task will create a feature service of the
+    output_name                  optional String, The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
     gis                          optional GIS, the GIS on which this tool runs. If not
@@ -182,9 +180,22 @@ def _forest_based_regression(input_layer,
 
 
     """
+    allowed_prediction_types = {
+        'train' : "Train",
+        'trainandpredict' : 'TrainAndPredict'
+
+    }
+    if str(prediction_type).lower() not in allowed_prediction_types:
+        raise ValueError("Invalid Prediction type.")
+    else:
+        prediction_type = allowed_prediction_types[prediction_type.lower()]
+
     kwargs=locals()
 
     gis=_arcgis.env.active_gis if gis is None else gis
+
+    if gis.version < [7]:
+        return None
     url=gis.properties.helperServices.geoanalytics.url
 
     params={}
@@ -207,50 +218,59 @@ def _forest_based_regression(input_layer,
 
     _set_context(params)
 
+
+
     param_db={
         "input_layer": (_FeatureSet, "inFeatures"),
         "prediction_type" : (str, "predictionType"),
         "features_to_predict" : (_FeatureSet, "featuresToPredict"),
-        "variable_predict" : (dict, "variablePredict"),
-        "explanatory_variables" : (list, "explanatoryVariables"),
-        "explanatory_variable_match" : (list, "explanatoryVariableMatching"),
+        "var_prediction" : (dict, "variablePredict"),
+        "var_explanatory" : (list, "explanatoryVariables"),
+        "exp_var_matching" : (list, "explanatoryVariableMatching"),
         "return_importance_table" : (bool, "returnVariableOfImportanceTable"),
-        "number_of_trees" : (int, "numberOfTrees"),
+        "trees" : (int, "numberOfTrees"),
+        "max_tree_depth" : (int, "maximumTreeDepth"),
         "min_leaf_size" : (int, "minimumLeafSize"),
         "sample_size" : (int, "sampleSize"),
-        "random_vars" : (str, "randomVariables"),
-        "percentage_for_validation" : (int, "percentageForValidation"),
+        "random_vars" : (int, "randomVariables"),
+        "validation" : (float, "percentageForValidation"),
         "output_name" : (str, "outputTrainedName"),
         "context": (str, "context"),
-        #"outputTrainedName": (_FeatureSet, "Output Features"),
+        "importance_tbl" : (bool, "createVariableOfImportanceTable"),
+        "output_trained": (_FeatureSet, "outputTrained"),
+        "output_predicted": (_FeatureSet, "outputPredicted"),
+        "variable_of_importance": (_FeatureSet, "variableOfImportance"),
     }
     return_values=[
-        {"name": "outputTrainedName", "display_name": "Output Features", "type": _FeatureSet},
-        {"name" : "outputPredicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
-        {"name" : "variableOfImportance", "display_name" : "Variable of Importance", "type" : _FeatureSet}
+        {"name": 'output_trained', "display_name": "Output Features", "type": _FeatureSet},
+        {"name" : "output_predicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
+        {"name" : "variable_of_importance", "display_name" : "Variable of Importance", "type" : _FeatureSet}
     ]
-
+    if features_to_predict is None and prediction_type == 'TrainAndPredict':
+        kwargs["features_to_predict"] = input_layer
+        #param_db.pop("features_to_predict")
     try:
-        _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True)
+        res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True)
         return output_service
     except:
         output_service.delete()
         raise
 
     return
-
-def _generalized_linear_regression(input_layer,
-                                  features_to_predict,
-                                  dependent_variable,
-                                  explanatory_variables,
-                                  regression_family="Continuous",
-                                  generate_coef_table=False,
-                                  variable_matching=None,
-                                  dependent_mapping=None,
-                                  output_name=None,
-                                  gis=None):
+#--------------------------------------------------------------------------
+def glr(input_layer,
+        var_dependent,
+        var_explanatory,
+        regression_family="Continuous",
+        features_to_predict=None,
+        gen_coeff_table=False,
+        exp_var_matching=None,
+        dep_mapping=None,
+        output_name=None,
+        gis=None):
     """
-    This tool performs Generalized Linear Regression (GLR) to generate
+
+    This tool performs Generalized Linear Regression (glr) to generate
     predictions or to model a dependent variable's relationship to a set of
     explanatory variables. This tool can be used to fit continuous
     (Gaussian/OLS), binary (logistic), and count (Poisson) models.
@@ -265,29 +285,13 @@ def _generalized_linear_regression(input_layer,
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required FeatureSet. The table, point, line or polygon features.
+    input_layer                  Required FeatureSet. The layer containing the dependent and
+                                 independent variables.
     --------------------------   ---------------------------------------------------------------
-    features_to_predict          Required FeatureSet. A layer containing features representing
-                                 locations where estimates should be computed. Each feature in
-                                 this dataset should contain values for all the explanatory
-                                 variables specified. The dependent variable for these features
-                                 will be estimated using the model calibrated for the input
-                                 layer data.
-
-                                 Syntax: As described in Feature input, this parameter can be
-                                         one of the following:
-
-                                    + A URL to a feature service layer with an optional filter
-                                      to select specific features
-                                    + A URL to a big data catalog service layer with an
-                                      optional filter to select specific features
-                                    + A feature collection
-
-    --------------------------   ---------------------------------------------------------------
-    dependent_variable           Required String. The numeric field containing the observed
+    var_dependent                      Required String. The numeric field containing the observed
                                  values you want to model.
     --------------------------   ---------------------------------------------------------------
-    explanatory_variables        Required String. One or more fields representing independent
+    var_explanatory              Required String. One or more fields representing independent
                                  explanatory variables in your regression model.
     --------------------------   ---------------------------------------------------------------
     regression_family            Required String. This field specifies the type of data you are
@@ -307,13 +311,29 @@ def _generalized_linear_regression(input_layer,
                                               or traffic accidents. The model used is Poisson
                                               regression.
     --------------------------   ---------------------------------------------------------------
-    generate_coef_table          Optional Boolean. Determines if a table with coefficient values
+    features_to_predict          Required FeatureSet. A layer containing features representing
+                                 locations where estimates should be computed. Each feature in
+                                 this dataset should contain values for all the explanatory
+                                 variables specified. The dependent variable for these features
+                                 will be estimated using the model calibrated for the input
+                                 layer data.
+
+                                 Syntax: As described in Feature input, this parameter can be
+                                         one of the following:
+
+                                    + A URL to a feature service layer with an optional filter
+                                      to select specific features
+                                    + A URL to a big data catalog service layer with an
+                                      optional filter to select specific features
+                                    + A feature collection
+    --------------------------   ---------------------------------------------------------------
+    gen_coeff_table              Optional Boolean. Determines if a table with coefficient values
                                  will be returned. By default, the coefficient table is not
                                  returned.
     --------------------------   ---------------------------------------------------------------
-    variable_matching            Optional List. A list of the explanatoryVariables specified from
+    exp_var_matching             Optional List. A list of the explanatoryVariables specified from
                                  the input_layer and their corresponding fields from the
-                                 features_to_predict. By default, if an explanatory_variables is
+                                 features_to_predict. By default, if an var_explanatoryiables is
                                  not mapped, it will match to a field with the same name in the
                                  features_to_predict. This parameter is only used if there is a
                                  features_to_predict input. You do not need to use it if the
@@ -324,17 +344,14 @@ def _generalized_linear_regression(input_layer,
                                           "trainingLayerField": "<field name>"},...]
 
                                     + predictionLayerField is the name of a field specified in the
-                                      explanatory_variables parameter.
+                                      var_explanatoryiables parameter.
                                     + trainingLayerField is the field that will match to the field
-                                      in the explanatory_variables parameter.
+                                      in the var_explanatoryiables parameter.
 
                                  REST scripting example:
 
-                                 "variablePredict":[{"predictionLayerField":"isSunny",
-                                                    "trainingLayerField": "isSunny2010"}]
-
     --------------------------   ---------------------------------------------------------------
-    dependent_mapping            Optional List. A list representing the values used to map to 0
+    dep_mapping                  Optional List. A list representing the values used to map to 0
                                  (absence) and 1 (presence) for binary regression.
 
                                  Syntax: [{"value0":"<false value>"},{"value1":"<true value>"}]
@@ -344,18 +361,39 @@ def _generalized_linear_regression(input_layer,
                                     + value1 is the string that will be used to represent 1
                                       (presence values).
 
-                                 REST scripting example: [{"value0":"Fail"},{"value1":"Pass"}]
     --------------------------   ---------------------------------------------------------------
     output_name                  Optional String. The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    gis                          optional GIS, the GIS on which this tool runs. If not
+    gis                          Optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     ==========================   ===============================================================
+
+    :returns:
+       Output feature layer item
+
+
     """
+
+
+    _allowed_regression_family = {
+        "continuous" : "Continuous",
+        "binary" : "Binary",
+        "count" : "Count"
+    }
     kwargs=locals()
 
+    if regression_family.lower() in _allowed_regression_family:
+        regression_family = _allowed_regression_family[regression_family.lower()]
+        if 'regression_family' in kwargs:
+            kwargs['regression_family'] = _allowed_regression_family[regression_family.lower()]
+    else:
+        raise ValueError("Invalid regression_family.")
+
     gis=_arcgis.env.active_gis if gis is None else gis
+
+    if gis.version < [7]:
+        return None
     url=gis.properties.helperServices.geoanalytics.url
 
     params={}
@@ -364,13 +402,12 @@ def _generalized_linear_regression(input_layer,
             params[key]=value
 
     if output_name is None:
-        output_service_name='Generalize_Regression' + _id_generator()
+        output_service_name='GLR_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
     else:
         output_service_name=output_name.replace(' ', '_')
 
-    output_service=_create_output_service(gis, output_name, output_service_name,
-                                          'Generalized Linear Regression')
+    output_service=_create_output_service(gis, output_name, output_service_name, 'Generalized Linear Regression')
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
@@ -381,39 +418,28 @@ def _generalized_linear_regression(input_layer,
 
     param_db={
         "input_layer": (_FeatureSet, "inputLayer"),
-        #"output_name": (str, "outputName"),
-        "features_to_predict" : (_FeatureSet, "featuresToPredict"),
-        "dependent_variable" : (str, "dependentVariable"),
-        "explanatory_variables" : (str, "explanatoryVariables"),
         "regression_family" : (str, "regressionFamily"),
-        "generate_coef_table" : (bool, "generateCoefficientTable"),
-        "variable_matching" : (list, "explanatoryVariableMatching"),
-        "dependent_mapping" : (list, "dependentMapping"),
-        #"context": (str, "context"),
-        "output_name": (_FeatureSet, "outputName"),
+        "gen_coeff_table" : (bool, "generateCoefficientTable"),
+        "exp_var_matching" : (list, "explanatoryVariableMatching"),
+        "var_dependent" : (list, "dependentVariable"),
+        "var_explanatory" : (list, "explanatoryVariables"),
+        "features_to_predict" : (_FeatureSet, "featuresToPredict"),
+        "dep_mapping" : (list, "dependentMapping"),
+        "output_name" : (str, "outputName"),
         "context": (str, "context"),
-        "output": (_FeatureSet, "Output Features"),
-        #"output_name": (_FeatureSet, "OutputName")
+        "output": (_FeatureSet, "output"),
+        "output_predicted": (_FeatureSet, "outputPredicted"),
+        "coefficient_table" : (_FeatureSet, "coefficientTable")
     }
-    #    "output_name": (_FeatureSet, "outputName"),
-    #}
-
-
-    #return_values=[
-    #    {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    #]
-
-
     return_values=[
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+        {"name": 'output', "display_name": "Output Features", "type": _FeatureSet},
+        {"name" : "output_predicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
+        {"name" : "coefficient_table", "display_name" : "Coefficient Table", "type" : _FeatureSet},
+        #{"name" : "variable_of_importance", "display_name" : "Variable of Importance", "type" : _FeatureSet}
     ]
 
-
     try:
-        _execute_gp_tool(gis, "GeneralizedLinearRegression",
-                         params, param_db,
-                         return_values, _use_async,
-                         url, True)
+        res = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True)
         return output_service
     except:
         output_service.delete()
@@ -421,6 +447,7 @@ def _generalized_linear_regression(input_layer,
 
     return
 
+#--------------------------------------------------------------------------
 def find_point_clusters(
     input_layer,
     method,
@@ -506,7 +533,7 @@ def find_point_clusters(
         raise
 
     return
-
+#--------------------------------------------------------------------------
 def calculate_density(
     input_layer,
     fields=None,
@@ -647,7 +674,7 @@ calculate_density.__annotations__={
     'area_units': str,
     'output_name': str}
 
-
+#--------------------------------------------------------------------------
 def find_hot_spots(
     point_layer,
     bin_size=5,
@@ -759,7 +786,7 @@ find_hot_spots.__annotations__={
     'time_step_reference': _datetime,
     'output_name': str}
 
-
+#--------------------------------------------------------------------------
 def create_space_time_cube(point_layer: _FeatureSet,
                            bin_size: float,
                            bin_size_unit: str,

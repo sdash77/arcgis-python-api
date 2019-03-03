@@ -15,7 +15,8 @@ def dissolve_boundaries(
         summary_fields=[],
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Dissolve features based on specified fields.
 
@@ -41,12 +42,14 @@ def dissolve_boundaries(
     dissolved_layer : layer (FeatureCollection)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+
     return gis._tools.featureanalysis.dissolve_boundaries(
         input_layer,
         dissolve_fields,
         summary_fields,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def extract_data(
@@ -56,7 +59,8 @@ def extract_data(
         data_format=None,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Select and download data for a specified area of interest. Layers that you select will be added to a zip file or
     layer package.
@@ -89,7 +93,8 @@ def extract_data(
         clip,
         data_format,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def merge_layers(
@@ -98,7 +103,8 @@ def merge_layers(
         merging_attributes=[],
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Combines two inputs of the same feature data type into a new output.
 
@@ -129,7 +135,8 @@ def merge_layers(
         merge_layer,
         merging_attributes,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def overlay_layers(
@@ -141,7 +148,8 @@ def overlay_layers(
         tolerance=None,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Overlays the input layer with the overlay layer. Overlay operations supported are Intersect, Union, and Erase.
 
@@ -181,7 +189,8 @@ def overlay_layers(
         output_type,
         tolerance,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 def create_route_layers(
         route_data_item,
@@ -190,9 +199,10 @@ def create_route_layers(
         summary=None,
         route_name_prefix=None,
         folder_name=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
-    Creates route layer items on the portal from the input route data. 
+    Creates route layer items on the portal from the input route data.
 
     Parameters
     ----------
@@ -202,12 +212,12 @@ def create_route_layers(
         Indicates if the input route data item should be deleted. The default value is False which does not delete the route data item.
     tags: Optional string
         Tags used to describe and identify the route layer items. Individual tags are separated using a comma. The route name is always
-        added as a tag even when a value for this argument is not specified. 
+        added as a tag even when a value for this argument is not specified.
     summary: Optional string
         The summary displayed as part of the item information for the route layer item. If a value for this argument is not specified,
         a default summary text "Route and directions for <Route Name>" is used.
     route_name_prefix : Optional string
-        A qualifier added to the title of every route layer item. This can be used to designate all routes that are shared for a 
+        A qualifier added to the title of every route layer item. This can be used to designate all routes that are shared for a
         specific purpose to have the same prefix in the title. The name of the route is always appended after this qualifier.
         If a value for the route_name_prefix is not specified, the title for the route layer item is created using only the route name.
     folder_name: Optional string
@@ -250,4 +260,4 @@ def create_route_layers(
     return gis._tools.featureanalysis.create_route_layers(
         route_data_item,
         delete_route_data_item,
-        output_name)
+        output_name, estimate=estimate)

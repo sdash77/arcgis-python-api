@@ -16,11 +16,12 @@ trace_downstream determines the flow paths in a downstream direction from the lo
 import arcgis as _arcgis
 
 def find_existing_locations(
-        input_layers=[],
-        expressions=[],
+        input_layers=None,
+        expressions=None,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     The Find Existing Locations task selects features in the input layer that meet a query you specify.
     A query is made up of one or more expressions. There are two types of expressions: attribute and spatial.
@@ -46,13 +47,17 @@ def find_existing_locations(
     -------
     result_layer : layer (FeatureCollection)
     """
-
+    if input_layers is None:
+        input_layers = []
+    if expressions is None:
+        expressions = []
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.find_existing_locations(
         input_layers,
         expressions,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def derive_new_locations(
@@ -60,7 +65,8 @@ def derive_new_locations(
         expressions=[],
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     The Derive New Locations task derives new features from the input layers that meet a query you specify. A query is
     made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an
@@ -87,6 +93,8 @@ def derive_new_locations(
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -98,7 +106,8 @@ def derive_new_locations(
         input_layers,
         expressions,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def find_similar_locations(
@@ -109,7 +118,7 @@ def find_similar_locations(
         number_of_results=0,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None, estimate=False):
     """
     Finds the locations that are most similar to one or more reference locations based on criteria that you specify.
 
@@ -144,13 +153,14 @@ def find_similar_locations(
         input_query,
         number_of_results,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 def find_centroids(input_layer,
                   point_location=False,
                   output_name=None,
                   context=None,
-                  gis=None):
+                  gis=None, estimate=False):
     """
     The Find Centroids task that finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical workflows where the resulting points can then be used in other analytic workflows.
 
@@ -172,6 +182,8 @@ def find_centroids(input_layer,
     output_name       Optional String. Output feature service name.
     ----------------  ---------------------------------------------------------------
     context           Optional String. Additional settings such as processing extent and output spatial reference.
+    ----------------  ---------------------------------------------------------------
+    estimate          Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     ================  ===============================================================
 
     :Returns: FeatureCollection or Item
@@ -183,7 +195,8 @@ def find_centroids(input_layer,
     return gis._tools.featureanalysis.find_centroids(input_layer,
                                                      point_location,
                                                      output_name,
-                                                     context)
+                                                     context,
+                                                     estimate=estimate)
 
 """
 def choose_best_facilities():
@@ -206,7 +219,8 @@ def create_viewshed(
         generalize=True,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Creates areas that are visible based on locations you specify.
 
@@ -236,6 +250,8 @@ def create_viewshed(
 
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
 
     Returns
@@ -254,7 +270,8 @@ def create_viewshed(
         target_height_units,
         generalize,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def create_watersheds(
@@ -265,7 +282,8 @@ def create_watersheds(
         generalize=True,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Creates catchment areas based on locations you specify.
 
@@ -287,6 +305,8 @@ def create_watersheds(
 
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
 
     Returns
@@ -303,7 +323,8 @@ def create_watersheds(
         source_database,
         generalize,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def trace_downstream(
@@ -317,7 +338,8 @@ def trace_downstream(
         generalize=True,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     Determine the flow paths in a downstream direction from the locations you specify.
 
@@ -346,6 +368,9 @@ def trace_downstream(
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
+
     Returns
     -------
     trace_layer : layer (FeatureCollection)
@@ -361,4 +386,5 @@ def trace_downstream(
         source_database,
         generalize,
         output_name,
-        context)
+        context,
+        estimate=estimate)
