@@ -6651,7 +6651,7 @@ class Item(dict):
             except: pass
         return None
 
-    def download(self, save_path=None):
+    def download(self, save_path=None, file_name=None):
         """
         Downloads the data to the specified folder or a temporary folder if a folder is not provided.
 
@@ -6660,6 +6660,8 @@ class Item(dict):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         save_path           Optional string. Folder location to download the file to.
+        ---------------     --------------------------------------------------------------------
+        file_name           Optional string. The name of the file.
         ===============     ====================================================================
 
 
@@ -6667,10 +6669,17 @@ class Item(dict):
            The download path if data was available, otherwise None.
         """
         data_path = 'content/items/' + self.itemid + '/data'
+        if file_name is None:
+            import re
+            file_name = self.name or self.title
+            file_name = re.sub('[^a-zA-Z0-9 \n\.]', '', file_name)
         if not save_path:
             save_path = self._workdir
         if data_path:
-            download_path = self._portal.con.get(path=data_path, file_name=self.name or self.title,
+            import re
+            name = self.name or self.title
+            name = re.sub('[^a-zA-Z0-9 \n\.]', '', name)
+            download_path = self._portal.con.get(path=data_path, file_name=file_name,
                                                  out_folder=save_path, try_json=False, force_bytes=False)
             if download_path == '':
                 return None
