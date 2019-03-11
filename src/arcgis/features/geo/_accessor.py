@@ -926,6 +926,7 @@ class GeoAccessor(object):
     _data = None
     _name = None
     _index = None
+    _kdtree = None
     _sindex = None
     _stype = None
     _sfname = None
@@ -2628,6 +2629,121 @@ class GeoAccessor(object):
                          [xmax, ymax], [xmax, ymin],
                          [xmin, ymin]]],
              'spatialReference' : dict(sr)})
+    #----------------------------------------------------------------------
+    def distance_matrix(self, leaf_size=16, rebuild=False):
+        """
+        Creates a k-d tree to calculate the nearest-neighbor problem.
+
+        **requires scipy**
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        leafsize                 Optional Integer. The number of points at which the algorithm
+                                 switches over to brute-force. Default: 16.
+        --------------------     --------------------------------------------------------------------
+        rebuild                  Optional Boolean. If True, the current KDTree is erased. If false,
+                                 any KD-Tree that exists will be returned.
+        ====================     ====================================================================
+
+
+        :returns: scipy's KDTree class
+
+        """
+        _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
+        if _HASARCPY == False and _HASSHAPELY == False:
+            return None
+        if rebuild:
+            self._kdtree = None
+        if self._kdtree is None:
+            try:
+                from scipy.spatial import cKDTree as KDTree
+            except ImportError:
+                from scipy.spatial import KDTree
+            xy = self._data[self.name].geom.centroid.tolist()
+            self._kdtree = KDTree(data=xy, leafsize=leaf_size)
+            return self._kdtree
+        else:
+            return self._kdtree
+    #----------------------------------------------------------------------
+    def voronoi(self):
+        """
+        Generates a voronoi diagram on the whole dataset.  If the geometry
+        is not a `Point` then the centroid is used for the geometry.  The
+        result is a polygon `GeoArray` that matches 1:1 to the original
+        dataset.
+
+        **requires scipy**
+
+        :returns: Polygon `GeoArray`
+
+        """
+        _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
+        if _HASARCPY == False and _HASSHAPELY == False:
+            return None
+        radius = max(abs(self.full_extent[0] - self.full_extent[2]),
+                     abs(self.full_extent[1] - self.full_extent[3]))
+        from ._array import GeoArray
+        from scipy.spatial import Voronoi
+        xy = self._data[self.name].geom.centroid
+        vor = Voronoi(xy.tolist())
+        if vor.points.shape[1] != 2:
+            raise ValueError("Supports 2-D only.")
+        new_regions = []
+        new_vertices = vor.vertices.tolist()
+        center = vor.points.mean(axis=0)
+        # Construct a map containing all ridges for a
+        # given point
+        all_ridges = {}
+        for (p1, p2), (v1, v2) in zip(vor.ridge_points,
+                                      vor.ridge_vertices):
+            all_ridges.setdefault(
+                p1, []).append((p2, v1, v2))
+            all_ridges.setdefault(
+                p2, []).append((p1, v1, v2))
+        # Reconstruct infinite regions
+        for p1, region in enumerate(vor.point_region):
+            vertices = vor.regions[region]
+            if all(v >= 0 for v in vertices):
+                # finite region
+                new_regions.append(vertices)
+                continue
+            # reconstruct a non-finite region
+            ridges = all_ridges[p1]
+            new_region = [v for v in vertices if v >= 0]
+            for p2, v1, v2 in ridges:
+                if v2 < 0:
+                    v1, v2 = v2, v1
+                if v1 >= 0:
+                    # finite ridge: already in the region
+                    continue
+                # Compute the missing endpoint of an
+                # infinite ridge
+                t = vor.points[p2] - \
+                    vor.points[p1]  # tangent
+                t /= np.linalg.norm(t)
+                n = np.array([-t[1], t[0]])  # normal
+                midpoint = vor.points[[p1, p2]]. \
+                    mean(axis=0)
+                direction = np.sign(
+                    np.dot(midpoint - center, n)) * n
+                far_point = vor.vertices[v2] + \
+                    direction * radius
+                new_region.append(len(new_vertices))
+                new_vertices.append(far_point.tolist())
+            # Sort region counterclockwise.
+            vs = np.asarray([new_vertices[v]
+                             for v in new_region])
+            c = vs.mean(axis=0)
+            angles = np.arctan2(
+                vs[:, 1] - c[1], vs[:, 0] - c[0])
+            new_region = np.array(new_region)[
+                np.argsort(angles)]
+            new_regions.append(new_region.tolist())
+        sr = self.sr
+        return GeoArray([Geometry({'rings' : [[new_vertices[l] for l in r]],
+                                   'spatialReference' : sr}).buffer(0) \
+                         for r in new_regions])
     #----------------------------------------------------------------------
     def project(self, spatial_reference, transformation_name=None):
         """
