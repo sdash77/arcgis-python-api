@@ -19,7 +19,8 @@ def aggregate_points(
                      percent_points=False,
                      output_name=None,
                      context=None,
-                     gis=None):
+                     gis=None,
+                     estimate=False):
     """
     Aggregate points task allows you to aggregate or count the total number of points that are distributed within
     specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation
@@ -50,6 +51,8 @@ def aggregate_points(
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -67,7 +70,8 @@ def aggregate_points(
                      minority_majority,
                      percent_points,
                      output_name,
-                     context)
+                     context,
+                     estimate=estimate)
 
 
 
@@ -87,7 +91,8 @@ def summarize_nearby(sum_nearby_layer,
                      percent_shape=False,
                      output_name=None,
                      context=None,
-                     gis=None):
+                     gis=None,
+                     estimate=False):
     """
     The SummarizeNearby task finds features that are within a specified distance of features in the input layer.
     Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a
@@ -147,6 +152,8 @@ def summarize_nearby(sum_nearby_layer,
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -171,7 +178,8 @@ def summarize_nearby(sum_nearby_layer,
                      minority_majority,
                      percent_shape,
                      output_name,
-                     context)
+                     context,
+                     estimate=estimate)
 
 
 def summarize_within(sum_within_layer,
@@ -184,7 +192,8 @@ def summarize_within(sum_within_layer,
                      percent_shape=False,
                      output_name=None,
                      context=None,
-                     gis=None):
+                     gis=None,
+                     estimate=False):
     """
     The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or
     portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer
@@ -225,6 +234,8 @@ def summarize_within(sum_within_layer,
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -243,7 +254,8 @@ def summarize_within(sum_within_layer,
                      minority_majority,
                      percent_shape,
                      output_name,
-                     context)
+                     context,
+                     estimate=estimate)
 
 
 def join_features(target_layer,
@@ -256,7 +268,8 @@ def join_features(target_layer,
                   summary_fields = None,
                   output_name = None,
                   context = None,
-                  gis=None):
+                  gis=None,
+                  estimate=False):
     """
     Parameters:
 
@@ -285,6 +298,7 @@ def join_features(target_layer,
 
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+        estimate: Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns:
        output_layer - outputLayer as a str
@@ -302,5 +316,6 @@ def join_features(target_layer,
         join_operation,
         summary_fields,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 

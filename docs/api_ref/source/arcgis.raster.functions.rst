@@ -326,6 +326,10 @@ ndvi
 ____
 .. automethod:: arcgis.raster.functions.ndvi
 
+NDVI
+____
+.. automethod:: arcgis.raster.functions.NDVI
+
 negate
 ______
 .. automethod:: arcgis.raster.functions.negate
@@ -357,6 +361,10 @@ _______________
 raster_calculator
 _________________
 .. automethod:: arcgis.raster.functions.raster_calculator
+
+raster_collection_function
+_________________
+.. automethod:: arcgis.raster.functions.raster_collection_function
 
 remap
 _____
@@ -494,3 +502,4 @@ _____________________
 weighted_sum
 _____________________
 .. automethod:: arcgis.raster.functions.weighted_sum
+

@@ -21,47 +21,47 @@ def calculate_density(
         num_classes=10,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     The calculate_density function creates a density map from point or line features by spreading known quantities of
     some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
     classified from least dense to most dense.
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
-        The point or line features from which to calculate density.
-    field : Optional string
-        A numeric field name specifying the number of incidents at each location. If not specified, each location will
-        be assumed to represent a single count.
-    cell_size : Optional float
-        This value is used to create a mesh of points where density values are calculated. The default is approximately
-        1/1000th of the smaller of the width and height of the analysis extent as defined in the context parameter.
-    cell_size_units : Optional string
-        The units of the cellSize value
-    radius : Optional float
-        A distance specifying how far to search to find point or line features when calculating density values.
-    radius_units : Optional string
-        The units of the radius parameter.
-    bounding_polygon_layer : Optional layer (see Feature Input in documentation)
-        A layer specifying the polygon(s) where you want densities to be calculated.
-    area_units : Optional string
-        The units of the calculated density values.
-    classification_type : Optional string
-        Determines how density values will be classified into polygons.
-    num_classes : Optional int
-        This value is used to divide the range of predicted values into distinct classes. The range of values in each
-        class is determined by the classificationType parameter.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    =========================    =========================================================
+    **Argument**                 **Description**
+    -------------------------    ---------------------------------------------------------
+    input_layer                  Required layer (see Feature Input in documentation). The point or line features from which to calculate density.
+    -------------------------    ---------------------------------------------------------
+    field                        Optional string. A numeric field name specifying the number of incidents at each location. If not specified, each location will be assumed to represent a single count.
+    -------------------------    ---------------------------------------------------------
+    cell_size                    Optional float. This value is used to create a mesh of points where density values are calculated. The default is approximately 1/1000th of the smaller of the width and height of the analysis extent as defined in the context parameter.
+    -------------------------    ---------------------------------------------------------
+    cell_size_units              Optional string. The units of the cellSize value
+    -------------------------    ---------------------------------------------------------
+    radius                       Optional float. A distance specifying how far to search to find point or line features when calculating density values.
+    -------------------------    ---------------------------------------------------------
+    radius_units                 Optional string. The units of the radius parameter.
+    -------------------------    ---------------------------------------------------------
+    bounding_polygon_layer       Optional layer (see Feature Input in documentation). A layer specifying the polygon(s) where you want densities to be calculated.
+    -------------------------    ---------------------------------------------------------
+    area_units                   Optional string. The units of the calculated density values.
+    -------------------------    ---------------------------------------------------------
+    classification_type          Optional string. Determines how density values will be classified into polygons.
+    -------------------------    ---------------------------------------------------------
+    num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classificationType parameter.
+    -------------------------    ---------------------------------------------------------
+    output_name                  Optional string. Additional properties such as output feature service name.
+    -------------------------    ---------------------------------------------------------
+    context                      Optional string. Additional settings such as processing extent and output spatial reference.
+    -------------------------    ---------------------------------------------------------
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------    ---------------------------------------------------------
+    estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    =========================    =========================================================
 
-    Returns
-    -------
-    result_layer : layer (FeatureCollection)
+
+    :Returns: result_layer : layer (FeatureCollection)
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -77,7 +77,8 @@ def calculate_density(
         classification_type,
         num_classes,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 def summarize_center_and_dispersion(
         analysis_layer,
@@ -87,7 +88,8 @@ def summarize_center_and_dispersion(
         group_field=None,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
 
     """
     The Summarize Center and Dispersion task finds central features and directional distributions.
@@ -101,34 +103,36 @@ def summarize_center_and_dispersion(
                             collection
     --------------------    ---------------------------------------------------------
     summarize_type          The method with which to summarize the analysis_layer.
-                            Choice List: 
-                            ["CentralFeature", "MeanCenter", "MedianCenter", 
+                            Choice List:
+                            ["CentralFeature", "MeanCenter", "MedianCenter",
                             "Ellipse"]
                             Example: "CentralFeature"
     --------------------    ---------------------------------------------------------
-    ellipse_size            The size of the output ellipse in standard deviations. 
+    ellipse_size            The size of the output ellipse in standard deviations.
                             The default ellipse size is 1. Valid choices are 1, 2, or
-                            3 standard deviations. 
+                            3 standard deviations.
                             Choice List: [1, 2, 3]
-                            Examples: 
+                            Examples:
                             "1"
                             [1, 2, 3]
     --------------------    ---------------------------------------------------------
-    weight_field            A numeric field in the analysis_layer to be used to 
+    weight_field            A numeric field in the analysis_layer to be used to
                             weight locations according to their relative importance.
     --------------------    ---------------------------------------------------------
     group_field             The field used to group features for separate directional
-                            distribution calculations. The group_field can be of 
+                            distribution calculations. The group_field can be of
                             integer, date, or string type.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string. Additional properties such as output 
-                            feature service name.                        
+    output_name             Optional string. Additional properties such as output
+                            feature service name.
     --------------------    ---------------------------------------------------------
-    context                 Optional string. Additional settings such as processing 
+    context                 Optional string. Additional settings such as processing
                             extent and output spatial reference.
     --------------------    ---------------------------------------------------------
-    gis                     Optional, the GIS on which this tool runs. If not 
-                            specified, the active GIS is used.                                                      
+    gis                     Optional, the GIS on which this tool runs. If not
+                            specified, the active GIS is used.
+    --------------------    ---------------------------------------------------------
+    estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     ====================    =========================================================
 
     :returns: Python dictionary with the following keys:
@@ -147,7 +151,8 @@ def summarize_center_and_dispersion(
         weight_field,
         group_field,
         output_name,
-        context) 
+        context,
+        estimate=estimate)
 
 def find_point_clusters(
         analysis_layer,
@@ -156,42 +161,44 @@ def find_point_clusters(
         search_distance_unit=None,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None, estimate=False):
 
     """
-    The Find Point Clusters function finds clusters of point features in surrounding 
-    noise based on their spatial distribution. Output is a layer containing records 
-    assigned to a cluster or noise. 
+    The Find Point Clusters function finds clusters of point features in surrounding
+    noise based on their spatial distribution. Output is a layer containing records
+    assigned to a cluster or noise.
 
     ====================    =========================================================
     **Argument**            **Description**
     --------------------    ---------------------------------------------------------
-    analysis_layer          Required layer. The point feature layer for which 
+    analysis_layer          Required layer. The point feature layer for which
                             density-based clustering will be calculated.
     --------------------    ---------------------------------------------------------
-    min_features_cluster    Required integer. The minimum number of features to be 
-                            considered a cluster. Any cluster with fewer features 
+    min_features_cluster    Required integer. The minimum number of features to be
+                            considered a cluster. Any cluster with fewer features
                             than the number provided will be considered noise.
     --------------------    ---------------------------------------------------------
-    search_distance         Optional double. The maximum distance to consider. The 
-                            Minimum Features per Cluster specified must be found 
-                            within this distance for cluster membership. Individual 
-                            clusters will be separated by at least this distance. If 
-                            a feature is located further than this distance from the 
-                            next closest feature in the cluster, it will not be 
+    search_distance         Optional double. The maximum distance to consider. The
+                            Minimum Features per Cluster specified must be found
+                            within this distance for cluster membership. Individual
+                            clusters will be separated by at least this distance. If
+                            a feature is located further than this distance from the
+                            next closest feature in the cluster, it will not be
                             included in the cluster.
     --------------------    ---------------------------------------------------------
-    search_distance_unit    Optional string. The linear unit to be used for the 
+    search_distance_unit    Optional string. The linear unit to be used for the
                             search distance parameter.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string. Additional properties such as output 
+    output_name             Optional string. Additional properties such as output
                             feature service name.
     --------------------    ---------------------------------------------------------
-    context                 Optional string. Additional settings such as processing 
+    context                 Optional string. Additional settings such as processing
                             extent and output spatial reference.
     --------------------    ---------------------------------------------------------
-    gis                     Optional, the GIS on which this tool runs. If not 
-                            specified, the active GIS is used.                                                      
+    gis                     Optional, the GIS on which this tool runs. If not
+                            specified, the active GIS is used.
+    --------------------    ---------------------------------------------------------
+    estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     ====================    =========================================================
 
     :returns: Python dictionary with the following keys:
@@ -206,7 +213,8 @@ def find_point_clusters(
         search_distance,
         search_distance_unit,
         output_name,
-        context)    
+        context,
+        estimate=estimate)
 
 def find_hot_spots(
         analysis_layer,
@@ -216,39 +224,39 @@ def find_hot_spots(
         aggregation_polygon_layer=None,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     The Find Hot Spots function finds statistically significant clusters of incident points, weighted points, or
     weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation.
     Output is a hot spot map.
 
-    Parameters
-    ----------
-    gis : The GIS used for running this analysis
-    analysis_layer : Required layer (see Feature Input in documentation)
-        The point or polygon feature layer for which hot spots will be calculated.
-    analysis_field : Optional string
-        The numeric field in the AnalysisLayer that will be analyzed.
-    divided_by_field : Optional string
+    =========================    =========================================================
+    **Argument**                 **Description**
+    -------------------------    ---------------------------------------------------------
+    analysis_layer               Required layer (see Feature Input in documentation). The point or polygon feature layer for which hot spots will be calculated.
+    -------------------------    ---------------------------------------------------------
+    analysis_field               Optional string. The numeric field in the AnalysisLayer that will be analyzed.
+    -------------------------    ---------------------------------------------------------
+    divided_by_field             Optional string. The field that will segment the locations.
+    -------------------------    ---------------------------------------------------------
+    bounding_polygon_layer       Optional layer (see Feature Input in documentation). When the analysis layer is points and no AnalysisField is specified, you can provide polygons features that define where incidents could have occurred.
+    -------------------------    ---------------------------------------------------------
+    aggregation_polygon_layer    Optional layer (see Feature Input in documentation). When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
+    -------------------------    ---------------------------------------------------------
+    output_name                  Optional string. Additional properties such as output feature service name.
+    -------------------------    ---------------------------------------------------------
+    context                      Optional string. Additional settings such as processing extent and output spatial reference.
+    -------------------------    ---------------------------------------------------------
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------    ---------------------------------------------------------
+    estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    =========================    =========================================================
 
-    bounding_polygon_layer : Optional layer (see Feature Input in documentation)
-        When the analysis layer is points and no AnalysisField is specified, you can provide polygons features that
-        define where incidents could have occurred.
-    aggregation_polygon_layer : Optional layer (see Feature Input in documentation)
-        When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into
-        which the points will be aggregated and analyzed, such as administrative units.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-    Returns
-    -------
-    dict with the following keys:
+    :Returns: dict with the following keys:
        "hot_spots_result_layer" : layer (FeatureCollection)
        "process_info" : list of messages
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -259,7 +267,8 @@ def find_hot_spots(
         bounding_polygon_layer,
         aggregation_polygon_layer,
         output_name,
-        context)
+        context,
+        estimate=estimate)
 
 
 def find_outliers(analysis_layer,
@@ -275,7 +284,8 @@ def find_outliers(analysis_layer,
                   band_units=None,
                   output_name=None,
                   context=None,
-                  gis=None):
+                  gis=None,
+                  estimate=False):
     """
 
     The Find Outliers task analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
@@ -314,6 +324,7 @@ def find_outliers(analysis_layer,
     context : Optional string
         Additional settings such as processing extent and output spatial reference.
     gis : The GIS used for running this analysis
+    estimate : Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -337,7 +348,8 @@ def find_outliers(analysis_layer,
                                                     distance_band,
                                                     band_units,
                                                     output_name,
-                                                    context)
+                                                    context,
+                                                    estimate=estimate)
 
 
 def interpolate_points(
@@ -352,7 +364,8 @@ def interpolate_points(
         predict_at_point_layer=None,
         output_name=None,
         context=None,
-        gis=None):
+        gis=None,
+        estimate=False):
     """
     The Interpolate Points function allows you to predict values at new locations based on measurements from a
     collection of points. The function takes point data with values at each point and returns areas classified by
@@ -392,6 +405,8 @@ def interpolate_points(
         Additional settings such as processing extent and output spatial reference.
     gis :
         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    estimate :
+        Optional Boolean. If True, the number of credits to run the operation will be returned.
 
     Returns
     -------
@@ -413,4 +428,5 @@ def interpolate_points(
         bounding_polygon_layer,
         predict_at_point_layer,
         output_name,
-        context)
+        context,
+        estimate=estimate)

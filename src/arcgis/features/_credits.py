@@ -13,7 +13,15 @@ def _estimate_credits(task, parameters, gis=None):
     """
     Estimates the number of credits a spatial analysis operation will take.
 
-
+    =======================     ====================================================================
+    **Argument**                **Description**
+    -----------------------     --------------------------------------------------------------------
+    task                        Required String. The name of the analysis tool.
+    -----------------------     --------------------------------------------------------------------
+    parameters                  Required String.  The input parameters for the tool.
+    -----------------------     --------------------------------------------------------------------
+    gis                         Optional GIS.  The enterprise connection object.
+    =======================     ====================================================================
 
     :returns: float
 
@@ -25,8 +33,7 @@ def _estimate_credits(task, parameters, gis=None):
     elif gis is None and \
          _arcgis.env.active_gis is None:
         raise Exception("A GIS must be provided and/or set as active.")
-    isinstance(gis, _arcgis.GIS)
-    if gis.version >= [7,1] and \
+    if gis.version >= [6,4] and \
        gis._portal.is_arcgisonline:
         url = gis.properties['helperServices']['creditEstimation']['url']
         gptask = "EstimateCredits"
@@ -36,9 +43,7 @@ def _estimate_credits(task, parameters, gis=None):
             'taskName' : task,
             'taskParameters' : json.dumps(parameters)
         }
-
         kwargs = locals()
-
         param_db = {
             "task": (str, "taskName"),
             "parameters": (str, "taskParameters"),
@@ -49,6 +54,6 @@ def _estimate_credits(task, parameters, gis=None):
         ]
         res = _execute_gp_tool(gis, gptask, kwargs, param_db, return_values, False, url, webtool=True, add_token=False)
         if 'cost' in res:
-            return res['cost']
+            return float(res['cost'])
         return res
     return
