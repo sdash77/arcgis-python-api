@@ -86,6 +86,10 @@ delete_image_collection
 -----------------------
 .. automethod:: arcgis.raster.analytics.delete_image_collection
 
+list_datastore_content
+-----------------------
+.. automethod:: arcgis.raster.analytics.list_datastore_content
+
 
 build_footprints
 -----------------------

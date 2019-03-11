@@ -1597,8 +1597,12 @@ def create_image_collection(image_collection,
 
                                          The raster type parameters argument is a dictionary.
     ------------------                   --------------------------------------------------------------------
-    out_sr                               Optional integer. The well-known ID of the spatial reference. Sets
-                                         the image collection spatial reference. 
+    out_sr                               Optional, additional parameters of the service.
+                            
+                                         The following additional parameters can be specified:
+                                         - Spatial reference of the image_collection; The well-known ID of 
+                                         the spatial reference or a spatial reference dictionary object for the 
+                                         input geometries.
     ------------------                   --------------------------------------------------------------------
     context                               Optional, The context parameter is used to provide additional input parameters
                                             {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
@@ -1682,10 +1686,13 @@ def create_image_collection(image_collection,
     if out_sr is not None:
         if isinstance(out_sr, int):
             if context is not None:
-                context.update({'outSR':{'wkid': out_sr}})
+                context.update({'outSR': out_sr})
             else:
                 context = {}
-                context["outSR"]={'wkid': out_sr}
+                context["outSR"]=out_sr
+        else:
+            context = {}
+            context["outSR"]=out_sr
 
     _set_context(params, context)
 
@@ -2338,22 +2345,28 @@ def optimum_travel_cost_network(input_regions_raster,
 
 def list_datastore_content(datastore, filter=None, *, gis=None, **kwargs):
     """
-    Parameters
-    ----------
-    datastore: Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed. 
-               It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
-               "/rasterStores/rasterstore"
-               or it can be a Datastore object containing a fileshare, rasterstore  or a cloudstore path.
-               eg:
-               ds=analytics.get_datastores()
-               ds_items =ds.search()
-               ds_items[1]
-               ds_items[1] may be specified as input for datastore         
-               
-    filter : Optional. To filter out the raster contents to be displayed
-    Returns
-    -------
-    list of contents in the datastore
+    List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    datastore              Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed. 
+                           It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
+                           "/rasterStores/rasterstore"
+                           or it can be a Datastore object containing a fileshare, rasterstore  or a cloudstore path.
+                           eg:
+                           ds=analytics.get_datastores()
+                           ds_items =ds.search()
+                           ds_items[1]
+                           ds_items[1] may be specified as input for datastore 
+    ------------------     --------------------------------------------------------------------
+    filter                 Optional. To filter out the raster contents to be displayed
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ==================     ====================================================================
+
+    :return:
+        List of contents in the datastore
     """
 
     task = "ListDatastoreContent"
