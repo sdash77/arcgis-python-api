@@ -1377,43 +1377,68 @@ def classify(input_raster,
     return output_service
 
 
-def segment(input_raster,
-            spectral_detail="15.5",
-            spatial_detail="15",
-            minimum_segment_size_in_pixels="20",
-            band_indexes="0,1,2",
-            remove_tiling_artifacts="false",
-            output_name=None,
-            *,
-            gis=None,
-            **kwargs):
+def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segment_size_in_pixels=20,
+            band_indexes=[0,1,2], remove_tiling_artifacts=False, output_name=None,
+            *, gis=None, **kwargs):
+
     """
+    Groups together adjacent pixels having similar spectral and spatial characteristics into
+    segments, known as objects.
 
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    input_raster                         Required ImageryLayer object
+    --------------------------------     --------------------------------------------------------------------
+    spectral_detail                      Optional float. Default is 15.5.
+                                         Set the level of importance given to the spectral differences of
+                                         features in your imagery. Valid values range from 1.0 to 20.0. A high
+                                         value is appropriate when you have features you want to classify
+                                         separately but have somewhat similar spectral characteristics.
+                                         Smaller values create spectrally smoother outputs.
 
-    Parameters
-    ----------
-    input_raster : Required string
+                                         For example, setting a higher spectral detail value for a forested
+                                         scene, will preserve greater discrimination between the different tree
+                                         species, resulting in more segments.
+    --------------------------------     --------------------------------------------------------------------
+    spatial_detail                       Optional float. Default is 15.
+                                         Set the level of importance given to the proximity between features
+                                         in your imagery. Valid values range from 1 to 20. A high value is
+                                         appropriate for a scene where your features of interest are small
+                                         and clustered together. Smaller values create spatially smoother
+                                         outputs.
 
-    spectral_detail : Required string
+                                         For example, in an urban scene, you could classify an impervious
+                                         surface using a smaller spatial detail, or you could classify
+                                         buildings and roads as separate classes using a higher spatial detail.
+    --------------------------------     --------------------------------------------------------------------
+    minimum_segment_size_in_pixels       Optional float. Default is 20.
+                                         Merge segments smaller than this size with their best fitting
+                                         neighbor segment. This is related to the minimum mapping unit for a
+                                         mapping project. Units are in pixels.
+    --------------------------------     --------------------------------------------------------------------
+    band_indexes                         Optional List of integers. Default is [0,1,2]
+                                         Define which 3 bands are used in segmentation. Choose the bands that
+                                         visually discriminate your features of interest best.
+    --------------------------------     --------------------------------------------------------------------
+    remove_tiling_artifacts              Optional Bool. Default is False.
+                                         If False, the tool will not run to remove tiling artifacts after
+                                         segmentation. The result may seem blocky at some tiling boundaries.
+    --------------------------------     --------------------------------------------------------------------
+    output_name                          Optional String. If specified, an Imagery Layer of given name is
+                                         created. Else, an Image Service is created by the method and used
+                                         as the output raster. You can pass in an existing Image Service Item
+                                         from your GIS to use that instead. Alternatively, you can pass in
+                                         the name of the output Image Service that should be created by this
+                                         method to be used as the output for the tool. A RuntimeError is raised
+                                         if a service by that name already exists
+    --------------------------------     --------------------------------------------------------------------
+    gis                                  Optional GIS object. If not speficied, the currently active connection
+                                         is used.
+    ================================     ====================================================================
 
-    spatial_detail : Required string
-
-    minimum_segment_size_in_pixels : Required string
-
-    band_indexes : Required string
-
-    remove_tiling_artifacts : Required string
-
-    output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
-        You can pass in an existing Image Service Item from your GIS to use that instead.
-        Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
-        A RuntimeError is raised if a service by that name already exists
-
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-    Returns
-    -------
-    output_raster : Image layer item 
+    :return:
+       output_raster : Imagery Layer item
     """
 
     task = "Segment"
@@ -1431,10 +1456,24 @@ def segment(input_raster,
 
     params["inputRaster"] = _layer_input(input_raster)
 
+    if isinstance(spectral_detail, (float, int)):
+        spectral_detail = str(spectral_detail)
     params["spectralDetail"] = spectral_detail
+
+    if isinstance(spatial_detail, (float,int)):
+        spatial_detail = str(spatial_detail)
     params["spatialDetail"] = spatial_detail
+
+    if isinstance(minimum_segment_size_in_pixels, (float, int)):
+        minimum_segment_size_in_pixels = str(minimum_segment_size_in_pixels)
     params["minimumSegmentSizeInPixels"] = minimum_segment_size_in_pixels
+
+    if isinstance(band_indexes, (list, tuple)):
+        band_indexes = ','.join(str(e) for e in band_indexes)
     params["bandIndexes"] = band_indexes
+
+    if isinstance(remove_tiling_artifacts, bool):
+        remove_tiling_artifacts = str(remove_tiling_artifacts).lower()
     params["removeTilingArtifacts"] = remove_tiling_artifacts
 
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
