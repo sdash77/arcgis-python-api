@@ -326,6 +326,10 @@ ndvi
 ____
 .. automethod:: arcgis.raster.functions.ndvi
 
+NDVI
+____
+.. automethod:: arcgis.raster.functions.NDVI
+
 negate
 ______
 .. automethod:: arcgis.raster.functions.negate
@@ -499,8 +503,3 @@ weighted_sum
 _____________________
 .. automethod:: arcgis.raster.functions.weighted_sum
 
-RFT
-------
-.. autoclass:: arcgis.raster.functions.RFT
-    :members:
-    :undoc-members:

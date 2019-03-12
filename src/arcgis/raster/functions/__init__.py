@@ -3671,49 +3671,57 @@ def raster_collection_function(raster, item_function, aggregation_function, proc
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 class RFT:
-    """
-    Represents a callable object created from a Raster Function Template(RFT) portal item. 
-    This object serves as a python function corresponding to the Raster Function Template. 
-
-    Once an RFT class object has been created, a single question mark before, or after the 
-    RFT object will show help relative to it. The help document would display the parameters
-    that were marked as public by the author of the RFT. 
-
-    If any of the input values need to be given or overriden, the values maybe specified 
-    as inputs directly to the RFT object. RFT objects can only be called using keyword 
-    arguments. 
-
-    .. code-block:: python
-
-        # Usage Example 1
-
-        rft_item_object = RFT(rft_item)
-        rft_item_object?
-        imagery_layer_output = rft_item_object(param1=<ImageryLayer object>, param2=<value>)
-        # In the above rft object, it is assumed that param1 represents the ImageryLayer input to the RFT.
-        imagery_layer_output #This would display a new ImageryLayer object with the RFT applied on it.
-
-    .. code-block:: python
-
-        # Usage Example 2 
-
-        # If the RFT is capable of working with an array of rasters
-
-        rft_item_object = RFT(rft_item)
-        rft_item_object?
-        imagery_layer_output = rft_item_object(param1=[<ImageryLayer object1>,<ScalarValue>,<ImageryLayer object2>], param2=<value>)
-        imagery_layer_output #This would display a new ImageryLayer object with the RFT applied on it.
-
-    ========================  ====================================================================
-    **Arguments**             **Description**
-    ------------------------  --------------------------------------------------------------------
-    raster_function_template  required, input portal raster function template item.
-    ------------------------  --------------------------------------------------------------------
-    gis                       optional, GIS on which the RFT object is based on. 
-    ========================  ====================================================================
-
-    """
     def __init__(self, raster_function_template,gis=None):
+        """
+        Represents a callable object created from a Raster Function Template(RFT) portal item. 
+        This object serves as a python function corresponding to the Raster Function Template. 
+
+        Once an RFT class object has been created, a single question mark before, or after the 
+        RFT object will show help relative to it. The help document would display the parameters
+        that were marked as public by the author of the RFT. (This is supported only in 
+        jupyter notebook and IPython environment.)
+
+        If any of the input values need to be given or overriden, the values maybe specified 
+        as inputs directly to the RFT object. RFT objects can only be called using keyword 
+        arguments. On calling the RFT object with the necessary input variables, it creates 
+        an output Imagery Layer with function chain applied on it.
+
+        .. note::
+            Make sure that Raster rendering service is turned turned on, inorder to display the 
+            output dynamically. 
+
+            Also, set the desired extent on the output Imagery Layer before viewing it
+
+        .. code-block:: python
+
+            # Usage Example 1
+
+            rft_item_object = RFT(rft_item)
+            rft_item_object?
+            imagery_layer_output = rft_item_object(param1=<ImageryLayer object>, param2=<value>)
+            # In the above rft object, it is assumed that param1 represents the ImageryLayer input to the RFT.
+            imagery_layer_output #This would display a new ImageryLayer object with the RFT applied on it.
+
+        .. code-block:: python
+
+            # Usage Example 2 
+
+            # If the RFT is capable of working with an array of rasters
+
+            rft_item_object = RFT(rft_item)
+            rft_item_object?
+            imagery_layer_output = rft_item_object(param1=[<ImageryLayer object1>,<ScalarValue>,<ImageryLayer object2>], param2=<value>)
+            imagery_layer_output #This would display a new ImageryLayer object with the RFT applied on it.
+
+        ========================  ====================================================================
+        **Arguments**             **Description**	
+        ------------------------  --------------------------------------------------------------------
+        raster_function_template  required, input portal raster function template item.
+        ------------------------  --------------------------------------------------------------------
+        gis                       optional, GIS on which the RFT object is based on.
+        ========================  ====================================================================
+        """
+
         self._is_public_flag = False
         self._rft=raster_function_template
         self._gis = _arcgis.env.active_gis if gis is None else gis
@@ -4178,7 +4186,7 @@ class RFT:
             complete_rft_dict = self._apply_argument(rft_dict,arg_dict_copy)
 
         newlyr = ImageryLayer(complete_rft_dict, self._gis)
-        _LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+        #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
         newlyr._fn = complete_rft_dict
         newlyr._fnra = complete_rft_dict
         return newlyr
