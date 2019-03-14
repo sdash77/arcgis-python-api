@@ -2687,6 +2687,8 @@ class GeoAccessor(object):
         """
         Performs spatial operation operations on two spatially enabled dataframes.
 
+        **requires ArcPy or Shapely**
+
         =========================    =========================================================
         **Argument**                 **Description**
         -------------------------    ---------------------------------------------------------
@@ -2703,6 +2705,7 @@ class GeoAccessor(object):
         """
         from arcgis.features.geo._tools import overlay
         return overlay(sdf1=self._data, sdf2=sdf, op=op.lower())
+
     #----------------------------------------------------------------------
     def voronoi(self):
         """
