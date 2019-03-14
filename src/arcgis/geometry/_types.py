@@ -198,10 +198,10 @@ class GeometryFactory(type):
         if iterable:
             if isinstance(iterable, (bytearray, bytes)): # WKB
                 iterable = cls._from_wkb(iterable)
-            elif 'coordinates' in iterable:
-                iterable = cls._from_gj(iterable)
             elif hasattr(iterable, "JSON"):
                 iterable = json.loads(getattr(iterable, "JSON"))
+            elif 'coordinates' in iterable:
+                iterable = cls._from_gj(iterable)
             elif hasattr(iterable, "exportToString"):
                 iterable = {'wkt' : iterable.exportToString()}
             elif isinstance(iterable, str) and\
@@ -1721,7 +1721,8 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(self.as_arcpy.difference(other=second_geometry))
+            g = self.as_arcpy.difference(other=second_geometry)
+            return Geometry(g)
         elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely

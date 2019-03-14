@@ -2666,16 +2666,54 @@ class GeoAccessor(object):
         else:
             return self._kdtree
     #----------------------------------------------------------------------
+    def select(self, other):
+        """
+        This operation performs a dataset wide **selection** by geometric
+        intersection. A geometry or another Spatially enabled DataFrame
+        can be given and `select` will return all rows that intersect that
+        input geometry.  The `select` operation uses a spatial index to
+        complete the task, so if it is not built before the first run, the
+        function will build a quadtree index on the fly.
+
+        **requires ArcPy or Shapely**
+
+        :returns: pd.DataFrame (spatially enabled)
+
+        """
+        from arcgis.features.geo._tools import select
+        return select(sdf=self._data, other=other)
+    #----------------------------------------------------------------------
+    def overlay(self, sdf, op="union"):
+        """
+        Performs spatial operation operations on two spatially enabled dataframes.
+
+        =========================    =========================================================
+        **Argument**                 **Description**
+        -------------------------    ---------------------------------------------------------
+        sdf                          Required Spatially Enabled DataFrame. The geometry to
+                                     perform the operation from.
+        -------------------------    ---------------------------------------------------------
+        op                           Optional String. The spatial operation to perform.  The
+                                     allowed value are: union, erase, identity, intersection.
+                                     `union` is the default operation.
+        =========================    =========================================================
+
+        :returns: Spatially enabled DataFrame (pd.DataFrame)
+
+        """
+        from arcgis.features.geo._tools import overlay
+        return overlay(sdf1=self._data, sdf2=sdf, op=op.lower())
+    #----------------------------------------------------------------------
     def voronoi(self):
         """
         Generates a voronoi diagram on the whole dataset.  If the geometry
         is not a `Point` then the centroid is used for the geometry.  The
-        result is a polygon `GeoArray` that matches 1:1 to the original
+        result is a polygon `GeoArray` Series that matches 1:1 to the original
         dataset.
 
         **requires scipy**
 
-        :returns: Polygon `GeoArray`
+        :returns: pd.Series
 
         """
         _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
@@ -2741,9 +2779,9 @@ class GeoAccessor(object):
                 np.argsort(angles)]
             new_regions.append(new_region.tolist())
         sr = self.sr
-        return GeoArray([Geometry({'rings' : [[new_vertices[l] for l in r]],
-                                   'spatialReference' : sr}).buffer(0) \
-                         for r in new_regions])
+        return pd.Series(GeoArray([Geometry({'rings' : [[new_vertices[l] for l in r]],
+                                             'spatialReference' : sr}).buffer(0) \
+                                   for r in new_regions]))
     #----------------------------------------------------------------------
     def project(self, spatial_reference, transformation_name=None):
         """
