@@ -711,9 +711,10 @@ def least_cost_path(in_source_data,
 
     source_direction_list = ["FROM_SOURCE","TO_SOURCE"]
 
-    if source_direction.upper() not in source_direction_list:
-        raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list) )
-    template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
+    if source_direction is not None:
+        if source_direction.upper() not in source_direction_list:
+            raise RuntimeError('source_direction should be one of the following '+ str(source_direction_list) )
+        template_dict["rasterFunctionArguments"]["source_direction"] = source_direction
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']["in_source_data"] = raster_ra1

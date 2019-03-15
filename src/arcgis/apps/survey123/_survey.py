@@ -3,6 +3,7 @@ import json
 import time
 import uuid
 import tempfile
+from urllib.parse import urlparse
 from typing import List
 from arcgis.gis import GIS, Item
 ########################################################################
@@ -318,21 +319,21 @@ class Survey():
             files = []
             items = []
             if res['jobStatus'] == 'esriJobSucceeded':
-                if 'resultFiles' in res['results']:
-                    for sub in res['results']['resultFiles']:
+                if 'resultFiles' in res['resultInfo']:
+                    for sub in res['resultInfo']['resultFiles']:
                         if 'id' in sub:
                             items.append(sub['id'])
                         elif 'url' in sub:
                             urls.append(sub['url'])
                     files = [self._si._gis._con.get(url,
-                                                    file_name=os.path.basename(url),
+                                                    file_name=os.path.basename(urlparse(url).path), add_token=False, try_json=False,
                                                     out_folder=temp_dir) \
                             for url in urls] + [gis.content.get(i) for i in items]
                     if len(files) == 1:
                         return files[0]
                     return files
-                elif 'details' in res['results']:
-                    for res in res['results']['details']:
+                elif 'details' in res['resultInfo']:
+                    for res in res['resultInfo']['details']:
                         if 'resultFile' in res:
                             fr =  res['resultFile']
                             if 'id' in fr:

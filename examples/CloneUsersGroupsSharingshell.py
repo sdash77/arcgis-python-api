@@ -23,7 +23,7 @@ else:
     # unresolved reference in Python3, but should work if running from Python2
     from urllib2 import URLError
 
-def copy_user(target, user, password):
+def copy_user(target, user, password, role_name):
     # See if the user has firstName and lastName properties
     try:
         firstname = user.firstName
@@ -51,9 +51,10 @@ def copy_user(target, user, password):
                            user.description, user.tags, user.get_thumbnail_link(),
                            culture=user.culture, region=user.region)
 
-        # update user role; assumes no custom roles
+        # update user role;
         if 'role' in user and not user.role == 'org_user':
-            target_user.update_role(user.role)
+            target_role = [role for role in target.users.roles.all(max_roles=50) if role.name == role_name][0]
+            target_user.update_role(role = target_role)
 
         return target_user
 
@@ -126,10 +127,11 @@ systemusers = ['system_publisher', 'esri_nav', 'esri_livingatlas', 'esri_boundar
 for user in sourceusers:
     if not user.username in systemusers:
         print('Copying {}...'.format(user.username))
+        src_role = source.users.roles.get_role(user.roleId)
         if user.provider == 'arcgis':
-            copy_user(target, user, 'TestPassword@123')
+            copy_user(target, user, 'TestPassword@123', src_role.name)
         elif user.provider == 'enterprise':  # web tier authenticated users
-            copy_user(target, user, 'NoPwdUsed')
+            copy_user(target, user, 'NoPwdUsed', src_role.name)
 
 # Get list of groups from the Source Portal and also from Target Portal (for cleanup purposes)
 sourcegroups = source.groups.search()

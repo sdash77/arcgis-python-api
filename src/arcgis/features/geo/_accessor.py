@@ -1766,24 +1766,70 @@ class GeoAccessor(object):
 
         """
         from ._viz.mapping import plot
-        if map_widget is None:
+
+        # small helper to consolidate the plotting function
+        def _plot_map_widget(mp_wdgt):
+            plot(df=self._data,
+                 map_widget=mp_wdgt,
+                 name=kwargs.pop('name', "Feature Collection Layer"),
+                 renderer_type=kwargs.pop("renderer_type", None),
+                 symbol_type=kwargs.pop('symbol_type', None),
+                 symbol_style=kwargs.pop('symbol_style', None),
+                 col=kwargs.pop('col', None),
+                 colors=kwargs.pop('cmap', None) or kwargs.pop('colors', None) or kwargs.pop('pallette', 'jet'),
+                 alpha=kwargs.pop('alpha', 1),
+                 **kwargs)
+
+        # small helper to address zoom level
+        def _adjust_zoom(mp_wdgt):
+
+            # if a single point, the extent will zoom to a scale so large it is almost irrelevant, so back out slightly
+            if mp_wdgt.zoom > 16:
+                mp_wdgt.zoom = 16
+
+            # if zooming to an extent, it will zoom one level too far, so back out one to make all data visible
+            else:
+                mp_wdgt.zoom = mp_wdgt.zoom - 1
+
+        # if the map widget is explicitly defined
+        if map_widget:
+
+            # plot and be merry
+            _plot_map_widget(map_widget)
+            return True
+
+        # otherwise, if a map widget is NOT explicitly defined
+        else:
+
             from arcgis.gis import GIS
             from arcgis.env import active_gis
+
+            # if a gis is not already created in the session, create an anonymous one
             gis = active_gis
             if gis is None:
                 gis = GIS()
+
+            # use the GIS to create a map widget
             map_widget = gis.map()
-        plot(df=self._data,
-             map_widget=map_widget,
-             name=kwargs.pop('name', "Feature Collection Layer"),
-             renderer_type=kwargs.pop("renderer_type", None),
-             symbol_type=kwargs.pop('symbol_type', None),
-             symbol_style=kwargs.pop('symbol_style', None),
-             col=kwargs.pop('col', None),
-             colors=kwargs.pop('cmap', None) or kwargs.pop('colors', None) or kwargs.pop('pallette', 'jet'),
-             alpha=kwargs.pop('alpha', 1),
-             **kwargs)
-        return True
+
+            # plot the data in the map widget
+            _plot_map_widget(map_widget)
+
+            # zoom the map widget to the extent of the data
+            map_widget.extent = {
+                'spatialReference': self._data.spatial.sr,
+                'xmin': self._data.spatial.full_extent[0],
+                'ymin': self._data.spatial.full_extent[1],
+                'xmax': self._data.spatial.full_extent[2],
+                'ymax': self._data.spatial.full_extent[3]
+            }
+
+            # adjust the zoom level so the map displays the data as expected
+            map_widget.on_draw_end(_adjust_zoom, True)
+
+            # return the map widget so it will be displayed below the cell in Jupyter Notebook
+            return map_widget
+
     #----------------------------------------------------------------------
     def to_featureclass(self, location, overwrite=True):
         """exports a geo enabled dataframe to a feature class."""
