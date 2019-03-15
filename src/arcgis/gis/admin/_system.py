@@ -176,7 +176,7 @@ class System(BasePortalAdmin):
             import os
             u = os.path.dirname(self._url)
             url = "%s/license" % u
-            return License(url=url, gis=self._con)
+            return PortalLicense(url=url, gis=self._con)
         return None
     #----------------------------------------------------------------------
     @property
@@ -305,8 +305,8 @@ class System(BasePortalAdmin):
         """
         url = "%s/languages" % self._url
         params = {"f" : "json"}
-        return self._con.get(path=url,
-                             params=params)
+        return self._con.get(url,
+                             params)
     #----------------------------------------------------------------------
     @languages.setter
     def languages(self, value):
@@ -318,8 +318,8 @@ class System(BasePortalAdmin):
         url = "%s/languages/update" % self._url
         params = {"f" : "json",
                   'languages' : value}
-        self._con.post(path=url,
-                       postdata=params)
+        self._con.post(url,
+                       params)
     #----------------------------------------------------------------------
     @property
     def content_discovery(self):
@@ -606,7 +606,7 @@ class Directory(BasePortalAdmin):
 
 
 ########################################################################
-class License(BasePortalAdmin):
+class PortalLicense(BasePortalAdmin):
     """
     The Enterprise portal requires a valid license to function correctly.
     This resource returns information for user types that are licensed
@@ -831,6 +831,9 @@ class Licenses(BasePortalAdmin):
     Starting at 10.5, Portal for ArcGIS enforces two levels of membership
     for licensing to define sets of privileges for registered members and
     their assigned roles.
+
+    **Deprecated at ArcGIS Enterprise 10.7**
+
     """
     _gis = None
     _con = None
