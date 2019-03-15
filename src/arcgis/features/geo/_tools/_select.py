@@ -22,7 +22,7 @@ def select(sdf, other):
         sindex = sdf.spatial.sindex()
         q1 = sindex.intersect(bbox=other.extent)
         sub = sdf.iloc[q1]
-        dj = sub[self.name].geom.disjoint(other) == False
+        dj = sub[sdf.spatial.name].geom.disjoint(other) == False
         dj.index = sub.index
         ud = ud | dj
         return sdf[ud]
@@ -34,7 +34,7 @@ def select(sdf, other):
             q1 = sindex.intersect(bbox=g.extent)
             sub = sdf.iloc[q1]
             if len(sub) > 0:
-                dj = sub[self.name].geom.disjoint(g) == False
+                dj = sub[sdf.spatial.name].geom.disjoint(g) == False
                 dj.index = sub.index
                 ud = ud | dj
         return sdf[ud]
