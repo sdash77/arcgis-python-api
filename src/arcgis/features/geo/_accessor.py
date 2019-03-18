@@ -2712,16 +2712,117 @@ class GeoAccessor(object):
         else:
             return self._kdtree
     #----------------------------------------------------------------------
+    def select(self, other):
+        """
+        This operation performs a dataset wide **selection** by geometric
+        intersection. A geometry or another Spatially enabled DataFrame
+        can be given and `select` will return all rows that intersect that
+        input geometry.  The `select` operation uses a spatial index to
+        complete the task, so if it is not built before the first run, the
+        function will build a quadtree index on the fly.
+
+        **requires ArcPy or Shapely**
+
+        :returns: pd.DataFrame (spatially enabled)
+
+        """
+        from arcgis.features.geo._tools import select
+        return select(sdf=self._data, other=other)
+    #----------------------------------------------------------------------
+    def overlay(self, sdf, op="union"):
+        """
+        Performs spatial operation operations on two spatially enabled dataframes.
+
+        **requires ArcPy or Shapely**
+
+        =========================    =========================================================
+        **Argument**                 **Description**
+        -------------------------    ---------------------------------------------------------
+        sdf                          Required Spatially Enabled DataFrame. The geometry to
+                                     perform the operation from.
+        -------------------------    ---------------------------------------------------------
+        op                           Optional String. The spatial operation to perform.  The
+                                     allowed value are: union, erase, identity, intersection.
+                                     `union` is the default operation.
+        =========================    =========================================================
+
+        :returns: Spatially enabled DataFrame (pd.DataFrame)
+
+        """
+        from arcgis.features.geo._tools import overlay
+        return overlay(sdf1=self._data, sdf2=sdf, op=op.lower())
+    #----------------------------------------------------------------------
+    def relationship(self, other, op, relation=None):
+        """
+        This method allows for dataframe to dataframe compairson using
+        spatial relationships.  The return is a pd.DataFrame that meet the
+        operations' requirements.
+
+        =========================    =========================================================
+        **Argument**                 **Description**
+        -------------------------    ---------------------------------------------------------
+        sdf                          Required Spatially Enabled DataFrame. The geometry to
+                                     perform the operation from.
+
+        -------------------------    ---------------------------------------------------------
+        op                           Optional String. The spatial operation to perform.  The
+                                     allowed value are: contains,crosses,disjoint,equals,
+                                     overlaps,touches, or within.
+
+                                     - contains - Indicates if the base geometry contains the comparison geometry.
+                                     - crosses -  Indicates if the two geometries intersect in a geometry of a lesser shape type.
+                                     - disjoint - Indicates if the base and comparison geometries share no points in common.
+                                     - equals - Indicates if the base and comparison geometries are of the same shape type and define the same set of points in the plane. This is a 2D comparison only; M and Z values are ignored.
+                                     - overlaps - Indicates if the intersection of the two geometries has the same shape type as one of the input geometries and is not equivalent to either of the input geometries.
+                                     - touches - Indicates if the boundaries of the geometries intersect.
+                                     - within - Indicates if the base geometry is within the comparison geometry.
+
+        -------------------------    ---------------------------------------------------------
+        relation                     Optional String.  The spatial relationship type.  The
+                                     allowed values are: BOUNDARY, CLEMENTINI, and PROPER.
+
+                                     + BOUNDARY - Relationship has no restrictions for interiors or boundaries.
+                                     + CLEMENTINI - Interiors of geometries must intersect. This is the default.
+                                     + PROPER - Boundaries of geometries must not intersect.
+
+                                     This only applies to contains,
+        =========================    =========================================================
+
+        :returns: Spatially enabled DataFrame (pd.DataFrame)
+
+
+        """
+        from ._tools import contains, crosses, disjoint
+        from ._tools import equals, overlaps, touches
+        from ._tools import within
+        _ops_allowed = {'contains' : contains,
+                        'crosses': crosses,
+                        'disjoint': disjoint,
+                        'equals': equals,
+                        'overlaps' : overlaps,
+                        'touches': touches,
+                        'within' : within}
+
+        if not op.lower() in _ops_allowed.keys():
+            raise ValueError("Invalid `op`. Please use a proper operation.")
+
+        if op.lower() in ['contains', 'within']:
+            fn = _ops_allowed[op.lower()]
+            return fn(sdf=self._data, other=other, relation=relation)
+        else:
+            fn = _ops_allowed[op.lower()]
+            return fn(sdf=self._data, other=other)
+    #----------------------------------------------------------------------
     def voronoi(self):
         """
         Generates a voronoi diagram on the whole dataset.  If the geometry
         is not a `Point` then the centroid is used for the geometry.  The
-        result is a polygon `GeoArray` that matches 1:1 to the original
+        result is a polygon `GeoArray` Series that matches 1:1 to the original
         dataset.
 
         **requires scipy**
 
-        :returns: Polygon `GeoArray`
+        :returns: pd.Series
 
         """
         _HASARCPY, _HASSHAPELY = self._check_geometry_engine()
@@ -2787,9 +2888,9 @@ class GeoAccessor(object):
                 np.argsort(angles)]
             new_regions.append(new_region.tolist())
         sr = self.sr
-        return GeoArray([Geometry({'rings' : [[new_vertices[l] for l in r]],
-                                   'spatialReference' : sr}).buffer(0) \
-                         for r in new_regions])
+        return pd.Series(GeoArray([Geometry({'rings' : [[new_vertices[l] for l in r]],
+                                             'spatialReference' : sr}).buffer(0) \
+                                   for r in new_regions]))
     #----------------------------------------------------------------------
     def project(self, spatial_reference, transformation_name=None):
         """

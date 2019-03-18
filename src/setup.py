@@ -39,7 +39,7 @@ else:
         'widgetsnbextension >=3',
         'pandas >=0.23',
         'numpy',
-        'pyshp',
+        'pyshp==1.2.11',
         'matplotlib',
         'keyring',
         'jupyterlab',
