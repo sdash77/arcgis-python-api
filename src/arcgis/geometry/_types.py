@@ -198,10 +198,10 @@ class GeometryFactory(type):
         if iterable:
             if isinstance(iterable, (bytearray, bytes)): # WKB
                 iterable = cls._from_wkb(iterable)
-            elif 'coordinates' in iterable:
-                iterable = cls._from_gj(iterable)
             elif hasattr(iterable, "JSON"):
                 iterable = json.loads(getattr(iterable, "JSON"))
+            elif 'coordinates' in iterable:
+                iterable = cls._from_gj(iterable)
             elif hasattr(iterable, "exportToString"):
                 iterable = {'wkt' : iterable.exportToString()}
             elif isinstance(iterable, str) and\
@@ -406,6 +406,16 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
+        """
+        Returns the Geometry as an ArcPy Geometry.
+
+        If `ArcPy` is not installed, none is returned.
+
+        **Requires ArcPy**
+
+        :returns: arcpy.Geometry
+
+        """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             import arcpy
@@ -879,6 +889,8 @@ class Geometry(BaseGeometry):
         """
         Returns the center of the geometry
 
+        **Requires ArcPy or Shapely**
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -923,6 +935,8 @@ class Geometry(BaseGeometry):
     def extent(self):
         """
         The extent of the geometry as a tuple containing xmin, ymin, xmax, ymax
+
+        **Requires ArcPy or Shapely**
 
         .. code-block:: python
 
@@ -1040,6 +1054,8 @@ class Geometry(BaseGeometry):
         A space-delimited string of the coordinate pairs of the convex hull
         rectangle.
 
+        **Requires ArcPy or Shapely**
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1067,6 +1083,8 @@ class Geometry(BaseGeometry):
     def is_multipart(self):
         """
         True, if the number of parts for this geometry is more than one.
+
+        **Requires ArcPy or Shapely**
 
         .. code-block:: python
 
@@ -1101,6 +1119,8 @@ class Geometry(BaseGeometry):
         The point at which the label is located. The label_point is always
         located within or on a feature.
 
+        **Requires ArcPy or Shapely**
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1133,7 +1153,6 @@ class Geometry(BaseGeometry):
     def last_point(self):
         """
         The last coordinate of the feature.
-
 
         .. code-block:: python
 
@@ -1185,6 +1204,8 @@ class Geometry(BaseGeometry):
         The length of the linear feature. Zero for point and multipoint feature types.
         The length units is the same as the spatial reference.
 
+        **Requires ArcPy or Shapely**
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1216,6 +1237,7 @@ class Geometry(BaseGeometry):
         feature types. The length units is the same as the spatial
         reference.
 
+        **Requires ArcPy or Shapely**
 
         .. code-block:: python
 
@@ -1316,7 +1338,6 @@ class Geometry(BaseGeometry):
         """
         The spatial reference of the geometry.
 
-
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1345,6 +1366,7 @@ class Geometry(BaseGeometry):
         """
         The center of gravity for a feature.
 
+        **Requires ArcPy or Shapely**
 
         .. code-block:: python
 
@@ -1412,7 +1434,9 @@ class Geometry(BaseGeometry):
     def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
         Returns a tuple of angle and distance to another point using a
-        measurement type.
+        measurement type.  If `ArcPy` is not installed, none is returned.
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1459,6 +1483,8 @@ class Geometry(BaseGeometry):
         """
         Constructs a polygon at a specified distance from the geometry.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1480,6 +1506,10 @@ class Geometry(BaseGeometry):
     def clip(self, envelope):
         """
         Constructs the intersection of the geometry and the specified extent.
+        If `ArcPy` is not installed, none is returned.
+
+        **Requires ArcPy**
+
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1512,6 +1542,8 @@ class Geometry(BaseGeometry):
     def contains(self, second_geometry, relation=None):
         """
         Indicates if the base geometry contains the comparison geometry.
+
+        **Requires ArcPy/Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1586,6 +1618,8 @@ class Geometry(BaseGeometry):
         Indicates if the two geometries intersect in a geometry of a lesser
         shape type.
 
+        **Requires ArcPy/Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1611,6 +1645,8 @@ class Geometry(BaseGeometry):
         Splits this geometry into a part left of the cutting polyline, and
         a part right of it.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1630,6 +1666,8 @@ class Geometry(BaseGeometry):
     def densify(self, method, distance, deviation):
         """
         Creates a new geometry with added vertices
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1668,6 +1706,8 @@ class Geometry(BaseGeometry):
         following illustration shows the results when the red polygon is the
         source geometry.
 
+        **Requires ArcPy/Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1681,7 +1721,8 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(self.as_arcpy.difference(other=second_geometry))
+            g = self.as_arcpy.difference(other=second_geometry)
+            return Geometry(g)
         elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
@@ -1692,6 +1733,8 @@ class Geometry(BaseGeometry):
         """
         Indicates if the base and comparison geometries share no points in
         common.
+
+        **Requires ArcPy/Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1718,6 +1761,8 @@ class Geometry(BaseGeometry):
         Returns the minimum distance between two geometries. If the
         geometries intersect, the minimum distance is 0.
         Both geometries must have the same projection.
+
+        **Requires ArcPy/Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1747,6 +1792,8 @@ class Geometry(BaseGeometry):
         shape type and define the same set of points in the plane. This is
         a 2D comparison only; M and Z values are ignored.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1773,6 +1820,8 @@ class Geometry(BaseGeometry):
         Creates a new simplified geometry using a specified maximum offset
         tolerance.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1793,6 +1842,8 @@ class Geometry(BaseGeometry):
     def get_area(self, method, units=None):
         """
         Returns the area of the feature using a measurement type.
+
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1824,6 +1875,8 @@ class Geometry(BaseGeometry):
         """
         Returns the length of the feature using a measurement type.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1854,6 +1907,8 @@ class Geometry(BaseGeometry):
         Returns an array of point objects for a particular part of geometry
         or an array containing a number of arrays, one for each part.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1875,6 +1930,8 @@ class Geometry(BaseGeometry):
         different shape types. The intersection of two geometries of the
         same shape type is a geometry containing only the regions of overlap
         between the original geometries.
+
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1922,6 +1979,8 @@ class Geometry(BaseGeometry):
         """
         Returns a measure from the start point of this line to the in_point.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1948,6 +2007,8 @@ class Geometry(BaseGeometry):
         shape type as one of the input geometries and is not equivalent to
         either of the input geometries.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1972,6 +2033,8 @@ class Geometry(BaseGeometry):
         """
         Returns a point at a given angle and distance in degrees and meters
         using the specified measurement type.
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2003,6 +2066,8 @@ class Geometry(BaseGeometry):
         Returns a point on a line at a specified distance from the beginning
         of the line.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -2027,6 +2092,8 @@ class Geometry(BaseGeometry):
     def project_as(self, spatial_reference, transformation_name=None):
         """
         Projects a geometry and optionally applies a geotransformation.
+
+        **Requires ArcPy**
 
         ====================     ====================================================================
         **Argument**             **Description**
@@ -2072,6 +2139,8 @@ class Geometry(BaseGeometry):
         side of the line the in_point is on as well as the distance along
         the line where the nearest point occurs.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -2098,6 +2167,8 @@ class Geometry(BaseGeometry):
         Returns a Polyline between start and end measures. Similar to
         Polyline.positionAlongLine but will return a polyline segment between
         two points on the polyline instead of a single point.
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2127,6 +2198,8 @@ class Geometry(BaseGeometry):
         """
         Returns a new point based on in_point snapped to this geometry.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -2149,6 +2222,8 @@ class Geometry(BaseGeometry):
         instersection of those geometries.
 
         The two input geometries must be the same shape type.
+
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2178,6 +2253,7 @@ class Geometry(BaseGeometry):
         """
         Indicates if the boundaries of the geometries intersect.
 
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2205,6 +2281,7 @@ class Geometry(BaseGeometry):
         Constructs the geometry that is the set-theoretic union of the input
         geometries.
 
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2231,6 +2308,8 @@ class Geometry(BaseGeometry):
     def within(self, second_geometry, relation=None):
         """
         Indicates if the base geometry is within the comparison geometry.
+
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
