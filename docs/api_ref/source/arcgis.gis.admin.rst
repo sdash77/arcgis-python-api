@@ -183,7 +183,7 @@ Licenses (Deprecated 10.7+)
    :members:
    :undoc-members:
 
-Portal License
+PortalLicense
 ---------------
 .. autoclass:: arcgis.gis.admin.PortalLicense
    :members:
