@@ -1581,6 +1581,37 @@ class UserManager(object):
     def __repr__(self):
         return self.__str__()
 
+    @property
+    def license_types(self):
+        """
+        Returns a list of available licenses associated with a given GIS.
+        The information returned can help administrators determine what type
+        of a user should me based on the bundles associated with each user
+        type.
+
+        **This is only available on 10.7+.**
+
+        :returns: list
+        """
+
+        if self._gis.version < [6,4]:
+            return []
+
+        url = "portals/self/userLicenseTypes"
+        params = {
+            'f': "json",
+            'start' : 1,
+            'num' : 255
+        }
+
+        res = self._gis._con.get(url, params)
+        results = res['userLicenseTypes']
+        while res['nextStart'] > -1:
+            params['start'] += 255
+            res = self._gis._con.get(url, params)
+            results += res['userLicenseTypes']
+        return results
+
     def counts(self, type='bundles', as_df=True):
         """
         This method returns a simple report on the number of licenses currently used
