@@ -25,7 +25,8 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/FeatureLayer',
                                 'esri/tasks/support/FeatureSet',
                                 'esri/PopupTemplate',
-                                'esri/layers/support/RasterFunction'],
+                                'esri/layers/support/RasterFunction',
+                                'esri/layers/support/MosaicRule'],
         options).then(([ImageryLayer,
                         KMLLayer,
                         TileLayer,
@@ -34,20 +35,25 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         FeatureLayer,
                         FeatureSet,
                         PopupTemplate,
-                        RasterFunction]) => {
+                        RasterFunction,
+                        MosaicRule]) => {
             if (noTypeLayer.type === "ImageryLayer"){
                 var typedLayer = new ImageryLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 if (('options' in noTypeLayer) && 
-                    ('imageServiceParameters' in noTypeLayer.options) &&
-                    ('renderingRule' in noTypeLayer.options.imageServiceParameters)){
-                    //If a raster function is being passed as an arg
-                    console.log("Applying raster function to imagery layer..");
-                    var renderingRule = 
-                        noTypeLayer.options.imageServiceParameters.renderingRule;
-                    var rasterFunction = RasterFunction.fromJSON(renderingRule);
-                    typedLayer.renderingRule = rasterFunction;
-                }
+                    ('imageServiceParameters' in noTypeLayer.options)){
+                        if('renderingRule' in noTypeLayer.options.imageServiceParameters){
+                            console.log("Applying rendering rule to imagery layer..");
+                            var renderingRuleJSON = 
+                                noTypeLayer.options.imageServiceParameters.renderingRule;
+                            var renderingRule = RasterFunction.fromJSON(renderingRuleJSON);
+                            typedLayer.renderingRule = rasterFunction;}
+                        if('mosaicRule' in noTypeLayer.options.imageServiceParameters){
+                            console.log("Applying mosaic rule to imagery layer..");
+                            var mosaicRuleJSON = 
+                                noTypeLayer.options.imageServiceParameters.mosaicRule;
+                            var mosaicRule = MosaicRule.fromJSON(mosaicRuleJSON);
+                            typedLayer.mosaicRule = mosaicRule;}}
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "KMLLayer") {
                 var typedLayer = new KMLLayer(noTypeLayer.url);
