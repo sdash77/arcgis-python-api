@@ -3488,6 +3488,17 @@ class ContentManager(object):
         else:
             return None
 
+    #----------------------------------------------------------------------
+    @property
+    def categories(self):
+        """
+        The category manager for items. See :class:`~arcgis.gis.CategorySchemaManager`.
+        """
+
+        base_url = "{base}portals/self".format(base=self._gis._portal.resturl)
+        return CategorySchemaManager(base_url=base_url, gis=self._gis)
+
+
     def get(self, itemid):
         """ Returns the item object for the specified itemid.
 
@@ -4357,6 +4368,198 @@ class ContentManager(object):
             item._hydrated = False
         return res
 
+########################################################################
+class CategorySchemaManager(object):
+    """
+    Helper class for managing category schemas on a group or portal.
+    """
+    _gis = None
+    _url = None
+
+    #----------------------------------------------------------------------
+    def __init__(self, base_url, gis=None):
+        """Constructor"""
+        self._url = base_url
+        if gis is None:
+            import arcgis
+            gis = arcgis.env.active_gis
+        self._gis = gis
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return "<CategorySchemaManager @ {url}>".format(url=self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the properties of the schema"""
+        from arcgis._impl.common._mixins import PropertyMap
+        return PropertyMap(self.schema)
+    #----------------------------------------------------------------------
+    @property
+    def schema(self):
+        """
+        Content category schema set on a group.
+        """
+        params = {'f' : 'json'}
+        url = "{base}/categorySchema".format(base=self._url)
+        res = self._gis._con.get(url, params)
+        if 'categorySchema' in res:
+            return res['categorySchema']
+        return res
+    #----------------------------------------------------------------------
+    @schema.setter
+    def schema(self, categories):
+        """
+        The Assign Group Category Schema operation allows group owner or
+        managers to set up content categories for a group that is a
+        hierarchical set of classes to help organize and browse group
+        content.
+
+        Each group can have a maximum of 5 category trees with each
+        category schema can have up to 4 hierarchical levels. The maximum
+        number of categories a group can have in total is 200 with each
+        category of less than 100 characters title and 300 characters
+        description.
+
+        ==================  =========================================================
+        **Argument**        **Description**
+        ------------------  ---------------------------------------------------------
+        categories          Required Dict. A category schema object consists of an
+                            array of dict objects representing top level categories.
+                            Each object has title, description and categories
+                            properties where categories consists of an array of
+                            objects with each having the same properties and
+                            represents the descendant categories or subcategories and
+                            so on.
+        ==================  =========================================================
+
+        **Example Input**
+
+        ```python
+
+        [{
+            "title": "Categories",
+            "categories": [{
+                    "title": "Basemaps",
+                    "categories": [{
+                            "title": "Partner Basemap"
+                    }, {
+                            "title": "Esri Basemaps",
+                            "categories": [{
+                                    "title": "Esri Raster Basemap"
+                            }, {
+                                    "title": "Esri Vector Basemap"
+                            }]
+                    }]
+		}, {
+                    "title": "Imagery",
+                    "categories": [{
+                            "title": "Multispectral Imagery"
+                    }, {
+                            "title": "Temporal Imagery"
+                    }]
+		}]
+	}, {
+            "title": "Region",
+            "categories": [{
+                    "title": "US"
+            }, {
+                    "title": "World"
+            }]
+	}]
+
+        ```
+
+        """
+        if categories is None:
+            return self.delete()
+        elif len(categories) == 0:
+            return self.delete()
+        params = {
+            'f' : 'json',
+            "categorySchema" : {"categorySchema": categories}
+        }
+        url = "{base}/assignCategorySchema".format(base=self._url)
+        res = self._gis._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return
+
+    #----------------------------------------------------------------------
+    def delete(self):
+        """
+        The `delete` operation allows group owner or managers to remove the
+        category schema set on a group.
+
+        :returns: Boolean
+        """
+        params = {'f' : 'json'}
+        url = "{base}/deleteCategorySchema".format(base=self._url)
+        try:
+            if self.schema == []:
+                return True
+            res = self._gis._con.post(url, params)
+            if 'success' in res:
+                return res['success']
+            return False
+        except:
+            return False
+    #----------------------------------------------------------------------
+    def assign_to_items(self, items):
+        """
+
+        The `assign_to_items` operation allows item owner and organization
+        administrators who has the `portal:admin:updateItems` privilege to
+        add or remove organization content categories on items. A maximum
+        of 100 items can be bulk updated per request.
+
+        ==================  =========================================================
+        **Argument**        **Description**
+        ------------------  ---------------------------------------------------------
+        items               Required List. A JSON array of item objects. Each is
+                            specified with the item ID that consists of a categories
+                            object. categories is specified with an array that lists
+                            all content categories to update on the item, each with
+                            full hierarchical path prefixed with /.
+
+                            Each item can be categorized to a maximum of 20
+                            categories.
+
+                            :Example:
+
+                                [{
+                                        "2678d3002eea4e4a825e3bdf10016e61": {
+                                                "categories": ["/Categories/Geology", "/Categories/Elevation"]
+                                        }
+                                }, {
+                                        "c3ad4ed8bcf04d619537cfe252a1760d": {
+                                                "categories": ["/Categories/Geology", "/Categories/Land cover/Forest/Deciduous Forest"]
+                                        }
+                                }, {
+                                        "9ced00fdce3e4b20bb4b05155acbe817": {
+                                                "categories": []
+                                        }
+                                }]
+
+        ==================  =========================================================
+
+
+        :returns: dict
+
+        """
+        params = {'f' : 'json',
+                  'items' : json.dumps(items)}
+        if self._url.lower().find("/portals/") == -1:
+            url = "{base}/updateItems".format(base=self._url)
+        else:
+            url = "{base}content/updateItems".format(base=self._gis._portal.resturl)
+        res = self._gis._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return False
+
 class ResourceManager(object):
     """
     Helper class for managing resource files of an item. This class is not created by users directly.
@@ -4700,6 +4903,17 @@ class Group(dict):
             thumbnail_url_path = self._gis._public_rest_url + 'community/groups/' + self.groupid + '/info/' + thumbnail_file
             return thumbnail_url_path
 
+    #----------------------------------------------------------------------
+    @property
+    def categories(self):
+        """
+        The category manager for groups. See :class:`~arcgis.gis.CategorySchemaManager`.
+        """
+        base_url = "{base}community/groups/{groupid}".format(base=self._gis._portal.resturl,
+                                                             groupid=self.groupid)
+        return CategorySchemaManager(base_url=base_url, gis=self._gis)
+
+
     @property
     def homepage(self):
         """Gets the URL to the HTML page for the group."""
@@ -4998,6 +5212,58 @@ class Group(dict):
             self._hydrate()
             return res.get('success')
         return False
+
+    #----------------------------------------------------------------------
+    def notify(self, users, subject, message, method="email", client_id=None):
+        """
+        Creates a group notification that sends a message to all users within
+        the group.
+
+        ==================  =========================================================
+        **Argument**        **Description**
+        ------------------  ---------------------------------------------------------
+        users               Required List. A list of users or user names.
+        ------------------  ---------------------------------------------------------
+        subject             Required String. The subject of the notification.
+        ------------------  ---------------------------------------------------------
+        message             Required String. The message body that will be sent to
+                            the group's users.
+        ------------------  ---------------------------------------------------------
+        method              Optional String. This is the form for which users will be
+                            contacted.  The allowed values are: email, push, and
+                            builtin.
+
+                            + email - sent a message via smtp.
+                            + push - pushes a message out.
+                            + builtin - creates a user notification.
+
+
+        ------------------  ---------------------------------------------------------
+        client_id           Optional String. The client id of the application for the
+                            push operation.
+        ==================  =========================================================
+
+        :return: Boolean
+
+        """
+        from arcgis.gis import User
+        cusers = []
+        for user in users:
+            if isinstance(user, User):
+                cusers.append(user.username)
+            else:
+                cusers.append(user)
+            del user
+        url = "community/groups/{groupid}/createNotification".format(groupid=self.groupid)
+        params = {
+            "notificationChannelType": method,
+            "subject": subject,
+            "message" : message,
+            "users" : ",".join(cusers),
+            "clientId" : client_id,
+            "f": "json"
+        }
+        return self._gis._con.post(url, params)
 
     def get_members(self):
         """
