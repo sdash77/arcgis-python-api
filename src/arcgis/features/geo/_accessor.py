@@ -2385,7 +2385,7 @@ class GeoAccessor(object):
                     ref = {"wkt" : ref}
                 elif isinstance(ref, int):
                     ref = {"wkid" : ref}
-                self._data[self.name].apply(lambda x: x.update({'spatialReference': ref}))
+                self._data[self.name].apply(lambda x: x.update({'spatialReference': ref}) if pd.notnull(x) else None)
     #----------------------------------------------------------------------
     def to_featureset(self):
         """

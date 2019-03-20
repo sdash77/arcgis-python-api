@@ -177,7 +177,7 @@ class Survey():
 
         title = "a%s" % uuid.uuid4().hex
         if export_format.lower() == 'df':
-            return self._ssi.layers[0].sdf
+            return self._ssi.layers[0].query().sdf
         if save_folder is None:
             save_folder = tempfile.gettempdir()
         isinstance(self._ssi, Item)
