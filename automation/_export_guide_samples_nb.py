@@ -18,13 +18,16 @@ from traitlets.config import Config
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 
+from _assets.css import get_css_asset_file_names
+
 unsafe_dirs = ['apidoc','labs','talks','data']
 DEFAULT_IMG_PREFIX = "/assets/img/python-graphics/" #What the dev site uses
 
 def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
                      replace_img_path=False, img_prefix=DEFAULT_IMG_PREFIX,
                      replace_full_urls=True,
-                     log_func=log.info):
+                     log_func=log.info,
+                     dummy_mode_css_add_head=False):
     f"""
     export Jupyter Notebooks in basic HTML. Will not execute the notebook.
     {info_text}
@@ -35,6 +38,8 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
     :param img_prefix: the image prefix to use
     :param replace_full_urls: if True, 
     replaces http://developers.arcgis.com/foo/bar to /foo/bar
+    :param dummy_mode_css_add_header: if True, will add references to the
+    css files in ./_assets/css to the <head> of each doc
     :return:
     """
     log_func(f"Converting notebooks at {root_path} to html, placing output "\
@@ -67,9 +72,17 @@ def export_notebooks(root_path, output_root_path, embed_try_it_live=False,
             log_str += " | exported "
             #endregion
 
+            header_str = ""
+            #region dummy mode css injection
+            if dummy_mode_css_add_head:
+                header_str += "<head>"
+                for css_file_name in get_css_asset_file_names():
+                    header_str += f'<link href="./{css_file_name}" rel="stylesheet">'
+                header_str += "</head>"
+
             #region inject title and SEO stuff into the html
             soup = BeautifulSoup(body, 'html.parser')
-            header_str = "---"
+            header_str += "---"
             try:
                 #try to get the heading.
                 hit_heading = soup.find('h1')
