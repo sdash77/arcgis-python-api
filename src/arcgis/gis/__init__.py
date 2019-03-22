@@ -7431,7 +7431,7 @@ class Item(dict):
         org                     Optional boolean. Default is False, don't share with
                                 the organization.
         ----------------------  --------------------------------------------------------
-        groups                  Optional list of group names as strings, or a list of
+        groups                  Optional list of group ids as strings, or a list of
                                 arcgis.gis.Group objects, or a comma-separated list of
                                 group IDs.
         ----------------------  --------------------------------------------------------
