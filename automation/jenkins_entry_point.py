@@ -21,8 +21,10 @@ _regex_and_funcs = [(MASTER_REGEX, [build_conda_package,
               (LINUX_SLAVE_REGEX,  [build_conda_package,
                                     publish_to_ftp_site]),
               
-              (PULL_REQUEST_REGEX, [build_documentation]),
-              
+              (GEOS_PULL_REQUEST_REGEX, [build_documentation]),
+
+              (PUB_REPO_PULL_REQUEST_REGEX, [build_dummy_dev_site]),
+
                    (PUBLISH_REGEX, [build_conda_package,
                                     publish_to_ftp_site]),
 
@@ -63,6 +65,7 @@ def _parse_args():
              "conda packages to on the FTP server.")
     parser.add_argument("--notebooks-root-dir", "-n", type=str, required=False,
         help="For -a dev_site, the root dir of arcgis-python-api repo. "\
+             "For -a public_repo_pull_request, the same thing. "\
              "For -a notebooks_test, the root dir of notebooks to test")
     parser.add_argument("--dev-website-repo", "-d", type=str, required=False,
         help="for -a dev_site, the root dir of arcgis-for-developers repo")

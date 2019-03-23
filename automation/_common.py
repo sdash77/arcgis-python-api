@@ -13,9 +13,12 @@ GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
     '..'))
 
-STAGING_DIR = os.path.abspath(os.path.join(
+AUTOMATION_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
-    "automation",
+    "automation"))
+
+STAGING_DIR = os.path.abspath(os.path.join(
+    AUTOMATION_DIR,
     "staging"))
 
 BUILD_DIR = os.path.abspath(os.path.join(
@@ -23,7 +26,8 @@ BUILD_DIR = os.path.abspath(os.path.join(
     "build"))
 
 MASTER_REGEX = ".*master.*"
-PULL_REQUEST_REGEX = ".*pull.*request.*"
+GEOS_PULL_REQUEST_REGEX = ".*geo.*pull.*request.*"
+PUB_REPO_PULL_REQUEST_REGEX = ".*pub.*repo.*pull.*request"
 PUBLISH_REGEX = ".*publish.*"
 LINUX_SLAVE_REGEX = ".*linux.*slave.*"
 SOURCE_CODE_TEST_REGEX = ".*source.*test.*"

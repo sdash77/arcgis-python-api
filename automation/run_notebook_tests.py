@@ -19,7 +19,15 @@ def run_notebook_tests(notebooks_root_dir, automation_type, build_number,
                                       jenkins_root = jenkins_root,
                                       notebook_timeout = notebook_timeout)
     runner = XMLTestRunner(output=STAGING_DIR)
+
+    setup_py_file = os.path.join(notebooks_root_dir, "misc", "setup.py")
+    run_shell_command(f"python {setup_py_file}")
+
     runner.run(suite)
+
+    teardown_py_file = os.path.join(notebooks_root_dir, "misc", "teardown.py")
+    run_shell_command(f"python {teardown_py_file}")
+
     _write_index_html_file_for_outputted_notebooks()
 
 def _discover_tests_get_suite(notebooks_root_dir, output_dir,
@@ -27,6 +35,7 @@ def _discover_tests_get_suite(notebooks_root_dir, output_dir,
                               jenkins_root, notebook_timeout):
     output_suite = unittest.TestSuite()
     log.info("Discovering notebooks to test in {}".format(notebooks_root_dir))
+
     for root, dirs, files in os.walk(notebooks_root_dir):
         for name in [file_ for file_ in files if ".ipynb" in file_]:
             notebook_path = os.path.join(root, name)
@@ -42,7 +51,7 @@ def _discover_tests_get_suite(notebooks_root_dir, output_dir,
                                                         str(build_number),
                                                         ""]))
                 output_suite.addTest(test)
-    
+
     if output_suite.countTestCases() == 0:
         raise RuntimeError("0 Notebooks found to run: Make sure '{}' "\
             "contains runnable notebooks.".format(notebooks_root_dir))
