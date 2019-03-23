@@ -1185,7 +1185,7 @@ class FeatureCollection(Layer):
             return FeatureSet.from_dict(self.properties['featureSet'])
 
     @staticmethod
-    def from_featureset(fset, symbol=None):
+    def from_featureset(fset, symbol=None, name=None):
         """
         Create a FeatureCollection object from a FeatureSet object.
 
@@ -1198,6 +1198,10 @@ class FeatureCollection(Layer):
                                can be picked from http://esri.github.io/arcgis-python-api/tools/symbol.html
 
                                If not specified, a default symbol will be created.
+        ------------------     --------------------------------------------------------------------
+        name                   Optional String. The name of the feature collection. This is used
+                               when feature collections are being persisted on a WebMap. If None is
+                               provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
         :return:
             A FeatureCollection object.
@@ -1209,10 +1213,20 @@ class FeatureCollection(Layer):
 
         # region compose layer definition
 
-        fc_layer_definition = {'geometryType': fset_dict['geometryType'],
-                               'fields':fset_dict['fields'],
-                               'objectIdField':fset.object_id_field_name,
-                               'type':'Feature Layer'}
+        fc_layer_definition = {'geometryType' : fset_dict['geometryType'],
+                               'fields' : fset_dict['fields'],
+                               'spatialReference' : fset_dict['spatialReference'],
+                               'objectIdField' : fset.object_id_field_name,
+                               'type' : 'Feature Layer'}
+
+        if not 'name' in fc_layer_definition:
+            if name:
+                fc_layer_definition['name'] = name.replace(" ", "_")
+            else:
+                fc_layer_definition['name'] = "a" + uuid.uuid4().hex[:5]
+
+        if not 'id' in fc_layer_definition:
+            fc_layer_definition['id'] = 0
 
         if not symbol:
             if fc_layer_definition['geometryType'] == 'esriGeometryPolyline':
@@ -1246,6 +1260,7 @@ class FeatureCollection(Layer):
                                               }
         # endregion
         # compose the feature collection dict
+
         layers_dict = {'featureSet':{'geometryType':fset_dict['geometryType'],
                                    'features':fset_dict['features']},
                     'layerDefinition':fc_layer_definition}
