@@ -1172,7 +1172,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _get_2d_screenshot: function(widget_inst) {
         return new Promise((resolve, reject) => {
-            widget_inst._2dMap.takeScreenshot().then((screenshot) => {
+            widget_inst._2dMap.takeScreenshot({format:"png"}).then((screenshot) => {
                 resolve(screenshot.dataUrl);
             }).catch((err) => {
                 reject(err);
@@ -1182,7 +1182,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _get_3d_screenshot: function(widget_inst) {
         return new Promise((resolve, reject) => {
-            widget_inst._3dMap.takeScreenshot().then((screenshot) => {
+            widget_inst._3dMap.takeScreenshot({format:"png"}).then((screenshot) => {
                 resolve(screenshot.dataUrl);
             }).catch((err) => {
                 reject(err);

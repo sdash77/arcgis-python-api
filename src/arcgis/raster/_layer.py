@@ -49,9 +49,26 @@ class ImageryLayer(Layer):
             if isinstance(url,dict):
                 encoded_dict = str(self._uri).encode('utf-8')
                 self._uri = base64.b64encode(encoded_dict)
-            url = self._gis.admin.servers._server_info[0]["url"]+"/rest/services/System/RasterRendering/ImageServer" 
-                       
-        
+            gis = _arcgis.env.active_gis if gis is None else gis
+
+            image_hosting_server_url = None
+            raster_analytics_server_url = None
+            hosting_server_url = None
+            for ds in gis._datastores:
+                if 'serverFunction' in ds._server.keys() and ds._server['serverFunction'] == 'ImageHosting':
+                    image_hosting_server_url = ds._server['url']
+                    break
+                elif 'serverFunction' in ds._server.keys() and ds._server['serverFunction'] == 'RasterAnalytics':
+                    raster_analytics_server_url = ds._server['url']
+                elif 'serverFunction' in ds._server.keys() and ds._server['serverFunction'] == '':
+                    hosting_server_url = ds._server['url']
+            if image_hosting_server_url:
+                url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer" 
+            elif raster_analytics_server_url:
+                url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer" 
+            else:
+                url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer" 
+
         super(ImageryLayer, self).__init__(url, gis) 
         self._spatial_filter = None
         self._temporal_filter = None

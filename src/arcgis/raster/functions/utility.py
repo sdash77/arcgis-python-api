@@ -4,6 +4,7 @@ import numbers
 from arcgis.features.layer import FeatureLayer
 
 def _raster_input(raster, raster2=None):
+    layer=None
     if raster2 is not None:
         if isinstance(raster2, ImageryLayer) and isinstance(raster, ImageryLayer):
             layer = raster2
@@ -30,7 +31,10 @@ def _raster_input(raster, raster2=None):
                     if raster._url == raster2._url:
                         raster2 = raster2._fn
                     else:
-                        raster2 = _replace_raster_url(raster2._fn, raster2._url)
+                        if(raster2._datastore_raster is False):
+                            raster2 = _replace_raster_url(raster2._fn, raster2._url)
+                        else:
+                            raster2 = _replace_raster_url(raster2._fn, raster2._uri)
                  else:
                     if raster2._url == raster._url:
                         oids = raster2.filtered_rasters()
@@ -41,7 +45,10 @@ def _raster_input(raster, raster2=None):
                         else:
                             raster2 = ['$' + str(x) for x in oids]
                     else:
-                        raster2 = raster2._url
+                        if(raster2._datastore_raster is False):
+                            raster2 = raster2._url
+                        else:
+                            raster2 = raster2._uri
         elif isinstance(raster2, ImageryLayer) and not isinstance(raster, ImageryLayer):
             layer = raster2
             raster_ra = _get_raster_ra(raster2)
@@ -98,10 +105,15 @@ def _raster_input(raster, raster2=None):
         # except:
         #     pass
 
-        for r in raster: # layer is first non numeric raster in list
-            if not isinstance(r, numbers.Number):
-                layer = r
-                break
+        for r in raster:
+            if isinstance(r, ImageryLayer):
+                if r._datastore_raster:
+                    layer = r
+        if layer is None:
+            for r in raster: # layer is first non numeric raster in list
+                if not isinstance(r, numbers.Number):
+                    layer = r
+                    break
 
         for r in raster:
             if not isinstance(r, numbers.Number):
