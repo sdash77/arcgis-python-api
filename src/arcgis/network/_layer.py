@@ -1,4 +1,5 @@
 from arcgis.gis import Layer, _GISResource
+from arcgis.features import Feature
 
 
 class NetworkLayer(Layer):
@@ -229,9 +230,18 @@ class RouteLayer(NetworkLayer):
                              "layer of Route type only")
 
         url = self._url + "/solve"
+
+        stops_dict = []
+        for stop in stops['features']:
+            if isinstance(stop, Feature):
+                stops_dict.append(stop.as_dict)
+            else:
+                stops_dict.append(stop)
+
+
         params = {
-                    "f" : "json",
-                    "stops": stops
+                    "f": "json",
+                    "stops": {"features": stops_dict}
                  }
 
         if not barriers is None:
