@@ -97,8 +97,15 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
 def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     if isinstance(layer, Item):
         layer = layer.layers[0]
-      
-    newlyr = ImageryLayer(layer._url, layer._gis)
+   
+    if layer._datastore_raster:
+        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+            newlyr = ImageryLayer(function_chain_ra, layer._gis)
+        else:
+            newlyr = ImageryLayer(layer._uri, layer._gis)
+
+    else:
+        newlyr = ImageryLayer(layer._url, layer._gis)
 
     newlyr._lazy_properties = layer.properties
     newlyr._hydrated = True
@@ -246,7 +253,11 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
     layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
-    layer = layer1 if layer1 is not None else layer2
+    if layer1 is not None and layer2._datastore_raster is False:
+        layer = layer1
+    else:
+        layer = layer2
+    #layer = layer1 if layer1 is not None else layer2
 
     extent_types = {
         "FirstOf" : 0,
@@ -548,7 +559,10 @@ def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     if raster2 is not None:
         layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
-    layer = layer1 if layer1 is not None else layer2
+    if layer1 is not None or (layer2 is not None and layer2._datastore_raster is False):
+        layer = layer1
+    else:
+        layer = layer2
 
     template_dict = {
         "rasterFunction": "Classify",
@@ -2958,7 +2972,11 @@ def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_
     layer1, raster_u_mag_1, raster_ra1 = _raster_input(raster_u_mag)
     layer2, raster_v_dir_1, raster_ra2 = _raster_input(raster_u_mag, raster_v_dir)
 
-    layer = layer1 if layer1 is not None else layer2
+    if layer1 is not None and layer2._datastore_raster is False:
+        layer = layer1
+    else:
+        layer = layer2
+    #layer = layer1 if layer1 is not None else layer2
 
     angle_reference_system_types = {
         "Geographic" : 0,
@@ -3366,15 +3384,31 @@ def pansharpen(pan_raster,
 
     layer1, pan_raster_1, raster_ra1 = _raster_input(pan_raster)
     layer2, ms_raster_1, raster_ra2 = _raster_input(pan_raster, ms_raster)
+    
+    layer3=None
     if ir_raster is not None:
         layer3, ir_raster_1, raster_ra3 = _raster_input(pan_raster, ir_raster)
 
-    if layer1 is not None:
+    layer = None
+    if layer1._datastore_raster is True:
         layer = layer1
-    elif layer2 is not None:
-       layer = layer2
-    else:
+    elif layer2._datastore_raster is True:
+        layer= layer2
+    elif (layer3 is not None and layer3._datastore_raster is True):
         layer = layer3
+    
+    if layer is not None:
+        pan_raster_1 = raster_ra1
+        ms_raster_1 = raster_ra2
+        if ir_raster is not None:
+            ir_raster_1 = raster_ra3
+    else:
+        if layer1 is not None:
+            layer = layer1
+        elif layer2 is not None:
+            layer = layer2
+        elif layer3 is not None:
+            layer = layer3
 
     pansharpening_types = {
         "IHS" : 0,
@@ -3672,29 +3706,35 @@ def raster_collection_function(raster, item_function, aggregation_function, proc
 
 class RFT:
     def __init__(self, raster_function_template,gis=None):
-        self._is_public_flag = False
-        self._rft=raster_function_template
-        self._gis = _arcgis.env.active_gis if gis is None else gis
-        key_value_dict={}
-        if(".rft.xml" in self._rft.name):
-            _rft_json = self.to_json(self._gis)
-        else:
-            file_path = self._rft.get_data()
-            f=open(file_path, "r")
-            file_content = f.read()
-            file_content = file_content.replace("false", "False")
-            file_content = file_content.replace("true", "True")
-            _rft_json = eval(file_content)
-        self._rft_json = _find_object_ref(_rft_json, {}, self)
-        global node, end_node 
-        node = 0
-        end_node=0
-        self._rft_dict, self._raster_dict = self._find_arguments_()
-        if self._rft_dict.keys() & hidden_inputs:
-            for key in hidden_inputs:
-                self._rft_dict.pop(key,None)
-        self._arguments=copy.deepcopy(self._rft_dict)
-        self.arguments = copy.deepcopy(self._arguments)
+        try:
+            self._is_public_flag = False
+            self._rft=raster_function_template
+            self._gis = _arcgis.env.active_gis if gis is None else gis
+            key_value_dict={}
+            if(".rft.xml" in self._rft.name):
+                _rft_json = self.to_json(self._gis)
+            else:
+                file_path = self._rft.get_data()
+                f=open(file_path, "r")
+                file_content = f.read()
+                file_content = file_content.replace("false", "False")
+                file_content = file_content.replace("true", "True")
+                _rft_json = eval(file_content)
+            self._rft_json = _find_object_ref(_rft_json, {}, self)
+            global node, end_node 
+            node = 0
+            end_node=0
+            self._rft_dict, self._raster_dict = self._find_arguments_()
+
+            if self._rft_dict.keys() & hidden_inputs:
+                for key in hidden_inputs:
+                    self._rft_dict.pop(key,None)
+            self._arguments=copy.deepcopy(self._rft_dict)
+            self.arguments = copy.deepcopy(self._arguments)
+        except:
+            _LOGGER.warning("Unable to find the arguments for the current raster function template. "
+                  "This might be because the server could not process the template "
+                  "or the template is invalid.")
 
     @property
     def __doc__(self):
@@ -3724,22 +3764,27 @@ class RFT:
 
 
     def __call__(self,*args,**kwargs):
-        i=0
-        key_list=list(self._arguments.keys())
-        for pos_arg in args:
-            kwargs.update({key_list[i]:pos_arg})
-            i=i+1
+        try:
+            i=0
+            key_list=list(self._arguments.keys())
+            for pos_arg in args:
+                kwargs.update({key_list[i]:pos_arg})
+                i=i+1
             
-        if(len(kwargs)==1):
-            for k,v in self._raster_dict.items():
-                self._raster_dict.update({k:kwargs[list(kwargs.keys())[0]]})	
-            return self._apply_rft(self._raster_dict, self._gis)	           
+            if(len(kwargs)==1):
+                for k,v in self._raster_dict.items():
+                    self._raster_dict.update({k:kwargs[list(kwargs.keys())[0]]})	
+                return self._apply_rft(self._raster_dict, self._gis)	           
 
-        for key in kwargs.keys():
-            for k in self._arguments.keys():
-                if(k==key):
-                    self._arguments[k]=kwargs[key]
-        return self._apply_rft(self._arguments, self._gis)
+            for key in kwargs.keys():
+                for k in self._arguments.keys():
+                    if(k==key):
+                        self._arguments[k]=kwargs[key]
+            return self._apply_rft(self._arguments, self._gis)
+        except:
+            _LOGGER.warning("Unable to apply the current raster function template on the imagery layer. " 
+                  "This might be because the server could not process the template, "
+                  "the template is invalid or not populated with correct arguments.")
 
         
     def to_json(self, gis =None):
