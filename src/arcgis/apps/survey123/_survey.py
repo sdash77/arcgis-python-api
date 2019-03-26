@@ -215,8 +215,9 @@ class Survey():
         :Returns: Item or string
 
         """
-        if where == "1=1":
-            where = {"where":"1=1"}
+        if isinstance(where, str):
+            where = {"where" : where}
+
         url = "https://{base}/api/featureReport/createReport/submitJob".format(base=self._baseurl)
         params = {
             "outputFormat" : "docx",
