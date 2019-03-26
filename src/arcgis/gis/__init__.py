@@ -3691,7 +3691,7 @@ class ContentManager(object):
                 raise ValueError("Folder: %s does not exist." % old_folder)
             url = "{base}content/users/{user}/{folderid}/updateFolder".format(
                 base=self._gis._portal.resturl,
-                user=owner,
+                user=owner_name,
                 folderid=folderid
             )
             res = self._gis._con.post(url, params)
