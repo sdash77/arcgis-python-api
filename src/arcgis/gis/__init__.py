@@ -3654,6 +3654,52 @@ class ContentManager(object):
                 print('Folder already exists.')
         return None
 
+    def rename_folder(self, old_folder, new_folder, owner=None):
+
+        """
+        Renames an existing folder from it's existing name to a new name.
+        If owner is not specified, owner is set as the logged in user.
+
+
+        ================  ==========================================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------------------------
+        old_folder        Required string. The name of the folder to rename for the owner.
+        ----------------  --------------------------------------------------------------------------
+        new_folder        Required string. The new name of the folder.
+        ----------------  --------------------------------------------------------------------------
+        owner             Optional string. User, folder owner, None for logged in user.
+        ================  ==========================================================================
+
+        :return: Boolean
+
+        """
+        params = {
+            'f' : 'json',
+            'newTitle' : new_folder
+        }
+        if old_folder != '/': # we don't rename the root folder
+            if owner is None:
+                owner = self._portal.logged_in_user()['username']
+                owner_name = owner
+            elif isinstance(owner, User):
+                owner_name = owner.username
+            else:
+                owner_name = owner
+            folderid = self._portal.get_folder_id(owner_name, old_folder)
+            if folderid is None:
+                raise ValueError("Folder: %s does not exist." % old_folder)
+            url = "{base}content/users/{user}/{folderid}/updateFolder".format(
+                base=self._gis._portal.resturl,
+                user=owner,
+                folderid=folderid
+            )
+            res = self._gis._con.post(url, params)
+            if 'success' in res:
+                return res['success']
+        return False
+
+
     def delete_items(self, items):
         """
         Deletes a collection of items from a users content.
