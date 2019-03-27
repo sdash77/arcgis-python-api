@@ -1692,6 +1692,12 @@ def create_image_collection(image_collection,
             else:
                 context = {}
                 context["outSR"]={'wkid': out_sr}
+        else:
+            if context is not None:
+                context.update({'outSR':out_sr})
+            else:
+                context = {}
+                context["outSR"]=out_sr
 
     _set_context(params, context)
 
