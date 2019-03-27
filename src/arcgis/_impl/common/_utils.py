@@ -62,10 +62,13 @@ def local_time_to_online(dt=None):
        Output:
           Long value
     """
+
     if dt is None:
         dt = datetime.datetime.now()
 
-    if isinstance(dt, datetime.datetime) and dt.tzinfo:
+    if sys.version_info.major == 3:
+        return int(dt.timestamp() * 1000)
+    elif isinstance(dt, datetime.datetime) and dt.tzinfo:
         dt = dt.astimezone()
 
     return int(time.mktime(dt.timetuple())  * 1000)
