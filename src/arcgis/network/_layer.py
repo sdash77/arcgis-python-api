@@ -222,22 +222,24 @@ class RouteLayer(NetworkLayer):
         :return: dict
 
         .. code-block:: python
-                # USAGE EXAMPLE 1: Solving the routing problem by passing in a FeatureSet
 
-                # get a FeatureSet through query
-                fl = sample_cities.layers[0]
-                cities_to_visit = fl.query(where="ST = 'CA' AND POP2010 > 300000",
-                                           out_fields='NAME', out_sr=4326)
+            # USAGE EXAMPLE: Solving the routing problem by passing in a FeatureSet
 
-                type(cities_to_visit)
-                >> arcgis.features.feature.FeatureSet
+            # get a FeatureSet through query
+            fl = sample_cities.layers[0]
+            cities_to_visit = fl.query(where="ST = 'CA' AND POP2010 > 300000",
+                                       out_fields='NAME', out_sr=4326)
 
-                # pass in the FeatureSet
-                result = route_layer.solve(stops=cities_to_visit, preserve_first_stop=True,
-                                           preserve_last_stop=True, find_best_sequence=True, return_directions=False,
-                                           return_stops=True, return_barriers=False, return_polygon_barriers=False,
-                                           return_polyline_barriers=False, return_routes=True,
-                                           output_lines='esriNAOutputLineStraight')
+            type(cities_to_visit)
+            >> arcgis.features.feature.FeatureSet
+
+            # pass in the FeatureSet
+            result = route_layer.solve(stops=cities_to_visit, preserve_first_stop=True,
+                                       preserve_last_stop=True, find_best_sequence=True, return_directions=False,
+                                       return_stops=True, return_barriers=False, return_polygon_barriers=False,
+                                       return_polyline_barriers=False, return_routes=True,
+                                       output_lines='esriNAOutputLineStraight')
+                                       
         """
 
         if not self.properties.layerType == "esriNAServerRouteLayer":
