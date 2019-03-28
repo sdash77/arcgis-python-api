@@ -414,22 +414,33 @@ def from_featureclass(filename, **kwargs):
                 fn = os.path.basename(filename)
                 geoms = []
                 atts = []
-                with fiona.open(path=fp, layer=fn) as source:
+                with fiona.open(fp, layer=fn) as source:
                     meta = source.meta
                     cols = list(source.schema['properties'].keys())
+                    
+                    # Get the CRS
+                    try:    
+                        wkid = source.crs['init'].split(':')[1]
+                    except:
+                        wkid = 4326
+                    
+                    sr = _types.SpatialReference({'wkid':int(wkid)})
+                    
                     for idx, row in source.items():
-                        geoms.append(_types.Geometry(row['geometry']))
+                        g = _types.Geometry(row['geometry'])
+                        geoms.append(g)
                         atts.append(list(row['properties'].values()))
                         del idx, row
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
+                    df.spatial.sr = sr
                     return df
         else:
             with fiona.drivers():
                 from arcgis.geometry import _types
                 geoms = []
                 atts = []
-                with fiona.open(path=filename) as source:
+                with fiona.open(filename) as source:
                     meta = source.meta
                     cols = list(source.schema['properties'].keys())
                     for idx, row in source.items():
