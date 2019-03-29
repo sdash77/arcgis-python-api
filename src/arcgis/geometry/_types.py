@@ -7,6 +7,8 @@ try:
 except ImportError as e:
     pass
 from six import add_metaclass
+from functools import partial
+
 #--------------------------------------------------------------------------
 def _is_valid(value):
     """checks if the value is valid"""
@@ -91,6 +93,18 @@ def _is_point(coords):
             else:
                 return _is_point(coord)
     return False
+#--------------------------------------------------------------------------
+def _geojson_type_to_esri_type(type_):
+    if type_ in ['LineString','MultiLineString']:
+        return Polyline
+    if type_ in ['Polygon','MultiPolygon']:
+        return Polygon
+    if type_ == 'Point':
+        return Point
+    if type_ == 'MultiPoint':
+        return MultiPoint
+    else:
+        raise ValueError("Unknown GeoJSON Geometry type: {}".format(type_))
 ###########################################################################
 class BaseGeometry(dict):
     _ao = None
@@ -113,12 +127,14 @@ class BaseGeometry(dict):
                 self._HASARCPY = True
             except:
                 self._HASARCPY = False
+                
         if self._HASSHAPELY is None:
             try:
                 import shapely
                 self._HASSHAPELY = True
             except:
                 self._HASSHAPELY = False
+            
         return self._HASARCPY, self._HASSHAPELY
     #----------------------------------------------------------------------
     def __setattr__(self, key, value):
@@ -192,6 +208,9 @@ class GeometryFactory(type):
             gj = json.loads(arcpy.AsShape(iterable, False).JSON)
             gj['spatialReference']['wkid'] = 4326
             return gj
+        else:
+            cls = _geojson_type_to_esri_type(iterable['type'])
+            return cls._from_geojson(iterable)
         return {}
 
     #----------------------------------------------------------------------
@@ -262,7 +281,7 @@ class Geometry(BaseGeometry):
     """
     _HASARCPY = None
     _HASSHAPELY = None
-
+    
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
@@ -753,29 +772,24 @@ class Geometry(BaseGeometry):
             )
 
         """
-        def _check_geometry_engine():
-            _HASARCPY, _HASSHAPELY = None, None
-            if _HASARCPY is None:
-                try:
-                    import arcpy
-                    _HASARCPY = True
-                except:
-                    _HASARCPY = False
-            if _HASSHAPELY is None:
-                try:
-                    import shapely
-                    _HASSHAPELY = True
-                except:
-                    _HASSHAPELY = False
-            return _HASARCPY, _HASSHAPELY
-        HASARCPY, HASSHAPELY = _check_geometry_engine()
+        try:
+            import shapely
+            HASSHAPELY = True
+        except:
+            HASSHAPELY = False
+
         if HASSHAPELY:
-            geometry = cls(shapely_geometry.__geo_interface__)
+            gj = shapely_geometry.__geo_interface__           
+            geom_cls = _geojson_type_to_esri_type(gj['type'])
+    
             if spatial_reference:
-                geometry.spatial_reference = spatial_reference
+                geometry = geom_cls._from_geojson(gj,sr=spatial_reference)
+            else:
+                geometry = geom_cls._from_geojson(gj)
+            
             return geometry
         else:
-            raise Exception('Shapely is required to execute from_shapely.')
+            raise ValueError('Shapely is required to execute from_shapely.')
     #----------------------------------------------------------------------
     @property
     def WKT(self):
@@ -2097,7 +2111,7 @@ class Geometry(BaseGeometry):
         """
         Projects a geometry and optionally applies a geotransformation.
 
-        **Requires ArcPy**
+        **Requires ArcPy or pyproj>=1.9 and PROJ.4**
 
         ====================     ====================================================================
         **Argument**             **Description**
@@ -2133,6 +2147,57 @@ class Geometry(BaseGeometry):
                 raise ValueError("Invalid spatial reference object.")
             return Geometry(self.as_arcpy.projectAs(spatial_reference=spatial_reference,
                                                     transformation_name=transformation_name))
+  
+        try:
+            import pyproj
+            from shapely.ops import transform 
+            HASPROJ = True
+        except:
+            HASPROJ = False
+
+        # Project using Proj4 (pyproj)
+        if HASPROJ:           
+            
+            esri_projections = {
+                102100: 3857,
+                102113: 3857
+            }
+            
+            # Get the input spatial reference
+            in_srid = self.spatial_reference.get('wkid',None)
+            in_srid = self.spatial_reference.get('latestWkid',in_srid)
+            # Convert web mercator from esri SRID
+            in_srid = esri_projections.get(int(in_srid),in_srid) 
+            in_srid = 'epsg:{}'.format(in_srid)
+                       
+            if isinstance(spatial_reference, dict) or isinstance(spatial_reference, SpatialReference):
+                out_srid = spatial_reference.get('wkid',None)
+                out_srid = spatial_reference.get('latestWkid',out_srid)
+            elif isinstance(spatial_reference, integer_types):
+                out_srid = spatial_reference
+            elif isinstance(spatial_reference, string_types):
+                out_srid = spatial_reference
+            else:
+                raise ValueError("Invalid spatial reference object.")
+                
+            out_srid = esri_projections.get(int(out_srid),out_srid)
+            out_srid = 'epsg:{}'.format(out_srid)
+            
+            try:
+                project = partial(
+                    pyproj.transform,
+                    pyproj.Proj(init=in_srid),
+                    pyproj.Proj(init=out_srid)
+                )
+            except RuntimeError as e:
+                raise ValueError("pyproj projection from {0} to {1} not currently supported".format(in_srid,out_srid))
+            
+            g = transform(project,self.as_shapely)
+            return Geometry.from_shapely(
+                g,
+                spatial_reference=spatial_reference
+            )        
+        
         return None
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
@@ -2683,6 +2748,7 @@ class Polyline(Geometry):
             coordinates = [data[coordkey]]
         else:
             coordinates = data[coordkey]
+        
         return cls(
             {'paths' : [[p for p in part] for part in coordinates],
              'spatialReference' : sr
