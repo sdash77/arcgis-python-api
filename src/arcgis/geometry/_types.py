@@ -12,6 +12,10 @@ from functools import partial
 #--------------------------------------------------------------------------
 def _is_valid(value):
     """checks if the value is valid"""
+    if 'spatialReference' not in value or \
+       isinstance(value['spatialReference'],
+                  (dict, SpatialReference)) == False:
+        return False
     if isinstance(value, Point):
         if hasattr(value, 'x') and \
            hasattr(value, 'y') :

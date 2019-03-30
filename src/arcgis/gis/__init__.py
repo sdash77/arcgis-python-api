@@ -2067,7 +2067,7 @@ class UserManager(object):
                     'role': role,
                     "userLicenseType": user_type,
                     "groups":",".join(group.id for group in groups),
-                    "userCreditsAssignment": credits,
+                    "userCreditAssignment": credits,
 
                     }
                     ],
