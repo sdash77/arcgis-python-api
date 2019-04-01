@@ -2084,7 +2084,7 @@ class Geometry(BaseGeometry):
         Returns a point on a line at a specified distance from the beginning
         of the line.
 
-        **Requires ArcPy**
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2105,6 +2105,9 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.positionAlongLine(value=value,
                                                             use_percentage=use_percentage))
+        elif HASSHAPELY:
+            return Geometry(self.as_shapely.interpolate(value, normalized=use_percentage).__geo_interface__)
+        
         return None
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):

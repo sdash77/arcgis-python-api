@@ -1102,7 +1102,7 @@ class OfflineMapAreaManager(object):
             aviris_layer = wm.layers[-1]
 
             north_bed = wm.definition.bookmarks[-1]['name']
-            wm.offline_areas.create(extent=north_bed, item_properties=item_prop,
+            wm.offline_areas.create(area=north_bed, item_properties=item_prop,
                                   folder='clear_lake', min_scale=9000, max_scale=4500,
                                    layers_to_ignore=[aviris_layer])
 
