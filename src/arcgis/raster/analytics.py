@@ -1603,6 +1603,8 @@ def create_image_collection(image_collection,
                                          - Spatial reference of the image_collection; The well-known ID of 
                                          the spatial reference or a spatial reference dictionary object for the 
                                          input geometries.
+                                         If the raster type name is set to "UAV/UAS", the spatial reference of the
+                                         output image collection will be determined by the raster type parameters defined.
     ------------------                   --------------------------------------------------------------------
     context                               Optional, The context parameter is used to provide additional input parameters
                                             {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
@@ -1686,13 +1688,16 @@ def create_image_collection(image_collection,
     if out_sr is not None:
         if isinstance(out_sr, int):
             if context is not None:
-                context.update({'outSR': out_sr})
+                context.update({'outSR':{'wkid': out_sr}})
+            else:
+                context = {}
+                context["outSR"]={'wkid': out_sr}
+        else:
+            if context is not None:
+                context.update({'outSR':out_sr})
             else:
                 context = {}
                 context["outSR"]=out_sr
-        else:
-            context = {}
-            context["outSR"]=out_sr
 
     _set_context(params, context)
 

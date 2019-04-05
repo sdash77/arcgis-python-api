@@ -370,10 +370,10 @@ class _DeepCloner():
             group_item_definition = self._get_group_definition(group)
             self._graph[group_id] = group_item_definition
 
-            wf_item_definition = self._get_item_definition(item)
-            wf_item_definition.sharing['groups'].append(group_id)
-            self._graph[item.id] = wf_item_definition
-            wf_item_definition.add_child(group_item_definition)
+            item_definition = self._get_item_definition(item)
+            item_definition.sharing['groups'].append(group_id)
+            self._graph[item.id] = item_definition
+            item_definition.add_child(group_item_definition)
 
             # Process the services
             services = ['dispatchers', 'assignments', 'workers', 'tracks']
@@ -381,11 +381,11 @@ class _DeepCloner():
                 item_id = _deep_get(workforce_json, service, 'serviceItemId')
                 if item_id is not None:
                     service_item = source.content.get(item_id)
-                    item_definition = self._get_item_definitions(service_item)
-                    self._graph[item_id] = item_definition
-                    wf_item_definition.add_child(item_definition)
-                    item_definition.sharing['groups'].append(group_id)
-                    item_definition.add_child(group_item_definition)
+                    layer_item_definition = self._get_item_definitions(service_item)
+                    self._graph[item_id] = layer_item_definition
+                    item_definition.add_child(layer_item_definition)
+                    layer_item_definition.sharing['groups'].append(group_id)
+                    layer_item_definition.add_child(group_item_definition)
 
 
             # Process the web maps
@@ -394,10 +394,10 @@ class _DeepCloner():
                 item_id = _deep_get(workforce_json, web_map)
                 if item_id is not None:
                     web_map_item = source.content.get(item_id)
-                    item_definition = self._get_item_definitions(web_map_item)
-                    item_definition.sharing['groups'].append(group_id)
-                    wf_item_definition.add_child(item_definition)
-                    item_definition.add_child(group_item_definition)
+                    map_item_definition = self._get_item_definitions(web_map_item)
+                    map_item_definition.sharing['groups'].append(group_id)
+                    item_definition.add_child(map_item_definition)
+                    map_item_definition.add_child(group_item_definition)
 
             # Handle any app integrations
             integrations = _deep_get(workforce_json, 'assignmentIntegrations')
@@ -419,10 +419,9 @@ class _DeepCloner():
                         item_ids = re.findall('itemID=[0-9A-F]{32}', url_template, re.IGNORECASE)
                         for item_id in item_ids:
                             integration_item = source.content.get(item_id[7:])
-                            item_definition = self._get_item_definitions(integration_item)
-                            self._graph[item_id[7:]] = item_definition
-                            wf_item_definition.add_child(item_definition)
-
+                            integration_item_definition = self._get_item_definitions(integration_item)
+                            self._graph[item_id[7:]] = integration_item_definition
+                            item_definition.add_child(integration_item_definition)
 
         # If the item is a form find the feature service that supports it
         elif item['type'] == 'Form':
@@ -584,6 +583,7 @@ class _DeepCloner():
         level = 0
 
         # also includes items that already existed and mapped
+        exceptions = []
         while leaf_nodes:           
             # Resolve any nodes that were provided in the item or group mapping
             for node in [node for node in leaf_nodes if node.info['id'] in self._clone_mapping['Item IDs'] or node.info['id'] in self._clone_mapping['Group IDs']]:
@@ -595,10 +595,24 @@ class _DeepCloner():
                 try:
                     node.clone()
                 except _ItemCreateException as ex:
-                    raise ex
+                    exceptions.append(ex)
+                    break
+
+            if len(exceptions) > 0:
+                break
 
             level += 1
             leaf_nodes = self._get_leaf_nodes()
+        
+        # if any of the exceptions are an _ItemCreate Exception, then delete all created items/groups
+        for ex in exceptions:
+            if isinstance(ex, _ItemCreateException):
+                created_items = self._get_created_items()
+                for item in reversed(created_items):
+                    if item:
+                        item.delete()
+                raise ex
+
         return [i for i in self._get_created_items() if isinstance(i, arcgis.gis.Item)]
 
     def _clone(self, excecutor):
@@ -1838,18 +1852,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             for relationship in relationships_copy[layer_id]:
                                 relationship['relatedTableId'] = layer_id_mapping[relationship['relatedTableId']]
 
-                        if self.target.properties.isPortal:
-                            relationships_definition = {'layers' : []}
-                            for key, value in layer_id_mapping.items():
-                                if key in relationships_copy:
-                                    relationships_definition['layers'].append({'id' : value, 'relationships' : relationships_copy[key]})
-                                else:
-                                    relationships_definition['layers'].append({'id' : value, 'relationships' : []})
-                            feature_service_admin.add_to_definition(relationships_definition)
-                        else:
-                            for layer_id in relationships_copy:
-                                layer = new_layers[layer_id]
-                                layer.manager.add_to_definition({'relationships' : relationships_copy[layer_id]})
+                        relationships_definition = {'layers' : []}
+                        for key, value in layer_id_mapping.items():
+                            if key in relationships_copy:
+                                relationships_definition['layers'].append({'id' : value, 'relationships' : relationships_copy[key]})
+                            else:
+                                relationships_definition['layers'].append({'id' : value, 'relationships' : []})
+                        feature_service_admin.add_to_definition(relationships_definition)
 
                 # Get the item properties from the original item
                 item_properties = self._get_item_properties(self.item_extent)
@@ -2879,16 +2888,17 @@ class _ProProjectPackageDefinition(_ItemDefinition):
         try:
             new_item = None
             original_item = self.info
+            aprx = None
+            map = None
+            maps = None
+            layers = None
+            lyr = None
+            ppkx = self.data
+
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
-            if not new_item:
-                aprx = None
-                map = None
-                maps = None
-                layers = None
-                lyr = None
-                ppkx = self.data
 
+            if not new_item:
                 try:
                     import arcpy
 

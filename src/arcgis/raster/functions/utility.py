@@ -4,6 +4,7 @@ import numbers
 from arcgis.features.layer import FeatureLayer
 
 def _raster_input(raster, raster2=None):
+    layer=None
     if raster2 is not None:
         if isinstance(raster2, ImageryLayer) and isinstance(raster, ImageryLayer):
             layer = raster2
@@ -30,7 +31,10 @@ def _raster_input(raster, raster2=None):
                     if raster._url == raster2._url:
                         raster2 = raster2._fn
                     else:
-                        raster2 = _replace_raster_url(raster2._fn, raster2._url)
+                        if(raster2._datastore_raster is False):
+                            raster2 = _replace_raster_url(raster2._fn, raster2._url)
+                        else:
+                            raster2 = _replace_raster_url(raster2._fn, raster2._uri)
                  else:
                     if raster2._url == raster._url:
                         oids = raster2.filtered_rasters()
@@ -41,7 +45,10 @@ def _raster_input(raster, raster2=None):
                         else:
                             raster2 = ['$' + str(x) for x in oids]
                     else:
-                        raster2 = raster2._url
+                        if(raster2._datastore_raster is False):
+                            raster2 = raster2._url
+                        else:
+                            raster2 = raster2._uri
         elif isinstance(raster2, ImageryLayer) and not isinstance(raster, ImageryLayer):
             layer = raster2
             raster_ra = _get_raster_ra(raster2)
@@ -98,10 +105,15 @@ def _raster_input(raster, raster2=None):
         # except:
         #     pass
 
-        for r in raster: # layer is first non numeric raster in list
-            if not isinstance(r, numbers.Number):
-                layer = r
-                break
+        for r in raster:
+            if isinstance(r, ImageryLayer):
+                if r._datastore_raster:
+                    layer = r
+        if layer is None:
+            for r in raster: # layer is first non numeric raster in list
+                if not isinstance(r, numbers.Number):
+                    layer = r
+                    break
 
         for r in raster:
             if not isinstance(r, numbers.Number):
@@ -307,48 +319,26 @@ def _input_rft(input_layer):
 
 
 def _find_object_ref(rft_dict, record, instance):
-    if isinstance(rft_dict,dict):
-        for k, v in rft_dict.items():
-            if isinstance(v, dict):
-                if "_object_id" in v:
-                    record[v["_object_id"]] = v
-                if "isPublic" in v:
-                    if v["isPublic"] is True:
-                        if not isinstance(instance,bool):
+    for k, v in rft_dict.items():
+        if isinstance(v, dict):
+            if "_object_id" in v:
+                record[v["_object_id"]] = v
+            if "isPublic" in v:
+                if v["isPublic"] is True:
+                    instance._is_public_flag=True
+            _find_object_ref(v, record, instance)
+
+        elif isinstance(v, list):
+            for ele in v:
+                if isinstance (ele,dict):
+                    if "_object_id" in ele:
+                        record[ele["_object_id"]] = ele
+                    if "isPublic" in ele:
+                        if ele["isPublic"] is True:
                             instance._is_public_flag=True
-                        else:
-                            instance=True
-                            
-                if (isinstance(instance,bool) and instance is False): 
-                    instance=_find_object_ref(v, record, instance)
-                elif (isinstance(instance,bool) and instance is True):
-                    return instance
-                else:
-                    _find_object_ref(v, record, instance)
-
-            elif isinstance(v, list):
-                for ele in v:
-                    if isinstance (ele,dict):
-                        if "_object_id" in ele:
-                            record[ele["_object_id"]] = ele
-                        if "isPublic" in v:
-                            if v["isPublic"] is True:
-                                instance._is_public_flag=True
-                        
-                        if (isinstance(instance,bool) and instance is False): 
-                            instance=_find_object_ref(ele, record, instance)
-                        elif (isinstance(instance,bool) and instance is True):
-                            return instance
-                        else:
-                            _find_object_ref(ele, record, instance)
-
-
-            
-    if isinstance(instance,bool):
-        return instance
+                    _find_object_ref(ele, record, instance)
     return _replace_object_id(rft_dict, record)
-    
-        
+
 def _replace_object_id(rft_dict, record):
 
     if isinstance (rft_dict, dict):
