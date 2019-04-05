@@ -253,7 +253,7 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
     layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
-    if layer1 is not None and layer2._datastore_raster is False:
+    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
         layer = layer1
     else:
         layer = layer2
@@ -4012,7 +4012,7 @@ class RFT:
                         _raster_function_traversal(value["arguments"])
             _function_traversal(value["arguments"])
 
-        def _raster_function_traversal(raster_dict, index=1, scalar_name="Raster", ispublic=False): #If isDataset=True
+        def _raster_function_traversal(raster_dict, index=1, scalar_name="Raster", ispublic=False, function_arg_type=None): #If isDataset=True
             if "value" in raster_dict.keys(): #Handling Scalar rasters
                 if raster_dict["value"] is None:
                     if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
@@ -4048,7 +4048,10 @@ class RFT:
                                 elif "function" in e.keys(): # if function template inside
                                     _function_traversal(e)
                                 else:  #if raster dataset inside raster array
-                                    if self._is_public_flag is False or ispublic==True or ("isPublic" not in raster_dict.keys()) or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
+                                    if function_arg_type is "LocalFunctionArguments":
+                                        if self._is_public_flag is False or ispublic==True or ("isPublic" not in e.keys()) or (("isPublic" in e.keys()) and e["isPublic"] is True):
+                                            _raster_function_traversal(e,  index, scalar_name, ispublic=True)
+                                    elif self._is_public_flag is False or ispublic==True or ("isPublic" not in raster_dict.keys()) or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
                                         _raster_function_traversal(e,  index, scalar_name, ispublic=True)
                         else: # If elements is empty i.e Rasters has no value when rft was created
                             if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
@@ -4120,11 +4123,12 @@ class RFT:
         def _function_traversal(dictionary):
             if "function" in dictionary.keys():
                 _function_create(dictionary)
+            function_arg_type=dictionary['type'] if 'type' in dictionary else None  
             for key,value in dictionary.items():
                 if isinstance(value , dict):
                     if "isDataset" in value.keys():
                         if (value["isDataset"] == True) or key == "raster" or key == "Raster2" or key == "Rasters" or key == "Raster":
-                            _raster_function_traversal(value)
+                            _raster_function_traversal(value,function_arg_type=function_arg_type)
                         elif (value["isDataset"] == False):  #Parameters
                             if "value" in value:                                
                                 if value["value"] is not None or isinstance(value["value"],bool):
@@ -4158,15 +4162,15 @@ class RFT:
                                 for arg_element in gdict["arguments"]["value"]["elements"]:
                                     _function_traversal(arg_element)
                             else: # when gdict["arguments"]["value"]["elements"]=[]
-                                _raster_function_traversal(gdict["arguments"])
+                                _raster_function_traversal(gdict["arguments"], function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
                     else:
-                        _raster_function_traversal(gdict["arguments"])
+                        _raster_function_traversal(gdict["arguments"], function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
             
                 else:
                     if "value" in gdict["arguments"]:
                         _function_traversal(gdict["arguments"]["value"])
                     elif (gdict["arguments"]["isDataset"] == True): #Aspect function with only raster parameter
-                        _raster_function_traversal(gdict["arguments"])
+                        _raster_function_traversal(gdict["arguments"],  function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
             _function_traversal(gdict["arguments"])
         return key_value_dict, raster_dictionary
 

@@ -2777,7 +2777,6 @@ class ImageryLayer(Layer):
 
             global nodenumber,root
             nodenumber=root=0
-            _is_public_flag=_find_object_ref(self._fnra,{},False)
             function_dictionary=self._fnra
 
             global dict_arg
