@@ -16,6 +16,7 @@ dependencies:
 - jupyterlab
 - pytest
 - matplotlib
+- tornado<6
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
