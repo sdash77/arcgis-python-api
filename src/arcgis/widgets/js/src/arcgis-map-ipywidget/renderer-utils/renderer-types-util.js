@@ -28,6 +28,10 @@ var isUniqueRenderer = function(renderer){
     return /.*unique.*/i.test(renderer);
 }
 
+var isDotDensityRenderer = function(renderer){
+    return /.*dot.*density.*/i.test(renderer);
+}
+
 var userSpecifiedAutocastRenderer = function(renderer){
     return /.*auto.*cast.*/i.test(renderer);
 }
@@ -39,4 +43,5 @@ module.exports = { isSmartMapRenderer: isSmartMapRenderer,
                    isClassedSizeRenderer: isClassedSizeRenderer,
                    isSimpleRenderer: isSimpleRenderer,
                    isUniqueRenderer: isUniqueRenderer,
-                   userSpecifiedAutocastRenderer: userSpecifiedAutocastRenderer};
+                   isDotDensityRenderer: isDotDensityRenderer,
+                   userSpecifiedAutocastRenderer: userSpecifiedAutocastRenderer,};
