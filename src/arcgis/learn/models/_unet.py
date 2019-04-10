@@ -30,6 +30,7 @@ class ArcGISModel(object):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -54,7 +55,8 @@ class ArcGISModel(object):
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro
         Train the model for the specified number of epocs and using the
-        specified learning rates
+        specified learning rates.
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -105,6 +107,7 @@ class ArcGISModel(object):
         """
         Loads a saved model for inferencing or fine tuning from the specified
         path or model name.
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
