@@ -1793,9 +1793,11 @@ class GeoAccessor(object):
 
         # if the map widget is explicitly defined
         if map_widget:
-
+            orig_col = copy.deepcopy(self._data.columns)
+            self._data.columns = [c.replace(" ", "_") for c in self._data.columns]
             # plot and be merry
             _plot_map_widget(map_widget)
+            self._data.columns = orig_col
             return True
 
         # otherwise, if a map widget is NOT explicitly defined
@@ -1813,8 +1815,10 @@ class GeoAccessor(object):
             map_widget = gis.map()
 
             # plot the data in the map widget
+            orig_col = copy.deepcopy(self._data.columns)
+            self._data.columns = [c.replace(" ", "_") for c in self._data.columns]
             _plot_map_widget(map_widget)
-
+            self._data.columns = orig_col
             # zoom the map widget to the extent of the data
             map_widget.extent = {
                 'spatialReference': self._data.spatial.sr,
