@@ -38,4 +38,9 @@ SingleShotDetector
     :members:
     :undoc-members:
 
+UnetClassifier
+------------------
+.. autoclass:: arcgis.learn.UnetClassifier
+    :members:
+    :undoc-members:
 
