@@ -72,10 +72,6 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     else:
         newlyr = ImageryLayer(layer._url, layer._gis)
 
-    newlyr._lazy_properties = layer.properties
-    newlyr._hydrated = True
-    newlyr._lazy_token = layer._token
-
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
     #     newlyr._fn = function_chain
@@ -83,14 +79,21 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     # else:
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
+    if layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+            newlyr._fn = function_chain_ra
 
     newlyr._where_clause = layer._where_clause
     newlyr._spatial_filter = layer._spatial_filter
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    newlyr._extent = layer._extent
+    #newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
+
+    newlyr._lazy_token = layer._token
+    newlyr._refresh()
+    newlyr._hydrated = True
 
     return newlyr
 
@@ -107,10 +110,6 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     else:
         newlyr = ImageryLayer(layer._url, layer._gis)
 
-    newlyr._lazy_properties = layer.properties
-    newlyr._hydrated = True
-    newlyr._lazy_token = layer._token
-
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
     #     newlyr._fn = function_chain
@@ -119,13 +118,21 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
 
+    if layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+            newlyr._fn = function_chain_ra
+
     newlyr._where_clause = layer._where_clause
     newlyr._spatial_filter = layer._spatial_filter
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    newlyr._extent = layer._extent
+    #newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
+
+    newlyr._lazy_token = layer._token
+    newlyr._refresh()
+    newlyr._hydrated = True
 
     return newlyr
 

@@ -511,8 +511,7 @@ def match_control_points(image_collection, control_points, similarity=None, cont
             raise RuntimeError('similarity can only be one of the following: '+str(similarityAllowedValues))
         params['similarity'] = similarity
 
-    if context is not None:
-        params['context'] = json.dumps(context)
+    _set_context(params, context)
 
     task = 'MatchControlPoints'
     job_values = _execute_task(gis, task, params)
@@ -638,7 +637,6 @@ def color_correction(image_collection,
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
-    context = {}
     _set_image_collection_param(gis,params, image_collection)
 
     color_correction_allowed_values = ['DODGING', 'HISTOGRAM', 'STANDARD_DEVIATION']
@@ -729,7 +727,6 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
-    context = {}
     _set_image_collection_param(gis, params, image_collection)
 
     if reference_image is not None:
@@ -823,7 +820,6 @@ def compute_seamlines(image_collection,
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
-    context={}
     _set_image_collection_param(gis, params, image_collection)
 
     contextAllowedValues= {"minRegionSize", "pixelSize", "blendType", "blendWidth", 
@@ -1063,7 +1059,6 @@ def generate_dem(image_collection,
 
     contextAllowedValues= ["maxObjectSize", "groundSpacing", "minAngle", "maxAngle", "minOverlap", "maxOmegaPhiDif", 
                             "maxGSDDif", "numImagePairs", "adjQualityThreshold", "method", "smoothingMethod", "applyToOrtho"]
-    context = {}
     params = {}
     folder = None
     folderId = None
