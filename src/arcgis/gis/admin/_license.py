@@ -385,9 +385,15 @@ class License(object):
     def plot(self):
         """returns a simple bar chart of assigned and remaining entitlements"""
         report = self.report
-        return report.plot(x=report["Entitlement"],
-                           y=['Assigned', 'Remaining'],
-                           kind='bar',stacked=True)
+        try:
+            return report.plot(x=report["Entitlement"],
+                               y=['Assigned', 'Remaining'],
+                               kind='bar',stacked=True)
+        except:
+            report.set_index("Entitlement", drop=True, append=False,
+                             inplace=True, verify_integrity=False)
+            return report.plot(y=['Assigned', 'Remaining'],
+                               kind='bar',stacked=True)
     #----------------------------------------------------------------------
     def all(self):
         """
