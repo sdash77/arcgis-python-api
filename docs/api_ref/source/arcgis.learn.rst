@@ -42,5 +42,6 @@ UnetClassifier
 ------------------
 .. autoclass:: arcgis.learn.UnetClassifier
     :members:
+    :inherited-members:
     :undoc-members:
 
