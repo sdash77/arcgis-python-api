@@ -388,12 +388,12 @@ class License(object):
         try:
             return report.plot(x=report["Entitlement"],
                                y=['Assigned', 'Remaining'],
-                               kind='bar',stacked=True)
+                               kind='bar',stacked=True).legend(loc='best')
         except:
             report.set_index("Entitlement", drop=True, append=False,
                              inplace=True, verify_integrity=False)
             return report.plot(y=['Assigned', 'Remaining'],
-                               kind='bar',stacked=True)
+                               kind='bar',stacked=True).legend(loc='best')
     #----------------------------------------------------------------------
     def all(self):
         """
