@@ -225,7 +225,8 @@ def find_hot_spots(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        shape_type=None):
     """
     The Find Hot Spots function finds statistically significant clusters of incident points, weighted points, or
     weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation.
@@ -251,6 +252,8 @@ def find_hot_spots(
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    -------------------------    ---------------------------------------------------------
+    shape_type                   Optional string. The shape of the polygon mesh the input features will be aggregated into.
     =========================    =========================================================
 
     :Returns: dict with the following keys:
@@ -268,7 +271,8 @@ def find_hot_spots(
         aggregation_polygon_layer,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate,
+        shape_type=shape_type)
 
 
 def find_outliers(analysis_layer,

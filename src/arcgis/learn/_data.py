@@ -1,11 +1,14 @@
 try:
     from fastai.vision.data import imagenet_stats
-    from fastai.vision.transform import crop, dihedral_affine
+    from fastai.vision.transform import crop, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
+    from fastai.vision.data import SegmentationItemList
     import torch
     from pathlib import Path
     from functools import partial
     import xml.etree.ElementTree as ET
     from .models._ssd_utils import SSDObjectItemList
+    import math
+    import json
     HAS_FASTAI = True
 except:
     HAS_FASTAI = False
@@ -57,7 +60,7 @@ def _get_bbox_lbls(imagefile, class_mapping):
 
     return [bboxes, classes]
 
-def prepare_data(path, class_mapping, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42):
+def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type = None):
     """
     Prepares a Fast.ai DataBunch from the exported Pascal VOC image chips
     exported by Export Training Data tool in ArcGIS Pro or Image Server.
@@ -69,7 +72,7 @@ def prepare_data(path, class_mapping, chip_size=224, val_split_pct=0.1, batch_si
     ---------------------   -------------------------------------------
     path                    Required string. Path to data directory.
     ---------------------   -------------------------------------------
-    class_mapping           Required dictionary. Mapping from PascalVOC id to
+    class_mapping           Optional dictionary. Mapping from id to
                             its string label.
     ---------------------   -------------------------------------------
     chip_size               Optional integer. Size of the image to train the
@@ -92,6 +95,13 @@ def prepare_data(path, class_mapping, chip_size=224, val_split_pct=0.1, batch_si
     ---------------------   -------------------------------------------
     seed                    Optional integer. Random seed for reproducible
                             train-validation split.
+    ---------------------   -------------------------------------------
+    dataset_type            Optional string. `prepare_data` function will infer 
+                            the `dataset_type` on its own if it contains a 
+                            map.txt file. If the path does not contain the 
+                            map.txt file pass either of 'PASCAL_VOC_rectangles', 
+                            'RCNN_Masks' and 'Classified_Tiles'                    
+                            
     =====================   ===========================================
 
     :returns: fastai DataBunch object
@@ -103,26 +113,81 @@ def prepare_data(path, class_mapping, chip_size=224, val_split_pct=0.1, batch_si
     if type(path) is str:
         path = Path(path)
 
-    images = 'images'
+    if class_mapping is None:
+        json_file = path / 'esri_model_definition.emd'
+        with open(json_file) as f:
+            emd = json.load(f)
+            try:
+                class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+            except KeyError:
+                class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
+        
+    imagefile_types = ['png', 'jpg', 'tif', 'jpeg', 'tiff']
+    bboxfile_types = ['xml', 'json']
+    with open(path / 'map.txt') as f:
+        line = f.readline()
+    left = line.split()[0].split('.')[-1].lower()
+    right = line.split()[1].split('.')[-1].lower()
+    
+    if dataset_type is None:
+        if (left in imagefile_types) and (right in imagefile_types):
+            dataset_type = 'RCNN_Masks'
+        elif (left in imagefile_types) and (right in bboxfile_types):
+            dataset_type = 'PASCAL_VOC_rectangles'
+        else:
+            raise NotImplementedError('Cannot infer dataset type. The dataset type is not implemented')            
+        
+    
+    if dataset_type in ['RCNN_Masks', 'Classified_Tiles']:
+        
+        def get_y_func(x, ext=right):
+            return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
+        
+        src = (SegmentationItemList.from_folder(path/'images')
+           .random_split_by_pct(0.1)
+           .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values())))  #TODO : ignoring keys
 
-    get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping)
+        if transforms is None:
+            transforms = get_transforms(flip_vert=True,
+                                        max_rotate=90.,
+                                        max_zoom=3.0,
+                                        max_lighting=0.5) #,
+    #                                     xtra_tfms=[skew(direction=(1,8),
+    #                                     magnitude=(0.2,0.8))]) 
 
-    src = (SSDObjectItemList.from_folder(path/images)
-       .random_split_by_pct(val_split_pct, seed=seed)
-       .label_from_func(get_y_func))
 
-    if transforms is None:
-        ranges = (0,1)
-        train_tfms = [crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), dihedral_affine()]
-        val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
-        transforms = (train_tfms, val_tfms)
+        data = (src
+            .transform(transforms, size=chip_size, tfm_y=True)
+            .databunch(bs=batch_size)
+            .normalize(imagenet_stats))
+        
+    elif dataset_type == 'PASCAL_VOC_rectangles':
 
-    data = (src
-        .transform(transforms, tfm_y=True)
-        .databunch(bs=batch_size, collate_fn=collate_fn)
-        .normalize(imagenet_stats)
-       )
+
+        get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping)
+
+        src = (SSDObjectItemList.from_folder(path/'images')
+           .random_split_by_pct(val_split_pct, seed=seed)
+           .label_from_func(get_y_func))
+
+        if transforms is None:
+            ranges = (0,1)
+            train_tfms = [crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(1.5, 1.5)), rand_zoom(scale=(0.75, 1.5))]
+            val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
+            transforms = (train_tfms, val_tfms)
+
+        data = (src
+            .transform(transforms, tfm_y=True)
+            .databunch(bs=batch_size, collate_fn=collate_fn)
+            .normalize(imagenet_stats)
+           )
+        
+    else:
+        raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))    
 
     data.chip_size = chip_size
+    show_batch_func = data.show_batch
+    show_batch_func = partial(show_batch_func, rows=min(int(math.sqrt(batch_size)), 5))
+    data.show_batch = show_batch_func
 
     return data

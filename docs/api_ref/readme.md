@@ -4,6 +4,7 @@
 <!-- MarkdownTOC -->
 
 - [Set up](#set-up)
+- [Generate API Reference](#generate-api-reference)
 - [Quickstart](#quickstart)
 - [Customizing conf.py](#customizing-confpy)
 - [Building the help](#building-the-help)
@@ -28,6 +29,18 @@ Then make a `docs` dir next to the `src` directory. The `docs` will house the bu
 ```
 cd docs
 ```
+
+
+## Generate API Reference
+
+If you simply want to generate the API reference, all you need to do is:
+```
+cd docs\api_ref
+make html
+```
+The doc would be generated in docs/api_ref/build/html folder.
+
+The notes below talk about the process to get to this point (valid for a new project) and can be ignored for the geosaurus project as all steps have already been run once to generate the config.
 
 ## Quickstart
 Execute `sphinx-quickstart` this fires a set of questions and creates the `conf.py` which contains the config settings and a defualt `index.rst` file containing the skeleton TOC for help.

@@ -1655,10 +1655,12 @@ def create_image_collection(image_collection,
                 params['imageCollection'] = _json.dumps({ 'uri' : image_collection })
         else:
             result = gis.content.search("title:"+str(image_collection), item_type = "Imagery Layer")
-            if len(result) > 0:
-                result = result[0]
-                if result is not None:
-                    params["imageCollection"]= _json.dumps({"itemId": result.itemid})
+            image_collection_result = None
+            for element in result:
+                if str(image_collection) == element.title:
+                    image_collection_result = element
+            if image_collection_result is not None:
+                params["imageCollection"]= json.dumps({"itemId": image_collection_result.itemid})
             else:
                 doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service") 
                 if doesnotexist:

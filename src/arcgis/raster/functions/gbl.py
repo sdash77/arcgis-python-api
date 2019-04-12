@@ -542,7 +542,7 @@ def zonal_statistics(in_zone_data,
         "rasterFunction" : "GPAdapter",
         "rasterFunctionArguments" : {
             "toolName" : "ZonalStatistics_sa",           
-            "PrimaryInputParameterName" : "in_zone_data",
+            "PrimaryInputParameterName" : "in_value_raster",
             "OutputRasterParameterName" : "out_raster",
             "in_zone_data" : in_zone_data, 
             "zone_field" : zone_field,

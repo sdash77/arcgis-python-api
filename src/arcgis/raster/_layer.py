@@ -752,7 +752,6 @@ class ImageryLayer(Layer):
             }
 
         newlyr._filtered = True
-
         return newlyr
 
     def _clone_layer(self):
@@ -2538,7 +2537,6 @@ class ImageryLayer(Layer):
         newlyr = self._clone_layer()
         if self._mosaic_rule is not None:
             newlyr._mosaic_rule["mosaicOperation"] = 'MT_' + op.upper()
-
         return newlyr
 
     def first(self):

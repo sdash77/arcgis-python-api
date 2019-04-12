@@ -738,7 +738,8 @@ class _FeatureAnalysisTools(_AsyncService):
                        aggregation_polygon_layer=None,
                        output_name=None,
                        context=None,
-                       estimate=False):
+                       estimate=False,
+                       shape_type=None):
         """
         The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
 
@@ -760,6 +761,10 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional settings such as processing extent and output spatial reference.
         estimate: Optional Boolean
             Returns the credit usage for the current task.
+        shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
+
+          - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
+          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.    
 
 
         Returns
@@ -791,6 +796,9 @@ class _FeatureAnalysisTools(_AsyncService):
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
+
+        if shape_type is not None:
+            params["shapeType"] = shape_type                                 
 
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
@@ -1542,12 +1550,12 @@ class _FeatureAnalysisTools(_AsyncService):
         ----------
         input_layers : Required list of Feature Layers
             The layers from which you can extract features.
-        extent : Optional string
+        extent : Optional Feature Layer
             The area that defines which features will be included in the output zip file or layer package.
         clip : Optional bool
             Select features that intersect the extent or clip features within the extent.
         data_format : Optional string
-            Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases. eg CSV
+            Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases. eg CSV, SHAPEFILE
         output_name : Optional string
             Additional properties such as output name of the item
         context : Optional string
@@ -1568,12 +1576,20 @@ class _FeatureAnalysisTools(_AsyncService):
 
         params["inputLayers"] = input_layers_param
         if extent is not None:
-            params["extent"] = extent
+            params["extent"] = super()._feature_input(extent)
         if clip is not None:
             params["clip"] = clip
         if data_format is not None:
             params["dataFormat"] = data_format
-        if output_name is not None:
+        if output_name is None:
+            output_name = 'Extracted_data_' + _id_generator()
+        
+        if data_format.upper() == 'SHAPEFILE':
+            params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
+                                                           "tags": "Analysis Results, Extract Data",
+                                                           "snippet": "Analysis file item generated from running the Extract Data tool.",
+                                                           "folderId": ""}}
+        else:
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context

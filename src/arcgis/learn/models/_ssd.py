@@ -413,7 +413,9 @@ class SingleShotDetector(object):
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
         Displays the results of a trained model on a part of the validation set.
-        """
+        """ 
+        if rows > self._data.batch_size:
+            rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
 
 

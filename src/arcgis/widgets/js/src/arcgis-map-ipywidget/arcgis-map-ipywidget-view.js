@@ -433,11 +433,11 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     mode_changed: function(){
     try{
         console.log("updating mode...");
-        this.activeView.container = null;
         if(this.model.get("mode") === "3D"){
             this.elements.switchButton.src = images.sceneToMapEncoded;
             if(this.activeView.viewpoint){
                 this._3dMap.viewpoint = this.activeView.viewpoint.clone();
+                this.activeView.container = null;
             }
             this._3dMap.container = this.container;
             this.activeView = this._3dMap;
@@ -447,6 +447,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this.elements.switchButton.src = images.mapToSceneEncoded;
             if(this.activeView.viewpoint){
                 this._2dMap.viewpoint = this.activeView.viewpoint.clone();
+                this.activeView.container = null;
              }
              this._2dMap.container = this.container;
              this.activeView = this._2dMap;
@@ -649,14 +650,16 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                     layer_json.renderer = layer.renderer.toJSON();
                     layer_json.rendererType = layer.renderer.declaredClass;}
                 layers_json.push(layer_json) }
+            var ground_json = map.ground ? map.ground.toJSON() : {}
+            var basemap_json = map.basemap ? map.basemap.toJSON() : {}
             var wm = { layers : layers_json,
-                       ground : map.ground.toJSON(),
-                       basemap : map.basemap.toJSON() };
+                       ground : ground_json,
+                       basemap : basemap_json };
             this.model.set('_readonly_webmap_from_js', wm);
             this.model.save_changes();
         } catch(err){
             this._displayErrorBox("Error updating readonly webmap json.");
-            console.warn("Error updatin readonly webmap"); console.warn(err); }
+            console.warn("Error updating readonly webmap"); console.warn(err); }
     },
 
     webscene_changed: function(){
