@@ -738,7 +738,8 @@ class _FeatureAnalysisTools(_AsyncService):
                        aggregation_polygon_layer=None,
                        output_name=None,
                        context=None,
-                       estimate=False):
+                       estimate=False,
+                       shape_type=None):
         """
         The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
 
@@ -760,6 +761,10 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional settings such as processing extent and output spatial reference.
         estimate: Optional Boolean
             Returns the credit usage for the current task.
+        shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
+
+          - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
+          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.    
 
 
         Returns
@@ -791,6 +796,9 @@ class _FeatureAnalysisTools(_AsyncService):
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
+
+        if shape_type is not None:
+            params["shapeType"] = shape_type                                 
 
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
