@@ -615,7 +615,8 @@ class MapView(widgets.DOMWidget):
             default_cdn_unreachable = not self._is_reachable(_DEFAULT_JS_CDN)
             if default_cdn_unreachable:
                 _portal_cdn = "{}/jsapi/jsapi4/".format(
-                    getattr(self, "_portal_url", ""))
+                    getattr(self.gis, "_url", ""))
+                    # use gis._url to get private url (disconn IWA edge case)
                 self._js_cdn_override = _portal_cdn
                 log.debug("Disconnected environment detected: " + 
                     "using JS API CDN from {}. ".format(_portal_cdn) + 

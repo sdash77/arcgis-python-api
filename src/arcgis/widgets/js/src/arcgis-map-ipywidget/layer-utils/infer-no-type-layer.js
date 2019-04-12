@@ -47,7 +47,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                             var renderingRuleJSON = 
                                 noTypeLayer.options.imageServiceParameters.renderingRule;
                             var renderingRule = RasterFunction.fromJSON(renderingRuleJSON);
-                            typedLayer.renderingRule = rasterFunction;}
+                            typedLayer.renderingRule = renderingRule;}
                         if('mosaicRule' in noTypeLayer.options.imageServiceParameters){
                             console.log("Applying mosaic rule to imagery layer..");
                             var mosaicRuleJSON = 

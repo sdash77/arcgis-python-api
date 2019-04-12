@@ -16,6 +16,10 @@ dependencies:
 - jupyterlab
 - pytest
 - matplotlib
+- tornado<6
+- scikit-learn
+- scikit-image
+- keras
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
