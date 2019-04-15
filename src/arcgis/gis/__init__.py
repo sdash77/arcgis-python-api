@@ -7525,6 +7525,10 @@ class Item(dict):
             "everyone": everyone,
             "account": org
         }
+        if allow_members_to_edit:
+            params['owner'] =self.owner
+            params['confirmItemControl'] = allow_members_to_edit  # True
+
         res = self._portal.con.post(url, params)
         self._hydrated = False
         self._hydrate()
