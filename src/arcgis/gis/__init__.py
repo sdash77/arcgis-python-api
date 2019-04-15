@@ -8033,7 +8033,7 @@ class Item(dict):
         else:
             raise ValueError("Invalid date range.")
 
-        url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+        url = "%sportals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
         try:
             res = self._portal.con.post(url, params)
             if as_df:
