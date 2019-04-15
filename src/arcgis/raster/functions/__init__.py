@@ -88,12 +88,14 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    #newlyr._extent = layer._extent
+    newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
 
     newlyr._lazy_token = layer._token
     newlyr._refresh()
     newlyr._hydrated = True
+    if layer._extent==layer.properties.extent:
+        newlyr._extent = newlyr.properties.extent
 
     return newlyr
 
@@ -127,13 +129,14 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    #newlyr._extent = layer._extent
+    newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
 
     newlyr._lazy_token = layer._token
     newlyr._refresh()
     newlyr._hydrated = True
-
+    if layer._extent==layer.properties.extent:
+        newlyr._extent = newlyr.properties.extent
     return newlyr
 
 
@@ -416,7 +419,32 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     :param raster: the input raster / imagery layer
     :param band_indexes: band indexes or expression
     :param astype: output pixel type
-    :param method: int (0 = UserDefined, 1 = NDVI, 2 = SAVI, 3 = TSAVI, 4 = MSAVI, 5 = GEMI, 6 = PVI, 7 = GVITM, 8 = Sultan)
+    :param method: int. The type of band arithmetic algorithm you want to deploy. 
+                   You can define your custom algorithm, or choose a predefined index.
+                   0 = UserDefined, 
+                   1 = NDVI,
+                   2 = SAVI,
+                   3 = TSAVI,
+                   4 = MSAVI,
+                   5 = GEMI,
+                   6 = PVI,
+                   7 = GVITM,
+                   8 = Sultan,
+                   9 = VARI,
+                   10 = GNDVI,
+                   11 = SR,
+                   12 = NDVIre,
+                   13 = SRre,
+                   14 = MTVI2,
+                   15 = RTVICore,
+                   16 = CIre,
+                   17 = CIg,
+                   18 = NDWI,
+                   19 = EVI,
+                   20 = IronOxide,
+                   21 = FerrousMinerals,
+                   22 = ClayMinerals
+
     :return: band_arithmetic applied to the input raster
     """
 
@@ -536,6 +564,223 @@ def sultan(raster, band_indexes="1 2 3 4 5 6", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 8)
+
+def vari(raster, band_indexes="3 2 1", astype=None):
+    """
+    Visible Atmospherically Resistant Index
+
+    VARI = (Green - Red)/(Green + Red - Blue)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red Green Blue", e.g., "3 2 1"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 9)
+
+def gndvi(raster, band_indexes="4 2", astype=None):
+    """
+    Green Normalized Difference Vegetation Index
+
+    GNDVI = (NIR-Green)/(NIR+Green)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red Green Blue", e.g., "3 2 1"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 10)
+
+def sr(raster, band_indexes="4 3", astype=None):
+    """
+    Simple Ratio (SR)
+
+    SR = NIR / Red
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Red", e.g., "3 2 1"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 11)
+
+def ndvire(raster, band_indexes="7 6", astype=None):
+    """
+    Red-Edge NDVI (NDVIre)
+    The Red-Edge NDVI (NDVIre) is a vegetation index for estimating 
+    vegetation health using the red-edge band. It is especially useful 
+    for estimating crop health in the mid to late stages of growth where 
+    the chlorophyll concentration is relatively higher. Also, NDVIre can
+    be used to map the within-field variability of nitrogen foliage to 
+    understand the fertilizer requirements of crops.
+
+    NDVIre = (NIR-RedEdge)/(NIR+RedEdge)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR RedEdge", e.g., "7 6"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 12)
+
+def srre(raster, band_indexes="7 6", astype=None):
+    """
+    The Red-Edge Simple Ratio (SRre) is a vegetation index for estimating the 
+    amount of healthy and stressed vegetation. It is the ratio of light scattered 
+    in the NIR and red-edge bands, which reduces the effects of atmosphere and topography.
+
+    Values are high for vegetation with high canopy closure and healthy vegetation, 
+    lower for high canopy closure and stressed vegetation, and low for soil, water, 
+    and nonvegetated features. The range of values is from 0 to about 30, where healthy 
+    vegetation generally falls between values of 1 to 10.
+
+    SRre = NIR / RedEdge
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR RedEdge", e.g., "7 6"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 13)
+
+def mtvi2(raster, band_indexes="7 5 3", astype=None):
+    """
+    The Modified Triangular Vegetation Index (MTVI2) is a vegetation index 
+    for detecting leaf chlorophyll content at the canopy scale while being 
+    relatively insensitive to leaf area index. It uses reflectance in the green, 
+    red, and near-infrared (NIR) bands
+
+    MTVI2 = (1.5*(1.2*(NIR-Green)-2.5*(Red-Green))/sqrt((2*NIR+1)^2-(6*NIR-5*sqrt(Red))-0.5))
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Red Green", e.g., "7 5 3"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 14)
+
+def rtvi_core(raster, band_indexes="7 6 3", astype=None):
+    """
+    The Red-Edge Triangulated Vegetation Index (RTVICore) is a vegetation index 
+    for estimating leaf area index and biomass. This index uses reflectance 
+    in the NIR, red-edge, and green spectral bands
+
+    RTVICore = [100(NIR-RedEdge)-10(NIR-Green)]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR RedEdge Green", e.g., "7 6 3"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 15)
+
+def cire(raster, band_indexes="7 6", astype=None):
+    """
+    The Chlorophyll Index - Red-Edge (CIre) is a vegetation index for estimating 
+    the chlorophyll content in leaves using the ratio of reflectivity in the 
+    near-infrared (NIR) and red-edge bands.
+
+    CIre = [(NIR / RedEdge)-1]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR RedEdge", e.g., "3 2 1"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 16)
+
+def cig(raster, band_indexes="7 3", astype=None):
+    """
+    The Chlorophyll Index - Green (CIg) is a vegetation index for estimating 
+    the chlorophyll content in leaves using the ratio of reflectivity in 
+    the near-infrared (NIR) and green bands.
+
+    CIg = [(NIR / Green)-1]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Green", e.g., "7 3"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 17)
+
+def ndwi(raster, band_indexes="5 3", astype=None):
+    """
+    The Normalized Difference Water Index (NDWI) is an index for delineating and 
+    monitoring content changes in surface water. It is computed with the near-infrared 
+    (NIR) and green bands.
+
+    NDWI = (Green - NIR)/(Green +NIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Green", e.g., "5 3"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 18)
+
+def evi(raster, band_indexes="5 4 2", astype=None):
+    """
+    The Enhanced Vegetation Index (EVI) is an optimized vegetation index that accounts 
+    for atmospheric influences and vegetation background signal. It's similar to NDVI, 
+    but is less sensitive to background and atmospheric noise, and it does not become 
+    saturated NDVI when viewing areas with very dense green vegetation.
+
+    EVI =  2.5 * [(NIR - Red)/(NIR + (6*Red) - (7.5*Blue) + 1)]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Red Blue", e.g., "5 4 2"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 19)
+
+def iron_oxide(raster, band_indexes="4 2", astype=None):
+    """
+    The Iron Oxide (IO) ratio is a geological index for identifying rock 
+    features that have experienced oxidation of iron-bearing sulfides 
+    using the red and blue bands. IO is useful in identifying iron oxide 
+    features below vegetation canopies, and is used in mineral composite mapping.
+
+    IronOxide = Red / Blue
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red Blue", e.g., "4 2"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 20)
+
+def ferrous_minerals(raster, band_indexes="6 5", astype=None):
+    """
+    The Ferrous Minerals (FM) ratio is a geological index for identifying 
+    rock features containing some quantity of iron-bearing minerals using
+    the shortwave infrared (SWIR) and near-infrared (NIR) bands. FM is used
+    in mineral composite mapping.
+
+    FM = SWIR / NIR
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "6 5"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 21)
+
+def clay_minerals(raster, band_indexes="6 7", astype=None):
+    """
+    The Clay Minerals (CM) ratio is a geological index for identifying 
+    mineral features containing clay and alunite using two shortwave 
+    infrared (SWIR) bands. CM is used in mineral composite mapping.
+
+    CM = SWIR1 / SWIR2
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR1 SWIR2", e.g., "6 7"
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 22)
 
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
@@ -3710,6 +3955,68 @@ def raster_collection_function(raster, item_function, aggregation_function, proc
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["arguments"]["RasterCollection"]["value"] = raster_ra
     return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
+
+def monitor_vegetation(raster, method='NDVI', band_indexes=None, astype=None):
+    """
+    The monitor_vegetation function performs an arithmetic operation on the bands 
+    of a performs an arithmetic operation on the bands of a multiband raster layer 
+    to reveal vegetation coverage information of the study area.
+    see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
+
+    :param raster: the input raster / imagery layer
+    :param method: String. The method to create the vegetation index layer. 
+                    The different vegetation indexes can help highlight certain features or reduce various noise. 
+                    NDVI, SAVI, TSAVI, MSAVI, GEMI, PVI, GVITM, Sultan, VARI, GNDVI, SR, NDVIre, SRre, MTVI2,
+                    RTVICore, CIre, CIg, NDWI, EVI
+                    Default is NDVI.
+    :param band_indexes: band indexes
+    :param astype: output pixel type
+
+    :return: output raster 
+    """
+    if band_indexes is None:
+        raise RuntimeError('band_indexes cannot be None')
+    if isinstance(method, str):
+        if method.upper() == 'NDVI':
+            return band_arithmetic(raster, band_indexes, astype, 1)
+        elif method.upper() == 'SAVI':
+            return band_arithmetic(raster, band_indexes, astype, 2)
+        elif method.upper() == 'TSAVI':
+            return band_arithmetic(raster, band_indexes, astype, 3)
+        elif method.upper() == 'MSAVI':
+            return band_arithmetic(raster, band_indexes, astype, 4)
+        elif method.upper() == 'GEMI':
+            return band_arithmetic(raster, band_indexes, astype, 5)
+        elif method.upper() == 'PVI':
+            return band_arithmetic(raster, band_indexes, astype, 6)
+        elif method.upper() == 'GVITM':
+            return band_arithmetic(raster, band_indexes, astype, 7)
+        elif method.upper() == 'SULTAN':
+            return band_arithmetic(raster, band_indexes, astype, 8)
+        elif method.upper() == 'VARI':
+            return band_arithmetic(raster, band_indexes, astype, 9)
+        elif method.upper() == 'GNDVI':
+            return band_arithmetic(raster, band_indexes, astype, 10)
+        elif method.upper() == 'SR':
+            return band_arithmetic(raster, band_indexes, astype, 11)
+        elif method.upper() == 'NDVIRE':
+            return band_arithmetic(raster, band_indexes, astype, 12)
+        elif method.upper() == 'SRRE':
+            return band_arithmetic(raster, band_indexes, astype, 13)
+        elif method.upper() == 'MTVI2':
+            return band_arithmetic(raster, band_indexes, astype, 14)
+        elif method.upper() == 'RTVICORE':
+            return band_arithmetic(raster, band_indexes, astype, 15)
+        elif method.upper() == 'CIRE':
+            return band_arithmetic(raster, band_indexes, astype, 16)
+        elif method.upper() == 'CIG':
+            return band_arithmetic(raster, band_indexes, astype, 17)
+        elif method.upper() == 'NDWI':
+            return band_arithmetic(raster, band_indexes, astype, 18)
+        elif method.upper() == 'EVI':
+            return band_arithmetic(raster, band_indexes, astype, 19)
+
+    return band_arithmetic(raster, band_indexes, astype, method)
 
 class RFT:
     def __init__(self, raster_function_template,gis=None):

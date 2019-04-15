@@ -7,6 +7,10 @@ calculate_travel_cost
 _______________
 .. automethod:: arcgis.raster.functions.gbl.calculate_travel_cost
 
+calculate_distance
+__________________
+.. automethod:: arcgis.raster.functions.gbl.calculate_distance
+
 cost_allocation
 _______________
 .. automethod:: arcgis.raster.functions.gbl.cost_allocation
