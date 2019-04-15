@@ -716,6 +716,15 @@ class GIS(object):
         """
         return ContentManager(self)
 
+    @_lazy_property
+    def hub(self):
+        """
+        The resource manager for GIS hub. See :class:`~arcgis.apps.hub.Hub`.
+        """
+        if self._portal.is_arcgisonline:
+            return arcgis.apps.hub.Hub(self)
+        else:
+            raise Exception("Hub is currently only compatible with ArcGIS Online.")
 
     @_lazy_property
     def _datastores(self):
