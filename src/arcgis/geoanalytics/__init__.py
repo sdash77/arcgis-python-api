@@ -44,22 +44,26 @@ def define_output_datastore(datastore=None, template=None):
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    datastore                    Optional Datastore. When provided, this tells the geoanalytical
-                                 tools where to save the information to. If specified as None
-                                 along with template, the `arcgis.env.output_datastore` will
-                                 reset to default.
+    datastore                    Optional Datastore/String. This specifies the big data file
+                                 share to save GeoAnalyticss results to. If specified as None the
+                                 `arcgis.env.output_datastore` will reset to default.  Allowed
+                                 string values are: `spatiotemporal` or `relational`.
     --------------------------   ---------------------------------------------------------------
-    template                     optional string.  If specified along with a datastore, the
-                                 `arcgis.env.output_datastore` will be set.  The output will be
-                                 written to that template.
+    template                     Optional string. If specified with the data store this
+                                 specifies the template used to format the GeoAnalytics results.
+                                 The output will be written to a file in the big data file
+                                 share.
     ==========================   ===============================================================
 
     :returns: Boolean
 
     """
     import arcgis
-
-    if datastore and template:
+    if isinstance(datastore, str) and \
+       str(datastore).lower() in ["spatiotemporal", "relational"]:
+        arcgis.env.output_datastore = str(datastore).lower()
+        return True
+    elif datastore and template:
         if isinstance(datastore, arcgis.gis.Datastore):
             arcgis.env.output_datastore = "{path}:{template}".format(path=datastore.path,
                                                                      template=template)
