@@ -109,3 +109,8 @@ optimum_travel_cost_network
 -----------------------
 .. automethod:: arcgis.raster.analytics.optimum_travel_cost_network
 
+
+determine_travel_costpath_as_polyline
+-------------------------------------
+.. automethod:: arcgis.raster.analytics.determine_travel_costpath_as_polyline
+

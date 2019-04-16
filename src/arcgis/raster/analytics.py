@@ -188,6 +188,43 @@ def _calculate_travel_cost_analytics_converter(raster_function,output_name=None,
                                   source_direction, allocation_field, output_distance_name,
                                   output_backlink_name, output_allocation_name, gis=gis,  **kwargs)
 
+def _calculate_distance_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
+    input_source = None
+    maximum_distance=None
+    output_cell_size=None
+    allocation_field=None
+    output_allocation_name=None
+    output_direction_name=None
+    output_distance_name=None
+
+    if raster_function['rasterFunctionArguments']['in_source_data'] is not None:
+        input_source = raster_function['rasterFunctionArguments']['in_source_data']
+    if 'maximum_distance' in raster_function['rasterFunctionArguments'].keys():
+        maximum_distance = raster_function['rasterFunctionArguments']['maximum_distance']
+    if 'allocation_field' in raster_function['rasterFunctionArguments'].keys():
+        allocation_field = raster_function['rasterFunctionArguments']['allocation_field']
+    if 'output_cell_size' in raster_function['rasterFunctionArguments'].keys():
+        output_cell_size = raster_function['rasterFunctionArguments']['output_cell_size']
+    output_distance_name = output_name
+
+    if "out_direction_raster" in other_outputs.keys():
+        if other_outputs["out_direction_raster"] is True:
+            output_direction_name = "out_direction" + '_' + _id_generator()
+
+    if "out_allocation_raster" in other_outputs.keys():
+        if other_outputs["out_allocation_raster"] is True:
+            output_allocation_name = "out_allocation" + '_' + _id_generator()
+
+    return _calculate_distance(input_source, 
+                               maximum_distance, 
+                               output_cell_size, 
+                               allocation_field, 
+                               output_distance_name,
+                               output_direction_name, 
+                               output_allocation_name, 
+                               gis=gis,  
+                               **kwargs)
+
 
 def _return_output(num_returns, output_dict ,return_value_names):
     if num_returns == 1:
@@ -252,6 +289,8 @@ def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None, **kw
         return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
     if raster_function['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
         return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
+    if raster_function['rasterFunctionArguments']['toolName'] is "CalculateDistance_sa":
+        return _calculate_distance_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
 
 def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None, image_collection_properties = None, use_input_rasters_by_ref = False):
     
@@ -2562,3 +2601,309 @@ def calculate_statistics(image_collection,
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
 
     return job_values["outCollection"]["url"]
+
+
+def determine_travel_costpath_as_polyline(input_source_data,
+                                          input_cost_raster,
+                                          input_destination_data,
+                                          path_type='BEST_SINGLE',
+                                          output_polyline_name=None,
+                                          *,
+                                          gis=None,
+                                          **kwargs):
+
+    '''
+    Calculates the least cost polyline path between sources and known destinations.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_source_data                        The layer that identifies the cells to determine the least 
+                                             costly path from. This parameter can have either a raster input or 
+                                             a feature input.
+    ------------------------------------     --------------------------------------------------------------------
+    input_cost_raster                        A raster defining the impedance or cost to move planimetrically through
+                                             each cell.
+    
+                                             The value at each cell location represents the cost-per-unit distance for 
+                                             moving through the cell. Each cell location value is multiplied by the 
+                                             cell resolution while also compensating for diagonal movement to 
+                                             obtain the total cost of passing through the cell. 
+    
+                                             The values of the cost raster can be an integer or a floating point, but they 
+                                             cannot be negative or zero as you cannot have a negative or zero cost.
+    ------------------------------------     --------------------------------------------------------------------
+    input_destination_data                   The layer that defines the destinations used to calculate the distance. 
+                                             This parameter can have either a raster input or a feature input.
+    ------------------------------------     --------------------------------------------------------------------
+    path_type                                A keyword defining the manner in which the values and zones on the 
+                                             input destination data will be interpreted in the cost path calculations.
+
+                                             A string describing the path type, which can either be BEST_SINGLE, 
+                                             EACH_CELL, or EACH_ZONE.
+
+                                             BEST_SINGLE: For all cells on the input destination data, the 
+                                             least-cost path is derived from the cell with the minimum of 
+                                             the least-cost paths to source cells. This is the default.
+
+                                             EACH_CELL: For each cell with valid values on the input 
+                                             destination data, at least-cost path is determined and saved 
+                                             on the output raster. With this option, each cell of the input 
+                                             destination data is treated separately, and a least-cost path 
+                                             is determined for each from cell.
+
+                                             EACH_ZONE: For each zone on the input destination data, 
+                                             a least-cost path is determined and saved on the output raster. 
+                                             With this option, the least-cost path for each zone begins at 
+                                             the cell with the lowest cost distance weighting in the zone.
+    ------------------------------------     --------------------------------------------------------------------
+    output_polyline_name                     Optional. If not provided, a feature layer is created by the method 
+                                             and used as the output.
+
+                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             that instead.
+
+                                             Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
+
+    :return:
+        The imagery layer url
+
+    '''
+
+    task = "DetermineTravelCostPathAsPolyline"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    if output_polyline_name is None:
+        output_polyline_service_name = 'Output Polyline_' + _id_generator()
+        output_polyline_name = output_polyline_service_name.replace(' ', '_')
+    else:
+        output_polyline_service_name = output_polyline_name.replace(' ', '_')
+
+    folder = None
+    folderId = None
+    if kwargs is not None:
+        if "folder" in kwargs:
+                folder = kwargs["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+
+    output_polyline_service = _create_output_feature_service(gis, output_polyline_name, output_polyline_service_name, 'DetermineTravelCostPathAsPolyline', folder)
+
+    if folderId is not None:
+        params["outputPolylineName"] = _json.dumps({"serviceProperties": {"name": output_polyline_service_name, "serviceUrl": output_polyline_service.url},
+                                       "itemProperties": {"itemId": output_polyline_service.itemid}, "folderId":folderId})
+    else:
+        params["outputPolylineName"] = _json.dumps({"serviceProperties": {"name": output_polyline_service_name, "serviceUrl": output_polyline_service.url},
+                                       "itemProperties": {"itemId": output_polyline_service.itemid}})
+
+    #primary output end
+    if input_source_data is not None:
+        params["inputSourceRasterOrFeatures"] = _layer_input(input_source_data)
+    else:
+        raise RuntimeError('input_source_data cannot be None')
+
+    if input_cost_raster is not None:
+        params["inputCostRaster"] = _layer_input(input_cost_raster)
+    else:
+        raise RuntimeError('input_cost_raster cannot be None')
+
+    if input_destination_data is not None:
+        params["inputDestinationRasterOrFeatures"] = _layer_input(input_destination_data)
+    else:
+        raise RuntimeError('input_destination_data cannot be None')
+
+    path_type_allowed_values = ["BEST_SINGLE","EACH_CELL","EACH_ZONE"]
+    if path_type is not None:
+        if [element.lower() for element in path_type_allowed_values].count(path_type.lower()) <= 0 :
+            raise RuntimeError("path_type can only be one of the following: "+ str(path_type_allowed_values))
+        for element in path_type_allowed_values:
+            if path_type.lower() == element.lower():
+                params['pathType'] = element
+
+    _set_context(params)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+
+    output_polyline_service.update(item_properties)
+
+    return output_polyline_service
+
+
+def _calculate_distance(input_source_data,
+                        maximum_distance=None,
+                        output_cell_size=None,
+                        allocation_field=None,
+                        output_distance_name=None,
+                        output_direction_name=None,
+                        output_allocation_name=None,
+                        context=None,
+                        *,
+                        gis=None,
+                        **kwargs):
+
+    '''
+    Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_source_data                        The layer that defines the sources to calculate the distance to. 
+                                             The layer can be raster or feature. To use a raster input, it must 
+                                             be of integer type.
+    ------------------------------------     --------------------------------------------------------------------
+    maximum_distance                         Defines the threshold that the accumulative distance values 
+                                             cannot exceed. If an accumulative Euclidean distance value exceeds 
+                                             this value, the output value for the cell location will be NoData. 
+                                             The default distance is to the edge of the output raster.
+
+                                             Supported units: Meters | Kilometers | Feet | Miles
+
+                                             Example:
+
+                                             {"distance":"60","units":"Meters"}
+    ------------------------------------     --------------------------------------------------------------------
+    output_cell_size                         Specify the cell size to use for the output raster.
+
+                                             Supported units: Meters | Kilometers | Feet | Miles
+
+                                             Example:
+                                             {"distance":"60","units":"Meters"}
+    ------------------------------------     --------------------------------------------------------------------
+    allocation_field                         A field on the input_source_data layer that holds the values that 
+                                             defines each source.
+
+                                             It can be an integer or a string field of the source dataset.
+
+                                             The default for this parameter is 'Value'.
+    ------------------------------------     --------------------------------------------------------------------
+    output_distance_name                     Optional. This is the output distance imagery layer that will be 
+                                             created.
+
+                                             If not provided, an imagery layer is created by the method 
+                                             and used as the output.
+    ------------------------------------     --------------------------------------------------------------------
+    output_direction_name                    Optional. This is the output direction imagery layer that will be 
+                                             created.
+
+                                             If not provided, an imagery layer is created by the method 
+                                             and used as the output.
+
+                                             The output direction raster is in degrees, and indicates the 
+                                             direction to return to the closest source from each cell center. 
+                                             The values on the direction raster are based on compass directions, 
+                                             with 0 degrees reserved for the source cells. Thus, a value of 90 
+                                             means 90 degrees to the East, 180 is to the South, 270 is to the west,
+                                             and 360 is to the North.
+    ------------------------------------     --------------------------------------------------------------------
+    output_allocation_name                   Optional. This is the output allocation  imagery layer that will be 
+                                             created.
+
+                                             If not provided, an imagery layer is created by the method 
+                                             and used as the output.
+
+                                             This parameter calculates, for each cell, the nearest source based 
+                                             on Euclidean distance.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
+
+    :return:
+        The imagery layer url
+
+    '''
+
+    task = "CalculateDistance"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    return_value_names = ["output_distance_service"]
+    params = {}
+
+    output_distance_raster, output_distance_service = _set_output_raster(output_distance_name, task, gis, kwargs)  
+    params["outputDistanceName"] = output_distance_raster 
+
+    #primary output end
+
+    if input_source_data is not None:
+        params["inputSourceRasterOrFeatures"] = _layer_input(input_source_data)
+    else:
+        raise RuntimeError('input_source_data cannot be None')
+
+    if maximum_distance is not None:
+        params["maximumDistance"] = maximum_distance
+
+    if output_cell_size is not None:
+        params["outputCellSize"] = output_cell_size
+
+    if allocation_field is not None:
+        params["allocationField"] = allocation_field
+
+    if output_direction_name is not None:
+        output_direction_raster, output_direction_service = _set_output_raster(output_direction_name, task, gis, kwargs)
+        params["outputDirectionName"] = output_direction_raster
+        return_value_names.extend(["output_direction_service"])
+
+    if output_allocation_name is not None:
+        output_allocation_raster, out_allocation_service = _set_output_raster(output_allocation_name, task, gis, kwargs) 
+        params["outputAllocationName"] = output_allocation_raster
+        return_value_names.extend(["output_allocation_service"])
+
+    _set_context(params)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_distance_service.update(item_properties)
+    outputs={"output_distance_service" : output_distance_service}
+    if output_direction_name is not None:
+       output_direction_service.update(item_properties)
+       outputs.update({"output_direction_service":output_direction_service})
+    if output_allocation_name is not None:
+       out_allocation_service.update(item_properties)
+       outputs.update({"output_allocation_service" : out_allocation_service})
+    num_returns = len(outputs)
+
+    return _return_output(num_returns, outputs, return_value_names)

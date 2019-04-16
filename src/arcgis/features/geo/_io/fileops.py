@@ -408,7 +408,13 @@ def from_featureclass(filename, **kwargs):
           os.path.dirname(filename).lower().find('.gdb') > -1):
         is_gdb = os.path.dirname(filename).lower().find('.gdb') > -1
         if is_gdb:
-            with fiona.drivers():
+           
+            # Remove deprecation warning. 
+            fiona_env = fiona.drivers
+            if hasattr(fiona,'Env'):
+                fiona_env = fiona.Env
+            
+            with fiona_env():
                 from arcgis.geometry import _types
                 fp = os.path.dirname(filename)
                 fn = os.path.basename(filename)
@@ -417,15 +423,15 @@ def from_featureclass(filename, **kwargs):
                 with fiona.open(fp, layer=fn) as source:
                     meta = source.meta
                     cols = list(source.schema['properties'].keys())
-                    
+
                     # Get the CRS
-                    try:    
+                    try:
                         wkid = source.crs['init'].split(':')[1]
                     except:
                         wkid = 4326
-                    
+
                     sr = _types.SpatialReference({'wkid':int(wkid)})
-                    
+
                     for idx, row in source.items():
                         g = _types.Geometry(row['geometry'])
                         geoms.append(g)
@@ -630,7 +636,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
         dfields = []
         cfields = []
         for c in df.columns:
-            idx = df[c].first_valid_index()
+            idx = df[c].first_valid_index() or df.index.tolist()[0]
             if idx > -1:
                 if isinstance(df[c].loc[idx],
                               Geometry):
@@ -667,7 +673,10 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             for fld in dfields:
                 idx = df[cfields].columns.tolist().index(fld)
                 if row[idx]:
-                    row[idx] = row[idx].to_pydatetime()
+                    if isinstance(row[idx].to_pydatetime(), (type(pd.NaT))):
+                        row[idx] = None
+                    else:
+                        row[idx] = row[idx].to_pydatetime()
             shpfile.record(*row)
             del idx
             del row
@@ -737,7 +746,7 @@ def _pyshp2(df, out_path, out_name):
         dfields = []
         cfields = []
         for c in df.columns:
-            idx = df[c].first_valid_index()
+            idx = df[c].first_valid_index() or df.index.tolist()[0]
             if idx > -1:
                 if isinstance(df[c].loc[idx],
                               Geometry):
@@ -774,7 +783,10 @@ def _pyshp2(df, out_path, out_name):
             for fld in dfields:
                 idx = df[cfields].columns.tolist().index(fld)
                 if row[idx]:
-                    row[idx] = row[idx].to_pydatetime()
+                    if isinstance(row[idx].to_pydatetime(), (type(pd.NaT))):
+                        row[idx] = None
+                    else:
+                        row[idx] = row[idx].to_pydatetime()
             shpfile.record(*row)
             del idx
             del row

@@ -127,14 +127,14 @@ class BaseGeometry(dict):
                 self._HASARCPY = True
             except:
                 self._HASARCPY = False
-                
+
         if self._HASSHAPELY is None:
             try:
                 import shapely
                 self._HASSHAPELY = True
             except:
                 self._HASSHAPELY = False
-            
+
         return self._HASARCPY, self._HASSHAPELY
     #----------------------------------------------------------------------
     def __setattr__(self, key, value):
@@ -281,7 +281,7 @@ class Geometry(BaseGeometry):
     """
     _HASARCPY = None
     _HASSHAPELY = None
-    
+
     def __init__(self, iterable=None, **kwargs):
         if iterable is None:
             iterable = ()
@@ -779,14 +779,14 @@ class Geometry(BaseGeometry):
             HASSHAPELY = False
 
         if HASSHAPELY:
-            gj = shapely_geometry.__geo_interface__           
+            gj = shapely_geometry.__geo_interface__
             geom_cls = _geojson_type_to_esri_type(gj['type'])
-    
+
             if spatial_reference:
                 geometry = geom_cls._from_geojson(gj,sr=spatial_reference)
             else:
                 geometry = geom_cls._from_geojson(gj)
-            
+
             return geometry
         else:
             raise ValueError('Shapely is required to execute from_shapely.')
@@ -1372,9 +1372,11 @@ class Geometry(BaseGeometry):
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY and \
            isinstance(self, Envelope):
-            return getattr(self.polygon.as_arcpy, "spatialReference", None)
+            v = getattr(self.polygon.as_arcpy, "spatialReference", None)
+            if v:
+                return SpatialReference(v)
         elif HASARCPY:
-            return SpatialReference(self['spatialReference']).as_arcpy
+            return SpatialReference(self['spatialReference'])
         if 'spatialReference' in self:
             return SpatialReference(self['spatialReference'])
         return None
@@ -2107,7 +2109,7 @@ class Geometry(BaseGeometry):
                                                             use_percentage=use_percentage))
         elif HASSHAPELY:
             return Geometry(self.as_shapely.interpolate(value, normalized=use_percentage).__geo_interface__)
-        
+
         return None
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
@@ -2150,29 +2152,29 @@ class Geometry(BaseGeometry):
                 raise ValueError("Invalid spatial reference object.")
             return Geometry(self.as_arcpy.projectAs(spatial_reference=spatial_reference,
                                                     transformation_name=transformation_name))
-  
+
         try:
             import pyproj
-            from shapely.ops import transform 
+            from shapely.ops import transform
             HASPROJ = True
         except:
             HASPROJ = False
 
         # Project using Proj4 (pyproj)
-        if HASPROJ:           
-            
+        if HASPROJ:
+
             esri_projections = {
                 102100: 3857,
                 102113: 3857
             }
-            
+
             # Get the input spatial reference
             in_srid = self.spatial_reference.get('wkid',None)
             in_srid = self.spatial_reference.get('latestWkid',in_srid)
             # Convert web mercator from esri SRID
-            in_srid = esri_projections.get(int(in_srid),in_srid) 
+            in_srid = esri_projections.get(int(in_srid),in_srid)
             in_srid = 'epsg:{}'.format(in_srid)
-                       
+
             if isinstance(spatial_reference, dict) or isinstance(spatial_reference, SpatialReference):
                 out_srid = spatial_reference.get('wkid',None)
                 out_srid = spatial_reference.get('latestWkid',out_srid)
@@ -2182,10 +2184,10 @@ class Geometry(BaseGeometry):
                 out_srid = spatial_reference
             else:
                 raise ValueError("Invalid spatial reference object.")
-                
+
             out_srid = esri_projections.get(int(out_srid),out_srid)
             out_srid = 'epsg:{}'.format(out_srid)
-            
+
             try:
                 project = partial(
                     pyproj.transform,
@@ -2194,13 +2196,13 @@ class Geometry(BaseGeometry):
                 )
             except RuntimeError as e:
                 raise ValueError("pyproj projection from {0} to {1} not currently supported".format(in_srid,out_srid))
-            
+
             g = transform(project,self.as_shapely)
             return Geometry.from_shapely(
                 g,
                 spatial_reference=spatial_reference
-            )        
-        
+            )
+
         return None
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
@@ -2751,7 +2753,7 @@ class Polyline(Geometry):
             coordinates = [data[coordkey]]
         else:
             coordinates = data[coordkey]
-        
+
         return cls(
             {'paths' : [[p for p in part] for part in coordinates],
              'spatialReference' : sr
@@ -2883,7 +2885,10 @@ class SpatialReference(BaseGeometry):
         super(SpatialReference, self)
         if iterable is None:
             iterable = {}
-
+        if isinstance(iterable, int):
+            iterable = {'wkid' : iterable}
+        if isinstance(iterable, str):
+            iterable = {'wkt' : iterable}
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             import arcpy
