@@ -408,7 +408,13 @@ def from_featureclass(filename, **kwargs):
           os.path.dirname(filename).lower().find('.gdb') > -1):
         is_gdb = os.path.dirname(filename).lower().find('.gdb') > -1
         if is_gdb:
-            with fiona.drivers():
+           
+            # Remove deprecation warning. 
+            fiona_env = fiona.drivers
+            if hasattr(fiona,'Env'):
+                fiona_env = fiona.Env
+            
+            with fiona_env():
                 from arcgis.geometry import _types
                 fp = os.path.dirname(filename)
                 fn = os.path.basename(filename)

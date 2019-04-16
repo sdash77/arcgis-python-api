@@ -26,7 +26,7 @@ class ArcGISModel(object):
         self.learn.recorder.plot()
     
     
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3)):
+    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
@@ -40,9 +40,16 @@ class ArcGISModel(object):
         lr                      Required float or slice of floats. Learning rate
                                 to be used for training the model. Select from
                                 the `lr_find` plot.
+        ---------------------   -------------------------------------------
+        one_cycle               Optional boolean. Parameter to select 1cycle
+                                learning rate schedule. If set to `False` no 
+                                learning rate schedule is used.                                
         =====================   ===========================================
         """
-        self.learn.fit(epochs, lr)
+        if one_cycle:
+            self.learn.fit_one_cycle(epochs, lr)
+        else:
+            self.learn.fit(epochs, lr)
         
     def unfreeze(self):
         """

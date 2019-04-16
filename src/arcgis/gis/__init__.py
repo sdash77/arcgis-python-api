@@ -716,6 +716,15 @@ class GIS(object):
         """
         return ContentManager(self)
 
+    @_lazy_property
+    def hub(self):
+        """
+        The resource manager for GIS hub. See :class:`~arcgis.apps.hub.Hub`.
+        """
+        if self._portal.is_arcgisonline:
+            return arcgis.apps.hub.Hub(self)
+        else:
+            raise Exception("Hub is currently only compatible with ArcGIS Online.")
 
     @_lazy_property
     def _datastores(self):
@@ -4417,7 +4426,9 @@ class ContentManager(object):
 ########################################################################
 class CategorySchemaManager(object):
     """
-    Helper class for managing category schemas on a group or portal.
+    Helper class for managing category schemas. This class is not created
+    by users directly. An instance of this class, called `categories`, is
+    available as a property on `gis.content` or on `gis.groups`.
     """
     _gis = None
     _url = None
@@ -4439,35 +4450,28 @@ class CategorySchemaManager(object):
     #----------------------------------------------------------------------
     @property
     def properties(self):
-        """returns the properties of the schema"""
+        """Returns the properties of the schema."""
         from arcgis._impl.common._mixins import PropertyMap
         return PropertyMap(self.schema)
     #----------------------------------------------------------------------
     @property
     def schema(self):
         """
-        Content category schema set on a group.
-        """
-        params = {'f' : 'json'}
-        url = "{base}/categorySchema".format(base=self._url)
-        res = self._gis._con.get(url, params)
-        if 'categorySchema' in res:
-            return res['categorySchema']
-        return res
-    #----------------------------------------------------------------------
-    @schema.setter
-    def schema(self, categories):
-        """
-        The Assign Group Category Schema operation allows group owner or
-        managers to set up content categories for a group that is a
-        hierarchical set of classes to help organize and browse group
-        content.
+        This property allows group owners/managers to manage the content 
+        categories for a group. These content categories are a hierarchical 
+        set of classes to help organize and browse group content.
 
         Each group can have a maximum of 5 category trees with each
         category schema can have up to 4 hierarchical levels. The maximum
         number of categories a group can have in total is 200 with each
         category of less than 100 characters title and 300 characters
         description.
+
+        When getting this property, returns the content category schema 
+        set on a group.
+
+        When setting this property, will update the group category schema
+        based on the `dict` this property is set to. See below.
 
         ==================  =========================================================
         **Argument**        **Description**
@@ -4480,45 +4484,17 @@ class CategorySchemaManager(object):
                             represents the descendant categories or subcategories and
                             so on.
         ==================  =========================================================
-
-        **Example Input**
-
-        ```python
-
-        [{
-            "title": "Categories",
-            "categories": [{
-                    "title": "Basemaps",
-                    "categories": [{
-                            "title": "Partner Basemap"
-                    }, {
-                            "title": "Esri Basemaps",
-                            "categories": [{
-                                    "title": "Esri Raster Basemap"
-                            }, {
-                                    "title": "Esri Vector Basemap"
-                            }]
-                    }]
-		}, {
-                    "title": "Imagery",
-                    "categories": [{
-                            "title": "Multispectral Imagery"
-                    }, {
-                            "title": "Temporal Imagery"
-                    }]
-		}]
-	}, {
-            "title": "Region",
-            "categories": [{
-                    "title": "US"
-            }, {
-                    "title": "World"
-            }]
-	}]
-
-        ```
-
         """
+        params = {'f' : 'json'}
+        url = "{base}/categorySchema".format(base=self._url)
+        res = self._gis._con.get(url, params)
+        if 'categorySchema' in res:
+            return res['categorySchema']
+        return res
+    #----------------------------------------------------------------------
+    @schema.setter
+    def schema(self, categories):
+        """See main `schema` property docstring"""
         if categories is None:
             return self.delete()
         elif len(categories) == 0:
@@ -4536,7 +4512,7 @@ class CategorySchemaManager(object):
     #----------------------------------------------------------------------
     def delete(self):
         """
-        The `delete` operation allows group owner or managers to remove the
+        This function allows group owner or managers to remove the
         category schema set on a group.
 
         :returns: Boolean
@@ -4555,11 +4531,12 @@ class CategorySchemaManager(object):
     #----------------------------------------------------------------------
     def assign_to_items(self, items):
         """
-
-        The `assign_to_items` operation allows item owner and organization
-        administrators who has the `portal:admin:updateItems` privilege to
-        add or remove organization content categories on items. A maximum
-        of 100 items can be bulk updated per request.
+        This function adds group content categories to the portal items 
+        specified in the `items` argument (see below). For assigning categories
+        to items in a group, you must be the group owner/manager. For assigning
+        organization content categories on items, you must be the item owner
+        or an administrator who has the `portal:admin:updateItems` privilege. 
+        A maximum of 100 items can be bulk updated per request.
 
         ==================  =========================================================
         **Argument**        **Description**
@@ -4592,19 +4569,25 @@ class CategorySchemaManager(object):
         ==================  =========================================================
 
 
-        :returns: dict
+        :returns: A `dict` of `item_id` : `status`, with `status` being
+        whether the content categories were successfully added
 
         """
         params = {'f' : 'json',
                   'items' : json.dumps(items)}
         if self._url.lower().find("/portals/") == -1:
-            url = "{base}/updateItems".format(base=self._url)
+            # If this SchemaManager is attached to a GroupManager
+            url = "{base}/updateCategories".format(base=self._url)
         else:
+            # else this SchemaManager is attached to a ContentManager
             url = "{base}content/updateItems".format(base=self._gis._portal.resturl)
-        res = self._gis._con.post(url, params)
-        if 'success' in res:
-            return res['success']
-        return False
+        response = self._gis._con.post(url, params)
+        output = {}
+        if 'results' in response:
+            for res in response['results']:
+                if 'success' in res and 'itemId' in res:
+                    output[res['itemId']] = res['success']
+        return output
 
 class ResourceManager(object):
     """
@@ -4955,10 +4938,10 @@ class Group(dict):
         """
         The category manager for groups. See :class:`~arcgis.gis.CategorySchemaManager`.
         """
-        base_url = "{base}community/groups/{groupid}".format(base=self._gis._portal.resturl,
-                                                             groupid=self.groupid)
+        base_url = "{base}content/groups/{groupid}".format(
+            base=self._gis._portal.resturl,
+            groupid=self.groupid)
         return CategorySchemaManager(base_url=base_url, gis=self._gis)
-
 
     @property
     def homepage(self):
@@ -7525,6 +7508,10 @@ class Item(dict):
             "everyone": everyone,
             "account": org
         }
+        if allow_members_to_edit:
+            params['owner'] =self.owner
+            params['confirmItemControl'] = allow_members_to_edit  # True
+
         res = self._portal.con.post(url, params)
         self._hydrated = False
         self._hydrate()

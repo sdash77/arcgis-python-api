@@ -2268,3 +2268,112 @@ def path_distance_back_link(in_source_data,
 
     return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra)
 
+def calculate_distance(in_source_data,
+                       maximum_distance=None,
+                       output_cell_size=None,
+                       allocation_field=None,
+                       generate_out_allocation_raster=False,
+                       generate_out_direction_raster=False):
+    """
+    Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
+
+    Parameters
+    ----------
+    :param in_source_data:  The layer that defines the sources to calculate the distance to. 
+                            The layer can be raster or feature. To use a raster input, it must 
+                            be of integer type.
+
+    :param maximum_distance:  Defines the threshold that the accumulative distance values 
+                              cannot exceed. If an accumulative Euclidean distance value exceeds 
+                              this value, the output value for the cell location will be NoData. 
+                              The default distance is to the edge of the output raster.
+
+                              Supported units: Meters | Kilometers | Feet | Miles
+
+                              Example:
+
+                              {"distance":"60","units":"Meters"}
+
+    :param output_cell_size:   Specify the cell size to use for the output raster.
+
+                               Supported units: Meters | Kilometers | Feet | Miles
+
+                               Example:
+                               {"distance":"60","units":"Meters"}
+
+    :param allocation_field:  A field on the input_source_data layer that holds the values that 
+                              defines each source.
+
+                              It can be an integer or a string field of the source dataset.
+
+                              The default for this parameter is 'Value'.
+
+    :param generate_out_direction_raster:   Boolean, determines whether out_direction_raster should be generated or not.
+                                           Set this parameter to True, in order to generate the out_direction_raster.
+                                           If set to true, the output will be a named tuple with name values being
+                                           output_distance_service and output_direction_service.
+                                           eg,
+                                           out_layer = calculate_distance(in_source_data
+                                                                         generate_out_direction_raster=True)
+                                           out_var = out_layer.save()
+                                           then,
+                                           out_var.output_distance_service -> gives you the output distance imagery layer item
+                                           out_var.output_direction_service -> gives you the output backlink raster imagery layer item
+
+                                           The output direction raster is in degrees, and indicates the 
+                                           direction to return to the closest source from each cell center. 
+                                           The values on the direction raster are based on compass directions, 
+                                           with 0 degrees reserved for the source cells. Thus, a value of 90 
+                                           means 90 degrees to the East, 180 is to the South, 270 is to the west,
+                                           and 360 is to the North.
+
+    :param generate_out_allocation_raster:  Boolean, determines whether out_allocation_raster should be generated or not.
+                                            Set this parameter to True, in order to generate the out_backlink_raster.
+                                            If set to true, the output will be a named tuple with name values being
+                                            output_distance_service and output_allocation_service.
+                                            eg,
+                                            out_layer = calculate_distance(in_source_data
+                                                                           generate_out_allocation_raster=False)
+                                            out_var = out_layer.save()
+                                            then,
+                                            out_var.output_distance_service -> gives you the output distance imagery layer item
+                                            out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
+
+                                            This parameter calculates, for each cell, the nearest source based 
+                                            on Euclidean distance.
+
+    :return: output raster with function applied
+    """
+    if isinstance (in_source_data, ImageryLayer):
+        layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
+    else:
+        raster_ra1 = _layer_input(in_source_data)
+        input_source_data = raster_ra1
+        layer1=raster_ra1
+
+    template_dict = {
+        "rasterFunction" : "GPAdapter",
+        "rasterFunctionArguments" : {
+            "toolName" : "CalculateDistance_sa",
+            "PrimaryInputParameterName" : "in_source_data",
+            "OutputRasterParameterName":"out_distance_raster",
+            "in_source_data" : input_source_data
+        }
+    }
+    
+    if maximum_distance is not None:
+        template_dict["rasterFunctionArguments"]["maximum_distance"] = maximum_distance
+
+    if output_cell_size is not None:
+        template_dict["rasterFunctionArguments"]["output_cell_size"] = output_cell_size
+
+    if allocation_field is not None:
+        template_dict["rasterFunctionArguments"]["allocation_field"] = allocation_field
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra['rasterFunctionArguments']["in_source_data"] = raster_ra1
+
+    if isinstance(in_source_data, ImageryLayer):
+        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, use_ra=True)
+    else:
+        return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, use_ra=True)
