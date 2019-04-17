@@ -4097,7 +4097,7 @@ class ContentManager(object):
         res = self._portal.con.post(path, postdata)
         return res['available']
 
-    def clone_items(self, items, folder=None, item_extent=None, use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None):
+    def clone_items(self, items, folder=None, item_extent=None, use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None, owner=None):
         """ Clone content to the GIS by creating new items.
 
         .. note::
@@ -4141,6 +4141,8 @@ class ContentManager(object):
         group_mapping             Optional dictionary. Can be used to associate a group id in the source
                                   GIS (key) to a group id in the target GIS (value). The target group will
                                   be used rather than cloning the source group.
+        ---------------------     --------------------------------------------------------------------
+        owner                     Optional string. Defaults to the logged in user.
         =====================     ====================================================================
 
         :return:
@@ -4152,8 +4154,13 @@ class ContentManager(object):
         wgs84_extent = None
         service_extent = item_extent
         if service_extent:
-            wgs84_extent = clone._wgs84_envelope(service_extent)
-        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping)
+            wgs84_extent = clone._wgs84_envelope(service_extent) 
+        owner_name = owner
+        if owner_name is None:
+            owner_name = self._gis.users.me.username        
+        if isinstance(owner, User):
+            owner_name = owner.username
+        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping, owner_name)
         return deep_cloner.clone()
 
     def bulk_update(self, itemids, properties):
