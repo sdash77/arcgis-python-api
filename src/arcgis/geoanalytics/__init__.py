@@ -63,6 +63,9 @@ def define_output_datastore(datastore=None, template=None):
        str(datastore).lower() in ["spatiotemporal", "relational"]:
         arcgis.env.output_datastore = str(datastore).lower()
         return True
+    elif isinstance(datastore, str) and \
+       not str(datastore).lower() in ["spatiotemporal", "relational"]:
+        raise ValueError("datastore can only ")
     elif datastore and template:
         if isinstance(datastore, arcgis.gis.Datastore):
             arcgis.env.output_datastore = "{path}:{template}".format(path=datastore.path,
