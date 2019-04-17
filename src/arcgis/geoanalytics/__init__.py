@@ -49,10 +49,9 @@ def define_output_datastore(datastore=None, template=None):
                                  `arcgis.env.output_datastore` will reset to default.  Allowed
                                  string values are: `spatiotemporal` or `relational`.
     --------------------------   ---------------------------------------------------------------
-    template                     Optional string. If specified with the data store this
-                                 specifies the template used to format the GeoAnalytics results.
-                                 The output will be written to a file in the big data file
-                                 share.
+    template                     Optional string. When specified, the `template` determines how
+                                 GeoAnalytics result schema will be formatted. The output will
+                                 be written to a file in the big data file share.
     ==========================   ===============================================================
 
     :returns: Boolean
