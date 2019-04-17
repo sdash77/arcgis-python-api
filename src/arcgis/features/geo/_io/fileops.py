@@ -408,12 +408,12 @@ def from_featureclass(filename, **kwargs):
           os.path.dirname(filename).lower().find('.gdb') > -1):
         is_gdb = os.path.dirname(filename).lower().find('.gdb') > -1
         if is_gdb:
-           
-            # Remove deprecation warning. 
+
+            # Remove deprecation warning.
             fiona_env = fiona.drivers
             if hasattr(fiona,'Env'):
                 fiona_env = fiona.Env
-            
+
             with fiona_env():
                 from arcgis.geometry import _types
                 fp = os.path.dirname(filename)
@@ -507,7 +507,7 @@ def to_featureclass(geo,
 
         notnull = geo._data[geo._name].notnull()
         idx = geo._data[geo._name][notnull].first_valid_index()
-        sr = sr = geo._data[geo._name][idx]['spatialReference']
+        sr = geo._data[geo._name][idx]['spatialReference']
         gt = geo._data[geo._name][idx].geometry_type.upper()
         null_geom = {
             'point': pd.io.json.dumps({'x' : None, 'y': None, 'spatialReference' : sr}),
@@ -515,7 +515,7 @@ def to_featureclass(geo,
             'polygon' : pd.io.json.dumps({'rings' : [], 'spatialReference' : sr}),
             'multipoint' : pd.io.json.dumps({'points' : [], 'spatialReference' : sr})
         }
-        sr = geo._data[geo._name][idx].spatial_reference
+        sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
         null_geom = null_geom[gt.lower()]
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
