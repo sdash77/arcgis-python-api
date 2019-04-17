@@ -138,9 +138,8 @@ class NotebookServer(object):
             url = self._url + "/notebooks"
             self._notebook = NotebookManager(url=url, gis=self._gis)
         return self._notebook
-
-
-
-
-
-
+    #----------------------------------------------------------------------
+    @property
+    def url(self):
+        """The URL of the notebook server."""
+        return self._url
