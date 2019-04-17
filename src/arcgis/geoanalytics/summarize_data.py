@@ -435,60 +435,84 @@ def join_features(target_layer,
                   output_name = None,
                   gis=None):
     """
-    Using either feature layers or tabular data, you can join features and records based on specific relationships between the input layers or tables. Joins will be determined by spatial, temporal, and attribute relationships, and summary statistics can be optionally calculated.
+    Using either feature layers or tabular data, you can join features and records based on
+    specific relationships between the input layers or tables. Joins will be determined by
+    spatial, temporal, and attribute relationships, and summary statistics can be optionally
+    calculated.
 
     For example
 
-    * Given point locations of crime incidents with a time, join the crime data to itself specifying a spatial relationship of crimes within 1 kilometer of each other and that occurred within 1 hour of each other to determine if there are a sequence of crimes close to each other in space and time.
+    * Given point locations of crime incidents with a time, join the crime data to itself
+      specifying a spatial relationship of crimes within 1 kilometer of each other and that
+      occurred within 1 hour of each other to determine if there are a sequence of crimes
+      close to each other in space and time.
 
-    * Given a table of ZIP Codes with demographic information and area features representing residential buildings, join the demographic information to the residences so each residence now has the information.
+    * Given a table of ZIP Codes with demographic information and area features representing
+      residential buildings, join the demographic information to the residences so each
+      residence now has the information.
 
-    The Join Features task works with two layers. Join Features joins attributes from one feature to another based on spatial, temporal, and attribute relationships or some combination of the three. The tool determines all input features that meet the specified join conditions and joins the second input layer to the first. You can optionally join all features to the matching features or summarize the matching features.
+    The Join Features task works with two layers. Join Features joins attributes from one
+    feature to another based on spatial, temporal, and attribute relationships or some
+    combination of the three. The tool determines all input features that meet the specified
+    join conditions and joins the second input layer to the first. You can optionally join
+    all features to the matching features or summarize the matching features.
 
-    Join Features can be applied to points, lines, areas, and tables. A temporal join requires that your input data is time-enabled, and a spatial join requires that your data has a geometry.
-
-
-
-Parameters:
-
-   target_layer: Target Features (feature input). Required parameter.
-
-   join_layer: Join Features (feature input). Required parameter.
-
-   join_operation: Join Operation (str). Required parameter.
-      Choice list:['JoinOneToOne', 'JoinOneToMany']
-
-   join_fields: Join Fields (str). Optional parameter.
-
-   summary_fields: Summary Statistics (str). Optional parameter.
-
-   spatial_relationship: Spatial Relationship (str). Optional parameter.
-      Choice list:['Equals', 'Intersects', 'Contains', 'Within', 'Crosses', 'Touches', 'Overlaps', 'Near']
-
-   spatial_near_distance: Near Spatial Distance (float). Optional parameter.
-
-   spatial_near_distance_unit: Near Spatial Distance Unit (str). Optional parameter.
-      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
-
-   temporal_relationship: Temporal Relationship (str). Optional parameter.
-      Choice list:['Equals', 'Intersects', 'During', 'Contains', 'Finishes', 'FinishedBy', 'Meets', 'MetBy', 'Overlaps', 'OverlappedBy', 'Starts', 'StartedBy', 'Near']
-
-   temporal_near_distance: Near Temporal Distance (int). Optional parameter.
-
-   temporal_near_distance_unit: Near Temporal Distance Unit (str). Optional parameter.
-      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
-
-   attribute_relationship: Attribute Relationships (str). Optional parameter.
-
-   join_condition: Join Condition (str). Optional parameter.
-
-   output_name: Output Features Name (str). Optional parameter.
-
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    Join Features can be applied to points, lines, areas, and tables. A temporal join
+    requires that your input data is time-enabled, and a spatial join requires that your
+    data has a geometry.
 
 
-Returns:
-   output - Output Features as Feature Layer Collection Item
+    ================================  ===============================================================
+    **Argument**                      **Description**
+    --------------------------------  ---------------------------------------------------------------
+    target_layer                      Required FeatureLayer. Target Features (feature input)
+    --------------------------------  ---------------------------------------------------------------
+    join_layer                        Required FeatureLayer. Join Features (feature input).
+    --------------------------------  ---------------------------------------------------------------
+    join_operation                    Required String. The join operation. Allowed values:
+                                      JoinOneToOne and JoinOneToMany
+    --------------------------------  ---------------------------------------------------------------
+    join_fields                       Optional String. Join Fields
+    --------------------------------  ---------------------------------------------------------------
+    summary_fields                    Optional String. Summary Statistics
+    --------------------------------  ---------------------------------------------------------------
+    spatial_relationship              Optional String. The spatial relationship. Choice list: ['Equals',
+                                      'Intersects', 'Contains', 'Within', 'Crosses', 'Touches',
+                                      'Overlaps', 'Near', 'NearGeodesic']
+    --------------------------------  ---------------------------------------------------------------
+    spatial_near_distance             Optional Float. Near Spatial Distance. This is required if the
+                                      `spatial_relationship` is defined as `NearGeodesic`.
+    --------------------------------  ---------------------------------------------------------------
+    spatial_near_distance_unit        Optional String. Near Spatial Distance Unit. This is required
+                                      if the `spatial_relationship` is defined as `NearGeodesic`.
+                                      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers',
+                                                   'NauticalMiles']
+    --------------------------------  ---------------------------------------------------------------
+    temporal_relationship             Optional String. Temporal Relationship.
+                                      Choice list : ['Equals', 'Intersects', 'During', 'Contains',
+                                                     'Finishes', 'FinishedBy', 'Meets', 'MetBy',
+                                                     'Overlaps', 'OverlappedBy', 'Starts',
+                                                     'StartedBy', 'Near']
+    --------------------------------  ---------------------------------------------------------------
+    temporal_near_distance            Optional Integer. Near Temporal Distance (int)
+    --------------------------------  ---------------------------------------------------------------
+    temporal_near_distance_unit       Optional String.Near Temporal Distance Unit
+                                      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours',
+                                                  'Minutes', 'Seconds', 'Milliseconds']
+    --------------------------------  ---------------------------------------------------------------
+    attribute_relationship            Optional String. Attribute Relationships
+    --------------------------------  ---------------------------------------------------------------
+    join_condition                    Optional String. Join Condition
+    --------------------------------  ---------------------------------------------------------------
+    output_name                       Optional String. The task will create a feature service of the
+                                      results. You define the name of the service.
+    --------------------------------  ---------------------------------------------------------------
+    gis                               Optional GIS. The GIS object where the analysis will take place.
+    ================================  ===============================================================
+
+
+
+    :Returns: Output Features as Feature Layer Collection Item
 
 
     """
