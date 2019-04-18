@@ -5,7 +5,7 @@ try:
     from fastai.vision.learner import create_body
     from torchvision.models import resnet34
     import numpy as np
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP
     from .._data import prepare_data
     import json
     import os
@@ -426,5 +426,32 @@ class SingleShotDetector(object):
             rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
 
+    def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False):
+        """
+        Computes average precision on the validation set for each class.
 
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        detect_thresh           Optional float. The probabilty above which
+                                a detection will be considered for computing
+                                average precision.
+        ---------------------   -------------------------------------------
+        iou_thresh              Optional float. The intersection over union
+                                threshold with the ground truth labels, above
+                                which a predicted bounding box will be
+                                considered a true positive.
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                average precision otherwise returns mean
+                                average precision.                        
+        =====================   ===========================================
 
+        :returns: `dict` if mean is False otherwise `float`
+        """        
+        aps = compute_class_AP(self, self._data.valid_dl, n_classes=(self._data.c - 1), detect_thresh=detect_thresh, iou_thresh=iou_thresh)
+        if mean:
+            import statistics
+            return statistics.mean(aps)
+        else:
+            return dict(zip(self._data.classes[1:], aps))

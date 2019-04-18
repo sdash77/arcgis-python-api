@@ -121,15 +121,16 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                 class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
             except KeyError:
                 class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
-        
-    imagefile_types = ['png', 'jpg', 'tif', 'jpeg', 'tiff']
-    bboxfile_types = ['xml', 'json']
-    with open(path / 'map.txt') as f:
-        line = f.readline()
-    left = line.split()[0].split('.')[-1].lower()
-    right = line.split()[1].split('.')[-1].lower()
     
     if dataset_type is None:
+
+        imagefile_types = ['png', 'jpg', 'tif', 'jpeg', 'tiff']
+        bboxfile_types = ['xml', 'json']
+        with open(path / 'map.txt') as f:
+            line = f.readline()
+        left = line.split()[0].split('.')[-1].lower()
+        right = line.split()[1].split('.')[-1].lower()
+        
         if (left in imagefile_types) and (right in imagefile_types):
             dataset_type = 'RCNN_Masks'
         elif (left in imagefile_types) and (right in bboxfile_types):
