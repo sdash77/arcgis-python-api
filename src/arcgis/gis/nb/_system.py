@@ -123,7 +123,7 @@ class SystemManager(object):
         if "containers" in res:
             for c in res["containers"]:
                 cid = c['id']
-                curl = self._url + "/{cid}".format(cid=cid)
+                curl = self._url + "/containers/{cid}".format(cid=cid)
                 container.append(Container(url=curl, gis=self._gis))
         return container
 

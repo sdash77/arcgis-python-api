@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 DEFAULT_ELEMENT_HEIGHT = "400px"
 
-_DEFAULT_JS_CDN = "https://js.arcgis.com/4.10/"
+_DEFAULT_JS_CDN = "https://js.arcgis.com/4.11/"
 _js_cdn_override_global = ""
 
 def _is_iterable(obj):

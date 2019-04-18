@@ -1,8 +1,10 @@
 import torch
-from torch import nn
+from torch import nn, LongTensor
 import torch.nn.functional as F
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
+from fastprogress import progress_bar
+import numpy as np
 
 def conv_params(in_size, out_size):
     filters = [3,2,5,4]
@@ -168,12 +170,12 @@ def nms(boxes, scores, overlap=0.5, top_k=100):
 
 class SSDObjectCategoryList(ObjectCategoryList):
     "`ItemList` for labelled bounding boxes detected using SSD."
-    def analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ssd=None):
+    def analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=False, device=torch.device('cpu')):
         # def analyze_pred(pred, anchors, grid_sizes, thresh=0.5, nms_overlap=0.1, ssd=None):
         b_clas, b_bb = pred
-        a_ic = ssd._actn_to_bb(b_bb, ssd._anchors.cpu(), ssd._grid_sizes.cpu())
+        a_ic = ssd._actn_to_bb(b_bb.to(device), ssd._anchors.to(device), ssd._grid_sizes.to(device))
         conf_scores, clas_ids = b_clas[:, 1:].max(1)
-        conf_scores = b_clas.t().sigmoid()
+        conf_scores = b_clas.t().sigmoid().to(device)
 
         out1, bbox_list, class_list = [], [], []
 
@@ -195,7 +197,10 @@ class SSDObjectCategoryList(ObjectCategoryList):
         if len(bbox_list) == 0:
             return None #torch.Tensor(size=(0,4)), torch.Tensor()
 
-        return torch.cat(bbox_list, dim=0), torch.cat(class_list, dim=0) # torch.cat(out1, dim=0), 
+        if ret_scores:
+            return torch.cat(bbox_list, dim=0).to(device), torch.cat(class_list, dim=0).to(device), torch.cat(out1, dim=0).to(device)
+        else:
+            return torch.cat(bbox_list, dim=0), torch.cat(class_list, dim=0) # torch.cat(out1, dim=0), 
 
     
     def reconstruct(self, t, x):
@@ -210,3 +215,56 @@ class SSDObjectCategoryList(ObjectCategoryList):
 class SSDObjectItemList(ObjectItemList):
     "`ItemList` suitable for object detection."
     _label_cls,_square_show_res = SSDObjectCategoryList,False
+
+def compute_ap(precision, recall):
+    "Compute the average precision for `precision` and `recall` curve."
+    recall = np.concatenate(([0.], list(recall), [1.]))
+    precision = np.concatenate(([0.], list(precision), [0.]))
+    for i in range(len(precision) - 1, 0, -1):
+        precision[i - 1] = np.maximum(precision[i - 1], precision[i])
+    idx = np.where(recall[1:] != recall[:-1])[0]
+    ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
+    return ap
+
+def compute_class_AP(ssd, dl, n_classes, iou_thresh=0.5, detect_thresh=0.35, num_keep=100):
+    tps, clas, p_scores = [], [], []
+    classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
+    with torch.no_grad():
+        for input,target in progress_bar(dl):
+            output = ssd.learn.pred_batch(batch=(input, target))#, reconstruct=True)
+
+            for i in range(target[0].size(0)):
+                op = ssd._data.y.analyze_pred((output[0][i], output[1][i]), thresh=detect_thresh, nms_overlap=iou_thresh, ssd=ssd, ret_scores=True, device=ssd._device)
+                tgt_bbox, tgt_clas = ssd._get_y(target[0][i], target[1][i])
+                
+
+                try:
+                    bbox_pred, preds, scores = op
+                    if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
+                        ious = ssd._jaccard(bbox_pred, tgt_bbox)
+                        max_iou, matches = ious.max(1)
+                        detected = []
+                        for i in range(len(preds)):
+                            if max_iou[i] >= iou_thresh and matches[i] not in detected and tgt_clas[matches[i]] == preds[i]:
+                                detected.append(matches[i])
+                                tps.append(1)
+                            else: tps.append(0)
+                        clas.append(preds.cpu())
+                        p_scores.append(scores.cpu())
+                except Exception as e:
+                    pass
+                n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)               
+    
+    tps, p_scores, clas = torch.tensor(tps), torch.cat(p_scores,0), torch.cat(clas,0)
+    fps = 1-tps
+    idx = p_scores.argsort(descending=True)
+    tps, fps, clas = tps[idx], fps[idx], clas[idx]
+    aps = []
+    for cls in range(1,n_classes+1):
+        tps_cls, fps_cls = tps[clas==cls].float().cumsum(0), fps[clas==cls].float().cumsum(0)
+        if tps_cls.numel() != 0 and tps_cls[-1] != 0:
+            precision = tps_cls / (tps_cls + fps_cls + 1e-8)
+            recall = tps_cls / (n_gts[cls - 1] + 1e-8)
+            aps.append(compute_ap(precision, recall))
+        else: aps.append(0.)
+    return aps

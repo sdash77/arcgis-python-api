@@ -15,6 +15,8 @@ trace_downstream determines the flow paths in a downstream direction from the lo
 """
 import arcgis as _arcgis
 
+from arcgis.features._analysis import choose_best_facilities
+
 def find_existing_locations(
         input_layers=None,
         expressions=None,
