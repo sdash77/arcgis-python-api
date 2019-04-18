@@ -5,6 +5,7 @@ from ..._impl.connection import _ArcGISConnection
 from ...gis import GIS
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
+from ...apps.tracker._location_tracking import LocationTrackingManager
 ########################################################################
 class PortalAdminManager(BasePortalAdmin):
     """
@@ -115,6 +116,13 @@ class PortalAdminManager(BasePortalAdmin):
             from ._idp import IdentityProviderManager
             self._idp = IdentityProviderManager(gis=self._gis)
         return self._idp
+    #----------------------------------------------------------------------
+    @property
+    def location_tracking(self):
+        """
+        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+        """
+        return LocationTrackingManager(self._gis)
     #----------------------------------------------------------------------
     @property
     def social_providers(self):
