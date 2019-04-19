@@ -1748,8 +1748,8 @@ class UserManager(object):
             raise NotImplementedError("The current version of the enterprise does not support `send_notification`")
         return False
 
-    def create(self, username, password, firstname, lastname, email, description=None, role='org_user',
-               provider='arcgis', idp_username=None, level=2, thumbnail=None, user_type='creator', credits=-1,
+    def create(self, username, password, firstname, lastname, email, description=None, role=None,
+               provider='arcgis', idp_username=None, level=2, thumbnail=None, user_type=None, credits=-1,
                groups=None):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
@@ -1821,7 +1821,7 @@ class UserManager(object):
         if self._gis.version >= [6,4]:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
                             'email', 'description', 'role', 'provider', 'idp_username',
-                            'user_type', 'thumbnail', 'credits', 'groups'}
+                            'user_type', 'thumbnail', 'credits', 'groups', 'level'}
             params = {}
             for k,v in kwargs.items():
                 if k in allowed_keys:
@@ -1965,7 +1965,7 @@ class UserManager(object):
     #----------------------------------------------------------------------
     def _create64plus(self, username, password, firstname, lastname, email, description=None, role='org_user',
                       provider='arcgis', idp_username=None, user_type='creator',
-                      thumbnail=None, credits=None, groups=None):
+                      thumbnail=None, credits=None, groups=None, level=None):
         """
         This operation is used to pre-create built-in or enterprise accounts within the portal,
         or built-in users in an ArcGIS Online organization account. Only an administrator
@@ -1988,8 +1988,8 @@ class UserManager(object):
                           6-24 characters long.
         ----------------  -------------------------------------------------------------------------------
         password          Required string. The password for the user.  It must be at least 8 characters.
-                          This is a required parameter only if
-                          the provider is arcgis; otherwise, the password parameter is ignored.
+                          This is a required parameter only if the provider is arcgis; otherwise, the
+                          password parameter is ignored.
                           If creating an account in an ArcGIS Online org, it can be set as None to let
                           the user set their password by clicking on a link that is emailed to him/her.
         ----------------  -------------------------------------------------------------------------------
@@ -2029,12 +2029,28 @@ class UserManager(object):
 
         """
         #map role parameter of a viewer to the internal value for org viewer.
+        if level == 2 and user_type is None and role is None:
+            user_type = "creator"
+            role = 'publisher'
+        elif level == 1 and user_type is None and role is None:
+            user_type = "viewer"
+            role = 'viewer'
+        elif level == 1 and user_type is None:
+            user_type = "viewer"
+        elif level == 1 and role is None:
+            role = "viewer"
+        elif level == 2 and user_type is None:
+            user_type = "creator"
+        elif level == 2 and role is None:
+            role = "publisher"
+
         levels = {'creator' : 'creatorUT',
                   'viewer' : 'viewerUT'}
         role_lookup = {
             'admin' : 'org_admin',
             'user' : 'org_user',
             'publisher' : 'org_publisher',
+            'creator' : 'org_publisher',
             'view_only' : 'tLST9emLCNfFcejK',
             'viewer' : 'iAAAAAAAAAAAAAAA',
             'viewplusedit' : 'iBBBBBBBBBBBBBBB'
@@ -4154,10 +4170,10 @@ class ContentManager(object):
         wgs84_extent = None
         service_extent = item_extent
         if service_extent:
-            wgs84_extent = clone._wgs84_envelope(service_extent) 
+            wgs84_extent = clone._wgs84_envelope(service_extent)
         owner_name = owner
         if owner_name is None:
-            owner_name = self._gis.users.me.username        
+            owner_name = self._gis.users.me.username
         if isinstance(owner, User):
             owner_name = owner.username
         deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping, owner_name)
@@ -4464,8 +4480,8 @@ class CategorySchemaManager(object):
     @property
     def schema(self):
         """
-        This property allows group owners/managers to manage the content 
-        categories for a group. These content categories are a hierarchical 
+        This property allows group owners/managers to manage the content
+        categories for a group. These content categories are a hierarchical
         set of classes to help organize and browse group content.
 
         Each group can have a maximum of 5 category trees with each
@@ -4474,7 +4490,7 @@ class CategorySchemaManager(object):
         category of less than 100 characters title and 300 characters
         description.
 
-        When getting this property, returns the content category schema 
+        When getting this property, returns the content category schema
         set on a group.
 
         When setting this property, will update the group category schema
@@ -4538,11 +4554,11 @@ class CategorySchemaManager(object):
     #----------------------------------------------------------------------
     def assign_to_items(self, items):
         """
-        This function adds group content categories to the portal items 
+        This function adds group content categories to the portal items
         specified in the `items` argument (see below). For assigning categories
         to items in a group, you must be the group owner/manager. For assigning
         organization content categories on items, you must be the item owner
-        or an administrator who has the `portal:admin:updateItems` privilege. 
+        or an administrator who has the `portal:admin:updateItems` privilege.
         A maximum of 100 items can be bulk updated per request.
 
         ==================  =========================================================
