@@ -28,6 +28,7 @@ Submodules
 .. toctree::
    :maxdepth: 3
 
+   arcgis.apps.hub
    arcgis.apps.workforce
    arcgis.apps.storymap
    arcgis.apps.survey123

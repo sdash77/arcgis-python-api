@@ -20,14 +20,7 @@ def _lazy_property(fn):
 class Hub(object):
     """
     Entry point into the Hub module. Lets you access an individual hub and its components.
-    .. code-block:: python
-
-    from arcgis.gis import GIS
-    gis = GIS("https://arcgis.com", "<username>", "<password>")
-    myHub = gis.hub
-    a_Initiative = myHub.initiatives.get(itemId)
-    a_Indicators = a_Initiative.indicators.search()
-    myEvents = myHub.events.search()
+       
 
     ================    ===============================================================
     **Argument**        **Description**
@@ -134,7 +127,7 @@ class Hub(object):
     @_lazy_property
     def events(self):
         """
-        The resource manager for Hub events. See :class:`~arcgis.apps.hub.EventsManager`.
+        The resource manager for Hub events. See :class:`~arcgis.apps.hub.EventManager`.
         """
         return EventManager(self)
     
@@ -405,7 +398,7 @@ class InitiativeManager(object):
         else:
             raise TypeError("Item is not a valid initiative or is inaccessible.")
     
-    def search(self, scope=None, initiative_id=None, title=None, owner=None, created=None, modified=None, tags=None):
+    def search(self, scope=None, title=None, owner=None, created=None, modified=None, tags=None):
         """ 
         Searches for initiatives.
 
@@ -414,8 +407,6 @@ class InitiativeManager(object):
         ---------------     --------------------------------------------------------------------
         scope               Optional string. Defines the scope of search.
                             Valid values are 'official', 'community' or 'all'.
-        ---------------     --------------------------------------------------------------------
-        initiative_id       Optional string. Initiative itemid.
         ---------------     --------------------------------------------------------------------
         title               Optional string. Return initiatives with provided string in title.
         ---------------     --------------------------------------------------------------------
@@ -438,8 +429,6 @@ class InitiativeManager(object):
         
         #Build search query
         query = 'typekeywords:hubInitiative'
-        if initiative_id!=None:
-            query += ' AND id:'+initiative_id
         if title!=None:
             query += ' AND title:'+title
         if owner!=None:
@@ -718,14 +707,12 @@ class IndicatorManager(object):
         except:
             return None
     
-    def search(self, indicator_id=None, url=None, item_id=None, name=None):
+    def search(self, url=None, item_id=None, name=None):
         """ 
         Searches for indicators within an initiative.
 
         ===============     ====================================================================
         **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        indicator_id        Optional string. Indicator identifier.
         ---------------     --------------------------------------------------------------------
         url                 Optional string. url registered for indicator in `source` dictionary.
         ---------------     --------------------------------------------------------------------
@@ -741,8 +728,6 @@ class IndicatorManager(object):
         indicatorlist = []
         for indicator in self._indicators:
             _indicators.append(indicator)
-        if indicator_id!=None:
-            _indicators = [indicator for indicator in _indicators if indicator['id']==indicator_id]
         if url!=None:
             _indicators = [indicator for indicator in _indicators if indicator['source']['url']==url]
         if item_id!=None:
