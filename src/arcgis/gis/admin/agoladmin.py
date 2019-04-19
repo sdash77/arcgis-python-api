@@ -5,6 +5,7 @@ from ..._impl.connection import _ArcGISConnection
 from ...gis import GIS
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
+from ...apps.tracker._location_tracking import LocationTrackingManager
 ########################################################################
 class AGOLAdminManager(object):
     """
@@ -136,6 +137,13 @@ class AGOLAdminManager(object):
         return self._idp
     #----------------------------------------------------------------------
     @property
+    def location_tracking(self):
+        """
+        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+        """
+        return LocationTrackingManager(self._gis)
+    @property
+    #----------------------------------------------------------------------
     def social_providers(self):
         """
         This resource allows for the setting and configuration of the social providers

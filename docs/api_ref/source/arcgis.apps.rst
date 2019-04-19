@@ -19,6 +19,10 @@ build_survey123_url
 --------------
 .. automethod:: arcgis.apps.build_survey123_url
 
+build_tracker_url
+--------------
+.. automethod:: arcgis.apps.build_tracker_url
+
 Submodules
 ----------
 .. toctree::
@@ -27,3 +31,4 @@ Submodules
    arcgis.apps.workforce
    arcgis.apps.storymap
    arcgis.apps.survey123
+   arcgis.apps.tracker

@@ -496,7 +496,7 @@ def match_control_points(image_collection, control_points, similarity='High', co
     ==================     ====================================================================
 
     :return:
-        A dictionary object
+        A list of dictionary objects
 
     '''
 

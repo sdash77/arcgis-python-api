@@ -340,6 +340,25 @@ def _validate_survey123_url(survey, center, fields):
             raise ValueError("Invalid parameters -- Must specify a survey if setting fields")
 
 
+def build_tracker_url(portal_url=None):
+    """
+        Creates a url that can be used to open Tracker for ArcGIS
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        portal_url             Optional :class:`String` The portal that should be used when tracker
+                               is launched via the url scheme.
+        ==================     ====================================================================
+
+        :return: :class:`String`
+    """
+    url = "arcgis-tracker://"
+    if portal_url is not None:
+        url += "?portalURL={}".format(portal_url)
+    return url
+
+
 def _encode_string(string):
     # allow for template values (e.g. "{assignment.location}"
     return urllib.parse.quote(str(string), safe="${},:")
