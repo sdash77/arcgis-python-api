@@ -22,43 +22,90 @@ def aggregate_points(
                      gis=None,
                      estimate=False):
     """
-    Aggregate points task allows you to aggregate or count the total number of points that are distributed within
-    specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation
-    calculations for attributes of the point layer to understand the general characteristics of aggregated points.
+    The Aggregate Points task works with a layer of point features and a layer of polygon features. It first figures out which points fall within each polygon's area.
+    After determining this point-in-polygon spatial relationship, statistics about all points in the polygon are calculated and assigned to the area. The most basic statistic is the count of the number of points within the polygon, but you can get other statistics as well.
+    For example, if your points represented coffee shops and each point has a TOTAL_SALES attribute, you can get statistics like the sum of all TOTAL_SALES within the polygon, or the minimum or maximum TOTAL_SALES value, or the standard deviation of all sales within the polygon.
 
-    Parameters
-    ----------
-    point_layer : Required layer (see Feature Input in documentation)
-        Point layer to be aggregated
-    polygon_layer : Required layer (see Feature Input in documentation)
-        Polygon layer to which the points should be aggregated.
-    keep_boundaries_with_no_points : Optional bool
-        Specify whether the polygons without any points should be returned in the output.
-    summary_fields : Optional list of strings
-        A list of field names and summary type. Example [fieldName1 summaryType1,fieldName2 summaryType2].
-    group_by_field : Optional string
-        A field name from PointLayer based on which the points will be grouped.
-    minority_majority : Optional bool
-        This boolean parameter is applicable only when a groupByField is specified. If true, the minority
-        (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will
-        be calculated.
-    percent_points : Optional bool
-        This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage count
-        of points for each unique groupByField value is calculated.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+    ====================================     ====================================================================
+    **Parameter**                            **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    point_layer                              Required point layer
 
-    Returns
-    -------
-    dict with the following keys:
-       "aggregated_layer" : layer (FeatureCollection)
-       "group_summary" : layer (FeatureCollection)
+                                             The point features that will be aggregated into the polygons in the polygon_layer.
+    ------------------------------------     --------------------------------------------------------------------
+    polygon_layer                            Required polygon layer
+
+                                             The polygon features (areas) into which the input points will be aggregated.
+    ------------------------------------     --------------------------------------------------------------------
+    keep_boundaries_with_no_points           Optional boolean
+
+                                             A Boolean value that specifies whether the polygons that have no points within them should be returned in the output.
+                                             
+                                             The default is true.
+    ------------------------------------     --------------------------------------------------------------------
+    summary_fields                           Optional list of strings
+
+                                             A list of field names and statistical summary type that you wish to calculate for all points within each polygon.
+                                             Note that the count of points within each polygon is always returned.
+                                             summary type is one of the following:
+
+                                             * Sum—Adds the total value of all the points in each polygon
+                                             * Mean—Calculates the average of all the points in each polygon.
+                                             * Min—Finds the smallest value of all the points in each polygon.
+                                             * Max—Finds the largest value of all the points in each polygon.
+                                             * Stddev—Finds the standard deviation of all the points in each polygon.
+                                             Example [fieldName1 summaryType1,fieldName2 summaryType2].
+    ------------------------------------     --------------------------------------------------------------------
+    group_by_field                           Optional string
+
+                                             A field name in the point_layer. Points that have the same value for the group by field will have their own counts and summary field statistics.
+
+                                             You can create statistical groups using an attribute in the analysis layer. For example, if you are aggregating crimes to neighborhood boundaries, you may have an attribute Crime_type with five different crime types. Each unique crime type forms a group, and the statistics you choose will be calculated for each unique value of Crime_type. When you choose a grouping attribute, two results are created: the result layer and a related table containing the statistics.
+    ------------------------------------     --------------------------------------------------------------------
+    minority_majority                        Optional boolean
+
+                                             This boolean parameter is applicable only when a group_by_field is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values for each group field within each boundary are calculated. Two new fields are added to the aggregated_layer prefixed with Majority_ and Minority_.
+                                             The default is false.
+    ------------------------------------     -------------------------------------------------------------------- 
+    percent_points                           Optional boolean
+    
+                                             This boolean parameter is applicable only when a group_by_field is specified. If set to true, the percentage count of points for each unique group_by_field value is calculated. A new field is added to the group summary output table containing the percentages of each attribute value within each group. If minority_majority is true, two additional fields are added to the aggregated_layer containing the percentages of the minority and majority attribute values within each group.
+    ------------------------------------     --------------------------------------------------------------------                       
+    output_name                              Optional string
+    
+                                             Output Features Name (str). Optional parameter.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional string
+
+                                             Context contains additional settings that affect task execution. For Aggregate Points, there are two settings.
+                                             
+                                             #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input pointLayer that intersect the bounding box will be analyzed.
+                                             #. Output Spatial Reference (outSR)—the output features will be projected into the output spatial reference.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Optional Boolean
+
+                                             If True, the number of credits to run the operation will be returned.
+    ====================================     ====================================================================
+
+    :return: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To find number of permits issued in each zip code of US.
+        
+        agg_result = aggregate_points(point_layer=permits,
+                                polygon_layer=zip_codes,
+                                keep_boundaries_with_no_points=False,
+                                summary_fields=["DeclValNu mean","DeclValNu2 mean"],
+                                group_by_field='Declared_V',
+                                minority_majority=True,
+                                percent_points=True,
+                                output_name="aggregated_permits",
+                                context='{"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}}') 
+
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.aggregate_points(

@@ -521,14 +521,14 @@ def to_featureclass(geo,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,
                                                  out_name=fc_name,
-                                                )[0]
+                                                 )[0]
+
         # 2. Add the Fields and Data Types
-        #
         oidfld = da.Describe(fc)['OIDFieldName']
         for col in columns[:]:
             if col.lower() in ['fid', 'oid', 'objectid']:
                 dtypes.append((col, np.int32))
-            elif df[col].dtype.name == 'datetime64[ns]':
+            elif df[col].dtype.name.startswith('datetime64[ns'):
                 dtypes.append((col, '<M8[us]'))
             elif df[col].dtype.name == 'object':
                 try:
@@ -553,13 +553,10 @@ def to_featureclass(geo,
             else:
                 dtypes.append((col, df[col].dtype.type))
 
-        array = np.array([],
-                        np.dtype(dtypes))
-        arcpy.da.ExtendTable(fc,
-                             oidfld, array,
-                             join_dummy, append_only=False)
+        array = np.array([], np.dtype(dtypes))
+        arcpy.da.ExtendTable(fc, oidfld, array, join_dummy, append_only=False)
+
         # 3. Insert the Data
-        #
         fields = arcpy.ListFields(fc)
         icols = [fld.name for fld in fields \
                  if fld.type not in ['OID', 'Geometry'] and \
@@ -570,7 +567,7 @@ def to_featureclass(geo,
 
         with da.InsertCursor(fc, icols) as irows:
             dt_fld_idx = [irows.fields.index(col) for col in df.columns \
-                          if df[col].dtype.name == 'datetime64[ns]']
+                          if df[col].dtype.name.startswith('datetime64[ns')]
             def _insert_row(row):
                 row[-1] = pd.io.json.dumps(row[-1])
                 for idx in dt_fld_idx:
