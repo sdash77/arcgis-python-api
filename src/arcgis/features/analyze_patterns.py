@@ -28,32 +28,55 @@ def calculate_density(
     some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
     classified from least dense to most dense.
 
+    For point input, each point should represent the location of some event	or incident, and the result layer represents
+    a count of the incident per unit area. A higher density value in a new location means that there are more points near
+    that location. In many cases, the result layer can be interpreted as a risk surface for future events. For example,
+    if the input points represent locations of lightning strikes, the result layer can be interpreted as a risk surface
+    for future lightning strikes.	
+            
+    For line input, the line density surface represents the total amount of line that is near each location. The units of	
+    the calculated density values are the length of line per unit area. For example, if the lines represent rivers, the	
+    result layer will represent the total length of rivers that are within the search radius. This result can be used to	
+    identify areas that are hospitable to grazing animals.
+    
     =========================    =========================================================
     **Argument**                 **Description**
     -------------------------    ---------------------------------------------------------
-    input_layer                  Required layer (see Feature Input in documentation). The point or line features from which to calculate density.
+    input_layer                  Required layer. The point or line features from which to calculate density. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
-    field                        Optional string. A numeric field name specifying the number of incidents at each location. If not specified, each location will be assumed to represent a single count.
+    field                        Optional string. A numeric field name specifying the number of incidents at each location.  For example, if you have points that represent cities, you can use a field representing the population of the city as the count field, and the resulting population density layer will calculate larger population densities near cities with larger populations. If not specified, each location will be assumed to represent a single count.
     -------------------------    ---------------------------------------------------------
-    cell_size                    Optional float. This value is used to create a mesh of points where density values are calculated. The default is approximately 1/1000th of the smaller of the width and height of the analysis extent as defined in the context parameter.
+    cell_size                    Optional float. This value is used to create a mesh of points where density values are calculated. The default is approximately 1/1000th of the smaller of the width and height of the analysis extent as defined in the context parameter. The smaller the value, the smoother the polygon boundaries will be. Conversely, with larger values, the polygon boundaries will be more coarse and jagged.
     -------------------------    ---------------------------------------------------------
-    cell_size_units              Optional string. The units of the cellSize value
+    cell_size_units              Optional string. The units of the cell_size value.
+                                 Choice list: ['Miles', 'Feet', 'Kilometers',  'Meters']
     -------------------------    ---------------------------------------------------------
     radius                       Optional float. A distance specifying how far to search to find point or line features when calculating density values.
     -------------------------    ---------------------------------------------------------
-    radius_units                 Optional string. The units of the radius parameter.
+    radius_units                 Optional string. The units of the radius parameter. If no distance is provided, a default will be calculated that is based on the locations of the input features and the values in the count field (if a count field is provided).
+                                 Choice list: ['Miles', 'Feet', 'Kilometers',  'Meters']
     -------------------------    ---------------------------------------------------------
-    bounding_polygon_layer       Optional layer (see Feature Input in documentation). A layer specifying the polygon(s) where you want densities to be calculated.
+    bounding_polygon_layer       Optional layer. A layer specifying the polygon(s) where you want densities to be calculated. For example, if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this parameter and the output will only draw within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
     area_units                   Optional string. The units of the calculated density values.
-    -------------------------    ---------------------------------------------------------
+                                 Choice list: ['areaUnits', 'SquareMiles']
+    -------------------------    ---------------------------------------------------------	
     classification_type          Optional string. Determines how density values will be classified into polygons.
+                                 Choice list: ['EqualInterval', 'GeometricInterval', 'NaturalBreaks', 'EqualArea', 'StandardDeviation']	
+                                    * EqualInterval—Polygons are created such that the range of density values is equal for each area.	
+                                    * GeometricInterval—Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.	
+                                    * NaturalBreaks—Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.	
+                                    * EqualArea—Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.	
+                                    * StandardDeviation—Polygons are created based upon the standard deviation of the predicted density values.
     -------------------------    ---------------------------------------------------------
-    num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classificationType parameter.
+    num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classification_type parameter.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string. Additional properties such as output feature service name.
+    output_name                  Optional string. Additional properties such as output feature service name.	
     -------------------------    ---------------------------------------------------------
-    context                      Optional string. Additional settings such as processing extent and output spatial reference.
+    context                      Optional string. Additional settings such as processing extent and output spatial reference. For calculate_density, there are two settings.
+
+                                 #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input_layer that intersect the bounding box will be analyzed.	
+                                 #. Output Spatial Reference (outSR)—the output features will be projected into the output spatial reference.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -61,7 +84,23 @@ def calculate_density(
     =========================    =========================================================
 
 
-    :Returns: result_layer : layer (FeatureCollection)
+    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To create a layer that shows density of collisions within 2 miles.	
+                       The density is classified based upon the standard deviation.
+                       The range of density values is divided into 5 classes.	
+        	
+        collision_density = calculate_density(input_layer=collisions,	
+                                        radius=2,	
+                                        radius_units='Miles',	
+                                        bounding_polygon_layer=zoning_lyr,	
+                                        area_units='SquareMiles',	
+                                        classification_type='StandardDeviation',	
+                                        num_classes=5,	
+                                        output_name='density_of_incidents')
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
