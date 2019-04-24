@@ -8,6 +8,8 @@ try:
     from pathlib import Path
     from ._codetemplate import image_classifier_prf
     from ._ssd import _raise_fastai_import_error, _EmptyData
+    from functools import partial
+    from ._unet_utils import is_no_color, LabelCallback
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -167,8 +169,8 @@ _EMD_TEMPLATE = {
     "Classes" : []
 }
 
-def accuracy(input, target, void_code=0):
-    target = target.squeeze(1)
+def accuracy(input, target, void_code=0, class_mapping=None):  
+    target = target.squeeze(1) 
     mask = target != void_code
     return (input.argmax(dim=1)[mask] == target[mask]).float().mean()
 
@@ -214,8 +216,9 @@ class UnetClassifier(ArcGISModel):
         else:
             self._backbone = backbone
 
+        acc_metric = partial(accuracy, void_code=0, class_mapping=data.class_mapping)
         self._data = data
-        self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True)
+        self.learn = unet_learner(data, arch=self._backbone, metrics=acc_metric, wd=1e-2, bottle=True, last_cross=True)
         self.learn.model = self.learn.model.to(self._device)
 
         if pretrained_path is not None:
@@ -254,18 +257,44 @@ class UnetClassifier(ArcGISModel):
         for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
             _CLASS_TEMPLATE["Value"] = i
             _CLASS_TEMPLATE["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)] # from colormap
+            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+            color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else self._data.color_mapping[inverse_class_mapping[class_name]]
             _CLASS_TEMPLATE["Color"] = color
             _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())
             
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
 
+    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True):
+        """
+        Train the model for the specified number of epocs and using the
+        specified learning rates
+        
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        epochs                  Required integer. Number of cycles of training
+                                on the data. Increase it if underfitting.
+        ---------------------   -------------------------------------------
+        lr                      Required float or slice of floats. Learning rate
+                                to be used for training the model. Select from
+                                the `lr_find` plot.
+        ---------------------   -------------------------------------------
+        one_cycle               Optional boolean. Parameter to select 1cycle
+                                learning rate schedule. If set to `False` no 
+                                learning rate schedule is used.                                
+        =====================   ===========================================
+        """
+        if one_cycle:
+            self.learn.fit_one_cycle(epochs, lr, callbacks=[LabelCallback(self.learn)])
+        else:
+            self.learn.fit(epochs, lr, callbacks=[LabelCallback(self.learn)])
 
-    def show_results(self, rows=5):
+
+    def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
         """
         if rows > self._data.batch_size:
             rows = self._data.batch_size
-        self.learn.show_results(rows=rows)             
+        self.learn.show_results(rows=rows, **kwargs)             
