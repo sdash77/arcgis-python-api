@@ -1,12 +1,12 @@
 try:
     from fastai.vision.data import imagenet_stats
     from fastai.vision.transform import crop, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
-    from fastai.vision.data import SegmentationItemList
     import torch
     from pathlib import Path
     from functools import partial
     import xml.etree.ElementTree as ET
     from .models._ssd_utils import SSDObjectItemList
+    from .models._unet_utils import ArcGISSegmentationItemList
     import math
     import json
     HAS_FASTAI = True
@@ -121,6 +121,8 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                 class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
             except KeyError:
                 class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
+
+            color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
     
     if dataset_type is None:
 
@@ -144,9 +146,9 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         def get_y_func(x, ext=right):
             return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
         
-        src = (SegmentationItemList.from_folder(path/'images')
-           .random_split_by_pct(0.1)
-           .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values())))  #TODO : ignoring keys
+        src = (ArcGISSegmentationItemList.from_folder(path/'images')
+           .random_split_by_pct(val_split_pct, seed=seed)
+           .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)) #TODO : Handel NoData case
 
         if transforms is None:
             transforms = get_transforms(flip_vert=True,
@@ -173,7 +175,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
         if transforms is None:
             ranges = (0,1)
-            train_tfms = [crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(1.5, 1.5)), rand_zoom(scale=(0.75, 1.5))]
+            train_tfms = [crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)), rand_zoom(scale=(0.75, 1.5))]
             val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
@@ -187,6 +189,8 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))    
 
     data.chip_size = chip_size
+    data.class_mapping = class_mapping
+    data.color_mapping = color_mapping
     show_batch_func = data.show_batch
     show_batch_func = partial(show_batch_func, rows=min(int(math.sqrt(batch_size)), 5))
     data.show_batch = show_batch_func

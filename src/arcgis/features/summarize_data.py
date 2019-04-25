@@ -29,23 +29,13 @@ def aggregate_points(
     ====================================     ====================================================================
     **Parameter**                            **Description**
     ------------------------------------     --------------------------------------------------------------------
-    point_layer                              Required point layer
-
-                                             The point features that will be aggregated into the polygons in the polygon_layer.
+    point_layer                              Required point layer. The point features that will be aggregated into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------     --------------------------------------------------------------------
-    polygon_layer                            Required polygon layer
-
-                                             The polygon features (areas) into which the input points will be aggregated.
+    polygon_layer                            Required polygon layer. The polygon features (areas) into which the input points will be aggregated. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------     --------------------------------------------------------------------
-    keep_boundaries_with_no_points           Optional boolean
-
-                                             A Boolean value that specifies whether the polygons that have no points within them should be returned in the output.
-                                             
-                                             The default is true.
+    keep_boundaries_with_no_points           Optional boolean. A Boolean value that specifies whether the polygons that have no points within them should be returned in the output. The default is true.
     ------------------------------------     --------------------------------------------------------------------
-    summary_fields                           Optional list of strings
-
-                                             A list of field names and statistical summary type that you wish to calculate for all points within each polygon.
+    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish to calculate for all points within each polygon.
                                              Note that the count of points within each polygon is always returned.
                                              summary type is one of the following:
 
@@ -56,40 +46,26 @@ def aggregate_points(
                                              * Stddev—Finds the standard deviation of all the points in each polygon.
                                              Example [fieldName1 summaryType1,fieldName2 summaryType2].
     ------------------------------------     --------------------------------------------------------------------
-    group_by_field                           Optional string
-
-                                             A field name in the point_layer. Points that have the same value for the group by field will have their own counts and summary field statistics.
-
-                                             You can create statistical groups using an attribute in the analysis layer. For example, if you are aggregating crimes to neighborhood boundaries, you may have an attribute Crime_type with five different crime types. Each unique crime type forms a group, and the statistics you choose will be calculated for each unique value of Crime_type. When you choose a grouping attribute, two results are created: the result layer and a related table containing the statistics.
+    group_by_field                           Optional string. A field name in the point_layer. Points that have the same value for the group by field will have their own counts and summary field statistics. You can create statistical groups using an attribute in the analysis layer. For example, if you are aggregating crimes to neighborhood boundaries, you may have an attribute Crime_type with five different crime types. Each unique crime type forms a group, and the statistics you choose will be calculated for each unique value of Crime_type. When you choose a grouping attribute, two results are created: the result layer and a related table containing the statistics.
     ------------------------------------     --------------------------------------------------------------------
-    minority_majority                        Optional boolean
-
-                                             This boolean parameter is applicable only when a group_by_field is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values for each group field within each boundary are calculated. Two new fields are added to the aggregated_layer prefixed with Majority_ and Minority_.
+    minority_majority                        Optional boolean. This boolean parameter is applicable only when a group_by_field is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values for each group field within each boundary are calculated. Two new fields are added to the aggregated_layer prefixed with Majority_ and Minority_.
                                              The default is false.
     ------------------------------------     -------------------------------------------------------------------- 
-    percent_points                           Optional boolean
-    
-                                             This boolean parameter is applicable only when a group_by_field is specified. If set to true, the percentage count of points for each unique group_by_field value is calculated. A new field is added to the group summary output table containing the percentages of each attribute value within each group. If minority_majority is true, two additional fields are added to the aggregated_layer containing the percentages of the minority and majority attribute values within each group.
+    percent_points                           Optional boolean. This boolean parameter is applicable only when a group_by_field is specified. If set to true, the percentage count of points for each unique group_by_field value is calculated. A new field is added to the group summary output table containing the percentages of each attribute value within each group. If minority_majority is true, two additional fields are added to the aggregated_layer containing the percentages of the minority and majority attribute values within each group.
     ------------------------------------     --------------------------------------------------------------------                       
-    output_name                              Optional string
-    
-                                             Output Features Name (str). Optional parameter.
+    output_name                              Optional string. Output Features Name (str). Optional parameter.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional string
-
-                                             Context contains additional settings that affect task execution. For Aggregate Points, there are two settings.
+    context                                  Optional string. Context contains additional settings that affect task execution. For Aggregate Points, there are two settings.
                                              
                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input pointLayer that intersect the bounding box will be analyzed.
                                              #. Output Spatial Reference (outSR)—the output features will be projected into the output spatial reference.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
-    estimate                                 Optional Boolean
-
-                                             If True, the number of credits to run the operation will be returned.
+    estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
     ====================================     ====================================================================
 
-    :return: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
 
 
     .. code-block:: python

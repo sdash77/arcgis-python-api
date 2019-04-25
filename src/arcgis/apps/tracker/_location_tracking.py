@@ -200,6 +200,19 @@ class LocationTrackingManager:
             definition["timeInfo"] = {"startTimeField": "location_timestamp"}
         item.layers[0].manager.update_definition(definition)
         item.layers[1].manager.update_definition(definition)
+        if self._gis.properties.isPortal:
+            # Set allowOthersToQuery to True - workaround for missing feature in Enterprise 10.7/10.7.1
+            arcgis.features.FeatureLayerCollection(item.url, self._gis).manager.update_definition(
+                {
+                    "editorTrackingInfo": {
+                        "enableOwnershipAccessControl": True,
+                        "enableEditorTracking": True,
+                        "allowOthersToQuery": True,
+                        "allowOthersToUpdate": False,
+                        "allowOthersToDelete": False
+                    }
+                }
+            )
         item.share(groups=[group])
         return arcgis.apps.tracker.TrackView(item)
 
