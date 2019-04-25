@@ -242,6 +242,15 @@ class _ArcGISConnection(object):
                  connection=None, verify_cert=True,
                  client_id=None):
         """ The _ArcGISConnection constructor. Requires URL and optionally username/password. """
+        if verify_cert == False:
+            try:
+                _create_unverified_https_context = ssl._create_unverified_context
+            except AttributeError:
+                # Legacy Python that doesn't verify HTTPS certificates by default
+                pass
+            else:
+                # Handle target environment that doesn't support HTTPS verification
+                ssl._create_default_https_context = _create_unverified_https_context
         if baseurl is None:
             self._is_arcpy = False
         else:
@@ -1006,12 +1015,12 @@ class _ArcGISConnection(object):
 
 
         if not verify_cert or not self._verify_cert:
-            ctx = ssl.create_default_context()
+            import ssl
+            ctx = ssl._create_unverified_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
             handler = request.HTTPSHandler(context=ctx)
             handlers.append(handler)
-
         return handlers
     #----------------------------------------------------------------------
 
