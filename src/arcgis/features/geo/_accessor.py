@@ -2510,6 +2510,10 @@ class GeoAccessor(object):
             'layerDefinition' : {
                 'htmlPopupType' : 'esriServerHTMLPopupTypeNone',
                 'objectIdField' : fs['objectIdFieldName'] or "OBJECTID",
+                'definitionEditor' : None, # ADDED 4/26/2019
+                "definitionExpression" : "", # ADDED 4/26/2019
+                "featureReduction" : None, # ADDED 4/26/2019
+                "overrideSymbols" : True, # ADDED 4/26/2019
                 #'types' : [],
                 'defaultVisibility' : True,
                 'supportsValidateSql' : True,

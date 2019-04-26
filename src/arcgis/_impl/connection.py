@@ -188,8 +188,17 @@ class MultiPartForm(object):
         self.form_data = buf.getvalue()
 ########################################################################
 class HTTPSClientAuthHandler(request.HTTPSHandler):
-    def __init__(self, key, cert):
-        request.HTTPSHandler.__init__(self)
+    _context = None
+    def __init__(self, key, cert, verify=False):
+        if verify == False:
+            import ssl
+            ctx = ssl._create_unverified_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            self._context = ctx
+            request.HTTPSHandler.__init__(self, context=ctx)
+        else:
+            request.HTTPSHandler.__init__(self)
         self.key = key
         self.cert = cert
     def https_open(self, req):
@@ -201,7 +210,8 @@ class HTTPSClientAuthHandler(request.HTTPSHandler):
         return  http_client.HTTPSConnection(host,
                                             key_file=self.key,
                                             cert_file=self.cert,
-                                            timeout=timeout)
+                                            timeout=timeout,
+                                            context=self._context)
 ########################################################################
 def jsonize_dict(val):
     if isinstance(val, (dict, list)):
@@ -998,7 +1008,7 @@ class _ArcGISConnection(object):
                 _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
 
         elif self._auth == "PKI":
-            handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
+            handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file, self._verify_cert))
 
         cj = cookiejar.CookieJar()
         handlers.append(request.HTTPCookieProcessor(cj))
@@ -1006,12 +1016,12 @@ class _ArcGISConnection(object):
 
 
         if not verify_cert or not self._verify_cert:
-            ctx = ssl.create_default_context()
+            import ssl
+            ctx = ssl._create_unverified_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
             handler = request.HTTPSHandler(context=ctx)
             handlers.append(handler)
-
         return handlers
     #----------------------------------------------------------------------
 
