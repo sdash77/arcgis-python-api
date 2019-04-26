@@ -12,7 +12,7 @@ class ArcGISImageSegment(Image):
     def __init__(self, x, cmap=None, norm=None):
         super(ArcGISImageSegment, self).__init__(x)
         self.cmap = cmap
-        self.norm = norm
+        self.mplnorm = norm
 
     def lighting(self, func, *args, **kwargs):
         return self
@@ -30,13 +30,11 @@ class ArcGISImageSegment(Image):
         cmap='tab20', alpha:float=0.5, **kwargs):
         "Show the `ImageSegment` on `ax`."
         ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap=self.cmap, figsize=figsize,
-                        interpolation='nearest', alpha=alpha, vmin=0, norm=self.norm, **kwargs)
+                        interpolation='nearest', alpha=alpha, vmin=0, norm=self.mplnorm, **kwargs)
         if title: ax.set_title(title)
 
 def is_no_color(color_mapping):
-    bools = sum([i != [-1,-1,-1] for i in color_mapping])
-    return bools == len(color_mapping) or bools == (len(color_mapping) - 1)
-
+    return (np.array(color_mapping) == [-1., -1., -1.]).any()
 
 class ArcGISSegmentationLabelList(ImageItemList):
     "`ItemList` for segmentation masks."
