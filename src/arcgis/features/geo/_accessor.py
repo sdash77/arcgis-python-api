@@ -2202,12 +2202,30 @@ class GeoAccessor(object):
         if 'objectid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]
+            if self._data[fs['objectIdFieldName']].is_unique == False:
+                old_series = self._data[fs['objectIdFieldName']].copy()
+                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
+                res = self.__feature_set__
+                self._data[fs['objectIdFieldName']] = old_series
+                return res
         elif 'fid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('fid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('fid')]
+            if self._data[fs['objectIdFieldName']].is_unique == False:
+                old_series = self._data[fs['objectIdFieldName']].copy()
+                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
+                res = self.__feature_set__
+                self._data[fs['objectIdFieldName']] = old_series
+                return res
         elif 'oid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('oid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('oid')]
+            if self._data[fs['objectIdFieldName']].is_unique == False:
+                old_series = self._data[fs['objectIdFieldName']].copy()
+                self._data[fs['objectIdFieldName']] = list(range(1, self._data.shape[0] + 1))
+                res = self.__feature_set__
+                self._data[fs['objectIdFieldName']] = old_series
+                return res
         else:
             self._data['OBJECTID'] = list(range(1, self._data.shape[0] + 1))
             res = self.__feature_set__
