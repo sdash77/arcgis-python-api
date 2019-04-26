@@ -122,7 +122,10 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             except KeyError:
                 class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
 
-            color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
+            try:
+                color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
+            except KeyError:
+                color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}
     
     if dataset_type is None:
 
