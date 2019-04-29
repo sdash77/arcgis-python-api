@@ -45,6 +45,12 @@ class LicenseManager(BasePortalAdmin):
         if initialize:
             self._init(connection=self._con)
     #----------------------------------------------------------------------
+    def __str__(self):
+        return "<License Manager at {url}>".format(url=self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
+    #----------------------------------------------------------------------
     def get(self, name):
         """
         retrieves a license by it's name (title)

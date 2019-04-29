@@ -917,7 +917,7 @@ def generate_renderer(geometry_type,
             'statistics' : symbol_args.pop('statistics', None),
             'stretchType' : symbol_args.pop('type', 'none'),
             'type' : 'rasterStretch',
-            'useGamma' : symbol_args.pop('use_gamme', False)
+            'useGamma' : symbol_args.pop('use_gamma', False)
         }
         return renderer
     elif render_type == "t":
