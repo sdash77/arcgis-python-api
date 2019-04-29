@@ -1699,7 +1699,7 @@ def create_image_collection(image_collection,
                 if str(image_collection) == element.title:
                     image_collection_result = element
             if image_collection_result is not None:
-                params["imageCollection"]= json.dumps({"itemId": image_collection_result.itemid})
+                params["imageCollection"]= _json.dumps({"itemId": image_collection_result.itemid})
             else:
                 doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service") 
                 if doesnotexist:
