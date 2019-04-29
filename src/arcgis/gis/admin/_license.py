@@ -472,6 +472,7 @@ class License(object):
     def assign(self, username, entitlements, suppress_email=True):
         """
         grants a user an entitlement.
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
