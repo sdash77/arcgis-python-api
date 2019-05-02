@@ -1541,8 +1541,8 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
     return _execute_gp_tool(gis, "TraceDownstream", kwargs, param_db, return_values, _use_async, url)
 
 
-def connect_origins_to_destinations(origins_layer: str = None,
-                                    destinations_layer: str = None,
+def connect_origins_to_destinations(origins_layer = None,
+                                    destinations_layer = None,
                                     measurement_type: str = """DrivingTime""",
                                     origins_layer_route_id_field: str = None,
                                     destinations_layer_route_id_field: str = None,
@@ -1550,7 +1550,10 @@ def connect_origins_to_destinations(origins_layer: str = None,
                                     time_zone_for_time_of_day: str = """GeoLocal""",
                                     output_name: str = None,
                                     context: str = None,
-                                    gis=None) -> tuple:
+                                    gis=None,
+                                    point_barrier_layer = None,
+                                    line_barrier_layer = None,
+                                    polygon_barrier_layer = None) -> tuple:
     """
 
 
@@ -1588,7 +1591,6 @@ Returns the following as a named tuple:
 See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GPServer/tasks/ConnectOriginsToDestinations.htm for additional help.
     """
     kwargs = locals()
-
     param_db = {
         "origins_layer": (str, "originsLayer"),
         "destinations_layer": (str, "destinationsLayer"),
@@ -1599,6 +1601,9 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "time_zone_for_time_of_day": (str, "timeZoneForTimeOfDay"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
+        "point_barrier_layer": (str, "pointBarrierLayer"),
+        "line_barrier_layer": (str, "lineBarrierLayer"),
+        "polygon_barrier_layer": (str, "polygonBarrierLayer"),
         "routes_layer": (str, "routesLayer"),
         "unassigned_origins_layer": (str, "unassignedOriginsLayer"),
         "unassigned_destinations_layer": (str, "unassignedDestinationsLayer"),

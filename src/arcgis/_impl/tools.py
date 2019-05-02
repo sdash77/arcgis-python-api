@@ -2711,12 +2711,16 @@ class _FeatureAnalysisTools(_AsyncService):
                                         origins_layer,
                                         destinations_layer,
                                         measurement_type="DrivingTime",
-                       origins_layer_route_id_field=None,
-                       destinations_layer_route_id_field=None,
-                       time_of_day=None,
-                       time_zone_for_time_of_day="GeoLocal",
-                       output_name=None,
-                       context=None):
+                                        origins_layer_route_id_field=None,
+                                        destinations_layer_route_id_field=None,
+                                        time_of_day=None,
+                                        time_zone_for_time_of_day="GeoLocal",
+                                        output_name=None,
+                                        context=None,
+                                        estimate=False,
+                                        point_barrier_layer=None,
+                                        line_barrier_layer=None,
+                                        polygon_barrier_layer=None):
         """
         Calculates routes between pairs of points.
 
@@ -2755,7 +2759,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         params["originsLayer"] = super()._feature_input(origins_layer)
         params["destinationsLayer"] = super()._feature_input(destinations_layer)
-        params["measurementType"] = measurement_type
+        params["measurementType"] = measurement_type             
         if origins_layer_route_id_field is not None:
             params["originsLayerRouteIDField"] = origins_layer_route_id_field
         if destinations_layer_route_id_field is not None:
@@ -2768,6 +2772,19 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if point_barrier_layer is not None:
+            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)    
+        if line_barrier_layer is not None:
+            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer) 
+        if polygon_barrier_layer is not None:
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)                      
+        
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)                                      
+        
+
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
