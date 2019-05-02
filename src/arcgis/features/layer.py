@@ -879,10 +879,7 @@ class FeatureLayer(Layer):
                               out_wkid=None,
                               gdb_version=None,
                               return_z=False,
-                              return_m=False,
-                              order_by_fields=None,
-                              return_count_only=False,
-                              return_true_curves=False):
+                              return_m=False):
         """
         The Query operation is performed on a feature service layer
         resource. The result of this operation are feature sets grouped
@@ -937,17 +934,6 @@ class FeatureLayer(Layer):
         return_m                   Optional boolean. If true, M values are included in the results if
                                    the features have M values. Otherwise, M values are not returned.
                                    The default is false.
-        ----------------------     --------------------------------------------------------------------
-        return_true_curves         Optional boolean. Optional parameter that is false by default. When
-                                   set to true, it returns true curves in output geometries; otherwise,
-                                   curves are converted to densified polylines or polygons.
-        ----------------------     --------------------------------------------------------------------
-        order_by_fields            Optional List. This parameter is used to request a list of the
-                                   related records based on the field order. This list is a comma
-                                   delimited list of field names.
-        ----------------------     --------------------------------------------------------------------
-        return_count_only          Optional boolean. If true, returns the count of the related records
-                                   for each objectid. The default is false.
         ======================     ====================================================================
 
 
@@ -964,16 +950,6 @@ class FeatureLayer(Layer):
             "returnM": return_m,
             "returnZ": return_z
         }
-        if return_count_only:
-            params['returnCountOnly'] = return_count_only
-        if return_true_curves:
-            params['returnTrueCurves'] = return_true_curves
-        if order_by_fields and isinstance(order_by_fields, (list, tuple)):
-            order_by_fields = ",".join(order_by_fields)
-            params['orderByFields'] = order_by_fields
-        elif order_by_fields and isinstance(order_by_fields, (list, tuple)) == False:
-            raise ValueError("order_by_fields must be a list.")
-
         if self._dynamic_layer is not None:
             params['layer'] = self._dynamic_layer
         if gdb_version is not None:
