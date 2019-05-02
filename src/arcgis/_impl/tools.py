@@ -764,7 +764,7 @@ class _FeatureAnalysisTools(_AsyncService):
         shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
 
           - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
-          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.    
+          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.
 
 
         Returns
@@ -798,7 +798,7 @@ class _FeatureAnalysisTools(_AsyncService):
                                      parameters=params)
 
         if shape_type is not None:
-            params["shapeType"] = shape_type                                 
+            params["shapeType"] = shape_type
 
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
@@ -1122,7 +1122,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
-
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
         Returns
         -------
         dissolved_layer : layer (FeatureCollection)
@@ -1186,6 +1187,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1262,6 +1265,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1407,6 +1412,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1560,6 +1567,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output name of the item
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1583,7 +1592,7 @@ class _FeatureAnalysisTools(_AsyncService):
             params["dataFormat"] = data_format
         if output_name is None:
             output_name = 'Extracted_data_' + _id_generator()
-        
+
         if data_format.upper() == 'SHAPEFILE':
             params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
                                                            "tags": "Analysis Results, Extract Data",
@@ -1627,6 +1636,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
