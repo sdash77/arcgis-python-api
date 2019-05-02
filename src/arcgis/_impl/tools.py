@@ -764,7 +764,7 @@ class _FeatureAnalysisTools(_AsyncService):
         shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
 
           - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
-          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.    
+          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.
 
 
         Returns
@@ -798,7 +798,7 @@ class _FeatureAnalysisTools(_AsyncService):
                                      parameters=params)
 
         if shape_type is not None:
-            params["shapeType"] = shape_type                                 
+            params["shapeType"] = shape_type
 
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
@@ -1122,7 +1122,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
-
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
         Returns
         -------
         dissolved_layer : layer (FeatureCollection)
@@ -1186,6 +1187,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1262,6 +1265,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1407,6 +1412,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1560,6 +1567,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output name of the item
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1583,7 +1592,7 @@ class _FeatureAnalysisTools(_AsyncService):
             params["dataFormat"] = data_format
         if output_name is None:
             output_name = 'Extracted_data_' + _id_generator()
-        
+
         if data_format.upper() == 'SHAPEFILE':
             params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
                                                            "tags": "Analysis Results, Extract Data",
@@ -1627,6 +1636,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1687,6 +1698,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1747,6 +1760,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         context : Optional string
 
+        estimate: Optional Boolean. Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1811,6 +1825,8 @@ class _FeatureAnalysisTools(_AsyncService):
         output_name       Optional String. Output feature service name.
         ----------------  ---------------------------------------------------------------
         context           Optional String. Additional settings such as processing extent and output spatial reference.
+        ----------------  ---------------------------------------------------------------
+        estimate          Optional Boolean. Returns the number of credit for the operation.
         ================  ===============================================================
 
         :Returns: dict
@@ -1886,6 +1902,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -1989,6 +2007,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -2099,6 +2119,8 @@ class _FeatureAnalysisTools(_AsyncService):
             Additional properties such as output feature service name.
         context : Optional string
             Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
 
         Returns
         -------
@@ -2206,6 +2228,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         context : Optional string
 
+        estimate: Optional Boolean. Returns the number of credit for the operation.
 
         Returns
         -------
@@ -2759,7 +2782,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         params["originsLayer"] = super()._feature_input(origins_layer)
         params["destinationsLayer"] = super()._feature_input(destinations_layer)
-        params["measurementType"] = measurement_type             
+        params["measurementType"] = measurement_type
         if origins_layer_route_id_field is not None:
             params["originsLayerRouteIDField"] = origins_layer_route_id_field
         if destinations_layer_route_id_field is not None:
@@ -2773,17 +2796,17 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
         if point_barrier_layer is not None:
-            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)    
+            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)
         if line_barrier_layer is not None:
-            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer) 
+            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
         if polygon_barrier_layer is not None:
-            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)                      
-        
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)
+
         if estimate:
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
-                                     parameters=params)                                      
-        
+                                     parameters=params)
+
 
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
@@ -2808,7 +2831,8 @@ class _FeatureAnalysisTools(_AsyncService):
     def create_route_layers(self,
                             route_data_item,
                             delete_route_data_item=False,
-                            output_name=None):
+                            output_name=None,
+                            estimate=False):
         """
 
 
@@ -2833,6 +2857,11 @@ class _FeatureAnalysisTools(_AsyncService):
         params["deleteRouteData"] = delete_route_data_item
         if output_name:
             params["outputName"] = output_name
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
         job_info = super()._analysis_job_status(task_url, job_info)
