@@ -365,13 +365,21 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                                            Compass, Legend){
         this.map = new Map({ground: "world-elevation"});
         this.container = this.elements.mapElement;
-        this._3dMap = new SceneView({map: this.map, container: this.container});
-        this._3dMap._parentIPyWidget = this;
-        this._2dMap = new MapView({
-            map: this.map,
-            container: this.container});
+        var mode = this.model.get("mode").toLowerCase();
+        if(mode === "2d"){
+            this._2dMap = new MapView({
+                map: this.map,
+                container: this.container});
+            this.activeView = this._2dMap;
+            this._3dMap = new SceneView({map: this.map});
+        } else if(mode === "3d"){
+            this._3dMap = new SceneView({
+                map: this.map,
+                container: this.container});
+            this.activeView = this._3dMap;
+            this._2dMap = new MapView({map: this.map});}
         this._2dMap._parentIPyWidget = this;
-        this.activeView = this._2dMap;
+        this._3dMap._parentIPyWidget = this;
 
         //Set the default zoom to a model-less number that looks a bit nicer
         this._2dMap.zoom = 2;
@@ -433,7 +441,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     mode_changed: function(){
     try{
         console.log("updating mode...");
-        if(this.model.get("mode") === "3D"){
+        var mode = this.model.get("mode").toLowerCase();
+        if(mode === "3d"){
             this.elements.switchButton.src = images.sceneToMapEncoded;
             if(this.activeView.viewpoint){
                 this._3dMap.viewpoint = this.activeView.viewpoint.clone();
