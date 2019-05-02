@@ -2831,7 +2831,8 @@ class _FeatureAnalysisTools(_AsyncService):
     def create_route_layers(self,
                             route_data_item,
                             delete_route_data_item=False,
-                            output_name=None):
+                            output_name=None,
+                            estimate=False):
         """
 
 
