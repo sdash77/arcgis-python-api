@@ -8,6 +8,7 @@ try:
     from .models._ssd_utils import SSDObjectItemList
     from .models._unet_utils import ArcGISSegmentationItemList
     import math
+    import sys
     import json
     HAS_FASTAI = True
 except:
@@ -113,6 +114,10 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     if type(path) is str:
         path = Path(path)
 
+    databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
+
+    color_mapping = None
+
     if class_mapping is None:
         json_file = path / 'esri_model_definition.emd'
         with open(json_file) as f:
@@ -122,10 +127,14 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             except KeyError:
                 class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
 
+    if color_mapping is None:
+        json_file = path / 'esri_model_definition.emd'
+        with open(json_file) as f:
+            emd = json.load(f)
             try:
                 color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
             except KeyError:
-                color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}
+                color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
     
     if dataset_type is None:
 
@@ -164,7 +173,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
         data = (src
             .transform(transforms, size=chip_size, tfm_y=True)
-            .databunch(bs=batch_size)
+            .databunch(bs=batch_size, **databunch_kwargs)
             .normalize(imagenet_stats))
         
     elif dataset_type == 'PASCAL_VOC_rectangles':
@@ -184,7 +193,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
         data = (src
             .transform(transforms, tfm_y=True)
-            .databunch(bs=batch_size, collate_fn=collate_fn)
+            .databunch(bs=batch_size, collate_fn=collate_fn, **databunch_kwargs)
             .normalize(imagenet_stats)
            )
         
