@@ -146,7 +146,7 @@ class ChildImageClassifier:
                     'name': 'batch_size',
                     'dataType': 'numeric',
                     'required': False,
-                    'value': 64,
+                    'value': 4,
                     'displayName': 'Batch Size',
                     'description': 'Batch Size'
                 }

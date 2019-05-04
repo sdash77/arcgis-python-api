@@ -237,10 +237,18 @@ class UnetClassifier(ArcGISModel):
             
         model_params = emd['ModelParameters']
 
-        class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+        try:
+            class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+            color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
+        except KeyError:
+            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
+            color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
+
         
         if data is None:
             empty_data = _EmptyData(path='str', loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            empty_data.class_mapping = class_mapping
+            empty_data.color_mapping = color_mapping
             return cls(empty_data, **model_params, pretrained_path=str(model_file))
         else:
             return cls(data, **model_params, pretrained_path=str(model_file))        
