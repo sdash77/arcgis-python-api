@@ -269,7 +269,7 @@ def detect_objects(input_raster,
         _set_param(gis, params, "model", model)
 
     if model_arguments:
-        params["modelArguments"] = model_arguments
+        params["modelArguments"] = dict((str(k),str(v)) for k, v in model_arguments.items())
 
     if isinstance(run_nms, bool):
         if run_nms:
@@ -389,7 +389,7 @@ def classify_pixels(input_raster,
         _set_param(gis, params, "model", model)
 
     if model_arguments:
-        params["modelArguments"] = model_arguments
+        params["modelArguments"] = dict((str(k),str(v)) for k, v in model_arguments.items())
 
     _set_context(params, context)
 
