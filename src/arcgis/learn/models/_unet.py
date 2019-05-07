@@ -262,10 +262,11 @@ class UnetClassifier(ArcGISModel):
         _EMD_TEMPLATE['ModelParameters'] = {
                                             'backbone': self._backbone.__name__
                                            }
+        _EMD_TEMPLATE['Classes'] = []
         for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
-            _CLASS_TEMPLATE["Value"] = i
-            _CLASS_TEMPLATE["Name"] = class_name
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+            _CLASS_TEMPLATE["Value"] = inverse_class_mapping[class_name]
+            _CLASS_TEMPLATE["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else self._data.color_mapping[inverse_class_mapping[class_name]]
             _CLASS_TEMPLATE["Color"] = color
             _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())

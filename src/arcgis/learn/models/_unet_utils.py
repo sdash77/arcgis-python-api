@@ -34,6 +34,8 @@ class ArcGISImageSegment(Image):
         if title: ax.set_title(title)
 
 def is_no_color(color_mapping):
+    if isinstance(color_mapping, dict):
+        color_mapping = list(color_mapping.values())
     return (np.array(color_mapping) == [-1., -1., -1.]).any()
 
 class ArcGISSegmentationLabelList(ImageItemList):
