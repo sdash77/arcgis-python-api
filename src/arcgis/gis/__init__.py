@@ -8058,7 +8058,7 @@ class Item(dict):
         except:
             return None
 
-    def get_data(self, try_json=True):
+    def get_data(self, try_json=True, folder=None):
         """
         Retrieves the data associated with an item. Note that this call may
         return different results for different item types: some item types may
@@ -8082,7 +8082,7 @@ class Item(dict):
            For JSON/text files, a Python dictionary or a string.  All others will be a byte array,
            that can be converted to string using data.decode('utf-8'). Zero byte files will return None.
         """
-        item_data = self._portal.get_item_data(self.itemid, try_json)
+        item_data = self._portal.get_item_data(self.itemid, try_json, folder)
 
         if item_data == '':
             return None

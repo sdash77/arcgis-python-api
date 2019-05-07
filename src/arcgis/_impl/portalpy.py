@@ -1211,9 +1211,9 @@ class Portal(object):
         """
         return self.con.post('content/items/' + itemid, self._postdata())
 
-    def get_item_data(self, itemid, try_json=True):
+    def get_item_data(self, itemid, try_json=True, folder=None):
         #print('content/items/' + itemid + '/data')
-        return self.con.get('content/items/' + itemid + '/data', try_json=try_json)
+        return self.con.get('content/items/' + itemid + '/data', try_json=try_json, out_folder=folder)
         #return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
         #return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
 
