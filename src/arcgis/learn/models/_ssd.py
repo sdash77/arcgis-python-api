@@ -11,6 +11,7 @@ try:
     import os
     from pathlib import Path
     from ._codetemplate import code
+    from ._unet_utils import is_no_color
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -318,10 +319,13 @@ class SingleShotDetector(object):
         _EMD_TEMPLATE['Grids'] = self.grids
         _EMD_TEMPLATE['Zooms'] = self.zooms
         _EMD_TEMPLATE['Ratios'] = self.ratios
+        _EMD_TEMPLATE['Classes'] = []
         for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
-            _CLASS_TEMPLATE["Value"] = i
+            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+            _CLASS_TEMPLATE["Value"] = inverse_class_mapping[class_name]
             _CLASS_TEMPLATE["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)]
+            color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) \
+                                                                  else self._data.color_mapping[inverse_class_mapping[class_name]]
             _CLASS_TEMPLATE["Color"] = color
             _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())
 
