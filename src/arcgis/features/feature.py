@@ -848,7 +848,7 @@ class FeatureSet(object):
                 return "esriGeometryPoint"
             elif geo_type == "MultiPoint":
                 return "esriGeometryMultiPoint"
-            elif geo_type == "LineString":
+            elif geo_type in ["LineString", "MultiLineString"]:
                 return "esriGeometryPolyline"
             elif geo_type == "Polygon" or geo_type == "MultiPolygon":
                 return "esriGeometryPolygon"
@@ -892,7 +892,22 @@ class FeatureSet(object):
                     geometry["rings"] = part_list[0]
             elif geo_type =="LineString":
                 geometry["paths"] = geom
-
+            elif geo_type == "MultiLineString":
+                if HASARCPY == 'rem':
+                    geom = arcpy.AsShape(geom)
+                    geom['spatialReference'] = {'wkid' : 4326}
+                    geometry = Geometry(json.loads(geom))
+                else:
+                    coordkey = ([d for d in geom if d.lower() == 'coordinates']
+                                    or ['coordinates']).pop()
+                    coordinates = geom[coordkey]
+                    typekey = ([d for d in geom if d.lower() == 'type']
+                                   or ['type']).pop()
+                    if geom[typekey].lower() == "linestring":
+                        coordinates = [coordinates]
+                    geometry["paths"] = coordinates
+            if not 'spatialReference' in geometry:
+                geometry['spatialReference'] = {'wkid' : 4326}
             return geometry
         return FeatureSet.from_dict(geo_to_esri(geojson))
     # ----------------------------------------------------------------------
