@@ -47,19 +47,6 @@ class GeoSeriesAccessor:
         self._data = obj.values
         self._index = obj.index
         self._name = obj.name
-    ##----------------------------------------------------------------------
-    #def _call_method(self, name, is_ga=False, **kwargs):
-        #"""accesses a method on the geometry object"""
-        #vals = []
-        #for g in self._data:
-            #if hasattr(g, name):
-                #vals.append(getattr(g, name, None)(**kwargs))
-            #else:
-                #vals.append(None)
-        #if is_ga:
-            #from ._array import GeoArray
-            #return pd.Series(GeoArray(vals), index=self._index)
-        #return pd.Series(vals, index=self._index)
     #----------------------------------------------------------------------
     @staticmethod
     def _validate(obj):
