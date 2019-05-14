@@ -15,7 +15,7 @@ except Exception as e:
              "..".format(INTEGRATION_TESTS_DIR))
     raise e
 
-def run_source_code_tests(*args, **kwargs):
+def run_integration_tests(*args, **kwargs):
     log.info("Attempting to run all test cases...")
     args = [ # run_test_cases.py is called from cmd: this list mimics sys.argv
              'run_source_code_tests', # argv[0] is always the file name
