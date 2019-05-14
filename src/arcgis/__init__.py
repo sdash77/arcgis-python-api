@@ -9,12 +9,10 @@ from .features.analysis import *
 from .geocoding import geocode
 
 try:
-    from .features.geo._magic import ArcGISMagics
-    ip = get_ipython()
-    ip.register_magics(ArcGISMagics)
-except: # push the namespace into pandas
     import pandas as pd
     from .features.geo import GeoAccessor, GeoSeriesAccessor
+except:
+    pass
 
 __all__ = ['GIS', 'geocode', 'features',
            'geoanalytics', 'geocoding', 'geometry',
