@@ -5,8 +5,8 @@
 #               groups and content
 #-------------------------------------------------------------------------------
 import os
-from dino_utils.dino_precondition_checks import PortalUtils
-from dino_utils.dino_configs import DinoConfigs
+from integration.dino_utils.dino_precondition_checks import PortalUtils
+from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 from arcgis.gis import GIS
 
