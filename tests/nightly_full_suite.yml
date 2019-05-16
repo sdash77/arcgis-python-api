@@ -1,0 +1,12 @@
+unit_tests_to_run:
+    - "./unit/**/*.py"
+integration_tests_to_run:
+    - "./integration/**/*.py"
+sanity_tests_to_run:
+    - "./sanity/**/*.py"
+notebook_tests_to_run:
+    - "./notebook/**/*.ipynb"
+widget_integration_tests_to_run:
+    - "./widget/**/*.ipynb"
+widget_unit_tests_to_run:
+    - "./widget/**/*.js"

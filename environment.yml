@@ -20,6 +20,7 @@ dependencies:
 - scikit-learn
 - scikit-image
 - keras
+- selenium
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6

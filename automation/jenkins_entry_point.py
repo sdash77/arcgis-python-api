@@ -28,11 +28,11 @@ _regex_and_funcs = [(MASTER_REGEX, [build_conda_package,
                    (PUBLISH_REGEX, [build_conda_package,
                                     publish_to_ftp_site]),
 
-          (SOURCE_CODE_TEST_REGEX, [run_source_code_tests]),
+          (SOURCE_CODE_TEST_REGEX, [run_integration_tests]),
 
                  (NOTEBOOK_TEST_REGEX, [run_notebook_tests]),
 
-                 (ALL_TEST_REGEX, [run_source_code_tests,
+                 (ALL_TEST_REGEX, [run_integration_tests,
                                    run_notebook_tests]),
 
                  (DEV_SITE_REGEX, [stage_notebooks_for_dev_web_repo,
