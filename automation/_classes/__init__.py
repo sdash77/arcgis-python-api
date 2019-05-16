@@ -2,3 +2,5 @@ from automation._classes.HtmlFileTestSuite import HtmlFileTestSuite
 from automation._classes.HtmlImgLinkParser import HtmlImgLinkParser
 from automation._classes.TestHtmlMatch import TestHtmlMatch
 from automation._classes.TestNotebook import TestNotebook
+from automation._classes.TestNotebookSelenium import TestNotebookSelenium
+from automation._classes.JupyterClassicNotebookServer import JupyterClassicNotebookServer
