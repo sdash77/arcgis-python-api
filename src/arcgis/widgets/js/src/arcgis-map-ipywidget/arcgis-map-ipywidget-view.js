@@ -345,6 +345,9 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         // Apply CSS to hide any image preview in the live notebook (but keep
         // it in the underlying notebook file)
         this._hidePreviewImageEl();
+
+        // Add screenshot keyboard shortcut
+        this._set_screenshot_keyboard_shortcut();
     },
 
     _hidePreviewImageEl: function(){
@@ -400,6 +403,27 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             e.stopPropagation();
             return false;
         }, false);
+    },
+
+    _set_screenshot_keyboard_shortcut: function(){
+        this.el.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key ==="P"){
+                this.model.set("_trigger_screenshot_with_args",
+                    {"_" : this._get_uuidv4(),
+                     "set_as_preview": true,
+                     "output_in_cell": false,
+                     "file_path": false});
+                this.model.save_changes();
+            }
+        });
+    },
+
+    _get_uuidv4: function() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, 
+          function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
     },
 
     custom_msg_changed: function(){
