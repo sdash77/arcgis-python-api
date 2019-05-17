@@ -1,7 +1,7 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC 
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
+
 import unittest
 import os
 import time
@@ -11,7 +11,10 @@ log = logging.getLogger()
 
 from automation._classes.JupyterClassicNotebookServer import JupyterClassicNotebookServer
 
-POLLING_INTERVAL_SEC = 2
+NB_CELL_POLLING_INTERVAL_SEC = 2
+PRE_WIDGET_SCREENSHOT_SLEEP_SEC = 10
+DEFAULT_IMPLICIT_WAIT_SEC = 10
+INBETWEEN_WIDGET_SCREENSHOT_SLEEP_SEC = 5
 
 class TestNotebookSelenium(unittest.TestCase):
     def __init__(self, notebook_file_path, output_dir, notebook_timeout, 
@@ -44,10 +47,23 @@ class TestNotebookSelenium(unittest.TestCase):
         run_toolbar = self.driver.find_element_by_id("run_int")
         run_button = self.driver.find_element_by_xpath('//button[@title="Run"]')
         self._run_notebook(run_button)
+        self._take_screenshots_of_any_map_widgets()
+
+    def _take_screenshots_of_any_map_widgets(self):
+        time.sleep(PRE_WIDGET_SCREENSHOT_SLEEP_SEC)
+        map_widget_divs = self.driver.find_elements_by_class_name(
+            "arcgisMapIPyWidgetDiv")
+        for widget_div in map_widget_divs:
+            widget_div.click()
+            self.driver.implicitly_wait(DEFAULT_IMPLICIT_WAIT_SEC)
+            for input_div in widget_div.find_elements_by_tag_name("input"):
+                input_div.send_keys(Keys.CONTROL, Keys.SHIFT, "P")
+                self.driver.implicitly_wait(DEFAULT_IMPLICIT_WAIT_SEC)
+            time.sleep(INBETWEEN_WIDGET_SCREENSHOT_SLEEP_SEC)
 
     def _run_notebook(self, run_button):
         while True:
-            time.sleep(POLLING_INTERVAL_SEC)
+            time.sleep(NB_CELL_POLLING_INTERVAL_SEC)
             if self._any_cell_currently_running():
                 print("Someone still running, waiting...")
                 continue
@@ -55,7 +71,6 @@ class TestNotebookSelenium(unittest.TestCase):
                 break
             else:
                 run_button.click()
-        log.info("Notebook finished running, exiting...")
 
     def _any_cell_currently_running(self):
         cell_prompt_input_elements = self.driver.find_elements_by_class_name("input_prompt")
