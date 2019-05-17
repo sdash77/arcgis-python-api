@@ -11,28 +11,28 @@ from automation._common import *
 from automation._classes import TestNotebook
 
 def run_notebook_tests(notebooks_root_dir, automation_type, build_number,
-                       jenkins_root, notebook_timeout, *args, **kwargs):
+                       jenkins_root, cell_timeout_sec, *args, **kwargs):
     suite = _discover_tests_get_suite(notebooks_root_dir = notebooks_root_dir,
                                       output_dir = STAGING_DIR,
                                       automation_type = automation_type,
                                       build_number = build_number,
                                       jenkins_root = jenkins_root,
-                                      notebook_timeout = notebook_timeout)
+                                      cell_timeout_sec = cell_timeout_sec)
     runner = XMLTestRunner(output=STAGING_DIR)
 
     setup_py_file = os.path.join(notebooks_root_dir, "misc", "setup.py")
-    run_shell_command(f"python {setup_py_file}")
+    run_shell_command(f"python {setup_py_file}", throw_exc_on_fail=False)
 
     runner.run(suite)
 
     teardown_py_file = os.path.join(notebooks_root_dir, "misc", "teardown.py")
-    run_shell_command(f"python {teardown_py_file}")
+    run_shell_command(f"python {teardown_py_file}", throw_exc_on_fail=False)
 
     _write_index_html_file_for_outputted_notebooks()
 
 def _discover_tests_get_suite(notebooks_root_dir, output_dir,
                               automation_type, build_number,
-                              jenkins_root, notebook_timeout):
+                              jenkins_root, cell_timeout_sec):
     output_suite = unittest.TestSuite()
     log.info("Discovering notebooks to test in {}".format(notebooks_root_dir))
 
@@ -44,8 +44,8 @@ def _discover_tests_get_suite(notebooks_root_dir, output_dir,
                 log.debug("Adding to suite notebook {}".format(notebook_path))
                 test = TestNotebook(notebook_file_path = notebook_path,
                                     output_dir = output_dir,
-                                    notebook_timeout = notebook_timeout,
-                                    jenkins_job_url= "/".join([jenkins_root,
+                                    cell_timeout_sec = cell_timeout_sec,
+                                    jenkins_job_url = "/".join([jenkins_root,
                                                         "job",
                                                         automation_type,
                                                         str(build_number),

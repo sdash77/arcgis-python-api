@@ -76,7 +76,7 @@ def _parse_args():
     parser.add_argument("--jenkins-root", "-j", type=str, required=False,
         help="For -a notebook_test, the root of the jenkins website. DEFAULT:"\
              " {}".format(JENKINS_ROOT), default=JENKINS_ROOT)
-    parser.add_argument("--notebook-timeout", "-t", type=int, required=False,
+    parser.add_argument("--cell-timeout-sec", "-c", type=int, required=False,
         help="For -a notebook_test, the max # of secs a CELL in a notebook "\
              "can run. DEFAULT: {}".format(NB_TIMEOUT), default=NB_TIMEOUT)
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg

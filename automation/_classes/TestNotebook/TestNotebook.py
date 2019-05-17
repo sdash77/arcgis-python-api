@@ -8,40 +8,65 @@ from nbconvert import HTMLExporter
 from nbconvert.preprocessors import ExecutePreprocessor
 import nbformat
 
+from automation._classes.TestNotebook.NotebookRunnerNbConvert \
+    import NotebookRunnerNbConvert
+from automation._classes.TestNotebook.NotebookRunnerSelenium \
+    import NotebookRunnerSelenium
+
 class TestNotebook(unittest.TestCase):
     """Given a notebook file, run it and output the ran notebook as HTML.
     Check the notebook for any errors in the python code's execution
     (unhandled exceptions, if output_type == "error"), fail the test if so.
     """
-    def __init__(self, notebook_file_path, output_dir, notebook_timeout, 
-                 jenkins_job_url=None, **kwargs):
+    def __init__(self, notebook_file_path, output_dir, cell_timeout_sec = 300,
+                 jenkins_job_url=None, 
+                 nb_runner="nbconvert",
+                 active_jupyter_backend = None, # only used with selenium
+                 browser = None, # only used with selenium
+                 **kwargs):
         """notebook_file_path is the path to the notebook to test
         output_dir is where all ran notebooks and converted html go to
         notebook_timeout is the max number of seconds a CELL in a nb can run
         jenkins_job_url is optional, it is used to print out a link to the
         outputted notebook if the test notebook suite is running on Jenkins
+        nb_runner is a string that specifies whether to run the notebook
+        using the standard nbconvert (no widget output) or using selenium
+        (widget output and live javascript running in a physical browser)
         """
-        self.input_notebook_file_path = notebook_file_path
+        self.notebook_file_path = notebook_file_path
         self.output_dir = output_dir
-        self.notebook_timeout = notebook_timeout
         self.jenkins_job_url = jenkins_job_url
         self.notebook_file_name_no_ext = os.path.splitext(os.path.basename(
-            self.input_notebook_file_path))[0]
-        self.output_notebook_file_path = os.path.join(self.output_dir,
-            self.notebook_file_name_no_ext + ".ipynb")
-        self.output_notebook_html_file_path = os.path.join(self.output_dir,
-            self.notebook_file_name_no_ext + ".html")
+            notebook_file_path))[0]
 
-        #Renames the 'runTest' method to the notebook filename (readability)
+        # Set up notebook runner
+        nb_runner_kwargs = {}
+        nb_runner_kwargs["notebook_file_path"] = notebook_file_path
+        nb_runner_kwargs["output_dir"] = output_dir
+        nb_runner_kwargs["cell_timeout_sec"] = cell_timeout_sec
+        if "nbconvert" in nb_runner:
+            self.runner = NotebookRunnerNbConvert(**nb_runner_kwargs)
+        elif "selenium" in nb_runner:
+            if active_jupyter_backend:
+                nb_runner_kwargs["active_jupyter_backend"] = \
+                    active_jupyter_backend
+            if browser:
+                nb_runner_kwargs["browser"] = browser
+
+            self.runner = NotebookRunnerSelenium(**nb_runner_kwargs)
+        else:
+            raise Exception(f"Couldn't find nb runner '{self.nb_runner}'")
+
+        # Renames the 'runTest' method to the notebook filename (readability)
         setattr(self, self.notebook_file_name_no_ext, self.runTest)
         super().__init__(**kwargs, methodName=self.notebook_file_name_no_ext)
 
     def runTest(self):
         """The actual test that runs for checking the notebook"""
         log.info("Testing notebook {}".format(self.notebook_file_name_no_ext))
-        self._run_input_notebook_convert_to_html(self.notebook_timeout)
-        self._check_output_notebook_for_errors()
-        
+        result = self.runner.run_notebook()
+        self._check_notebook_for_errors(result.output_ipynb_path)
+
         #If we're reached here, we've passed
         msg = "Notebook {nb_name} passed!\n{nb_links_text}\n-----\n".format(
               nb_name = self.notebook_file_name_no_ext,
@@ -49,36 +74,9 @@ class TestNotebook(unittest.TestCase):
         print(msg)
         log.debug(msg)
 
-    def _run_input_notebook_convert_to_html(self, timeout):
-        """Execute a notebook via nbconvert, save the output as both a 
-        notebook and an HTML file in the output_dir
-        """
-        with open(self.input_notebook_file_path, "r",
-                  encoding="utf-8") as input_nb_file:
-            #Execute input notebook
-            input_nb = nbformat.read(input_nb_file,
-                as_version=nbformat.current_nbformat)
-            ep = ExecutePreprocessor(timeout=timeout,
-                                     allow_errors=True,
-                                     kernel_name="python3")
-            ep.preprocess(input_nb, {})
-
-            #Write outputted notebook to file on disk as notebook
-            with open(self.output_notebook_file_path, "wt",
-                      encoding="utf-8") as output_nb_file:
-                nbformat.write(input_nb, output_nb_file,
-                    version=nbformat.current_nbformat)
-
-            #Write outputted notebook to file on disk as html
-            html_exporter = HTMLExporter()
-            (body, resources) = html_exporter.from_notebook_node(input_nb)
-            with open(self.output_notebook_html_file_path, "w",
-                      encoding="utf-8") as output_html:
-                output_html.write(body)
-
-    def _check_output_notebook_for_errors(self):
+    def _check_notebook_for_errors(self, notebook_file_path):
         """If the output notebook has any errors, fail the test"""
-        with open(self.output_notebook_file_path, "r",
+        with open(notebook_file_path, "r",
                   encoding="utf-8") as output_file:
             nb = nbformat.read(output_file, nbformat.current_nbformat)
             self.errors = [output for cell in nb.cells if "outputs" in cell
