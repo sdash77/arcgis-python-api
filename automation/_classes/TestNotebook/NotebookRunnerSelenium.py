@@ -1,11 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
 
-import unittest
 import os
 import time
 import sys
+import shutil
+import tempfile
 import logging
 log = logging.getLogger()
 
@@ -17,14 +17,19 @@ PRE_WIDGET_SCREENSHOT_SLEEP_SEC = 10
 DEFAULT_IMPLICIT_WAIT_SEC = 10
 INBETWEEN_WIDGET_SCREENSHOT_SLEEP_SEC = 5
 AFTER_SAVE_SLEEP_SEC = 10
+GENERIC_SLEEP_SEC = 5
 
 class NotebookRunnerSelenium:
-    def __init__(self, notebook_file_path, notebook_timeout, output_dir,
+    def __init__(self, notebook_file_path, output_dir, cell_timeout_sec = 300,
                  active_jupyter_backend = None, browser = "Chrome"):
         self.notebook_file_path = notebook_file_path
-        self.notebook_timeout = notebook_timeout
+        self.cell_timeout_sec = cell_timeout_sec
         self.active_jupyter_backend = active_jupyter_backend
         self.output_dir = output_dir
+
+        self.notebook_file_name_no_ext = os.path.splitext(os.path.basename(
+            self.notebook_file_path))[0]
+
         if "chrome" in browser.lower():
             self.driver = webdriver.Chrome()
         elif "firefox" in browser.lower():
@@ -37,26 +42,38 @@ class NotebookRunnerSelenium:
             if self.active_jupyter_backend:
                 self._run_notebook()
             else:
-                with JupyterClassicNotebookServer() as j:
+                tmp_dir = tempfile.mkdtemp()
+                with JupyterClassicNotebookServer(tmp_dir) as j:
                     self.active_jupyter_backend = j
                     self._run_notebook()
                     self.active_jupyter_backend = None
+                shutil.rmtree(tmp_dir)
         except:
             # Yes, even catch keyboard interrupts
             if self.active_jupyter_backend:
-                self.active_jupyter_backend.__exit__()
+                self.active_jupyter_backend.__exit__(None, None, None)
             raise
 
     def _run_notebook(self):
-        self._initialize_notebook()
+        shutil.copy(self.notebook_file_path,
+                    self.active_jupyter_backend.notebook_root_dir)
+        self._initialize_selenium()
         self._run_each_cell_until_bottom()
         self._take_screenshots_of_any_map_widgets()
         self._save_notebook()
+        output_notebook_path = os.path.join(
+            self.active_jupyter_backend.notebook_root_dir,
+            self.notebook_file_name_no_ext+".ipynb")
+        print(f"Copying {output_notebook_path} to {self.output_dir}")
+        print(shutil.copy(output_notebook_path, self.output_dir))
+        time.sleep(30)
 
-    def _initialize_notebook(self):
-        self.driver.implicitly_wait(self.notebook_timeout)
-        nb_url = self.active_jupyter_backend.base_url + "notebook.ipynb"
+    def _initialize_selenium(self):
+        self.driver.implicitly_wait(GENERIC_SLEEP_SEC)
+        nb_url = self.active_jupyter_backend.base_url + \
+                f"{self.notebook_file_name_no_ext}.ipynb"
         self.driver.get(nb_url)
+        time.sleep(GENERIC_SLEEP_SEC)
         self._initial_num_code_cells = self._get_num_code_cells()
         self._initialize_run_button_element()
         self._initialize_save_button_element()
@@ -67,7 +84,7 @@ class NotebookRunnerSelenium:
 
     def _initialize_save_button_element(self):
         self._save_button = self.driver.find_element_by_xpath(
-            '//button/[@title="Save and Checkpoint"]')
+            '//button[@title="Save and Checkpoint"]')
 
     def _save_notebook(self):
         self._save_button.click()
@@ -86,7 +103,7 @@ class NotebookRunnerSelenium:
             time.sleep(INBETWEEN_WIDGET_SCREENSHOT_SLEEP_SEC)
 
     def _run_each_cell_until_bottom(self):
-        seconds_running = 0
+        seconds_cell_running = 0
         while True:
             time.sleep(NB_CELL_POLLING_INTERVAL_SEC)
             seconds_cell_running += NB_CELL_POLLING_INTERVAL_SEC
@@ -94,7 +111,7 @@ class NotebookRunnerSelenium:
                 continue
             elif self._bottom_of_notebook_reached():
                 break
-            elif seconds_cell_running > self.notebook_timeout:
+            elif seconds_cell_running > self.cell_timeout_sec:
                 raise Exception("Cell has timed out, failing...")
             else:
                 seconds_cell_running = 0

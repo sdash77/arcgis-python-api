@@ -20,7 +20,7 @@ class TestNotebook(unittest.TestCase):
     """
     def __init__(self, notebook_file_path, output_dir, cell_timeout_sec = 300,
                  jenkins_job_url=None, 
-                 nb_runner="nbconvert",
+                 notebook_runner="nbconvert",
                  active_jupyter_backend = None, # only used with selenium
                  browser = None, # only used with selenium
                  **kwargs):
@@ -44,9 +44,9 @@ class TestNotebook(unittest.TestCase):
         nb_runner_kwargs["notebook_file_path"] = notebook_file_path
         nb_runner_kwargs["output_dir"] = output_dir
         nb_runner_kwargs["cell_timeout_sec"] = cell_timeout_sec
-        if "nbconvert" in nb_runner:
+        if "nbconvert" in notebook_runner:
             self.runner = NotebookRunnerNbConvert(**nb_runner_kwargs)
-        elif "selenium" in nb_runner:
+        elif "selenium" in notebook_runner:
             if active_jupyter_backend:
                 nb_runner_kwargs["active_jupyter_backend"] = \
                     active_jupyter_backend

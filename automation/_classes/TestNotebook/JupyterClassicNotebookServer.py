@@ -9,7 +9,7 @@ log = logging.getLogger()
 from automation._common import run_shell_command
 
 class JupyterClassicNotebookServer:
-    def __init__(self, notebook_root_dir=None, port=8888):
+    def __init__(self, notebook_root_dir, port=8888):
         self.port = port
         self.notebook_root_dir = notebook_root_dir
         try:

@@ -49,7 +49,8 @@ def _discover_tests_get_suite(notebooks_root_dir, output_dir,
                                                         "job",
                                                         automation_type,
                                                         str(build_number),
-                                                        ""]))
+                                                        ""]),
+                                    notebook_runner="selenium")
                 output_suite.addTest(test)
 
     if output_suite.countTestCases() == 0:
