@@ -1,6 +1,3 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-
 import os
 import time
 import sys
@@ -8,6 +5,12 @@ import shutil
 import tempfile
 import logging
 log = logging.getLogger()
+
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from nbconvert import HTMLExporter
+from nbconvert.preprocessors import ExecutePreprocessor
+import nbformat
 
 from automation._classes.TestNotebook.JupyterClassicNotebookServer \
     import JupyterClassicNotebookServer
@@ -38,35 +41,49 @@ class NotebookRunnerSelenium:
             raise Exception("Could not infer browser to run notebook on")
 
     def run_notebook(self):
+        output = None
         try:
             if self.active_jupyter_backend:
-                self._run_notebook()
+                output = self._run_notebook()
             else:
                 tmp_dir = tempfile.mkdtemp()
                 with JupyterClassicNotebookServer(tmp_dir) as j:
                     self.active_jupyter_backend = j
-                    self._run_notebook()
+                    output = self._run_notebook()
                     self.active_jupyter_backend = None
                 shutil.rmtree(tmp_dir)
         except:
             # Yes, even catch keyboard interrupts
             if self.active_jupyter_backend:
+                # Triple check that we've closed all jupyter server insts
                 self.active_jupyter_backend.__exit__(None, None, None)
             raise
+        return output
 
     def _run_notebook(self):
+        # Stage the notebook in a location Jupyter Server can open it
         shutil.copy(self.notebook_file_path,
                     self.active_jupyter_backend.notebook_root_dir)
+        
+        # Run the notebook, take screenshots of widgets, save it
         self._initialize_selenium()
         self._run_each_cell_until_bottom()
         self._take_screenshots_of_any_map_widgets()
         self._save_notebook()
-        output_notebook_path = os.path.join(
+
+        # Convert to HTML, then copy both HTML and executed nb to output_dir
+        executed_notebook_path = os.path.join(
             self.active_jupyter_backend.notebook_root_dir,
-            self.notebook_file_name_no_ext+".ipynb")
-        print(f"Copying {output_notebook_path} to {self.output_dir}")
-        print(shutil.copy(output_notebook_path, self.output_dir))
-        time.sleep(30)
+            self.notebook_file_name_no_ext + ".ipynb")
+        shutil.copy(executed_notebook_path, self.output_dir)
+        output_ipynb_path = os.path.join(self.output_dir,
+            self.notebook_file_name_no_ext + ".ipynb")
+        output_html_path = os.path.join(self.output_dir,
+            self.notebook_file_name_no_ext + ".html")
+        self._convert_ipynb_to_html(output_ipynb_path, output_html_path)
+
+        return NotebookRunnerResult(output_ipynb_path = output_ipynb_path,
+                                    output_html_path = output_html_path)
 
     def _initialize_selenium(self):
         self.driver.implicitly_wait(GENERIC_SLEEP_SEC)
@@ -133,3 +150,14 @@ class NotebookRunnerSelenium:
         self._save_button.click()
         time.sleep(AFTER_SAVE_SLEEP_SEC)
 
+    def _convert_ipynb_to_html(self, ipynb_path, html_path):
+        with open(ipynb_path, "r",
+                  encoding="utf-8") as input_nb_file:
+            #Execute input notebook
+            input_nb = nbformat.read(input_nb_file,
+                as_version = nbformat.current_nbformat)
+            html_exporter = HTMLExporter()
+            (body, resources) = html_exporter.from_notebook_node(input_nb)
+            with open(html_path, "w",
+                      encoding="utf-8") as output_html:
+                output_html.write(body)
