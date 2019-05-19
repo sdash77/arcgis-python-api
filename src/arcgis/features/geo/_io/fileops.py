@@ -301,14 +301,28 @@ def to_table(geo, location, overwrite=True):
 #--------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
     """
-    Returns a GeoDataFrame from a feature class.
-    Inputs:
-     filename: full path to the feature class
-    Optional Parameters:
-     sql_clause: sql clause to parse data down
-     where_clause: where statement
-     sr: spatial reference object
-     fields: list of fields to extract from the table
+    Returns a GeoDataFrame (Spatially Enabled Pandas DataFrame) from a feature class.
+
+    ===========================     ====================================================================
+    **Argument**                    **Description**
+    ---------------------------     --------------------------------------------------------------------
+    filename                        Required string. Full path to the feature class
+    ===========================     ====================================================================
+
+    *Optional parameters when ArcPy library is available in the current environment*:
+    ===========================     ====================================================================
+    **Key**                         **Value**
+    ---------------------------     --------------------------------------------------------------------
+    sql_clause                      sql clause to parse data down. To learn more see
+                                    [ArcPy Search Cursor](https://pro.arcgis.com/en/pro-app/arcpy/data-access/searchcursor-class.htm)
+    ---------------------------     --------------------------------------------------------------------
+    where_clause                    where statement. To learn more see [ArcPy SQL reference](https://pro.arcgis.com/en/pro-app/help/mapping/navigation/sql-reference-for-elements-used-in-query-expressions.htm)
+    ---------------------------     --------------------------------------------------------------------
+    fields                          list of strings specifying the field names.
+    ===========================     ====================================================================
+
+    :returns: pandas.core.frame.DataFrame
+
     """
     from arcgis.geometry import _types
     import json
@@ -334,8 +348,8 @@ def from_featureclass(filename, **kwargs):
             fields = [fld.name for fld in desc['fields'] \
                       if fld.type not in ['Geometry'] and \
                       fld.name not in [area_field, length_field]]
-            cursor_fields = fields + ['SHAPE@JSON']
-            df_fields = fields + ['SHAPE']
+        cursor_fields = fields + ['SHAPE@JSON']
+        df_fields = fields + ['SHAPE']
         count = 0
         dfs = []
         shape_field_idx = cursor_fields.index("SHAPE@JSON")

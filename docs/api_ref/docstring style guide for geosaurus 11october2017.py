@@ -52,6 +52,10 @@ def xyz(self, arg1, argument2=None, argument_three=None, arg4demoPruposes=None):
     argument_three         Optional string. Description text here.
     ------------------     --------------------------------------------------------------------
     arg4demoPurposes       Optional <> object. Description text here.
+    ------------------     --------------------------------------------------------------------
+    arg5demoPurposes       Optional <> object. Description text here. To learn more see
+                           `hyperlink text <url such as : http://stackoverflow.com/>`_.
+                           Note: the trailing _ is important.
     ==================     ====================================================================
 
 
