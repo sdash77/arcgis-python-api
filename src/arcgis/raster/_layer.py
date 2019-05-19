@@ -282,11 +282,11 @@ class ImageryLayer(Layer):
             elif self._fn is not None:
                 params['renderingRule'] = self._fn
 
-        if self._datastore_raster:
-            params["Raster"]=self._uri
-            if isinstance(self._uri, bytes):
-                del params['renderingRule']
+            if self._datastore_raster:
                 params["Raster"]=self._uri
+                if isinstance(self._uri, bytes):
+                    del params['renderingRule']
+                    params["Raster"]=self._uri
 
             return self._con.get(path=url,
                              params=params)
