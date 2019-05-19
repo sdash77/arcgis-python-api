@@ -3802,7 +3802,11 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
     :param radius: int default is 3 - specified when neighborhood_type is Circle or Wedge
     :param start_angle: float, default is 0
     :param end_angle: float, default is 90
-    :param neighborhood_values: - specified when neighborhood_type is Irregular or Weight
+    :param neighborhood_values: - specified when neighborhood_type is Irregular or Weight.
+                                  It can be a list of list, in which the width and height will be automatically set from the columns and rows 
+                                  respectively of the two dimensional list.
+                                  or a one dimensional list obtained from flattening a two dimensional list. In this case 
+                                  the dimensions needs to be specified explicitly in width and height parameters
     :param stat_type: int
                       There are 11 types of focal statistical functions:
                       1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
@@ -3864,7 +3868,14 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
     if end_angle is not None:
         template_dict["rasterFunctionArguments"]["EndAngle"] = end_angle
     if neighborhood_values is not None:
-        template_dict["rasterFunctionArguments"]["NeighborhoodValues"] = neighborhood_values
+        flattened = [item for sublist in neighborhood_values if isinstance(sublist, list) for item in sublist]
+        if flattened == []:
+            flattened = neighborhood_values
+        else:
+            template_dict["rasterFunctionArguments"]["Height"] = len(neighborhood_values)
+            if isinstance(neighborhood_values[0], list):
+                template_dict["rasterFunctionArguments"]["Width"] = len(neighborhood_values[0])
+        template_dict["rasterFunctionArguments"]["NeighborhoodValues"] = flattened
     if ignore_no_data is not None:
         template_dict["rasterFunctionArguments"]["NoDataPolicy"] = ignore_no_data
 
