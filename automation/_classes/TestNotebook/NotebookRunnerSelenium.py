@@ -15,6 +15,9 @@ import nbformat
 from automation._classes.TestNotebook.JupyterClassicNotebookServer \
     import JupyterClassicNotebookServer
 
+from automation._classes.TestNotebook.NotebookRunnerResult \
+    import NotebookRunnerResult
+
 NB_CELL_POLLING_INTERVAL_SEC = 2
 PRE_WIDGET_SCREENSHOT_SLEEP_SEC = 10
 DEFAULT_IMPLICIT_WAIT_SEC = 10
@@ -29,18 +32,25 @@ class NotebookRunnerSelenium:
         self.cell_timeout_sec = cell_timeout_sec
         self.active_jupyter_backend = active_jupyter_backend
         self.output_dir = output_dir
+        self.browser = browser
 
         self.notebook_file_name_no_ext = os.path.splitext(os.path.basename(
             self.notebook_file_path))[0]
 
-        if "chrome" in browser.lower():
+    def _initialize_driver(self):
+        if "chrome" in self.browser.lower():
             self.driver = webdriver.Chrome()
-        elif "firefox" in browser.lower():
+        elif "firefox" in self.browser.lower():
             self.driver = webdriver.Firefox()
         else:
             raise Exception("Could not infer browser to run notebook on")
+        self.driver.fullscreen_window()
+
+    def _deinitialize_driver(self):
+        self.driver.close()
 
     def run_notebook(self):
+        self._initialize_driver()
         output = None
         try:
             if self.active_jupyter_backend:
@@ -58,6 +68,7 @@ class NotebookRunnerSelenium:
                 # Triple check that we've closed all jupyter server insts
                 self.active_jupyter_backend.__exit__(None, None, None)
             raise
+        self._deinitialize_driver()
         return output
 
     def _run_notebook(self):
