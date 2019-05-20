@@ -1,7 +1,8 @@
 __version__ = '1.6.1'
 
-from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, \
-    mapping, apps, learn
+from . import (features, geoanalytics, geocoding, geometry,
+               geoprocessing, network, raster, realtime, schematics,
+               mapping, apps, learn)
 
 from .gis import GIS
 from .features.analysis import *

@@ -15,6 +15,7 @@ from arcgis.mapping.symbol import create_symbol, _cmap2rgb
 __all__ = ['generate_renderer']
 
 RENDERER_TYPES = {
+    "d" : "dot density",
     "s" : 'simple',#
     "u" : 'unique',#
     "u-a" : 'unique',#
@@ -25,6 +26,295 @@ RENDERER_TYPES = {
     't' : "Temporal",#
     'v' : "vector field"#
 }
+
+class _DotDensity(object):
+    """
+    Creates the dot density renderer for Polygon Geometries.
+
+    """
+    _df = None
+    _attributes = None
+    _dot_value = None
+    _ref_scale = None
+    _unit = None
+    _blend_dots = None
+    _dot_shape = None
+    _dot_size = None
+    _bg_color = None
+    _seed = 1
+    _outline = None
+    _type = "dotDensity"
+    #----------------------------------------------------------------------
+    def __init__(self,
+                 df,
+                 attributes,
+                 dot_value,
+                 ref_scale,
+                 unit,
+                 blend_dots=False,
+                 shape="s",
+                 size=1,
+                 background=None,
+                 seed=1):
+        """initalizer"""
+        self._df = df
+        self._attributes = attributes
+        self._dot_value = dot_value
+        self._ref_scale = ref_scale
+        self._unit = unit
+        self._blend_dots = blend_dots
+        self._dot_shape = shape
+        self._dot_size = size
+        if background is None:
+            background = [0,0,0,0]
+        else:
+            background = self._cmap(color=background, cstep=None, alpha=.1)
+        self._bg_color = background
+        self._seed = seed
+    #----------------------------------------------------------------------
+    @property
+    def data(self):
+        """gets the data"""
+        return self._df
+    #----------------------------------------------------------------------
+    @property
+    def renderer_type(self):
+        """returns the current renderer type"""
+        return self._type
+    #----------------------------------------------------------------------
+    @property
+    def background(self):
+        """
+        Returns the background color
+
+        :returns: List
+
+        """
+        return self._bg_color
+    #----------------------------------------------------------------------
+    @property
+    def shape(self):
+        """
+        Returns the shape of the dots
+        """
+        return self._dot_shape
+    #----------------------------------------------------------------------
+    @shape.setter
+    def shape(self, value):
+        """
+        Sets the shape of the dots in the renderer.
+        """
+        POINT_STYLES_DISPLAY = {
+            "o" : "Circle", #default
+            "+" : "Cross",
+            "d" : "Diamond",
+            "s" : "Square",
+            "x" : "X"
+        }
+        if str(value).lower() in POINT_STYLES_DISPLAY:
+            self._dot_shape = POINT_STYLES_DISPLAY[str(value).lower()]
+    #----------------------------------------------------------------------
+    @property
+    def unit(self):
+        """gets/sets the units"""
+        return self._unit
+    #----------------------------------------------------------------------
+    @unit.setter
+    def unit(self, value):
+        """gets/sets the units"""
+        self._unit = value
+    #----------------------------------------------------------------------
+    @property
+    def size(self):
+        """returns the size of the dots"""
+        return self._dot_size
+    #----------------------------------------------------------------------
+    @property
+    def ref_scale(self):
+        """reference scale"""
+        return self._ref_scale
+    #----------------------------------------------------------------------
+    @ref_scale.setter
+    def ref_scale(self, value):
+        """"""
+        if isinstance(value, (int, float)):
+            self._ref_scale = value
+        else:
+            raise ValueError("Value must be an int or float.")
+
+    #----------------------------------------------------------------------
+    @size.setter
+    def size(self, value):
+        """
+        Sets the size of the dots.
+        """
+        self._dot_size = float(value)
+
+    #----------------------------------------------------------------------
+    @background.setter
+    def background(self, value):
+        """sets the background color"""
+        import random
+        if isinstance(value, str):
+            cstep = random.randint(0,255)
+            color = value
+            alpha = 1
+            self._bg_color = _cmap2rgb(color, cstep, alpha)
+        elif isinstance(value, (list, tuple)) and len(value) == 4:
+            self._bg_color = value
+        else:
+            raise ValueError("Invalid color specified.")
+
+    #----------------------------------------------------------------------
+    @property
+    def attributes(self):
+        """
+        returns a list of attributes
+        """
+        if self._attributes is None:
+            self._attributes = []
+        return self._attributes
+    #----------------------------------------------------------------------
+    def _cmap(self, color, cstep=None, alpha=1):
+        """processes the colors"""
+        import random
+        if isinstance(color, (list, tuple)) and len(color) == 4:
+            return color
+        else:
+            if cstep is None:
+                cstep = random.randint(0,255)
+            if color is None:
+                color = 'jet'
+            return _cmap2rgb(color, cstep, alpha)
+        return
+    #----------------------------------------------------------------------
+    def _cmap2rgb(self, colors, step, alpha=1):
+        """converts a color map to RGBA list"""
+        from matplotlib import cm
+        t = getattr(cm, colors)(step, bytes=True)
+        t = [int(i) for i in t]
+        t[-1] = alpha * 255
+        return t
+    #----------------------------------------------------------------------
+    def add_attribute(self, label, field,
+                      color, cstep=None, alpha=1):
+        """
+        Assigns an attribute to the dot density renderer
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        field               Required String.  Name of the dataset field
+        ---------------     --------------------------------------------------------------------
+        label               Required String.  Descriptive name of the field.
+        ---------------     --------------------------------------------------------------------
+        color               Required String/List. A integer array consisting of R,G,B,A or the
+                            name of a color map.
+        ---------------     --------------------------------------------------------------------
+        cstep               Optional Int. A position on the color chart between 0-255.
+        ---------------     --------------------------------------------------------------------
+        alpha               Optional float. A value between 0-1 that determines the symbol opacity.
+        ===============     ====================================================================
+
+        :returns: Boolean
+
+        """
+        mapped_names = [n['field'].lower() for n in self.attributes]
+        if field.lower() in mapped_names:
+            raise ValueError("Field already assigned to a label.")
+        if field in self._df.columns:
+            self._attributes.append(
+                {
+                    'field' : field,
+                    'label' : label,
+                    'color' : self._cmap(color)
+                }
+            )
+            return True
+        else:
+            raise ValueError("Field not found in dataset.")
+        return False
+    #----------------------------------------------------------------------
+    def remove_attribute(self, field):
+        """
+        Removes the attribute to the dot density renderer.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        field               Required String.  Name of the dataset field
+        ===============     ====================================================================
+
+        :returns: Boolean
+
+        """
+        mapped_names = [n['field'].lower() for n in self.attributes if 'field' in n]
+        if field.lower() in mapped_names:
+            idx = mapped_names.index(field.lower())
+            self._attributes.pop(idx)
+            return True
+        return False
+    #----------------------------------------------------------------------
+    def add_expression(self, expression, title, label, color):
+        """
+        Adds an arcade expression to the attributes
+
+
+        """
+        self._attributes.append({
+            "valueExpression": expression,
+            "valueExpressionTitle": title,
+            "label": label,
+            "color": self._cmap(color)
+        })
+    #----------------------------------------------------------------------
+    def remove_expression(self, label):
+        """
+        Adds an arcade expression to the attributes
+
+
+        """
+        labels = [n['label'].lower() for n in self.attributes if 'label' in n]
+        if label.lower() in labels:
+            idx = labels.index(label.lower())
+            self._attributes.pop(idx)
+            return True
+        return False
+    #----------------------------------------------------------------------
+    @property
+    def dot_value(self):
+        """
+        Get/Sets what each dot is worth. This should be an float/integer.
+        """
+        return self._dot_value
+    #----------------------------------------------------------------------
+    @dot_value.setter
+    def dot_value(self, value):
+        """
+        Get/Sets what each dot is worth. This should be an float/integer.
+        """
+        self._dot_value = value
+    #----------------------------------------------------------------------
+    @property
+    def renderer(self):
+        """returns the JSON renderer"""
+        r = {
+            "type": "dotDensity",
+            "outline" : "null",
+            "attributes": self.attributes,
+            "backgroundColor": self.background,
+            "blendDots": self._blend_dots,
+            "dotShape": self.shape,
+            "dotSize": self.size,
+            "legendOptions": {
+                "unit": self.unit
+            },
+            "referenceDotValue": self.dot_value,
+            "referenceScale": self.ref_scale,
+            "seed": self._seed
+        }
+        return r
+
 def _size_info(field, min_value, max_value,
                min_size=6, max_size=37.5, unit='unknown'):
     """
@@ -78,7 +368,7 @@ def _color_info(field:str,
 def _trans_info(data, **kwargs):
     """creates a transparancy information for visual variables"""
     ti = None
-    if 'trans_info_field' in symbol_args:
+    if 'trans_info_field' in kwargs:
         ti = {}
 
         ti['field'] = kwargs.pop('trans_info_field', None)
@@ -246,7 +536,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     v = []
     if isinstance(sdf_or_list, SpatialDataFrame) and \
        'trans_info_field' in kwargs:
-
+        trans_info_field = kwargs['trans_info_field']
         data = sdf_or_list[trans_info_field].unique().tolist()
     elif isinstance(sdf_or_list, (tuple, list)):
         data = list(set(sdf_or_list))
@@ -289,7 +579,7 @@ def generate_renderer(geometry_type,
                             -------------   ----------------------------------------
                             Polyline        simple, unique, class break
                             -------------   ----------------------------------------
-                            Polygon         simple, unique, class break
+                            Polygon         simple, unique, class break, dot density
                             -------------   ----------------------------------------
                             Raster          stretched
                             =============   ========================================
@@ -319,6 +609,8 @@ def generate_renderer(geometry_type,
                             + 'h' - heatmap renders point data into a raster
                                     visualization that emphasizes areas of higher
                                     density or weighted values.
+                            + 'd' - dot density renderer
+
     ----------------------  ---------------------------------------------------------
     colors                  optional string/list.  Color mapping.  For simple renderer,
                             just provide a string.  For more robust renderers like
@@ -570,6 +862,46 @@ def generate_renderer(geometry_type,
     ======================  =========================================================
 
 
+    **Dot Density Renderer**
+
+    A class breaks renderer symbolizes based on the value of some numeric attribute.
+
+    ======================  =========================================================
+    **Optional Argument**   **Description**
+    ----------------------  ---------------------------------------------------------
+    attributes              Required List. The fields, labels and colors to add to
+                            the web map.  The list consists of dictionarys with the
+                            following keys:
+
+                            ===============     ====================================================================
+                            **Argument**        **Description**
+                            ---------------     --------------------------------------------------------------------
+                            field               Required String.  Name of the dataset field
+                            ---------------     --------------------------------------------------------------------
+                            label               Required String.  Descriptive name of the field.
+                            ---------------     --------------------------------------------------------------------
+                            color               Required List. A integer array consisting of R,G,B,A values
+                            ---------------     --------------------------------------------------------------------
+                            ===============     ====================================================================
+
+                            If the field name is not in the SeDF, then an error will be raised on renderering.
+
+    ----------------------  ---------------------------------------------------------
+    dot_value               Required Float. The unit value of what 1 dot equals.
+    ----------------------  ---------------------------------------------------------
+    ref_scale               Required Int. The reference scale of the dots.
+    ----------------------  ---------------------------------------------------------
+    unit                    Required string.  A label of the unit which each dot
+                            means.
+    ----------------------  ---------------------------------------------------------
+    blend_dots              Optional boolean.  Allows for the dots to overlap.
+    ----------------------  ---------------------------------------------------------
+    size                    Optional float. The size of the dot on the density map.
+    ----------------------  ---------------------------------------------------------
+    background              Optional List.  A color background as a list of [r,g,b,a]
+                            values.  The default is no background [0,0,0,0].
+    ======================  =========================================================
+
 
     :returns: dict
 
@@ -622,6 +954,31 @@ def generate_renderer(geometry_type,
         raise Exception("Invalid Renderer type.")
     else:
         render_type = render_type.lower()
+    if render_type == 'd' and geometry_type == 'polygon':
+        import pandas as pd
+        if isinstance(sdf_or_series, pd.DataFrame) == False:
+            raise Exception("DotDensity only works for Polygon DataFrames")
+
+        attributes = symbol_args.pop("attributes")
+        dot_value = symbol_args.pop("dot_value")
+        ref_scale = symbol_args.pop("ref_scale")
+        unit = symbol_args.pop("unit")
+        blend_dots = symbol_args.pop('blend_dots', False)
+        shape = symbol_args.pop("shape", "s")
+        size = symbol_args.pop('size', 1)
+        background = symbol_args.pop('background', None)
+        seed = 1
+        return _DotDensity(df=sdf_or_series,
+                           attributes=attributes,
+                           dot_value=dot_value,
+                           ref_scale=ref_scale,
+                           unit=unit,
+                           blend_dots=blend_dots,
+                           shape=shape,
+                           size=size,
+                           background=background, seed=seed).renderer
+    elif render_type == 'd' and geometry_type != 'polygon':
+        raise Exception("Dot Density is only supported by polygons")
     if render_type == 's':
         symbol = symbol_args.pop('symbol', None)
         if symbol is None:

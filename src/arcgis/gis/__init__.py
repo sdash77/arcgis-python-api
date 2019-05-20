@@ -8082,7 +8082,8 @@ class Item(dict):
            For JSON/text files, a Python dictionary or a string.  All others will be a byte array,
            that can be converted to string using data.decode('utf-8'). Zero byte files will return None.
         """
-        item_data = self._portal.get_item_data(self.itemid, try_json)
+        folder = None
+        item_data = self._portal.get_item_data(self.itemid, try_json, folder)
 
         if item_data == '':
             return None

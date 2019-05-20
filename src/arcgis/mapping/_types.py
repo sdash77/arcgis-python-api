@@ -1268,7 +1268,30 @@ class OfflineMapAreaManager(object):
         # region call CreateMapArea tool
         from arcgis.geoprocessing._tool import Toolbox
         pkg_tb = Toolbox(url=self._url, gis=self._gis)
-        oma_result = pkg_tb.create_map_area(self._item.id, _bookmark, _extent, output_name=output_name)
+
+        if self._gis.version >= [7,2]:
+
+            if _extent:
+                area = _extent
+            elif _bookmark:
+                area = {'name' : _bookmark}
+
+            if isinstance(area, str):
+                area_type = "BOOKMARK"
+            elif isinstance(area, Polygon) or \
+                 (isinstance(area, dict) and 'rings' in area):
+                area_type = "POLYGON"
+            elif isinstance(area, Envelope) or \
+                 (isinstance(area, dict) and 'xmin' in area):
+                area_type = "ENVELOPE"
+            elif isinstance(area, (list, tuple)):
+                area_type = "ENVELOPE"
+            oma_result = pkg_tb.create_map_area(map_item_id=self._item.id,
+                                                area_type=area_type,
+                                                area=area,
+                                                output_name=output_name)
+        else:
+            oma_result = pkg_tb.create_map_area(self._item.id, _bookmark, _extent, output_name=output_name)
         # endregion
 
         # Call update on Item with Refresh Information

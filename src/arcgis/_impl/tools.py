@@ -2542,7 +2542,10 @@ class _FeatureAnalysisTools(_AsyncService):
                     include_route_layers=False,
                     output_name=None,
                     context=None,
-                    estimate=False):
+                    estimate=False,
+                    point_barrier_layer=None,
+                    line_barrier_layer=None,
+                    polygon_barrier_layer=None):
         """
 
 
@@ -2578,6 +2581,11 @@ class _FeatureAnalysisTools(_AsyncService):
 
         context : Optional string
 
+        point_barrier_layer: Optional FeatureSet/FeatureLayer
+
+        line_barrier_layer: Optional FeatureSet/FeatureLayer
+
+        polygon_barrier_layer: Optional FeatureSet/FeatureLayer
 
         Returns
         -------
@@ -2615,6 +2623,12 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if point_barrier_layer:
+            params["pointBarrierLayer"] = point_barrier_layer
+        if line_barrier_layer:
+            params['lineBarrierLayer'] = line_barrier_layer
+        if polygon_barrier_layer:
+            params['polygonBarrierLayer'] = polygon_barrier_layer
 
         if estimate:
             from arcgis.features._credits import _estimate_credits
