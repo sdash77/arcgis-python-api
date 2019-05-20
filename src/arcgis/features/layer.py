@@ -879,7 +879,9 @@ class FeatureLayer(Layer):
                               out_wkid=None,
                               gdb_version=None,
                               return_z=False,
-                              return_m=False):
+                              return_m=False,
+                              historic_moment=None,
+                              return_true_curve=False):
         """
         The Query operation is performed on a feature service layer
         resource. The result of this operation are feature sets grouped
@@ -934,6 +936,20 @@ class FeatureLayer(Layer):
         return_m                   Optional boolean. If true, M values are included in the results if
                                    the features have M values. Otherwise, M values are not returned.
                                    The default is false.
+        ----------------------     --------------------------------------------------------------------
+        historic_moment            Optional Integer/datetime. The historic moment to query. This parameter
+                                   applies only if the supportsQueryWithHistoricMoment property of the
+                                   layers being queried is set to true. This setting is provided in the
+                                   layer resource.
+
+                                   If historic_moment is not specified, the query will apply to the
+                                   current features.
+
+                                   Syntax: historic_moment=<Epoch time in milliseconds>
+        ----------------------     --------------------------------------------------------------------
+        return_true_curves         Optional boolean. Optional parameter that is false by default. When
+                                   set to true, returns true curves in output geometries; otherwise,
+                                   curves are converted to densified polylines or polygons.
         ======================     ====================================================================
 
 
@@ -950,6 +966,12 @@ class FeatureLayer(Layer):
             "returnM": return_m,
             "returnZ": return_z
         }
+        if historic_moment:
+            if hasattr(historic_moment, "timestamp"):
+                historic_moment = int(historic_moment.timestamp() * 1000)
+            params['historicMoment'] = historic_moment
+        if return_true_curve:
+            params['returnTrueCurves'] = return_true_curve
         if self._dynamic_layer is not None:
             params['layer'] = self._dynamic_layer
         if gdb_version is not None:
