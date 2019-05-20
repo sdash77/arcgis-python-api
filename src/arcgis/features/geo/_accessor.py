@@ -2098,17 +2098,28 @@ class GeoAccessor(object):
     @staticmethod
     def from_featureclass(location, **kwargs):
         """
-        Returns a Spatially enbaled `pandas.DataFrame` from a feature class.
+        Returns a Spatially enabled `pandas.DataFrame` from a feature class.
 
-        ====================    =========================================================
-        **Argument**            **Description**
-        --------------------    ---------------------------------------------------------
-        location                Required String. The full qualified path to the feature
-                                class.
-        ====================    =========================================================
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        location                        Required string. Full path to the feature class
+        ===========================     ====================================================================
 
-        :returns: Pandas' `DataFrame`
+        *Optional parameters when ArcPy library is available in the current environment*:
 
+        ===========================     ====================================================================
+        **Key**                         **Value**
+        ---------------------------     --------------------------------------------------------------------
+        sql_clause                      sql clause to parse data down. To learn more see
+                                        `ArcPy Search Cursor <https://pro.arcgis.com/en/pro-app/arcpy/data-access/searchcursor-class.htm>`_
+        ---------------------------     --------------------------------------------------------------------
+        where_clause                    where statement. To learn more see `ArcPy SQL reference <https://pro.arcgis.com/en/pro-app/help/mapping/navigation/sql-reference-for-elements-used-in-query-expressions.htm>`_
+        ---------------------------     --------------------------------------------------------------------
+        fields                          list of strings specifying the field names.
+        ===========================     ====================================================================
+
+        :returns: pandas.core.frame.DataFrame
         """
         return from_featureclass(filename=location, **kwargs)
     #----------------------------------------------------------------------

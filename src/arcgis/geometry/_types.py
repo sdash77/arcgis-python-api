@@ -564,13 +564,17 @@ class Geometry(BaseGeometry):
                 return None
             if len(a) == 0:
                 return None
-            elif len(a) > 1: # single part
+            elif len(a) == 1: # single part
                 x_max = max(a[0], key=lambda x: x[0])[0]
                 x_min = min(a[0], key=lambda x: x[0])[0]
                 y_max = max(a[0], key=lambda x: x[1])[1]
                 y_min = min(a[0], key=lambda x: x[1])[1]
                 return x_min, y_min, x_max, y_max
             else:
+                if 'points' in a:
+                    a = a['points']
+                if 'points' not in a and 'coordinates' in a:
+                    a = a['coordinates']
                 xs = []
                 ys = []
                 for pt in a: # multiple part geometry

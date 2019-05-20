@@ -866,8 +866,6 @@ class FeatureSet(object):
                 geometry["y"] = geom["coordinates"][1]
             elif geo_type == "Polygon":
                 geometry["rings"] = geom["coordinates"]
-            elif geo_type == "MultiPoint":
-                geometry["points"] = geom["coordinates"]
             elif geo_type == "MultiPolygon":
                 rings = []
                 if HASARCPY:
@@ -892,24 +890,25 @@ class FeatureSet(object):
                         if part_item:
                             part_list.append([part_item])
                     geometry["rings"] = part_list[0]
-            elif geo_type =="LineString":
-                geometry["paths"] = geom
+            elif geo_type in ["LineString", "MultiPoint"]:
+                geometry = geom
             elif geo_type == "MultiLineString":
                 if HASARCPY == 'rem':
                     geom = arcpy.AsShape(geom)
-                    geom['spatialReference'] = {'wkid' : 4326}
+                    geom['spatialReference'] = {'wkid': 4326}
                     geometry = Geometry(json.loads(geom))
                 else:
                     coordkey = ([d for d in geom if d.lower() == 'coordinates']
-                                    or ['coordinates']).pop()
+                                or ['coordinates']).pop()
                     coordinates = geom[coordkey]
                     typekey = ([d for d in geom if d.lower() == 'type']
-                                   or ['type']).pop()
+                               or ['type']).pop()
                     if geom[typekey].lower() == "linestring":
                         coordinates = [coordinates]
                     geometry["paths"] = coordinates
             if not 'spatialReference' in geometry:
-                geometry['spatialReference'] = {'wkid' : 4326}
+                geometry['spatialReference'] = {'wkid': 4326}
+
             return geometry
         return FeatureSet.from_dict(geo_to_esri(geojson))
     # ----------------------------------------------------------------------
