@@ -254,7 +254,7 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
         raise Exception("Unable to get analysis job results.")
 
 
-def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False, add_token=True):
+def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False, add_token=True, return_messages=False):
     if gis is None:
         gis = arcgis.env.active_gis
 
@@ -352,6 +352,9 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             output_dict['result_layer'] = MapImageLayer(result_layer_url, gptool._gis)
 
         num_returns = len(resp)
+        if return_messages:
+            return _return_output(num_returns, output_dict, return_values), job_info
+
         return _return_output(num_returns, output_dict, return_values)
 
     else: # synchronous
@@ -374,6 +377,8 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                 pass  # cannot handle unexpected output as return tuple will change
 
         num_returns = len(resp['results'])
+        if return_messages:
+            return _return_output(num_returns, output_dict, return_values), job_info
         return _return_output(num_returns, output_dict, return_values)
 
 

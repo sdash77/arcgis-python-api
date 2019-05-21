@@ -15,6 +15,114 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
+def run_python_script(code, layers=None, gis=None):
+    """
+
+    The Run Python Script task executes a Python script on your ArcGIS
+    GeoAnalytics Server site. In the script, you can create an analysis
+    pipeline by chaining together multiple GeoAnalytics Tools without
+    writing intermediate results to a data store. You can also use other
+    Python functionality in the script that can be distributed across your
+    GeoAnalytics Server.
+
+    For example, suppose that each week you receive a new dataset of
+    vehicle locations containing billions of point features. Each time you
+    receive a new dataset, you must perform the same workflow involving
+    multiple GeoAnalytics Tools to create an information product that you
+    share within your organization. This workflow creates several large
+    intermediate layers that take up lots of space in your data store. By
+    scripting this workflow in Python and executing the code in the Run
+    Python Script task, you can avoid creating these unnecessary
+    intermediate layers, while simplifying the steps to create the
+    information product.
+
+    When you use Run Python Script, the Python code is executed on your
+    GeoAnalytics Server. The script runs with the Python 3.6 environment
+    that is installed with GeoAnalytics Server, and all console output is
+    returned as job messages. Some Python modules can be used in your
+    script to execute code across multiple cores of one or more machines
+    in your GeoAnalytics Server using Spark 2.2.0(the compute platform that
+    distributes analysis for GeoAnalytics Tools).
+
+    A geoanalytics module is available and allows you to run GeoAnalytics
+    Tools in the script. This package is imported automatically when you
+    use Run Python Script.
+
+    To interact directly with Spark in the Run Python Script task, use the
+    pyspark module, which is imported automatically when you run the task.
+    The pyspark module is the Python API for Spark and provides a
+    collection of distributed analysis tools for data management,
+    clustering, regression, and more that can be called in Run Python
+    Script and run across your GeoAnalytics Server.
+
+    When using the geoanalytics and pyspark packages, most functions return
+    analysis results in memory as Spark DataFrames. Spark data frames can be
+    written to a data store or used in the script. This allows for the
+    chaining together of multiple geoanalytics and pyspark tools, while only
+    writing out the final result to a data store, eliminating the need to
+    create any intermediate result layers.
+
+    For advanced users, an instance of SparkContext is instantiated
+    automatically as sc and can be used in the script to interact with Spark.
+    This allows for the execution of custom distributed analysis across your
+    GeoAnalytics Server.
+
+    It is recommended that you use an integrated development environment
+    (IDE) to write your Python script, and copy the script text into the Run
+    Python Script tool. This makes it easier to identify syntax errors and
+    typos prior to running your script. It is also recommended that you run
+    your script using a small subset of the input data first to verify that
+    there are no logic errors or exceptions. You can use the Describe
+    Dataset task to create a sample layer for this purpose.
+
+    ================  ===============================================================
+    code              Required String. Python code to execute as a string.
+    ----------------  ---------------------------------------------------------------
+    layers            Optional List. A list of FeatureLayers to operate on.
+    ----------------  ---------------------------------------------------------------
+    gis               optional GIS. The GIS object where the analysis will take place.
+    ================  ===============================================================
+
+    :returns: Dict
+
+
+    """
+    if layers is None:
+        layers = []
+    import inspect
+    params = {'f': 'json'}
+
+    if inspect.isfunction(code):
+        params['code'] = inspect.getsource(code)
+    elif isinstance(code, str):
+        params['code'] = code
+    else:
+        raise ValueError("code must be a string or Python Function.")
+
+    if isinstance(layers, (tuple, list)):
+        params['layers'] = layers
+    else:
+        raise ValueError("layers must be a list or tuple")
+
+    tool_name = "RunPythonScript"
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+
+    _set_context(params)
+
+    param_db = {
+        "layers": (_FeatureSet, "inputLayers"),
+        "code" : (str, "pythonScript"),
+        "context": (str, "context"),
+    }
+
+    try:
+        res, msg = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=True)
+        return msg
+    except:
+        raise
+    return None
+
 def dissolve_boundaries(input_layer,
                         dissolve_fields=None,
                         summary_fields=None,
