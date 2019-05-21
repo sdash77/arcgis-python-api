@@ -18,7 +18,7 @@ _use_async = True
 def run_python_script(code, layers=None, gis=None):
     """
 
-    The Run Python Script task executes a Python script on your ArcGIS
+    The `run_python_script` method executes a Python script on your ArcGIS
     GeoAnalytics Server site. In the script, you can create an analysis
     pipeline by chaining together multiple GeoAnalytics Tools without
     writing intermediate results to a data store. You can also use other
@@ -76,14 +76,14 @@ def run_python_script(code, layers=None, gis=None):
     Dataset task to create a sample layer for this purpose.
 
     ================  ===============================================================
-    code              Required String. Python code to execute as a string.
+    code              Required String/Python Method. Python code to execute.
     ----------------  ---------------------------------------------------------------
     layers            Optional List. A list of FeatureLayers to operate on.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ================  ===============================================================
 
-    :returns: Dict
+    :returns: Dictionary of messages from the code provided.
 
 
     """
