@@ -16,6 +16,8 @@ import tempfile
 import logging
 log = logging.getLogger(__name__)
 
+import yaml
+
 BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version} "\
                  "--output-folder {output_dir}"
 BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
@@ -54,6 +56,10 @@ SRC_DIR = os.path.abspath(os.path.join(
 SRC_DIST_DIR = os.path.abspath(os.path.join(
     SRC_DIR,
     "dist"))
+META_YAML_FILE_PATH = os.path.abspath(os.path.join(
+    BUILD_DIR,
+    "arcgis",
+    "meta.yaml"))
 
 def _main():
     args = _parse_cmd_line_args()
@@ -69,13 +75,16 @@ def _main():
         return
     elif _only_python_is_specified(args):
         build_conda_packages(python_versions = args.python,
-                             os_build_targets = [ _determine_current_os() ])
+                             os_build_targets = [ _determine_current_os() ],
+                             build_number = args.build_number)
     elif _only_os_is_specified(args):
         build_conda_packages(python_versions = DEFAULT_PYS,
-                             os_build_targets = args.os)
+                             os_build_targets = args.os,
+                             build_number = args.build_number)
     elif _both_os_and_python_are_specified(args):
         build_conda_packages(os_build_targets = args.os,
-                             python_versions = args.python)
+                             python_versions = args.python,
+                             build_number = args.build_number)
     else:
         args.print_help()
         raise Exception("Incorrect usage: See the --help text and try again")
@@ -116,6 +125,8 @@ def _parse_cmd_line_args():
         help="Build the pip .tar.gz package and place it in ./output/pip")
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Print all DEBUG log msgs (i.e. print 'conda build' cmd output)")
+    parser.add_argument("--build-number", "-b", default=0,
+        help="What build number int to apply to meta.yaml/output conda pkg.")
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
 
 def _setup_logging(args):
@@ -185,6 +196,7 @@ def build_conda_packages_for_all_os_and_py():
 
 def build_conda_packages(os_build_targets,
                          python_versions,
+                         build_number=0,
                          clear_output_folder = True):
     """Will build conda packages for specified oses, and pys. Places pkgs
     in output folder, will clear output folder if specified. Can only build
@@ -196,6 +208,8 @@ def build_conda_packages(os_build_targets,
         SUPPORTED_PYS for all supported. Ex: ['3.6', '3.5']
     clear_output_folder: bool to toggle if BUILD_OUTPUT_DIR is cleared
     """
+    _apply_build_number_to_meta_yaml(build_number)
+
     if clear_output_folder:
         _clear_output_folder()
     _check_edge_cases(os_build_targets,
@@ -209,6 +223,8 @@ def build_conda_packages(os_build_targets,
                                    os_build_targets = os_build_targets,
                                    output_dir = BUILD_OUTPUT_DIR)
             _copy_noarch_dir(src = tmp_dir, dst = BUILD_OUTPUT_DIR)
+
+    _restore_default_build_number_to_meta_yaml()
 
 # Public facing conda uploading func
 def upload_any_conda_packages_in_output_folder():
@@ -372,6 +388,18 @@ def _determine_current_os():
     architecture = "64" if is_64_bit else "32"
     return "{target_os}-{architecture}".format(target_os = target_os,
                                                architecture = architecture)
+
+def _apply_build_number_to_meta_yaml(build_number: int):
+    meta_yaml = {}
+    with open(META_YAML_FILE_PATH, "r") as f:
+        meta_yaml = yaml.load(f)
+        meta_yaml["build"]["number"] = str(build_number)
+    with open(META_YAML_FILE_PATH, "w") as f:
+        yaml.dump(meta_yaml, f, default_flow_style=False)
+
+def _restore_default_build_number_to_meta_yaml():
+    _apply_build_number_to_meta_yaml(0)
+
 if __name__ == "__main__":
     try:
         _main()
