@@ -30,3 +30,7 @@ merge_layers
 overlay_data
 --------------
 .. automethod:: arcgis.geoanalytics.manage_data.overlay_data
+
+run_python_script
+--------------
+.. automethod:: arcgis.geoanalytics.manage_data.run_python_script

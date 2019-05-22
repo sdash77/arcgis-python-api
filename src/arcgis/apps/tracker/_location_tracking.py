@@ -1,7 +1,6 @@
 import arcgis
 from arcgis._impl.common._utils import _lazy_property
 from arcgis.apps.tracker import LocationTrackingError
-from pkg_resources import parse_version
 
 
 class LocationTrackingManager:
@@ -196,7 +195,7 @@ class LocationTrackingManager:
         })
         definition = {"viewDefinitionQuery": "created_user in ('')"}
         # Workaround for 10.7 bug where time wasn't enabled
-        if self._gis.properties.isPortal and parse_version(self._gis.properties.currentVersion) <= parse_version("7.1"):
+        if self._gis.properties.isPortal and self._gis.version <= [7,1]:
             definition["timeInfo"] = {"startTimeField": "location_timestamp"}
         item.layers[0].manager.update_definition(definition)
         item.layers[1].manager.update_definition(definition)
