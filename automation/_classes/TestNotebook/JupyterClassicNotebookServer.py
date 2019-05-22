@@ -8,6 +8,8 @@ log = logging.getLogger()
 
 from automation._common import run_shell_command
 
+MAX_NUM_PORTS_TO_TRY = 5
+
 class JupyterClassicNotebookServer:
     def __init__(self, notebook_root_dir, port=8888):
         self.port = port
@@ -30,13 +32,27 @@ class JupyterClassicNotebookServer:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         result = sock.connect_ex(('127.0.0.1',port_num))
         if result == 0:
-           output = False
-        else:
            output = True
+        else:
+           output = False
         sock.close()
         return output
 
+    def _resolve_port(self):
+        """Test ports until you find an open one, set to self.port"""
+        ports_tested = []
+        for port in range(self.port, self.port + MAX_NUM_PORTS_TO_TRY):
+            ports_tested.append(port)
+            if not self._port_in_use(port):
+                self.port = port
+                return
+        raise Exception(f"Ports {ports_tested} are ALL in use by other " + \
+                        f"processes, will not start Jupyter server. Check " + \
+                        f"that you're properly shutting down jupyter servers.")
+
+
     def __enter__(self):
+        self._resolve_port()
         args = [self._jupyter_exe_loc, "notebook", 
                               f"--config={self._config_file_path}",
                               f"--no-browser",

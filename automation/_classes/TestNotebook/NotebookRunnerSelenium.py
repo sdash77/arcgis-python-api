@@ -29,7 +29,7 @@ class NotebookRunnerSelenium:
     def __init__(self, notebook_file_path, output_dir, cell_timeout_sec = 300,
                  active_jupyter_backend = None, browser = "Chrome"):
         self.notebook_file_path = notebook_file_path
-        self.cell_timeout_sec = cell_timeout_sec
+        self.cell_timeout_sec = int(cell_timeout_sec)
         self.active_jupyter_backend = active_jupyter_backend
         self.output_dir = output_dir
         self.browser = browser
@@ -135,12 +135,13 @@ class NotebookRunnerSelenium:
         while True:
             time.sleep(NB_CELL_POLLING_INTERVAL_SEC)
             seconds_cell_running += NB_CELL_POLLING_INTERVAL_SEC
-            if self._any_cell_currently_running():
+            if seconds_cell_running > self.cell_timeout_sec:
+                raise Exception(f"Cell is running for {seconds_cell_running} "\
+                                f"seconds. This is above threshold, failing.")
+            elif self._any_cell_currently_running():
                 continue
             elif self._bottom_of_notebook_reached():
                 break
-            elif seconds_cell_running > self.cell_timeout_sec:
-                raise Exception("Cell has timed out, failing...")
             else:
                 seconds_cell_running = 0
                 self._run_button.click()
