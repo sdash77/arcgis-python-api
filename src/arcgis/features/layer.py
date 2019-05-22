@@ -1664,7 +1664,7 @@ class FeatureLayerCollection(_GISResource):
             raise ValueError("The layer variable must be a list.")
         url = "{base}/queryDomains".format(base=self._url)
         params = {'f':'json'}
-        params['layers'] : layers
+        params['layers'] = layers
         res = self._con.post(url, params)
         if 'domains' in res:
             return res['domains']
