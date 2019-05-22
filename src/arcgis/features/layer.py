@@ -1599,6 +1599,34 @@ class FeatureLayerCollection(_GISResource):
         return self._admin
 
     @property
+    def relationships(self):
+        """
+        The `relationships` property provides relationship information for
+        the layers and tables in the service.
+
+        The relationships resource includes information about relationship
+        rules from the back-end relationship classes, in addition to the
+        relationship information already found in the individual layers and
+        tables.
+
+        Services that support the relationships resource will have the
+        "supportsRelationshipsResource": true property on their service
+        resource.
+
+        :returns: List of Dictionaries
+
+        """
+        if "supportsRelationshipsResource" in self.properties and \
+           self.properties["supportsRelationshipsResource"]:
+            url = self._url + "/relationships"
+            params = {'f' : 'json'}
+            res = self._con.get(url, params)
+            if 'relationships' in res:
+                return res['relationships']
+            return res
+        return []
+
+    @property
     def versions(self):
         """
         Returns a `VersionManager` to create, update and use versions on a `FeatureLayerCollection`.
@@ -1613,6 +1641,34 @@ class FeatureLayerCollection(_GISResource):
                 self._vermgr = VersionManager(url=url, gis=self._gis)
             return self._vermgr
         return None
+    # ----------------------------------------------------------------------
+    def query_domains(self, layers):
+        """
+        The query_domains returns full domain information for the domains
+        referenced by the layers in the service. This operation is
+        performed on a feature service resource. The operation takes an
+        array of layer IDs and returns the set of domains referenced by the
+        layers.
+
+        ================================     ====================================================================
+        **Argument**                         **Description**
+        --------------------------------     --------------------------------------------------------------------
+        layers                               Required List.  An array of layers. The set of domains to return is
+                                             based on the domains referenced by these layers. Example: [1,2,3,4]
+        ================================     ====================================================================
+
+        :returns: list of dictionaries
+
+        """
+        if not isinstance(layers (tuple, list)):
+            raise ValueError("The layer variable must be a list.")
+        url = "{base}/queryDomains".format(base=self._url)
+        params = {'f':'json'}
+        params['layers'] : layers
+        res = self._con.post(url, params)
+        if 'domains' in res:
+            return res['domains']
+        return res
     # ----------------------------------------------------------------------
     def extract_changes(self,
                         layers,
