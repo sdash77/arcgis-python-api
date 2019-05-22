@@ -228,38 +228,139 @@ def create_buffers(
         gis=None,
         estimate=False):
     """
-    Creates buffer polygon(s) around input features.
+    .. image:: _static/images/create_buffers/create_buffers.png 
+    
+    .. |Disks| image:: _static/images/create_buffers/Disks.png
+    .. |Dissolve| image:: _static/images/create_buffers/Dissolve.png
+    .. |Flat| image:: _static/images/create_buffers/Flat.png
+    .. |Full| image:: _static/images/create_buffers/Full.png
+    .. |Left| image:: _static/images/create_buffers/Left.png
+    .. |None| image:: _static/images/create_buffers/None.png
+    .. |Outside| image:: _static/images/create_buffers/Outside.png
+    .. |Right| image:: _static/images/create_buffers/Right.png
+    .. |Rings| image:: _static/images/create_buffers/Rings.png
+    .. |Round| image:: _static/images/create_buffers/Round.png
+    .. |Unspecified| image:: _static/images/create_buffers/Unspecified.png
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
-        The input to be buffered.
-    distances : Optional list of floats
-        The distance(s) that will be buffered.
-    field : Optional string
-        Buffers will be created using field values.
-    units : Optional string
-        The linear unit to be used with the distance value(s).
-    dissolve_type : Optional string
-        Specifies the dissolve to be performed to remove buffer overlap.
-    ring_type : Optional string
-        The ring type.
-    side_type : Optional string
-        The side(s) of the input that will be buffered.
-    end_type : Optional string
-        The shape of the buffer at the end of buffered line features.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+    The ``create_buffers`` task creates polygons that cover a given distance from a point,
+    line, or polygon feature. Buffers are typically used to create areas that can be 
+    further analyzed using a tool such as ``overlay_layers``. For example, if the question 
+    is "What buildings are within one mile of the school?", the answer can be found by 
+    creating a one-mile buffer around the school and overlaying the buffer with the layer 
+    containing building footprints. The end result is a layer of those buildings within 
+    one mile of the school.
 
-    Returns
-    -------
-    buffer_layer : layer (FeatureCollection)
+    =========================    =========================================================
+    **Parameter**                **Description**
+    -------------------------    ---------------------------------------------------------
+    input_layer                  Required point, line or polygon feature layer. The input features to be buffered. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    distances                    Optional list of floats to buffer the input features. The distance(s) that will be buffered. You must supply values 
+                                 for either the ``distances`` or ``field`` parameter. You can enter a single distance value or multiple values. 
+                                 The units of the distance values is suppied by the units parameter.
+    -------------------------    ---------------------------------------------------------
+    field                        Optional string. A field on the ``input_layer`` containing a buffer distance. Buffers will be created using field values. 
+                                 Unlike the ``distances`` parameter, multiple distances are not supported on field input.
+    -------------------------    ---------------------------------------------------------
+    units                        Optional string. The linear unit to be used with the distance value(s) specified in distances or contained in the field value.
+                                             
+                                 Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'NauticalMiles', 'Yards']
+                                             
+                                 The default is 'Meters'.
+    -------------------------    ---------------------------------------------------------
+    dissolve_type                Optional string. Determines how overlapping buffers are processed.
+
+                                 Choice list: ['None', 'Dissolve']   
+
+                                 +------------+---------------------------------------------------------------------------------+
+                                 | |None|     | ``None``—Overlapping areas are kept. This is the default.                       |
+                                 +------------+---------------------------------------------------------------------------------+
+                                 | |Dissolve| | ``Dissolve``—Overlapping areas are combined.                                    |
+                                 +------------+---------------------------------------------------------------------------------+
+
+    -------------------------    ---------------------------------------------------------
+    ring_type                    Optional string. Determines how multiple-distance buffers are processed.
+    
+                                 Choice list: ['Disks', 'Rings']
+
+                                 +-----------+--------------------------------------------------------------------------------------------------+
+                                 | |Disks|   | ``Disks``—buffers are concentric and will overlap. For example, if your distances are 10 and 14, | 
+                                 |           | the result will be two buffers, one from 0 to 10 and one from 0 to 14. This is the default.      |
+                                 +-----------+--------------------------------------------------------------------------------------------------+
+                                 | |Rings|   | ``Rings``—buffers will not overlap. For example, if your distances are 10 and 14, the result will|
+                                 |           | be two buffers, one from 0 to 10 and one from 10 to 14.                                          |
+                                 +-----------+--------------------------------------------------------------------------------------------------+
+                                 
+    -------------------------    ---------------------------------------------------------
+    side_type                    Optional string. When buffering line features, you can choose which side of the line to buffer.
+
+                                 Typically, you choose both sides (Full, which is the default). Left and right are determined as 
+                                 if you were walking from the first x,y coordinate of the line (the start coordinate) to the last 
+                                 x,y coordinate of the line (the end coordinate). Choosing left or right usually means you know 
+                                 that your line features were created and stored in a particular direction (for example, upstream 
+                                 or downstream in a river network).
+
+                                 When buffering polygon features, you can choose whether the buffer includes or excludes the polygon 
+                                 being buffered.
+
+                                 Choice list: ['Full', 'Left', 'Right', 'Outside']
+
+                                 +---------------+----------------------------------------------------------------------------------------------------+
+                                 | |Full|        | ``Full``—both sides of the line will be buffered. This is the default for line featuress.          |
+                                 |               |                                                                                                    |           
+                                 +---------------+----------------------------------------------------------------------------------------------------+
+                                 | |Left|        | ``Left``—only the right side of the line will be buffered.                                         |
+                                 +---------------+----------------------------------------------------------------------------------------------------+
+                                 | |Right|       | ``Right``—only the right side of the line will be buffered.                                        |
+                                 +---------------+----------------------------------------------------------------------------------------------------+
+                                 | |Outside|     | ``Outside``—when buffering a polygon, the polygon being buffered is excluded in the result buffer. |
+                                 +---------------+----------------------------------------------------------------------------------------------------+
+                                 | |Unspecified| | If ``side_type`` not supplied, the polygon being buffered is included in the result buffer.        | 
+                                 |               | This is the  default for polygon features.                                                         |
+                                 +---------------+----------------------------------------------------------------------------------------------------+                                                                  
+
+    -------------------------    ---------------------------------------------------------
+    end_type                     Optional string. The shape of the buffer at the end of line input features. This parameter is not 
+                                 valid for polygon input features. At the ends of lines the buffer can be rounded (Round) or be 
+                                 straight across (Flat).
+
+                                 Choice list: ['Round', 'Flat']
+
+                                 +---------+-------------------------------------------------------------------------------+
+                                 | |Round| | ``Round``—buffers will be rounded at the ends of lines. This is the default.  |
+                                 +---------+-------------------------------------------------------------------------------+
+                                 | |Flat|  | ``Flat``—buffers will be flat at the ends of lines.                           |
+                                 +---------+-------------------------------------------------------------------------------+
+                                   
+    -------------------------    ---------------------------------------------------------
+    output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
+    -------------------------    ---------------------------------------------------------
+    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_buffers``, there are two settings.
+                                             
+                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer`` 
+                                    that intersect the bounding box will be analyzed.
+
+                                 #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    -------------------------    ---------------------------------------------------------
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------    ---------------------------------------------------------
+    estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    =========================    =========================================================
+
+    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To create 5 mile buffer around US parks, within the specified extent.
+        
+        polygon_lyr_buffer = create_buffers(input_layer=parks_lyr,
+                                 distances=[5],
+                                 units='Miles',
+                                 ring_type='Rings',
+                                 end_type='Flat',
+                                 output_name='create_buffers',
+                                 context={"extent":{"xmin":-12555831.656684224,"ymin":5698027.566358956,"xmax":-11835489.102124758,"ymax":6104672.556836072,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.create_buffers(input_layer,

@@ -22,7 +22,7 @@ from datetime import datetime
 import logging
 _log = logging.getLogger(__name__)
 
-from six.moves.urllib.error import HTTPError
+from urllib.error import  HTTPError
 
 import arcgis._impl.portalpy as portalpy
 import arcgis.env
@@ -30,7 +30,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
-from six.moves.urllib.error import HTTPError
+
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -3549,6 +3549,136 @@ class ContentManager(object):
             return Item(self._gis, itemid, item)
         return None
 
+    def advanced_search(self, query, return_count=False, max_items=100, bbox=None,
+                        categories=None, category_filter=None,
+                        start=1, sort_field="title",
+                        sort_order="asc", count_fields=None,
+                        count_size=None, as_dict=False):
+        """
+        This method allows the ability to fully customize  the search experience.
+        The `advanced_search` method allows users to control of the finer grained parameters
+        not exposed by the 'search' method.  Additionally, it allows for the manual paging of
+        information and how the data is returned.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        query               Required String.  The search query.
+        ----------------    ---------------------------------------------------------------
+        bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
+                            box to limit the search in.  Items like documents do not have
+                            bounding boxes and will not be included in the search.
+        ----------------    ---------------------------------------------------------------
+        categories          Optional String. A comma separated list of up to 8 org content
+                            categories to search items. Exact full path of each category is
+                            required, OR relationship between the categories specified.
+
+                            Each request allows a maximum of 8 categories parameters with
+                            AND relationship between the different categories parameters
+                            called.
+        ----------------    ---------------------------------------------------------------
+        category_filters    Optional String. A comma separated list of up to 3 category
+                            terms to search items that have matching categories. Up to 2
+                            `category_filters` parameter are allowed per request. It can
+                            not be used together with categories to search in a request.
+        ----------------    ---------------------------------------------------------------
+        start               Optional Int. The starting position to search from.  This is
+                            only required if paging is needed.
+        ----------------    ---------------------------------------------------------------
+        sort_field          Optional String. Responses from the `search` operation can be
+                            sorted on various fields. `avgrating` is the default.
+        ----------------    ---------------------------------------------------------------
+        sort_order          Optional String. The sequence into which a collection of
+                            records are arranged after they have been sorted. The allowed
+                            values are: asc for ascending and desc for descending.
+        ----------------    ---------------------------------------------------------------
+        count_fields        Optional String. A comma separated list of fields to count.
+                            Maximum count fields allowed per request is 3. Supported count
+                            fields: `tags`, `type`, `access`, `contentstatus`, and
+                            `categories`.
+        ----------------    ---------------------------------------------------------------
+        count_size          Optional Int. The maximum number of field values to count for
+                            each `count_fields`. The default value is None, and maximum size
+                            allowed is 200.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        ================    ===============================================================
+
+        :returns: Depends on the inputs.
+                  - Dictionary for a standard search
+                  - `return_count`=True an integer is returned
+                  - `count_fields` is specified a list of dicts for each field specified
+
+        """
+        from arcgis.gis._impl import _search
+        stype = "content"
+        group_id = None
+        if max_items == -1:
+            max_items = _search(gis=self._gis, query=query, stype=stype,
+                          max_items=0, bbox=bbox,
+                          categories=categories, category_filter=category_filter,
+                          start=start, sort_field=sort_field,
+                          sort_order=sort_order, count_fields=count_fields,
+                          count_size=count_size, group_id=group_id, as_dict=as_dict)['total']
+        so = {
+            'asc' : 'asc',
+            'desc' : 'desc',
+            'ascending' : 'asc',
+            'descending' : 'desc'
+        }
+        if sort_order:
+            sort_order = so[sort_order]
+
+        if count_fields or return_count:
+            max_items = 0
+        if max_items <= 100:
+            res = _search(gis=self._gis, query=query, stype=stype,
+                          max_items=max_items, bbox=bbox,
+                          categories=categories, category_filter=category_filter,
+                          start=start, sort_field=sort_field,
+                          sort_order=sort_order, count_fields=count_fields,
+                          count_size=count_size, group_id=group_id, as_dict=as_dict)
+            if 'total' in res and \
+               return_count:
+                return res['total']
+            elif 'aggregations' in res:
+                return res['aggregations']
+            return res
+        else:
+            allowed_keys = [ 'query', 'return_count', 'max_items', 'bbox','categories', 'category_filter',
+                             'start', 'sort_field', 'sort_order', 'count_fields','count_size', 'as_dict']
+            inputs = locals()
+            kwargs = {}
+            for k,v in inputs.items():
+                if k in allowed_keys:
+                    kwargs[k] = v
+            import concurrent.futures
+            import math, copy
+            num = 100
+            steps = range(math.ceil(max_items / num))
+            params = [ ]
+            for step in steps:
+                new_start = start + num*step
+                kwargs['max_items'] = num
+                kwargs['start'] = new_start
+                params.append(copy.deepcopy(kwargs))
+            items = {
+                'results' : [],
+                'start' : start,
+                'num' : 100,
+                'total' : -999
+            }
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_url = {executor.submit(self.advanced_search, **param): param for param in params}
+                for future in concurrent.futures.as_completed(future_to_url):
+                    result = future_to_url[future]
+                    data = future.result()
+                    if 'results' in data:
+                        items['results'].extend(data['results'])
+            if len(items['results']) > max_items:
+                items['results'] = items['results'][:max_items]
+            return items
+
     def search(self,
                query, item_type=None,
                sort_field='avgRating', sort_order='desc',
@@ -3601,6 +3731,9 @@ class ContentManager(object):
         :return:
             A list of items matching the specified query.
         """
+        if max_items > 10000:
+            raise Exception(("Use `advanced_search` fo"
+                             "r item queries over 10,000 Items."))
         itemlist = []
         if query is not None and query != '' and item_type is not None:
             query += ' AND '
@@ -3639,12 +3772,17 @@ class ContentManager(object):
                 query += ' (type:"' + item_type +'")'
         if isinstance(categories, list):
             categories = ",".join(categories)
-        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org,
-                                    categories=categories, category_filters=category_filters)
-        for item in items:
-            itemlist.append(Item(self._gis, item['id'], item))
+        if not outside_org:
+            accountid = self._gis.properties.get('id')
+            if accountid and query:
+                query += ' accountid:' + accountid
+            elif accountid:
+                query = 'accountid:' + accountid
+        itemlist = self.advanced_search(query=query, max_items=max_items,
+                             categories=categories,
+                             start=1, sort_field=sort_field,
+                             sort_order=sort_order)['results']
         return itemlist
-    # q: (type:"web map" NOT type:"web mapping applications") AND accountid:0123456789ABCDEF
 
     def create_folder(self, folder, owner=None):
         """
