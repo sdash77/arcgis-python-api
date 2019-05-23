@@ -1020,13 +1020,16 @@ class _FeatureAnalysisTools(_AsyncService):
                                 input_layer,
                                 break_values=[5, 10, 15],
                                 break_units="Minutes",
-                                travel_mode="Driving",
+                                travel_mode="Driving Time",
                                 overlap_policy="Overlap",
                                 time_of_day=None,
                                 time_zone_for_time_of_day="GeoLocal",
                                 output_name=None,
                                 context=None,
-                                estimate=False):
+                                estimate=False,
+                                point_barrier_layer=None,
+                                line_barrier_layer=None,
+                                polygon_barrier_layer=None):
         """
 
 
@@ -1077,6 +1080,12 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if point_barrier_layer is not None:
+            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)
+        if line_barrier_layer is not None:
+            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
+        if polygon_barrier_layer is not None:
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)        
 
 
         if estimate:
