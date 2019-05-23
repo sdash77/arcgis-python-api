@@ -8647,12 +8647,16 @@ class Item(dict):
                 if not ms.properties.minScale:
                     min_scale = ms.properties.tileInfo.lods[0]['scale']
                     max_scale = ms.properties.tileInfo.lods[-1]['scale']
-                    edit_result = ms.manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
+                else:
+                    min_scale = ms.properties.minScale
+                    max_scale = ms.properties.maxScale
+                edit_result = ms.manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
 
                 # Get LoD from Map Image Layer
                 full_extent = dict(ms.properties.fullExtent)
                 lod_dict = ms.properties.tileInfo['lods']
-                lod = [current_lod['level'] for current_lod in lod_dict]
+                lod = [current_lod['level'] for current_lod in lod_dict
+                       if (min_scale <= current_lod['scale'] <= max_scale)]
                 ret = ms.manager.update_tiles(levels=lod, extent=full_extent)
             except Exception as tiles_ex:
                 raise Exception('Error unpacking tiles :' + str(tiles_ex))
