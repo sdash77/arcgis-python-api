@@ -30,10 +30,7 @@ GEOS_PULL_REQUEST_REGEX = ".*geo.*pull.*request.*"
 PUB_REPO_PULL_REQUEST_REGEX = ".*pub.*repo.*pull.*request"
 PUBLISH_REGEX = ".*publish.*"
 LINUX_SLAVE_REGEX = ".*linux.*slave.*"
-SOURCE_CODE_TEST_REGEX = ".*source.*test.*"
-NOTEBOOK_TEST_REGEX = ".*notebook.*test.*"
-ALL_TEST_REGEX = ".*all.*test.*"
-DEV_SITE_REGEX = ".*dev.*site.*"
+RUN_TEST_SUITE_REGEX = ".*test.*suite.*"
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
     try:

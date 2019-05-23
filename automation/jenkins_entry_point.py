@@ -18,26 +18,18 @@ _regex_and_funcs = [(MASTER_REGEX, [build_conda_package,
                                     publish_to_ftp_site,
                                     build_documentation]),
 
-              (LINUX_SLAVE_REGEX,  [build_conda_package,
-                                    publish_to_ftp_site]),
+                    (LINUX_SLAVE_REGEX,  [build_conda_package,
+                                          publish_to_ftp_site]),
               
-              (GEOS_PULL_REQUEST_REGEX, [build_documentation]),
+                    (GEOS_PULL_REQUEST_REGEX, [build_documentation]),
 
-              (PUB_REPO_PULL_REQUEST_REGEX, [build_dummy_dev_site]),
+                    (PUB_REPO_PULL_REQUEST_REGEX, [build_dummy_dev_site]),
 
-                   (PUBLISH_REGEX, [build_conda_package,
-                                    publish_to_ftp_site]),
+                    (PUBLISH_REGEX, [build_conda_package,
+                                     publish_to_ftp_site]),
 
-          (SOURCE_CODE_TEST_REGEX, [run_integration_tests]),
-
-                 (NOTEBOOK_TEST_REGEX, [run_notebook_tests]),
-
-                 (ALL_TEST_REGEX, [run_integration_tests,
-                                   run_notebook_tests]),
-
-                 (DEV_SITE_REGEX, [stage_notebooks_for_dev_web_repo,
-                                   build_dev_website_and_publish,
-                                   run_dev_website_tests])]
+                    (RUN_TEST_SUITE_REGEX, [run_test_suite]),
+              ]
 
 def _main():
     args = _parse_args()
@@ -71,8 +63,6 @@ def _parse_args():
         help="for -a dev_site, the root dir of arcgis-for-developers repo")
     parser.add_argument("--html-output-dir", "-o", type=str, required=False,
         help="For -a dev_site, the dir where outputted html files get put") 
-    parser.add_argument("--dev-website-server", "-s", type=str, required=False,
-        help="For -a dev_site, the dev site server to run tests against")
     parser.add_argument("--jenkins-root", "-j", type=str, required=False,
         help="For -a notebook_test, the root of the jenkins website. DEFAULT:"\
              " {}".format(JENKINS_ROOT), default=JENKINS_ROOT)

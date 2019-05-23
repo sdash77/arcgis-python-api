@@ -5,7 +5,7 @@ import logging
 log = logging.getLogger()
 
 from automation._common import *
-from automation._export_guide_samples_nb import export_notebooks
+from automation.dev_site._export_guide_samples_nb import export_notebooks
 
 def stage_notebooks_for_dev_web_repo(notebooks_root_dir,
                  output_dir=os.path.join(STAGING_DIR, "arcgis-for-developers"),

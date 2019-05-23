@@ -1,0 +1,14 @@
+unit_tests_to_run:
+    - "{geosaurus_dir}/tests/unit/**/*.py"
+integration_tests_to_run:
+    - "{geosaurus_dir}/tests/integration/**/*.py"
+sanity_tests_to_run:
+    - "{geosaurus_dir}/tests/sanity/**/*.py"
+notebook_tests_to_run:
+    - "{geosaurus_dir}/tests/notebook/**/*.ipynb"
+    - "{arcgis_python_api_dir}/samples/**/*.ipynb"
+    - "{arcgis_python_api_dir}/guide/**/*.ipynb"
+widget_integration_tests_to_run:
+    - "{geosaurus_dir}/tests/widget/**/*.ipynb"
+widget_unit_tests_to_run:
+    - "{geosaurus_dir}/tests/widget/**/*.js"

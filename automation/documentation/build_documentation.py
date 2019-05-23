@@ -4,7 +4,7 @@ import logging
 log = logging.getLogger()
 
 from automation._common import *
-from automation.undocumentation_stats import get_undoc_stats
+from automation.documentation.undocumentation_stats import get_undoc_stats
 DOCS_DIR = os.path.abspath(os.path.join(GEOSAURUS_ROOT_DIR, 
                                         "docs", "api_ref"))
 infile = os.path.abspath(os.path.join(STAGING_DIR,

@@ -1,7 +1,6 @@
 unit_tests_to_run:
     - "./unit/**/*.py"
-integration_tests_to_run:
-    - "./integration/**/*.py"
+integration_tests_to_run: []
 notebook_tests_to_run:
     - "./notebook/**/*.ipynb"
 widget_integration_tests_to_run:

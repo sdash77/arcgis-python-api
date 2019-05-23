@@ -3,7 +3,7 @@ import logging
 log = logging.getLogger()
 
 from automation._common import *
-from automation._classes import *
+from automation.misc._unused._classes import *
 
 def run_dev_website_tests(dev_website_server, **kwargs):
     """Runs tests on every html file in STAGING/arcgis-for-developers,

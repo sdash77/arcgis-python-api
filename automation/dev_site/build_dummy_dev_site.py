@@ -5,8 +5,9 @@ import logging
 log = logging.getLogger()
 
 from automation._common import *
-from automation._export_guide_samples_nb import export_notebooks  
-from automation.stage_notebooks_for_dev_web_repo import recursive_file_copy
+from automation.dev_site._export_guide_samples_nb import export_notebooks  
+from automation.dev_site.stage_notebooks_for_dev_web_repo \
+    import recursive_file_copy
 
 def build_dummy_dev_site(notebooks_root_dir, **kwargs):
     log.info("Building a dummy developer's website...")
@@ -34,7 +35,7 @@ def build_dummy_dev_site(notebooks_root_dir, **kwargs):
                         dst_dir_root = output_dir)
 
     # Copy all CSS
-    css_dir = os.path.join(AUTOMATION_DIR, "_assets", "css")
+    css_dir = os.path.join(AUTOMATION_DIR, "misc", "_assets", "css")
     for g in glob.glob(os.path.join(css_dir, "*.css")):
         copyfile(g, os.path.join(output_dir, os.path.basename(g)))
 

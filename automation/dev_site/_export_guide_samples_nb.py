@@ -18,7 +18,7 @@ from traitlets.config import Config
 from nbconvert import HTMLExporter
 from bs4 import BeautifulSoup
 
-from automation._assets.css import get_css_asset_file_names
+from automation.misc._assets.css import get_css_asset_file_names
 
 unsafe_dirs = ['apidoc','labs','talks','data']
 DEFAULT_IMG_PREFIX = "/assets/img/python-graphics/" #What the dev site uses

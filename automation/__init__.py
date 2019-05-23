@@ -23,15 +23,16 @@ stdout_handler.setLevel(logging.INFO)
 stdout_handler.setFormatter(formatter)
 log.addHandler(stdout_handler)
 
-from automation.automation_cleanup import automation_cleanup
-from automation.automation_setup import automation_setup
-from automation.build_conda_package import build_conda_package
-from automation.build_dev_website_and_publish import build_dev_website_and_publish
-from automation.build_documentation import build_documentation
-from automation.build_pip_package import build_pip_package
-from automation.publish_to_ftp_site import publish_to_ftp_site
-from automation.run_dev_website_tests import run_dev_website_tests
-from automation.run_integration_tests import run_integration_tests
-from automation.run_notebook_tests import run_notebook_tests
-from automation.stage_notebooks_for_dev_web_repo import stage_notebooks_for_dev_web_repo
-from automation.build_dummy_dev_site import build_dummy_dev_site
+from automation.misc.automation_cleanup import automation_cleanup
+from automation.misc.automation_setup import automation_setup
+
+from automation.package_building.build_conda_package import build_conda_package
+from automation.package_building.build_pip_package import build_pip_package
+from automation.package_building.publish_to_ftp_site import publish_to_ftp_site
+
+from automation.documentation.build_documentation import build_documentation
+
+from automation.dev_site.stage_notebooks_for_dev_web_repo import stage_notebooks_for_dev_web_repo
+from automation.dev_site.build_dummy_dev_site import build_dummy_dev_site
+
+from automation.testing_utils.run_test_suite import run_test_suite
