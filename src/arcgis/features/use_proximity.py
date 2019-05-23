@@ -379,47 +379,186 @@ def create_buffers(
 def create_drive_time_areas(input_layer,
                             break_values=[5, 10, 15],
                             break_units="Minutes",
-                            travel_mode="Driving",
+                            travel_mode="Driving Time",
                             overlap_policy="Overlap",
                             time_of_day=None,
                             time_zone_for_time_of_day="GeoLocal",
                             output_name=None,
                             context=None,
                             gis=None,
-                            estimate=False):
+                            estimate=False,
+                            point_barrier_layer=None,
+                            line_barrier_layer=None,
+                            polygon_barrier_layer=None):
     """
+    .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png 
+
+    .. |Overlap| image:: _static/images/create_drive_time_areas/Overlap.png    
+    .. |Dissolve| image:: _static/images/create_drive_time_areas/Dissolve.png    
+    .. |Split| image:: _static/images/create_drive_time_areas/Split.png            
+
+    The ``create_drive_time_areas`` method creates areas that can be reached within a 
+    given drive time or drive distance. It can help you answer questions such as:
+
+    * How far can I drive from here in five minutes?
+    * What areas are covered within a three-mile drive distance of my stores?
+    * What areas are within four minutes of our fire stations?
+
+    =========================    =========================================================
+    **Parameter**                **Description**
+    -------------------------    ---------------------------------------------------------
+    input_layer                  Required point feature layer. The points around which travel areas 
+                                 based on a mode of transportation will be drawn. 
+                                 See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    travel_mode                  Optional string or dict. Specify the mode of transportation for the analysis.
+                                 
+                                 Choice list: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+ 
+                                 The default is 'Driving Time'.
+    -------------------------    ---------------------------------------------------------
+    break_values                 Optional list of floats. The size of the polygons to create. 
+                                 The units for break_values is specified with the break_units parameter.
+
+                                 By setting many unique values in the list, polygons of different sizes are generated around each input location.
+
+                                 The default is [5, 10, 15].
+    -------------------------    ---------------------------------------------------------
+    break_units                  Optional string. The units of the break_values parameter.
+
+                                 To create areas showing how far you can go along roads or walkways within a given time, specify a time unit. 
+                                 Alternatively, specify a distance unit to generate areas bounded by a maximum travel distance.  
+
+                                 When the travel_mode is time based, a time unit should be specified for the break_units. When the 
+                                 travel_mode is distance based, a distance unit should be specified for the break_units.          
+                                
+                                 Choice list: ['Seconds', 'Minutes', Hours', 'Feet', 'Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
+                                             
+                                 The default is 'Minutes'.
+    -------------------------    ---------------------------------------------------------
+    overlap_policy               Optional string. Determines how overlapping areas are processed.
+
+                                 Choice list: ['Overlap', 'Dissolve', 'Split']   
+
+                                 +---------------+-----------------------------------------------------------------------------------------------------+
+                                 | |Overlap|     | ``Overlap``-Overlapping areas are kept. This is the default.                                        |
+                                 +---------------+-----------------------------------------------------------------------------------------------------+
+                                 | |Dissolve|    | ``Dissolve``-Overlapping areas are combined by break value. Because the areas are dissolved,        |
+                                 |               | use this option when you need to know the areas that can be reached within a                        |
+                                 |               | given time or distance, but you don't need to know which input points are nearest.                  |      
+                                 +---------------+-----------------------------------------------------------------------------------------------------+
+                                 | |Split|       | ``Split``-Overlapping areas are split in the middle. Use this option when you need to know          |
+                                 |               | the one nearest input location to the covered area.                                                 |
+                                 +---------------+-----------------------------------------------------------------------------------------------------+
+
+                                 The default is 'Overlap'
+
+    -------------------------    ---------------------------------------------------------
+    time_of_day                  Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis, 
+                                 set measurement_type to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value 
+                                 to time_of_day. (A travel mode with other impedance_attribute_name values don't support traffic.) The time_of_day value represents 
+                                 the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+
+                                 The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical 
+                                 averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe 
+                                 records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+                                
+                                 The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries 
+                                 Esri currently provides traffic data for.
+                                
+                                 Typical Traffic:
+
+                                 To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day 
+                                 of the week to one of the following dates from 1990:
+
+                                 * Monday—1/1/1990
+                                 * Tuesday—1/2/1990
+                                 * Wednesday—1/3/1990
+                                 * Thursday—1/4/1990
+                                 * Friday—1/5/1990
+                                 * Saturday—1/6/1990
+                                 * Sunday—1/7/1990
+                                 Set the time and date as datetime.datetime.
+
+                                 For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to 
+                                 datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+                                
+                                 Live Traffic:
+
+                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
+
+                                 Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you 
+                                 specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
+                                 
+                                 Examples:
+                                 from datetime import datetime
+
+                                 * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                 * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                 * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014, 
+                                   live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                 * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015, 
+                                   live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.                      
+    -------------------------    ---------------------------------------------------------
+    time_zone_for_time_of_day    Optional string. Specify the time zone or zones of the time_of_day parameter. 
+                                
+                                 Choice list: ['GeoLocal', 'UTC']
+                                           
+                                 GeoLocal-refers to the time zone in which the originsLayer points are located.
+                                           
+                                 UTC-refers to Coordinated Universal Time.    
+                                 
+                                 The default is 'GeoLocal'.                                                                                        
+    -------------------------    ---------------------------------------------------------
+    output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
+    -------------------------    ---------------------------------------------------------
+    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_drive_time_areas``, there are two settings.
+                                             
+                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer`` 
+                                    that intersect the bounding box will be analyzed.
+
+                                 #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    -------------------------    ---------------------------------------------------------
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------    ---------------------------------------------------------
+    estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    -------------------------    ---------------------------------------------------------
+    point_barrier_layer          Optional layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) 
+                                 when traveling on the underlying streets.
+
+                                 A point barrier can model a fallen tree, an accident, a downed electrical line, or anything that completely blocks 
+                                 traffic at a specific position along the street. Travel is permitted on the street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    line_barrier_layer           Optional layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
+
+                                 A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across several street 
+                                 segments can be modeled with a line barrier. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    polygon_barrier_layer        Optional string. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+
+                                 One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.     
+    =========================    =========================================================
+
+    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
 
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
+    .. code-block:: python
 
-    break_values : Optional list of floats
+        USAGE EXAMPLE: To create drive time areas around USA airports, within the specified extent.
+        
+        target_area4 = create_drive_time_areas(airport_lyr,
+                                       break_values=[2, 4],
+                                       break_units='Hours',
+                                       travel_mode='Trucking Time',
+                                       overlap_policy='Split',  
+                                       time_of_day=datetime(2019, 5, 13, 7, 52),
+                                       output_name='create_drive_time_areas',
+                                       context={"extent":{"xmin":-11134400.655784884,"ymin":3368261.7800108367,"xmax":-10682810.692676282,"ymax":3630899.409198575,"spatialReference":{"wkid":102100,"latestWkid":3857}}}) """
 
-    break_units : Optional string
-
-    travel_mode : Optional string
-
-    overlap_policy : Optional string
-
-    time_of_day : Optional datetime.datetime
-
-    time_zone_for_time_of_day : Optional string
-
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
-
-    Returns
-    -------
-    drive_time_areas_layer : layer (FeatureCollection)
-    """
     gis = _arcgis.env.active_gis if gis is None else gis
+    if isinstance(travel_mode, str):
+        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+        travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0] 
     return gis._tools.featureanalysis.create_drive_time_areas(
         input_layer,
         break_values,
@@ -430,7 +569,10 @@ def create_drive_time_areas(input_layer,
         time_zone_for_time_of_day,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate,
+        point_barrier_layer=point_barrier_layer,
+        line_barrier_layer=line_barrier_layer,
+        polygon_barrier_layer=polygon_barrier_layer)
 
 
 def find_nearest(

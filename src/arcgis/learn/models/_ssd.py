@@ -9,6 +9,7 @@ try:
     from .._data import prepare_data
     import json
     import os
+    import tempfile
     from pathlib import Path
     from ._codetemplate import code
     from ._unet_utils import is_no_color
@@ -158,7 +159,7 @@ class SingleShotDetector(object):
 
         class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
         if data is None:
-            empty_data = _EmptyData(path='str', loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            empty_data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
             return cls(empty_data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
         else:
             return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))

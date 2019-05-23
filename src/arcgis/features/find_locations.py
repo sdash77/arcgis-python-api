@@ -224,41 +224,112 @@ def create_viewshed(
         gis=None,
         estimate=False):
     """
-    Creates areas that are visible based on locations you specify.
+    .. image:: _static/images/create_viewshed/create_viewshed.png 
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
+    The create_viewshed method identifies visible areas based on the observer locations you provide. 
+    The results are areas where the observers can see the observed objects (and the observed objects can see the observers).
 
-    dem_resolution : Optional string
+    =========================    =========================================================
+    **Parameter**                **Description**
+    -------------------------    ---------------------------------------------------------
+    input_layer                  Required point feature layer. The features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    dem_resolution               Optional string. The approximate spatial resolution (cell size) of the source elevation data used for the calculation.
 
-    maximum_distance : Optional float
+                                 The resolution values are an approximation of the spatial resolution of the digital elevation model. 
+                                 While many elevation sources are distributed in units of arc seconds, the keyword is an approximation 
+                                 of those resolutions in meters for easier understanding.
 
-    max_distance_units : Optional string
+                                 Choice list: ['FINEST', '10m', '24m', '30m', '90m']
 
-    observer_height : Optional float
+                                 The default is the finest resolution available.
+    -------------------------    ---------------------------------------------------------
+    maximum_distance             Optional float. This is a cutoff distance where the computation of visible areas stops. Beyond this distance, it is unknown whether the analysis points and the other objects can see each other.
 
-    observer_height_units : Optional string
+                                 It is useful for modeling current weather conditions or a given time of day, such as dusk. Large values increase computation time.
 
-    target_height : Optional float
+                                 Unless specified, a default maximum distance will be computed based on the resolution and extent of the source DEM. The allowed maximum value is 50 kilometers.
+                                 Use max_distance_units to set the units for maximum_distance.
+    -------------------------    ---------------------------------------------------------
+    max_distance_units           Optional string. The units for the maximum_distance parameter.
+                                             
+                                 Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
+                                             
+                                 The default is 'Meters'.
+    -------------------------    ---------------------------------------------------------
+    observer_height              Optional float. This is the height above the ground of the observer locations.
 
-    target_height_units : Optional string
+                                 The default is 1.75 meters, which is approximately the average height of a person. If you are looking from an elevated location, such as an observation tower or a tall building, use that height instead.
 
-    generalize : Optional bool
+                                 Use observer_height_units to set the units for observer_height.
 
-    output_name : Optional string
+    -------------------------    ---------------------------------------------------------
+    observer_height_units        Optional string. The units for the observer_height parameter.
+                                 
+                                 Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
 
-    context : Optional string
+                                 The default is 'Meters'.
+    -------------------------    ---------------------------------------------------------
+    target_height                Optional float. This is the height of structures or people on the ground used to 
+                                 establish visibility. The result viewshed are those areas where an input point can see these other objects. 
+                                 The converse is also true; the other objects can see an input point.
 
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+                                 * If your input points represent wind turbines and you want to determine where people standing on the 
+                                   ground can see the turbines, enter the average height of a person (approximately 6 feet). 
+                                   The result is those areas where a person standing on the ground can see the wind turbines.
+                                 * If your input points represent fire lookout towers and you want to determine which lookout 
+                                   towers can see a smoke plume 20 feet high or higher, enter 20 feet for the height. The result 
+                                   is those areas where a fire lookout tower can see a smoke plume at least 20 feet high.
+                                 * If your input points represent scenic overlooks along roads and trails and you want to determine 
+                                   where wind turbines 400 feet high or higher can be seen, enter 400 feet for the height. The result 
+                                   is those areas where a person standing at a scenic overlook can see a wind turbine at least 400 feet high.
+                                 * If your input points represent scenic overlooks and you want to determine how much area on the ground 
+                                   people standing at the overlook can see, enter zero. The result is those areas that can be seen from the scenic overlook.
+                                 
+                                 Use target_height_units to set the units for target_height.                                                                
 
+    -------------------------    ---------------------------------------------------------
+    target_height_units          Optional string. The units for the target_height parameter.
 
-    Returns
-    -------
-    viewshed_layer : layer (FeatureCollection)
+                                 Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
+                                             
+                                 The default is 'Meters'.
+    -------------------------    ---------------------------------------------------------
+    generalize                   Optional boolean. Determines whether or not the viewshed polygons are to be generalized.
+
+                                 The viewshed calculation is based on a raster elevation model that creates a result with stair-stepped edges. 
+                                 To create a more pleasing appearance and improve performance, the default behavior is to generalize the polygons. 
+                                 The generalization process smooths the boundary of the visible areas and may remove some single-cell visible areas.  
+
+                                 The default value is True.          
+    -------------------------    ---------------------------------------------------------
+    output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
+    -------------------------    ---------------------------------------------------------
+    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_viewshed``, there are two settings.
+                                             
+                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer`` 
+                                    that intersect the bounding box will be analyzed.
+
+                                 #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    -------------------------    ---------------------------------------------------------
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------    ---------------------------------------------------------
+    estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    =========================    =========================================================
+    
+    :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To create viewshed around esri headquarter office.
+        
+        viewshed3 = create_viewshed(hq_lyr,
+                            maximum_distance=9,
+                            max_distance_units='Miles',
+                            target_height=6,
+                            target_height_units='Feet',
+                            output_name="create Viewshed")
+    
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.create_viewshed(
