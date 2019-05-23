@@ -200,6 +200,7 @@ class GIS(object):
     _is_hosted_nb_home = False
     _product_version = None
     _is_agol = None
+    _pds = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
@@ -725,6 +726,14 @@ class GIS(object):
             return arcgis.apps.hub.Hub(self)
         else:
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
+
+    @property
+    def datastore(self):
+        if self.version >= [7,1]:
+            from arcgis.gis._impl._datastores import PortalDataStore
+            url = self._portal.resturl + "portals/self/datastores"
+            self._pds = PortalDataStore(url=url, gis=self)
+        return self._pds
 
     @_lazy_property
     def _datastores(self):
