@@ -107,6 +107,13 @@ Federation
    :show-inheritance:
 
 
+LivingAtlas
+---------------
+.. autoclass:: arcgis.gis.admin.LivingAtlas
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Logs
 ---------------
 .. autoclass:: arcgis.gis.admin.Logs
