@@ -114,6 +114,7 @@ LivingAtlas
    :undoc-members:
    :show-inheritance:
 
+
 Logs
 ---------------
 .. autoclass:: arcgis.gis.admin.Logs
