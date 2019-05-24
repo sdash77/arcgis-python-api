@@ -70,6 +70,13 @@ LicenseManager
     :undoc-members:
     :show-inheritance:
 
+LivingAtlas
+---------------
+.. autoclass:: arcgis.gis.admin.LivingAtlas
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 IdentityProviderManager
 ---------------
 .. autoclass:: arcgis.gis.admin.IdentityProviderManager
@@ -102,14 +109,6 @@ UX
 Federation
 ---------------
 .. autoclass:: arcgis.gis.admin.Federation
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
-LivingAtlas
----------------
-.. autoclass:: arcgis.gis.admin.LivingAtlas
    :members:
    :undoc-members:
    :show-inheritance:
