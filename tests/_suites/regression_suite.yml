@@ -8,8 +8,7 @@ unit_tests_to_run:
         - "{geosaurus_dir}/tests/unit/**/*.py"
 integration_tests_to_run:
     config: {}
-    paths:
-        - "{geosaurus_dir}/tests/integration/**/*.py"
+    paths: []
 nbconvert_notebook_tests_to_run:
     config:
         blacklist_regexes: 
@@ -18,9 +17,7 @@ nbconvert_notebook_tests_to_run:
             300
     paths:
         - "{geosaurus_dir}/tests/notebook/**/*.ipynb"
-        - "{arcgis_python_api_dir}/samples/**/*.ipynb"
-        - "{arcgis_python_api_dir}/guide/**/*.ipynb"
-selenium_notebook_tests_to_run:
+elenium_notebook_tests_to_run:
     config:
         blacklist_regexes: 
             - ".*ipynb_checkpoints.*"

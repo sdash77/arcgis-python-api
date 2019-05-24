@@ -8,7 +8,7 @@ from nbconvert import HTMLExporter
 from nbconvert.preprocessors import ExecutePreprocessor
 import nbformat
 
-from automation._classes.TestNotebook.NotebookRunnerResult \
+from _test_runners.TestNotebook.NotebookRunnerResult \
     import NotebookRunnerResult
 
 class NotebookRunnerNbConvert:

@@ -8,9 +8,9 @@ from nbconvert import HTMLExporter
 from nbconvert.preprocessors import ExecutePreprocessor
 import nbformat
 
-from automation._classes.TestNotebook.NotebookRunnerNbConvert \
+from _test_runners.TestNotebook.NotebookRunnerNbConvert \
     import NotebookRunnerNbConvert
-from automation._classes.TestNotebook.NotebookRunnerSelenium \
+from _test_runners.TestNotebook.NotebookRunnerSelenium \
     import NotebookRunnerSelenium
 
 class TestNotebook(unittest.TestCase):

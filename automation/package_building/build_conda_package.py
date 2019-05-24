@@ -7,13 +7,10 @@ import logging
 log = logging.getLogger()
 
 from automation._common import *
-try:
-    #import python package from the BUILD_DIR dir
-    sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
-    from build import build
-except Exception:
-    log.warn("Couldn't import 'build' from {}. Attempting to continue..."\
-             "".format(GEOSAURUS_ROOT_DIR))
+
+#import python package from the BUILD_DIR dir
+sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
+from build import build
 
 def build_conda_package(*args, **kwargs):
     build.build_conda_packages_for_all_os_and_py()

@@ -12,10 +12,10 @@ from nbconvert import HTMLExporter
 from nbconvert.preprocessors import ExecutePreprocessor
 import nbformat
 
-from automation._classes.TestNotebook.JupyterClassicNotebookServer \
+from _test_runners.TestNotebook.JupyterClassicNotebookServer \
     import JupyterClassicNotebookServer
 
-from automation._classes.TestNotebook.NotebookRunnerResult \
+from _test_runners.TestNotebook.NotebookRunnerResult \
     import NotebookRunnerResult
 
 NB_CELL_POLLING_INTERVAL_SEC = 2

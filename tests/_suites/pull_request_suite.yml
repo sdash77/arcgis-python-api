@@ -1,9 +1,31 @@
+sanity_tests_to_run:
+    config: {}
+    paths:
+        - "{geosaurus_dir}/tests/sanity/**/*.py"
 unit_tests_to_run:
-    - "./unit/**/*.py"
-integration_tests_to_run: []
-notebook_tests_to_run:
-    - "./notebook/**/*.ipynb"
-widget_integration_tests_to_run:
-    - "./widget/**/*.ipynb"
+    config: {}
+    paths:
+        - "{geosaurus_dir}/tests/unit/**/*.py"
+
+integration_tests_to_run:
+    config: {}
+    paths: []
+nbconvert_notebook_tests_to_run:
+    config:
+        blacklist_regexes: 
+            - ".*ipynb_checkpoints.*"
+        cell_timeout_sec:
+            300
+    paths:
+        - "{geosaurus_dir}/tests/notebook/**/*.ipynb"
+elenium_notebook_tests_to_run:
+    config:
+        blacklist_regexes: 
+            - ".*ipynb_checkpoints.*"
+        cell_timeout_sec:
+            300
+    paths: []
 widget_unit_tests_to_run:
-    - "./widget/**/*.js"
+    config: {}
+    paths:
+        - "{geosaurus_dir}/tests/widget/**/*.js"

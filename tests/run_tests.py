@@ -12,23 +12,12 @@ import shutil
 import platform
 import subprocess
 import tempfile
+
 import logging
 log = logging.getLogger(__name__)
 
-import yaml
-
-GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
-    os.path.dirname( __file__ ),
-    '..'))
-AUTOMATION_DIR = os.path.abspath(os.path.join(
-    GEOSAURUS_ROOT_DIR,
-    "automation"))
-TESTS_DIR = os.path.abspath(os.path.join(
-    GEOSAURUS_ROOT_DIR,
-    "tests"))
-TESTS_OUTPUT = os.path.abspath(os.path.join(
-    TESTS_DIR,
-    "_tests_output"))
+from _test_runners._common import *
+from _test_runners import read_suite_file, run_suite
 
 def _main():
     args = _parse_cmd_line_args()
@@ -48,13 +37,11 @@ def _parse_cmd_line_args():
         help="Run all sanity tests")
     parser.add_argument("--suite", "-y", type=str,
         help="Run the tests in the specified /path/to/suite.yaml")
-    parse.add_argument("--output", "-o", type=str, default=".",
-        help="Output directory to write junit xml etc. files to")
+    parser.add_argument("--output-dir", "-o", type=str, default=".",
+        help="(Optional) Output directory to write junit xml etc. files to. "\
+             "DEFAULT: this directory")
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Verbose logging output")
-    parser.add_argument("--dry-run", "-d", action="store_true",
-        help="Stage each test for run, then skip each test, outputting the "\
-             "same .xml file as specified")
     args = parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
     if any([args.unit, args.sanity, args.suite]):
         return args
@@ -80,21 +67,31 @@ def _setup_logging(args):
     log.debug("args passed in => {}".format(args))
 
 def _run_tests(args):
-    if args.unit:
-        _run_unit_tests()
-    if args.sanity:
-        _run_sanity_tests()
     if args.suite:
-        _run_suite_tests(args.suite)
+        suite = read_suite_file(args.suite)
+    else:
+        suite = {}
 
-def _run_unit_tests():
-    log.info("Running all unit tests...")
+    if args.unit:
+        suite = _add_to_suite_all_unit_tests(suite)
+    if args.sanity:
+        suite = _add_to_suite_all_sanity_tests(suite)
 
-def _run_sanity_tests():
-    log.info("Running all sanity tests...")
+    run_suite(suite, args.output_dir)
 
-def _run_suite_tests(suite):
-    log.info(f"Running all tests in this suite: {suite}")
+def _add_to_suite_all_unit_tests(suite):
+    suite['unit_tests_to_run'] = {}
+    suite['unit_tests_to_run']['config'] = {}
+    suite['unit_tests_to_run']['paths'] = \
+        [os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", "**", "*.py"),]
+    return suite
+
+def _add_to_suite_all_sanity_tests(suite):
+    suite['sanity_tests_to_run'] = {}
+    suite['sanity_tests_to_run']['config'] = {}
+    suite['sanity_tests_to_run']['paths'] = \
+        [os.path.join(GEOSAURUS_ROOT_DIR, "tests", "sanity", "**", "*.py"),]
+    return suite
 
 if __name__ == "__main__":
     try:

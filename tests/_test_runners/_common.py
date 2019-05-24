@@ -1,40 +1,19 @@
-import sys
-import codecs
 import os
-import shutil
 import subprocess
-import logging
-log = logging.getLogger()
-
-JENKINS_ROOT = "http://zion/jenkins"
-NB_TIMEOUT = 120
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
+    '..',
     '..'))
-
 AUTOMATION_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "automation"))
-
-STAGING_DIR = os.path.abspath(os.path.join(
-    AUTOMATION_DIR,
-    "staging"))
-
-BUILD_DIR = os.path.abspath(os.path.join(
-    GEOSAURUS_ROOT_DIR,
-    "build"))
-
 TESTS_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "tests"))
-
-MASTER_REGEX = ".*master.*"
-GEOS_PULL_REQUEST_REGEX = ".*geo.*pull.*request.*"
-PUB_REPO_PULL_REQUEST_REGEX = ".*pub.*repo.*pull.*request"
-PUBLISH_REGEX = ".*publish.*"
-LINUX_SLAVE_REGEX = ".*linux.*slave.*"
-RUN_TEST_SUITE_REGEX = ".*test.*suite.*"
+TESTS_OUTPUT = os.path.abspath(os.path.join(
+    TESTS_DIR,
+    "_tests_output"))
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
     try:
@@ -60,18 +39,4 @@ def _bytes_to_str_cp850_workaround(bytes_):
     """
     return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
 
-def recursive_file_copy(src_dir_root, dst_dir_root, files_to_ignore=[]):
-    """Given two dirs with the same folder structure, copy all files from
-    src to dst, overwriting existing files, ignoring specified files
-    """
-    for root, dirs, files in os.walk(src_dir_root):
-        for name in [x for x in files if x not in files_to_ignore]:
-            rel_path = os.path.join(root, name).split(src_dir_root)[-1]
-            abs_path = src_dir_root + rel_path
-            _overwrite_copy(src = abs_path,
-                            dst = dst_dir_root + rel_path)
-
-def _overwrite_copy(src, dst):
-    log.debug("Copying {} to {}...".format(src, dst))
-    shutil.copyfile(src, dst)
 
