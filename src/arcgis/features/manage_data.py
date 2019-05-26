@@ -192,45 +192,69 @@ def overlay_layers(
         context,
         estimate=estimate)
 
-def create_route_layers(
-        route_data_item,
-        delete_route_data_item=False,
-        tags=None,
-        summary=None,
-        route_name_prefix=None,
-        folder_name=None,
-        gis=None,
-        estimate=False):
+def create_route_layers(route_data_item,
+                        delete_route_data_item=False,
+                        tags=None,
+                        summary=None,
+                        route_name_prefix=None,
+                        folder_name=None,
+                        gis=None,
+                        estimate=False):
+    
     """
-    Creates route layer items on the portal from the input route data.
+    The ``create_route_layers`` method creates route layer items on the portal from the input route data.
 
-    Parameters
-    ----------
-    route_data_item : Required item
-        The route data item that is used to create route layer items.
-    delete_route_data_item : Required Boolean (see Feature Input in documentation)
-        Indicates if the input route data item should be deleted. The default value is False which does not delete the route data item.
-    tags: Optional string
-        Tags used to describe and identify the route layer items. Individual tags are separated using a comma. The route name is always
-        added as a tag even when a value for this argument is not specified.
-    summary: Optional string
-        The summary displayed as part of the item information for the route layer item. If a value for this argument is not specified,
-        a default summary text "Route and directions for <Route Name>" is used.
-    route_name_prefix : Optional string
-        A qualifier added to the title of every route layer item. This can be used to designate all routes that are shared for a
-        specific purpose to have the same prefix in the title. The name of the route is always appended after this qualifier.
-        If a value for the route_name_prefix is not specified, the title for the route layer item is created using only the route name.
-    folder_name: Optional string
-        The folder within your personal online workspace (My Content in your ArcGIS Online or Portal for ArcGIS organization) where the
-        route layer items will be created. If a folder with the specified name does not exist, a new folder will be created.
-        If a folder with the specified name exists, the items will be created in the existing folder.
-        If a value for folder_name is not specified, the route layer items are created in the root folder of your online workspace.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    A route layer includes all the information for a particular route such as the stops assigned to 
+    the route as well as the travel directions. Creating route layers is useful if you want to share 
+    individual routes with other members in your organization.
 
-    Returns
-    -------
-    route_layers : list (items)
+
+    =========================    =========================================================
+    **Parameter**                **Description**
+    -------------------------    ---------------------------------------------------------
+    route_data                   Required item. The item id for the route data item that is used to create route layer items. 
+                                 Before running this task, the route data must be added to your portal as an item.
+    -------------------------    ---------------------------------------------------------
+    delete_route_data_item       Required boolean. Indicates if the input route data item should be deleted. You may want to 
+                                 delete the route data in case it is no longer required after the route layers have been created from it.
+
+                                 When ``delete_route_data_item`` is set to true and the task fails to delete the route data item, 
+                                 it will return a warning message but still continue execution.
+
+                                 The default value is False.
+    -------------------------    ---------------------------------------------------------
+    tags                         Optional string. Tags used to describe and identify the route layer items. 
+                                 Individual tags are separated using a comma. The route name is always
+                                 added as a tag even when a value for this argument is not specified.
+    -------------------------    ---------------------------------------------------------
+    summary                      Optional string. The summary displayed as part of the item information for the route layer item. 
+                                 If a value for this argument is not specified, a default summary text "Route and directions for <Route Name>" is used.
+    -------------------------    ---------------------------------------------------------
+    route_name_prefix            Optional string. A qualifier added to the title of every route layer item. This can be used to designate all routes that are shared for a
+                                 specific purpose to have the same prefix in the title. The name of the route is always appended after this qualifier.
+                                 If a value for the route_name_prefix is not specified, the title for the route layer item is created using only the route name.
+    -------------------------    ---------------------------------------------------------
+    folder_name                  Optional string. The folder within your personal online workspace (My Content in your ArcGIS Online or Portal for ArcGIS organization) where the
+                                 route layer items will be created. If a folder with the specified name does not exist, a new folder will be created.
+                                 If a folder with the specified name exists, the items will be created in the existing folder.
+                                 If a value for folder_name is not specified, the route layer items are created in the root folder of your online workspace.
+    -------------------------    ---------------------------------------------------------
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------    ---------------------------------------------------------
+    estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    =========================    =========================================================
+
+    :returns: result_layer : list (items)
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To create route layers from geodatabase item.
+        route = create_route_layers(route_data_item=route_item,
+                            delete_route_data_item=False,
+                            tags="datascience",
+                            summary="example of create route layers method",
+                            route_name_prefix="santa_ana",
+                            folder_name="create route layers")        
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     output_name = {}
