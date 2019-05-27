@@ -563,35 +563,84 @@ def create_watersheds(
         gis=None,
         estimate=False):
     """
-    Creates catchment areas based on locations you specify.
+    .. image:: _static/images/create_watersheds/create_watersheds.png 
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
+    The ``create_watersheds`` method determines the watershed, or upstream contributing area, for each point 
+    in your analysis layer. For example, suppose you have point features representing locations 
+    of waterborne contamination, and you want to find the likely sources of the contamination. 
+    Since the source of the contamination must be somewhere within the watershed upstream of the 
+    point, you would use this tool to define the watersheds containing the sources of the contaminant.
+ 
 
-    search_distance : Optional float
+    =========================    =========================================================
+    **Parameter**                **Description**
+    -------------------------    ---------------------------------------------------------
+    input_layer                  Required point feature layer. The point features used for calculating watersheds. 
+                                 These are referred to as pour points, because it is the location at which water pours out of the watershed. 
+                                 See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    search_distance              Optional float. The maximum distance to move the location of an input point.
+                                 Use search_units to set the units for search_distance.
 
-    search_units : Optional string
+                                 If your input points are located away from a drainage line, the resulting watersheds 
+                                 are likely to be very small and not of much use in determining the upstream source of 
+                                 contamination. In most cases, you want your input points to snap to the nearest drainage 
+                                 line in order to find the watersheds that flows to a point located on the drainage line. 
+                                 To find the closest drainage line, specify a search distance. If you do not specify a 
+                                 search distance, the tool will compute and use a conservative search distance.
 
-    source_database : Optional string
+                                 To use the exact location of your input point, specify a search distance of zero.
 
-    generalize : Optional bool
+                                 For analysis purposes, drainage lines have been precomputed by Esri using standard 
+                                 hydrologic models. If there is no drainage line within the search distance, the location 
+                                 containing the highest flow accumulation within the search distance is used.
+    -------------------------    ---------------------------------------------------------
+    search_units                 Optional string. The linear units specified for the search distance.
 
-    output_name : Optional string
+                                 Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'Yards']
+    -------------------------    ---------------------------------------------------------
+    source_database              Optional string. Keyword indicating the data source resolution that will be used in the analysis.
+                                             
+                                 Choice list: ['Finest', '30m', '90m']
 
-    context : Optional string
+                                 * Finest (Default): Finest resolution available at each location from all possible data sources.
+                                 * 30m: The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
+                                 * 90m: The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
+    -------------------------    ---------------------------------------------------------
+    generalize                   Optional boolean. Determines if the output watersheds will be smoothed into simpler shapes or conform 
+                                 to the cell edges of the original DEM.
 
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+                                 * True: The polygons will be smoothed into simpler shapes. This is the default.
+                                 * False: The edge of the polygons will conform to the edges of the original DEM.
 
+                                 The default value is True.          
+    -------------------------    ---------------------------------------------------------
+    output_name                  Optional string. Output feature service name. If not provided, a feature collection is returned.
+    -------------------------    ---------------------------------------------------------
+    context                      Optional dict. Context contains additional settings that affect task execution. For ``create_watersheds``, there are two settings.
+                                             
+                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer`` 
+                                    that intersect the bounding box will be analyzed.
 
-    Returns
-    -------
-    dict with the following keys:
-       "snap_pour_pts_layer" : layer (FeatureCollection)
-       "watershed_layer" : layer (FeatureCollection)
+                                 #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    -------------------------    ---------------------------------------------------------
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------    ---------------------------------------------------------
+    estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    =========================    =========================================================
+
+    :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To create watersheds for Chennai lakes.    
+
+        lakes_watershed = create_watersheds(lakes_lyr,
+                                            search_distance=3,
+                                            search_units='Kilometers',
+                                            source_database='90m',
+                                            output_name='create watersheds')
+    
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.create_watersheds(
