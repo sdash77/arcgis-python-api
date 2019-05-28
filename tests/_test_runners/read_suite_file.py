@@ -45,8 +45,10 @@ def _replace_placeholders(dict_, geosaurus_dir, arcgis_python_api_dir):
 def _unglob_paths(suite):
         for tests_to_run_key in suite:
             new_paths_list = []
-            for path in suite[tests_to_run_key]['paths']:
-                new_paths_list += glob.glob(path, recursive=True)
+            for preglob_path in suite[tests_to_run_key]['paths']:
+                for postglob_path in glob.glob(preglob_path, recursive=True):
+                    new_paths_list.append(os.path.normpath(postglob_path))
+
             suite[tests_to_run_key]['paths'] = new_paths_list
 
 def _remove_blacklist_paths(suite):
