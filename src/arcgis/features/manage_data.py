@@ -16,31 +16,82 @@ def dissolve_boundaries(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        multi_part_features=True):
     """
-    Dissolve features based on specified fields.
+    .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png 
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
-        The layer containing polygon features that will be dissolved.
-    dissolve_fields : Optional list of strings
-        One or more fields from the input that control which polygons are merged. If no fields are supplied, all
-        polygons that overlap or shared a common border will be dissolved into one polygon.
-    summary_fields : Optional list of strings
-        A list of field names and statistical types that will be used to summarize the output. Supported statistics
-        include: Sum, Mean, Min, Max, and Stddev.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    The dissolve_boundaries method finds polygons that overlap or share a common boundary and merges them together to form a single polygon.
 
-    Returns
-    -------
-    dissolved_layer : layer (FeatureCollection)
-    """
+    You can control which boundaries are merged by specifying a field. For example, if you have a layer of counties, and each county 
+    has a State_Name attribute, you can dissolve boundaries using the State_Name attribute. Adjacent counties will be merged together 
+    if they have the same value for State_Name. The end result is a layer of state boundaries.
+ 
+    ====================================     ====================================================================
+    **Parameter**                            **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
+    ------------------------------------     --------------------------------------------------------------------
+    dissolve_fields                          Optional list of strings. One or more fields on the input_layer that control which polygons 
+                                             are merged. If you don't supply dissolve_fields , or you supply an empty list of fields, polygons 
+                                             that share a common border (that is, they are adjacent) or polygon areas that overlap will be dissolved into one polygon.
+
+                                             If you do supply values for the dissolve_fields parameter, polygons that share a common border 
+                                             and contain the same value in one or more fields will be dissolved. For example, if you have a layer of counties, 
+                                             and each county has a State_Name attribute, you can dissolve boundaries using the State_Name attribute. 
+                                             Adjacent counties will be merged together if they have the same value for State_Name. The end result is a layer of 
+                                             state boundaries.If two or more fields are specified, the values in these fields must be the same for the boundary to be dissolved.
+    ------------------------------------     --------------------------------------------------------------------
+    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish to calculate from the polygons 
+                                             that are dissolved together. For example, if you are dissolving counties based on State_Name, and each county had a Population field, you can sum Population. 
+                                             The result would be a layer of state boundaries with total population.
+                                             
+                                             fieldName is the name of one of the numeric fields found in the input_layer.
+                                             summary type is one of the following:
+
+                                             * Sum—Adds the total value of all the points in each polygon
+                                             * Mean—Calculates the average of all the points in each polygon.
+                                             * Min—Finds the smallest value of all the points in each polygon.
+                                             * Max—Finds the largest value of all the points in each polygon.
+                                             * Stddev—Finds the standard deviation of all the points in each polygon.
+                                             Example [fieldName1 summaryType1,fieldName2 summaryType2].
+    ------------------------------------     --------------------------------------------------------------------                       
+    output_name                              Optional string. If provided, the task will create a feature service of the results. 
+                                             You define the name of the service. If output_name is not supplied, the task will return a feature collection.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional string. Context contains additional settings that affect task execution. For dissolve_boundaries Points, there are two settings.
+                                             
+                                             #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                             #. Output Spatial Reference (outSR)—the output features will be projected into the output spatial reference.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
+    ------------------------------------     --------------------------------------------------------------------                       
+    multi_part_features                      Optional boolean. Specifies whether multipart features (i.e. features which share a common 
+                                             attribute table but are not visibly connected) are allowed in the output feature class.    
+
+                                             Choice list: ['True', 'False'].
+
+                                             True: Specifies multipart features are allowed.
+
+                                             False: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
+
+                                             The default value is True.    
+    ====================================     ====================================================================
+
+    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To dissolve boundaries of polygons with same state name. The dissolved polygons are summarized using population as summary field and standard deviation as summary type.
+        diss_counties = dissolve_boundaries(input_layer=usa_counties,
+                                            dissolve_fields=["STATE_NAME"],
+                                            summary_fields=["POPULATION STDDEV"],
+                                            output_name="DissolveBoundaries")    
+    """                           
+  
     gis = _arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.featureanalysis.dissolve_boundaries(
@@ -49,7 +100,8 @@ def dissolve_boundaries(
         summary_fields,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate,
+        multi_part_features=multi_part_features)
 
 
 def extract_data(
