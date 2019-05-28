@@ -1368,6 +1368,10 @@ def query_camera_info(camera_query=None,
     camera_query           Required String. This is a SQL query statement that can 
                            be used to filter a portion of the digital camera
                            database.
+                           Digital camera database can be queried using the fields Make, Model,
+                           Focallength, Columns, Rows, PixelSize.
+
+                           Eg. "Make='Rollei' and Model='RCP-8325'"
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -1392,10 +1396,8 @@ def query_camera_info(camera_query=None,
     task = 'QueryCameraInfo'
     job_values = _execute_task(gis, task, params)
     pd.set_option('display.max_rows', None)
-    df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = ["Maker","Model", "Focal Length", "Columns", "Rows","Pixel Size"])
-    display(df)
+    df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = job_values["outputCameraInfo"]["schema"])
     return df
-    #return job_values["outputCameraInfo"]["content"]
 
 ###################################################################################################
 ## query control points
