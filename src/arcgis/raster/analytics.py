@@ -1262,8 +1262,14 @@ def interpolate_points(input_point_features,
 
     Returns
     -------
-    named tuple with name values being output_raster, output_error_raster and
-    process_info
+    named tuple with name values being :
+
+     - output_raster (the output_raster item description is updated with the process_info),
+
+     - process_info (if run in a non-Jupyter environment, use process_info.data to get the HTML data) and 
+
+     - output_error_raster (if output_prediction_error is set to True).   
+    
     """
 
     task = "InterpolatePoints"
@@ -1315,12 +1321,12 @@ def interpolate_points(input_point_features,
     if output_raster is not None:
         outputs.update({"output_raster":output_raster})
 
-    if output_error_raster is not None:
+    if (output_error_raster is not None) and output_error_raster is not '':
         output_error_raster_item = gis.content.get(output_error_raster["itemId"])
         outputs.update({"output_error_raster":output_error_raster_item})
         return_value_names.extend(["output_error_raster"])
 
-    if process_info is not None:
+    if (process_info is not None) and process_info is not '':
         html_final="<b>The following table contains cross validation statistics:</b><br></br><table style='width: 250px;margin-left: 2.5em;'><tbody>"
         import json
         for row in process_info:
