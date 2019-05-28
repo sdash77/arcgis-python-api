@@ -11,9 +11,6 @@ AUTOMATION_DIR = os.path.abspath(os.path.join(
 TESTS_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "tests"))
-TESTS_OUTPUT = os.path.abspath(os.path.join(
-    TESTS_DIR,
-    "_tests_output"))
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
     try:

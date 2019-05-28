@@ -3,7 +3,7 @@ import os
 import unittest
 from glob import glob
 import logging
-log = logging.getLogger()
+log = logging.getLogger("__main__")
 
 from xmlrunner import XMLTestRunner
 

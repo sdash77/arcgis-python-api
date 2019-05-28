@@ -12,7 +12,6 @@ import shutil
 import platform
 import subprocess
 import tempfile
-
 import logging
 log = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ def _parse_cmd_line_args():
         help="Run all sanity tests")
     parser.add_argument("--suite", "-y", type=str,
         help="Run the tests in the specified /path/to/suite.yaml")
-    parser.add_argument("--output-dir", "-o", type=str, default=".",
+    parser.add_argument("--output-dir", "-o", type=str, default=TESTS_DIR,
         help="(Optional) Output directory to write junit xml etc. files to. "\
              "DEFAULT: this directory")
     parser.add_argument("--verbose", "-v", action="store_true",

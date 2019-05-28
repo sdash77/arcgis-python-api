@@ -1,6 +1,6 @@
 import os
 import logging
-log = logging.getLogger(__name__)
+log = logging.getLogger("__main__")
 
 from _test_runners.runners import *
 

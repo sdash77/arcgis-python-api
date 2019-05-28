@@ -1,6 +1,6 @@
 import logging
+# TODO: find more elgant logging solution
 log = logging.getLogger(__name__)
-
 log.setLevel(logging.DEBUG)
 formatter_str = \
     u'-----    %(levelname)s    |    '\
@@ -17,3 +17,4 @@ log.addHandler(stdout_handler)
 
 from _test_runners.read_suite_file import read_suite_file
 from _test_runners.run_suite import run_suite
+from _test_runners._common import *
