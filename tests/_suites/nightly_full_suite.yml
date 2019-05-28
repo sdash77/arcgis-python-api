@@ -13,10 +13,6 @@ integration_tests_to_run:
             - "{geosaurus_dir}/tests/integration/apps/test_build_explorer_url.py"
             - "{geosaurus_dir}/tests/integration/df_accessor/dataframe_spatial_tests.py"
             - "{geosaurus_dir}/tests/integration/geometry/affine_tests.py"
-            - "{geosaurus_dir}"
-            - "{geosaurus_dir}"
-            - "{geosaurus_dir}"
-
     paths:
         - "{geosaurus_dir}/tests/integration/**/*.py"
 nbconvert_notebook_tests_to_run:

@@ -50,6 +50,7 @@ def _unglob_paths(suite):
             suite[tests_to_run_key]['paths'] = new_paths_list
 
 def _remove_blacklist_paths(suite):
+    print(f"about to apply blacklist to {suite}")
     for tests_to_run_key in suite:
         if 'blacklist_regexes' not in suite[tests_to_run_key]['config']:
             continue
