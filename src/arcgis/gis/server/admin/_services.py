@@ -967,6 +967,7 @@ class Service(BaseServer):
     _jsonProperties = None
     _url = None
     _extensions = None
+    _jm = None
     #----------------------------------------------------------------------
     def __init__(self,
                  url,
@@ -1000,6 +1001,8 @@ class Service(BaseServer):
         self._url = url
         self._currentURL = url
         self._con = con
+        if url.lower().find('gpserver') > -1:
+            self.jobs = self._jobs
         if initialize:
             self._init(self._con)
     #----------------------------------------------------------------------
@@ -1148,6 +1151,7 @@ class Service(BaseServer):
         self.stop()
         self.start()
         return True
+
     #----------------------------------------------------------------------
     def rename(self, new_name):
         """
@@ -1403,3 +1407,159 @@ class Service(BaseServer):
         if 'status' in res:
             return res['status'] == 'success'
         return res
+    #----------------------------------------------------------------------
+    @property
+    def _jobs(self):
+        """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
+        if self._jm is None:
+            url = "%s/jobs" % self._url
+            self._jm = JobManager(url=url,
+                                  con=self._con)
+        return self._jm
+###########################################################################
+class JobManager(BaseServer):
+    """
+    The `JobManager` provides operations to locate, monitor, and intervene
+    in current asynchronous jobs being run by the geoprocessing service.
+    """
+    _con = None
+    _gis = None
+    _url = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, con):
+        """Constructor"""
+        self._url = url
+        self._con = con
+    #----------------------------------------------------------------------
+    def search(self,
+               start_time=None,
+               end_time=None,
+               status=None,
+               username=None,
+               machine=None):
+        """
+        This operation allows you to query the current jobs for a
+        geoprocessing service, with a range of parameters to find jobs that
+        meet specific conditions.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        start_time          Optional Datetime. The start date/time of the geoprocessing job.
+        ---------------     --------------------------------------------------------------------
+        end_time            Optional Datetime. The end date/time of the geoprocessing job.
+        ---------------     --------------------------------------------------------------------
+        status              Optional String. TThe current status of the job. The possible
+                            statuses are as follows:
+
+                            - esriJobNew
+                            - esriJobSubmitted
+                            - esriJobExecuting
+                            - esriJobSucceeded
+                            - esriJobFailed
+                            - esriJobCancelling
+                            - esriJobCancelled
+                            - esriJobWaiting
+        ---------------     --------------------------------------------------------------------
+        username            Optional String. The ArcGIS Server user who submitted the job. If
+                            the service is anonymous, this parameter will be unavailable.
+        ---------------     --------------------------------------------------------------------
+        machine             Optional String. The machine running the job.
+        ===============     ====================================================================
+
+
+        :returns: List of `Job`
+
+        """
+        url = "{base}/query".format(base=self._url)
+        import datetime as _datetime
+        if start_time and end_time is None:
+            end_time = int(_datetime.datetime.now().timestamp() * 1000)
+        params = {
+            'f' : 'json',
+            'start' : 1,
+            'number' : 10,
+            'startTime' : "",
+            'endTime' : "",
+            'userName' : "",
+            'machineName' : ""
+        }
+        if start_time:
+            params['startTime'] = int(start_time.timestamp() * 1000)
+        if end_time:
+            params['endTime'] = int(end_time.timestamp() * 1000)
+        if status:
+            params['status'] = status
+        if username:
+            params['userName'] = username
+        if machine:
+            params['machineName'] = machine
+        results = []
+        res = self._con.get(url, params)
+        results = [Job(url="%s/%s" % (self._url, key), con=self._con) for key in res['results'].keys()]
+        while res['nextStart'] > -1:
+            params['start'] = res['nextStart']
+            res = self._con.get(url, params)
+            results += [Job(url="%s/%s" % (self._url, key), con=self._con) for key in res['results'].keys()]
+        return results
+    #----------------------------------------------------------------------
+    def purge(self):
+        """
+        The method `purge` cancels all asynchronous jobs for the
+        geoprocessing service that currently carry a status of NEW,
+        SUBMITTED, or WAITING.
+
+        :returns: Boolean
+
+        """
+        url = "{base}/purgeQueue".format(base=self._url)
+        params = {'f' : 'json'}
+        return self._con.post(url, params)
+
+###########################################################################
+class Job(BaseServer):
+    """
+    A `Job` represents the asynchronous execution of an operation by a
+    geoprocessing service.
+    """
+    _con = None
+    _url = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, con):
+        """Constructor"""
+        self._con = con
+        self._url = url
+    #----------------------------------------------------------------------
+    def cancel(self):
+        """
+        Cancels the current job from the server
+
+        :returns: Boolean
+
+        """
+        url = "{base}/cancel".format(base=self._url)
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'status' in res:
+            return res['status']
+        return res
+    #----------------------------------------------------------------------
+    def delete(self):
+        """
+        Deletes the current job from the server
+
+        :returns: Boolean
+
+        """
+        url = "{base}/cancel".format(base=self._url)
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'status' in res:
+            return res['status']
+        return res
+
+
+
+
