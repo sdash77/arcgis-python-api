@@ -9,6 +9,7 @@ unit_tests_to_run:
 integration_tests_to_run:
     config:
         blacklist:
+            - "{geosaurus_dir}/tests/integration/**/_*.py"
             - "{geosaurus_dir}/tests/integration/gis/test_ContentManager_class.py"
             - "{geosaurus_dir}/tests/integration/apps/test_build_explorer_url.py"
             - "{geosaurus_dir}/tests/integration/df_accessor/dataframe_spatial_tests.py"

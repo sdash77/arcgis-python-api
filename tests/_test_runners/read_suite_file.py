@@ -43,14 +43,36 @@ def _replace_placeholders(dict_, geosaurus_dir, arcgis_python_api_dir):
                             geosaurus_dir = geosaurus_dir,
                             arcgis_python_api_dir = arcgis_python_api_dir))
 
-def _unglob_paths(suite):
-        for tests_to_run_key in suite:
-            new_paths_list = []
-            for preglob_path in suite[tests_to_run_key]['paths']:
-                for postglob_path in glob.glob(preglob_path, recursive=True):
-                    new_paths_list.append(os.path.normpath(postglob_path))
+def _unglob_paths(dict_):
+    if isinstance(dict_, dict):
+        for key in dict_:
+            value = dict_[key]
+            if isinstance(value, dict):
+                _unglob_paths(value)
+            elif isinstance(value, list):
+                new_list = []
+                for preglob_path in value:
+                    for postglob_path in glob.glob(preglob_path, 
+                                                   recursive=True):
+                        new_list.append(postglob_path)
+                dict_[key] = new_list
 
-            suite[tests_to_run_key]['paths'] = new_paths_list
+                """
+                for i in range(0, len(value)):
+                    if isinstance(value[i], str):
+                        value[i] = os.path.normpath(value[i].format(
+                            geosaurus_dir = geosaurus_dir,
+                            arcgis_python_api_dir = arcgis_python_api_dir))
+                """
+    """
+    for tests_to_run_key in suite:
+        new_paths_list = []
+        for preglob_path in suite[tests_to_run_key]['paths']:
+            for postglob_path in glob.glob(preglob_path, recursive=True):
+                new_paths_list.append(os.path.normpath(postglob_path))
+
+        suite[tests_to_run_key]['paths'] = new_paths_list
+    """
 
 def _remove_blacklist_paths(suite):
     print(f"about to apply blacklist to {suite}")
@@ -58,7 +80,7 @@ def _remove_blacklist_paths(suite):
         if 'blacklist' not in suite[tests_to_run_key]['config']:
             continue
         blacklist = suite[tests_to_run_key]['config']['blacklist']
-        for blacklist in blacklist:
+        for blacklist_path in blacklist:
             suite[tests_to_run_key]['paths'] = list(\
                 path for path in suite[tests_to_run_key]['paths'] \
-                if not path == blacklist_regex)
+                if not path == blacklist_path)
