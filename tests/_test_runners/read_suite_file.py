@@ -2,7 +2,6 @@ import os
 import glob
 import re
 
-
 import yaml
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
@@ -44,6 +43,7 @@ def _replace_placeholders(dict_, geosaurus_dir, arcgis_python_api_dir):
                             arcgis_python_api_dir = arcgis_python_api_dir))
 
 def _unglob_paths(dict_):
+    """Unglobs all globable lists of paths in the whole suite"""
     if isinstance(dict_, dict):
         for key in dict_:
             value = dict_[key]
@@ -57,25 +57,8 @@ def _unglob_paths(dict_):
                         new_list.append(postglob_path)
                 dict_[key] = new_list
 
-                """
-                for i in range(0, len(value)):
-                    if isinstance(value[i], str):
-                        value[i] = os.path.normpath(value[i].format(
-                            geosaurus_dir = geosaurus_dir,
-                            arcgis_python_api_dir = arcgis_python_api_dir))
-                """
-    """
-    for tests_to_run_key in suite:
-        new_paths_list = []
-        for preglob_path in suite[tests_to_run_key]['paths']:
-            for postglob_path in glob.glob(preglob_path, recursive=True):
-                new_paths_list.append(os.path.normpath(postglob_path))
-
-        suite[tests_to_run_key]['paths'] = new_paths_list
-    """
-
 def _remove_blacklist_paths(suite):
-    print(f"about to apply blacklist to {suite}")
+    """Removes all matching blacklist items from the `paths` entry"""
     for tests_to_run_key in suite:
         if 'blacklist' not in suite[tests_to_run_key]['config']:
             continue

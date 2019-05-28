@@ -10,6 +10,7 @@ def run_integration_tests(config, paths, output_dir):
     out_xml = os.path.join(output_dir, "integration_tests_output.xml")
     pytest_args = ["-x",] + paths + [ 
         f"--junit-xml={out_xml}",
+        "--maxfail=99999999999999999",
         ]
     log.debug(f"Running pytest.main({pytest_args})")
     #os.chdir(INTEGRATION_TESTS_DIR)

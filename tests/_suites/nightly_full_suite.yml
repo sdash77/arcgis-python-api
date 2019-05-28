@@ -10,10 +10,6 @@ integration_tests_to_run:
     config:
         blacklist:
             - "{geosaurus_dir}/tests/integration/**/_*.py"
-            - "{geosaurus_dir}/tests/integration/gis/test_ContentManager_class.py"
-            - "{geosaurus_dir}/tests/integration/apps/test_build_explorer_url.py"
-            - "{geosaurus_dir}/tests/integration/df_accessor/dataframe_spatial_tests.py"
-            - "{geosaurus_dir}/tests/integration/geometry/affine_tests.py"
     paths:
         - "{geosaurus_dir}/tests/integration/**/*.py"
 nbconvert_notebook_tests_to_run:
