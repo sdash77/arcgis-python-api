@@ -1115,7 +1115,8 @@ class _FeatureAnalysisTools(_AsyncService):
                             summary_fields=[],
                             output_name=None,
                             context=None,
-                            estimate=False):
+                            estimate=False,
+                            multi_part_features=True):
         """
         Dissolve features based on specified fields.
 
@@ -1151,7 +1152,8 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
-
+        if  multi_part_features:
+            params["multiPartFeatures"] = multi_part_features
 
         if estimate:
             from arcgis.features._credits import _estimate_credits

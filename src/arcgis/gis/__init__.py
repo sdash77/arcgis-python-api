@@ -1329,7 +1329,7 @@ class DatastoreManager(object):
         object_store        Required string. This is the amazon bucket path or Azuze path.
         ---------------     --------------------------------------------------------------------
         provider            Required string. Values must be azuredatalakestore, amazon,
-                            Huawei, Alibaba, or azure.
+                            Alibaba, or azure.
         ---------------     --------------------------------------------------------------------
         managed             Optional boolean. When the data store is server only, the database
                             is entirely managed and owned by the server and cannot be accessed
