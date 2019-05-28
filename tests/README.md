@@ -36,6 +36,6 @@ For any path contained in the `geosaurus` repository, start out your string with
 
 `config` contains miscellaneous specific options for those tests, such as 
 
-    - `blacklist_regexes` (list of regex strings to test against all file paths of test files, and to remove if there is a match)
+    - `blacklist` (list of glob-able paths to remove from `paths` if there is a match)
     - `cell_timeout_sec` (if the test is a notebook test, how long to wait in seconds for a cell to finish before forcing a failure)
     - `browser` (if the test is a selenium notebook test, whether to override to use Firefox or Chrome. If not specified, will pick one depending on the day of the week)
