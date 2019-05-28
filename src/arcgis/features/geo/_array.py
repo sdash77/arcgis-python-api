@@ -187,6 +187,12 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         return type(self)(self.data.copy())
 
     from arcgis.geometry import BaseGeometry
+    #----------------------------------------------------------------------
+    @property
+    def size(self):
+        """returns the length of the data"""
+        return len(self.data)
+
     @property
     def is_valid(self):
         """Checks if the Geometry is Valid"""
