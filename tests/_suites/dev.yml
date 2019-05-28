@@ -7,18 +7,10 @@ unit_tests_to_run:
     paths:
         - "{geosaurus_dir}/tests/unit/**/*.py"
 integration_tests_to_run:
-    config:
-        blacklist_regexes:
-            - "{geosaurus_dir}/tests/integration/gis/test_ContentManager_class.py"
-            - "{geosaurus_dir}/tests/integration/apps/test_build_explorer_url.py"
-            - "{geosaurus_dir}/tests/integration/df_accessor/dataframe_spatial_tests.py"
-            - "{geosaurus_dir}/tests/integration/geometry/affine_tests.py"
-            - "{geosaurus_dir}"
-            - "{geosaurus_dir}"
-            - "{geosaurus_dir}"
-
+    config: {}
     paths:
-        - "{geosaurus_dir}/tests/integration/**/*.py"
+        - "{geosaurus_dir}/tests/integration/gis/test_UserManager_class.py"
+        - "/Users/davi9349/devel/geofork/tests/integration/mapping/test_OfflineMapAreaManager_class.py"
 nbconvert_notebook_tests_to_run:
     config:
         blacklist_regexes: 

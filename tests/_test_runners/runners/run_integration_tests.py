@@ -12,5 +12,5 @@ def run_integration_tests(config, paths, output_dir):
         f"--junit-xml={out_xml}",
         ]
     log.debug(f"Running pytest.main({pytest_args})")
-    os.chdir(INTEGRATION_TESTS_DIR)
+    #os.chdir(INTEGRATION_TESTS_DIR)
     pytest.main(pytest_args)
