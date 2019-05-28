@@ -2,6 +2,7 @@ import os
 import glob
 import re
 
+
 import yaml
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
@@ -60,4 +61,4 @@ def _remove_blacklist_paths(suite):
         for blacklist_regex in blacklist:
             suite[tests_to_run_key]['paths'] = list(\
                 path for path in suite[tests_to_run_key]['paths'] \
-                if not re.match(blacklist_regex, path))
+                if not re.match(blacklist_regex, re.escape(path)))
