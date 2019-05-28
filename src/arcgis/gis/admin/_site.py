@@ -1,6 +1,3 @@
-"""
-Module contains a class to manage site level functions on a local GIS
-"""
 from ._base import BasePortalAdmin
 ########################################################################
 class Site(BasePortalAdmin):
@@ -84,7 +81,7 @@ class Site(BasePortalAdmin):
         ---------------------------     --------------------------------------------------------------------
         license_file                    Optional string. The portal license file. Starting at 10.7, you will
                                         obtain your portal license file - which contains information
-                                        regarding your user types, apps, and app bundles—from My Esri. For
+                                        regarding your user types, apps, and app bundles-from My Esri. For
                                         more information, see Obtain a portal license file.
         ---------------------------     --------------------------------------------------------------------
         user_license                    The user type for the initial administrator account. The values
@@ -203,7 +200,7 @@ class Site(BasePortalAdmin):
         configuration store.
         If this is the first portal machine in your site, use the Create
         Site operation instead.
-        The joinSite operation:
+        The join operation:
          - Registers a machine to an existing site (active machine)
          - Creates a snapshot of the database of the active machine
          - Updates the token shared key

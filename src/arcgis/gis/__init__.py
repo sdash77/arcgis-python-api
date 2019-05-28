@@ -394,13 +394,13 @@ class GIS(object):
            me.role == "org_admin":
             try:
                 if self.properties.isPortal == True:
-                    from .admin.portaladmin import PortalAdminManager
+                    from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                                     gis=self)
                 else:
                     from .admin.agoladmin import AGOLAdminManager
                     self.admin = AGOLAdminManager(gis=self)
-            except:
+            except Exception as e:
                 pass
         elif self._con._auth.lower() != 'anon' and \
              self._con._auth is not None and\
