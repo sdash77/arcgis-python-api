@@ -4,8 +4,9 @@ from arcgis._impl import _ArcGISConnection
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
 ###########################################################################
-class PortalDataStore:
+class PortalDataStore(object):
     """
+
     The datastores resource page provides access to operations that allow you to do the
     following:
 
@@ -103,7 +104,9 @@ class PortalDataStore:
     #----------------------------------------------------------------------
     def delete_layers(self, item):
         """
-        Before a data store can be unregistered from a server, all of its bulk-published layers must be deleted, as the removeFromServer operation cannot be completed if there are outstanding bulk-published layers. The deleteLayers operation deletes all layers published from the data store.
+        Before a data store can be unregistered from a server, all of its
+        bulk-published layers must be deleted. The delete_layers removes all
+        layers published from the data store.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -136,9 +139,12 @@ class PortalDataStore:
             return True
         return False
     #----------------------------------------------------------------------
-    def list(self, item):
+    def layers(self, item):
         """
-        The getLayers operation returns a list of layers bulk published from a data store with the publishLayers operation. The getLayers operation returns an array of tuples, with each tuple containing two objects: a layer and the dataset it was published from. For example, the feature layer States was published from the feature class States.
+        The `layers operation returns a list of layers bulk published from a
+        data store with the `publish_layers` method. The `layers` method
+        returns an array of tuples, with each tuple containing two
+        objects: a layer and the dataset it was published from.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -284,7 +290,14 @@ class PortalDataStore:
     #----------------------------------------------------------------------
     def refresh_server(self, item, server_id):
         """
-        After a data store has been registered, there may be times in which the data store's registration information may be changed. When changes like these occur, the server will need to be updated with the newly configured information so that your users will still be able to access the data store items without interruption. The refreshServer operation can be called to propagate these changes to your ArcGIS Server. This operation can only be performed after the data store information has been updated.
+        After a data store has been registered, there may be times in which
+        the data store's registration information may be changed. When
+        changes like these occur, the server will need to be updated with
+        the newly configured information so that your users will still be
+        able to access the data store items without interruption. The
+        `refresh_server` can be called to propagate these changes to your
+        ArcGIS Server. This operation can only be performed after the data
+        store information has been updated.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -318,7 +331,12 @@ class PortalDataStore:
     #----------------------------------------------------------------------
     def validate(self, server_id, item=None, config=None):
         """
-        The validate operation ensures that your ArcGIS Server can connect and use the datasets stored within a given data store. While this operation can be called before or after the data store has been registered with your server, it is recommended that the validate operation is performed beforehand. A data store can be validated by using either its datastoreId or the JSON for an unregistered data store.
+        The `validate` ensures that your ArcGIS Server can connect and use
+        the datasets stored within a given data store. While this operation
+        can be called before or after the data store has been registered
+        with your server, it is recommended that the validate operation is
+        performed beforehand. A data store can be validated by using either
+        its datastoreId or the JSON for an unregistered data store.
 
         ==================     ====================================================================
         **Argument**           **Description**

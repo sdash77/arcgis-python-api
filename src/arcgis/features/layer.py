@@ -1602,16 +1602,16 @@ class FeatureLayerCollection(_GISResource):
     def relationships(self):
         """
         The `relationships` property provides relationship information for
-        the layers and tables in the service.
+        the layers and tables in the feature layer collection.
 
         The relationships resource includes information about relationship
         rules from the back-end relationship classes, in addition to the
         relationship information already found in the individual layers and
         tables.
 
-        Services that support the relationships resource will have the
-        "supportsRelationshipsResource": true property on their service
-        resource.
+        Feature layer collections that support the relationships resource
+        will have the "supportsRelationshipsResource": true property on
+        their properties.
 
         :returns: List of Dictionaries
 
@@ -1645,10 +1645,10 @@ class FeatureLayerCollection(_GISResource):
     def query_domains(self, layers):
         """
         The query_domains returns full domain information for the domains
-        referenced by the layers in the service. This operation is
-        performed on a feature service resource. The operation takes an
-        array of layer IDs and returns the set of domains referenced by the
-        layers.
+        referenced by the layers in the feature layer collection. This
+        operation is performed on a feature layer collection. The operation
+        takes an array of layer IDs and returns the set of domains referenced
+        by the layers.
 
         ================================     ====================================================================
         **Argument**                         **Description**
