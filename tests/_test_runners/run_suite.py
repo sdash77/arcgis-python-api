@@ -1,11 +1,12 @@
 import os
+import json
 import logging
 log = logging.getLogger("__main__")
 
 from _test_runners.runners import *
 
 def run_suite(suite, output_dir, jenkins_root="http://zion/jenkins"):
-    log.debug(f"running suite {suite}")
+    log.debug(f"running suite {json.dumps(suite)}")
 
     if "sanity_tests_to_run" in suite:
         run_sanity_tests(suite["sanity_tests_to_run"]["config"],
