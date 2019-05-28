@@ -615,13 +615,13 @@ class PlatformServiceManager(BaseServer):
             if "platformservices" in self._json_dict:
                 for ps in self._json_dict["platformservices"]:
                     services.append(PlatformService(url="%s/%s" % (self._url, ps['id']),
-                                                    gis=self._con))
+                                                    connection=self._con))
         else:
             if "platformservices" in self._json_dict:
                 for ps in self._json_dict["platformservices"]:
                     if ps['type'].lower() == service.lower():
                         services.append(PlatformService(url="%s/%s" % (self._url, ps['id']),
-                                                    gis=self._con))
+                                                    connection=self._con))
         return services
 ########################################################################
 class PlatformService(BaseServer):
