@@ -12,6 +12,7 @@ import shutil
 import platform
 import subprocess
 import tempfile
+import glob
 import logging
 log = logging.getLogger(__name__)
 
@@ -36,7 +37,8 @@ def _parse_cmd_line_args():
         help="Run all sanity tests")
     parser.add_argument("--suite", "-y", type=str,
         help="Run the tests in the specified /path/to/suite.yaml")
-    parser.add_argument("--output-dir", "-o", type=str, default=TESTS_DIR,
+    parser.add_argument("--output-dir", "-o", type=str, 
+        default=os.path.join(TESTS_DIR, "_output"),
         help="(Optional) Output directory to write junit xml etc. files to. "\
              "DEFAULT: this directory")
     parser.add_argument("--verbose", "-v", action="store_true",
@@ -81,15 +83,17 @@ def _run_tests(args):
 def _add_to_suite_all_unit_tests(suite):
     suite['unit_tests_to_run'] = {}
     suite['unit_tests_to_run']['config'] = {}
-    suite['unit_tests_to_run']['paths'] = \
-        [os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", "**", "*.py"),]
+    suite['unit_tests_to_run']['paths'] = glob.glob(
+        os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", "**", "*.py"),
+        recursive = True)
     return suite
 
 def _add_to_suite_all_sanity_tests(suite):
     suite['sanity_tests_to_run'] = {}
     suite['sanity_tests_to_run']['config'] = {}
-    suite['sanity_tests_to_run']['paths'] = \
-        [os.path.join(GEOSAURUS_ROOT_DIR, "tests", "sanity", "**", "*.py"),]
+    suite['sanity_tests_to_run']['paths'] = glob.glob(
+        os.path.join(GEOSAURUS_ROOT_DIR, "tests", "sanity", "**", "*.py"),
+        recursive = True)
     return suite
 
 if __name__ == "__main__":

@@ -1,5 +1,10 @@
+import os
 import logging
 log = logging.getLogger("__main__")
 
-def run_unit_tests(*args, **kwargs):
-    log.info("running unit tests")
+from _test_runners._common import *
+
+def run_unit_tests(config, paths, output_dir):
+    log.info("Running unit tests...")
+    output_xml_path = os.path.join(output_dir, "unit_tests_output.xml")
+    run_pytest_on(paths, output_xml_path)

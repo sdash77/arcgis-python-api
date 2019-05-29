@@ -68,8 +68,6 @@ src/.vscode/settings.json
 tests/integration/test-results/
 /*.wpr
 /*.wpu
-tests/*.xml
-tests/*.html
 
 #Any builds from setup.py for pip go in a dist folder
 /src/dist

@@ -1,5 +1,9 @@
 import os
 import subprocess
+import logging
+log = logging.getLogger("__main__")
+
+import pytest
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
@@ -36,4 +40,10 @@ def _bytes_to_str_cp850_workaround(bytes_):
     """
     return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
 
-
+def run_pytest_on(paths, output_xml_path):
+    pytest_args = ["-x",] + paths + [ 
+        f"--junit-xml={output_xml_path}",
+        "--maxfail=99999999999999999",
+        ]
+    log.debug(f"Running pytest.main({pytest_args})")
+    pytest.main(pytest_args)
