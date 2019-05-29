@@ -1409,6 +1409,19 @@ class Service(BaseServer):
         return res
     #----------------------------------------------------------------------
     @property
+    def iteminformation(self):
+        """ returns the item information
+
+        :returns: ItemInforamtionManager
+
+        """
+        if self._ii is None:
+            u_url = self._url + "/iteminfo"
+            self._ii = ItemInforamtionManager(url=u_url,
+                                       con=self._con)
+        return self._ii
+    #----------------------------------------------------------------------
+    @property
     def _jobs(self):
         """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
         if self._jm is None:
@@ -1559,6 +1572,153 @@ class Job(BaseServer):
         if 'status' in res:
             return res['status']
         return res
+###########################################################################
+class ItemInforamtionManager(BaseServer):
+    """
+    The item information resource stores metadata about a service.
+    Typically, this information is available to clients that want to index
+    or harvest information about the service.
+
+    Item information is represented in JSON. The property `properties` allows
+    users to access the schema and see the current format of the JSON.
+
+
+    """
+    _url = None
+    _properties = None
+    _con = None
+    def __init__(self, url, con):
+        """Constructor"""
+        self._url = url
+        self._con = con
+    #----------------------------------------------------------------------
+    def delete(self):
+        """Deletes the item information.
+
+        :returns: Boolean
+
+        """
+        url = "{base}/delete".format(base=self._url)
+        params = {'f': 'json'}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def upload(self, info_file, folder=None):
+        """Uploads a file associated with the item information to the server.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        info_file           Required String. The file to upload to the server.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional String. The name of the folder on the server to which the
+                            file must be uploaded.
+        ===============     ====================================================================
+
+        :returns: Dict
+
+        """
+        f = {'file' : info_file}
+        params = {
+            'f' : 'json',
+
+        }
+        if folder:
+            params['folder'] = folder
+        url = "{base}/upload".format(base=self._url)
+        res = self._con.post(url,
+                             params,
+                             files=f)
+        return res
+    #----------------------------------------------------------------------
+    @property
+    def manifest(self):
+        """
+        The service manifest resource documents the data and other resources
+        that define the service origins and power the service. This resource
+        will tell you underlying databases and their location along with
+        other supplementary files that make up the service.
+
+
+        The JSON representation of the manifest has the following two sections:
+
+        Databases
+
+           + byReference - Indicates whether the service data is referenced
+                           from a registered folder or database (true) or
+                           if it was copied to the server at the time the
+                           service was published (false).
+           + onPremiseConnectionString - Path to publisher data location.
+           + onServerConnectionString - Path to data location after
+                                        publishing completes.
+
+
+        When both the server machine and the publisher's machine are using
+        the same folder or database, byReference is true and the
+        onPremiseConnectionString and onServerConnectionString properties
+        have the same value.
+
+        When the server machine and the publisher machine are using
+        different folders or databases, byReference is true and the
+        onPremiseConnectionString and onServerConnectionString properties
+        have different values.
+
+        When the data is copied to the server automatically at publish time,
+        byReference is false.
+
+        Resources
+
+           + clientName - Machine where ArcGIS for Desktop was used to
+                          publish the service.
+           + onPremisePath - Path, relative to the 'clientName'
+                             machine, where the source resource (.mxd,
+                             .3dd, .tbx files, geodatabases, and so on)
+                             originated.
+           + serverPath - Path to the document after publishing
+                          completes.
+
+        :returns: Dict
+
+        """
+        url = "{base}/manifest/manifest.json"
+        params = {'f' : 'json'}
+
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """
+        Gets/Sets the Item Information for a serivce.
+
+        :returns: Dict
+
+        """
+        url = "{base}".format(base=self._url)
+        params = {'f': 'json'}
+        return self._con.get(url, params)
+    #----------------------------------------------------------------------
+    @properties.setter
+    def properties(self, value):
+        """
+        Gets/Sets the Item Information for a serivce.
+
+        :returns: Dict
+
+        """
+        url = "{base}/edit".format(base=self._url)
+        params = {'f': 'json'}
+        return self._con.post(url, params)
+
+
+
+
+
+
+
+
+
 
 
 
