@@ -25,3 +25,4 @@ dependencies:
   - unittest-xml-reporting
   - setuptools >=38.6
   - sphinx-rtd-theme
+  - pytest-blockage

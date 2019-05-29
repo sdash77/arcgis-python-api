@@ -40,10 +40,12 @@ def _bytes_to_str_cp850_workaround(bytes_):
     """
     return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
 
-def run_pytest_on(paths, output_xml_path):
+def run_pytest_on(paths, output_xml_path, block_network_access=False):
     pytest_args = ["-x",] + paths + [ 
         f"--junit-xml={output_xml_path}",
         "--maxfail=99999999999999999",
         ]
+    if block_network_access:
+        pytest_args.append("--blockage")
     log.debug(f"Running pytest.main({pytest_args})")
     pytest.main(pytest_args)
