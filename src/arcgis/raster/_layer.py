@@ -1620,7 +1620,7 @@ class ImageryLayer(Layer):
         if isinstance(item_ids, str):
             item_ids = [item_ids]
         if isinstance(service_url, str):
-            service_url = [service_url]
+            service_url = service_url
         params['geodataTransformApplyMethod'] = geodata_transform_apply_method
         params['rasterType'] = raster_type
         params['buildPyramids'] = build_pyramids
