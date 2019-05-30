@@ -196,7 +196,7 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
     @property
     def is_valid(self):
         """Checks if the Geometry is Valid"""
-        return pd.Series([g.is_valid for g in self])
+        return pd.Series([g.is_valid() for g in self])
 
     #----------------------------------------------------------------------
     def _call_property(self, prop, as_ga=False):
@@ -275,10 +275,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
     @property
     def is_multipart(self):
         return self._call_property("is_multipart")
-    #----------------------------------------------------------------------
-    @property
-    def is_valid(self):
-        return self._call_property("is_valid")
+    ##----------------------------------------------------------------------
+    #@property
+    #def is_valid(self):
+    #    return self._call_property("is_valid")
     #----------------------------------------------------------------------
     @property
     def JSON(self):
