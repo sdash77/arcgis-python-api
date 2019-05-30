@@ -1399,7 +1399,8 @@ class _FeatureAnalysisTools(_AsyncService):
                      units=None,
                      output_name=None,
                      context=None,
-                     estimate=False):
+                     estimate=False,
+                     return_boundaries=False):
         """
         The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
@@ -1452,6 +1453,8 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if return_boundaries:
+            params["returnBoundaries"] = return_boundaries            
 
 
         if estimate:
