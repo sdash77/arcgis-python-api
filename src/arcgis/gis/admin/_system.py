@@ -70,7 +70,10 @@ class System(BasePortalAdmin):
            domain items are separated using a pipe (|).
          - WebContextURL-If you are using a reverse proxy, set this
            property to reverse proxy URL.
-
+         - ldapCertificateValidation Introduced at 10.7. When set to true,
+           any encrypted LDAP communication (LDAPS) made from the portal to
+           the user or group identity store will enforce certificate
+           validation. The default value is false.
         """
         url = "%s/properties" % self._url
         params = {"f" : "json"}
@@ -111,6 +114,10 @@ class System(BasePortalAdmin):
            domain items are separated using a pipe (|).
          - WebContextURL-If you are using a reverse proxy, set this
            property to reverse proxy URL.
+        - ldapCertificateValidation-Introduced at 10.7. When set to true,
+           any encrypted LDAP communication (LDAPS) made from the portal to
+           the user or group identity store will enforce certificate
+           validation. The default value is false.
         """
         url = "%s/properties/update" % self._url
         params = {"f" : "json",
@@ -815,7 +822,7 @@ class PortalLicense(BasePortalAdmin):
         file = {'file' : file}
         params = {'f' : "json",
                   'listAdministratorUserTypes' : list_ut}
-        url = "%s/importLicense" % self._url
+        url = "%s/validateLicense" % self._url
         res = self._con.post(url, params, files=file)
         return res
 

@@ -98,10 +98,7 @@ class PortalAdminManager(BasePortalAdmin):
     #----------------------------------------------------------------------
     @property
     def category_schema(self):
-        """
-        This resource allows for the setting and manipulating of catagory
-        schemas.
-        """
+        """This resource allows for the setting and manipulating of catagory schemas."""
         if self._category_schema is None:
             from ._catagoryschema import CategoryManager
             self._category_schema = CategoryManager(gis=self._gis)

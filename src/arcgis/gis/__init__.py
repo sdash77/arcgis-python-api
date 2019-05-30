@@ -200,6 +200,7 @@ class GIS(object):
     _is_hosted_nb_home = False
     _product_version = None
     _is_agol = None
+    _pds = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
@@ -393,13 +394,13 @@ class GIS(object):
            me.role == "org_admin":
             try:
                 if self.properties.isPortal == True:
-                    from .admin.portaladmin import PortalAdminManager
+                    from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                                     gis=self)
                 else:
                     from .admin.agoladmin import AGOLAdminManager
                     self.admin = AGOLAdminManager(gis=self)
-            except:
+            except Exception as e:
                 pass
         elif self._con._auth.lower() != 'anon' and \
              self._con._auth is not None and\
@@ -725,6 +726,14 @@ class GIS(object):
             return arcgis.apps.hub.Hub(self)
         else:
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
+
+    @property
+    def datastore(self):
+        if self.version >= [7,1]:
+            from arcgis.gis._impl._datastores import PortalDataStore
+            url = self._portal.resturl + "portals/self/datastores"
+            self._pds = PortalDataStore(url=url, gis=self)
+        return self._pds
 
     @_lazy_property
     def _datastores(self):
