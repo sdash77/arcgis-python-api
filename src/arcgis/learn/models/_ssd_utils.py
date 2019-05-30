@@ -49,7 +49,7 @@ class OutConv(nn.Module):
                 flatten_conv(self.oconv2(x), self.k)]
     
 class SSDHead(nn.Module):
-    def __init__(self, grids, anchors_per_cell, num_classes, num_features=7, drop=0.3, bias=-4.):
+    def __init__(self, grids, anchors_per_cell, num_classes, num_features=7, drop=0.3, bias=-4., num_channels=512):
         super().__init__()
         self.drop = nn.Dropout(drop)
         
@@ -61,7 +61,7 @@ class SSDHead(nn.Module):
         self._k = anchors_per_cell
 
         
-        self.sconvs.append(StdConv(512, 256, stride=1, drop=drop))
+        self.sconvs.append(StdConv(num_channels, 256, stride=1, drop=drop))
         
         
         for i in range(len(grids)):
