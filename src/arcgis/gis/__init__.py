@@ -1110,7 +1110,7 @@ class Datastore(dict):
         :returns: Boolean. True = Success, False = Failure
 
         """
-        url = data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
+        url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
         params = {'f' : 'json'}
         res = self._con.post(url, params)
         if 'success' in res:
