@@ -84,7 +84,8 @@ def _add_to_suite_all_unit_tests(suite):
     suite['unit_tests_to_run'] = {}
     suite['unit_tests_to_run']['config'] = {}
     suite['unit_tests_to_run']['paths'] = glob.glob(
-        os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", "**", "*.py"),
+        os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", 
+            "test_arcgis", "**", "*.py"),
         recursive = True)
     return suite
 

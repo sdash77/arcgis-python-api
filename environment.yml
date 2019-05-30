@@ -21,6 +21,8 @@ dependencies:
 - scikit-image
 - keras
 - selenium
+- scipy
+- pillow
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
