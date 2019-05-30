@@ -1100,7 +1100,23 @@ class Datastore(dict):
             return True
         else:
             return False
+    #----------------------------------------------------------------------
+    def regenerate(self):
+        """
+        This regenerates the manifest for a big data file share. You can
+        regenerate a manifest if you have added new data or if you have
+        uploaded a hints file using the edit resource.
 
+        :returns: Boolean. True = Success, False = Failure
+
+        """
+        url = data_item_manifest_url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     def validate(self):
         """
         Validates that this data item's path (for file shares) or connection string (for databases)

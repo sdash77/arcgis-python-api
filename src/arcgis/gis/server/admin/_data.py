@@ -964,6 +964,7 @@ class Datastore(BaseServer):
 
         resp = self._con.post(path, params, verify_cert=False)
         if resp ['status'] == 'success':
+            self.regenerate()
             return True
         else:
             return False
@@ -990,6 +991,22 @@ class Datastore(BaseServer):
             res = self._con.post(path, params, verify_cert=False)
 
         return res['status'] == 'success'
+    #----------------------------------------------------------------------
+    def regenerate(self):
+        """
+        This regenerates the manifest for a big data file share. You can
+        regenerate a manifest if you have added new data or if you have
+        uploaded a hints file using the edit resource.
+
+        :returns: Boolean. True = Success, False = Failure
+
+        """
+        url = self._datastore._url + "/regenerate"
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
     #----------------------------------------------------------------------
     @property
     def datasets(self):
