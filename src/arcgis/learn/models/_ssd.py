@@ -4,6 +4,7 @@ try:
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
     from torchvision.models import resnet34
+    from torchvision import models
     import numpy as np
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP
     from .._data import prepare_data
@@ -111,16 +112,22 @@ class SingleShotDetector(object):
             _raise_fastai_import_error()
 
         if backbone is None:
-            backbone = resnet34
+            self._backbone = models.resnet34
+        elif type(backbone) is str:
+            self._backbone = getattr(models, backbone)
+        else:
+            self._backbone = backbone
 
         self._create_anchors(grids, zooms, ratios)
 
-        num_features = model_sizes(create_body(backbone), size=(data.chip_size, data.chip_size))[-1][-1]
+        feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
+        num_features = feature_sizes[-1][-1]
+        num_channels = feature_sizes[-1][1]
 
-        ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias)
+        ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
 
         self._data = data
-        self.learn = create_cnn(data=data, arch=backbone, custom_head=ssd_head)
+        self.learn = create_cnn(data=data, arch=self._backbone, custom_head=ssd_head)
         self.learn.model = self.learn.model.to(self._device)
 
         if pretrained_path is not None:
@@ -154,13 +161,17 @@ class SingleShotDetector(object):
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
+        try:
+            backbone = emd['backbone']
+        except KeyError:
+            backbone = 'resnet34'
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
         class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
         if data is None:
             empty_data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
-            return cls(empty_data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
+            return cls(empty_data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone)
         else:
             return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
 
@@ -320,6 +331,7 @@ class SingleShotDetector(object):
         _EMD_TEMPLATE['Grids'] = self.grids
         _EMD_TEMPLATE['Zooms'] = self.zooms
         _EMD_TEMPLATE['Ratios'] = self.ratios
+        _EMD_TEMPLATE['backbone'] = self._backbone.__name__
         _EMD_TEMPLATE['Classes'] = []
         for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
