@@ -2077,6 +2077,7 @@ class UserManager(object):
             'publisher' : 'org_publisher',
             'creator' : 'org_publisher',
             'view_only' : 'tLST9emLCNfFcejK',
+            'org_viewer' : 'iAAAAAAAAAAAAAAA',
             'viewer' : 'iAAAAAAAAAAAAAAA',
             'viewplusedit' : 'iBBBBBBBBBBBBBBB'
         }
