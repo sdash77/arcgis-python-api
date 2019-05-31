@@ -739,7 +739,11 @@ class _FeatureAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None,
                        estimate=False,
-                       shape_type=None):
+                       shape_type=None,
+                       cell_size=None,
+                       cell_size_unit=None,
+                       distance_band=None,
+                       distance_band_unit=None):
         """
         The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
 
@@ -791,14 +795,22 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if shape_type is not None:
+            params["shapeType"] = shape_type     
+        if cell_size is not None:
+            params["cellSize"] = cell_size               
+        if cell_size_unit is not None:
+            params["cellSizeUnit"] = cell_size_unit
+        if distance_band is not None:
+            params["distanceBand"] = distance_band
+        if distance_band_unit is not None:
+            params["distanceBandUnit"] = distance_band_unit
+
 
         if estimate:
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-
-        if shape_type is not None:
-            params["shapeType"] = shape_type
 
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
