@@ -7,6 +7,7 @@ can be created where all the requirements are met.
 find_existing_locations searches for existing areas in a layer that meet a series of criteria.
 derive_new_locations creates new areas from locations in your study area that meet a series of criteria.
 find_similar_locations finds locations most similar to one or more reference locations based on criteria you specify.
+find_centroids finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature.
 choose_best_facilities choose the best locations for facilities by allocating locations that have demand for these
 facilities in a way that satisfies a given goal.
 create_viewshed creates areas that are visible based on locations you specify.
@@ -364,37 +365,49 @@ def find_similar_locations(
         estimate=estimate)
 
 def find_centroids(input_layer,
-                  point_location=False,
-                  output_name=None,
-                  context=None,
-                  gis=None, estimate=False):
+                   point_location=False,
+                   output_name=None,
+                   context=None,
+                   gis=None, 
+                   estimate=False):
     """
-    The Find Centroids task that finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical workflows where the resulting points can then be used in other analytic workflows.
+    .. image:: _static/images/find_centroids/find_centroids.png 
+
+    The ``find_centroids`` method that finds and generates points from the representative center (centroid) of 
+    each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical 
+    workflows where the resulting points can then be used in other analytic workflows.
 
     For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
 
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required FeatureLayer. The multipoint, line, or polygon features that will be used to generate centroid point features.
+    input_layer       Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    point_location    Optional Boolean. A Boolean value that determines the output location of the points.
+    point_location    Optional boolean. A Boolean value that determines the output location of the points.
 
-
-                      + True - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
-
-                      + False - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
-
+                        + True - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
+                        + False - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
     ----------------  ---------------------------------------------------------------
-    output_name       Optional String. Output feature service name.
+    output_name       Optional string. If provided, the method will create a feature service of the results. You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
     ----------------  ---------------------------------------------------------------
-    context           Optional String. Additional settings such as processing extent and output spatial reference.
+    context           Optional string. Context contains additional settings that affect method execution. For ``find_centroids``, there are two settings.
+                       
+                      #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the ``input_layer`` that intersect the bounding box will be buffered.
+                      #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference. 
     ----------------  ---------------------------------------------------------------
-    estimate          Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    estimate          Optional boolean. If True, the number of credits to run the operation will be returned.
     ================  ===============================================================
 
-    :Returns: FeatureCollection or Item
+    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
 
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To find centroids of madison fields nearest to the actual centroids.
+        
+        centroid = find_centroids(madison_fields,
+                                  point_location=True,
+                                  output_name='find centroids')              
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     if gis._portal.is_arcgisonline == False:
@@ -404,6 +417,8 @@ def find_centroids(input_layer,
                                                      output_name,
                                                      context,
                                                      estimate=estimate)
+
+
 
 """
 def choose_best_facilities():

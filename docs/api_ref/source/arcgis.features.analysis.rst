@@ -85,6 +85,10 @@ find_similar_locations
 --------------
 .. automethod:: arcgis.features.analysis.find_similar_locations
 
+find_centroids
+--------------
+.. automethod:: arcgis.features.analysis.find_centroids
+
 interpolate_points
 --------------
 .. automethod:: arcgis.features.analysis.interpolate_points
