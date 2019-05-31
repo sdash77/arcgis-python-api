@@ -9,20 +9,25 @@ GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     '..',
     '..'))
 
-def read_suite_file(suite_file_path, 
-                    geosaurus_dir = GEOSAURUS_ROOT_DIR,
-                    arcgis_python_api_dir="/path/not/specified/"):
-    """Reads in the specified /path/to/yaml/, replaces the {placeholder} tags
+def read_suite(suite, 
+               geosaurus_dir = GEOSAURUS_ROOT_DIR,
+               arcgis_python_api_dir="/path/not/specified/"):
+    """Reads in the specified "/path/to/suite.yaml" str path OR a dict 
+    representation of a suite.yaml file. Replaces the {placeholder} tags
     with the correct full paths, unglobs any glob syntax paths, removes paths
-    from the blacklist, returns the suite dict object
+    from the blacklist, returns the newly parsed suite dict object
     """
-    suite = {}
-    with open(suite_file_path, 'r') as f:
-        suite = yaml.load(f)
-    _replace_placeholders(suite, GEOSAURUS_ROOT_DIR, arcgis_python_api_dir)
-    _unglob_paths(suite)
-    _remove_blacklist_paths(suite)
-    return suite
+    output_suite = {}
+    if isinstance(suite, str):
+        with open(suite, 'r') as f:
+            output_suite = yaml.load(f)
+    elif isinstance(suite, dict):
+        output_suite = suite
+
+    _replace_placeholders(output_suite, GEOSAURUS_ROOT_DIR, arcgis_python_api_dir)
+    _unglob_paths(output_suite)
+    _remove_blacklist_paths(output_suite)
+    return output_suite
 
 def _replace_placeholders(dict_, geosaurus_dir, arcgis_python_api_dir):
     """Replaces all {geosaurus_dir} and {arcgis_python_api_dir} placeholder
@@ -57,13 +62,13 @@ def _unglob_paths(dict_):
                         new_list.append(postglob_path)
                 dict_[key] = new_list
 
-def _remove_blacklist_paths(suite):
+def _remove_blacklist_paths(output_suite):
     """Removes all matching blacklist items from the `paths` entry"""
-    for tests_to_run_key in suite:
-        if 'blacklist' not in suite[tests_to_run_key]['config']:
+    for tests_to_run_key in output_suite:
+        if 'blacklist' not in output_suite[tests_to_run_key]['config']:
             continue
-        blacklist = suite[tests_to_run_key]['config']['blacklist']
+        blacklist = output_suite[tests_to_run_key]['config']['blacklist']
         for blacklist_path in blacklist:
-            suite[tests_to_run_key]['paths'] = list(\
-                path for path in suite[tests_to_run_key]['paths'] \
+            output_suite[tests_to_run_key]['paths'] = list(\
+                path for path in output_suite[tests_to_run_key]['paths'] \
                 if not path == blacklist_path)

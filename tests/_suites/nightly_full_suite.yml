@@ -1,10 +1,8 @@
-sanity_tests_to_run:
-    config: {}
-    paths:
-        - "{geosaurus_dir}/tests/sanity/**/*.py"
 unit_tests_to_run:
-    config: {}
-    paths:
+    config:
+        blacklist:
+            - "{geosaurus_dir}/tests/integration/**/_*.py"
+     paths:
         - "{geosaurus_dir}/tests/unit/**/*.py"
 integration_tests_to_run:
     config:
@@ -14,8 +12,9 @@ integration_tests_to_run:
         - "{geosaurus_dir}/tests/integration/**/*.py"
 nbconvert_notebook_tests_to_run:
     config:
-        blacklist_regexes: 
-            - ".*ipynb_checkpoints.*"
+        blacklist:
+            - "{geosaurus_dir}/tests/notebook/**/*ipynb_checkpoint*/**/*"
+            - "{arcgis_python_api_dir}/tests/notebook/**/*ipynb_checkpoint*/**/*"
         cell_timeout_sec:
             300
         setup_script: "{arcgis_python_api_dir}/misc/setup.py"
@@ -26,12 +25,12 @@ nbconvert_notebook_tests_to_run:
         - "{arcgis_python_api_dir}/guide/**/*.ipynb"
 selenium_notebook_tests_to_run:
     config:
-        blacklist_regexes: 
-            - ".*ipynb_checkpoints.*"
-        cell_timeout_sec:
+        blacklist:
+            - "{geosaurus_dir}/tests/widget/integration/automated/**/*ipynb_checkpoint*/**/*"
+          cell_timeout_sec:
             300
     paths:
-        - "{geosaurus_dir}/tests/widget/**/*.ipynb"
+        - "{geosaurus_dir}/tests/widget/integration/automated/**/*.ipynb"
 widget_unit_tests_to_run:
     config: {}
     paths:

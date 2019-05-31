@@ -1,28 +1,24 @@
 # Tests
 
-This directory contains everything needed to run tests on various parts of the Python API.
+This directory contains everything needed to run tests on various parts of the Python API. The `run_tests.py` script in this directory is how you run tests on your local dev copy of `geosaurus/src`.
 
-## Useage
+## `run_tests.py` Useage
 
-To run all unit tests and all sanity tests:
+To run specific tests:
+    `python run_tests.py ./unit/foo.py ./integration/bar.py`
 
-`python run_tests.py --unit --sanity`
+To run all unit tests and all tests in the `./integration/foobar/` dir:
+    `python run_tests.py ./unit/ ./integration/foobar/`
 
-To run one specific unit test:
+To run a specific suite file of tests (For example, our regression suite):
+    `python run_tests.py --suite ./_suites/regression.yaml`
+    Note: you can make your own suite file and specify a path to it: see the below section on how suite files are made
 
-`python run_tests.py --unit ./unit/test_arcgis/../foo.py`
+To run a notebook test with the `nbconvert` headless runner:
+    `python run_tests.py ./notebook/foo.ipynb`
 
-To run one specific integration test:
-
-`python run_tests.py --integration ./integration/../foo.py`
-
-To run a specific suite file of tests:
-
-`python run_tests.py --suite /path/to/suite.yaml`
-
-You can glob paths to test multiple files. For example, to run all tests in the `./unit/foobar/` folder, you would run:
-
-`python run_tests.py --unit ./unit/foobar/*.py`
+To run a widget test with the `selenium` browser runner (Requires the `selenium` python package, as well as the `Chrome`/`Firefox` selenium driver standalone executables in the PATH):
+    `python run_tests.py ./widget/integration/automated/foo.ipynb`
 
 ## ./unit
 
@@ -44,7 +40,7 @@ An integration test covers most other cases outside of unit tests. As we define 
 
 ## ./notebook
 
-This directory contains any `.ipynb` files we want to test as a part of any suite. Notebooks can be run with two different "runners": an `nbconvert` runner (headless, no widget output), and a `selenium` runner (runs in a web browser, widget output in HTML). See the `./suite` section for more information how notebooks are run.
+This directory contains any `.ipynb` files we want to test as a part of any suite. Notebooks can be run with two different "runners": an `nbconvert` runner (headless, no widget output), and a `selenium` runner (runs in a web browser, widget output in HTML). When running from the cmd line utility, any notebooks specified will use the `nbconvert` runner. See the suites section for more information how notebooks are run.
 
 ## ./utils
 
@@ -52,20 +48,15 @@ Place any code you want to use across multiple tests in this module (mock classe
 
 ## ./widget
 
-Contains all the notebooks and javascript code to test the `arcgis-map-ipywidget` functionality.
-
-## ./sanity
-
-Self explantory, tests that basic imports of all modules and submodules don't fail, other basic tests.
+Contains all the notebooks and javascript code to test the `arcgis-map-ipywidget` functionality. Any notebooks in `./widget/integration/automated/` will be run using the `selenium` runner
 
 ## ./\_suites/
 
 The .yaml files in this directory represent what is run for our CI/CD systems on pull request, as a regression test, as a full nightly suite, etc. You can make your own .yaml file if you'd like to run a certain mixture of different tests. Here's how the file is formatted for reference:
 
-There are 6 top level keys:
+There are 5 top level keys:
 
     - `unit_tests_to_run`
-    - `sanity_tests_to_run`
     - `integration_tests_to_run`
     - `nbconvert_notebook_tests_to_run`
         - Run these notebooks using the `nbconvert` as a backend (no browser is opened to run the notebook, no javascript is ran. There is no map widget output)
@@ -86,9 +77,8 @@ For any path contained in the `geosaurus` repository, start out your string with
 
     - `blacklist` (list of glob-able paths to remove from `paths` if there is a match)
     - `cell_timeout_sec` (if the test is a notebook test, how long to wait in seconds for a cell to finish before forcing a failure)
-    - `browser` (if the test is a selenium notebook test, whether to override to use Firefox or Chrome. If not specified, will pick one depending on the day of the week)
+    - `browser` (if the test is a selenium notebook test, 3 possible values. If `firefox`, use the Firefox driver. If `chrome`, use the Chrome driver. If `dayofweek`, will pick `firefox` if the current day is Mon/Wed/Fri/Sun, and `chrome` on Tues/Thurs/Sat.)
 
 ## ./\_test\_runners
 
-This directory contains all the Python code needed to run the specified unit/notebook/etc. tests and output the XML to the correct location
-
+This module contains all the Python code needed to run the specified unit/notebook/etc. tests and output the XML to the correct location.
