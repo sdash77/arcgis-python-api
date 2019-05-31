@@ -3,6 +3,7 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageItemList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
+import torch
 import warnings
 import PIL
 import numpy as np
@@ -73,9 +74,10 @@ class ArcGISSegmentationLabelList(ImageItemList):
     def analyze_pred(self, pred, thresh:float=0.5): 
         label_mapping = {(idx + 1):value for idx, value in enumerate(self.class_mapping.keys())}
         out = pred.argmax(dim=0)[None]
+        predictions = torch.zeros_like(out)
         for key, value in label_mapping.items():
-            out[out==key] = value
-        return out
+            predictions[out==key] = value
+        return predictions
 
     def reconstruct(self, t): 
         return ArcGISImageSegment(t, cmap=self.cmap, norm=self.mplnorm)
@@ -91,6 +93,7 @@ class LabelCallback(LearnerCallback):
         self.label_mapping = {value:(idx+1) for idx, value in enumerate(learn.data.class_mapping.keys())}
         
     def on_batch_begin(self, last_input, last_target, **kwargs):
+        modified_target = torch.zeros_like(last_target)
         for label, idx in self.label_mapping.items():
-            last_target[last_target==label] = idx
-        return last_input, last_target
+            modified_target[last_target==label] = idx
+        return last_input, modified_target
