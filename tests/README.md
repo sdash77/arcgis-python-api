@@ -18,7 +18,9 @@ This directory contains everything needed to run tests on various parts of the P
 
 ## ./unit
 
-> Unit Test: A test written by a programmer for the purpose of ensuring that the production code does what the programmer expects it to do. (Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html)
+#### Unit Test: A test written by a programmer for the purpose of ensuring that the production code does what the programmer expects it to do.
+
+>Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html
 
 A unit test should test the smallest amount of code possible. In `geosaurus`'s case, it should assert the logic of some code __without__ connecting to an external system. This means your unit tests should __not__ connect to a portal, should __not__ call into a 3rd party python library, etc.
 
@@ -26,7 +28,9 @@ A unit test should test the smallest amount of code possible. In `geosaurus`'s c
 
 ## ./integration
 
-> Integration Test: A test written by architects and/or technical leads for the purpose of ensuring that a sub-assembly of system components operates correctly. (Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html)
+#### Integration Test: A test written by architects and/or technical leads for the purpose of ensuring that a sub-assembly of system components operates correctly.
+
+>Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html
 
 An integration test covers most other cases outside of unit tests. As we define it, it asserts end-user functionality when calling public-facing APIs. These tests can connect external systems, connect to Portals, call into 3rd party libraries, etc.
 
