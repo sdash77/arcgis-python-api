@@ -4,27 +4,21 @@ This directory contains everything needed to run tests on various parts of the P
 
 ## `run_tests.py` Useage
 
-To run specific tests:
-    `python run_tests.py ./unit/foo.py ./integration/bar.py`
-
-To run all unit tests and all tests in the `./integration/foobar/` dir:
-    `python run_tests.py ./unit/ ./integration/foobar/`
-
-To run a specific suite file of tests (For example, our regression suite):
-    `python run_tests.py --suite ./_suites/regression.yaml`
-    Note: you can make your own suite file and specify a path to it: see the below section on how suite files are made
-
-To run a notebook test with the `nbconvert` headless runner:
-    `python run_tests.py ./notebook/foo.ipynb`
-
-To run a widget test with the `selenium` browser runner (Requires the `selenium` python package, as well as the `Chrome`/`Firefox` selenium driver standalone executables in the PATH):
-    `python run_tests.py ./widget/integration/automated/foo.ipynb`
+- To run specific tests:
+    - `python run_tests.py ./unit/foo.py ./integration/bar.py`
+- To run all unit tests and all tests in the `./integration/foobar/` dir:
+    - `python run_tests.py ./unit/ ./integration/foobar/`
+- To run a specific suite file of tests (For example, our regression suite):
+    - `python run_tests.py --suite ./_suites/regression.yaml`
+    - Note: you can make your own suite file and specify a path to it: see the `"_suites"` section for how suite files are structured
+- To run a notebook test with the `nbconvert` headless runner:
+    - `python run_tests.py ./notebook/foo.ipynb`
+- To run a widget test with the `selenium` browser runner (Requires the `selenium` python package, as well as the `Chrome`/`Firefox` selenium driver standalone executables in the PATH):
+    - `python run_tests.py ./widget/integration/automated/foo.ipynb`
 
 ## ./unit
 
-> Unit Test: A test written by a programmer for the purpose of ensuring that the production code does what the programmer expects it to do.
-
-Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html
+> Unit Test: A test written by a programmer for the purpose of ensuring that the production code does what the programmer expects it to do. (Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html)
 
 A unit test should test the smallest amount of code possible. In `geosaurus`'s case, it should assert the logic of some code __without__ connecting to an external system. This means your unit tests should __not__ connect to a portal, should __not__ call into a 3rd party python library, etc.
 
@@ -32,15 +26,13 @@ A unit test should test the smallest amount of code possible. In `geosaurus`'s c
 
 ## ./integration
 
-> Integration Test: A test written by architects and/or technical leads for the purpose of ensuring that a sub-assembly of system components operates correctly. 
-
-Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html
+> Integration Test: A test written by architects and/or technical leads for the purpose of ensuring that a sub-assembly of system components operates correctly. (Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html)
 
 An integration test covers most other cases outside of unit tests. As we define it, it asserts end-user functionality when calling public-facing APIs. These tests can connect external systems, connect to Portals, call into 3rd party libraries, etc.
 
 ## ./notebook
 
-This directory contains any `.ipynb` files we want to test as a part of any suite. Notebooks can be run with two different "runners": an `nbconvert` runner (headless, no widget output), and a `selenium` runner (runs in a web browser, widget output in HTML). When running from the cmd line utility, any notebooks specified will use the `nbconvert` runner. See the suites section for more information how notebooks are run.
+This directory contains any `.ipynb` files we want to test as a part of any suite. Notebooks can be run with two different "runners": an `nbconvert` runner (headless, no widget output), and a `selenium` runner (runs in a web browser, widget output in HTML). When running from the cmd line utility, any notebooks in the `./notebook/` dir will use the `nbconvert` runner. See the suites section for more information how notebooks are run.
 
 ## ./utils
 
@@ -48,7 +40,7 @@ Place any code you want to use across multiple tests in this module (mock classe
 
 ## ./widget
 
-Contains all the notebooks and javascript code to test the `arcgis-map-ipywidget` functionality. Any notebooks in `./widget/integration/automated/` will be run using the `selenium` runner
+Contains all the notebooks and javascript code to test the `arcgis-map-ipywidget` functionality. When running from the cmd line utility, notebooks in `./widget/integration/automated/` will be run using the `selenium` runner
 
 ## ./\_suites/
 
