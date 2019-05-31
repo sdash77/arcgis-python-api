@@ -15,6 +15,10 @@ find_similar_locations
 --------------
 .. automethod:: arcgis.features.find_locations.find_similar_locations
 
+find_centroids
+--------------
+.. automethod:: arcgis.features.analysis.find_centroids
+
 choose_best_facilities
 --------------
 .. automethod:: arcgis.features.find_locations.choose_best_facilities

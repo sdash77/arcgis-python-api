@@ -34,6 +34,7 @@ __all__ = ['GIS', 'geocode', 'features',
            'find_hot_spots',
            'find_nearest',
            'find_similar_locations',
+           'find_centroids'
            'interpolate_points',
            'join_features',
            'merge_layers',
