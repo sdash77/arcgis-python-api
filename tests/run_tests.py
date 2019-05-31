@@ -13,6 +13,7 @@ import platform
 import subprocess
 import tempfile
 import glob
+import webbrowser
 import logging
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ def _main():
     args = _parse_cmd_line_args()
     _setup_logging(args)
     _run_tests(args)
+    log.info("Tests finished running, see file/console output. Exiting...")
 
 # Running from cmd line setup funcs
 def _parse_cmd_line_args():
@@ -43,6 +45,10 @@ def _parse_cmd_line_args():
         default=os.path.join(TESTS_DIR, "_output"),
         help="Output directory to write junit xml etc. files to. "\
              "DEFAULT: .\_output")
+    parser.add_argument("--no-browser-output", "-q", action="store_true",
+        help="By default, when this script finishes running a web browser "\
+             "will pop up and display the results of the tests. To stop this "\
+             "from happening, specify this flag.")
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Verbose logging output")
     args = parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
@@ -75,7 +81,9 @@ def _run_tests(args):
         suite = read_suite(DEFAULT_EMPTY_SUITE_FILE_PATH)
     _add_to_suite_cmd_arg_tests(suite, args.tests)
     _parse_suite(suite)
-    run_suite(suite, args.output_dir)
+    output_xml_files = run_suite(suite, args.output_dir)
+    if not args.no_browser_output:
+        _display_results_in_browser(output_xml_files)
 
 def _add_to_suite_cmd_arg_tests(suite, tests):
     for test in tests:
@@ -119,6 +127,26 @@ def _add_to_suite_if_widget_test(suite, test):
         if os.path.isdir(test):
             test = os.path.join(test, "**", "*.js")
         suite['widget_unit_tests_to_run']['paths'].append(test)
+
+def _display_results_in_browser(output_xml_files):
+    try:
+        browser_urls_to_display = []
+        for output_xml_file in output_xml_files:
+            html_file = os.path.splitext(output_xml_file)[0] + ".html"
+            if os.path.exists(html_file):
+                os.remove(html_file)
+            run_shell_command(f"junit2html {output_xml_file} {html_file}")
+            browser_urls_to_display.append(
+                    "file://" + os.path.abspath(html_file))
+        if browser_urls_to_display:
+            log.info("Opening results in a web browser...")
+            webbrowser.open(browser_urls_to_display[0], new=1)
+            for url in browser_urls_to_display[1:]:
+                webbrowser.open_new_tab(url)
+    except Exception as e:
+        log.warn("Could not display results in a browser:")
+        log.exception(e)
+        log.info("Skipping browser display and continuing...")
 
 if __name__ == "__main__":
     try:

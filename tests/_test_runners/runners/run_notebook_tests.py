@@ -12,6 +12,7 @@ from _test_runners.TestNotebook import TestNotebook
 def run_notebook_tests(config, paths, output_dir,
                        jenkins_root, runner = "nbconvert"):
     log.info("Running notebook tests...")
+    #return output_xml_path
     """
     suite = _discover_tests_get_suite(notebooks_root_dir = notebooks_root_dir,
                                       output_dir = STAGING_DIR,
