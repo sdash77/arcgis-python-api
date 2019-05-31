@@ -186,7 +186,7 @@ def _setup_testing(args):
 
 if __name__ == "__main__":
     print("You should not be running tests by calling this file. Use the "\
-          "logic in geosaurus/automation instead that utilizes pytest. To "\
+          "logic in geosaurus/tests instead that utilizes pytest. To "\
           "continue running tests using this file anyway, press Ctrl + C "\
           "in the next 10 seconds, or else this program will quit")
     try:
