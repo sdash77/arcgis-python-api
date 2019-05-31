@@ -1608,7 +1608,10 @@ class _FeatureAnalysisTools(_AsyncService):
             output_name = 'Extracted_data_' + _id_generator()
 
         if data_format.upper() == 'SHAPEFILE':
-            params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
+            if isinstance(output_name, dict):
+                params["outputName"] = {"itemProperties": output_name}
+            else:
+                params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
                                                            "tags": "Analysis Results, Extract Data",
                                                            "snippet": "Analysis file item generated from running the Extract Data tool.",
                                                            "folderId": ""}}

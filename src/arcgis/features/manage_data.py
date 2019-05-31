@@ -114,29 +114,57 @@ def extract_data(
         gis=None,
         estimate=False):
     """
-    Select and download data for a specified area of interest. Layers that you select will be added to a zip file or
-    layer package.
+    .. image:: _static/images/extract_data/extract_data.png 
 
-    Parameters
-    ----------
-    input_layers : Required list of strings
-        The layers from which you can extract features.
-    extent : Optional string
-        The area that defines which features will be included in the output zip file or layer package.
-    clip : Optional bool
-        Select features that intersect the extent or clip features within the extent.
-    data_format : Optional string
-        Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    The ``extract_data`` method is used to extract data from one or more layers within a given extent. 
+    The extracted data format can be a file geodatabase, shapefiles, csv, or kml. 
+    File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
-    Returns
-    -------
-    content_id : layer (FeatureCollection)
+    ===================================    =========================================================
+    **Argument**                           **Description**
+    -----------------------------------    ---------------------------------------------------------
+    input_layers                           Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------    ---------------------------------------------------------
+    extent                                 Optional layer. The extent is the area of interest used to extract the input features. If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------------------    ---------------------------------------------------------
+    clip                                   Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped 
+                                           within the extent. By default, features are not clipped and all features intersecting the extent are returned. 
+
+                                           The default is false.     
+    -----------------------------------    ---------------------------------------------------------
+    data_format                            Optional string. A keyword defining the output data format for your extracted data.
+                                           
+                                           Choice list: ['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']
+                                           
+                                           The default is 'CSV'.
+
+                                           If FILEGEODATABASE is specified, and the input layer has `attachments <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_ , the attachments will be extracted 
+                                           to the output file geodatabase if clip is false. If clip is true, attachments will not be extracted.
+    -----------------------------------    ---------------------------------------------------------
+    output_name                            Optional string or dict. ``output_name`` is used to name the item in your My contents page. For more information on these item properties, see the Item resource page in the `ArcGIS REST API <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
+                                           Syntax when ``output_name`` is dict: {
+                                                                                "title": "<title>",
+                                                                                "tag": "<tags>",
+                                                                                "snippet": "<snippet>",
+                                                                                "description": "<description>"
+                                                                                }
+    -----------------------------------    ---------------------------------------------------------   
+    context                                Optional string. Context contains additional settings that affect method execution. For ``extract_data``, there is one setting.
+
+                                           #. Output Spatial Reference (outSR)—the extracted features will be projected into the output spatial reference.
+    -----------------------------------    ---------------------------------------------------------   
+    gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ===================================    =========================================================    
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To extract data from highways layer with the extent of a state boundary. 
+        
+        ext_state_highway = extract_data(input_layers=[highways.layers[0]],
+                                 extent=state_area_boundary.layers[0],
+                                 clip=True,
+                                 data_format='shapefile',
+                                 output_name='state highway extracted')	    
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.extract_data(
