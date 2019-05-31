@@ -1891,6 +1891,113 @@ class _FeatureAnalysisTools(_AsyncService):
             # Feature Collection
             return arcgis.features.FeatureCollection(job_values['outputLayer'])
 
+
+    def choose_best_facilities(self,
+                               goal='Allocate',
+                               demand_locations_layer=None,
+                               demand=1,
+                               demand_field=None,
+                               max_travel_range=2147483647,
+                               max_travel_range_field=None,
+                               max_travel_range_units='Minutes',
+                               travel_mode='Driving Time',
+                               time_of_day=None,
+                               time_zone_for_time_of_day='GeoLocal',
+                               travel_direction='FacilityToDemand',
+                               required_facilities_layer=None,
+                               required_facilities_capacity=2147483647,
+                               required_facilities_capacity_field=None,
+                               candidate_facilities_layer=None,
+                               candidate_count=1,
+                               candidate_facilities_capacity=2147483647,
+                               candidate_facilities_capacity_field=None,
+                               percent_demand_coverage=100,
+                               output_name=None,
+                               context=None,
+                               estimate=False,
+                               point_barrier_layer=None,
+                               line_barrier_layer=None,
+                               polygon_barrier_layer=None):
+
+        task ="ChooseBestFacilities"
+
+        params = {}
+
+        if goal is not None:
+            params["goal"] = goal
+        params["demandLocationsLayer"] = super()._feature_input(demand_locations_layer)            
+        if demand is not None:
+            params["demand"] = demand
+        if demand_field is not None:
+            params["demandField"] = demand_field
+        if max_travel_range is not None:
+            params["maxTravelRange"] = max_travel_range
+        if max_travel_range_field is not None:
+            params["maxTravelRangeField"] = max_travel_range_field
+        if max_travel_range_units is not None:
+            params["maxTravelRangeUnits"] = max_travel_range_units
+        if travel_mode is not None:
+            params["travelMode"] = travel_mode
+        if time_of_day is not None:
+            params["timeOfDay"] = time_of_day
+        if time_zone_for_time_of_day is not None:
+            params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day  
+        if travel_direction is not None:
+            params["travelDirection"] = travel_direction
+        if required_facilities_layer is not None:
+            params["requiredFacilitiesLayer"] = super()._feature_input(required_facilities_layer)
+        if required_facilities_capacity is not None:
+            params["requiredFacilitiesCapacity"] = required_facilities_capacity
+        if required_facilities_capacity_field is not None:
+            params["requiredFacilitiesCapacityField"] = required_facilities_capacity_field
+        if candidate_facilities_layer is not None:
+            params["candidateFacilitiesLayer"] = super()._feature_input(candidate_facilities_layer)            
+        if candidate_count is not None:
+            params["candidateCount"] = candidate_count
+        if candidate_facilities_capacity is not None:
+            params["candidateFacilitiesCapacity"] = candidate_facilities_capacity
+        if candidate_facilities_capacity_field is not None:       
+            params["candidateFacilitiesCapacityField"] = candidate_facilities_capacity_field                 
+        if percent_demand_coverage is not None:
+            params["percentDemandCoverage"] = percent_demand_coverage            
+        if output_name is not None:
+            params["outputName"] = {"serviceProperties": {"name": output_name }}
+        if context is not None:
+            params["context"] = context
+        if point_barrier_layer is not None:
+            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)
+        if line_barrier_layer is not None:
+            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
+        if polygon_barrier_layer is not None:
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)    
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
+        task_url, job_info, job_id = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
+        #print(job_values)
+        if output_name is not None:
+            itemid = job_values['allocatedDemandLocationsLayer']['itemId']
+            item = arcgis.gis.Item(self._gis, itemid)
+            return item
+        else:
+            # Feature Collection
+
+            allocated_demand_locations_layer = arcgis.features.FeatureCollection(job_values['allocatedDemandLocationsLayer'])
+
+            allocation_lines_layer = arcgis.features.FeatureCollection(job_values['allocationLinesLayer'])
+
+            assigned_facilities_layer = arcgis.features.FeatureCollection(job_values['assignedFacilitiesLayer'])
+            return { "allocated_demand_locations_layer":allocated_demand_locations_layer, "allocation_lines_layer":allocation_lines_layer, "assigned_facilities_layer":assigned_facilities_layer, }        
+
+
     def interpolate_points(self,
                            input_layer,
                            field,
