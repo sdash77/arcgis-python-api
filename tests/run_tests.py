@@ -34,7 +34,7 @@ def _parse_cmd_line_args():
         "To run all unit tests and all tests in ./integration/foobar/ dir:\n"\
         "   `python run_tests.py ./unit/ ./integration/foobar/`\n",
         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("tests", type=str, nargs='+',
+    parser.add_argument("tests", type=str, nargs='*',
         help="A list of test paths to run: either paths to files directly, "
              "or paths to directories") 
     parser.add_argument("--suite", "-s", type=str,
@@ -46,6 +46,9 @@ def _parse_cmd_line_args():
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Verbose logging output")
     args = parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
+    if not any([args.suite, args.tests]):
+        raise Exception("You must specify either positional argument `tests`,"\
+                        " or --suite /path/to/suite.yml")
     return args
 
 def _setup_logging(args):

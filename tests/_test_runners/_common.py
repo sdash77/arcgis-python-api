@@ -1,5 +1,6 @@
 import os
 import subprocess
+from subprocess import Popen, PIPE, STDOUT
 import logging
 log = logging.getLogger("__main__")
 
@@ -72,4 +73,11 @@ def run_pytest_on(paths, output_xml_path, block_network_access=False):
     if block_network_access:
         pytest_args.append("--blockage")
     log.debug(f"Running pytest.main({pytest_args})")
-    pytest.main(pytest_args)
+    _run_pytest_subprocess(pytest_args)
+
+def _run_pytest_subprocess(pytest_args):
+    print("Running subprocess")
+    args = ['python', '-m', 'pytest'] + pytest_args
+    with Popen(args, cwd=TESTS_DIR, stderr=PIPE) as p:
+        for line in p.stderr:
+            print(str(line.decode('utf-8')), end='')
