@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 import glob
 import webbrowser
+import pathlib
 import logging
 log = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ from _test_runners import *
 def _main():
     args = _parse_cmd_line_args()
     _setup_logging(args)
+    _setup_output_dir(args.output_dir)
     _run_tests(args)
     log.info("Tests finished running, see file/console output. Exiting...")
 
@@ -74,6 +76,13 @@ def _setup_logging(args):
     log.info("Logging at level {}.".format(logging.getLevelName(log.level)))
     log.debug("args passed in => {}".format(args))
 
+def _setup_output_dir(output_dir):
+    output_executed_notebooks_dir = os.path.join(output_dir,
+        "executed_notebooks")
+    if os.path.isdir(output_executed_notebooks_dir):
+        shutil.rmtree(output_executed_notebooks_dir, ignore_errors=True)
+    os.mkdir(output_executed_notebooks_dir)
+
 def _run_tests(args):
     if args.suite:
         suite = read_suite(args.suite)
@@ -83,7 +92,7 @@ def _run_tests(args):
     _parse_suite(suite)
     output_xml_files = run_suite(suite, args.output_dir)
     if not args.no_browser_output:
-        _display_results_in_browser(output_xml_files)
+        _display_results_in_browser(output_xml_files, args.output_dir)
 
 def _add_to_suite_cmd_arg_tests(suite, tests):
     for test in tests:
@@ -128,7 +137,7 @@ def _add_to_suite_if_widget_test(suite, test):
             test = os.path.join(test, "**", "*.js")
         suite['widget_unit_tests_to_run']['paths'].append(test)
 
-def _display_results_in_browser(output_xml_files):
+def _display_results_in_browser(output_xml_files, output_dir):
     try:
         browser_urls_to_display = []
         for output_xml_file in output_xml_files:
@@ -137,12 +146,18 @@ def _display_results_in_browser(output_xml_files):
                 os.remove(html_file)
             run_shell_command(f"junit2html {output_xml_file} {html_file}")
             browser_urls_to_display.append(
-                    "file://" + os.path.abspath(html_file))
+                pathlib.Path(os.path.abspath(html_file)).as_uri())
         if browser_urls_to_display:
             log.info("Opening results in a web browser...")
             webbrowser.open(browser_urls_to_display[0], new=1)
             for url in browser_urls_to_display[1:]:
                 webbrowser.open_new_tab(url)
+        output_executed_notebooks_index_file = os.path.join(
+            output_dir, "executed_notebooks", "index.html")
+        if os.path.exists(output_executed_notebooks_index_file):
+            webbrowser.open(pathlib.Path(
+                output_executed_notebooks_index_file).as_uri())
+
     except Exception as e:
         log.warn("Could not display results in a browser:")
         log.exception(e)

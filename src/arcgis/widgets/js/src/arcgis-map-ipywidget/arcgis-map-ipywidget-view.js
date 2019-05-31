@@ -407,7 +407,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _set_screenshot_keyboard_shortcut: function(){
         this.el.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.key ==="P"){
+            if (e.shiftKey && e.key ==="P"){
                 this.model.set("_trigger_screenshot_with_args",
                     {"_" : this._get_uuidv4(),
                      "set_as_preview": true,

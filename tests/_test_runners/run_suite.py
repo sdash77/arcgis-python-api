@@ -1,11 +1,15 @@
 import os
 import json
+import pathlib
 import logging
 log = logging.getLogger("__main__")
 
 from _test_runners.runners import *
+from _test_runners._common import *
 
-def run_suite(suite, output_dir, jenkins_root="http://zion/jenkins"):
+file_uri_output_dir = pathlib.Path(TESTS_DIR).as_uri()
+
+def run_suite(suite, output_dir, jenkins_job_url=file_uri_output_dir):
     log.debug(f"running suite {json.dumps(suite)}")
     output_xml_results = []
 
@@ -16,6 +20,7 @@ def run_suite(suite, output_dir, jenkins_root="http://zion/jenkins"):
                            suite["unit_tests_to_run"]["paths"],
                            output_dir)
         output_xml_results.append(xml_output)
+
     if "integration_tests_to_run" in suite and \
        suite["integration_tests_to_run"]["paths"]:
         xml_output = \
@@ -23,14 +28,15 @@ def run_suite(suite, output_dir, jenkins_root="http://zion/jenkins"):
                                   suite["integration_tests_to_run"]["paths"],
                                   output_dir)
         output_xml_results.append(xml_output)
+
     if "nbconvert_notebook_tests_to_run" in suite and \
        suite["nbconvert_notebook_tests_to_run"]["paths"]:
         xml_output = \
             run_notebook_tests(suite["nbconvert_notebook_tests_to_run"]["config"],
                                suite["nbconvert_notebook_tests_to_run"]["paths"],
                                output_dir,
-                               jenkins_root = jenkins_root,
-                               runner = "nbconvert")
+                               jenkins_job_url = jenkins_job_url,
+                               notebook_runner = "nbconvert")
         output_xml_results.append(xml_output)
 
     if "selenium_notebook_tests_to_run" in suite and \
@@ -39,8 +45,8 @@ def run_suite(suite, output_dir, jenkins_root="http://zion/jenkins"):
             run_notebook_tests(suite["selenium_notebook_tests_to_run"]["config"],
                                suite["selenium_notebook_tests_to_run"]["paths"],
                                output_dir,
-                               jenkins_root = jenkins_root,
-                               runner = "selenium")
+                               jenkins_job_url = jenkins_job_url,
+                               notebook_runner = "selenium")
         output_xml_results.append(xml_output)
 
     if "widget_unit_tests_to_run" in suite and \

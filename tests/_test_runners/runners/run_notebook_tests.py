@@ -1,75 +1,76 @@
 import sys
 import os
 import unittest
+import shutil
 from glob import glob
+import tempfile
+from uuid import uuid4
 import logging
 log = logging.getLogger("__main__")
 
 from xmlrunner import XMLTestRunner
 
 from _test_runners.TestNotebook import TestNotebook
+from _test_runners._common import *
 
 def run_notebook_tests(config, paths, output_dir,
-                       jenkins_root, runner = "nbconvert"):
+                       jenkins_job_url, notebook_runner = "nbconvert"):
     log.info("Running notebook tests...")
-    #return output_xml_path
-    """
-    suite = _discover_tests_get_suite(notebooks_root_dir = notebooks_root_dir,
-                                      output_dir = STAGING_DIR,
-                                      automation_type = automation_type,
-                                      build_number = build_number,
-                                      jenkins_root = jenkins_root,
-                                      cell_timeout_sec = cell_timeout_sec)
-    runner = XMLTestRunner(output=STAGING_DIR)
 
-    setup_py_file = os.path.join(notebooks_root_dir, "misc", "setup.py")
-    run_shell_command(f"python {setup_py_file}", throw_exc_on_fail=False)
+    # Make a folder to put all output executed notebooks
+    output_executed_notebooks_dir = os.path.join(output_dir,
+        "executed_notebooks")
+    output_xml_path = os.path.join(output_dir, 
+        f"{notebook_runner}_notebook_tests_output.xml")
 
-    runner.run(suite)
+    # Add all tests from `paths` to a unittest.TestSuite() instance
+    utest_test_suite = unittest.TestSuite()
+    for notebook_path in paths:
+        test = TestNotebook(notebook_file_path = notebook_path,
+                            output_dir = output_executed_notebooks_dir,
+                            cell_timeout_sec = config['cell_timeout_sec'],
+                            jenkins_job_url = jenkins_job_url,
+                            notebook_runner = notebook_runner,
+                            browser = config.get("browser", None))
+        utest_test_suite.addTest(test)
 
-    teardown_py_file = os.path.join(notebooks_root_dir, "misc", "teardown.py")
-    run_shell_command(f"python {teardown_py_file}", throw_exc_on_fail=False)
+    # Run the actual tests, run setup/teardown if applicable
+    if 'setup_script' in config:
+        run_shell_command(f"python {config['setup_script']}")
 
-    _write_index_html_file_for_outputted_notebooks()
-    """
+    with _empty_temp_folder() as empty_temp_dir:
+        runner = XMLTestRunner(empty_temp_dir)
+        runner.run(utest_test_suite)
+        for temp_xml_path in glob(os.path.join(empty_temp_dir, "*.xml")):
+            os.rename(temp_xml_path, output_xml_path)
 
-def _discover_tests_get_suite(notebooks_root_dir, output_dir,
-                              automation_type, build_number,
-                              jenkins_root, cell_timeout_sec):
-    output_suite = unittest.TestSuite()
-    log.info("Discovering notebooks to test in {}".format(notebooks_root_dir))
+    if 'teardown_script' in config:
+        run_shell_command(f"python {config['teardown_script']}")
 
-    for root, dirs, files in os.walk(notebooks_root_dir):
-        for name in [file_ for file_ in files if ".ipynb" in file_]:
-            notebook_path = os.path.join(root, name)
-            if (".ipynb_checkpoints" not in notebook_path) and \
-               ("talks" not in notebook_path):
-                log.debug("Adding to suite notebook {}".format(notebook_path))
-                test = TestNotebook(notebook_file_path = notebook_path,
-                                    output_dir = output_dir,
-                                    cell_timeout_sec = cell_timeout_sec,
-                                    jenkins_job_url = "/".join([jenkins_root,
-                                                        "job",
-                                                        automation_type,
-                                                        str(build_number),
-                                                        ""]),
-                                    notebook_runner="selenium")
-                output_suite.addTest(test)
+    # Write an index file for easier viewing, return outputted xml file
+    _write_index_html_file_for_outputted_notebooks(
+        output_executed_notebooks_dir)
+    return output_xml_path
 
-    if output_suite.countTestCases() == 0:
-        raise RuntimeError("0 Notebooks found to run: Make sure '{}' "\
-            "contains runnable notebooks.".format(notebooks_root_dir))
-    else:
-        log.info("Found {} notebooks to run".format(
-                 output_suite.countTestCases()))
-    
-    return output_suite
-
-def _write_index_html_file_for_outputted_notebooks():
-    with open(os.path.join(STAGING_DIR, "index.html"), "w") as f:
+def _write_index_html_file_for_outputted_notebooks(output_dir):
+    with open(os.path.join(output_dir, "index.html"), "w") as f:
         f.write("<h1>Press a link below to see an outputted notebook</h1>\n")
-        for notebook_html_file in glob(os.path.join(STAGING_DIR, "*.html")):
+        for notebook_html_file in glob(os.path.join(output_dir, "*.html")):
             notebook_html_file_name_no_ext = os.path.splitext(
                 os.path.basename(notebook_html_file))[0]
             f.write('<p><a href="./{0}.html">{0}</a></p>\n'.format(
                 notebook_html_file_name_no_ext))
+
+class _empty_temp_folder:
+    """Use with "with" syntax like "with empty_temp_folder() as tmp:"
+    Creates a temporary folder and deletes it after finished being used
+    """
+    def __enter__(self):
+        self.temp_folder = os.path.join(tempfile.gettempdir(),
+                                        ".{}".format(uuid4()))
+        os.makedirs(self.temp_folder)
+        return self.temp_folder
+
+    def __exit__(self, type, value, traceback):
+        shutil.rmtree(self.temp_folder)
+

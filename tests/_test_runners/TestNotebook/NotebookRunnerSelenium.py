@@ -3,6 +3,7 @@ import time
 import sys
 import shutil
 import tempfile
+from datetime import date
 import logging
 log = logging.getLogger()
 
@@ -42,9 +43,21 @@ class NotebookRunnerSelenium:
             self.driver = webdriver.Chrome()
         elif "firefox" in self.browser.lower():
             self.driver = webdriver.Firefox()
+        elif "dayofweek" in self.browser.lower():
+            if self._is_today_mon_wed_fri_or_sun():
+                self.driver = webdriver.Firefox()
+            else:
+                self.driver = webdriver.Chrome()
         else:
             raise Exception("Could not infer browser to run notebook on")
         self.driver.fullscreen_window()
+
+    def _is_today_mon_wed_fri_or_sun(self):
+        return date.today().weekday() in [ 0, # Monday
+                                           2, # Wednesday
+                                           4, # Friday
+                                           6] # Sunday
+
 
     def _deinitialize_driver(self):
         self.driver.close()
@@ -126,7 +139,7 @@ class NotebookRunnerSelenium:
             widget_div.click()
             self.driver.implicitly_wait(DEFAULT_IMPLICIT_WAIT_SEC)
             for input_div in widget_div.find_elements_by_tag_name("input"):
-                input_div.send_keys(Keys.CONTROL, Keys.SHIFT, "P")
+                input_div.send_keys(Keys.SHIFT, "P")
                 self.driver.implicitly_wait(DEFAULT_IMPLICIT_WAIT_SEC)
             time.sleep(INBETWEEN_WIDGET_SCREENSHOT_SLEEP_SEC)
 

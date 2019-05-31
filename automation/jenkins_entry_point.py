@@ -63,9 +63,8 @@ def _parse_args():
         help="for -a dev_site, the root dir of arcgis-for-developers repo")
     parser.add_argument("--html-output-dir", "-o", type=str, required=False,
         help="For -a dev_site, the dir where outputted html files get put") 
-    parser.add_argument("--jenkins-root", "-j", type=str, required=False,
-        help="For -a notebook_test, the root of the jenkins website. DEFAULT:"\
-             " {}".format(JENKINS_ROOT), default=JENKINS_ROOT)
+    parser.add_argument("--jenkins-job-url", "-j", type=str, required=False,
+        help="The URL of the job that is being triggered.")
     parser.add_argument("--suite-path", "-s", type=str, required=False,
         help="The /path/to/suite.yaml if tests are to be run (-a test_suite, "\
              "-a pull_request, etc.)")

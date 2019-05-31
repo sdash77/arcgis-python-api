@@ -13,6 +13,7 @@ import shutil
 import platform
 import subprocess
 import tempfile
+from uuid import uuid4
 import logging
 log = logging.getLogger(__name__)
 
@@ -367,7 +368,7 @@ class _empty_temp_folder:
     """
     def __enter__(self):
         self.temp_folder = os.path.join(tempfile.gettempdir(),
-                                        ".{}".format(hash(os.times())))
+                                        ".{}".format(uuid4()))
         os.makedirs(self.temp_folder)
         return self.temp_folder
 
