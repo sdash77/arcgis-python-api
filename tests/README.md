@@ -32,11 +32,13 @@ A unit test should test the smallest amount of code possible. In `geosaurus`'s c
 
 >Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html
 
-An integration test covers most other cases outside of unit tests. As we define it, it asserts end-user functionality when calling public-facing APIs. These tests can connect external systems, connect to Portals, call into 3rd party libraries, etc.
+An integration test covers most other cases outside of unit tests. As we define it, it asserts correct functionality when calling public-facing APIs. These tests can connect external systems, connect to Portals, call into 3rd party libraries, etc.
 
 ## ./notebook
 
-This directory contains any `.ipynb` files we want to test as a part of any suite. Notebooks can be run with two different "runners": an `nbconvert` runner (headless, no widget output), and a `selenium` runner (runs in a web browser, widget output in HTML). When running from the cmd line utility, any notebooks in the `./notebook/` dir will use the `nbconvert` runner. See the suites section for more information how notebooks are run.
+This directory contains any `.ipynb` files we want to test as a part of any suite. Notebook tests are ran from top to bottom, and will pass if there are no unhandled exceptions or red errors in the notebook. Make sure your write your test notebooks to explicitly throw unhandled exceptions on failure (Using `assert` statements can be useful)
+
+Notebooks can be run with two different "runners": an `nbconvert` runner (headless, no widget output), and a `selenium` runner (runs in a web browser, widget output in HTML). When running from the cmd line utility, any notebooks in the `./notebook/` dir will use the `nbconvert` runner. See the suites section for more information how to specify the notebook runner.
 
 ## ./utils
 

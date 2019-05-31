@@ -15,6 +15,6 @@ stdout_handler.setLevel(logging.INFO)
 stdout_handler.setFormatter(formatter)
 log.addHandler(stdout_handler)
 
-from _test_runners.read_suite import read_suite
-from _test_runners.run_suite import run_suite
+from _test_runners.read_suite import *
+from _test_runners.run_suite import *
 from _test_runners._common import *

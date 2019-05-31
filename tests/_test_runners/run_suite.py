@@ -8,10 +8,6 @@ from _test_runners.runners import *
 def run_suite(suite, output_dir, jenkins_root="http://zion/jenkins"):
     log.debug(f"running suite {json.dumps(suite)}")
 
-    if "sanity_tests_to_run" in suite:
-        run_sanity_tests(suite["sanity_tests_to_run"]["config"],
-                          suite["sanity_tests_to_run"]["paths"],
-                          output_dir)
     if "unit_tests_to_run" in suite:
         run_unit_tests(suite["unit_tests_to_run"]["config"],
                         suite["unit_tests_to_run"]["paths"],

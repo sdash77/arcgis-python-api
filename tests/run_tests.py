@@ -17,7 +17,7 @@ import logging
 log = logging.getLogger(__name__)
 
 from _test_runners._common import *
-from _test_runners import read_suite, run_suite
+from _test_runners import *
 
 def _main():
     args = _parse_cmd_line_args()
@@ -69,68 +69,53 @@ def _run_tests(args):
     if args.suite:
         suite = read_suite(args.suite)
     else:
-        suite = {}
+        suite = read_suite(DEFAULT_EMPTY_SUITE_FILE_PATH)
+    _add_to_suite_cmd_arg_tests(suite, args.tests)
+    _parse_suite(suite)
+    run_suite(suite, args.output_dir)
 
-    for test in args.tests:
-        if os.path.isdir(test):
-            test = os.path.join(test, "**", "*") # make dir globable
+def _add_to_suite_cmd_arg_tests(suite, tests):
+    for test in tests:
+        test = os.path.abspath(test)
         _add_to_suite_if_unit_test(suite, test)
         _add_to_suite_if_integration_test(suite, test)
         _add_to_suite_if_notebook_test(suite, test)
         _add_to_suite_if_widget_test(suite, test)
 
+def _parse_suite(suite):
+    """Unblogs any paths and removes blacklist items when added in from
+    cmd arguments
     """
-        suite = _add_to_suite_all_unit_tests(suite)
-    if args.sanity:
-        suite = _add_to_suite_all_sanity_tests(suite)
-
-    run_suite(suite, args.output_dir)
-    """
-
+    unglob_paths(suite)
+    remove_blacklist_paths(suite)
 
 def _add_to_suite_if_unit_test(suite, test):
-    print("Testing for unit")
-    return
-    suite['unit_tests_to_run'] = {}
-    suite['unit_tests_to_run']['config'] = {}
-    suite['unit_tests_to_run']['paths'] = glob.glob(
-        os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", 
-            "test_arcgis", "**", "*.py"),
-        recursive = True)
-    return suite
+    if UNIT_TESTS_DIR in test:
+        if os.path.isdir(test):
+            test = os.path.join(test, "**", "*.py")
+        suite['unit_tests_to_run']['paths'].append(test)
 
 def _add_to_suite_if_integration_test(suite, test):
-    print("Testing for integration")
-    return
-    suite['unit_tests_to_run'] = {}
-    suite['unit_tests_to_run']['config'] = {}
-    suite['unit_tests_to_run']['paths'] = glob.glob(
-        os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", 
-            "test_arcgis", "**", "*.py"),
-        recursive = True)
-    return suite
+    if INTEGRATION_TESTS_DIR in test:
+        if os.path.isdir(test):
+            test = os.path.join(test, "**", "*.py")
+        suite['integration_tests_to_run']['paths'].append(test)
 
 def _add_to_suite_if_notebook_test(suite, test):
-    print("Testing for notebook")
-    return
-    suite['unit_tests_to_run'] = {}
-    suite['unit_tests_to_run']['config'] = {}
-    suite['unit_tests_to_run']['paths'] = glob.glob(
-        os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", 
-            "test_arcgis", "**", "*.py"),
-        recursive = True)
-    return suite
+    if NOTEBOOK_TESTS_DIR in test:
+        if os.path.isdir(test):
+            test = os.path.join(test, "**", "*.ipynb")
+        suite['nbconvert_notebook_tests_to_run']['paths'].append(test)
 
 def _add_to_suite_if_widget_test(suite, test):
-    print("Testing for widget")
-    return
-    suite['unit_tests_to_run'] = {}
-    suite['unit_tests_to_run']['config'] = {}
-    suite['unit_tests_to_run']['paths'] = glob.glob(
-        os.path.join(GEOSAURUS_ROOT_DIR, "tests", "unit", 
-            "test_arcgis", "**", "*.py"),
-        recursive = True)
-    return suite
+    if WIDGET_INTEGRATION_TESTS_DIR in test:
+        if os.path.isdir(test):
+            test = os.path.join(test, "**", "*.ipynb")
+        suite['selenium_notebook_tests_to_run']['paths'].append(test)
+    if WIDGET_UNIT_TESTS_DIR in test:
+        if os.path.isdir(test):
+            test = os.path.join(test, "**", "*.js")
+        suite['widget_unit_tests_to_run']['paths'].append(test)
 
 if __name__ == "__main__":
     try:
