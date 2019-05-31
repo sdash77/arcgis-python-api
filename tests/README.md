@@ -18,7 +18,7 @@ This directory contains everything needed to run tests on various parts of the P
 
 ## ./unit
 
-#### Unit Test: A test written by a programmer for the purpose of ensuring that the production code does what the programmer expects it to do.
+### Unit Test: A test written by a programmer for the purpose of ensuring that the production code does what the programmer expects it to do.
 
 >Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html
 
@@ -28,7 +28,7 @@ A unit test should test the smallest amount of code possible. In `geosaurus`'s c
 
 ## ./integration
 
-#### Integration Test: A test written by architects and/or technical leads for the purpose of ensuring that a sub-assembly of system components operates correctly.
+### Integration Test: A test written by architects and/or technical leads for the purpose of ensuring that a sub-assembly of system components operates correctly.
 
 >Source: https://blog.cleancoder.com/uncle-bob/2017/05/05/TestDefinitions.html
 
