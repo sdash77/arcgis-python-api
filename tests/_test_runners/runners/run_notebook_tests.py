@@ -20,6 +20,8 @@ def run_notebook_tests(config, paths, output_dir,
     # Make a folder to put all output executed notebooks
     output_executed_notebooks_dir = os.path.join(output_dir,
         "executed_notebooks")
+    if not os.path.isdir(output_executed_notebooks_dir):
+        os.mkdir(output_executed_notebooks_dir)
     output_xml_path = os.path.join(output_dir, 
         f"{notebook_runner}_notebook_tests_output.xml")
 
