@@ -169,8 +169,10 @@ class ImageryLayer(Layer):
     def extent(self):
         """Area of interest. Used for displaying the imagery layer when queried"""
         if self._extent is None:
-            self._extent = self.properties.initialExtent
-
+            if 'initialExtent' in self.properties:
+                self._extent = self.properties.initialExtent
+            elif 'extent' in self.properties:
+                self._extent = self.properties.extent
         return self._extent
 
     @property

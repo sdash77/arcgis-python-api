@@ -1820,7 +1820,7 @@ class MapImageLayerManager(_GISResource):
         params = {
             "f": "json"
         }
-        return self._con._post(url, params)
+        return self._con.post(url, params)
     #----------------------------------------------------------------------
     def update_tiles(self, levels=None, extent=None):
         """
@@ -1888,7 +1888,7 @@ class MapImageLayerManager(_GISResource):
             "f" : "json",
             "rerun": code
         }
-        return self._con._post(url, params)
+        return self._con.post(url, params)
     # ----------------------------------------------------------------------
     def edit_tile_service(self,
                           service_definition=None,

@@ -413,10 +413,11 @@ class Machine(BaseServer):
         :return: boolean
 
         """
-        params = {'f' : 'json'}
+        params = {'f' : 'json',
+                  'csrfPreventToken' : self._con.token
+                  }
         url = self._url + "/sslcertificates/{cert}/delete".format(cert=certificate)
-        res = self._con.get(path=url,
-                            params=params)
+        res = self._con.post(url, params)
         if isinstance(res, dict) and 'status' in res:
             return res['status']
         else:
