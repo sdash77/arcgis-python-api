@@ -2583,7 +2583,11 @@ class _FeatureAnalysisTools(_AsyncService):
                      time_zone_for_time_of_day="GeoLocal",
                      output_name=None,
                      context=None,
-                     estimate=False):
+                     estimate=False,
+                     include_route_layers=None,
+                     point_barrier_layer=None,
+                     line_barrier_layer=None,
+                     polygon_barrier_layer=None):
         """
         Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations.
 
@@ -2638,6 +2642,15 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if include_route_layers is not None:
+            params["includeRouteLayers"] = include_route_layers            
+        if point_barrier_layer is not None:
+            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)
+        if line_barrier_layer is not None:
+            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
+        if polygon_barrier_layer is not None:
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)        
+
         if estimate:
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
