@@ -140,7 +140,7 @@ def _add_to_suite_if_widget_test(suite, test):
 def _display_results_in_browser(output_xml_files, output_dir):
     try:
         browser_urls_to_display = []
-        for output_xml_file in output_xml_files:
+        for output_xml_file in [x for x in output_xml_files if x]:
             html_file = os.path.splitext(output_xml_file)[0] + ".html"
             if os.path.exists(html_file):
                 os.remove(html_file)

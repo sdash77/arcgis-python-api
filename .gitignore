@@ -68,6 +68,7 @@ src/.vscode/settings.json
 tests/integration/test-results/
 /*.wpr
 /*.wpu
+tests/geckodriver.log
 
 #Any builds from setup.py for pip go in a dist folder
 /src/dist
