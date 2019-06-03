@@ -9,6 +9,7 @@ plan_routes determines the best way to route a fleet of vehicles to visit many s
 """
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
+import arcgis.network as network
 
 def connect_origins_to_destinations(origins_layer,
                                     destinations_layer,
@@ -587,47 +588,171 @@ def find_nearest(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        include_route_layers=None,
+        point_barrier_layer=None,
+        line_barrier_layer=None,
+        polygon_barrier_layer=None):
     """
-    Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to
-    features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer
-    containing the nearest features and a line layer that links the start locations to their nearest locations.
+    .. image:: _static/images/find_nearest/find_nearest.png 
 
-    Parameters
-    ----------
-    analysis_layer : Required layer (see Feature Input in documentation)
-        For each feature in this layer, the task finds the nearest features from the nearLayer.
-    near_layer : Required layer (see Feature Input in documentation)
-        The features from which the nearest locations are found.
-    measurement_type : Required string
-        The nearest locations can be determined by measuring straight-line distance, driving distance, or driving time
-    max_count : Optional int
-        The maximum number of near locations to find for each feature in analysisLayer.
-    search_cutoff : Optional float
-        Limits the search range to this value
-    search_cutoff_units : Optional string
-        The units for the value specified as searchCutoff
-    time_of_day : Optional datetime.datetime
-        When measurementType is DrivingTime, this value specifies the time of day to be used for driving time
-        calculations based on traffic.
-    time_zone_for_time_of_day : Optional string
+    The ``find_nearest`` method measures the straight-line distance, driving distance, or driving time from 
+    features in the analysis layer to features in the near layer, and copies the nearest features in the near 
+    layer to a new layer. Connecting lines showing the measured path are returned as well. ``find_nearest`` also 
+    reports the measurement and relative rank of each nearest feature. There are options to limit the number 
+    of nearest features to find or the search range in which to find them. The results from this method can help 
+    you answer the following kinds of questions:
 
-    output_name : Optional string
-        Additional properties such as output feature service name
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+    * What is the nearest park from here?
+    * Which hospital can I reach in the shortest drive time? And how long would the trip take on a Tuesday at 5:30 p.m. during rush hour?
+    * What are the road distances between major European cities?
+    * Which of these patients reside within two miles of these chemical plants?
+    
+    Find Nearest returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations. 
+    The connecting line layer contains information about the start and nearest locations and the distances between.
 
-    Returns
-    -------
+    =========================    =========================================================
+    **Parameter**                **Description**
+    -------------------------    ---------------------------------------------------------
+    analysis_layer               Required layer. The features from which the nearest locations are found. This layer can have point, line, or polygon features. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    near_layer                   Required layer. The nearest features are chosen from this layer. This layer can have point, line, or polygon features. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    measurement_type             Required string. Specify the mode of transportation for the analysis.
+
+                                 Choice list: ['StraightLine', 'Driving Distance', 'Driving Time ', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']               
+
+                                 The default is 'Driving Time'.
+    -------------------------    ---------------------------------------------------------
+    max_count                    Optional string. The maximum number of nearest locations to find for each feature in ``analysis_layer``. The default is the maximum cutoff allowed by the service, which is 100.
+
+                                 Note that setting a maxCount for this parameter doesn't guarantee that many features will be found. The ``search_cutoff`` and other constraints may also reduce the number of features found.
+    -------------------------    ---------------------------------------------------------
+    search_cutoff                Optional float. The maximum range to search for nearest locations from each feature in the ``analysis_layer``. 
+                                 The units for this parameter is always minutes when ``measurement_type`` is set to a time based travel mode; 
+                                 otherwise the units are set in the ``search_cutoff_units`` parameter.
+
+                                 The default is to search without bounds.
+    -------------------------    ---------------------------------------------------------                                 
+    search_cutoff_units          The units of the ``search_cutoff`` parameter. This parameter is ignored when ``measurement_type`` is set to a time based travel 
+                                 mode because the units for ``search_cutoff`` are always minutes in those cases. If ``measurement_type`` is set to StraightLine or another distance-based travel mode, and a value for ``search_cutoff`` is specified, set the cutoff units using this parameter.
+
+                                 Choice list: ['Kilometers', 'Meters', 'Miles', 'Feet', '']
+
+                                 The default value is null, which causes the service to choose either miles or kilometers according to the units property of the user making the request.
+    -------------------------    ---------------------------------------------------------
+    time_of_day                  Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis, set ``measurement_type`` to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value to ``time_of_day``. (A travel mode with other impedance_attribute_name values don't support traffic.) The ``time_of_day`` value represents the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+
+                                 The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+                                
+                                 The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries Esri currently provides traffic data for.
+                                
+                                 Typical Traffic:
+
+                                 To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day of the week to one of the following dates from 1990:
+ 
+                                 * Monday—1/1/1990
+                                 * Tuesday—1/2/1990
+                                 * Wednesday—1/3/1990
+                                 * Thursday—1/4/1990
+                                 * Friday—1/5/1990
+                                 * Saturday—1/6/1990
+                                 * Sunday—1/7/1990
+                                 Set the time and date as datetime.datetime.
+
+                                 For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+                                
+                                 Live Traffic:
+
+                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
+
+                                 Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
+                                
+                                 Examples:
+                                 from datetime import datetime
+
+                                 * "time_of_day": datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                 * "time_of_day": datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                 * "time_of_day": datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014, live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                 * "time_of_day": datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015, live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+
+    -------------------------    ---------------------------------------------------------
+    time_zone_for_time_of_day    Optional string. Specify the time zone or zones of the ``time_of_day`` parameter. 
+
+                                 Choice list: ['GeoLocal', 'UTC']
+                                
+                                 ``GeoLocal``-refers to the time zone in which the origins_layer points are located.
+                                
+                                 ``UTC``-refers to Coordinated Universal Time.                                                                   
+    -------------------------    ---------------------------------------------------------
+    include_route_layers         Optional boolean. When ``include_route_layers`` is set to true, each route from the result is also saved as a route layer item. 
+                                 A route layer includes all the information for a particular route such as the stops assigned to the route as well 
+                                 as the travel directions. Creating route layers is useful if you want to share individual routes with other members in your organization. 
+                                 The route layers use the output feature service name provided in the ``output_name`` parameter as a prefix and the route name generated as part 
+                                 of the analysis is added to create a unique name for each route layer.
+                                 
+                                 **Caution:**
+
+                                 Route layers cannot be created when the output is a feature collection. The task will raise an error if ``output_name`` is not 
+                                 specified (which indicates feature collection output) and ``include_route_layers`` is true.
+
+                                 The maximum number of route layers that can be created is 1,000. If the result contains more than 1,000 routes 
+                                 and ``include_route_layers`` is true, the task will only create the output feature service.
+    -------------------------    ---------------------------------------------------------
+    point_barrier_layer          Optional layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) when traveling on the underlying streets.
+
+                                 A point barrier can model a fallen tree, an accident, a downed electrical line, or anything that completely blocks traffic at a specific 
+                                 position along the street. Travel is permitted on the street but not through the barrier.
+    -------------------------    ---------------------------------------------------------
+    line_barrier_layer           Optional layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
+
+                                 A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across 
+                                 several street segments can be modeled with a line barrier.
+    -------------------------    ---------------------------------------------------------
+    polygon_barrier_layer        Optional layer. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+
+                                 One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible.
+    -------------------------    ---------------------------------------------------------
+    output_name                  Optional string. Output feature layer collection. If not provided, a feature collection is returned.
+    -------------------------    ---------------------------------------------------------
+    context                      Optional dict. Context contains additional settings that affect task execution. For ``find_nearest``, there are two settings.
+                                             
+                                 #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer`` 
+                                    that intersect the bounding box will be analyzed.
+
+                                 #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    -------------------------    ---------------------------------------------------------
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------    ---------------------------------------------------------
+    estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    =========================    =========================================================
+
+    :Returns:
+
     dict with the following keys:
+
        "nearest_layer" : layer (FeatureCollection)
+
        "connecting_lines_layer" : layer (FeatureCollection)
+
+    .. code-block:: python
+
+        #USAGE EXAMPLE: To find which regional office can be reached in the shortest drive time from esri headquarter. 
+    
+        result1 = find_nearest(analysis_layer=esri_hq_lyr,
+                               near_layer=regional_offices_lyr,
+                               measurement_type="Driving Time",
+                               output_name="find nearest office",
+                               include_route_layers=True,
+                               point_barrier_layer=road_closures_lyr))           
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    if isinstance(measurement_type, str):
+        if measurement_type != 'StraightLine':  
+            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+            measurement_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]     
+        else:
+            pass;    
     return gis._tools.featureanalysis.find_nearest(
         analysis_layer,
         near_layer,
@@ -639,7 +764,11 @@ def find_nearest(
         time_zone_for_time_of_day,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate,
+        include_route_layers=include_route_layers,
+        point_barrier_layer=point_barrier_layer,
+        line_barrier_layer=line_barrier_layer,
+        polygon_barrier_layer=polygon_barrier_layer)
 
 
 def plan_routes(
