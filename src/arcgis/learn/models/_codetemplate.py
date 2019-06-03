@@ -217,6 +217,10 @@ class ArcGISObjectDetector:
 
 """
 
+feature_classifier_prf = """
+print('not implemented')
+"""
+
 image_classifier_prf = """
 import numpy as np
 import json
