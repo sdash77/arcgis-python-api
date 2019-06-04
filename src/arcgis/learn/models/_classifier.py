@@ -1,5 +1,5 @@
 try:
-    from ._unet import ArcGISModel
+    from ._arcgis_model import ArcGISModel
     import tempfile
     import numpy as np
     import json
@@ -18,7 +18,6 @@ try:
     from fastai.vision import imagenet_stats
     from fastai.vision.learner import create_cnn, ClassificationInterpretation
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
-    
     import tempfile
     HAS_FASTAI = True
 except Exception as e:

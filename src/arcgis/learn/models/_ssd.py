@@ -1,3 +1,11 @@
+import tempfile
+from pathlib import Path
+import json
+import os
+from ._codetemplate import code
+from functools import partial
+import arcgis
+
 try:
     import torch
     from fastai.vision.learner import create_cnn
@@ -8,11 +16,8 @@ try:
     import numpy as np
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP
     from .._data import prepare_data
-    import json
-    import os
-    import tempfile
-    from pathlib import Path
-    from ._codetemplate import code
+    from fastai.callbacks import EarlyStoppingCallback
+    from ._arcgis_model import SaveModelCallback
     from ._unet_utils import is_no_color
     HAS_FASTAI = True
 except Exception as e:
@@ -186,11 +191,11 @@ class SingleShotDetector(object):
         clear_output()
         self.learn.recorder.plot()
 
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True):
+    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
-
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -203,13 +208,29 @@ class SingleShotDetector(object):
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
                                 learning rate schedule. If set to `False` no 
-                                learning rate schedule is used.                                
+                                learning rate schedule is used.       
+        ---------------------   -------------------------------------------
+        early_stopping          Optional boolean. Parameter to add early stopping.
+                                If set to `True` training will stop if validation
+                                loss stops improving for 5 epochs.       
+        ---------------------   -------------------------------------------
+        checkpoint              Optional boolean. Parameter to save the best model
+                                during training. If set to `True` the best model 
+                                based on validation loss will be saved during 
+                                training.
         =====================   ===========================================
         """
+        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
+        kwargs.pop('callbacks', None)
+        if early_stopping:
+            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='val_loss', min_delta=0.01, patience=5))
+        if checkpoint:
+            callbacks.append(SaveModelCallback(self, monitor='val_loss', every='improvement', name='checkpoint'))
+
         if one_cycle:
-            self.learn.fit_one_cycle(epochs, lr)
+            self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
         else:
-            self.learn.fit(epochs, lr)
+            self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
 
 
     def unfreeze(self):
@@ -321,6 +342,8 @@ class SingleShotDetector(object):
     def _create_zip(self, zipname, path):
         import shutil
         zip_file = shutil.make_archive(zipname, 'zip', path)
+        if os.path.exists(os.path.join(path, zipname) + '.zip'):
+            os.remove(os.path.join(path, zipname) + '.zip')
         shutil.move(zip_file, path)
 
     def _create_emd(self, path):
@@ -345,24 +368,7 @@ class SingleShotDetector(object):
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
 
-    def save(self, name_or_path):
-        """
-        Saves the model weights, creates an Esri Model Definition and Deep
-        Learning Package zip for deployment to Image Server or ArcGIS Pro
-
-        Train the model for the specified number of epocs and using the
-        specified learning rates
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to save. It
-                                stores it at the pre-defined location. If path
-                                is passed then it stores at the specified path
-                                with model name as directory name. and creates
-                                all the intermediate directories.
-        =====================   ===========================================
-        """
+    def _save(self, name_or_path, zip_files=True):
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
@@ -391,8 +397,30 @@ class SingleShotDetector(object):
         zip_name = self._create_emd(saved_path)
         with open(saved_path.parent / _EMD_TEMPLATE['InferenceFunction'], 'w') as f:
             f.write(code)
-        self._create_zip(zip_name, str(saved_path.parent))
-        print('Created model files at {spp}'.format(spp=saved_path.parent))
+        if zip_files:
+            self._create_zip(zip_name, str(saved_path.parent))
+        if arcgis.env.verbose:
+            print('Created model files at {spp}'.format(spp=saved_path.parent))            
+        return saved_path.parent
+
+    def save(self, name_or_path):
+        """
+        Saves the model weights, creates an Esri Model Definition and Deep
+        Learning Package zip for deployment to Image Server or ArcGIS Pro
+        Train the model for the specified number of epocs and using the
+        specified learning rates.
+        
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name of the model to save. It
+                                stores it at the pre-defined location. If path
+                                is passed then it stores at the specified path
+                                with model name as directory name. and creates
+                                all the intermediate directories.
+        =====================   ===========================================
+        """        
+        self._save(name_or_path)
 
 
     def load(self, name_or_path):
