@@ -4,6 +4,7 @@ import sys
 import shutil
 import tempfile
 from datetime import date
+from uuid import uuid4
 import logging
 log = logging.getLogger()
 
@@ -69,12 +70,11 @@ class NotebookRunnerSelenium:
             if self.active_jupyter_backend:
                 output = self._run_notebook()
             else:
-                tmp_dir = tempfile.mkdtemp()
-                with JupyterClassicNotebookServer(tmp_dir) as j:
-                    self.active_jupyter_backend = j
-                    output = self._run_notebook()
-                    self.active_jupyter_backend = None
-                shutil.rmtree(tmp_dir)
+                with _empty_temp_folder as tmp_dir:
+                    with JupyterClassicNotebookServer(tmp_dir) as j:
+                        self.active_jupyter_backend = j
+                        output = self._run_notebook()
+                        self.active_jupyter_backend = None
         except:
             # Yes, even catch keyboard interrupts
             if self.active_jupyter_backend:
@@ -186,3 +186,18 @@ class NotebookRunnerSelenium:
             with open(html_path, "w",
                       encoding="utf-8") as output_html:
                 output_html.write(body)
+
+class _empty_temp_folder:
+    """Use with "with" syntax like "with empty_temp_folder() as tmp:"
+    Creates a temporary folder and deletes it after finished being used
+    """
+    def __enter__(self):
+        self.temp_folder = os.path.join(tempfile.gettempdir(),
+                                        ".{}".format(uuid4()))
+        os.makedirs(self.temp_folder)
+        return self.temp_folder
+
+    def __exit__(self, type, value, traceback):
+        shutil.rmtree(self.temp_folder)
+
+
