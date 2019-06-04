@@ -1,156 +1,21 @@
+import json
+import os
+from pathlib import Path
+from ._codetemplate import image_classifier_prf
+from ._ssd import _raise_fastai_import_error, _EmptyData
+from functools import partial
+
 try:
+    from ._arcgis_model import ArcGISModel, SaveModelCallback
     import torch
     from torchvision import models
     from fastai.vision.learner import unet_learner
     import numpy as np
-    import json
-    import os
-    from pathlib import Path
-    from ._codetemplate import image_classifier_prf
-    from ._ssd import _raise_fastai_import_error, _EmptyData
-    from functools import partial
     from ._unet_utils import is_no_color, LabelCallback
+    from fastai.callbacks import EarlyStoppingCallback
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
-
-
-class ArcGISModel(object):
-    
-    def lr_find(self):
-        """
-        Runs the Learning Rate Finder, and displays the graph of it's output.
-        Helps in choosing the optimum learning rate for training the model.
-        """
-        from IPython.display import clear_output
-        self.learn.lr_find()
-        clear_output()
-        self.learn.recorder.plot()
-    
-    
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True):
-        """
-        Train the model for the specified number of epocs and using the
-        specified learning rates
-        
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        epochs                  Required integer. Number of cycles of training
-                                on the data. Increase it if underfitting.
-        ---------------------   -------------------------------------------
-        lr                      Required float or slice of floats. Learning rate
-                                to be used for training the model. Select from
-                                the `lr_find` plot.
-        ---------------------   -------------------------------------------
-        one_cycle               Optional boolean. Parameter to select 1cycle
-                                learning rate schedule. If set to `False` no 
-                                learning rate schedule is used.                                
-        =====================   ===========================================
-        """
-        if one_cycle:
-            self.learn.fit_one_cycle(epochs, lr)
-        else:
-            self.learn.fit(epochs, lr)
-        
-    def unfreeze(self):
-        """
-        Unfreezes the earlier layers of the detector for fine-tuning.
-        """
-        self.learn.unfreeze()
-        
-    def save(self, name_or_path):
-        """
-        Saves the model weights, creates an Esri Model Definition and Deep
-        Learning Package zip for deployment to Image Server or ArcGIS Pro
-        Train the model for the specified number of epocs and using the
-        specified learning rates.
-        
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to save. It
-                                stores it at the pre-defined location. If path
-                                is passed then it stores at the specified path
-                                with model name as directory name. and creates
-                                all the intermediate directories.
-        =====================   ===========================================
-        """
-        if '\\' in name_or_path or '/' in name_or_path:
-            path = Path(name_or_path)
-            name = path.parts[-1]
-            # to make fastai save to both path and with name
-            temp = self.learn.path
-            self.learn.path = path
-            self.learn.model_dir = ''
-            if not os.path.exists(self.learn.path):
-                os.makedirs(self.learn.path)
-            saved_path = self.learn.save(name, return_path=True)
-            # undoing changes to self.learn.path and self.learn.model
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
-        else:
-            temp = self.learn.path
-            # fixing fastai bug
-            self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
-            if not os.path.exists(self.learn.path / self.learn.model_dir):
-                os.makedirs(self.learn.path / self.learn.model_dir)
-            saved_path = self.learn.save(name_or_path,  return_path=True)
-            # undoing changes to self.learn.path
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
-
-        zip_name = self._create_emd(saved_path)
-        with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
-            f.write(self._code)
-        self._create_zip(zip_name, str(saved_path.parent))
-        print('Created model files at {spp}'.format(spp=saved_path.parent))
-        
-    def _create_zip(self, zipname, path):
-        import shutil
-        zip_file = shutil.make_archive(zipname, 'zip', path)
-        shutil.move(zip_file, path)
-        
-    def load(self, name_or_path):
-        """
-        Loads a saved model for inferencing or fine tuning from the specified
-        path or model name.
-        
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to load from
-                                the pre-defined location. If path is passed then
-                                it loads from the specified path with model name
-                                as directory name. Path to ".pth" file can also
-                                be passed
-        =====================   ===========================================
-        """
-        if '\\' in name_or_path or '/' in name_or_path:
-            path = Path(name_or_path)
-            # to make fastai from both path and with name
-            temp = self.learn.path
-            if path.is_file():
-                name = path.stem
-                self.learn.path = path.parent
-            else:
-                name = path.parts[-1]
-                self.learn.path = path
-            self.learn.model_dir = ''
-            self.learn.load(name)
-            # undoing changes to self.learn.path and self.learn.model_dir
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
-        else:
-            temp = self.learn.path
-            # fixing fastai bug
-            self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
-            self.learn.load(name_or_path)
-            # undoing changes to self.learn.path
-            self.learn.path = temp
-            self.learn.model_dir = 'models'  
 
 _CLASS_TEMPLATE =     {
       "Value" : 1,
@@ -274,7 +139,7 @@ class UnetClassifier(ArcGISModel):
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
 
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True):
+    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
@@ -291,14 +156,30 @@ class UnetClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
                                 learning rate schedule. If set to `False` no 
-                                learning rate schedule is used.                                
+                                learning rate schedule is used.       
+        ---------------------   -------------------------------------------
+        early_stopping          Optional boolean. Parameter to add early stopping.
+                                If set to `True` training will stop if validation
+                                loss stops improving for 5 epochs.       
+        ---------------------   -------------------------------------------
+        checkpoint              Optional boolean. Parameter to save the best model
+                                during training. If set to `True` the best model 
+                                based on validation loss will be saved during 
+                                training.
         =====================   ===========================================
         """
-        if one_cycle:
-            self.learn.fit_one_cycle(epochs, lr, callbacks=[LabelCallback(self.learn)])
-        else:
-            self.learn.fit(epochs, lr, callbacks=[LabelCallback(self.learn)])
+        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
+        kwargs.pop('callbacks', None)
+        callbacks.append(LabelCallback(self.learn))
+        if early_stopping:
+            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='val_loss', min_delta=0.01, patience=5))
+        if checkpoint:
+            callbacks.append(SaveModelCallback(self, monitor='val_loss', every='improvement', name='checkpoint'))
 
+        if one_cycle:
+            self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
+        else:
+            self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
 
     def show_results(self, rows=5, **kwargs):
         """

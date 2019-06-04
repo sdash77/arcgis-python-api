@@ -31,7 +31,7 @@ def add_datepart(df, col_name, drop=True, errors="raise"):
     :return: None
     '''
     if not has_deps:
-        _raise_deps_error()
+        _raise_dep_error()
     col = df[col_name]
     col_dtype = col.dtype
     if isinstance(col_dtype, pd.core.dtypes.dtypes.DatetimeTZDtype):
@@ -113,7 +113,7 @@ def process_df(df, target=None, do_scale=False, add_date_feats=False, mapper=Non
     if add_date_feats:
         for i in df:
             if np.issubdtype(df[i].dtype, np.datetime64):
-                _add_datepart(df, i)
+                add_datepart(df, i)
     if do_scale:
         mapper = _scale(df, mapper)
     cat_cols = df.select_dtypes(include=['object','category']).columns
