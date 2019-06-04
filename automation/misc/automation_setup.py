@@ -8,7 +8,7 @@ from automation._common import *
 def automation_setup(*args, **kwargs):
     """Clears results Installs correct packages, builds geosaurus source"""
     log.info("Starting setup...")
-    _clear_staging_folder([".gitignore", "log.log"])
+    _clear_staging_folder([".gitignore", "log.log", "warnings.log"])
     log.info("Setup complete!")
 
 def _clear_staging_folder(files_to_ignore):
