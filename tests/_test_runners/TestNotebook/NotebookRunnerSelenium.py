@@ -70,7 +70,7 @@ class NotebookRunnerSelenium:
             if self.active_jupyter_backend:
                 output = self._run_notebook()
             else:
-                with _empty_temp_folder as tmp_dir:
+                with _empty_tmp_dir() as tmp_dir:
                     with JupyterClassicNotebookServer(tmp_dir) as j:
                         self.active_jupyter_backend = j
                         output = self._run_notebook()
@@ -187,7 +187,7 @@ class NotebookRunnerSelenium:
                       encoding="utf-8") as output_html:
                 output_html.write(body)
 
-class _empty_temp_folder:
+class _empty_tmp_dir:
     """Use with "with" syntax like "with empty_temp_folder() as tmp:"
     Creates a temporary folder and deletes it after finished being used
     """
@@ -199,5 +199,4 @@ class _empty_temp_folder:
 
     def __exit__(self, type, value, traceback):
         shutil.rmtree(self.temp_folder)
-
 

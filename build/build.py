@@ -217,7 +217,7 @@ def build_conda_packages(os_build_targets,
                       python_versions)
 
     for python_version in python_versions:
-        with _empty_temp_folder() as tmp_dir:
+        with _empty_tmp_dir() as tmp_dir:
             _run_conda_build_command(python_version = python_version,
                                      output_dir = tmp_dir)
             _convert_conda_package(conda_package = _find_conda_package(tmp_dir),
@@ -362,7 +362,7 @@ def _run_shell_cmd(cmd):
                  "{}".format(e.output.decode("utf-8")))
         raise e
 
-class _empty_temp_folder:
+class _empty_tmp_dir:
     """Use with "with" syntax like "with empty_temp_folder() as tmp:"
     Creates a temporary folder and deletes it after finished being used
     """
