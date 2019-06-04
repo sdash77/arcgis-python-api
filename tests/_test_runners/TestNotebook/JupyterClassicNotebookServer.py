@@ -67,6 +67,4 @@ class JupyterClassicNotebookServer:
 
     def __exit__(self, type, value, traceback):
         log.info("Shutting down Jupyter Server instance...")
-        self.process.stdout.close()
-        self.process.stderr.close()
         self.process.terminate()

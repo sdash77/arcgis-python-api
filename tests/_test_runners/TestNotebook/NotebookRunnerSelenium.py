@@ -198,5 +198,4 @@ class _empty_tmp_dir:
         return self.temp_folder
 
     def __exit__(self, type, value, traceback):
-        shutil.rmtree(self.temp_folder)
-
+        pass
