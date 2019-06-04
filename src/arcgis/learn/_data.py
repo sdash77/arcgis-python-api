@@ -162,10 +162,10 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
         # imagefile_types = ['png', 'jpg', 'tif', 'jpeg', 'tiff']
         # bboxfile_types = ['xml', 'json']
-        # with open(path / 'map.txt') as f:
-        #     line = f.readline()
+        with open(path / 'map.txt') as f:
+            line = f.readline()
         # left = line.split()[0].split('.')[-1].lower()
-        # right = line.split()[1].split('.')[-1].lower()
+        right = line.split()[1].split('.')[-1].lower()
         
         # if (left in imagefile_types) and (right in imagefile_types):
         #     dataset_type = 'RCNN_Masks'
