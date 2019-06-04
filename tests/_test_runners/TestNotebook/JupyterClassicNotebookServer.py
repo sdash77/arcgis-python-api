@@ -75,7 +75,7 @@ class JupyterClassicNotebookServer:
             if os.name == "posix":
                 run_shell_command(f"kill $(lsof -i:{self.port})")
             elif os.name == "nt":
-               out = run_shell_command(f"netstat -ano | findsr :{self.port}")
+                out = run_shell_command(f"netstat -ano | findsr :{self.port}")
                 pid = out.split("\n")[0].lower().split("listening")[1].strip()
                 run_shell_command(f"taskkill /pid {pid} /f")
         except Exception as e:
