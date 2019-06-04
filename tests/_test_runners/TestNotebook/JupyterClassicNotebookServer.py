@@ -51,7 +51,6 @@ class JupyterClassicNotebookServer:
                         f"processes, will not start Jupyter server. Check " + \
                         f"that you're properly shutting down jupyter servers.")
 
-
     def __enter__(self):
         self._resolve_port()
         args = [self._jupyter_exe_loc, "notebook", 
@@ -68,3 +67,17 @@ class JupyterClassicNotebookServer:
     def __exit__(self, type, value, traceback):
         log.info("Shutting down Jupyter Server instance...")
         self.process.terminate()
+        self._try_kill_process_on_port()
+
+    def _try_kill_process_on_port(self):
+        log.info(f"Attempting to kill process running on port {self.port}")
+        try:
+            if os.name == "posix":
+                run_shell_command(f"kill $(lsof -i:{self.port})")
+            elif os.name == "nt":
+               out = run_shell_command(f"netstat -ano | findsr :{self.port}")
+                pid = out.split("\n")[0].lower().split("listening")[1].strip()
+                run_shell_command(f"taskkill /pid {pid} /f")
+        except Exception as e:
+            log.warn(f"Could not kill jupyter process running on {self.port}."\
+                     f" Beware of a leak of unkilled server instances...")
