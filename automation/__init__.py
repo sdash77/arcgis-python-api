@@ -4,7 +4,8 @@ log = logging.getLogger()
 from automation._common import *
 
 log.setLevel(logging.DEBUG)
-log_file_path = os.path.join(STAGING_DIR, "log.log")
+debug_log_file_path = os.path.join(STAGING_DIR, "log.log")
+warning_log_file_path = os.path.join(STAGING_DIR, "warnings.log")
 formatter_str = \
     u'-----    %(levelname)s    |    '\
      '%(asctime)s    |    '\
@@ -13,10 +14,15 @@ formatter_str = \
      '"%(message)s"'
 formatter = logging.Formatter(formatter_str)
 
-file_handler = logging.FileHandler(log_file_path, "w")
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
-log.addHandler(file_handler)
+debug_file_handler = logging.FileHandler(debug_log_file_path, "w")
+debug_file_handler.setLevel(logging.DEBUG)
+debug_file_handler.setFormatter(formatter)
+log.addHandler(debug_file_handler)
+
+warning_file_handler = logging.FileHandler(warning_log_file_path, "w")
+warning_file_handler.setLevel(logging.WARNING)
+warning_file_handler.setFormatter(formatter)
+log.addHandler(warning_file_handler)
 
 stdout_handler = logging.StreamHandler()
 stdout_handler.setLevel(logging.INFO)
