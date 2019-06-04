@@ -19,7 +19,8 @@ class JupyterClassicNotebookServer:
                 shell_cmd = "which jupyter"
             elif os.name == "nt":
                 shell_cmd = "where jupyter"
-            self._jupyter_exe_loc = run_shell_command(shell_cmd).split("\n")[0]
+            self._jupyter_exe_loc = \
+                run_shell_command(shell_cmd).split("\n")[0].strip()
             self._config_file_path = os.path.join(tempfile.gettempdir(),
                                                   "config.py")
             with open(self._config_file_path, "w+") as f:
