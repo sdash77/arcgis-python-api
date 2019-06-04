@@ -22,11 +22,11 @@ def to_geo(values):
 
     Or dictionaries
     >>> to_geo([{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}])
-    <IPArray(['{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'])>
+    <GeoArray(['{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'])>
 
     Or Geometry Objects
     >>> to_geo([Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})])
-    <IPArray(['{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'])>
+    <GeoArray(['{"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}}'])>
     """
     from ._array import GeoArray
 
