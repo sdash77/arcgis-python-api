@@ -19,12 +19,15 @@ TESTS_DIR = os.path.abspath(os.path.join(
 UNIT_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "unit"))
+SANITY_TESTS_DIR = os.path.abspath(os.path.join(
+    UNIT_TESTS_DIR,
+    "sanity"))
 INTEGRATION_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "integration"))
 NOTEBOOK_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
-    "notebook"))
+    "notebooks"))
 WIDGET_INTEGRATION_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "widget",

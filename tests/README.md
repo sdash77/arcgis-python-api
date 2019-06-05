@@ -38,7 +38,7 @@ An integration test covers most other cases outside of unit tests. As we define 
 
 This directory contains any `.ipynb` files we want to test as a part of any suite. Notebook tests are ran from top to bottom, and will pass if there are no unhandled exceptions or red errors in the notebook. Make sure your write your test notebooks to explicitly throw unhandled exceptions on failure (Using `assert` statements can be useful)
 
-Notebooks can be run with two different "runners": an `nbconvert` runner (headless, no widget output), and a `selenium` runner (runs in a web browser, widget output in HTML). When running from the cmd line utility, any notebooks in the `./notebook/` dir will use the `nbconvert` runner. See the suites section for more information how to specify the notebook runner.
+Notebooks can be run with two different "runners": an `nbconvert` runner (headless, no widget output), and a `selenium` runner (runs in a web browser, widget output in HTML). When running from the cmd line utility, any notebooks in the `./notebook/nbconvert/` dir will use the `nbconvert` runner, whereas any notebooks in the `./notebooks/selenium/` dir will use the `selenium` runner. See the suites section for more information how to specify the notebook runner.
 
 ## ./utils
 
@@ -80,3 +80,7 @@ For any path contained in the `geosaurus` repository, start out your string with
 ## ./\_test\_runners
 
 This module contains all the Python code needed to run the specified unit/notebook/etc. tests and output the XML to the correct location.
+
+## ./unit/sanity
+
+This is a special directory that will __always__ run before any tests are run. It does very basic smoke tests like making sure that the python API being imported via `import arcgis` is the module located at `../src/arcgis`, making sure each file in `../src/` is valid Python and doesn't throw any SyntaxErrors, etc.

@@ -31,15 +31,22 @@ def _bytes_to_str_cp850_workaround(bytes_):
     """
     return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
 
-def run_pytest_on(paths, output_xml_path, block_network_access=False):
+def run_pytest_on(paths, output_xml_path, 
+                  block_network_access=False,
+                  max_fail = 9999999999999999,
+                  throw_exc_on_fail = False):
     pytest_args = ["-x",] + paths + [ 
         f"--junit-xml={output_xml_path}",
-        "--maxfail=99999999999999999",
+        f"--maxfail={max_fail}",
         ]
     if block_network_access:
         pytest_args.append("--blockage")
     log.debug(f"Running pytest.main({pytest_args})")
-    _run_pytest_subprocess(pytest_args)
+    if not throw_exc_on_fail:
+        _run_pytest_subprocess(pytest_args)
+    else:
+        cmd = " ".join(["python", "-m", "pytest"] + pytest_args)
+        run_shell_command(cmd, throw_exc_on_fail = throw_exc_on_fail)
 
 def _run_pytest_subprocess(pytest_args):
     args = ['python', '-m', 'pytest'] + pytest_args
@@ -47,3 +54,4 @@ def _run_pytest_subprocess(pytest_args):
     with Popen(args, cwd=TESTS_DIR, stderr=PIPE) as p:
         for line in p.stderr:
             print(str(line.decode('utf-8')), end='')
+        print(f"REturn code = {p.returncode}")

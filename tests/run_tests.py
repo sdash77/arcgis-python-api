@@ -125,7 +125,12 @@ def _add_to_suite_if_notebook_test(suite, test):
     if NOTEBOOK_TESTS_DIR in test:
         if os.path.isdir(test):
             test = os.path.join(test, "**", "*.ipynb")
-        suite['nbconvert_notebook_tests_to_run']['paths'].append(test)
+        nbconvert_dir = os.path.join(NOTEBOOK_TESTS_DIR, "nbconvert")
+        selenium_dir = os.path.join(NOTEBOOK_TESTS_DIR, "selenium")
+        if selenium_dir in test:
+            suite['selenium_notebook_tests_to_run']['paths'].append(test)
+        if nbconvert_dir in test:
+            suite['nbconvert_notebook_tests_to_run']['paths'].append(test)
 
 def _add_to_suite_if_widget_test(suite, test):
     if WIDGET_INTEGRATION_TESTS_DIR in test:
@@ -141,6 +146,8 @@ def _display_results_in_browser(output_xml_files, output_dir):
     try:
         browser_urls_to_display = []
         for output_xml_file in [x for x in output_xml_files if x]:
+            if "sanity" in output_xml_file:
+                continue
             html_file = os.path.splitext(output_xml_file)[0] + ".html"
             if os.path.exists(html_file):
                 os.remove(html_file)

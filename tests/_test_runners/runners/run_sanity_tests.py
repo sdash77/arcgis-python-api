@@ -1,5 +1,24 @@
+import os
+import glob
 import logging
 log = logging.getLogger("__main__")
 
-def run_sanity_tests(*args, **kwargs):
-    log.info("running sanity tests..")
+from utils._common import *
+from _test_runners._common import *
+
+def run_sanity_tests(output_dir):
+    try:
+        log.info("running sanity tests..")
+        sanity_test_paths = glob.glob(os.path.join(SANITY_TESTS_DIR, "**", "*.py"),
+                                      recursive=True)
+        sanity_test_xml_output = os.path.join(output_dir, "sanity_test.xml")
+        run_pytest_on(sanity_test_paths, sanity_test_xml_output,
+                      max_fail=0,
+                      throw_exc_on_fail = True)
+        return sanity_test_xml_output
+    except Exception as e:
+        log.exception(e)
+        msg = f'Sanity tests failed! Rest of suite not running since it '\
+              f'would give errenous, potentially false-positive output. '\
+              f'Exception thrown: "{e}"'
+        raise Exception(msg)
