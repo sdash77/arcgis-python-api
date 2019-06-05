@@ -739,7 +739,11 @@ class _FeatureAnalysisTools(_AsyncService):
                        output_name=None,
                        context=None,
                        estimate=False,
-                       shape_type=None):
+                       shape_type=None,
+                       cell_size=None,
+                       cell_size_unit=None,
+                       distance_band=None,
+                       distance_band_unit=None):
         """
         The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
 
@@ -791,14 +795,22 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if shape_type is not None:
+            params["shapeType"] = shape_type     
+        if cell_size is not None:
+            params["cellSize"] = cell_size               
+        if cell_size_unit is not None:
+            params["cellSizeUnit"] = cell_size_unit
+        if distance_band is not None:
+            params["distanceBand"] = distance_band
+        if distance_band_unit is not None:
+            params["distanceBandUnit"] = distance_band_unit
+
 
         if estimate:
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-
-        if shape_type is not None:
-            params["shapeType"] = shape_type
 
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
@@ -1020,13 +1032,16 @@ class _FeatureAnalysisTools(_AsyncService):
                                 input_layer,
                                 break_values=[5, 10, 15],
                                 break_units="Minutes",
-                                travel_mode="Driving",
+                                travel_mode="Driving Time",
                                 overlap_policy="Overlap",
                                 time_of_day=None,
                                 time_zone_for_time_of_day="GeoLocal",
                                 output_name=None,
                                 context=None,
-                                estimate=False):
+                                estimate=False,
+                                point_barrier_layer=None,
+                                line_barrier_layer=None,
+                                polygon_barrier_layer=None):
         """
 
 
@@ -1077,6 +1092,12 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if point_barrier_layer is not None:
+            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)
+        if line_barrier_layer is not None:
+            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
+        if polygon_barrier_layer is not None:
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)        
 
 
         if estimate:
@@ -1106,7 +1127,8 @@ class _FeatureAnalysisTools(_AsyncService):
                             summary_fields=[],
                             output_name=None,
                             context=None,
-                            estimate=False):
+                            estimate=False,
+                            multi_part_features=True):
         """
         Dissolve features based on specified fields.
 
@@ -1142,7 +1164,8 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
-
+        if  multi_part_features:
+            params["multiPartFeatures"] = multi_part_features
 
         if estimate:
             from arcgis.features._credits import _estimate_credits
@@ -1388,7 +1411,8 @@ class _FeatureAnalysisTools(_AsyncService):
                      units=None,
                      output_name=None,
                      context=None,
-                     estimate=False):
+                     estimate=False,
+                     return_boundaries=False):
         """
         The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
@@ -1441,6 +1465,8 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if return_boundaries:
+            params["returnBoundaries"] = return_boundaries            
 
 
         if estimate:
@@ -1594,7 +1620,10 @@ class _FeatureAnalysisTools(_AsyncService):
             output_name = 'Extracted_data_' + _id_generator()
 
         if data_format.upper() == 'SHAPEFILE':
-            params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
+            if isinstance(output_name, dict):
+                params["outputName"] = {"itemProperties": output_name}
+            else:
+                params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
                                                            "tags": "Analysis Results, Extract Data",
                                                            "snippet": "Analysis file item generated from running the Extract Data tool.",
                                                            "folderId": ""}}
@@ -1861,6 +1890,113 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
             return arcgis.features.FeatureCollection(job_values['outputLayer'])
+
+
+    def choose_best_facilities(self,
+                               goal='Allocate',
+                               demand_locations_layer=None,
+                               demand=1,
+                               demand_field=None,
+                               max_travel_range=2147483647,
+                               max_travel_range_field=None,
+                               max_travel_range_units='Minutes',
+                               travel_mode='Driving Time',
+                               time_of_day=None,
+                               time_zone_for_time_of_day='GeoLocal',
+                               travel_direction='FacilityToDemand',
+                               required_facilities_layer=None,
+                               required_facilities_capacity=2147483647,
+                               required_facilities_capacity_field=None,
+                               candidate_facilities_layer=None,
+                               candidate_count=1,
+                               candidate_facilities_capacity=2147483647,
+                               candidate_facilities_capacity_field=None,
+                               percent_demand_coverage=100,
+                               output_name=None,
+                               context=None,
+                               estimate=False,
+                               point_barrier_layer=None,
+                               line_barrier_layer=None,
+                               polygon_barrier_layer=None):
+
+        task ="ChooseBestFacilities"
+
+        params = {}
+
+        if goal is not None:
+            params["goal"] = goal
+        params["demandLocationsLayer"] = super()._feature_input(demand_locations_layer)            
+        if demand is not None:
+            params["demand"] = demand
+        if demand_field is not None:
+            params["demandField"] = demand_field
+        if max_travel_range is not None:
+            params["maxTravelRange"] = max_travel_range
+        if max_travel_range_field is not None:
+            params["maxTravelRangeField"] = max_travel_range_field
+        if max_travel_range_units is not None:
+            params["maxTravelRangeUnits"] = max_travel_range_units
+        if travel_mode is not None:
+            params["travelMode"] = travel_mode
+        if time_of_day is not None:
+            params["timeOfDay"] = time_of_day
+        if time_zone_for_time_of_day is not None:
+            params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day  
+        if travel_direction is not None:
+            params["travelDirection"] = travel_direction
+        if required_facilities_layer is not None:
+            params["requiredFacilitiesLayer"] = super()._feature_input(required_facilities_layer)
+        if required_facilities_capacity is not None:
+            params["requiredFacilitiesCapacity"] = required_facilities_capacity
+        if required_facilities_capacity_field is not None:
+            params["requiredFacilitiesCapacityField"] = required_facilities_capacity_field
+        if candidate_facilities_layer is not None:
+            params["candidateFacilitiesLayer"] = super()._feature_input(candidate_facilities_layer)            
+        if candidate_count is not None:
+            params["candidateCount"] = candidate_count
+        if candidate_facilities_capacity is not None:
+            params["candidateFacilitiesCapacity"] = candidate_facilities_capacity
+        if candidate_facilities_capacity_field is not None:       
+            params["candidateFacilitiesCapacityField"] = candidate_facilities_capacity_field                 
+        if percent_demand_coverage is not None:
+            params["percentDemandCoverage"] = percent_demand_coverage            
+        if output_name is not None:
+            params["outputName"] = {"serviceProperties": {"name": output_name }}
+        if context is not None:
+            params["context"] = context
+        if point_barrier_layer is not None:
+            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)
+        if line_barrier_layer is not None:
+            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
+        if polygon_barrier_layer is not None:
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)    
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+
+        task_url, job_info, job_id = super()._analysis_job(task, params)
+
+        job_info = super()._analysis_job_status(task_url, job_info)
+        job_values = super()._analysis_job_results(task_url, job_info, job_id)
+        #print(job_values)
+        if output_name is not None:
+            itemid = job_values['allocatedDemandLocationsLayer']['itemId']
+            item = arcgis.gis.Item(self._gis, itemid)
+            return item
+        else:
+            # Feature Collection
+
+            allocated_demand_locations_layer = arcgis.features.FeatureCollection(job_values['allocatedDemandLocationsLayer'])
+
+            allocation_lines_layer = arcgis.features.FeatureCollection(job_values['allocationLinesLayer'])
+
+            assigned_facilities_layer = arcgis.features.FeatureCollection(job_values['assignedFacilitiesLayer'])
+            return { "allocated_demand_locations_layer":allocated_demand_locations_layer, "allocation_lines_layer":allocation_lines_layer, "assigned_facilities_layer":assigned_facilities_layer, }        
+
 
     def interpolate_points(self,
                            input_layer,
@@ -2447,7 +2583,11 @@ class _FeatureAnalysisTools(_AsyncService):
                      time_zone_for_time_of_day="GeoLocal",
                      output_name=None,
                      context=None,
-                     estimate=False):
+                     estimate=False,
+                     include_route_layers=None,
+                     point_barrier_layer=None,
+                     line_barrier_layer=None,
+                     polygon_barrier_layer=None):
         """
         Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations.
 
@@ -2502,6 +2642,15 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if include_route_layers is not None:
+            params["includeRouteLayers"] = include_route_layers            
+        if point_barrier_layer is not None:
+            params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)
+        if line_barrier_layer is not None:
+            params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
+        if polygon_barrier_layer is not None:
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)        
+
         if estimate:
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
@@ -2542,7 +2691,10 @@ class _FeatureAnalysisTools(_AsyncService):
                     include_route_layers=False,
                     output_name=None,
                     context=None,
-                    estimate=False):
+                    estimate=False,
+                    point_barrier_layer=None,
+                    line_barrier_layer=None,
+                    polygon_barrier_layer=None):
         """
 
 
@@ -2578,6 +2730,11 @@ class _FeatureAnalysisTools(_AsyncService):
 
         context : Optional string
 
+        point_barrier_layer: Optional FeatureSet/FeatureLayer
+
+        line_barrier_layer: Optional FeatureSet/FeatureLayer
+
+        polygon_barrier_layer: Optional FeatureSet/FeatureLayer
 
         Returns
         -------
@@ -2615,6 +2772,12 @@ class _FeatureAnalysisTools(_AsyncService):
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
             params["context"] = context
+        if point_barrier_layer:
+            params["pointBarrierLayer"] = point_barrier_layer
+        if line_barrier_layer:
+            params['lineBarrierLayer'] = line_barrier_layer
+        if polygon_barrier_layer:
+            params['polygonBarrierLayer'] = polygon_barrier_layer
 
         if estimate:
             from arcgis.features._credits import _estimate_credits

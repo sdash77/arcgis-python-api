@@ -826,10 +826,13 @@ class _ArcGISConnection(object):
                 params['token'] = self.token
 
         if len(params.keys()) > 0:
-            params = {k: jsonize_dict(v) for k, v in params.items()}
-            url = "{url}?{params}".format(url=url,
+            if url.lower().find("/generatetoken ") > -1:
+                _log.debug('REQUEST (get): ' + url)
+            else:
+                params = {k: jsonize_dict(v) for k, v in params.items()}
+                url = "{url}?{params}".format(url=url,
                                           params=urlencode(params))
-        _log.debug('REQUEST (get): ' + url)
+                _log.debug('REQUEST (get): ' + url)
 
         try:
             # Send the request and read the response
@@ -1063,7 +1066,10 @@ class _ArcGISConnection(object):
                 postdata['token'] = self.token
 
         if _log.isEnabledFor(logging.DEBUG):
-            msg = 'REQUEST: ' + url + ', ' + str(postdata)
+            if url.lower().find("/generatetoken") > -1:
+                msg = 'REQUEST: ' + url
+            else:
+                msg = 'REQUEST: ' + url + ', ' + str(postdata)
             if files:
                 msg += ', files=' + str(files)
             _log.debug(msg)

@@ -1,7 +1,8 @@
 __version__ = '1.6.1'
 
-from . import features, geoanalytics, geocoding, geometry, geoprocessing, network, raster, realtime, schematics, \
-    mapping, apps, learn
+from . import (features, geoanalytics, geocoding, geometry,
+               geoprocessing, network, raster, realtime, schematics,
+               mapping, apps, learn)
 
 from .gis import GIS
 from .features.analysis import *
@@ -33,6 +34,7 @@ __all__ = ['GIS', 'geocode', 'features',
            'find_hot_spots',
            'find_nearest',
            'find_similar_locations',
+           'find_centroids'
            'interpolate_points',
            'join_features',
            'merge_layers',

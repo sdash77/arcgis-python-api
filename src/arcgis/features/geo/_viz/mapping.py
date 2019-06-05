@@ -171,8 +171,13 @@ def plot(df,
     if map_widget is None:
         map_exists = False
         map_widget = MapView()
-
+    import string
+    trantab = str.maketrans(string.punctuation, "_" * len(string.punctuation))
+    col_new = [col.translate(trantab) for col in df.columns]
+    col_old = df.columns.tolist()
+    df.columns = col_new
     fc = df.spatial.to_feature_collection(name=name)
+    df.columns = col_old
     gt = [el for el in df.spatial.geometry_type if el is not None]
     if renderer_type is None and \
        not renderer is None:

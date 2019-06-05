@@ -564,13 +564,17 @@ class Geometry(BaseGeometry):
                 return None
             if len(a) == 0:
                 return None
-            elif len(a) > 1: # single part
+            elif len(a) == 1: # single part
                 x_max = max(a[0], key=lambda x: x[0])[0]
                 x_min = min(a[0], key=lambda x: x[0])[0]
                 y_max = max(a[0], key=lambda x: x[1])[1]
                 y_min = min(a[0], key=lambda x: x[1])[1]
                 return x_min, y_min, x_max, y_max
             else:
+                if 'points' in a:
+                    a = a['points']
+                if 'points' not in a and 'coordinates' in a:
+                    a = a['coordinates']
                 xs = []
                 ys = []
                 for pt in a: # multiple part geometry
@@ -2609,17 +2613,19 @@ class Polygon(Geometry):
         if fill_color is None:
             fill_color = "#66cc99" if self.is_valid else "#ff3333"
         rings = []
+        s = ""
         for ring in self['rings']:
-            rings += ring
-        exterior_coords = [
-            ["{},{}".format(*c) for c in rings]]
-        path = " ".join([
-            "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
-            for coords in exterior_coords])
-        return (
+            rings = ring
+            exterior_coords = [
+                ["{},{}".format(*c) for c in rings]]
+            path = " ".join([
+                "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
+                for coords in exterior_coords])
+            s += (
             '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
             'stroke-width="{0}" opacity="0.6" d="{1}" />'
             ).format(2. * scale_factor, path, fill_color)
+        return s
     #----------------------------------------------------------------------
     @property
     def type(self):

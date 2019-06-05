@@ -22,7 +22,7 @@ from datetime import datetime
 import logging
 _log = logging.getLogger(__name__)
 
-from six.moves.urllib.error import HTTPError
+from urllib.error import  HTTPError
 
 import arcgis._impl.portalpy as portalpy
 import arcgis.env
@@ -30,7 +30,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
-from six.moves.urllib.error import HTTPError
+
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -200,6 +200,7 @@ class GIS(object):
     _is_hosted_nb_home = False
     _product_version = None
     _is_agol = None
+    _pds = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
@@ -393,13 +394,13 @@ class GIS(object):
            me.role == "org_admin":
             try:
                 if self.properties.isPortal == True:
-                    from .admin.portaladmin import PortalAdminManager
+                    from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                                     gis=self)
                 else:
                     from .admin.agoladmin import AGOLAdminManager
                     self.admin = AGOLAdminManager(gis=self)
-            except:
+            except Exception as e:
                 pass
         elif self._con._auth.lower() != 'anon' and \
              self._con._auth is not None and\
@@ -725,6 +726,14 @@ class GIS(object):
             return arcgis.apps.hub.Hub(self)
         else:
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
+
+    @property
+    def datastore(self):
+        if self.version >= [7,1]:
+            from arcgis.gis._impl._datastores import PortalDataStore
+            url = self._portal.resturl + "portals/self/datastores"
+            self._pds = PortalDataStore(url=url, gis=self)
+        return self._pds
 
     @_lazy_property
     def _datastores(self):
@@ -1091,7 +1100,23 @@ class Datastore(dict):
             return True
         else:
             return False
+    #----------------------------------------------------------------------
+    def regenerate(self):
+        """
+        This regenerates the manifest for a big data file share. You can
+        regenerate a manifest if you have added new data or if you have
+        uploaded a hints file using the edit resource.
 
+        :returns: Boolean. True = Success, False = Failure
+
+        """
+        url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     def validate(self):
         """
         Validates that this data item's path (for file shares) or connection string (for databases)
@@ -1320,7 +1345,7 @@ class DatastoreManager(object):
         object_store        Required string. This is the amazon bucket path or Azuze path.
         ---------------     --------------------------------------------------------------------
         provider            Required string. Values must be azuredatalakestore, amazon,
-                            Huawei, Alibaba, or azure.
+                            Alibaba, or azure.
         ---------------     --------------------------------------------------------------------
         managed             Optional boolean. When the data store is server only, the database
                             is entirely managed and owned by the server and cannot be accessed
@@ -2052,6 +2077,7 @@ class UserManager(object):
             'publisher' : 'org_publisher',
             'creator' : 'org_publisher',
             'view_only' : 'tLST9emLCNfFcejK',
+            'org_viewer' : 'iAAAAAAAAAAAAAAA',
             'viewer' : 'iAAAAAAAAAAAAAAA',
             'viewplusedit' : 'iBBBBBBBBBBBBBBB'
         }
@@ -3549,6 +3575,136 @@ class ContentManager(object):
             return Item(self._gis, itemid, item)
         return None
 
+    def advanced_search(self, query, return_count=False, max_items=100, bbox=None,
+                        categories=None, category_filter=None,
+                        start=1, sort_field="title",
+                        sort_order="asc", count_fields=None,
+                        count_size=None, as_dict=False):
+        """
+        This method allows the ability to fully customize  the search experience.
+        The `advanced_search` method allows users to control of the finer grained parameters
+        not exposed by the 'search' method.  Additionally, it allows for the manual paging of
+        information and how the data is returned.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        query               Required String.  The search query.
+        ----------------    ---------------------------------------------------------------
+        bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
+                            box to limit the search in.  Items like documents do not have
+                            bounding boxes and will not be included in the search.
+        ----------------    ---------------------------------------------------------------
+        categories          Optional String. A comma separated list of up to 8 org content
+                            categories to search items. Exact full path of each category is
+                            required, OR relationship between the categories specified.
+
+                            Each request allows a maximum of 8 categories parameters with
+                            AND relationship between the different categories parameters
+                            called.
+        ----------------    ---------------------------------------------------------------
+        category_filters    Optional String. A comma separated list of up to 3 category
+                            terms to search items that have matching categories. Up to 2
+                            `category_filters` parameter are allowed per request. It can
+                            not be used together with categories to search in a request.
+        ----------------    ---------------------------------------------------------------
+        start               Optional Int. The starting position to search from.  This is
+                            only required if paging is needed.
+        ----------------    ---------------------------------------------------------------
+        sort_field          Optional String. Responses from the `search` operation can be
+                            sorted on various fields. `avgrating` is the default.
+        ----------------    ---------------------------------------------------------------
+        sort_order          Optional String. The sequence into which a collection of
+                            records are arranged after they have been sorted. The allowed
+                            values are: asc for ascending and desc for descending.
+        ----------------    ---------------------------------------------------------------
+        count_fields        Optional String. A comma separated list of fields to count.
+                            Maximum count fields allowed per request is 3. Supported count
+                            fields: `tags`, `type`, `access`, `contentstatus`, and
+                            `categories`.
+        ----------------    ---------------------------------------------------------------
+        count_size          Optional Int. The maximum number of field values to count for
+                            each `count_fields`. The default value is None, and maximum size
+                            allowed is 200.
+        ----------------    ---------------------------------------------------------------
+        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        ================    ===============================================================
+
+        :returns: Depends on the inputs.
+                  - Dictionary for a standard search
+                  - `return_count`=True an integer is returned
+                  - `count_fields` is specified a list of dicts for each field specified
+
+        """
+        from arcgis.gis._impl import _search
+        stype = "content"
+        group_id = None
+        if max_items == -1:
+            max_items = _search(gis=self._gis, query=query, stype=stype,
+                          max_items=0, bbox=bbox,
+                          categories=categories, category_filter=category_filter,
+                          start=start, sort_field=sort_field,
+                          sort_order=sort_order, count_fields=count_fields,
+                          count_size=count_size, group_id=group_id, as_dict=as_dict)['total']
+        so = {
+            'asc' : 'asc',
+            'desc' : 'desc',
+            'ascending' : 'asc',
+            'descending' : 'desc'
+        }
+        if sort_order:
+            sort_order = so[sort_order]
+
+        if count_fields or return_count:
+            max_items = 0
+        if max_items <= 100:
+            res = _search(gis=self._gis, query=query, stype=stype,
+                          max_items=max_items, bbox=bbox,
+                          categories=categories, category_filter=category_filter,
+                          start=start, sort_field=sort_field,
+                          sort_order=sort_order, count_fields=count_fields,
+                          count_size=count_size, group_id=group_id, as_dict=as_dict)
+            if 'total' in res and \
+               return_count:
+                return res['total']
+            elif 'aggregations' in res:
+                return res['aggregations']
+            return res
+        else:
+            allowed_keys = [ 'query', 'return_count', 'max_items', 'bbox','categories', 'category_filter',
+                             'start', 'sort_field', 'sort_order', 'count_fields','count_size', 'as_dict']
+            inputs = locals()
+            kwargs = {}
+            for k,v in inputs.items():
+                if k in allowed_keys:
+                    kwargs[k] = v
+            import concurrent.futures
+            import math, copy
+            num = 100
+            steps = range(math.ceil(max_items / num))
+            params = [ ]
+            for step in steps:
+                new_start = start + num*step
+                kwargs['max_items'] = num
+                kwargs['start'] = new_start
+                params.append(copy.deepcopy(kwargs))
+            items = {
+                'results' : [],
+                'start' : start,
+                'num' : 100,
+                'total' : -999
+            }
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_url = {executor.submit(self.advanced_search, **param): param for param in params}
+                for future in concurrent.futures.as_completed(future_to_url):
+                    result = future_to_url[future]
+                    data = future.result()
+                    if 'results' in data:
+                        items['results'].extend(data['results'])
+            if len(items['results']) > max_items:
+                items['results'] = items['results'][:max_items]
+            return items
+
     def search(self,
                query, item_type=None,
                sort_field='avgRating', sort_order='desc',
@@ -3601,6 +3757,9 @@ class ContentManager(object):
         :return:
             A list of items matching the specified query.
         """
+        if max_items > 10000:
+            raise Exception(("Use `advanced_search` fo"
+                             "r item queries over 10,000 Items."))
         itemlist = []
         if query is not None and query != '' and item_type is not None:
             query += ' AND '
@@ -3639,12 +3798,17 @@ class ContentManager(object):
                 query += ' (type:"' + item_type +'")'
         if isinstance(categories, list):
             categories = ",".join(categories)
-        items = self._portal.search(query, sort_field=sort_field, sort_order=sort_order, max_results=max_items, outside_org=outside_org,
-                                    categories=categories, category_filters=category_filters)
-        for item in items:
-            itemlist.append(Item(self._gis, item['id'], item))
+        if not outside_org:
+            accountid = self._gis.properties.get('id')
+            if accountid and query:
+                query += ' accountid:' + accountid
+            elif accountid:
+                query = 'accountid:' + accountid
+        itemlist = self.advanced_search(query=query, max_items=max_items,
+                             categories=categories,
+                             start=1, sort_field=sort_field,
+                             sort_order=sort_order)['results']
         return itemlist
-    # q: (type:"web map" NOT type:"web mapping applications") AND accountid:0123456789ABCDEF
 
     def create_folder(self, folder, owner=None):
         """
@@ -8082,7 +8246,8 @@ class Item(dict):
            For JSON/text files, a Python dictionary or a string.  All others will be a byte array,
            that can be converted to string using data.decode('utf-8'). Zero byte files will return None.
         """
-        item_data = self._portal.get_item_data(self.itemid, try_json)
+        folder = None
+        item_data = self._portal.get_item_data(self.itemid, try_json, folder)
 
         if item_data == '':
             return None
@@ -8508,12 +8673,16 @@ class Item(dict):
                 if not ms.properties.minScale:
                     min_scale = ms.properties.tileInfo.lods[0]['scale']
                     max_scale = ms.properties.tileInfo.lods[-1]['scale']
-                    edit_result = ms.manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
+                else:
+                    min_scale = ms.properties.minScale
+                    max_scale = ms.properties.maxScale
+                edit_result = ms.manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
 
                 # Get LoD from Map Image Layer
                 full_extent = dict(ms.properties.fullExtent)
                 lod_dict = ms.properties.tileInfo['lods']
-                lod = [current_lod['level'] for current_lod in lod_dict]
+                lod = [current_lod['level'] for current_lod in lod_dict
+                       if (min_scale <= current_lod['scale'] <= max_scale)]
                 ret = ms.manager.update_tiles(levels=lod, extent=full_extent)
             except Exception as tiles_ex:
                 raise Exception('Error unpacking tiles :' + str(tiles_ex))
@@ -9513,11 +9682,13 @@ class _GISResource(object):
     def _refresh(self):
         params = {"f": "json"}
         if type(self).__name__ == 'ImageryLayer':
-            if hasattr(self, "_uri"):
-                if self._uri:
-                    params["Raster"] = self._uri
             if self._fn is not None:
                 params['renderingRule'] = self._fn
+            if hasattr(self, "_uri"):
+                if isinstance(self._uri, bytes):
+                    if 'renderingRule' in params.keys():
+                        del params['renderingRule']
+                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)

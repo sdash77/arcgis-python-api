@@ -879,7 +879,9 @@ class FeatureLayer(Layer):
                               out_wkid=None,
                               gdb_version=None,
                               return_z=False,
-                              return_m=False):
+                              return_m=False,
+                              historic_moment=None,
+                              return_true_curve=False):
         """
         The Query operation is performed on a feature service layer
         resource. The result of this operation are feature sets grouped
@@ -934,6 +936,20 @@ class FeatureLayer(Layer):
         return_m                   Optional boolean. If true, M values are included in the results if
                                    the features have M values. Otherwise, M values are not returned.
                                    The default is false.
+        ----------------------     --------------------------------------------------------------------
+        historic_moment            Optional Integer/datetime. The historic moment to query. This parameter
+                                   applies only if the supportsQueryWithHistoricMoment property of the
+                                   layers being queried is set to true. This setting is provided in the
+                                   layer resource.
+
+                                   If historic_moment is not specified, the query will apply to the
+                                   current features.
+
+                                   Syntax: historic_moment=<Epoch time in milliseconds>
+        ----------------------     --------------------------------------------------------------------
+        return_true_curves         Optional boolean. Optional parameter that is false by default. When
+                                   set to true, returns true curves in output geometries; otherwise,
+                                   curves are converted to densified polylines or polygons.
         ======================     ====================================================================
 
 
@@ -950,6 +966,12 @@ class FeatureLayer(Layer):
             "returnM": return_m,
             "returnZ": return_z
         }
+        if historic_moment:
+            if hasattr(historic_moment, "timestamp"):
+                historic_moment = int(historic_moment.timestamp() * 1000)
+            params['historicMoment'] = historic_moment
+        if return_true_curve:
+            params['returnTrueCurves'] = return_true_curve
         if self._dynamic_layer is not None:
             params['layer'] = self._dynamic_layer
         if gdb_version is not None:
@@ -1577,6 +1599,34 @@ class FeatureLayerCollection(_GISResource):
         return self._admin
 
     @property
+    def relationships(self):
+        """
+        The `relationships` property provides relationship information for
+        the layers and tables in the feature layer collection.
+
+        The relationships resource includes information about relationship
+        rules from the back-end relationship classes, in addition to the
+        relationship information already found in the individual layers and
+        tables.
+
+        Feature layer collections that support the relationships resource
+        will have the "supportsRelationshipsResource": true property on
+        their properties.
+
+        :returns: List of Dictionaries
+
+        """
+        if "supportsRelationshipsResource" in self.properties and \
+           self.properties["supportsRelationshipsResource"]:
+            url = self._url + "/relationships"
+            params = {'f' : 'json'}
+            res = self._con.get(url, params)
+            if 'relationships' in res:
+                return res['relationships']
+            return res
+        return []
+
+    @property
     def versions(self):
         """
         Returns a `VersionManager` to create, update and use versions on a `FeatureLayerCollection`.
@@ -1591,6 +1641,34 @@ class FeatureLayerCollection(_GISResource):
                 self._vermgr = VersionManager(url=url, gis=self._gis)
             return self._vermgr
         return None
+    # ----------------------------------------------------------------------
+    def query_domains(self, layers):
+        """
+        The query_domains returns full domain information for the domains
+        referenced by the layers in the feature layer collection. This
+        operation is performed on a feature layer collection. The operation
+        takes an array of layer IDs and returns the set of domains referenced
+        by the layers.
+
+        ================================     ====================================================================
+        **Argument**                         **Description**
+        --------------------------------     --------------------------------------------------------------------
+        layers                               Required List.  An array of layers. The set of domains to return is
+                                             based on the domains referenced by these layers. Example: [1,2,3,4]
+        ================================     ====================================================================
+
+        :returns: list of dictionaries
+
+        """
+        if not isinstance(layers (tuple, list)):
+            raise ValueError("The layer variable must be a list.")
+        url = "{base}/queryDomains".format(base=self._url)
+        params = {'f':'json'}
+        params['layers'] = layers
+        res = self._con.post(url, params)
+        if 'domains' in res:
+            return res['domains']
+        return res
     # ----------------------------------------------------------------------
     def extract_changes(self,
                         layers,

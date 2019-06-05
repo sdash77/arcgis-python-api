@@ -47,19 +47,6 @@ class GeoSeriesAccessor:
         self._data = obj.values
         self._index = obj.index
         self._name = obj.name
-    ##----------------------------------------------------------------------
-    #def _call_method(self, name, is_ga=False, **kwargs):
-        #"""accesses a method on the geometry object"""
-        #vals = []
-        #for g in self._data:
-            #if hasattr(g, name):
-                #vals.append(getattr(g, name, None)(**kwargs))
-            #else:
-                #vals.append(None)
-        #if is_ga:
-            #from ._array import GeoArray
-            #return pd.Series(GeoArray(vals), index=self._index)
-        #return pd.Series(vals, index=self._index)
     #----------------------------------------------------------------------
     @staticmethod
     def _validate(obj):
@@ -937,6 +924,54 @@ class GeoAccessor(object):
         self._data = obj
         self._index = obj.index
         self._name = None
+    #----------------------------------------------------------------------
+    def _repr_svg_(self):
+        """draws the dataframe as SVG features"""
+
+        if self.name:
+            fn = lambda g, n: getattr(g, n, None)() if g is not None else None
+            vals = np.vectorize(fn, otypes='O')(self._data['SHAPE'], 'svg')
+            svg = "\n".join(vals.tolist())
+            svg_top = '<svg xmlns="http://www.w3.org/2000/svg" ' \
+                'xmlns:xlink="http://www.w3.org/1999/xlink" '
+            if len(self._data) == 0:
+                return svg_top + '/>'
+            else:
+                # Establish SVG canvas that will fit all the data + small space
+                xmin, ymin, xmax, ymax = self.full_extent
+                if xmin == xmax and ymin == ymax:
+                    # This is a point; buffer using an arbitrary size
+                    xmin, ymin, xmax, ymax = xmin - .001, ymin - .001, xmax + .001, ymax + .001
+                else:
+                    # Expand bounds by a fraction of the data ranges
+                    expand = 0.04  # or 4%, same as R plots
+                    widest_part = max([xmax - xmin, ymax - ymin])
+                    expand_amount = widest_part * expand
+                    xmin -= expand_amount
+                    ymin -= expand_amount
+                    xmax += expand_amount
+                    ymax += expand_amount
+                dx = xmax - xmin
+                dy = ymax - ymin
+                width = min([max([100.0, dx]), 300])
+                height = min([max([100.0, dy]), 300])
+                try:
+                    scale_factor = max([dx, dy]) / max([width, height])
+                except ZeroDivisionError:
+                    scale_factor = 1
+                view_box = "{0} {1} {2} {3}".format(xmin, ymin, dx, dy)
+                transform = "matrix(1,0,0,-1,0,{0})".format(ymax + ymin)
+                return svg_top + (
+                    'width="{1}" height="{2}" viewBox="{0}" '
+                    'preserveAspectRatio="xMinYMin meet">'
+                    '<g transform="{3}">{4}</g></svg>'
+                    ).format(view_box,
+                             width,
+                             height,
+                             transform,
+                             svg)
+        return
+
     #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):
         """Assigns the Geometry Column by Name or by List"""
@@ -2026,17 +2061,28 @@ class GeoAccessor(object):
     @staticmethod
     def from_featureclass(location, **kwargs):
         """
-        Returns a Spatially enbaled `pandas.DataFrame` from a feature class.
+        Returns a Spatially enabled `pandas.DataFrame` from a feature class.
 
-        ====================    =========================================================
-        **Argument**            **Description**
-        --------------------    ---------------------------------------------------------
-        location                Required String. The full qualified path to the feature
-                                class.
-        ====================    =========================================================
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        location                        Required string. Full path to the feature class
+        ===========================     ====================================================================
 
-        :returns: Pandas' `DataFrame`
+        *Optional parameters when ArcPy library is available in the current environment*:
 
+        ===========================     ====================================================================
+        **Key**                         **Value**
+        ---------------------------     --------------------------------------------------------------------
+        sql_clause                      sql clause to parse data down. To learn more see
+                                        `ArcPy Search Cursor <https://pro.arcgis.com/en/pro-app/arcpy/data-access/searchcursor-class.htm>`_
+        ---------------------------     --------------------------------------------------------------------
+        where_clause                    where statement. To learn more see `ArcPy SQL reference <https://pro.arcgis.com/en/pro-app/help/mapping/navigation/sql-reference-for-elements-used-in-query-expressions.htm>`_
+        ---------------------------     --------------------------------------------------------------------
+        fields                          list of strings specifying the field names.
+        ===========================     ====================================================================
+
+        :returns: pandas.core.frame.DataFrame
         """
         return from_featureclass(filename=location, **kwargs)
     #----------------------------------------------------------------------
@@ -2608,7 +2654,7 @@ class GeoAccessor(object):
         (-118, 32, -97, 33)
 
         """
-        ge = self._data[self.name].geom.geoextent
+        ge = self._data[self.name].geom.extent
         q = ge.notnull()
         data = ge[q].tolist()
         array = np.array(data)
