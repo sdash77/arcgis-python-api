@@ -148,7 +148,7 @@ class ArcGISModel(object):
                                 all the intermediate directories.
         =====================   ===========================================
         """        
-        self._save(name_or_path)
+        return self._save(name_or_path)
 
         
     def _create_zip(self, zipname, path):
