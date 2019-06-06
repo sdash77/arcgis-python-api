@@ -203,21 +203,38 @@ def find_point_clusters(
         gis=None, estimate=False):
 
     """
-    The Find Point Clusters function finds clusters of point features in surrounding
-    noise based on their spatial distribution. Output is a layer containing records
-    assigned to a cluster or noise.
+    .. image:: _static/images/find_point_clusters/find_point_clusters.png 
+
+    The ``find_point_clusters`` method finds clusters of point features within surrounding 
+    noise based on their spatial distribution.
+
+    This method uses unsupervised machine learning clustering algorithms to detect 
+    patterns of point features based purely on spatial location and, optionally, 
+    the distance to a specified number of features.
+
+    The result map shows each cluster identified as well as features considered 
+    noise. Multiple clusters will be assigned each color. Colors will be assigned 
+    and repeated so that each cluster is visually distinct from its neighboring clusters.
+
+    This method utilizes two related algorithms. By default the HDBSCAN algorithm is 
+    used to find clusters. If a ``search_distance`` is specified, the DBSCAN algorithm 
+    is used. DBSCAN is only appropriate if there is a very clear search distance to use 
+    for your analysis and will return clusters with similar densities. When 
+    no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters 
+    of varying densities from sparser noise resulting in more data-driven clusters.
 
     ====================    =========================================================
     **Argument**            **Description**
     --------------------    ---------------------------------------------------------
     analysis_layer          Required layer. The point feature layer for which
-                            density-based clustering will be calculated.
+                            density-based clustering will be calculated. 
+                            See :ref:`Feature Input<FeatureInput>`.
     --------------------    ---------------------------------------------------------
     min_features_cluster    Required integer. The minimum number of features to be
                             considered a cluster. Any cluster with fewer features
                             than the number provided will be considered noise.
     --------------------    ---------------------------------------------------------
-    search_distance         Optional double. The maximum distance to consider. The
+    search_distance         Optional float. The maximum distance to consider. The
                             Minimum Features per Cluster specified must be found
                             within this distance for cluster membership. Individual
                             clusters will be separated by at least this distance. If
@@ -225,14 +242,23 @@ def find_point_clusters(
                             next closest feature in the cluster, it will not be
                             included in the cluster.
     --------------------    ---------------------------------------------------------
-    search_distance_unit    Optional string. The linear unit to be used for the
-                            search distance parameter.
+    search_distance_unit    Optional string. The linear unit to be used with the distance 
+                            value specified for ``search_distance``. You must provide a 
+                            value if ``search_distance`` has been set.
+
+                            Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
+
+                            The default is 'Miles'.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string. Additional properties such as output
-                            feature service name.
+    output_name             Optional string. If provided, the method will create a 
+                            feature service of the results. You define the name of 
+                            the service. If ``output_name`` is not supplied, the method 
+                            will return a feature collection.
     --------------------    ---------------------------------------------------------
-    context                 Optional string. Additional settings such as processing
-                            extent and output spatial reference.
+    context                 Optional string. Context contains additional settings that affect method execution. For ``find_point_clusters``, there are two settings.
+
+                            #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
+                            #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
                             specified, the active GIS is used.
@@ -240,9 +266,17 @@ def find_point_clusters(
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     ====================    =========================================================
 
-    :returns: Python dictionary with the following keys:
-        "point_clusters_result_layer" : layer (FeatureCollection)
-        "process_info" : list of messages
+    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature collection.
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To find patterns of taffic accidents purely on spatial location.
+        clusters= find_point_clusters(collision,
+                                      min_features_cluster=200,
+                                      search_distance=2,
+                                      search_distance_unit='Kilometers',
+                                      output_name='find point clusters')
+                
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
