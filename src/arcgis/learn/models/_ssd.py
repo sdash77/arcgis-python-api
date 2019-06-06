@@ -420,7 +420,7 @@ class SingleShotDetector(object):
                                 all the intermediate directories.
         =====================   ===========================================
         """        
-        self._save(name_or_path)
+        return self._save(name_or_path)
 
 
     def load(self, name_or_path):
