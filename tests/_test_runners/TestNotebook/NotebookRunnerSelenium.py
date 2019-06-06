@@ -31,6 +31,9 @@ class NotebookRunnerSelenium:
     def __init__(self, notebook_file_path, output_dir, cell_timeout_sec = 300,
                  active_jupyter_backend = None, browser = "Chrome"):
         self.notebook_file_path = notebook_file_path
+        self.notebook_file_dir = os.path.dirname(notebook_file_path)
+        self.notebook_file_name_no_ext = \
+            os.path.splitext(notebook_file_path)[0]
         self.cell_timeout_sec = int(cell_timeout_sec)
         self.active_jupyter_backend = active_jupyter_backend
         self.output_dir = output_dir
@@ -70,11 +73,10 @@ class NotebookRunnerSelenium:
             if self.active_jupyter_backend:
                 output = self._run_notebook()
             else:
-                with _empty_tmp_dir() as tmp_dir:
-                    with JupyterClassicNotebookServer(tmp_dir) as j:
-                        self.active_jupyter_backend = j
-                        output = self._run_notebook()
-                        self.active_jupyter_backend = None
+                with JupyterClassicNotebookServer(self.notebook_file_dir) as j:
+                    self.active_jupyter_backend = j
+                    output = self._run_notebook()
+                    self.active_jupyter_backend = None
         except:
             # Yes, even catch keyboard interrupts
             if self.active_jupyter_backend:
@@ -85,10 +87,12 @@ class NotebookRunnerSelenium:
         return output
 
     def _run_notebook(self):
-        # Stage the notebook in a location Jupyter Server can open it
+        # Make copy of original notebook so we can restore it later
+        orig_nb_tmp_path = os.path.join(self.notebook_file_dir,
+            f"{self.notebook_file_name_no_ext}-orig{uuid4()}.ipynb")
         shutil.copy(self.notebook_file_path,
-                    self.active_jupyter_backend.notebook_root_dir)
-        
+                    orig_nb_tmp_path)
+
         # Run the notebook, take screenshots of widgets, save it
         self._initialize_selenium()
         self._run_each_cell_until_bottom()
@@ -105,6 +109,11 @@ class NotebookRunnerSelenium:
         output_html_path = os.path.join(self.output_dir,
             self.notebook_file_name_no_ext + ".html")
         self._convert_ipynb_to_html(output_ipynb_path, output_html_path)
+
+        # Restore original notebook now that we have finished running
+        shutil.copy(orig_nb_tmp_path,
+                    self.notebook_file_path)
+        os.rm(orig_nb_tmp_path)
 
         return NotebookRunnerResult(output_ipynb_path = output_ipynb_path,
                                     output_html_path = output_html_path)

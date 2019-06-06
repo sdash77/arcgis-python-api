@@ -23,6 +23,9 @@ AUTOMATION_DIR = os.path.abspath(os.path.join(
 TESTS_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "tests"))
+TESTS_UTILS_DIR = os.path.abspath(os.path.join(
+    TESTS_DIR,
+    "utils"))
 UNIT_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "unit"))
@@ -61,7 +64,7 @@ GEOSAURUS_PYTHON_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
 
 GEOSAURUS_JUPYTER_NB_EXEC = GEOSAURUS_PYTHON_EXEC + \
                             ["-m", "jupyter", "notebook"]
-GEOSAURUS_JUPYTER_NOTEBOOK_EXEC_STR = " ".join(GEOSAURUS_JUPYTER_NB_EXEC)
+GEOSAURUS_JUPYTER_NB_EXEC_STR = " ".join(GEOSAURUS_JUPYTER_NB_EXEC)
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
     try:

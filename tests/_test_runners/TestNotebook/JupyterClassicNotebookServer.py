@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE, STDOUT
 import logging
 log = logging.getLogger()
 
-from utils._common import run_shell_command
+from utils._common import *
 
 MAX_NUM_PORTS_TO_TRY = 5
 
@@ -15,16 +15,10 @@ class JupyterClassicNotebookServer:
         self.port = port
         self.notebook_root_dir = notebook_root_dir
         try:
-            if os.name == "posix":
-                shell_cmd = "which jupyter"
-            elif os.name == "nt":
-                shell_cmd = "where jupyter"
-            self._jupyter_exe_loc = \
-                run_shell_command(shell_cmd).split("\n")[0].strip()
             self._config_file_path = os.path.join(tempfile.gettempdir(),
                                                   "config.py")
             with open(self._config_file_path, "w+") as f:
-                f.write('c.NotebookApp.token = "" # disables auth')
+                f.write(f'c.NotebookApp.token = "" # disables auth\n')
         except Exception as e:
             raise Exception("Couldn't determine Jupyter executable location")
 
@@ -53,13 +47,13 @@ class JupyterClassicNotebookServer:
 
     def __enter__(self):
         self._resolve_port()
-        args = [self._jupyter_exe_loc, "notebook", 
-                              f"--config={self._config_file_path}",
-                              f"--no-browser",
-                              f"--port={self.port}"]
-        log.debug(f"calling Popen({args})")
-        self.process = Popen(args, cwd=self.notebook_root_dir, 
-                             stdout=PIPE, stderr=STDOUT)
+        cmd = f"{GEOSAURUS_JUPYTER_NB_EXEC_STR} "\
+              f"--config={self._config_file_path} "\
+              f"--no-browser "\
+              f"--port={self.port} "
+        log.debug(f"calling Popen({cmd})")
+        self.process = Popen(cmd, cwd=self.notebook_root_dir,shell=True) 
+        #                     stdout=PIPE, stderr=STDOUT, shell=True)
         self.base_url = f"http://127.0.0.1:{self.port}/notebooks/"
         time.sleep(10) # Just incase
         return self
