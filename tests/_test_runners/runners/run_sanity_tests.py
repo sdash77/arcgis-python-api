@@ -4,7 +4,6 @@ import logging
 log = logging.getLogger("__main__")
 
 from utils._common import *
-from _test_runners._common import *
 
 def run_sanity_tests(output_dir):
     try:

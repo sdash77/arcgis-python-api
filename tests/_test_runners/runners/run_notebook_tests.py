@@ -11,7 +11,7 @@ log = logging.getLogger("__main__")
 from xmlrunner import XMLTestRunner
 
 from _test_runners.TestNotebook import TestNotebook
-from _test_runners._common import *
+from utils._common import *
 
 def run_notebook_tests(config, paths, output_dir,
                        jenkins_job_url, notebook_runner = "nbconvert"):

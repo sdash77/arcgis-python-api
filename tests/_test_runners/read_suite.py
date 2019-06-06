@@ -4,7 +4,6 @@ import re
 
 import yaml
 
-from _test_runners._common import *
 from utils._common import *
 
 def read_suite(suite_file_path, 

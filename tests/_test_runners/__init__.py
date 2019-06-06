@@ -17,4 +17,3 @@ log.addHandler(stdout_handler)
 
 from _test_runners.read_suite import *
 from _test_runners.run_suite import *
-from _test_runners._common import *

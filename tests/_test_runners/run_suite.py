@@ -5,7 +5,6 @@ import logging
 log = logging.getLogger("__main__")
 
 from _test_runners.runners import *
-from _test_runners._common import *
 from utils._common import *
 
 file_uri_output_dir = pathlib.Path(TESTS_DIR).as_uri()

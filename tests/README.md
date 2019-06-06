@@ -6,15 +6,17 @@ This directory contains everything needed to run tests on various parts of the P
 
 - To run specific tests:
     - `python run_tests.py ./unit/foo.py ./integration/bar.py`
-- To run all unit tests and all tests in the `./integration/foobar/` dir:
-    - `python run_tests.py ./unit/ ./integration/foobar/`
+- To run all unit tests, all tests in the `./integration/foobar/` dir, and specific tests:
+    - `python run_tests.py ./unit/ ./integration/bar.py ./integration/foobar/`
 - To run a specific suite file of tests (For example, our regression suite):
     - `python run_tests.py --suite ./_suites/regression.yaml`
     - Note: you can make your own suite file and specify a path to it: see the `"_suites"` section for how suite files are structured
 - To run a notebook test with the `nbconvert` headless runner:
-    - `python run_tests.py ./notebook/foo.ipynb`
+    - `python run_tests.py ./notebooks/nbconvert/foo.ipynb`
 - To run a widget test with the `selenium` browser runner (Requires the `selenium` python package, as well as the `Chrome`/`Firefox` selenium driver standalone executables in the PATH):
-    - `python run_tests.py ./widget/integration/automated/foo.ipynb`
+    - `python run_tests.py ./notebooks/selenium/foo.ipynb`
+
+> Note: `run_tests.py` runs the equivalent of `pip install -e ../src/ --no-deps`, modifying your environment by overlaying this repository's `arcgis` module located at `../src`. This means that you can only run tests against the python code at `../src`, not on any `arcgis` package in your environment. This overlay will persist after running `run_tests.py`.
 
 ## ./unit
 

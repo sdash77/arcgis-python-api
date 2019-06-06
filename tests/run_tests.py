@@ -18,7 +18,7 @@ import pathlib
 import logging
 log = logging.getLogger(__name__)
 
-from _test_runners._common import *
+from utils._common import *
 from _test_runners import *
 
 def _main():

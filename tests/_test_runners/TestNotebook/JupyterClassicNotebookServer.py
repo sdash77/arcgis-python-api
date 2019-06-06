@@ -6,7 +6,7 @@ from subprocess import Popen, PIPE, STDOUT
 import logging
 log = logging.getLogger()
 
-from _test_runners._common import run_shell_command
+from utils._common import run_shell_command
 
 MAX_NUM_PORTS_TO_TRY = 5
 
