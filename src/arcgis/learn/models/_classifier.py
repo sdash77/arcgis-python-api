@@ -42,7 +42,7 @@ _CLASS_TEMPLATE =     {
 
 class FeatureClassifier(ArcGISModel):
     """
-    Creates an image classifier to classify the area occupied by a 
+    Creates an image classifier to classify the area occupied by a
     geographical feature based on the imagery it overlaps with.
 
     =====================   ===========================================
@@ -78,7 +78,7 @@ class FeatureClassifier(ArcGISModel):
             self._backbone = backbone
 
         self._emd_template = _EMD_TEMPLATE
-        
+
         self._code = feature_classifier_prf
 
         self._data = data
@@ -95,7 +95,7 @@ class FeatureClassifier(ArcGISModel):
         """
         if rows > self._data.batch_size:
             rows = self._data.batch_size
-        self.learn.show_results(rows=rows, **kwargs)             
+        self.learn.show_results(rows=rows, **kwargs)
 
     def predict(self, img_path):
         img = open_image(img_path)
@@ -110,14 +110,14 @@ class FeatureClassifier(ArcGISModel):
                                             'backbone': self._backbone.__name__
                                            }
         _EMD_TEMPLATE['Classes'] = []
-        for i, class_name in enumerate(self._data.classes): 
+        for i, class_name in enumerate(self._data.classes):
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             _CLASS_TEMPLATE["Value"] = inverse_class_mapping[class_name]
             _CLASS_TEMPLATE["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else self._data.color_mapping[inverse_class_mapping[class_name]]
             _CLASS_TEMPLATE["Color"] = color
             _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())
-            
+
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
 
@@ -126,12 +126,12 @@ class FeatureClassifier(ArcGISModel):
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
-            
+
         model_file = Path(emd['ModelFile'])
-        
+
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
-            
+
         model_params = emd['ModelParameters']
         chip_size = emd["ImageWidth"]
 
@@ -139,31 +139,31 @@ class FeatureClassifier(ArcGISModel):
             class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
             color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
         except KeyError:
-            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
-            color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
+            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
+            color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}
 
-        
-        if data is None:            
+
+        if data is None:
             ranges = (0, 1)
             train_tfms = [rotate(degrees=30, p=0.5),
-                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), 
+                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
                 dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)),
                 # rand_zoom(scale=(0.75, 1.5))
                 ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
-            
+
             with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning) 
-                
+                warnings.simplefilter("ignore", UserWarning)
+
                 tempdata = ImageDataBunch.single_from_classes(
-                    tempfile.TemporaryDirectory().name, sorted(list(class_mapping.values())), 
-                    tfms=transforms, size=chip_size).normalize(imagenet_stats) 
+                    tempfile.TemporaryDirectory().name, sorted(list(class_mapping.values())),
+                    tfms=transforms, size=chip_size).normalize(imagenet_stats)
                 tempdata.chip_size = chip_size
                 return cls(tempdata, **model_params, pretrained_path=str(model_file))
         else:
-            return cls(data, **model_params, pretrained_path=str(model_file))        
-        
+            return cls(data, **model_params, pretrained_path=str(model_file))
+
     def plot_confusion_matrix(self):
         """
         Plots a confusion matrix of the model predictions to evaluate accuracy
@@ -184,9 +184,9 @@ class FeatureClassifier(ArcGISModel):
         ------------------------------------     --------------------------------------------------------------------
         input_features                           Required. Spatially enabled DataFrame containing features to be classified
         ------------------------------------     --------------------------------------------------------------------
-        imagery                                  Required. MapImageLayer or ImageryLayer with imagery 
+        imagery                                  Required. MapImageLayer or ImageryLayer with imagery
         ------------------------------------     --------------------------------------------------------------------
-        class_value_field                        Optional string. The column in the returned dataframe that contains the class value 
+        class_value_field                        Optional string. The column in the returned dataframe that contains the class value
         ------------------------------------     --------------------------------------------------------------------
         confidence_score_field                   Optional string. The column in the returned dataframe that contains the confidence scores as output by the image detection model
         ------------------------------------     --------------------------------------------------------------------
@@ -197,7 +197,7 @@ class FeatureClassifier(ArcGISModel):
         ====================================     ====================================================================
 
         :return:
-            The spatially enabled dataframe with colmns for the inferred class value and confidence scores 
+            The spatially enabled dataframe with colmns for the inferred class value and confidence scores
 
         """
         sdf = input_features.copy()
@@ -208,7 +208,7 @@ class FeatureClassifier(ArcGISModel):
                 cellsize = context['cellSize']
             except:
                 pass
-        
+
         chipsize = self._data.chip_size
 
         w = cellsize * chipsize
@@ -217,8 +217,8 @@ class FeatureClassifier(ArcGISModel):
                 g = row['SHAPE']
                 x, y = g.centroid
                 ext = (x - w/2, y - w/2, x + w/2, y + w/2)
-            
-                filename = imagery.export_map(ext, size=f'{chipsize},{chipsize}', f='image', format='jpg',save_folder=tmpdir, save_file='test.jpg')
+
+                filename = imagery.export_map(ext, size='{0},{1}'.format(chipsize, chipsize), f='image', format='jpg',save_folder=tmpdir, save_file='test.jpg')
                 prediction = self.predict(filename)
                 sdf[class_value_field] = self._data.classes[int(prediction[1])]
                 sdf[confidence_score_field] = float(prediction[2][prediction[1]]*100)
