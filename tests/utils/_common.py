@@ -60,11 +60,11 @@ GEOSAURUS_PYTHON_EXEC = [sys.executable, "-m", "pip",
                         "install", "-e", GEOSAURUS_SRC_DIR, "--no-deps",
                             "&&",
                         sys.executable]
-GEOSAURUS_PYTHON_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
+GEOSAURUS_PYTHON_EXEC_STR = r" ".join(GEOSAURUS_PYTHON_EXEC)
 
 GEOSAURUS_JUPYTER_NB_EXEC = GEOSAURUS_PYTHON_EXEC + \
                             ["-m", "jupyter", "notebook"]
-GEOSAURUS_JUPYTER_NB_EXEC_STR = " ".join(GEOSAURUS_JUPYTER_NB_EXEC)
+GEOSAURUS_JUPYTER_NB_EXEC_STR = r" ".join(GEOSAURUS_JUPYTER_NB_EXEC)
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
     try:

@@ -21,7 +21,8 @@ _regex_and_funcs = [(MASTER_REGEX, [build_conda_package,
                     (LINUX_SLAVE_REGEX,  [build_conda_package,
                                           publish_to_ftp_site]),
 
-                    (GEOS_PULL_REQUEST_REGEX, [build_documentation]),
+                    (GEOS_PULL_REQUEST_REGEX, [run_test_suite,
+                                               build_documentation]),
 
                     (PUB_REPO_PULL_REQUEST_REGEX, [build_dummy_dev_site]),
 
