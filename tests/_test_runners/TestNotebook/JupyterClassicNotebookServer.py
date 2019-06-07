@@ -54,7 +54,7 @@ class JupyterClassicNotebookServer:
         log.debug(f"calling Popen({cmd})")
         self.process = Popen(cmd, cwd=self.notebook_root_dir,shell=True) 
         #                     stdout=PIPE, stderr=STDOUT, shell=True)
-        self.base_url = f"http://127.0.0.1:{self.port}/notebooks/"
+        self.base_url = f"http://localhost:{self.port}/notebooks/"
         time.sleep(10) # Just incase
         return self
 
