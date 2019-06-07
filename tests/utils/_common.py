@@ -60,11 +60,9 @@ GEOSAURUS_PYTHON_EXEC = [sys.executable, "-m", "pip",
                         "install", "-e", GEOSAURUS_SRC_DIR, "--no-deps",
                             "&&",
                         sys.executable]
-GEOSAURUS_PYTHON_EXEC_STR = r" ".join(GEOSAURUS_PYTHON_EXEC)
 
 GEOSAURUS_JUPYTER_NB_EXEC = GEOSAURUS_PYTHON_EXEC + \
                             ["-m", "jupyter", "notebook"]
-GEOSAURUS_JUPYTER_NB_EXEC_STR = r" ".join(GEOSAURUS_JUPYTER_NB_EXEC)
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
     try:
@@ -104,8 +102,8 @@ def run_pytest_on(paths, output_xml_path,
     if not throw_exc_on_fail:
         _run_pytest_subprocess(pytest_args)
     else:
-        cmd = " ".join(GEOSAURUS_PYTHON_EXEC + ["-m", "pytest"] + pytest_args)
-        run_shell_command(r"{}".format(cmd),
+        args = GEOSAURUS_PYTHON_EXEC + ["-m", "pytest"] + pytest_args
+        run_shell_command(args,
                          throw_exc_on_fail = throw_exc_on_fail)
 
 def _run_pytest_subprocess(pytest_args):
