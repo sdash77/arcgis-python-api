@@ -56,13 +56,15 @@ DEFAULT_EMPTY_SUITE_FILE_PATH = os.path.abspath(os.path.join(
 
 # The python executable cmd that guarantees that `import arcgis` will pull
 # The `arcgis` from this repository's `geosaurus/src/arcgis`
-GEOSAURUS_PYTHON_EXEC = [sys.executable, "-m", "pip", 
+GEOSAURUS_PYTHON_EXEC = ['"' + sys.executable + '"', "-m", "pip", 
                         "install", "-e", GEOSAURUS_SRC_DIR, "--no-deps",
                             "&&",
-                        sys.executable]
+                        '"' + sys.executable + '"']
+GEOSAURUS_PYTHON_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
 
 GEOSAURUS_JUPYTER_NB_EXEC = GEOSAURUS_PYTHON_EXEC + \
                             ["-m", "jupyter", "notebook"]
+GEOSAURUS_JUPYTER_NB_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
     try:
@@ -103,7 +105,7 @@ def run_pytest_on(paths, output_xml_path,
         _run_pytest_subprocess(pytest_args)
     else:
         args = GEOSAURUS_PYTHON_EXEC + ["-m", "pytest"] + pytest_args
-        run_shell_command(args,
+        run_shell_command(" ".join(args),
                          throw_exc_on_fail = throw_exc_on_fail)
 
 def _run_pytest_subprocess(pytest_args):
