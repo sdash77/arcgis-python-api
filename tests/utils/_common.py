@@ -104,7 +104,7 @@ def run_pytest_on(paths, output_xml_path,
     if not throw_exc_on_fail:
         _run_pytest_subprocess(pytest_args)
     else:
-        cmd = " ".join(GEOSAURUS_PYTHON_EXEC + ["-m", "pytest"] + pytest_args)
+        cmd = r" ".join(GEOSAURUS_PYTHON_EXEC + ["-m", "pytest"] + pytest_args)
         run_shell_command(cmd, throw_exc_on_fail = throw_exc_on_fail)
 
 def _run_pytest_subprocess(pytest_args):
