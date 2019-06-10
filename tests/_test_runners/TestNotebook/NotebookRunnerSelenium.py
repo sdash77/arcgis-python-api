@@ -79,19 +79,25 @@ class NotebookRunnerSelenium:
                     self.active_jupyter_backend = None
         except:
             # Yes, even catch keyboard interrupts
-            if self.active_jupyter_backend:
-                # Triple check that we've closed all jupyter server insts
-                self.active_jupyter_backend.__exit__(None, None, None)
+            try:
+                if self.active_jupyter_backend:
+                    # Triple check that we've closed all jupyter server insts
+                    self.active_jupyter_backend.__exit__(None, None, None)
+                os.remove(self.orig_nb_tmp_path)
+                self._deinitialize_driver()
+            except Exception as e:
+                pass
+
             raise
         self._deinitialize_driver()
         return output
 
     def _run_notebook(self):
         # Make copy of original notebook so we can restore it later
-        orig_nb_tmp_path = os.path.join(self.notebook_file_dir,
+        self.orig_nb_tmp_path = os.path.join(self.notebook_file_dir,
             f"{self.notebook_file_name_no_ext}-orig{uuid4()}.ipynb")
         shutil.copy(self.notebook_file_path,
-                    orig_nb_tmp_path)
+                    self.orig_nb_tmp_path)
 
         # Run the notebook, take screenshots of widgets, save it
         self._initialize_selenium()
@@ -111,9 +117,9 @@ class NotebookRunnerSelenium:
         self._convert_ipynb_to_html(output_ipynb_path, output_html_path)
 
         # Restore original notebook now that we have finished running
-        shutil.copy(orig_nb_tmp_path,
+        shutil.copy(self.orig_nb_tmp_path,
                     self.notebook_file_path)
-        os.remove(orig_nb_tmp_path)
+        os.remove(self.orig_nb_tmp_path)
 
         return NotebookRunnerResult(output_ipynb_path = output_ipynb_path,
                                     output_html_path = output_html_path)
