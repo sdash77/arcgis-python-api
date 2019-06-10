@@ -63,7 +63,7 @@ GEOSAURUS_PYTHON_EXEC = ['"' + sys.executable + '"', "-m", "pip",
 GEOSAURUS_PYTHON_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
 
 GEOSAURUS_JUPYTER_NB_EXEC = GEOSAURUS_PYTHON_EXEC + \
-                            ["-m", "jupyter", "notebook"]
+                            ["-m", "jupyter"]
 GEOSAURUS_JUPYTER_NB_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
 
 def run_shell_command(cmd, throw_exc_on_fail=True):
@@ -90,10 +90,28 @@ def _bytes_to_str_cp850_workaround(bytes_):
     """
     return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
 
+def _setup_env():
+    """Installs the Python API located at ../../src, installs and activates
+    the widget source located at ../../src/arcgis/widgets/js/. Called before
+    test runs when run on Jenkins, not when run from run_tests.py
+    """
+    python_cmd =  [f'"{sys.executable}"',]
+    pip_install_cmd = python_cmd + \
+        ["-m", "pip", "install", "-e", GEOSAURUS_SRC_DIR, "--no-deps" ]
+    run_shell_command(" ".join(pip_install_cmd))
+ 
+    jupyter_cmd = python_cmd + ["-m", "jupyter"]
+    widget_install_cmd = jupyter_cmd + ["nbextension", "install", "--py",
+        "--sys-prefix", "arcgis" ]
+    widget_enable_cmd = jupyter_cmd + ["nbextension", "enable", "--py",
+        "--sys-prefix", "arcgis" ]
+    run_shell_command(" ".join(widget_install_cmd))
+    run_shell_command(" ".join(widget_enable_cmd))
+
 def run_pytest_on(paths, output_xml_path, 
                   block_network_access=False,
                   max_fail = 9999999999999999,
-                  run_geosaurus_exec_throw_exc_on_fail = False):
+                  throw_exc_on_fail = False):
     pytest_args = ["-x",] + paths + [ 
         f"--junit-xml={output_xml_path}",
         f"--maxfail={max_fail}",
@@ -101,12 +119,12 @@ def run_pytest_on(paths, output_xml_path,
     if block_network_access:
         pytest_args.append("--blockage")
     log.debug(f"Running pytest.main({pytest_args})")
-    if not run_geosaurus_exec_throw_exc_on_fail:
+    if not throw_exc_on_fail:
         _run_pytest_subprocess(pytest_args)
     else:
-        args = GEOSAURUS_PYTHON_EXEC + ["-m", "pytest"] + pytest_args
+        args = [ f'"{sys.executable}"', "-m", "pytest" ] + pytest_args
         run_shell_command(" ".join(args),
-            throw_exc_on_fail = run_geosaurus_exec_throw_exc_on_fail)
+            throw_exc_on_fail = throw_exc_on_fail)
 
 def _run_pytest_subprocess(pytest_args):
     args = ['python', '-m', 'pytest'] + pytest_args

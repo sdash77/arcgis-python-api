@@ -11,13 +11,15 @@ file_uri_output_dir = pathlib.Path(TESTS_DIR).as_uri()
 
 def run_suite(suite, output_dir, 
               jenkins_job_url=file_uri_output_dir,
-              skip_sanity = False):
+              run_setup_env = False):
     log.debug(f"running suite {json.dumps(suite)}")
     output_xml_results = []
 
-    if not skip_sanity:
-        xml_output = run_sanity_tests(output_dir)
-        output_xml_results.append(xml_output)
+    if run_setup_env:
+        _setup_env()
+
+    xml_output = run_sanity_tests(output_dir)
+    output_xml_results.append(xml_output)
 
     if "unit_tests_to_run" in suite and \
        suite["unit_tests_to_run"]["paths"]:

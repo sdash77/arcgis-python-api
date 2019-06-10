@@ -90,7 +90,7 @@ def _run_tests(args):
         suite = read_suite(DEFAULT_EMPTY_SUITE_FILE_PATH)
     _add_to_suite_cmd_arg_tests(suite, args.tests)
     _parse_suite(suite)
-    output_xml_files = run_suite(suite, args.output_dir, skip_sanity=True)
+    output_xml_files = run_suite(suite, args.output_dir, run_setup_env = False)
     if not args.no_browser_output:
         _display_results_in_browser(output_xml_files, args.output_dir)
 
