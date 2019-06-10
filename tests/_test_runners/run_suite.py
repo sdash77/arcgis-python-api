@@ -9,13 +9,15 @@ from utils._common import *
 
 file_uri_output_dir = pathlib.Path(TESTS_DIR).as_uri()
 
-def run_suite(suite, output_dir, jenkins_job_url=file_uri_output_dir):
+def run_suite(suite, output_dir, 
+              jenkins_job_url=file_uri_output_dir,
+              skip_sanity = False):
     log.debug(f"running suite {json.dumps(suite)}")
     output_xml_results = []
 
-    # Always run the sanity tests located in geosaurus/tests/unit/sanity/
-    xml_output = run_sanity_tests(output_dir)
-    output_xml_results.append(xml_output)
+    if not skip_sanity:
+        xml_output = run_sanity_tests(output_dir)
+        output_xml_results.append(xml_output)
 
     if "unit_tests_to_run" in suite and \
        suite["unit_tests_to_run"]["paths"]:

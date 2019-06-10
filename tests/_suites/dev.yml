@@ -13,6 +13,7 @@ nbconvert_notebook_tests_to_run:
     config:
         blacklist:
             - "{geosaurus_dir}/tests/notebook/**/*ipynb_checkpoint*/**/*"
+            - "{arcgis_python_api_dir}/tests/notebook/**/*ipynb_checkpoint*/**/*"
         cell_timeout_sec:
             300
         setup_script: "{arcgis_python_api_dir}/misc/setup.py"
@@ -27,7 +28,8 @@ selenium_notebook_tests_to_run:
         browser:
             "dayofweek"
     paths:
-        - "{geosaurus_dir}/tests/notebooks/selenium/**/*.ipynb"
+        - "{geosaurus_dir}/tests/widget/integration/automated/**/*.ipynb"
+        - "{geosaurus_dir}/tests/notebook/selenium/**/*.ipynb"
 widget_unit_tests_to_run:
     config: {}
     paths:
