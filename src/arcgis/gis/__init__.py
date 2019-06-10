@@ -393,6 +393,10 @@ class GIS(object):
            hasattr(me, 'role') and \
            me.role == "org_admin":
             try:
+                if self._is_hosted_nb_home:
+                    import warnings
+                    warnings.warn("You are logged on as %s with an administrator role, proceed with caution." % \
+                                  self.users.me.username)
                 if self.properties.isPortal == True:
                     from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
