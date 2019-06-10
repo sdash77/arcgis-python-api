@@ -113,7 +113,7 @@ class NotebookRunnerSelenium:
         # Restore original notebook now that we have finished running
         shutil.copy(orig_nb_tmp_path,
                     self.notebook_file_path)
-        os.rm(orig_nb_tmp_path)
+        os.remove(orig_nb_tmp_path)
 
         return NotebookRunnerResult(output_ipynb_path = output_ipynb_path,
                                     output_html_path = output_html_path)

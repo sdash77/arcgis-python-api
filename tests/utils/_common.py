@@ -93,7 +93,7 @@ def _bytes_to_str_cp850_workaround(bytes_):
 def run_pytest_on(paths, output_xml_path, 
                   block_network_access=False,
                   max_fail = 9999999999999999,
-                  throw_exc_on_fail = False):
+                  run_geosaurus_exec_throw_exc_on_fail = False):
     pytest_args = ["-x",] + paths + [ 
         f"--junit-xml={output_xml_path}",
         f"--maxfail={max_fail}",
@@ -101,7 +101,7 @@ def run_pytest_on(paths, output_xml_path,
     if block_network_access:
         pytest_args.append("--blockage")
     log.debug(f"Running pytest.main({pytest_args})")
-    if not throw_exc_on_fail:
+    if not run_geosaurus_exec_throw_exc_on_fail:
         _run_pytest_subprocess(pytest_args)
     else:
         args = GEOSAURUS_PYTHON_EXEC + ["-m", "pytest"] + pytest_args

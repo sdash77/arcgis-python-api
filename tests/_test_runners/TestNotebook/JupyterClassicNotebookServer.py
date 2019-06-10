@@ -47,7 +47,7 @@ class JupyterClassicNotebookServer:
 
     def __enter__(self):
         self._resolve_port()
-        cmd = f"{GEOSAURUS_JUPYTER_NB_EXEC_STR} "\
+        cmd = f"python -m jupyter notebook "\
               f"--config={self._config_file_path} "\
               f"--no-browser "\
               f"--port={self.port} "
