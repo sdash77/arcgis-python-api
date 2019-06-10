@@ -16,7 +16,7 @@ def run_suite(suite, output_dir,
     output_xml_results = []
 
     if run_setup_env:
-        _setup_env()
+        setup_env()
 
     xml_output = run_sanity_tests(output_dir)
     output_xml_results.append(xml_output)

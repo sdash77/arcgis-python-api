@@ -90,7 +90,7 @@ def _bytes_to_str_cp850_workaround(bytes_):
     """
     return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
 
-def _setup_env():
+def setup_env():
     """Installs the Python API located at ../../src, installs and activates
     the widget source located at ../../src/arcgis/widgets/js/. Called before
     test runs when run on Jenkins, not when run from run_tests.py
