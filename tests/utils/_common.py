@@ -95,6 +95,7 @@ def setup_env():
     the widget source located at ../../src/arcgis/widgets/js/. Called before
     test runs when run on Jenkins, not when run from run_tests.py
     """
+    lof.info(f"Setting up env to use `arcgis` from {GEOSAURUS_ROOT_DIR}...")
     python_cmd =  [f'"{sys.executable}"',]
     pip_install_cmd = python_cmd + \
         ["-m", "pip", "install", "-e", GEOSAURUS_SRC_DIR, "--no-deps" ]
