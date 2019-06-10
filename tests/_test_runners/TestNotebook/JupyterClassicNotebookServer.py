@@ -48,7 +48,7 @@ class JupyterClassicNotebookServer:
 
     def __enter__(self):
         self._resolve_port()
-        cmd = f'"{sys.executable}" -m jupyter notebook "\
+        cmd = f'"{sys.executable}" -m jupyter notebook '\
               f"--config={self._config_file_path} "\
               f"--no-browser "\
               f"--port={self.port} "
