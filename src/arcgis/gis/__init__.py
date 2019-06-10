@@ -9360,7 +9360,7 @@ class Item(dict):
         :return: dict
 
         """
-        if self.type not in ['Application']:
+        if not 'application' in self.type.lower():
             return None
         if redirect_uris is None:
             redirect_uris = []
