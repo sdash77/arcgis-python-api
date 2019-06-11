@@ -1618,7 +1618,7 @@ class ImageryLayer(Layer):
         if item_ids is None and service_url is None:
             raise Exception("An itemId or service_url must be provided")
         if isinstance(item_ids, str):
-            item_ids = [item_ids]
+            item_ids = item_ids
         if isinstance(service_url, str):
             service_url = service_url
         params['geodataTransformApplyMethod'] = geodata_transform_apply_method
