@@ -21,7 +21,7 @@ nbconvert_notebook_tests_to_run:
         setup_script: "{arcgis_python_api_dir}/misc/setup.py"
         teardown_script: "{arcgis_python_api_dir}/misc/teardown.py"
     paths:
-        - "{geosaurus_dir}/tests/notebook/nbconvert/**/*.ipynb"
+        - "{geosaurus_dir}/tests/dir/notebooks/nbconvert/aggregate_points_test.ipynb"
 selenium_notebook_tests_to_run:
     config:
         blacklist:

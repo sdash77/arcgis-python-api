@@ -16,8 +16,6 @@ This directory contains everything needed to run tests on various parts of the P
 - To run a widget test with the `selenium` browser runner (Requires the `selenium` python package, as well as the `Chrome`/`Firefox` selenium driver standalone executables in the PATH):
     - `python run_tests.py ./notebooks/selenium/foo.ipynb`
 
-> Note: `run_tests.py` runs the equivalent of `pip install -e ../src/ --no-deps`, modifying your environment by overlaying this repository's `arcgis` module located at `../src`. This means that you can only run tests against the python code at `../src`, not on any `arcgis` package in your environment. This overlay will persist after running `run_tests.py`.
-
 ## ./unit
 
 ### Unit Test: A test written by a programmer for the purpose of ensuring that the production code does what the programmer expects it to do.
@@ -36,7 +34,7 @@ A unit test should test the smallest amount of code possible. In `geosaurus`'s c
 
 An integration test covers most other cases outside of unit tests. As we define it, it asserts correct functionality when calling public-facing APIs. These tests can connect external systems, connect to Portals, call into 3rd party libraries, etc.
 
-## ./notebook
+## ./notebooks
 
 This directory contains any `.ipynb` files we want to test as a part of any suite. Notebook tests are ran from top to bottom, and will pass if there are no unhandled exceptions or red errors in the notebook. Make sure your write your test notebooks to explicitly throw unhandled exceptions on failure (Using `assert` statements can be useful)
 
