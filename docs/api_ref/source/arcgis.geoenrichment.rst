@@ -13,21 +13,21 @@ Country
 
 get_countries
 ---------------
-.. automethod:: arcgis.geoenrichment.get_countries
+.. autofunction:: arcgis.geoenrichment.get_countries
 
 create_report
 -----------------
-.. automethod:: arcgis.geoenrichment.create_report
+.. autofunction:: arcgis.geoenrichment.create_report
 
 enrich
 --------------
-.. automethod:: arcgis.geoenrichment.enrich
+.. autofunction:: arcgis.geoenrichment.enrich
 
 find_businesses
 --------------
-.. automethod:: arcgis.geoenrichment.find_businesses
+.. autofunction:: arcgis.geoenrichment.find_businesses
 
 standard_geography_query
 ---------------
-.. automethod:: arcgis.geoenrichment.standard_geography_query
+.. autofunction:: arcgis.geoenrichment.standard_geography_query
 
