@@ -379,9 +379,20 @@ class FeatureLayer(Layer):
                            result_type=None,
                            as_df=True):
         """
-        The queryTopFeatures operation is performed on a feature service layer resource. This operation returns a feature set based on the top features by order within a group. For example, when querying counties in the United States, you want to return the top five counties by population in each state. To do this, you can use queryTopFeaures to group by state name, order by desc on the population and return the first five rows from each group (state).
-        The topFilter parameter is used to set the group by, order by, and count criteria used in generating the result. The operation also has many of the same parameters (for example, where and geometry) as the layer query operation. However, unlike the layer query operation, queryTopFeatures does not support parameters such as outStatistics and its related parameters or returnDistinctValues. Consult the advancedQueryCapabilities layer property for more details. For example, queryTopFeatures will support pagination if "supportsPaginationOnAggregatedQueries" is true.
-        If the feature service supports the queryTopFeatures operation, it will include "supportsTopFeaturesQuery": true, in the advancedQueryCapabilities layer property.
+        The `query_top_features` is performed on a feature layer. This operation returns a feature set or
+        spatially enabled dataframe based on the top features by order within a group. For example, when
+        querying counties in the United States, you want to return the top five counties by population in
+        each state. To do this, you can use `query_top_feaures` to group by state name, order by desc on
+        the population and return the first five rows from each group (state).
+
+        The top_filter parameter is used to set the group by, order by, and count criteria used in
+        generating the result. The operation also has many of the same parameters (for example, where
+        and geometry) as the layer query operation. However, unlike the layer query operation,
+        `query_top_feaures` does not support parameters such as outStatistics and its related parameters
+        or return distinct values. Consult the advancedQueryCapabilities layer property for more details.
+
+        If the feature layer collection supports the `query_top_feaures` operation, it will include
+        "supportsTopFeaturesQuery": true, in the advancedQueryCapabilities layer property.
 
         ================================     ====================================================================
         **Argument**                         **Description**
@@ -539,7 +550,7 @@ class FeatureLayer(Layer):
             params['resultType'] = "none"
         if order_by_field:
             params['orderByFields'] = order_by_field
-        url = self._url + "/queryTopFeatures"
+        url = self._url + "/`query_top_feaures`"
         if as_df and \
            return_count_only == False and \
            return_ids_only == False:
