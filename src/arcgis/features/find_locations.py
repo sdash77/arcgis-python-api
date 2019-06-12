@@ -61,12 +61,15 @@ def find_existing_locations(
                                              }   
 
                                              **Note**
+
                                              * operator can be either ``and`` or ``or``
                                              * layer is the index of the layer in the ``input_layers`` parameter.
                                              * The where clause must be surrounded by double quotes.
                                              * When dealing with text fields, values must be single-quoted ('VACANT').
-                                             * Date fields support all queries except LIKE. Dates are strings in YYYY:MM:DD hh:mm:ss format. Here's an example using the date field ObsDate:
-                                               "where": "ObsDate >= '1998-04-30 13:30:00' "
+                                             * Date fields support all queries except LIKE. Dates are strings in YYYY:MM:DD hh:mm:ss format.
+                                              Here's an example using the date field ObsDate:
+
+                                              "where": "ObsDate >= '1998-04-30 13:30:00' "
 
                                              +----------+------------------------------------------------------------------+
                                              | =        | Equal                                                            |
