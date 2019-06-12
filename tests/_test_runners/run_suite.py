@@ -9,9 +9,8 @@ from utils._common import *
 
 file_uri_output_dir = pathlib.Path(TESTS_DIR).as_uri()
 
-def run_suite(suite, output_dir, 
-              jenkins_job_url=file_uri_output_dir,
-              run_setup_env = True):
+def run_suite(suite, output_dir, run_setup_env,
+              jenkins_job_url=file_uri_output_dir,):
     log.debug(f"running suite {json.dumps(suite)}")
     output_xml_results = []
 
