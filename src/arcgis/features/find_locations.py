@@ -61,12 +61,15 @@ def find_existing_locations(
                                              }   
 
                                              **Note**
+
                                              * operator can be either ``and`` or ``or``
                                              * layer is the index of the layer in the ``input_layers`` parameter.
                                              * The where clause must be surrounded by double quotes.
                                              * When dealing with text fields, values must be single-quoted ('VACANT').
-                                             * Date fields support all queries except LIKE. Dates are strings in YYYY:MM:DD hh:mm:ss format. Here's an example using the date field ObsDate:
-                                               "where": "ObsDate >= '1998-04-30 13:30:00' "
+                                             * Date fields support all queries except LIKE. Dates are strings in YYYY:MM:DD hh:mm:ss format.
+                                              Here's an example using the date field ObsDate:
+
+                                              "where": "ObsDate >= '1998-04-30 13:30:00' "
 
                                              +----------+------------------------------------------------------------------+
                                              | =        | Equal                                                            |
@@ -542,30 +545,96 @@ def find_similar_locations(
         context=None,
         gis=None, estimate=False):
     """
-    Finds the locations that are most similar to one or more reference locations based on criteria that you specify.
+    .. image:: _static/images/find_similar_locations/find_similar_locations.png 
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
+    The ``find_similar_locations`` method measures the similarity of candidate locations to one or more reference locations.
 
-    search_layer : Required layer (see Feature Input in documentation)
+    Based on criteria you specify, Find ``find_similar_locations`` can answer questions such as the following:
 
-    analysis_fields : Required list of strings
+    Which of your stores are most similar to your top performers with regard to customer profiles?
+    Based on characteristics of villages hardest hit by the disease, which other villages are high risk?
+    To answer questions such as these, you provide the reference locations (the ``input_layer`` parameter), the candidate 
+    locations (the ``search_layer`` parameter), and the fields representing the criteria you want to match. For example, 
+    the ``input_layer`` might be a layer containing your top performing stores or the villages hardest hit by the disease. 
+    The ``search_layer`` contains your candidate locations to search. This might be all of your stores or all other villages. 
+    Finally, you supply a list of fields to use for measuring similarity. ``find_similar_locations`` will rank all of the 
+    candidate locations by how closely they match your reference locations across all of the fields you have selected.
 
-    input_query : Optional string
+    =======================  ===========================================================================================
+    **Argument**             **Description**
+    -----------------------  -------------------------------------------------------------------------------------------
+    input_layer              Required feature layer. The ``input_layer`` contains one or more 
+                             reference locations against which features in the ``search_layer`` 
+                             will be evaluated for similarity. For example, the ``input_layer`` 
+                             might contain your top performing stores or the villages hardest 
+                             hit by a disease. 
+                             It is not uncommon that the ``input_layer`` and ``search_layer`` are the 
+                             same feature service. For example, the feature service contains 
+                             locations of all stores, one of which is your top performing store. 
+                             If you want to rank the remaining stores from most to least similar 
+                             to your top performing store, you can provide a filter for both the 
+                             inputLayer and the ``search_layer``. The filter on the ``input_layer`` would 
+                             select the top performing store while the filter on the ``search_layer`` 
+                             would select all stores except for the top performing store. You can 
+                             also use the optional ``input_query`` parameter to specify reference locations.
 
-    number_of_results : Optional int
+                             If there is more than one reference location, similarity will be based 
+                             on averages for the fields you specify in the ``analysis_fields`` parameter. 
+                             So, for example, if there are two reference locations and you are 
+                             interested in matching population, the task will look for candidate 
+                             locations in the ``search_layer`` with populations that are most like the 
+                             average population for both reference locations. If the values for the 
+                             reference locations are 100 and 102, for example, the method will look 
+                             for candidate locations with populations near 101. Consequently, you 
+                             will want to use fields for the reference locations fields that have 
+                             similar values. If, for example, the population values for one reference 
+                             location is 100 and the other is 100,000, the tool will look for candidate 
+                             locations with population values near the average of those two values: 50,050. 
+                             Notice that this averaged value is nothing like the population for either 
+                             of the reference locations. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------  -------------------------------------------------------------------------------------------
+    search_layer             Required feature layer. The layer containing candidate locations that 
+                             will be evaluated against the reference locations. See :ref:`Feature Input<FeatureInput>`.
+    -----------------------  -------------------------------------------------------------------------------------------
+    analysis_fields          Required list of strings. A list of fields whose values are used to determine similarity. 
+                             They must be numeric fields and the fields must exist on both the ``input_layer`` and 
+                             the ``search_layer``. The method will find features in the ``search_layer`` that have field 
+                             values closest to those of the features in your ``input_layer``.
+    -----------------------  -------------------------------------------------------------------------------------------
+    input_query              Optional string. In the situation where the ``input_layer`` and the ``search_layer`` are the same feature service, 
+                             this parameter allows you to input a query on the ``input_layer`` to specify which features are the reference locations. 
+                             The reference locations specified by this query will not be analyzed as candidates. 
+                             The syntax of ``input_query`` is the same as a filter.
+    -----------------------  -------------------------------------------------------------------------------------------
+    number_of_results        Optional int. The number of ranked candidate locations output to the ``similar_result_layer``. 
+                             If ``number_of_results`` is not specified, or set to zero, all candidate locations will be ranked and output.
+    -----------------------  -------------------------------------------------------------------------------------------
+    output_name              Optional string. If provided, the method will create a feature service of the results. 
+                             You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    -----------------------  -------------------------------------------------------------------------------------------
+    context                  Optional string. Context contains additional settings that affect method execution. 
+                             For ``find_similar_locations``, there are two settings.
+                       
+                             #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features 
+                                in the ``input_layer`` that intersect the bounding box will be analyzed.
+                             #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference. 
+    -----------------------  -------------------------------------------------------------------------------------------
+    estimate                 Optional boolean. If True, the number of credits to run the operation will be returned.
+    =======================  ===========================================================================================
 
-    output_name : Optional string
+    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
 
-    context : Optional string
+        "similar_result_layer" : layer (FeatureCollection)
 
+        "process_info" : list of message
 
-    Returns
-    -------
-    dict with the following keys:
-       "similar_result_layer" : layer (FeatureCollection)
-       "process_info" : layer (FeatureCollection)
+    .. code-block:: python
+
+        #USAGE EXAMPLE: To find top 4 most locations from the candidates layer that are similar to the target location.
+        top_4_most_similar_locations = find_similar_locations(target_lyr, candidates_lyr,
+                                                    analysis_fields=['THH17','THH35','THH02','THH05','POPDENS14','FAMGRW10_14','UNEMPRT_CY'],
+                                                    output_name = "top 4 similar locations",
+                                                    number_of_results=4)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.find_similar_locations(

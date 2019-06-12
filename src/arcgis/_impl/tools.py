@@ -726,9 +726,7 @@ class _FeatureAnalysisTools(_AsyncService):
         else:
             # Feature Collection
 
-            point_clusters_result_layer = arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
-
-            return { "point_clusters_result_layer":point_clusters_result_layer, "process_info":None}
+            return arcgis.features.FeatureCollection(job_values['pointClustersResultLayer'])
 
     def find_hot_spots(self,
                        analysis_layer,
@@ -2490,7 +2488,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
             similar_result_layer = arcgis.features.FeatureCollection(job_values['similarResultLayer'])
 
-            process_info = arcgis.features.FeatureCollection(job_values['processInfo'])
+            process_info = job_values['processInfo']
             return { "similar_result_layer":similar_result_layer, "process_info":process_info, }
 
 
