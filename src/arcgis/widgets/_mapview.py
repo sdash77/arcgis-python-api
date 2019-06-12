@@ -487,9 +487,9 @@ class MapView(widgets.DOMWidget):
     def _file_output_screenshot_update_callback(self, change):
         """Called every time the front end takes a screenshot for a file
         write"""
-        if self._screenshot_file_output_path:
-            img_data_uri_str = self._parse_js_resp(change['new'])
-            img_data_raw_str = img_data_uri_str.split('base64,')[-1]
+        img_data_uri_str = self._parse_js_resp(change['new'])
+        img_data_raw_str = img_data_uri_str.split('base64,')[-1]
+        if self._screenshot_file_output_path and img_data_raw_str:
             with open(self._screenshot_file_output_path, "wb") as f:
                 img_data_raw_bytes = base64.b64decode(img_data_raw_str)
                 f.write(img_data_raw_bytes)
