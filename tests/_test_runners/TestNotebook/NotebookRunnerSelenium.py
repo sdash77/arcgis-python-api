@@ -64,7 +64,7 @@ class NotebookRunnerSelenium:
 
 
     def _deinitialize_driver(self):
-        self.driver.close()
+        self.driver.quit()
 
     def run_notebook(self):
         self._initialize_driver()
