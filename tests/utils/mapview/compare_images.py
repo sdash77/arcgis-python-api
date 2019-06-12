@@ -24,7 +24,7 @@ def compare_images(img1_path, img2_path, max_perc_diff = 0.01):
         raise UnsimilarImageError("Different kinds of images, failing!")
         
     # Resize image so they are the same size
-    arbitrary_dimensions = (500,200)
+    arbitrary_dimensions = (800,400)
     img1 = img1.resize(arbitrary_dimensions)
     img2 = img2.resize(arbitrary_dimensions)
  
