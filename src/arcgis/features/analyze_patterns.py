@@ -545,53 +545,151 @@ def interpolate_points(
         gis=None,
         estimate=False):
     """
-    The Interpolate Points function allows you to predict values at new locations based on measurements from a
-    collection of points. The function takes point data with values at each point and returns areas classified by
-    predicted values.
+    .. image:: _static/images/interpolate_points/interpolate_points.png 
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
-        The point layer whose features will be interpolated.
-    field : Required string
-        Name of the numeric field containing the values you wish to interpolate.
-    interpolate_option : Optional string
-        Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate). More
-        accurate predictions take longer to calculate.
-    output_prediction_error : Optional bool
-        If True, a polygon layer of standard errors for the interpolation predictions will be returned in the
-        predictionError output parameter.
-    classification_type : Optional string
-        Determines how predicted values will be classified into areas.
-    num_classes : Optional int
-        This value is used to divide the range of interpolated values into distinct classes. The range of values in each
-        class is determined by the classificationType parameter. Each class defines the boundaries of the result
-        polygons.
-    class_breaks : Optional list of floats
-        If classificationType is Manual, supply desired class break values separated by spaces. These values define the
-        upper limit of each class, so the number of classes will equal the number of entered values. Areas will not be
-        created for any locations with predicted values above the largest entered break value. You must enter at least
-        two values and no more than 32.
-    bounding_polygon_layer : Optional layer (see Feature Input in documentation)
-        A layer specifying the polygon(s) where you want values to be interpolated.
-    predict_at_point_layer : Optional layer (see Feature Input in documentation)
-        An optional layer specifying point locations to calculate prediction values. This allows you to make predictions
-        at specific locations of interest.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+    The ``interpolate_points`` method allows you to predict values at new locations based on measurements 
+    from a collection of points. The method takes point data with values at each point and returns 
+    areas classified by predicted values. For example:
 
-    Returns
-    -------
-    dict with the following keys:
-       "result_layer" : layer (FeatureCollection)
-       "prediction_error" : layer (FeatureCollection)
-       "predicted_point_layer" : layer (FeatureCollection)
+    * An air quality management district has sensors that measure pollution levels. 
+      ``interpolate_points`` can be used to predict pollution levels at locations that don't have sensors, 
+      such as locations with at-risk populations—schools or hospitals, for example.
+    * Predict heavy metal concentrations in crops based on samples taken from individual plants.
+    * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other 
+      indicators (such as electrical conductivity) in order to study their relationships to crop yield 
+      and prescribe precise amounts of fertilizer for each location in the field.
+    * Meteorological applications include prediction of temperatures, rainfall, 
+      and associated variables (such as acid rain).
+
+    ``interpolate_points`` uses the `Empirical Bayesian 
+    Kriging <http://desktop.arcgis.com/en/arcmap/latest/tools/geostatistical-analyst-toolbox/empirical-bayesian-kriging.htm>`_ 
+    geoprocessing tool to perform the interpolation. The parameters that are supplied to 
+    the Empirical Bayesian Kriging tool are controlled by the ``interpolate_option`` request parameter.
+
+    If a value of 1 is provided for ``interpolate_option``, empirical Bayesian kriging will 
+    use the following parameters:
+
+    * transformation_type—NONE
+    * semivariogram_model_type—POWER
+    * max_local_points—50
+    * overlap_factor—1
+    * number_semivariograms—30
+    * nbrMin—8
+    * nbrMax—8
+
+    If a value of 5 is provided for ``interpolate_option``, empirical Bayesian kriging 
+    will use the following parameters:
+
+    * transformation_type—NONE
+    * semivariogram_model_type—POWER
+    * max_local_points—75
+    * overlap_factor—1.5
+    * number_semivariograms—100
+    * nbrMin—10
+    * nbrMax—10
+    
+    If a value of 9 is provided for ``interpolate_option``, empirical Bayesian kriging 
+    will use the following parameters:
+
+    * transformation_type—EMPIRICAL
+    * semivariogram_model_type—K_BESSEL
+    * max_local_points—200
+    * overlap_factor—3
+    * number_semivariograms—200
+    * nbrMin—15
+    * nbrMax—15
+
+    ===========================  ===========================================================================================
+    **Argument**                 **Description**
+    ---------------------------  -------------------------------------------------------------------------------------------        
+    input_layer                  Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------  ------------------------------------------------------------------------------------------- 
+    field                        Required string. Name of the numeric field containing the values you wish to interpolate.
+    ---------------------------  -------------------------------------------------------------------------------------------     
+    interpolate_option           Optional integer. Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate). 
+                                 More accurate predictions take longer to calculate.
+
+                                 Choice list: [1, 5, 9].
+                                 
+                                 The default is 5. 
+    ---------------------------  -------------------------------------------------------------------------------------------      
+    output_prediction_error      Optional boolean. If True, a polygon layer of standard errors for the interpolation 
+                                 predictions will be returned in the ``prediction_error`` output parameter.
+
+                                 Standard errors are useful because they provide information about the reliability of the predicted values. 
+                                 A simple rule of thumb is that the true value will fall within two standard errors of the predicted 
+                                 value 95 percent of the time. For example, suppose a new location gets a predicted value of 50 with a 
+                                 standard error of 5. This means that this task's best guess is that the true value at that location is 50, 
+                                 but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values, 
+                                 multiply the standard error by 2, add this value to the predicted value to get the upper end of the range, 
+                                 and subtract it from the predicted value to get the lower end of the range.
+    ---------------------------  -------------------------------------------------------------------------------------------  
+    classification_type          Optional string. Determines how predicted values will be classified into areas.
+                                 
+                                 * ``EqualArea``—Polygons are created such that the number of data values in each area is equal. 
+                                   For example, if the data has more large values than small values, more areas will be created for large values.
+                                 * ``EqualInterval``—Polygons are created such that the range of predicted values is equal for each area.
+                                 * ``GeometricInterval``—Polygons are based on class intervals that have a geometrical series. 
+                                   This method ensures that each class range has approximately the same number of values within 
+                                   each class and that the change between intervals is consistent.
+                                 * ``Manual``—You to define your own range of values for areas. These values will be entered in 
+                                   the ``class_breaks`` parameter below.
+                                 
+                                 Choice list: ['EqualArea', 'EqualInterval', 'GeometricInterval', 'Manual']
+                                 
+                                 The default is 'GeometricInterval'.
+    ---------------------------  -------------------------------------------------------------------------------------------     
+    num_classes                  Optional integer. This value is used to divide the range of interpolated values into distinct classes. 
+                                 The range of values in each class is determined by the ``classification_type`` parameter. 
+                                 Each class defines the boundaries of the result polygons.
+
+                                 The default is 10. The maximum value is 32.
+    ---------------------------  -------------------------------------------------------------------------------------------      
+    class_breaks                 Optional list of floats. If ``classification_type`` is Manual, supply desired class break values separated by spaces. 
+                                 These values define the upper limit of each class, so the number of classes will equal the number of entered values. 
+                                 Areas will not be created for any locations with predicted values above the largest entered break value. 
+                                 You must enter at least two values and no more than 32.
+    ---------------------------  -------------------------------------------------------------------------------------------    
+    bounding_polygon_layer       Optional layer. A layer specifying the polygon(s) where you want values to be interpolated.  For example, 
+                                 if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this 
+                                 parameter and the output will only contain polygons within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------  -------------------------------------------------------------------------------------------       
+    predict_at_point_layer       Optional layer. An optional layer specifying point locations to calculate prediction values. 
+                                 This allows you to make predictions at specific locations of interest. For example, if the ``input_layer`` represents 
+                                 measurements of pollution levels, you can use this parameter to predict the pollution levels of locations with large 
+                                 at-risk populations, such as schools or hospitals. You can then use this information to give recommendations to health 
+                                 officials in those locations.
+
+                                 If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------  -------------------------------------------------------------------------------------------    
+    output_name                  Optional string. If provided, the method will create a feature service of the results. 
+                                 You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    ---------------------------  -------------------------------------------------------------------------------------------         
+    context                      Optional string. Additional settings such as processing extent and output spatial reference.
+    ---------------------------  -------------------------------------------------------------------------------------------          
+    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ---------------------------  -------------------------------------------------------------------------------------------     
+    estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
+    ===========================  ===========================================================================================
+
+    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
+
+        "result_layer" : layer (FeatureCollection)
+
+        "prediction_error" : layer (FeatureCollection)
+
+        "predicted_point_layer" : layer (FeatureCollection)
+
+    .. code-block:: python
+
+        #USAGE EXAMPLE: To predict mine production in US at new locations.
+        interpolated = interpolate_points(coal_mines_us,
+                                          field='Total_Prod',
+                                          interpolate_option=5,
+                                          output_prediction_error=True,
+                                          classification_type='GeometricInterval',
+                                          num_classes=10,
+                                          output_name='interpolate coal mines production')                 
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -608,3 +706,4 @@ def interpolate_points(
         output_name,
         context,
         estimate=estimate)
+
