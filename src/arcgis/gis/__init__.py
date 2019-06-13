@@ -7241,7 +7241,8 @@ class Item(dict):
                    'Feature Collection',
                    'GeoJson',
                    'Scene Package',
-                   'KML']
+                   'KML',
+                   'Excel']
         user_id = self._user_id
         data_path = 'content/users/%s/export' % user_id
         params = {
