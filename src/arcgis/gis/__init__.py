@@ -7217,7 +7217,8 @@ class Item(dict):
         title               Required string. The desired name of the exported service item.
         ---------------     --------------------------------------------------------------------
         export_format       Required string. The format to export the data to. Allowed types: 'Shapefile',
-                            'CSV', 'File Geodatabase', 'Feature Collection', 'GeoJson', 'Scene Package', 'KML'
+                            'CSV', 'File Geodatabase', 'Feature Collection', 'GeoJson', 'Scene Package', 'KML',
+                             and 'Excel'
         ---------------     --------------------------------------------------------------------
         parameters          Optional string. A JSON object describing the layers to be exported
                             and the export parameters for each layer.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Item/02r30000008s000000/
