@@ -186,28 +186,68 @@ def merge_layers(
         gis=None,
         estimate=False):
     """
-    Combines two inputs of the same feature data type into a new output.
+    .. image:: _static/images/merge_layers/merge_layers.png 
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
-         The point, line, or polygon  features to merge with the mergeLayer.
-    merge_layer : Required layer (see Feature Input in documentation)
-        The point, line or polygon features to merge with inputLayer.  mergeLayer must contain the same feature type
-        point, line, or polygon) as the inputLayer.
-    merging_attributes : Optional list of strings
-        An array of values that describe how fields from the mergeLayer are to be modified.  By default all fields from
-        both inputs will be carried across to the output.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    The ``merge_layers`` method copies features from two layers into a new layer. 
+    The layers to be merged must all contain the same feature types (points, lines, or polygons). 
+    You can control how the fields from the input layers are joined and copied. For example:
 
-    Returns
-    -------
-    merged_layer : layer (FeatureCollection)
+    * I have three layers for England, Wales, and Scotland and I want a single layer of Great Britain.
+    * I have two layers containing parcel information for contiguous townships. I want to join them together into a single layer, keeping only the fields that have the same name and type on the two layers.
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
+    ----------------  ---------------------------------------------------------------
+    merge_layer       Required feature layer. The point, line, or polygon features to merge with the ``input_layer``. 
+                      The ``merge_layer`` must contain the same feature type (point, line, or polygon) as the ``input_layer``. See :ref:`Feature Input<FeatureInput>`.
+    ----------------  ---------------------------------------------------------------
+    merge_attributes  Optional list. Defines how the fields in ``merge_layer`` will be
+                      modified. By default, all fields from both inputs will be
+                      included in the output layer.
+
+                      If a field exists in one layer but not the other, the output
+                      layer will still contain the field. The output field will
+                      contain null values for the input features that did not have the
+                      field. For example, if the ``input_layer`` contains a field named
+                      TYPE but the ``merge_layer`` does not contain TYPE, the output will
+                      contain TYPE, but its values will be null for all the features
+                      copied from the ``merge_layer``.
+
+                      You can control how fields in the ``merge_layer`` are written to the
+                      output layer using the following merge types that operate on a
+                      specified ``merge_layer`` field:
+
+                      + ``Remove`` - The field in the ``merge_layer`` will be removed from the output layer.
+                      + ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer. 
+                        You cannot rename a field in the ``merge_layer`` to a field in the ``input_layer``. If you want to make field names equivalent, use Match.
+                      + ``Match`` - A field in the ``merge_layer`` is made equivalent to a field in the ``input_layer`` specified by merge value. 
+                        For example, the ``input_layer`` has a field named CODE and the ``merge_layer`` has a field named STATUS. 
+                        You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the ``merge_layer``. 
+                        Type casting is supported (for example, float to integer, integer to string) except for string to numeric.
+    ----------------  ---------------------------------------------------------------
+    output_name       Optional string. If provided, the method will create a feature service of the results. You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    ----------------  ---------------------------------------------------------------
+    context           Optional dict. Context contains additional settings that affect task execution. For ``merge_layers``, there are two settings.
+                                
+                      #. Extent (``extent``)-a bounding box that defines the analysis area. Only those features in the ``input_layer`` and the ``merge_layer`` that intersect the bounding box will be merged into the output layer.
+                      #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.    
+    ----------------  ---------------------------------------------------------------
+    gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ----------------  ---------------------------------------------------------------
+    estimate          Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    ================  ===============================================================
+
+    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To merge two layers into a new layer using merge attributes.
+        merged = merge_layers(input_layer=esri_offices,
+                              merge_layer=satellite_soffice_lyr,
+                              merging_attributes=["State Match Place_Name"],
+                              output_name="merge layers")
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.merge_layers(
