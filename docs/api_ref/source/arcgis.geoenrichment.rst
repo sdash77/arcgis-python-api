@@ -11,6 +11,7 @@ Country
     :members:
     :undoc-members:
 
+
 get_countries
 ---------------
 .. autofunction:: arcgis.geoenrichment.get_countries
