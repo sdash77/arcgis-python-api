@@ -283,50 +283,104 @@ def summarize_within(sum_within_layer,
 
 def join_features(target_layer,
                   join_layer,
-                  spatial_relationship = None,
-                  spatial_relationship_distance = None,
-                  spatial_relationship_distance_units = None,
-                  attribute_relationship = None,
-                  join_operation = """JoinOneToOne""",
-                  summary_fields = None,
-                  output_name = None,
-                  context = None,
+                  spatial_relationship=None,
+                  spatial_relationship_distance=None,
+                  spatial_relationship_distance_units=None,
+                  attribute_relationship=None,
+                  join_operation="""JoinOneToOne""",
+                  summary_fields=None,
+                  output_name=None,
+                  context=None,
                   gis=None,
                   estimate=False):
     """
-    Parameters:
+    .. image:: _static/images/join_features/join_features.png 
 
-       target_layer: targetLayer (str). Required parameter.
+    The ``join_features`` method works with two layers and joins the attributes 
+    from one feature to another based on spatial and attribute relationships.
 
-       join_layer: joinLayer (str). Required parameter.
+    ============================================================================================     =================================================================================================================================
+    **Parameter**                                                                                    **Description**
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    target_layer                                                                                     Required layer. The point, line, polygon or table layer that will have attributes from 
+                                                                                                     the ``join_layer`` appended to its table. See :ref:`Feature Input<FeatureInput>`.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    join_layer                                                                                       Required layer. The point, line, polygon or table layer that will be joined to the ``target_layer``. See :ref:`Feature Input<FeatureInput>`.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    spatial_relationship                                                                             Required string. Defines the spatial relationship used to spatially join features.
 
-       spatial_relationship: spatialRelationship (str). Optional parameter.
-          Choice list:['intersects', 'withindistance', 'completelycontains', 'completelywithin', 'within', 'contains', 'identicalto']
+                                                                                                     Choice list: ['identicalto', 'intersects', 'completelycontains', 'completelywithin', 'withindistance']
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    spatial_relationship_distance (Required if ``spatial_relationship`` is withindistance)           Optional float. A float value used for the search distance to determine if the target features are near or within a 
+                                                                                                     specified distance of the join features. 
+                                                                                                     This is only applied if Within a distance of is the selected ``spatial_relationship``. 
+                                                                                                     You can only enter a single distance value. The units of the distance values are supplied by the 
+                                                                                                     ``spatial_relationship_distance_units`` parameter.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    spatial_relationship_distance_units (Required if ``spatial_relationship`` is withindistance)     Optional string. The linear unit to be used with the distance value specified in ``spatial_relationship_distance``.
 
-       spatial_relationship_distance: spatialRelationshipDistance (float). Optional parameter.
+                                                                                                     Choice list: ['Miles', 'Yards', 'Feet', 'NauticalMiles', 'Meters', 'Kilometers']
 
-       spatial_relationship_distance_units: spatialRelationshipDistanceUnits (str). Optional parameter.
-          Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'NauticalMiles']
+                                                                                                     The default is 'Miles'.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    attribute_relationship                                                                           Optional list of dicts. Defines an attribute relationship used to join features. Features are matched when the field 
+                                                                                                     values in the join layer are equal to field values in the target layer.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    join_operation                                                                                   Optional string. A string representing the type of join that will be applied.
+                                                                                                     
+                                                                                                     Choice list: ['JoinOneToOne', 'JoinOneToMany']
 
-       attribute_relationship: attributeRelationship (str). Optional parameter.
+                                                                                                        * ``JoinOneToOne``—If multiple join features are found that have the same relationships with a 
+                                                                                                          single target feature, the attributes from the multiple join features will be aggregated using 
+                                                                                                          the specified summary statistics. For example, if a point target feature is found within two 
+                                                                                                          separate polygon join features, the attributes from the two polygons will be aggregated before 
+                                                                                                          being transferred to the output point feature class. If one polygon has an attribute value of 
+                                                                                                          3 and the other has a value of 7, and a SummaryField of sum is selected, the aggregated value 
+                                                                                                          in the output feature class will be 10. There will always be a Count field calculated, with a 
+                                                                                                          value of 2, for the number of features specified. This is the default.
+                                                                                                        
+                                                                                                        * ``JoinOneToMany``—If multiple join features are found that have the same relationship with 
+                                                                                                          a single target feature, the output feature class will contain multiple copies (records) of 
+                                                                                                          the target feature. For example, if a single point target feature is found within two separate 
+                                                                                                          polygon join features, the output feature class will contain two copies of the target feature: 
+                                                                                                          one record with the attributes of the first polygon, and another record with the attributes of 
+                                                                                                          the second polygon. There are no summary statistics calculated with this method.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    summary_fields                                                                                   Optional list of dicts. A list of field names and statistical summary types that you want to calculate. 
+                                                                                                     Note that the count is always returned by default.
 
-       join_operation: joinOperation (str). Optional parameter.
-          Choice list:['JoinOneToOne', 'JoinOneToMany']
+                                                                                                     fieldName is the name of one of the numeric fields found in the input join layer.
 
-       summary_fields: summaryFields (str). Optional parameter.
+                                                                                                     statisticType is one of the following:
 
-       output_name: outputName (str). Optional parameter.
+                                                                                                        * ``SUM``—Adds the total value of all the points in each polygon
+                                                                                                        * ``MEAN``—Calculates the average of all the points in each polygon
+                                                                                                        * ``MIN``—Finds the smallest value of all the points in each polygon
+                                                                                                        * ``MAX``—Finds the largest value of all the points in each polygon
+                                                                                                        * ``STDDEV``—Finds the standard deviation of all the points in each polygon
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    output_name                                                                                      Optional string. If provided, the method will create a feature service of the results. You define the name of the service. 
+                                                                                                     If ``output_name`` is not supplied, the task will return a feature collection.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    context                                                                                          Optional string. Context contains additional settings that affect method execution. For ``join_features``, there are the following two settings:
 
-       context: context (str). Optional parameter.
+                                                                                                     #. Extent (``extent``)—A bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be analyzed.
 
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+                                                                                                     #. Output Spatial Reference (``outSR``)—The output features will be projected into the output spatial reference.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    estimate                                                                                         Optional boolean. If True, the number of credits to run the operation will be returned.
+    ============================================================================================     =================================================================================================================================
+    
+    :returns: result_layer : feature layer Item if ``output_name`` is specified, else feature collection.
 
-        estimate: Optional Boolean. If True, the number of credits to run the operation will be returned.
+    .. code-block:: python
 
-    Returns:
-       output_layer - outputLayer as a str
-
-    See http://localhost:6080/arcgis/rest/directories/arcgisoutput/tasks_GPServer/tasks/JoinFeatures.htm for additional help.
+        USAGE EXAMPLE: To summarize traffic accidents within each parcel using spatial relationship.
+        accident_count_in_each_parcel = join_features(target_layer=parcel_lyr,
+                                                      join_layer=traffic_accidents_lyr,
+                                                      spatial_relationship='intersects',
+                                                      output_name='join features',
+                                                      context={"extent":{"xmin":-9375809.87305117,"ymin":4031882.3806860778,"xmax":-9370182.196843527,"ymax":4034872.9794178144,"spatialReference":{"wkid":102100,"latestWkid":3857}}}, )
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.join_features(
@@ -341,4 +395,3 @@ def join_features(target_layer,
         output_name,
         context,
         estimate=estimate)
-
