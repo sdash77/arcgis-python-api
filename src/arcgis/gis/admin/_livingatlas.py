@@ -62,6 +62,7 @@ class LivingAtlas(BasePortalAdmin):
     gis                 required GIS, the gis connection object.
     ===============     ====================================================
     """
+    
     _groupquery = None
     _con = None
     _url = None
@@ -432,7 +433,7 @@ class LivingAtlas(BasePortalAdmin):
     #----------------------------------------------------------------------
     def disable_premium_atlas(self):
         """
-        Disables the Premium Livinng Atlas Content for a local portal.
+        Disables the Premium Living Atlas Content for a local portal.
 
         """
         group_id = None
@@ -461,4 +462,3 @@ class LivingAtlas(BasePortalAdmin):
         else:
             return False
         return False
-
