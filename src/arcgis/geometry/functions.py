@@ -96,9 +96,12 @@ def auto_complete(polygons=None,
        polygons and a set of polylines.
 
        Inputs:
-          polygons - array of Polygon objects
-          polylines - list of Polyline objects
-          spatial_ref - spatial reference of the input geometries WKID
+        polygons -
+         array of Polygon objects
+        polylines -
+         list of Polyline objects
+        spatial_ref -
+         spatial reference of the input geometries WKID
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -106,6 +109,7 @@ def auto_complete(polygons=None,
         polygons,
         polylines,
         spatial_ref)
+
 
 def buffer(geometries,
            in_sr,
@@ -123,10 +127,14 @@ def buffer(geometries,
        available to union buffers and to use geodesic distance.
 
        Inputs:
-         geometries - The array of geometries to be buffered.
-         in_sr - The well-known ID of the spatial reference or a spatial
+
+         geometries -
+          The array of geometries to be buffered.
+         in_sr -
+          The well-known ID of the spatial reference or a spatial
           reference JSON object for the input geometries.
-         distances - The distances that each of the input geometries is
+         distances -
+          The distances that each of the input geometries is
           buffered.
          unit - The units for calculating each buffer distance. If unit
           is not specified, the units are derived from bufferSR. If
