@@ -9,7 +9,6 @@ integration_tests_to_run:
         blacklist:
             - "{geosaurus_dir}/tests/integration/**/_*.py"
     paths:
-        - "{geosaurus_dir}/tests/integration/apps/*.py"
         - "{geosaurus_dir}/tests/integration/server_tests/service_factory_test.py"
 nbconvert_notebook_tests_to_run:
     config:
