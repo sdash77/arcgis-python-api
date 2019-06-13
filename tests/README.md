@@ -79,7 +79,7 @@ For any path contained in the `geosaurus` repository, start out your string with
 
 ## ./\_test\_runners
 
-This module contains all the Python code needed to run the specified unit/notebook/etc. tests and output the XML to the correct location..
+This module contains all the Python code needed to run the specified unit/notebook/etc. tests and output the XML to the correct location.
 
 ## ./unit/sanity
 
