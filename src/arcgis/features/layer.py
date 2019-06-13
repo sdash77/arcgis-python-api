@@ -1347,7 +1347,9 @@ class FeatureLayer(Layer):
         return self._con.post(path=edit_url, postdata=params, token=self._token)
 
     # ----------------------------------------------------------------------
-    def calculate(self, where, calc_expression, sql_format="standard"):
+    def calculate(self, where, calc_expression,
+                  sql_format="standard", version=None,
+                  sessionid=None, return_edit_moment=None):
         """
         The calculate operation is performed on a feature layer
         resource. It updates the values of one or more fields in an
@@ -1358,26 +1360,52 @@ class FeatureLayer(Layer):
         calculate. System fields include ObjectId and GlobalId.
         See Calculate a field for more information on supported expressions
 
-           =====================   ===========================================
-           **Inputs**              **Description**
-           ---------------------   -------------------------------------------
-           where                   A where clause can be used to limit the updated records.
-                                   Any legal SQL where clause operating on the fields in
-                                   the layer is allowed.
-           ---------------------   -------------------------------------------
-           calc_expression         The array of field/value info objects that
-                                   contain the field or fields to update and their
-                                   scalar values or SQL expression.  Allowed types
-                                   are dictionary and list.  List must be a list
-                                   of dictionary objects.
-                                   Calculation Format is as follows:
-                                   {"field" : "<field name>",  "value" : "<value>"}
-           ---------------------   -------------------------------------------
-           sql_format              The SQL format for the calcExpression. It can be
-                                   either standard SQL92 (standard) or native SQL
-                                   (native). The default is standard.
-                                   Values: standard, native
-           =====================   ===========================================
+        =====================   ====================================================
+        **Inputs**              **Description**
+        ---------------------   ----------------------------------------------------
+        where                   Required String. A where clause can be used to limit
+                                the updated records. Any legal SQL where clause
+                                operating on the fields in the layer is allowed.
+        ---------------------   ----------------------------------------------------
+        calc_expression         Required List. The array of field/value info objects
+                                that contain the field or fields to update and their
+                                scalar values or SQL expression.  Allowed types are
+                                dictionary and list.  List must be a list of
+                                dictionary objects.
+
+                                Calculation Format is as follows:
+
+                                    `{"field" : "<field name>",  "value" : "<value>"}`
+
+        ---------------------   ----------------------------------------------------
+        sql_format              Optional String. The SQL format for the
+                                calc_expression. It can be either standard SQL92
+                                (standard) or native SQL (native). The default is
+                                standard.
+
+                                Values: `standard`, `native`
+        ---------------------   ----------------------------------------------------
+        version                 Optional String. The geodatabase version to apply
+                                the edits.
+        ---------------------   ----------------------------------------------------
+        sessionid               Optional String. A parameter which is set by a
+                                client during long transaction editing on a branch
+                                version. The sessionid is a GUID value that clients
+                                establish at the beginning and use throughout the
+                                edit session.
+                                The sessonid ensures isolation during the edit
+                                session. This parameter applies only if the
+                                `isDataBranchVersioned` property of the layer is
+                                true.
+        ---------------------   ----------------------------------------------------
+        return_edit_moment      Optional Boolean. This parameter specifies whether
+                                the response will report the time edits were
+                                applied. If true, the server will return the time
+                                edits were applied in the response's edit moment
+                                key. This parameter applies only if the
+                                `isDataBranchVersioned` property of the layer is
+                                true.
+        =====================   ====================================================
 
         .. code-block:: python
 
@@ -1411,6 +1439,13 @@ class FeatureLayer(Layer):
             params['sqlFormat'] = sql_format.lower()
         else:
             params['sqlFormat'] = "standard"
+        if version:
+            params['gdbVersion'] = version
+        if sessionid:
+            params['sessionID'] = sessionid
+        if isinstance(return_edit_moment, bool):
+            params['returnEditMoment'] = return_edit_moment
+
         return self._con.post(path=url,
                               postdata=params, token=self._token)
 
@@ -1599,6 +1634,34 @@ class FeatureLayerCollection(_GISResource):
         return self._admin
 
     @property
+    def relationships(self):
+        """
+        The `relationships` property provides relationship information for
+        the layers and tables in the feature layer collection.
+
+        The relationships resource includes information about relationship
+        rules from the back-end relationship classes, in addition to the
+        relationship information already found in the individual layers and
+        tables.
+
+        Feature layer collections that support the relationships resource
+        will have the "supportsRelationshipsResource": true property on
+        their properties.
+
+        :returns: List of Dictionaries
+
+        """
+        if "supportsRelationshipsResource" in self.properties and \
+           self.properties["supportsRelationshipsResource"]:
+            url = self._url + "/relationships"
+            params = {'f' : 'json'}
+            res = self._con.get(url, params)
+            if 'relationships' in res:
+                return res['relationships']
+            return res
+        return []
+
+    @property
     def versions(self):
         """
         Returns a `VersionManager` to create, update and use versions on a `FeatureLayerCollection`.
@@ -1613,6 +1676,34 @@ class FeatureLayerCollection(_GISResource):
                 self._vermgr = VersionManager(url=url, gis=self._gis)
             return self._vermgr
         return None
+    # ----------------------------------------------------------------------
+    def query_domains(self, layers):
+        """
+        The query_domains returns full domain information for the domains
+        referenced by the layers in the feature layer collection. This
+        operation is performed on a feature layer collection. The operation
+        takes an array of layer IDs and returns the set of domains referenced
+        by the layers.
+
+        ================================     ====================================================================
+        **Argument**                         **Description**
+        --------------------------------     --------------------------------------------------------------------
+        layers                               Required List.  An array of layers. The set of domains to return is
+                                             based on the domains referenced by these layers. Example: [1,2,3,4]
+        ================================     ====================================================================
+
+        :returns: list of dictionaries
+
+        """
+        if not isinstance(layers (tuple, list)):
+            raise ValueError("The layer variable must be a list.")
+        url = "{base}/queryDomains".format(base=self._url)
+        params = {'f':'json'}
+        params['layers'] = layers
+        res = self._con.post(url, params)
+        if 'domains' in res:
+            return res['domains']
+        return res
     # ----------------------------------------------------------------------
     def extract_changes(self,
                         layers,

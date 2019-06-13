@@ -703,7 +703,10 @@ class Geometry(BaseGeometry):
         if isinstance(self, Point):
             return False
         elif isinstance(self, Polygon):
-            return len(self['rings']) == 0
+            if 'rings' in self:
+                return len(self['rings']) == 0
+            elif 'curveRings' in self:
+                return len(self['curveRings']) == 0
         elif isinstance(self, Polyline):
             return len(self['paths']) == 0
         elif isinstance(self, MultiPoint):

@@ -200,6 +200,7 @@ class GIS(object):
     _is_hosted_nb_home = False
     _product_version = None
     _is_agol = None
+    _pds = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
@@ -393,13 +394,13 @@ class GIS(object):
            me.role == "org_admin":
             try:
                 if self.properties.isPortal == True:
-                    from .admin.portaladmin import PortalAdminManager
+                    from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
                                                     gis=self)
                 else:
                     from .admin.agoladmin import AGOLAdminManager
                     self.admin = AGOLAdminManager(gis=self)
-            except:
+            except Exception as e:
                 pass
         elif self._con._auth.lower() != 'anon' and \
              self._con._auth is not None and\
@@ -725,6 +726,14 @@ class GIS(object):
             return arcgis.apps.hub.Hub(self)
         else:
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
+
+    @property
+    def datastore(self):
+        if self.version >= [7,1]:
+            from arcgis.gis._impl._datastores import PortalDataStore
+            url = self._portal.resturl + "portals/self/datastores"
+            self._pds = PortalDataStore(url=url, gis=self)
+        return self._pds
 
     @_lazy_property
     def _datastores(self):
@@ -1091,7 +1100,23 @@ class Datastore(dict):
             return True
         else:
             return False
+    #----------------------------------------------------------------------
+    def regenerate(self):
+        """
+        This regenerates the manifest for a big data file share. You can
+        regenerate a manifest if you have added new data or if you have
+        uploaded a hints file using the edit resource.
 
+        :returns: Boolean. True = Success, False = Failure
+
+        """
+        url = self._admin_url + '/data/items' + self.datapath + "/manifest/regenerate"
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     def validate(self):
         """
         Validates that this data item's path (for file shares) or connection string (for databases)
@@ -1320,7 +1345,7 @@ class DatastoreManager(object):
         object_store        Required string. This is the amazon bucket path or Azuze path.
         ---------------     --------------------------------------------------------------------
         provider            Required string. Values must be azuredatalakestore, amazon,
-                            Huawei, Alibaba, or azure.
+                            Alibaba, or azure.
         ---------------     --------------------------------------------------------------------
         managed             Optional boolean. When the data store is server only, the database
                             is entirely managed and owned by the server and cannot be accessed
@@ -2052,6 +2077,7 @@ class UserManager(object):
             'publisher' : 'org_publisher',
             'creator' : 'org_publisher',
             'view_only' : 'tLST9emLCNfFcejK',
+            'org_viewer' : 'iAAAAAAAAAAAAAAA',
             'viewer' : 'iAAAAAAAAAAAAAAA',
             'viewplusedit' : 'iBBBBBBBBBBBBBBB'
         }

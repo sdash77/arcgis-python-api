@@ -378,7 +378,9 @@ class GeoSeriesAccessor:
         :returns: output geometry clipped to extent
 
         """
-        return self._data.clip(**{'envelope' : envelope})
+        res = self._data.clip(**{'envelope' : envelope})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
         """
@@ -398,15 +400,19 @@ class GeoSeriesAccessor:
 
         :returns: boolean
         """
-        return self._data.contains(**{'second_geometry' : second_geometry,
+        res = self._data.contains(**{'second_geometry' : second_geometry,
                                       'relation' : relation})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def convex_hull(self):
         """
         Constructs the geometry that is the minimal bounding polygon such
         that all outer angles are convex.
         """
-        return self._data.convex_hull()
+        res = self._data.convex_hull()
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
@@ -422,7 +428,9 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return self._data.crosses(**{'second_geometry' : second_geometry})
+        res = self._data.crosses(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def cut(self, cutter):
         """
@@ -438,7 +446,9 @@ class GeoSeriesAccessor:
         :returns: a list of two geometries
 
         """
-        return self._data.cut(**{'cutter' : cutter})
+        res = self._data.cut(**{'cutter' : cutter})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
@@ -467,9 +477,11 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._data.densify(**{'method' : method,
+        res = self._data.densify(**{'method' : method,
                                     'distance' : distance,
                                     'deviation' : deviation})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def difference(self, second_geometry):
         """
@@ -487,7 +499,9 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._data.difference(**{'second_geometry' : second_geometry})
+        res = self._data.difference(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
@@ -503,7 +517,9 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return self._data.disjoint(**{'second_geometry' : second_geometry})
+        res = self._data.disjoint(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def distance_to(self, second_geometry):
         """
@@ -520,7 +536,9 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        return self._data.distance_to(**{'second_geometry' : second_geometry})
+        res = self._data.distance_to(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def equals(self, second_geometry):
         """
@@ -538,7 +556,9 @@ class GeoSeriesAccessor:
 
 
         """
-        return self._data.equals(**{'second_geometry' : second_geometry})
+        res = self._data.equals(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def generalize(self, max_offset):
         """
@@ -554,7 +574,9 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._data.generalize(**{'max_offset' : max_offset})
+        res = self._data.generalize(**{'max_offset' : max_offset})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def get_area(self, method, units=None):
         """
@@ -563,7 +585,7 @@ class GeoSeriesAccessor:
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        method              Required String. LANAR measurements reflect the projection of
+        method              Required String. PLANAR measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
                             take into account the curvature of the earth). GEODESIC,
                             GREAT_ELLIPTIC, LOXODROME, and PRESERVE_SHAPE measurement types
@@ -578,8 +600,10 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        return self._data.get_area(**{'method' : method,
+        res = self._data.get_area(**{'method' : method,
                                       'units' : units})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def get_length(self, method, units):
         """
@@ -602,8 +626,10 @@ class GeoSeriesAccessor:
         :returns: float
 
         """
-        return self._data.get_length(**{'method' : method,
-                                        'units' : units})
+        res = self._data.get_length(**{'method' : method,
+                                       'units' : units})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def get_part(self, index=None):
         """
@@ -648,8 +674,10 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        return self._data.intersect(**{'second_geometry' : second_geometry,
+        res = self._data.intersect(**{'second_geometry' : second_geometry,
                                        'dimension' : dimension})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
         """
@@ -667,8 +695,10 @@ class GeoSeriesAccessor:
         :return: float
 
         """
-        return self._data.measure_on_line(**{'second_geometry' : second_geometry,
-                                             'as_percentage' : as_percentage})
+        res = self._data.measure_on_line(**{'second_geometry' : second_geometry,
+                                            'as_percentage' : as_percentage})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
@@ -685,7 +715,9 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        return self._data.overlaps(**{'second_geometry' : second_geometry})
+        res = self._data.overlaps(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
         """
@@ -710,9 +742,11 @@ class GeoSeriesAccessor:
 
 
         """
-        return self._data.point_from_angle_and_distance(**{'angle' : angle,
+        res = self._data.point_from_angle_and_distance(**{'angle' : angle,
                                                            'distance' : distance,
                                                            'method' : method})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
@@ -734,8 +768,10 @@ class GeoSeriesAccessor:
         :return: Geometry
 
         """
-        return self._data.position_along_line(**{'value' : value,
-                                                 'use_percentage' : use_percentage})
+        res = self._data.position_along_line(**{'value' : value,
+                                                'use_percentage' : use_percentage})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
@@ -752,8 +788,10 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Geometry
         """
-        return self._data.project_as(**{'spatial_reference' : spatial_reference,
-                                        'transformation_name' : transformation_name})
+        res = self._data.project_as(**{'spatial_reference' : spatial_reference,
+                                       'transformation_name' : transformation_name})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
                                  use_percentage=False):
@@ -775,8 +813,10 @@ class GeoSeriesAccessor:
         :return: tuple
 
         """
-        return self._data.query_point_and_distance(**{'second_geometry' : second_geometry,
+        res = self._data.query_point_and_distance(**{'second_geometry' : second_geometry,
                                                       'use_percentage' : use_percentage})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def segment_along_line(self, start_measure,
                            end_measure, use_percentage=False):
@@ -803,9 +843,11 @@ class GeoSeriesAccessor:
         :returns: Geometry
 
         """
-        return self._data.segment_along_line(**{'start_measure' : start_measure,
-                                                'end_measure' : end_measure,
-                                                'use_percentage' : use_percentage})
+        res = self._data.segment_along_line(**{'start_measure' : start_measure,
+                                               'end_measure' : end_measure,
+                                               'use_percentage' : use_percentage})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
         """
@@ -820,7 +862,9 @@ class GeoSeriesAccessor:
         :return: arcgis.gis.Geometry
 
         """
-        return self._data.snap_to_line(**{'second_geometry' : second_geometry})
+        res = self._data.snap_to_line(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def symmetric_difference (self, second_geometry):
         """
@@ -837,7 +881,9 @@ class GeoSeriesAccessor:
 
         :return: arcgis.gis.Geometry
         """
-        return self._data.symmetric_difference(**{'second_geometry' : second_geometry})
+        res = self._data.symmetric_difference(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
@@ -852,7 +898,9 @@ class GeoSeriesAccessor:
 
         :return: boolean
         """
-        return self._data.touches(**{'second_geometry' : second_geometry})
+        res = self._data.touches(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def union(self, second_geometry):
         """
@@ -868,7 +916,9 @@ class GeoSeriesAccessor:
 
         :return: arcgis.gis.Geometry
         """
-        return self._data.union(**{'second_geometry' : second_geometry})
+        res = self._data.union(**{'second_geometry' : second_geometry})
+        res.index = self._index
+        return res
     #----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
@@ -890,9 +940,11 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        return self._data.within(**{'second_geometry' : second_geometry,
+        res = self._data.within(**{'second_geometry' : second_geometry,
                                     'relation' : relation}
                                  )
+        res.index = self._index
+        return res
 
 
 #--------------------------------------------------------------------------
@@ -1161,10 +1213,7 @@ class GeoAccessor(object):
             )
 
             result.columns = ['_key_left', '_key_right', 'match_bool']
-            result = (
-                pd.DataFrame(result[result['match_bool']==1])
-                      .drop('match_bool', axis=1)
-            )
+            result = pd.DataFrame(result[result['match_bool']==1]).drop('match_bool', axis=1)
         else:
             # when output from the join has no overlapping geometries
             result = pd.DataFrame(columns=['_key_left', '_key_right'], dtype=float)
@@ -1204,7 +1253,7 @@ class GeoAccessor(object):
                           left_on='_key_right', right_index=True,
                           how='right'), left_index=True,
                           right_on='_key_left', how='right')
-                      .set_index(index_right)
+                      .set_index('index_y')
                      )
             joined = joined.drop(['_key_left', '_key_right'], axis=1)
         try:
@@ -2873,7 +2922,7 @@ class GeoAccessor(object):
                         'equals': equals,
                         'overlaps' : overlaps,
                         'touches': touches,
-                        'within' : within}
+                        'within' : contains}
 
         if not op.lower() in _ops_allowed.keys():
             raise ValueError("Invalid `op`. Please use a proper operation.")

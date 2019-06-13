@@ -3,6 +3,7 @@ This is the ArcGIS Notebook Server API Framework
 """
 
 import os
+from urllib.parse import urlparse
 
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
@@ -26,6 +27,8 @@ class NotebookServer(object):
     _machine = None
     _notebook = None
     _security = None
+    _version = None
+    _sitemanager = None
     #----------------------------------------------------------------------
     def __init__(self, url, gis):
         """Constructor"""
@@ -60,6 +63,29 @@ class NotebookServer(object):
         return self._properties
     #----------------------------------------------------------------------
     @property
+    def version(self):
+        """
+        Returns the notebook server version
+
+        :returns: List
+        """
+        if self._version is None:
+            self._version = [int(i) for i in self.properties.version.split('.')]
+        return self._version
+    #----------------------------------------------------------------------
+    @property
+    def site(self):
+        """
+        Provides access to the notebook server's site management operations
+
+        :returns: SiteManager
+        """
+        if self._sitemanager is None:
+            from ._site import SiteManager
+            self._sitemanager = SiteManager(url=self._url, notebook=self, gis=self._gis)
+        return self._sitemanager
+    #----------------------------------------------------------------------
+    @property
     def info(self):
         """
         Returns information about the server site itself
@@ -71,6 +97,27 @@ class NotebookServer(object):
         params = {'f' : 'json'}
         res = self._gis._con.get(url, params)
         return PropertyMap(res)
+    #----------------------------------------------------------------------
+    @property
+    def health_check(self):
+        """
+
+        The `health_check` verifies that your ArcGIS Notebook Server site
+        has been created, and that its Docker environment has been
+        correctly configured.
+
+        **This is only avaible if the site can be accessed around the web adapter**
+
+        :returns: boolean
+
+        """
+        netloc = urlparse(self._url).netloc
+        url = "https://{base}:11443/arcgis/rest/info/healthcheck".format(base=netloc)
+        params = {'f' : 'json'}
+        res = self._gis._con.get(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
     #----------------------------------------------------------------------
     @property
     def logs(self):

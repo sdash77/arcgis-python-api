@@ -1082,7 +1082,8 @@ class EnterpriseUsers(BasePortalAdmin):
                level=2,
                provider="arcgis",
                idp_username=None,
-               description=None):
+               description=None,
+               user_license=None):
         """
         This operation is used to pre-create built-in or enterprise
         accounts within the portal. The provider parameter is used to
@@ -1103,7 +1104,7 @@ class EnterpriseUsers(BasePortalAdmin):
         ---------------------------     --------------------------------------------------------------------
         role                            Optional string. The role for the user account. The default value is
                                         org_user.
-                                        Values org_user | org_publisher | org_admin
+                                        Values org_admin | org_publisher | org_user | org_editor (Data Editor) | viewer
         ---------------------------     --------------------------------------------------------------------
         level                           Optional integer. The account level to assign the user.
                                         Values 1 or 2
@@ -1116,11 +1117,39 @@ class EnterpriseUsers(BasePortalAdmin):
                                         parameter is enterprise.
         ---------------------------     --------------------------------------------------------------------
         description                     Optional string. A user description
+        ---------------------------     --------------------------------------------------------------------
+        user_license	                Optional string. The user type for the account. (10.7+)
+
+                                        Values: creator, editor, advanced (GIS Advanced),
+                                                basic (GIS Basic), standard (GIS Standard), viewer,
+                                                fieldworker
+
         ===========================     ====================================================================
 
         :returns: boolean
 
         """
+        role_lu = {
+            "editor" : "iBBBBBBBBBBBBBBB",
+            "viewer" : "iAAAAAAAAAAAAAAA",
+            "org_editor" : "iBBBBBBBBBBBBBBB",
+            "org_viewer" : "iAAAAAAAAAAAAAAA"
+        }
+        user_license_lu = {
+            "creator" : "creatorUT",
+            "editor" : "editorUT",
+            "advanced" : "GISProfessionalAdvUT",
+            "basic" : "GISProfessionalBasicUT",
+            "standard" : "GISProfessionalStdUT",
+            "viewer" : "viewerUT",
+            "fieldworker" : "fieldWorkerUT"
+
+        }
+        if user_license.lower() in user_license_lu:
+            user_license = user_license_lu[user_license.lower()]
+        if role.lower() in role_lu:
+            role = role_lu[role.lower()]
+
         url = "%s/createUser" % self._url
         params = {
             "f" : "json",
@@ -1137,6 +1166,8 @@ class EnterpriseUsers(BasePortalAdmin):
             params['idpUsername'] =  idp_username
         if description:
             params['description'] = description
+        if user_license:
+            params['userLicenseTypeId'] = user_license
         res = self._con.post(path=url, postdata=params)
         return res['status'] == 'success'
     #----------------------------------------------------------------------

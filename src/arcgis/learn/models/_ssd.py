@@ -1,17 +1,23 @@
+import tempfile
+from pathlib import Path
+import json
+import os
+from ._codetemplate import code
+from functools import partial
+import arcgis
+
 try:
     import torch
     from fastai.vision.learner import create_cnn
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
     from torchvision.models import resnet34
+    from torchvision import models
     import numpy as np
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP
     from .._data import prepare_data
-    import json
-    import os
-    import tempfile
-    from pathlib import Path
-    from ._codetemplate import code
+    from fastai.callbacks import EarlyStoppingCallback
+    from ._arcgis_model import SaveModelCallback
     from ._unet_utils import is_no_color
     HAS_FASTAI = True
 except Exception as e:
@@ -111,16 +117,22 @@ class SingleShotDetector(object):
             _raise_fastai_import_error()
 
         if backbone is None:
-            backbone = resnet34
+            self._backbone = models.resnet34
+        elif type(backbone) is str:
+            self._backbone = getattr(models, backbone)
+        else:
+            self._backbone = backbone
 
         self._create_anchors(grids, zooms, ratios)
 
-        num_features = model_sizes(create_body(backbone), size=(data.chip_size, data.chip_size))[-1][-1]
+        feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
+        num_features = feature_sizes[-1][-1]
+        num_channels = feature_sizes[-1][1]
 
-        ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias)
+        ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
 
         self._data = data
-        self.learn = create_cnn(data=data, arch=backbone, custom_head=ssd_head)
+        self.learn = create_cnn(data=data, arch=self._backbone, custom_head=ssd_head)
         self.learn.model = self.learn.model.to(self._device)
 
         if pretrained_path is not None:
@@ -154,13 +166,17 @@ class SingleShotDetector(object):
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
+        try:
+            backbone = emd['backbone']
+        except KeyError:
+            backbone = 'resnet34'
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
         class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
         if data is None:
             empty_data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
-            return cls(empty_data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
+            return cls(empty_data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone)
         else:
             return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
 
@@ -175,11 +191,11 @@ class SingleShotDetector(object):
         clear_output()
         self.learn.recorder.plot()
 
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True):
+    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
-
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -192,13 +208,29 @@ class SingleShotDetector(object):
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
                                 learning rate schedule. If set to `False` no 
-                                learning rate schedule is used.                                
+                                learning rate schedule is used.       
+        ---------------------   -------------------------------------------
+        early_stopping          Optional boolean. Parameter to add early stopping.
+                                If set to `True` training will stop if validation
+                                loss stops improving for 5 epochs.       
+        ---------------------   -------------------------------------------
+        checkpoint              Optional boolean. Parameter to save the best model
+                                during training. If set to `True` the best model 
+                                based on validation loss will be saved during 
+                                training.
         =====================   ===========================================
         """
+        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
+        kwargs.pop('callbacks', None)
+        if early_stopping:
+            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='val_loss', min_delta=0.01, patience=5))
+        if checkpoint:
+            callbacks.append(SaveModelCallback(self, monitor='val_loss', every='improvement', name='checkpoint'))
+
         if one_cycle:
-            self.learn.fit_one_cycle(epochs, lr)
+            self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
         else:
-            self.learn.fit(epochs, lr)
+            self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
 
 
     def unfreeze(self):
@@ -310,6 +342,8 @@ class SingleShotDetector(object):
     def _create_zip(self, zipname, path):
         import shutil
         zip_file = shutil.make_archive(zipname, 'zip', path)
+        if os.path.exists(os.path.join(path, zipname) + '.zip'):
+            os.remove(os.path.join(path, zipname) + '.zip')
         shutil.move(zip_file, path)
 
     def _create_emd(self, path):
@@ -320,6 +354,7 @@ class SingleShotDetector(object):
         _EMD_TEMPLATE['Grids'] = self.grids
         _EMD_TEMPLATE['Zooms'] = self.zooms
         _EMD_TEMPLATE['Ratios'] = self.ratios
+        _EMD_TEMPLATE['backbone'] = self._backbone.__name__
         _EMD_TEMPLATE['Classes'] = []
         for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
@@ -333,24 +368,7 @@ class SingleShotDetector(object):
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
 
-    def save(self, name_or_path):
-        """
-        Saves the model weights, creates an Esri Model Definition and Deep
-        Learning Package zip for deployment to Image Server or ArcGIS Pro
-
-        Train the model for the specified number of epocs and using the
-        specified learning rates
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to save. It
-                                stores it at the pre-defined location. If path
-                                is passed then it stores at the specified path
-                                with model name as directory name. and creates
-                                all the intermediate directories.
-        =====================   ===========================================
-        """
+    def _save(self, name_or_path, zip_files=True):
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
@@ -379,8 +397,30 @@ class SingleShotDetector(object):
         zip_name = self._create_emd(saved_path)
         with open(saved_path.parent / _EMD_TEMPLATE['InferenceFunction'], 'w') as f:
             f.write(code)
-        self._create_zip(zip_name, str(saved_path.parent))
-        print('Created model files at {spp}'.format(spp=saved_path.parent))
+        if zip_files:
+            self._create_zip(zip_name, str(saved_path.parent))
+        if arcgis.env.verbose:
+            print('Created model files at {spp}'.format(spp=saved_path.parent))            
+        return saved_path.parent
+
+    def save(self, name_or_path):
+        """
+        Saves the model weights, creates an Esri Model Definition and Deep
+        Learning Package zip for deployment to Image Server or ArcGIS Pro
+        Train the model for the specified number of epocs and using the
+        specified learning rates.
+        
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name of the model to save. It
+                                stores it at the pre-defined location. If path
+                                is passed then it stores at the specified path
+                                with model name as directory name. and creates
+                                all the intermediate directories.
+        =====================   ===========================================
+        """        
+        return self._save(name_or_path)
 
 
     def load(self, name_or_path):

@@ -1,6 +1,6 @@
 try:
-    from fastai.vision.data import imagenet_stats
-    from fastai.vision.transform import crop, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
+    from fastai.vision.data import imagenet_stats, ImageItemList
+    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch
     from pathlib import Path
     from functools import partial
@@ -43,7 +43,6 @@ def _bb_pad_collate(samples, pad_idx=0):
             pass
     return torch.cat(imgs,0), (bboxes,labels)
 
-
 def _get_bbox_lbls(imagefile, class_mapping):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
     tree = ET.parse(xmlfile)
@@ -60,6 +59,23 @@ def _get_bbox_lbls(imagefile, class_mapping):
             classes.append(class_mapping[int(child[0].text)])
 
     return [bboxes, classes]
+
+def _get_lbls(imagefile, class_mapping):
+    xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
+    tree = ET.parse(xmlfile)
+    xmlroot = tree.getroot()
+    bboxes  = []
+    classes = []
+    for child in xmlroot:
+        if child.tag == 'object':
+            xmin, ymin, xmax, ymax = float(child[1][0].text),\
+            float(child[1][1].text),\
+            float(child[1][2].text),\
+            float(child[1][3].text)
+            bboxes.append([ymin, xmin, ymax, xmax])
+            classes.append(class_mapping[int(child[0].text)])
+
+    return classes[0]
 
 def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type = None):
     """
@@ -116,6 +132,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
 
+    
     color_mapping = None
 
     if class_mapping is None:
@@ -138,19 +155,24 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     
     if dataset_type is None:
 
-        imagefile_types = ['png', 'jpg', 'tif', 'jpeg', 'tiff']
-        bboxfile_types = ['xml', 'json']
+        stats_file = path / 'esri_accumulated_stats.json'
+        with open(stats_file) as f:
+            stats = json.load(f)
+            dataset_type = stats['MetaDataMode']
+
+        # imagefile_types = ['png', 'jpg', 'tif', 'jpeg', 'tiff']
+        # bboxfile_types = ['xml', 'json']
         with open(path / 'map.txt') as f:
             line = f.readline()
-        left = line.split()[0].split('.')[-1].lower()
+        # left = line.split()[0].split('.')[-1].lower()
         right = line.split()[1].split('.')[-1].lower()
         
-        if (left in imagefile_types) and (right in imagefile_types):
-            dataset_type = 'RCNN_Masks'
-        elif (left in imagefile_types) and (right in bboxfile_types):
-            dataset_type = 'PASCAL_VOC_rectangles'
-        else:
-            raise NotImplementedError('Cannot infer dataset type. The dataset type is not implemented')            
+        # if (left in imagefile_types) and (right in imagefile_types):
+        #     dataset_type = 'RCNN_Masks'
+        # elif (left in imagefile_types) and (right in bboxfile_types):
+        #     dataset_type = 'PASCAL_VOC_rectangles'
+        # else:
+        #     raise NotImplementedError('Cannot infer dataset type. The dataset type is not implemented')            
         
     
     if dataset_type in ['RCNN_Masks', 'Classified_Tiles']:
@@ -176,7 +198,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             .databunch(bs=batch_size, **databunch_kwargs)
             .normalize(imagenet_stats))
         
-    elif dataset_type == 'PASCAL_VOC_rectangles':
+    elif dataset_type == 'PASCAL_VOC_rectangles': 
 
 
         get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping)
@@ -194,8 +216,36 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         data = (src
             .transform(transforms, tfm_y=True)
             .databunch(bs=batch_size, collate_fn=collate_fn, **databunch_kwargs)
-            .normalize(imagenet_stats)
-           )
+            .normalize(imagenet_stats))
+        
+    elif dataset_type == 'Labeled_Tiles':
+
+
+        get_y_func = partial(_get_lbls, class_mapping=class_mapping)
+
+        src = (ImageItemList.from_folder(path/'images')
+           .random_split_by_pct(val_split_pct, seed=42)
+           .label_from_func(get_y_func))
+
+        if transforms is None:
+            # transforms = get_transforms(flip_vert=True,
+            #                             max_warp=0,
+            #                             max_rotate=90.,
+            #                             max_zoom=1.5,
+            #                             max_lighting=0.5)
+            ranges = (0, 1)
+            train_tfms = [rotate(degrees=30, p=0.5),
+                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), 
+                dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)),
+                # rand_zoom(scale=(0.75, 1.5))
+                ]
+            val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
+            transforms = (train_tfms, val_tfms)
+
+        data = (src
+            .transform(transforms, size=chip_size)
+            .databunch(bs=batch_size, **databunch_kwargs)
+            .normalize(imagenet_stats))
         
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))    
