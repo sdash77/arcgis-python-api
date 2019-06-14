@@ -697,7 +697,7 @@ class FeatureLayer(Layer):
             return self._query(url, params, raw=as_raw)
 
         params['returnCountOnly'] = True
-        out_stats_key = params.pop('outStatistics')
+        out_stats_key = params.pop('outStatistics', None)
         record_count = self._query(url, params, raw=as_raw)
         if 'maxRecordCount' in self.properties:
             max_records = self.properties['maxRecordCount']
