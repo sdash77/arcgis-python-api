@@ -183,7 +183,7 @@ def build_conda_packages_default(clear_output_folder = True):
         _run_conda_build_command(python_version = python_version,
                                  output_dir = BUILD_OUTPUT_DIR)
 
-def build_conda_packages_for_all_os_and_py():
+def build_conda_packages_for_all_os_and_py(build_number=0):
     """Will generate conda packages for all supported os and pys"""
     if _is_current_os_windows():
         os_build_targets = SUPPORTED_WIN
@@ -193,7 +193,8 @@ def build_conda_packages_for_all_os_and_py():
         raise RuntimeError("{} is not a supported OS".format(os.name))
 
     build_conda_packages(os_build_targets = os_build_targets,
-                         python_versions = SUPPORTED_PYS)
+                         python_versions = SUPPORTED_PYS
+                         build_number = build_number)
 
 def build_conda_packages(os_build_targets,
                          python_versions,

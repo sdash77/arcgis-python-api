@@ -113,8 +113,9 @@ def run_pytest_on(paths, output_xml_path,
                   block_network_access=False,
                   max_fail = 9999999999999999,
                   throw_exc_on_fail = False):
+    paths = list(f'"{x}"' for x in paths)
     pytest_args = ["-x",] + paths + [ 
-        f"--junit-xml={output_xml_path}",
+        f'--junit-xml="{output_xml_path}"',
         f"--maxfail={max_fail}",
         ]
     if block_network_access:
