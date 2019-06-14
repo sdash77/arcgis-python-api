@@ -29,7 +29,7 @@ selenium_notebook_tests_to_run:
             300
         browser:
             "dayofweek"
-    paths: []
+    paths: [] 
 widget_unit_tests_to_run:
     config: {}
     paths:
