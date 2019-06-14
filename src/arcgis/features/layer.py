@@ -692,19 +692,19 @@ class FeatureLayer(Layer):
                     return_all_records = False
                 params[key] = val
                 del key, val
-
-        if not return_all_records:
+        
+        if not return_all_records or "outStatistics" in params:
+            if as_df:
+                return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
         params['returnCountOnly'] = True
-        out_stats_key = params.pop('outStatistics', None)
         record_count = self._query(url, params, raw=as_raw)
         if 'maxRecordCount' in self.properties:
             max_records = self.properties['maxRecordCount']
         else:
             max_records = 1000
 
-        params['outStatistics'] = out_stats_key
         params['returnCountOnly'] = False
         if record_count == 0 and as_df:
             import numpy as np
