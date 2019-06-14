@@ -231,34 +231,95 @@ def overlay_layers(
         gis=None,
         estimate=False):
     """
-    Overlays the input layer with the overlay layer. Overlay operations supported are Intersect, Union, and Erase.
+    .. image:: _static/images//overlay_layers/overlay_layers.png
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
-        The input analysis layer.
-    overlay_layer : Required layer (see Feature Input in documentation)
-        The layer to be overlaid with the analysis layer.
-    overlay_type : Optional string
-        The overlay type (INTERSECT, UNION, or ERASE) defines how the analysis layer and the overlay layer are combined.
-    snap_to_input : Optional bool
-        When the distance between features is less than the tolerance, the features in the overlay layer will snap to
-        the features in the input layer.
-    output_type : Optional string
-        The type of intersection (INPUT, LINE, POINT).
-    tolerance : Optional float
-        The minimum distance separating all feature coordinates (nodes and vertices) as well as the distance a
-        coordinate can move in X or Y (or both).
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    .. |Intersect| image:: _static/images/overlay_layers/Intersect.png
+    .. |Union| image:: _static/images/overlay_layers/Union.png
+    .. |Erase| image:: _static/images/overlay_layers/Erase.png
 
-    Returns
-    -------
-    output_layer : layer (FeatureCollection)
+
+    The ``overlay_layers`` method combines two or more layers into one single layer. 
+    You can think of overlay as peering through a stack of maps and creating a single map containing 
+    all the information found in the stack. In fact, before the advent of GIS, cartographers would 
+    literally copy maps onto clear acetate sheets, overlay these sheets on a light table, and hand 
+    draw a new map from the overlaid data. Overlay is much more than a merging of line work; all the 
+    attributes of the features taking part in the overlay are carried through to the final product. 
+    Overlay is used to answer one of the most basic questions of geography, "what is on top of what?" For example:
+
+    + What parcels are within the 100-year floodplain? (Within is just another way of saying on top of.)
+    + What roads are within what counties?
+    + What land use is on top of what soil type?
+    + What wells are within abandoned military bases?
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    input_layer       Required layer. The point, line, or polygon features that will be 
+                      overlayed with the ``overlay_layer``. See :ref:`Feature Input<FeatureInput>`.
+    ----------------  ---------------------------------------------------------------
+    overlay_layer     Required layer. The features that will be overlaid with the ``input_layer`` features. See :ref:`Feature Input<FeatureInput>`.
+    ----------------  ---------------------------------------------------------------
+    overlay_type      Optional string. The type of overlay to be performed.
+
+                      Choice list: ['Intersect', 'Union', 'Erase']
+
+                      +--------------+--------------------------------------------------------------------------------------------------------+
+                      | |Intersect|  | ``Intersect``-Computes a geometric intersection of the input layers. Features or portions of           |
+                      |              | features which overlap in both the ``input_layer`` and ``overlay_layer`` layer will be written         |
+                      |              | to the output layer. This is the default.                                                              |
+                      +--------------+--------------------------------------------------------------------------------------------------------+
+                      | |Union|      | ``Union``-Computes a geometric union of the input layers. All features and their attributes will       |
+                      |              | be written to the output layer. This option is only valid if both the ``input_layer`` and              |
+                      |              | the ``overlay_layer`` contain polygon features.                                                        |
+                      +--------------+--------------------------------------------------------------------------------------------------------+
+                      | |Erase|      | ``Erase``-Only those features or portions of features in the ``overlay_layer`` that are not within the |
+                      |              | features in the ``input_layer`` layer are written to the output.                                       |
+                      +--------------+--------------------------------------------------------------------------------------------------------+
+
+                      The default value is 'Intersect'.
+
+    ----------------  ---------------------------------------------------------------
+    snap_to_input      Optional boolean. A Boolean value indicating if feature vertices in the ``input_layer`` are allowed to move. 
+                       The default is false and means if the distance between features is less than the ``tolerance`` value, all features from both 
+                       layers can move to allow snapping to each other. When set to true, only features in ``overlay_layer`` can move to snap to the ``input_layer`` features.
+    ----------------  ---------------------------------------------------------------
+    output_type       Optional string. The type of intersection you want to find. 
+                      This parameter is only valid when the ``overlay_type`` is Intersect.
+
+                      Choice list: ['Input', 'Line', 'Point']
+
+                        *  ``Input`` - The features returned will be the same geometry type as
+                           the ``input_layer`` or ``overlay_layer`` with the lowest dimension geometry. 
+                           If all inputs are polygons, the output will contain polygons. If one or more of 
+                           the inputs are lines and none of the inputs are points, the output will be line. 
+                           If one or more of the inputs are points, the output will contain points. This is the default.
+                        *  ``Line`` - Line intersections will be returned. This is only valid if none of the inputs are points.
+                        *  ``Point`` - Point intersections will be returned. If the inputs are line or polygon, the output will be a multipoint layer.
+    ----------------  ---------------------------------------------------------------
+    tolerance         Optional float. A float value of the minimum distance separating all feature coordinates 
+                      as well as the distance a coordinate can move in X or Y (or both). The units of tolerance are the same as the units of the ``input_layer``.
+    ----------------  --------------------------------------------------------------- 
+    output_name       Optional string. If provided, the task will create a feature service of the results. You define the name of the service. If ``output_name`` is not supplied, the task will return a feature collection.
+    ----------------  --------------------------------------------------------------- 
+    context           Optional string. Context contains additional settings that affect task execution. For ``overlay_layers``, there are two settings.
+
+                      #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the ``input_layer`` and ``overlay_layer`` and that intersect the bounding box will be overlaid.
+                      #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    ----------------  ---------------------------------------------------------------
+    gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ================  ===============================================================
+
+    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
+
+
+    .. code-block:: python
+
+        #USAGE EXAMPLE: To clip a buffer in the shape of Capitol hill neighborhood.
+        cliped_buffer = overlay_layers(buffer,
+                                       neighbourhood,
+                                       output_name="Cliped buffer")
+
+ 
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.overlay_layers(
