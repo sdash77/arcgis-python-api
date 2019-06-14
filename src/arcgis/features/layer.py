@@ -903,7 +903,9 @@ class FeatureLayer(Layer):
                 params[key] = val
                 del key, val
 
-        if not return_all_records:
+        if not return_all_records or "outStatistics" in params:
+            if as_df:
+                return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
         params['returnCountOnly'] = True
