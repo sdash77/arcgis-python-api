@@ -243,7 +243,7 @@ def merge_layers(
 
     .. code-block:: python
 
-        USAGE EXAMPLE: To merge two layers into a new layer using merge attributes.
+        #USAGE EXAMPLE: To merge two layers into a new layer using merge attributes.
         merged = merge_layers(input_layer=esri_offices,
                               merge_layer=satellite_soffice_lyr,
                               merging_attributes=["State Match Place_Name"],
