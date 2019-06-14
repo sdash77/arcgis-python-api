@@ -692,7 +692,7 @@ class FeatureLayer(Layer):
                     return_all_records = False
                 params[key] = val
                 del key, val
-        
+
         if not return_all_records or "outStatistics" in params:
             if as_df:
                 return self._query_df(url, params)
