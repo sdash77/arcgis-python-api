@@ -25,6 +25,7 @@ class LicenseManager(BasePortalAdmin):
     :returns:
        LicenseManager Object
     """
+
     _con = None
     _url = None
     _json_dict = None
