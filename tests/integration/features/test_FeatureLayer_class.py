@@ -3,9 +3,9 @@
 # Purpose:     Tests for reading feature layers, editing them.
 #-------------------------------------------------------------------------------
 import unittest
-from dino_utils.dino_precondition_checks import PreconditionChecks
-from dino_utils.dino_precondition_checks import PortalUtils
-from dino_utils.dino_configs import DinoConfigs
+from integration.dino_utils.dino_precondition_checks import PreconditionChecks
+from integration.dino_utils.dino_precondition_checks import PortalUtils
+from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 

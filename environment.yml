@@ -20,7 +20,12 @@ dependencies:
 - scikit-learn
 - scikit-image
 - keras
+- selenium
+- scipy
+- pillow
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6
   - sphinx-rtd-theme
+  - pytest-blockage
+  - junit2html

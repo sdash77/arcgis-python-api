@@ -25,17 +25,18 @@ BUILD_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "build"))
 
+TESTS_DIR = os.path.abspath(os.path.join(
+    GEOSAURUS_ROOT_DIR,
+    "tests"))
+
 MASTER_REGEX = ".*master.*"
 GEOS_PULL_REQUEST_REGEX = ".*geo.*pull.*request.*"
 PUB_REPO_PULL_REQUEST_REGEX = ".*pub.*repo.*pull.*request"
 PUBLISH_REGEX = ".*publish.*"
 LINUX_SLAVE_REGEX = ".*linux.*slave.*"
-SOURCE_CODE_TEST_REGEX = ".*source.*test.*"
-NOTEBOOK_TEST_REGEX = ".*notebook.*test.*"
-ALL_TEST_REGEX = ".*all.*test.*"
-DEV_SITE_REGEX = ".*dev.*site.*"
+RUN_TEST_SUITE_REGEX = ".*test.*suite.*"
 
-def run_shell_command(cmd):
+def run_shell_command(cmd, throw_exc_on_fail=True):
     try:
         log.info("Currently running command '{}'".format(cmd))
         byte_output = subprocess.check_output(cmd,
@@ -47,7 +48,8 @@ def run_shell_command(cmd):
     except subprocess.CalledProcessError as e:
         log.warn("cmd failed, returned non-zero code. Output:\n"\
                  "{}".format(e.output.decode("utf-8")))
-        raise e
+        if throw_exc_on_fail:
+            raise e
 
 def _bytes_to_str_cp850_workaround(bytes_):
     """Although python encodes everything in utf-8, The Windows CMD prompt 
