@@ -29,9 +29,7 @@ selenium_notebook_tests_to_run:
             300
         browser:
             "dayofweek"
-    paths:
-        - "{geosaurus_dir}/tests/notebooks/selenium/sanity2.ipynb"
-        - "{geosaurus_dir}/tests/notebooks/selenium/WidgetBasicAssertion.ipynb"
+    paths: [] 
 widget_unit_tests_to_run:
     config: {}
     paths:
