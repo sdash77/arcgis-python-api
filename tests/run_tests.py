@@ -152,8 +152,8 @@ def _display_results_in_browser(output_xml_files, output_dir):
             if os.path.exists(html_file):
                 os.remove(html_file)
             junit2html_path = os.path.join(TESTS_UTILS_DIR, "junit2html.py") 
-            run_shell_command(f"{sys.executable} {junit2html_path} "\
-                              f"{output_xml_file} {html_file}")
+            run_shell_command(f'"{sys.executable}" "{junit2html_path}" '\
+                              f'"{output_xml_file}" "{html_file}"')
             browser_urls_to_display.append(
                 pathlib.Path(os.path.abspath(html_file)).as_uri())
         if browser_urls_to_display:

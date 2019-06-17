@@ -40,6 +40,10 @@ def replace_placeholders(dict_, geosaurus_dir, arcgis_python_api_dir):
                         value[i] = os.path.normpath(value[i].format(
                             geosaurus_dir = geosaurus_dir,
                             arcgis_python_api_dir = arcgis_python_api_dir))
+            elif isinstance(value, str):
+                dict_[key] = value.format(
+                    geosaurus_dir = geosaurus_dir,
+                    arcgis_python_api_dir = arcgis_python_api_dir)
 
 def unglob_paths(dict_):
     """Unglobs all globable lists of paths in the whole suite"""

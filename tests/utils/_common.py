@@ -113,22 +113,28 @@ def run_pytest_on(paths, output_xml_path,
                   block_network_access=False,
                   max_fail = 9999999999999999,
                   throw_exc_on_fail = False):
-    pytest_args = ["-x",] + paths + [ 
-        f"--junit-xml={output_xml_path}",
-        f"--maxfail={max_fail}",
-        ]
-    if block_network_access:
-        pytest_args.append("--blockage")
-    log.debug(f"Running pytest.main({pytest_args})")
     if not throw_exc_on_fail:
+        pytest_args = ["-x",] + paths + [ 
+            f'--junit-xml={output_xml_path}',
+            f"--maxfail={max_fail}",
+            ]
+        if block_network_access:
+            pytest_args.append("--blockage")
         _run_pytest_subprocess(pytest_args)
     else:
+        paths = list(f'"{x}"' for x in paths)
+        pytest_args = ["-x",] + paths + [
+            f'--junit-xml="{output_xml_path}"',
+            f"--maxfail={max_fail}",
+            ]
+        if block_network_access:
+            pytest_args.append("--blockage")
         args = [ f'"{sys.executable}"', "-m", "pytest" ] + pytest_args
         run_shell_command(" ".join(args),
             throw_exc_on_fail = throw_exc_on_fail)
 
 def _run_pytest_subprocess(pytest_args):
-    args = ['python', '-m', 'pytest'] + pytest_args
+    args = [sys.executable, '-m', 'pytest'] + pytest_args
     log.debug(f"Running Popen({args},...")
     with Popen(args, cwd=TESTS_DIR, stderr=PIPE) as p:
         for line in p.stderr:

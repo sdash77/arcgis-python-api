@@ -12,8 +12,8 @@ from automation._common import *
 sys.path.append(os.path.join(GEOSAURUS_ROOT_DIR))
 from build import build
 
-def build_conda_package(*args, **kwargs):
-    build.build_conda_packages_for_all_os_and_py()
+def build_conda_package(build_number, *args, **kwargs):
+    build.build_conda_packages_for_all_os_and_py(build_number = build_number)
     _move_output_to_staging()   
 
 def _move_output_to_staging():
