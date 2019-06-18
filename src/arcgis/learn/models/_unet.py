@@ -1,5 +1,4 @@
-import json
-import os
+import os, json, tempfile
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._ssd import _raise_fastai_import_error, _EmptyData
@@ -111,7 +110,7 @@ class UnetClassifier(ArcGISModel):
 
         
         if data is None:
-            empty_data = _EmptyData(path='str', loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            empty_data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
             empty_data.class_mapping = class_mapping
             empty_data.color_mapping = color_mapping
             return cls(empty_data, **model_params, pretrained_path=str(model_file))
