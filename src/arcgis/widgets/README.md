@@ -4,6 +4,14 @@ This directory contains all information needed to build the ipywidget shipped wi
 
 # Setting up the environment
 
+### npm/node/yarn
+    - Make sure you have `nodejs`, `npm`, and `yarn` installed on your computer
+    - run `npm install -g webpack webpack-cli`, or `npm install --save-dev webpack-cli`, or any command that makes `webpack` calleable from your terminal/cmd
+    - in `geosaurus/src/arcgis/widgets/js`, run `yarn install` to install all JS dependencies
+    - If you are running into issues setting this up, contact David Vitale or Rhea Jackson
+
+### jupyter
+
 - Create a new blank conda environment, add all dependencies to the `arcgis` package to it (but not the `arcgis` package itself)
     - This can be accomplished by `conda env create -f /path/to/geosaurus/environment.yml`
 - Activate the above environment
@@ -41,20 +49,10 @@ This directory contains all information needed to build the ipywidget shipped wi
 ## When you're ready to merge into master
 
 - run `yarn run build:prod`, run through all tests in geosaurus/tests/widget and assert full functionality
+- Make sure all the files in `geosaurus/src/arcgis/widgets/js/dist/*` are included in your commit and gets included into master -- this is actually what the Python references when a map widget is made in a Jupyter Notebook
 
 ## Misc
 
 - npm version 8 might be required if the installation keeps hanging
 - the default `npm install` will only build the jupyterlab extension (it does not build the notebook extension)
     - An auto-building of the lab extension is needed for how jupuyterlab handles it's extensions
-- To download a notebook as HTML with the widget in it:
-    - 'Widget' > 'Save Widget State'
-    - 'File' > 'Download as' > 'HTML'
-    - Open the downloaded notebook's HTML file in a text editor
-    - Delete all <script> tags after the <title> tag on the top of the file
-    - Replace with the following:
-```
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js" crossorigin="anonymous"></script>
-```
