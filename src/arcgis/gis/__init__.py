@@ -394,6 +394,10 @@ class GIS(object):
            hasattr(me, 'role') and \
            me.role == "org_admin":
             try:
+                if self._is_hosted_nb_home:
+                    import warnings
+                    warnings.warn("You are logged on as %s with an administrator role, proceed with caution." % \
+                                  self.users.me.username)
                 if self.properties.isPortal == True:
                     from arcgis.gis.admin.portaladmin import PortalAdminManager
                     self.admin = PortalAdminManager(url="%s/portaladmin" % self._portal.url,
@@ -3128,6 +3132,61 @@ class ContentManager(object):
                 return False
         return False
 
+    #----------------------------------------------------------------------
+    def can_delete(self, item):
+        """
+        The 'can_delete' Item indicates whether an item can be erased or
+        not. When the returned response from 'can_delete' Item is true, the
+        item can be safely removed. When the returned response is false,
+        the item cannot be deleted due to a dependency or protection
+        setting.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item                Required `Item`. The `Item` to be erased.
+        ===============     ====================================================================
+
+        :returns: Dict
+
+
+        ===============     ====================================================================
+        **Status**          **Response**
+        ---------------     --------------------------------------------------------------------
+        success             {
+                            "itemId": "e03f626be86946f997c29d6dfc7a9666",
+                            "success": True
+                            }
+
+        ---------------     --------------------------------------------------------------------
+        failure             {
+                            "itemId": "a34c2e6711494e62b3b8d7452d4d6235",
+                            "success": false,
+                            "reason": {
+                            "message": "Unable to delete item. Delete protection is turned on."
+                            }
+                            }
+
+        ===============     ====================================================================
+
+        """
+        params = {'f' : 'json'}
+        url = "{resturl}content/users/{username}/items/{itemid}/canDelete".format(resturl=self._portal.resturl,
+                                                                           username=item.owner,
+                                                                           itemid=item.itemid)
+        try:
+            res = self._portal.con.post(url, params)
+            return res
+        except Exception as e:
+            return {
+                "itemId": item.itemid,
+                "success": False,
+                "reason": {
+                    "message": "{msg}".format(msg=e.args[0])
+                }
+            }
+        return False
+    #----------------------------------------------------------------------
     def add(self, item_properties, data=None, thumbnail=None,
             metadata=None, owner=None, folder=None):
         """ Adds content to the GIS by creating an item.
@@ -7214,7 +7273,8 @@ class Item(dict):
         title               Required string. The desired name of the exported service item.
         ---------------     --------------------------------------------------------------------
         export_format       Required string. The format to export the data to. Allowed types: 'Shapefile',
-                            'CSV', 'File Geodatabase', 'Feature Collection', 'GeoJson', 'Scene Package', 'KML'
+                            'CSV', 'File Geodatabase', 'Feature Collection', 'GeoJson', 'Scene Package', 'KML',
+                             and 'Excel'
         ---------------     --------------------------------------------------------------------
         parameters          Optional string. A JSON object describing the layers to be exported
                             and the export parameters for each layer.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Item/02r30000008s000000/
@@ -7237,7 +7297,8 @@ class Item(dict):
                    'Feature Collection',
                    'GeoJson',
                    'Scene Package',
-                   'KML']
+                   'KML',
+                   'Excel']
         user_id = self._user_id
         data_path = 'content/users/%s/export' % user_id
         params = {
@@ -9357,7 +9418,7 @@ class Item(dict):
         :return: dict
 
         """
-        if self.type not in ['Application']:
+        if not 'application' in self.type.lower():
             return None
         if redirect_uris is None:
             redirect_uris = []

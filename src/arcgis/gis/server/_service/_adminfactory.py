@@ -22,6 +22,25 @@ from .._common import ServerConnection
 from ._geodataservice import GeoData
 from ._layerfactory import Service
 from ..admin._services import Service as AdminService
+
+def _str_replace(mystring, rd):
+    """replaces a value based on a key/value pair where the
+    key is the text to replace and the value is the new value.
+
+    The find/replace is case insensitive.
+
+    """
+    import re
+    patternDict = {}
+    myDict = {}
+    for key,value in rd.items():
+        pattern = re.compile(re.escape(key), re.IGNORECASE)
+        patternDict[value] = pattern
+    for key in patternDict:
+        regex_obj = patternDict[key]
+        mystring = regex_obj.sub(key, mystring)
+    return mystring
+
 class AdminServiceFactory(type):
     """
     Generates an Administrative Service Object from a url or service object
@@ -38,14 +57,15 @@ class AdminServiceFactory(type):
             parent = Service(url=os.path.dirname(url), server=gis)
             return AdminServiceGen(parent, gis)
         elif isinstance(service, (NetworkDataset)):
-            url = url.lower().replace("naserver", "mapserver")
+            rd = {'naserver', 'MapServer'}
+            url = _str_replace(url, rd)
             parent = Service(url=url, server=gis)
             return AdminServiceGen(parent, gis)
         else:
+            rd = {'/rest/': '/admin/'}
             connection = service._con
             admin_url = "%s.%s" % (
-                os.path.dirname(url).lower().replace(
-                    "/rest/", "/admin/"),
+                _str_replace(os.path.dirname(url), rd),
                 os.path.basename(url))
             return AdminService(url=admin_url, gis=gis)
         return type.__call__(cls, service, gis, False)

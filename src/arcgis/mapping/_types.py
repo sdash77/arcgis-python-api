@@ -1822,6 +1822,58 @@ class MapImageLayerManager(_GISResource):
         }
         return self._con.post(url, params)
     #----------------------------------------------------------------------
+    def import_tiles(self, item,
+                     levels=None, extent=None,
+                     merge=False, replace=False):
+        """
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item                Required ItemId or Item. The TPK file's item id.
+                            This TPK file contains to-be-extracted bundle files
+                            which are then merged into an existing cache service.
+        ---------------     ----------------------------------------------------
+        levels              Optional String / List of integers, The level of details
+                            to update. Example: "1,2,10,20" or [1,2,10,20]
+        ---------------     ----------------------------------------------------
+        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
+                            example: "-100,-50,200,500" or
+                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is false and applicable to
+                            compact cache storage format. It controls whether
+                            the bundle files from the TPK file are merged with
+                            the one in the existing cached service. Otherwise,
+                            the bundle files are overwritten.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean. Default is false, applicable to
+                            compact cache storage format and used when
+                            merge=true. It controls whether the new tiles will
+                            replace the existing ones when merging bundles.
+        ===============     ====================================================
+
+        :returns: Dict
+
+        """
+        params = {
+            'f' : 'json',
+            'sourceItemId' : None,
+            'extent' : extent,
+            'levels' : levels,
+            'mergeBundle' : merge,
+            'replaceTiles' : replace
+        }
+        if isinstance(item, str):
+            params['sourceItemId'] = item
+        elif isinstance(item, Item):
+            params['sourceItemId'] = item.itemid
+        else:
+            raise ValueError("The `item` must be a string or Item")
+        url = self._url + "/importTiles"
+        res = self._con.post(url, params)
+        return res
+    #----------------------------------------------------------------------
     def update_tiles(self, levels=None, extent=None):
         """
         The starts tile generation for ArcGIS Online.  The levels of detail

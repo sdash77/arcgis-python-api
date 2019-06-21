@@ -357,6 +357,216 @@ class FeatureLayer(Layer):
 
         result = self.query(query_string, return_geometry=False, out_fields=attribute,return_distinct_values=True)
         return [feature.attributes[attribute] for feature in result.features]
+    #----------------------------------------------------------------------
+    def query_top_features(self,
+                           top_filter=None,
+                           where=None,
+                           objectids=None,
+                           start_time=None,
+                           end_time=None,
+                           geometry_filter=None,
+                           out_fields="*",
+                           return_geometry=True,
+                           return_centroid=False,
+                           max_allowable_offset=None,
+                           out_sr=None,
+                           geometry_precision=None,
+                           return_ids_only=False,
+                           return_extents_only=False,
+                           order_by_field=None,
+                           return_z=False,
+                           return_m=False,
+                           result_type=None,
+                           as_df=True):
+        """
+        The `query_top_features` is performed on a feature layer. This operation returns a feature set or
+        spatially enabled dataframe based on the top features by order within a group. For example, when
+        querying counties in the United States, you want to return the top five counties by population in
+        each state. To do this, you can use `query_top_feaures` to group by state name, order by desc on
+        the population and return the first five rows from each group (state).
+
+        The top_filter parameter is used to set the group by, order by, and count criteria used in
+        generating the result. The operation also has many of the same parameters (for example, where
+        and geometry) as the layer query operation. However, unlike the layer query operation,
+        `query_top_feaures` does not support parameters such as outStatistics and its related parameters
+        or return distinct values. Consult the advancedQueryCapabilities layer property for more details.
+
+        If the feature layer collection supports the `query_top_feaures` operation, it will include
+        "supportsTopFeaturesQuery": true, in the advancedQueryCapabilities layer property.
+
+        ================================     ====================================================================
+        **Argument**                         **Description**
+        --------------------------------     --------------------------------------------------------------------
+        top_filter                           Required Dict. The `top_filter` define the aggregation of the data.
+
+                                               - groupByFields define the field or fields used to aggregate
+                                                               your data.
+                                               - topCount defines the number of features returned from the top
+                                                          features query and is a numeric value.
+                                               - orderByFields defines the order in which the top features will
+                                                               be returned. orderByFields can be specified in
+                                                               either ascending (asc) or descending (desc)
+                                                               order, ascending being the default.
+
+                                             Example: {"groupByFields": "worker", "topCount": 1,
+                                                       "orderByFields": "employeeNumber"}
+        --------------------------------     --------------------------------------------------------------------
+        where	                             Optional String. A WHERE clause for the query filter. SQL '92 WHERE
+                                             clause syntax on the fields in the layer is supported for most data
+                                             sources.
+        --------------------------------     --------------------------------------------------------------------
+        objectids	                     Optional List. The object IDs of the layer or table to be queried.
+        --------------------------------     --------------------------------------------------------------------
+        start_time                           Optional Datetime. The starting time to query for.
+        --------------------------------     --------------------------------------------------------------------
+        end_time                             Optional Datetime. The end date to query for.
+        --------------------------------     --------------------------------------------------------------------
+        geometry_filter                      Optional from arcgis.geometry.filter. Allows for the information to
+                                             be filtered on spatial relationship with another geometry.
+        --------------------------------     --------------------------------------------------------------------
+        out_fields                           Optional String. The list of fields to include in the return results.
+        --------------------------------     --------------------------------------------------------------------
+        return_geometry                      Optional Boolean. If False, the query will not return geometries.
+                                             The default is True.
+        --------------------------------     --------------------------------------------------------------------
+        return_centroid                      Optional Boolean. If True, the centroid of the geometry will be
+                                             added to the output.
+        --------------------------------     --------------------------------------------------------------------
+        max_allowable_offset                 Optional float. This option can be used to specify the
+                                             max_allowable_offset to be used for generalizing geometries returned
+                                             by the query operation.
+                                             The max_allowable_offset is in the units of out_sr. If out_sr is not
+                                             specified, max_allowable_offset is assumed to be in the unit of the
+                                             spatial reference of the layer.
+        --------------------------------     --------------------------------------------------------------------
+        out_sr                               Optional Integer. The WKID for the spatial reference of the returned
+                                             geometry.
+        --------------------------------     --------------------------------------------------------------------
+        geometry_precision                   Optional Integer. This option can be used to specify the number of
+                                             decimal places in the response geometries returned by the query
+                                             operation.
+                                             This applies to X and Y values only (not m or z-values).
+        --------------------------------     --------------------------------------------------------------------
+        return_ids_only                      Optional boolean. Default is False.  If true, the response only
+                                             includes an array of object IDs. Otherwise, the response is a
+                                             feature set.
+        --------------------------------     --------------------------------------------------------------------
+        return_extent_only                   Optional boolean. If true, the response only includes the extent of
+                                             the features that would be returned by the query. If
+                                             returnCountOnly=true, the response will return both the count and
+                                             the extent.
+                                             The default is false. This parameter applies only if the
+                                             supportsReturningQueryExtent property of the layer is true.
+        --------------------------------     --------------------------------------------------------------------
+        order_by_field                       Optional Str. Optional string. One or more field names on which the
+                                             features/records need to be ordered. Use ASC or DESC for ascending
+                                             or descending, respectively, following every field to control the
+                                             ordering.
+                                             example: STATE_NAME ASC, RACE DESC, GENDER
+        --------------------------------     --------------------------------------------------------------------
+        return_z                             Optional boolean. If true, Z values are included in the results if
+                                             the features have Z values. Otherwise, Z values are not returned.
+                                             The default is False.
+        --------------------------------     --------------------------------------------------------------------
+        return_m                             Optional boolean. If true, M values are included in the results if
+                                             the features have M values. Otherwise, M values are not returned.
+                                             The default is false.
+        --------------------------------     --------------------------------------------------------------------
+        result_type                          Optional String. The result_type can be used to control the number
+                                             of features returned by the query operation.
+                                             Values: none | standard | tile
+        --------------------------------     --------------------------------------------------------------------
+        as_df                                Optional Boolean. If False, the result is returned as a FeatureSet.
+                                             If True (default) the result is returned as a spatially enabled dataframe.
+        ================================     ====================================================================
+
+
+        :returns: Default - pd.DataFrame, when as_df=False returns a FeatureSet. If return_count_only is True, the
+                  return type is Integer. If the return_ids_only is True, a list of value is returned.
+
+
+        """
+        import datetime as _datetime
+        return_count_only = False
+        params = {
+            'f' : "json",
+        }
+        params['returnCentroid'] = return_centroid
+        if where:
+            params['where'] = where
+        else:
+            params['where'] = "1=1"
+        if objectids and isinstance(objectids, (list, tuple)):
+            params['objectIds'] = ",".join([str(obj) for obj in objectids])
+        elif objectids and isinstance(objectids, str):
+            params['objectIds'] = objectids
+        if start_time and isinstance(start_time, _datetime.datetime):
+            start_time = str(int(start_time.timestamp() * 1000))
+        if end_time and isinstance(start_time, _datetime.datetime):
+            end_time = str(int(start_time.timestamp() * 1000))
+        if start_time and not end_time:
+            params['time'] = "%s, null" % start_time
+        elif end_time and not start_time:
+            params['time'] = "null, %s" % end_time
+        elif start_time and end_time:
+            params['time'] = "%s, %s" % (start_time, end_time)
+        if geometry_filter and \
+               isinstance(geometry_filter, GeometryFilter):
+            for key, val in geometry_filter.filter:
+                params[key] = val
+        elif geometry_filter and \
+                 isinstance(geometry_filter, dict):
+            for key, val in geometry_filter.items():
+                params[key] = val
+        if top_filter:
+            params['topFilter'] = top_filter
+        if out_fields and isinstance(out_fields, (list, tuple)):
+            params['outFields'] = ",".join(out_fields)
+        elif out_fields and isinstance(out_fields, str):
+            params['outFields'] = out_fields
+        else:
+            params['outFields'] = "*"
+        if return_geometry == False:
+            params['returnGeometry'] = False
+        elif return_geometry == True:
+            params['returnGeometry'] = True
+        if max_allowable_offset:
+            params['maxAllowableOffset'] = max_allowable_offset
+        if geometry_precision:
+            params['geometryPrecision'] = geometry_precision
+        if out_sr:
+            params['outSR'] = out_sr
+        if return_ids_only:
+            params['returnIdsOnly'] = return_ids_only
+        if return_count_only:
+            params['returnCountOnly'] = return_count_only
+        if return_z:
+            params['returnZ'] = return_z
+        if return_m:
+            params['returnM'] = return_m
+        if result_type:
+            params['resultType'] = result_type
+        else:
+            params['resultType'] = "none"
+        if order_by_field:
+            params['orderByFields'] = order_by_field
+        url = self._url + "/`query_top_feaures`"
+        if as_df and \
+           return_count_only == False and \
+           return_ids_only == False:
+            return self._query_df(url, params)
+        elif as_df == False and\
+             return_count_only == False and \
+             return_ids_only == False:
+            res = self._con.post(url, params)
+            return FeatureSet.from_dict(res)
+        elif return_count_only:
+            res = self._con.post(url, params)
+            return res
+        elif return_ids_only:
+            res = self._con.post(url, params)
+            return res
+        return None
 
     # ----------------------------------------------------------------------
     def query(self,
