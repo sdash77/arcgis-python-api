@@ -1,6 +1,7 @@
 """ Defines store functions for working with Workers.
 """
 
+import math
 from ... import workforce
 from .utils import add_features, update_features, remove_features, validate
 
@@ -77,7 +78,9 @@ def add_workers(project, workers):
         add_features(project.workers_layer, features, use_global_ids)
 
         # add worker named users to the project's group.
-        project.group.add_users([worker.user_id for worker in workers])
+        max_add_per_call = 25
+        for i in range(0, math.ceil(len(workers) / max_add_per_call)):
+            project.group.add_users([w.user_id for w in workers[i * max_add_per_call:(i * max_add_per_call) + max_add_per_call]])
     return workers
 
 

@@ -2683,7 +2683,7 @@ class _FeatureAnalysisTools(_AsyncService):
                     return_to_start=True,
                     end_layer=None,
                     end_layer_route_id_field=None,
-                    travel_mode="Driving",
+                    travel_mode="Driving Time",
                     stop_service_time=0,
                     max_route_time=525600,
                     include_route_layers=False,

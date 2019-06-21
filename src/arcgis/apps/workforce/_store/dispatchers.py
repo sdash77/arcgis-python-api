@@ -1,6 +1,7 @@
 """ Defines store functions for working with Workers.
 """
 
+import math
 from ... import workforce
 from .utils import add_features, update_features, remove_features, validate
 
@@ -95,7 +96,9 @@ def add_dispatchers(project, dispatchers):
         add_features(project.dispatchers_layer, features, use_global_ids)
 
     # add dispatcher named users to the project's group.
-    project.group.add_users([dispatcher.user_id for dispatcher in dispatchers])
+    max_add_per_call = 25
+    for i in range(0, math.ceil(len(dispatchers) / max_add_per_call)):
+        project.group.add_users([d.user_id for d in dispatchers[i * max_add_per_call:(i * max_add_per_call) + max_add_per_call]])
     return dispatchers
 
 

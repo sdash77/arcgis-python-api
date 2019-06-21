@@ -324,6 +324,7 @@ class GIS(object):
 
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
+                self._portal.con.token = self._utoken
                 self._portal.con._auth = "BUILTIN"
 
         except Exception as e:

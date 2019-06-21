@@ -133,15 +133,15 @@ def connect_origins_to_destinations(origins_layer,
 
                                            UTC-refers to Coordinated Universal Time.
     -----------------------------------    ---------------------------------------------------------
-    include_route_layers                   Optional Boolean. When include_route_layers is set to true, each route from the result is also saved as a route layer item. A route layer includes all the
+    include_route_layers                   Optional Boolean. When include_route_layers is set to True, each route from the result is also saved as a route layer item. A route layer includes all the
                                            information for a particular route such as the stops assigned to the route as well as the travel directions. Creating route layers is useful if you want
                                            to share individual routes with other members in your organization. The route layers use the output feature service name provided in the outputName
                                            parameter as a prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
 
                                            Caution: Route layers cannot be created when the output is a feature collection. The task will raise an error if output_name is not specified
-                                           (which indicates feature collection output) and include_route_layers is true.
+                                           (which indicates feature collection output) and include_route_layers is True.
 
-                                           The maximum number of route layers that can be created is 1,000. If the result contains more than 1,000 routes and include_route_layers is true,
+                                           The maximum number of route layers that can be created is 1,000. If the result contains more than 1,000 routes and include_route_layers is True,
                                            the task will only create the output feature service.
     -----------------------------------    ---------------------------------------------------------
     output_name                            Optional string. If provided, the task will create a feature layer of the results. You define the name of the layer. If output_name is not supplied,
@@ -151,16 +151,12 @@ def connect_origins_to_destinations(origins_layer,
 
                                            #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the origins_layer and destinations_layer that intersect the
                                               bounding box will be analyzed.
-                                           #. Output Spatial Reference (outSR)
-
-                                           * If the output is a feature service, the spatial reference will be the same as originsLayer. Setting outSR for feature services has no effect.
-
-                                           * If the output is a feature collection, the features will be in the spatial reference of the outSRvalue or the spatial reference of originsLayer
-                                             when outSR is not specified.
+                                           #. Output Spatial Reference (outSR)-If the output is a feature service, the spatial reference will be the same as originsLayer. Setting outSR for feature services has no effect.
+                                              If the output is a feature collection, the features will be in the spatial reference of the outSRvalue or the spatial reference of originsLayer when outSR is not specified.
     -----------------------------------    ---------------------------------------------------------
     gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -----------------------------------    ---------------------------------------------------------
-    estimate                               Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    estimate                               Optional Boolean. Is True, the number of credits needed to run the operation will be returned as a float.
     -----------------------------------    ---------------------------------------------------------
     point_barrier_layer                    Optional layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) when traveling on the underlying streets.
 
@@ -185,6 +181,7 @@ def connect_origins_to_destinations(origins_layer,
         "unassigned_origins_layer" : layer (FeatureCollection)
 
         "unassigned_destinations_layer" : layer (FeatureCollection)
+
     .. code-block:: python
 
         USAGE EXAMPLE: To retrieve trvel modes and run connect_origins_to_destinations tool.
@@ -685,7 +682,7 @@ def find_nearest(
                                 
                                  ``UTC``-refers to Coordinated Universal Time.                                                                   
     -------------------------    ---------------------------------------------------------
-    include_route_layers         Optional boolean. When ``include_route_layers`` is set to true, each route from the result is also saved as a route layer item. 
+    include_route_layers         Optional boolean. When ``include_route_layers`` is set to True, each route from the result is also saved as a route layer item. 
                                  A route layer includes all the information for a particular route such as the stops assigned to the route as well 
                                  as the travel directions. Creating route layers is useful if you want to share individual routes with other members in your organization. 
                                  The route layers use the output feature service name provided in the ``output_name`` parameter as a prefix and the route name generated as part 
@@ -694,10 +691,10 @@ def find_nearest(
                                  **Caution:**
 
                                  Route layers cannot be created when the output is a feature collection. The task will raise an error if ``output_name`` is not 
-                                 specified (which indicates feature collection output) and ``include_route_layers`` is true.
+                                 specified (which indicates feature collection output) and ``include_route_layers`` is True.
 
                                  The maximum number of route layers that can be created is 1,000. If the result contains more than 1,000 routes 
-                                 and ``include_route_layers`` is true, the task will only create the output feature service.
+                                 and ``include_route_layers`` is True, the task will only create the output feature service.
     -------------------------    ---------------------------------------------------------
     point_barrier_layer          Optional layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) when traveling on the underlying streets.
 
@@ -781,7 +778,7 @@ def plan_routes(
         return_to_start=True,
         end_layer=None,
         end_layer_route_id_field=None,
-        travel_mode="Driving",
+        travel_mode="Driving Time",
         stop_service_time=0,
         max_route_time=525600,
         include_route_layers=False,
@@ -793,65 +790,265 @@ def plan_routes(
         line_barrier_layer=None,
         polygon_barrier_layer=None):
     """
-    You provide a set of stops and the number of vehicles available to visit the stops, and Plan Routes determines how
-    to efficiently assign the stops to the vehicles and route the vehicles to the stops.
 
-    Use this tool to plan work for a mobile team of inspectors, appraisers, in-home support service providers, and
-    others; deliver or pick up items from remote locations; or offer transportation services to people.
+    .. image:: _static/images/plan_routes/plan_routes.png 
+    
+    .. |balanced| image:: _static/images/plan_routes/balanced.png
+    .. |partially_balanced| image:: _static/images/plan_routes/partially_balanced.png 
+    .. |unbalanced| image:: _static/images/plan_routes/unbalanced.png
 
-    Parameters
-    ----------
+    The ``plan_routes`` method determines how to efficiently divide tasks among a mobile workforce.
 
-    stops_layer : Required layer (see Feature Input in documentation)
+    You provide the input, which includes a set of stops and the number of vehicles available to 
+    visit the stops, and the tool assigns the stops to vehicles and returns routes showing how each 
+    vehicle can reach their assigned stops in the least amount of time.
 
-    route_count : Required int
+    With ``plan_routes``, mobile workforces reach more jobsites in less time, which increases 
+    productivity and improves customer service. Organizations often use ``plan_routes`` to:
 
-    max_stops_per_route : Required int
+    * Inspect homes, restaurants, and construction sites
+    * Provide repair, installation, and technical services
+    * Deliver items and small packages
+    * Make sales calls
+    * Provide van transportation from spectators' homes to events
 
-    route_start_time : Required datetime.datetime
+    The output from ``plan_routes`` includes a layer of routes showing the shortest paths to visit 
+    the stops; a layer of the stops assigned to routes, as well as any stops that couldn't be reached 
+    due to the given parameter settings; and a layer of directions containing the travel itinerary for each route.
 
-    start_layer : Required layer (see Feature Input in documentation)
+    ============================    ==================================================================================================    
+    **Parameter**                   **Description**
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    stops_layer                     Required feature layer. The points that the vehicles, drivers, or routes, should visit.
+                                    The fields on the input stops are included in the output stops, so if your input 
+                                    layer has a field such as Name, Address, or ProductDescription, that information 
+                                    will be available in the results. See :ref:`Feature Input<FeatureInput>`.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    route_count                     Required integer. The number of vehicles that are available to visit the stops. 
+                                    The method supports up to 100 vehicles. 
+                                 
+                                    The default value is 0.
 
-    start_layer_route_id_field : Optional string
+                                    The method may be able to find and return a solution that uses fewer vehicles than 
+                                    the number you specify for this parameter. The number of vehicles returned also 
+                                    depends on four other parameters: the total number of stops in ``stops_layer``, the 
+                                    number of stops per vehicle you allow (``max_stops_per_route``), the travel time between 
+                                    stops, the time spent at each stop (``stop_service_time``), and any limit you set on the 
+                                    total route time per vehicle (``max_route_time``).
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    max_stops_per_route             Required integer. The maximum number of stops a route, or vehicle, is allowed to visit. 
+                                    The largest value you can specify is 200. The default value is zero.
 
-    return_to_start : Optional bool
+                                    This is one of two parameters that balance the overall workload across routes. 
+                                    The other is ``max_route_time``.
 
-    end_layer : Optional layer (see Feature Input in documentation)
+                                    By lowering the maximum number of stops that can be assigned to each vehicle, the vehicles 
+                                    are more likely to have an equal number of stops assigned to them. This helps 
+                                    balance workloads among drivers. The drawback, however, is that it may result in a 
+                                    solution that is less efficient.
 
-    end_layer_route_id_field : Optional string
+                                    By increasing the stops per vehicle, the tool has more freedom to find more efficient solutions; 
+                                    however, the workload may be unevenly distributed among drivers and vehicles. Note that you can 
+                                    balance workloads by time instead of number of stops by specifying a value for the ``max_route_time`` parameter.
 
-    travel_mode : Optional string
+                                    The following examples demonstrate the effects of limiting the maximum stops per vehicle or the 
+                                    total time per vehicle. In all of these examples, two routes start at the same location 
+                                    and visit a total of six stops.
+                                 
+                                    +----------------------------+----------------------------------------------------------------------------------------------------------+
+                                    | |balanced|                 | Balanced travel times and stops per route:                                                               |
+                                    |                            |                                                                                                          |
+                                    |                            | The stops are more or less uniformly spread apart, so setting ``max_stops_per_route``=3 to evenly        |
+                                    |                            | distribute the workload results in routes that are roughly the same duration.                            |
+                                    |                            |                                                                                                          |           
+                                    +----------------------------+----------------------------------------------------------------------------------------------------------+
+                                    | |partially_balanced|       | Balanced stops per route but unbalanced travel times:                                                    |
+                                    |                            |                                                                                                          |
+                                    |                            | Five of the six stops are clustered near the starting location, but one stop is set apart                |
+                                    |                            | and requires a much longer drive to be reached. Dividing the stops equally between the two               |  
+                                    |                            | routes (``max_stops_per_route``=3) causes unbalanced travel times.                                       |
+                                    +----------------------------+----------------------------------------------------------------------------------------------------------+
+                                    | |unbalanced|               | Unbalanced stops per route but balanced travel times:                                                    |
+                                    |                            |                                                                                                          |
+                                    |                            | The stops are in the same location as the previous graphic. By increasing the value of                   |
+                                    |                            | ``max_stops_per_route`` to 4, and limiting the total travel time per vehicle (``max_route_time``),       |    
+                                    |                            | the travel times are balanced even though one route visits more stops.                                   |
+                                    +----------------------------+----------------------------------------------------------------------------------------------------------+
+                                                            
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    route_start_time                Required datetime.datetime. Specify when the vehicles or people start their routes. 
+                                    The time is specified as datetime.
+                                    The starting time value is the same for all routes; that is, all routes start at the same time.
 
-    stop_service_time : Optional float
+                                    Time zones affect what value you assign to ``route_start_time``. The time zone for the start time is 
+                                    based on the time zone in which the starting point is geographically located. For instance, 
+                                    if you have one route starting location and it is located in Pacific Standard Time (PST), 
+                                    the time you specify for ``route_start_time`` is in PST.
 
-    max_route_time : Optional float
+                                    There are a couple of scenarios to beware of given that starting times are based on where 
+                                    the starting points are located. One situation to be careful of is when you are located in 
+                                    one time zone but your starting locations are in another times zone. For instance, assume 
+                                    you are in Pacific Standard Time (UTC-8:00) and the vehicles you are routing are stationed 
+                                    in Mountain Standard Time (UTC-7:00). If it is currently 9:30 a.m. PST (10:30 a.m. MST) 
+                                    and your vehicles need to begin their routes in 30 minutes, you would set the start time 
+                                    to 11:00 a.m. That is, the starting locations for the routes are in the Mountain time zone, 
+                                    and it is currently 10:30 a.m. there, therefore, a starting time of 30 minutes from now is 11:00 a.m. 
+                                    Make sure you set the parameter according to the proper time zone.
 
-    include_route_layers : Optional bool
+                                    The other situation that requires caution is where starting locations are spread across 
+                                    multiple time zones. The time you set for ``route_start_time`` is specific to the time zone in 
+                                    which the starting location is—regardless of whether there are one or more starting locations 
+                                    in the problem you submit. For instance, if one route starts from a point in PST and another 
+                                    route starts from MST, and you enter 11:00 a.m. as the start time, the route in PST will start 
+                                    at 11:00 a.m. PST and the route in MST will start at 11:00 a.m. MST—a one-hour difference. The 
+                                    starting times are the same in local time, but offset in actual time, or UTC.
 
-    output_name : Optional string
+                                    The service automatically determines the time zones of the input starting locations (``start_layer``) for you.
 
-    context : Optional string
+                                    Examples:
 
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+                                    * datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. Routes will depart their 
+                                      starting locations at 8:00 a.m., 22 October. Any routes with starting points in Mountain 
+                                      Standard Time start at 8:00 a.m., 22 October 2014 MST; any routes with starting points in 
+                                      Pacific Standard Time start at 8:00 a.m. 22 October 2014 PST, and so on.
+                                    * datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    start_layer                     Required feature layer. Provide the locations where the people or vehicles start their routes. 
+                                    You can specify one or many starting locations.
 
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+                                    If specifying one, all routes will start from the one location. If specifying many starting 
+                                    locations, each route needs exactly one predefined starting location, and the following criteria must be met:
 
-    point_barrier_layer: Optional FeatureSet/FeatureLayer
+                                    The number of routes (``route_count``) must equal the number of points in ``start_layer``. (However, 
+                                    when only one point is included in ``start_layer``, it is assumed that all routes start from 
+                                    the same location, and the two numbers can be different.)
+                                    The starting location for each route must be identified with the ``start_layer_route_id_field`` 
+                                    parameter. This implies that the input points in ``start_layer`` have a unique identifier. 
+                                    Bear in mind that if you also have many ending locations, those locations need to be 
+                                    predetermined as well. The predetermined start and end locations of each route are 
+                                    paired together by matching route ID values.
+                                    See the the section of this topic entitled Starting and ending locations of 
+                                    routes to learn more. See :ref:`Feature Input<FeatureInput>`.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    start_layer_route_id_field      Optional string. Choose a field that uniquely identifies points in start_layer. 
+                                    This parameter is required when ``start_layer`` has more than one point; it is ignored otherwise.
 
-    line_barrier_layer: Optional FeatureSet/FeatureLayer
+                                    The ``start_layer_route_id_field`` parameter helps identify where routes begin and 
+                                    indicates the names of the output routes.
 
-    polygon_barrier_layer: Optional FeatureSet/FeatureLayer
+                                    See the the section of this topic entitled Starting and ending locations 
+                                    of routes to learn more.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    return_to_start                 Optional boolean. A True value indicates each route must end its trip at the same place where 
+                                    it started. The starting location is defined by the ``start_layer`` and ``start_layer_route_id_field`` parameters.
 
-    Returns
-    -------
-    dict with the following keys:
-       "routes_layer" : layer (FeatureCollection)
-       "assigned_stops_layer" : layer (FeatureCollection)
-       "unassigned_stops_layer" : layer (FeatureCollection)
+                                    The default value is True.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    end_layer                       Optional layer. Provide the locations where the people or vehicles end their routes.
+
+                                    If ``end_layer`` is not specified, ``return_to_start`` must be set to True.
+
+                                    You can specify one or many ending locations.
+ 
+                                    If specifying one, all routes will end at the one location. If specifying many ending 
+                                    locations, each route needs exactly one predefined ending location, and the following criteria must be met:
+
+                                    + The number of routes (``route_count``) must equal the number of points in ``end_layer``. 
+                                     (However, when only one point is included in ``end_layer``, it is assumed that all routes 
+                                     end at the same location, and the two numbers can be different.)
+                                    + The ending location for each route must be identified with the ``start_layer_route_id_field`` 
+                                     parameter. This implies that the input points in endLayer have a unique identifier. 
+                                     Bear in mind that if you also have many starting locations, those locations need to be 
+                                     predetermined as well. The predetermined start and end locations of each route are paired 
+                                     together by matching route ID values. See :ref:`Feature Input<FeatureInput>`.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    end_layer_route_id_field        Optional string. Choose a field that uniquely identifies points in ``end_layer``. 
+                                    This parameter is required when ``end_layer`` has more than one point; it is ignored 
+                                    if there is one point or if ``return_to_start`` is True.
+ 
+                                    The ``end_layer_route_id_field`` parameter helps identify where routes end and indicates the names of the output routes.
+  
+                                    See the the section of this topic entitled Starting and ending locations of routes to learn more.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    travel_mode                     Optional string. Optional string. Specify the mode of transportation for the analysis.
+                                   
+                                    Choice list: ['Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    stop_service_time               Optional float. Indicates how much time, in minutes, is spent at each stop. 
+                                    The units are minutes. All stops are assinged the same service duration from 
+                                    this parameter—unique values for individual stops cannot be specified with this service.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    max_route_time                  Optional float. The amount of time you specify here limits the maximum duration of each route. 
+                                    The maximum route time is an accumulation of travel time and the total service time at visited 
+                                    stops (``stop_service_time``). This parameter is commonly used to prevent drivers from working 
+                                    too many hours or to balance workloads across routes or drivers.
+   
+                                    The units are 'minutes'. The default value, which is also the maximum value, is 525600 minutes, or one year.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    include_route_layers            Optional boolean. When ``include_route_layers`` is set to True, each route from the result is also 
+                                    saved as a route layer item. A route layer includes all the information for a particular route such as the stops assigned to 
+                                    the route as well as the travel directions. Creating route layers is useful if you want to share individual routes with other 
+                                    members in your organization. The route layers use the output feature service name provided in the ``output_name`` parameter as a 
+                                    prefix and the route name generated as part of the analysis is added to create a unique name for each route layer.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    output_name                     Optional string. If provided, the method will create a feature service of the results. You define 
+                                    the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    context                         Optional string. Context contains additional settings that affect task execution. For ``plan_routes``, there are two settings:
+  
+                                    #. Extent (``extent``)—A bounding box that defines the analysis area. Only those points in the inputLayer, start_layer, and endLayer that are within the bounding box can be visited by routes.
+
+                                    #. Output Spatial Reference (``outSR``)-If the output is a feature service, the spatial reference will be the same as ``stops_layer``. Setting outSR for feature services has no effect.
+                                       If the output is a feature collection, the features will be in the spatial reference of the outSR value or the spatial reference of ``stops_layer`` when outSR is not specified.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    gis                             Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    estimate                        Optional boolean. If True, the number of credits to run the operation will be returned.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    point_barrier_layer             Optional feature layer. Specify one or more point features that act as temporary restrictions (in other words, barriers) when traveling on the underlying streets.
+
+                                    A point barrier can model a fallen tree, an accident, a downed electrical line, or anything that completely blocks traffic at a specific position along the street. Travel is permitted on the street but not through the barrier. See :ref:`Feature Input<FeatureInput>`.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    line_barrier_layer              Optional feature layer. Specify one or more line features that prohibit travel anywhere the lines intersect the streets.
+
+                                    A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across several street segments can be modeled with a line barrier. See :ref:`Feature Input<FeatureInput>`.
+    ----------------------------    --------------------------------------------------------------------------------------------------
+    polygon_barrier_layer           Optional feature layer. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+
+                                    One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
+    ============================    ==================================================================================================
+
+    :returns: feature layer Item if ``output_name`` is specified, else dict with the following keys:
+        
+        
+        "routes_layer" : layer (FeatureCollection)
+        
+        "assigned_stops_layer" : layer (FeatureCollection)
+       
+        "unassigned_stops_layer" : layer (FeatureCollection)
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To plan routes to provide cab from employee residence to office.
+        route = plan_routes(stops_layer=employee_residence,
+                            route_count=4,
+                            max_stops_per_route=4,
+                            route_start_time=datetime(2019, 6, 20, 6, 0),
+                            start_layer=office_location,
+                            start_layer_route_id_field='n_office',
+                            return_to_start=False,
+                            end_layer=office_location,
+                            end_layer_route_id_field='n_office',
+                            travel_mode='Driving Time',
+                            stop_service_time=5,
+                            include_route_layers=False,
+                            output_name='plan route for employees')
+
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    if isinstance(travel_mode, str):
+        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+        travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]     
     return gis._tools.featureanalysis.plan_routes(
         stops_layer,
         route_count,
