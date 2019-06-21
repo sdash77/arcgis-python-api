@@ -27,7 +27,7 @@ def _str_replace(mystring, rd):
     """replaces a value based on a key/value pair where the
     key is the text to replace and the value is the new value.
 
-    The find/replace is case insensative.
+    The find/replace is case insensitive.
 
     """
     import re
