@@ -1211,39 +1211,86 @@ def trace_downstream(
         gis=None,
         estimate=False):
     """
-    Determine the flow paths in a downstream direction from the locations you specify.
+    .. image:: _static/images/trace_downstream/trace_downstream.png 
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
+    The ``trace_downstream`` method determines the trace, or flow path, in a downstream direction from the points in your analysis layer.
 
-    split_distance : Optional float
+    For example, suppose you have point features representing sources of contamination and you want to determine where in your study 
+    area the contamination will flow. You can use ``trace_downstream`` to identify the path the contamination will take. This trace 
+    can also be divided into individual line segments by specifying a distance value and units. The line being returned can be the 
+    total length of the flow path, a specified maximum trace length, or clipped to area features such as your study area. In many 
+    cases, if the total length of the trace path is returned, it will be from the source all the way to the ocean.
 
-    split_units : Optional string
+    =====================================    =========================================================
+    **Argument**                             **Description**
+    -------------------------------------    ---------------------------------------------------------
+    input_layer                              Required feature layer. The point features used for the starting location of a downstream trace. 
+                                             See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------    ---------------------------------------------------------
+    split_distance                           Optional float. The trace line will be split into multiple lines where each line is of the specified length. 
+                                             The resulting trace will have multiple line segments, each with fields FromDistance and ToDistance.
+    -------------------------------------    ---------------------------------------------------------
+    split_units                              Optional string. The units used to specify split distance.
 
-    max_distance : Optional float
+                                             Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
 
-    max_distance_units : Optional string
+                                             The default is 'Kilometers'.
+    -------------------------------------    ---------------------------------------------------------
+    max_distance                             Optional float. Determines the total length of the line that will be returned. If you provide a 
+                                             ``bounding_polygon_layer`` to clip the trace, the result will be clipped to the features in ``bounding_polygon_layer``, 
+                                             regardless of the distance you enter here.
+    -------------------------------------    ---------------------------------------------------------
+    max_distance_units                       Optional string. The units used to specify maximum distance.
 
-    bounding_polygon_layer : Optional layer (see Feature Input in documentation)
+                                             Choice list: ['Meters', 'Kilometers', 'Feet' 'Yards', 'Miles'].
 
-    source_database : Optional string
+                                             The default is 'Kilometers'.
+    -------------------------------------    ---------------------------------------------------------
+    bounding_polygon_layer                   Optional feature layer. A polygon layer specifying the area(s) where you want the trace 
+                                             downstreams to be calculated in. For example, if you only want to calculate the trace downstream 
+                                             with in a county polygon, provide a layer containing the county polygon and the resulting trace 
+                                             lines will be clipped to the county boundary. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------    ---------------------------------------------------------
+    source_database                          Optional string. Keyword indicating the data source resolution that will be used in the analysis.
 
-    generalize : Optional bool
+                                             Choice list: ['Finest', '30m', '90m'].
 
-    output_name : Optional string
+                                                * Finest: Finest resolution available at each location from all possible data sources.
 
-    context : Optional string
+                                                * 30m: The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
 
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+                                                * 90m: The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
 
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+                                             The default is 'Finest'.
+    -------------------------------------    ---------------------------------------------------------
+    generalize                               Optional boolean. Determines if the output trace downstream lines will be smoothed 
+                                             into simpler lines or conform to the cell edges of the original DEM.
+    -------------------------------------    ---------------------------------------------------------
+    output_name                              Optional string. If provided, the task will create a feature service of the results. 
+                                             You define the name of the service. If ``output_name`` is not supplied, the task will return a feature collection.
+    -------------------------------------    ---------------------------------------------------------
+    context                                  Optional string. Context contains additional settings that affect task execution. For ``trace_downstream``, there are two settings.
 
-    Returns
-    -------
-    trace_layer : layer (FeatureCollection)
+                                             #. Extent (``extent``)—a bounding box that defines the analysis area. Only those points 
+                                                in the ``input_layer`` that intersect the bounding box will have a downstream trace generated.
+                                             #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    -------------------------------------    ---------------------------------------------------------
+    estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
+    =====================================    =========================================================
+
+    :returns: feature layer collection if ``output_name`` is set, else feature collection.
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To identify the path the water contamination  will take.
+        path = trace_downstream(input_layer=water_source_lyr,
+                                split_distance=2,
+                                split_units='Miles',
+                                max_distance=2,
+                                max_distance_units='Miles',
+                                source_database='Finest',
+                                generalize=True,
+                                output_name='trace downstream')  
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.trace_downstream(
