@@ -218,53 +218,99 @@ def summarize_within(sum_within_layer,
                      gis=None,
                      estimate=False):
     """
-    The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or
-    portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer
-    of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use
-    type for each watershed.Given a layer of parcels in a county and a layer of city boundaries, summarize the average
-    value of vacant parcels within each city boundary.Given a layer of counties and a layer of roads, summarize the
-    total mileage of roads by road type within each county.
+    .. image:: _static/images/summarize_within/summarize_within.png 
 
-    Parameters
-    ----------
-    sum_within_layer : Required layer (see Feature Input in documentation)
-        A polygon feature layer or featurecollection. Features, or portions of features, in the summaryLayer (below)
-        that fall within the boundaries of these polygons will be summarized.
-    summary_layer : Required layer (see Feature Input in documentation)
-        Point, line, or polygon features that will be summarized for each polygon in the sumWithinLayer.
-    sum_shape : Optional bool
-        A boolean value that instructs the task to calculate count of points, length of lines or areas of polygons of
-        the summaryLayer within each polygon in sumWithinLayer.
-    shape_units : Optional string
-        Specify units to summarize the length or areas when sumShape is set to true. Units is not required to summarize
-        points.
-    summary_fields : Optional list of strings
-        A list of field names and statistical summary type that you wish to calculate for all features in the
-        summaryLayer that are within each polygon in the sumWithinLayer. Eg:["fieldname1 summary", "fieldname2 summary"]
-    group_by_field : Optional string
-        Specify a field from the summaryLayer features to calculate statistics separately for each unique attribute
-        value.
-    minority_majority : Optional bool
-        This boolean parameter is applicable only when a groupByField is specified. If true, the minority
-        (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will
-        be calculated.
-    percent_shape : Optional bool
-        This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of
-        shape (eg. length for lines) for each unique groupByField value is calculated.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+    The ``summarize_within`` method finds the point, line, or polygon features (or portions of these features) 
+    that are within the boundaries of polygons in another layer. For example:
 
-    Returns
-    -------
-    dict with the following keys:
-       "result_layer" : layer (FeatureCollection)
-       "group_by_summary" : layer (FeatureCollection)
+        * Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.
+        * Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.
+        * Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
+
+    You can think of ``summarize_within`` as taking two layers and stacking them on top of each other. 
+    One of the layers, the ``sum_within_layer`` must be a polygon layer, and imagine that these polygon 
+    boundaries are all colored red. The other layer, the ``summary_layer``, can be any feature type—point, 
+    line, or polygon. After stacking these layers on top of each other, you peer down through the stack 
+    and count the number of features in the ``summary_layer`` that fall within the polygons with the red 
+    boundaries (the ``sum_within_layer``). Not only can you count the number of features, you can calculate 
+    simple statistics about the attributes of the features in the ``summary_layer``, such as sum, mean, minimum, maximum, and so on.
+
+    =====================================    =========================================================
+    **Argument**                             **Description**
+    -------------------------------------    ---------------------------------------------------------
+    sum_within_layer                         Required feature layer. The polygon features. Features, or 
+                                             portions of features, in the ``summary_layer`` (below) that fall within 
+                                             the boundaries of these polygons will be summarized. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------    ---------------------------------------------------------
+    summary_layer                            Required feature layer. Point, line, or polygon features that will be summarized for each polygon in the ``sum_within_layer``.
+                                             See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------    ---------------------------------------------------------       
+    sum_shape                                Optional boolean. A boolean value that instructs the task to calculate statistics 
+                                             based on shape type of the ``summary_layer``, such as the length of lines or areas of 
+                                             polygons of the ``summary_layer`` within each polygon in ``sum_within_layer``. 
+                                             
+                                             The default is True.
+    -------------------------------------    ---------------------------------------------------------
+    shape_units                              Optional string. Specify units to summarize the length or areas when ``sum_shape`` is set to true. Units is not required to summarize
+                                             points.
+
+                                             When ``summary_layer`` contains polygons: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareMiles', 'SquareYards', 'SquareFeet']
+                                             
+                                             When ``summary_layer`` contains lines: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    -------------------------------------    ---------------------------------------------------------
+    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish 
+                                             to calculate for all features in the ``summary_layer`` that are within each polygon in the ``sum_within_layer`` .
+
+                                             Example: ["fieldname1 summary", "fieldname2 summary"]
+    -------------------------------------    ---------------------------------------------------------
+    group_by_field                           Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately 
+                                             for each unique attribute value. For example, suppose the ``sum_within_layer`` contains city boundaries and 
+                                             the ``summary_layer`` features are parcels. One of the fields of the parcels is Status which contains 
+                                             two values: VACANT and OCCUPIED. To calculate the total area of vacant and occupied parcels within the 
+                                             boundaries of cities, use Status as the ``group_by_field`` field.
+    -------------------------------------    ---------------------------------------------------------
+    minority_majority                        Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. 
+                                             If true, the minority (least dominant) or the majority (most dominant) attribute values for each group 
+                                             field are calculated. Two new fields are added to the ``result_layer`` prefixed with Majority_ and Minority_.
+
+                                             The default is False.
+    -------------------------------------    ---------------------------------------------------------
+    percent_shape                            Optional boolean. This Boolean parameter is applicable only when a ``group_by_field`` is specified.
+                                             If set to true, the percentage of each unique ``group_by_field`` value is calculated for 
+                                             each ``sum_within_layer`` polygon. 
+                                             
+                                             The default is False.
+    -------------------------------------    ---------------------------------------------------------
+    output_name                              Optional string. If provided, the method will create a feature service of the results. 
+                                             You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    -------------------------------------    ---------------------------------------------------------
+    context                                  Optional string. Context contains additional settings that affect task execution. For ``summarize_within``, there are two settings.
+
+                                             #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the ``sum_within_layer`` and the ``Summary_layer`` that intersect the bounding box will be summarized.
+                                             #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    -------------------------------------    ---------------------------------------------------------
+    estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
+    =====================================    =========================================================
+
+    :returns: Item if ``output_name`` is set. else results in a Python dict with the following keys:
+
+        dict with the following keys:
+
+            "result_layer" : layer (FeatureCollection)
+
+            "group_by_summary" : layer (FeatureCollection)
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To summarize traffic accidents within each county and group them by the day of accident. 
+        acc_within_county = summarize_within(sum_within_layer=boundaries,
+                                             summary_layer=collision_lyr,
+                                             sum_shape=True,
+                                             group_by_field='Day',
+                                             minority_majority=True,
+                                             percent_shape=True,
+                                             output_name='summarize accidents within each county',
+                                             context={"extent":{"xmin":-13160690.837046918,"ymin":4041586.5461609075,"xmax":-13132466.464352652,"ymax":4058001.397985127,"spatialReference":{"wkid":102100,"latestWkid":3857}}})           
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.featureanalysis.summarize_within(
