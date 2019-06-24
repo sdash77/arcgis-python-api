@@ -19,6 +19,10 @@ summarize_nearby
 --------------
 .. autofunction:: arcgis.features.summarize_data.summarize_nearby
 
+summarize_center_and_dispersion
+--------------
+.. autofunction:: arcgis.features.summarize_data.summarize_center_and_dispersion
+
 summarize_within
 --------------
 .. autofunction:: arcgis.features.summarize_data.summarize_within

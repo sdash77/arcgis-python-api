@@ -205,6 +205,90 @@ def summarize_nearby(sum_nearby_layer,
                      estimate=estimate)
 
 
+def summarize_center_and_dispersion(
+        analysis_layer,
+        summarize_type=["CentralFeature"],
+        ellipse_size=None,
+        weight_field=None,
+        group_field=None,
+        output_name=None,
+        context=None,
+        gis=None,
+        estimate=False):
+
+    """
+    .. image:: _static/images/summarize_center_and_dispersion/summarize_center_and_dispersion.png 
+
+    The ``summarize_center_and_dispersion`` method finds central features and directional distributions. It can be used to answer questions such as:
+
+    * Where is the center?
+    * Which feature is the most accessible from all other features?
+    * How dispersed, compact, or integrated are the features?
+    * Are there directional trends?s
+
+    ====================    =========================================================
+    **Argument**            **Description**
+    --------------------    ---------------------------------------------------------
+    analysis_layer          Required frature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
+    --------------------    ---------------------------------------------------------
+    summarize_type          Required list of strings. The method with which to summarize the ``analysis_layer``.
+
+                            Choice list: ["CentralFeature", "MeanCenter", "MedianCenter", "Ellipse"]
+    --------------------    ---------------------------------------------------------
+    ellipse_size            Optional string. The size of the output ellipse in standard deviations.
+                            
+                            Choice list: ['1 standard deviations', '2 standard deviations', '3 standard deviations']
+
+                            The default ellipse size is '1 standard deviations'.
+    --------------------    ---------------------------------------------------------
+    weight_field            Optional field. A numeric field in the ``analysis_layer`` to be used to
+                            weight locations according to their relative importance.
+    --------------------    ---------------------------------------------------------
+    group_field             Optional field. The field used to group features for separate directional
+                            distribution calculations. The ``group_field`` can be of
+                            integer, date, or string type.
+    --------------------    ---------------------------------------------------------
+    output_name             Optional string. If provided, the method will create a feature service of the results. 
+                            You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
+    --------------------    ---------------------------------------------------------
+    context                 Optional string. Context contains additional settings that affect task execution. For ``summarize_center_and_dispersion``, there are two settings.
+
+                            #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
+                            #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    --------------------    ---------------------------------------------------------
+    estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
+    ====================    =========================================================
+
+    :returns: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
+        "central_feature_result_layer" : layer (FeatureCollection)
+        "mean_feature_result_layer" : layer (FeatureCollection)
+        "median_feature_result_layer" : layer (FeatureCollection)
+        "ellipse_feature_result_layer" : layer (FeatureCollection)
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To find central features and mean center of earthquake over past months.
+        central_features = summarize_center_and_dispersion(analysis_layer=earthquakes,
+                                                           summarize_type=["CentralFeature","MeanCenter"],
+                                                           ellipse_size='2 standard deviations',
+                                                           weight_field='mag',
+                                                           group_field='magType',
+                                                           output_name='find central features and mean center of earthquake over past months')
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.featureanalysis.summarize_center_and_dispersion(
+        analysis_layer,
+        summarize_type,
+        ellipse_size,
+        weight_field,
+        group_field,
+        output_name,
+        context,
+        estimate=estimate)
+
+
 def summarize_within(sum_within_layer,
                      summary_layer,
                      sum_shape=True,

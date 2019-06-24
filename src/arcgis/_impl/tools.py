@@ -520,7 +520,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
     def summarize_center_and_dispersion(self,
                                         analysis_layer,
-                                        summarize_type,
+                                        summarize_type=["CentralFeature"],
                                         ellipse_size=None,
                                         weight_field=None,
                                         group_field=None,
@@ -588,14 +588,14 @@ class _FeatureAnalysisTools(_AsyncService):
         params = {}
 
         params["analysisLayer"] = super()._feature_input(analysis_layer)
-        params["summarizeType "] = summarize_type
-
+        params["summarizeType"] = summarize_type
+        
         if ellipse_size is not None:
-            params["ellipseSize "] = ellipse_size
+            params["ellipseSize"] = ellipse_size
         if weight_field is not None:
             params["weightField"] = weight_field
         if group_field  is not None:
-            params["groupField "] = group_field
+            params["groupField"] = group_field
         if output_name is not None:
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
@@ -637,12 +637,10 @@ class _FeatureAnalysisTools(_AsyncService):
             median_center_result_layer = arcgis.features.FeatureCollection(job_values['medianCenterResultLayer'])
             ellipse_result_layer = arcgis.features.FeatureCollection(job_values['ellipseResultLayer'])
 
-            process_info = job_values['processInfo']
             return {"central_feature_result_layer":central_feature_result_layer,
-                    "meanCenterResultLayer":mean_center_result_layer,
-                    "medianCenterResultLayer":median_center_result_layer,
-                    "ellipseResultLayer":ellipse_result_layer,
-                    "process_info":process_info}
+                    "mean_center_result_layer":mean_center_result_layer,
+                    "median_center_result_layer":median_center_result_layer,
+                    "ellipse_result_layer":ellipse_result_layer, }
 
     def find_point_clusters(self,
                             analysis_layer,
