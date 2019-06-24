@@ -3088,19 +3088,45 @@ class ContentManager(object):
             'partNum' : None
         }
         messages = []
+        future_files = []
         with open(file_path, 'rb') as f:
-            for part_num, piece in enumerate(read_in_chunks(f), start=1):
-                params['partNum'] = part_num
-                temp_file = os.path.join(tempfile.gettempdir(), "split.part%s" % part_num)
-                files = {'file' : temp_file}
-                with open(temp_file, 'wb') as writer:
-                    writer.write(piece)
-                    del writer
-                res = self._gis._con.post(url, params, files=files)
-                if os.path.isfile(temp_file):
-                    os.remove(temp_file)
-                del part_num, piece, files
-                messages.append(res['success'])
+            import copy
+            import concurrent.futures
+            nthreads = 5
+            with concurrent.futures.ThreadPoolExecutor(max_workers=nthreads) as tp:
+                future_parts = {}
+                for part_num, piece in enumerate(read_in_chunks(f), start=1):
+                    params['partNum'] = part_num
+                    temp_file = os.path.join(tempfile.gettempdir(), "split.part%s" % part_num)
+                    kwargs = {
+                        "path" : url,
+                        "postdata" : copy.copy(params),
+                        'files' : {'file' : copy.copy(temp_file)}
+                    }
+                    with open(temp_file, 'wb') as writer:
+                        writer.write(piece)
+                        del writer
+                    future_parts[tp.submit(self._gis._con.post, **kwargs)] = part_num
+                    future_files.append(copy.copy(temp_file))
+                for future in concurrent.futures.as_completed(future_parts):
+                    part_num = future_parts[future]
+                    try:
+                        from concurrent.futures import Future
+                        isinstance(future, Future)
+                        if future.done():
+                            data = future.result()
+                            if 'success' in data:
+                                messages.append(data['success'])
+                            else:
+                                messages.append(False)
+                    except Exception as exc:
+                        _log.error('%r generated an exception: %s' % (url, exc))
+                    else:
+                        _log.debug('%r page is %s' % (url, data))
+                    for ffile in future_files:
+                        if os.path.isfile(ffile):
+                            os.remove(ffile)
+                       
         if all(messages):
             # commit the addition
             url = "{base}content/users/{user}/items/{itemid}/commit".format(base=self._gis._portal.resturl,

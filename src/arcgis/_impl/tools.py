@@ -5717,7 +5717,7 @@ class _GeometryService(_GISService):
             params['distances'] = ",".join(distances)
         else:
             params['distances'] = str(distances)
-        params['units'] = unit
+        params['unit'] = unit
         if bufferSR is not None:
             params['bufferSR'] = bufferSR
         if outSR is not None:

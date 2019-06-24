@@ -2447,23 +2447,10 @@ class GeoAccessor(object):
         data = [getattr(g, 'spatialReference', None) or g['spatialReference'] \
                 for g in self._data[self.name] \
                 if g not in [None, np.NaN, np.nan, '']]
-        df = pd.DataFrame(data)
-        label = "wkid"
-        if 'wkid' in df:
-            srs = pd.DataFrame(data)['wkid'].unique().tolist()
-        else:
-            label = "wkt"
-            srs = pd.DataFrame(data)['wkt'].unique().tolist()
-        if len(srs) > 1:
-            rsrs = []
-            for sr in srs:
-                if isinstance(sr, int):
-                    rsrs.append(SpatialReference({'wkid' : sr}))
-                else:
-                    rsrs.append(SpatialReference({'wkt' : sr}))
-            return rsrs
-        else:
-            return SpatialReference({label : srs[0]})
+        srs = [SpatialReference(sr) for sr in pd.DataFrame(data).drop_duplicates().to_dict('records')]
+        if len(srs) == 1:
+            return srs[0]
+        return srs
     #----------------------------------------------------------------------
     @sr.setter
     def sr(self, ref):
@@ -3024,7 +3011,7 @@ class GeoAccessor(object):
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  SpatialReference object or the coordinate system name.
         --------------------     --------------------------------------------------------------------
-        transformation_name      Required String. The geotransformation name.
+        transformation_name      Optional String. The geotransformation name.
         ====================     ====================================================================
 
         :returns: boolean
