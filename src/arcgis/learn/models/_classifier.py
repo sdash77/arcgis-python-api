@@ -18,7 +18,11 @@ try:
     from fastai.vision import imagenet_stats
     from fastai.vision.learner import create_cnn, ClassificationInterpretation
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
+    import torch.nn.functional as functional
     import tempfile
+    import glob
+    import time
+    import xml.etree.ElementTree as ElementTree
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -171,56 +175,180 @@ class FeatureClassifier(ArcGISModel):
         interp = ClassificationInterpretation.from_learner(self.learn)
         interp.plot_confusion_matrix()
 
-    def classify_features(self, input_features, imagery,
-                   class_value_field=None,
-                   confidence_score_field=None,
-                   context=None):
+    # def classify_features(self, input_features, imagery,
+    #                class_value_field=None,
+    #                confidence_score_field=None,
+    #                context=None):
+    #
+    #     """
+    #     Classifies the area occupied by geographical features based on the imagery they overlaps with.
+    #
+    #     ====================================     ====================================================================
+    #     **Argument**                             **Description**
+    #     ------------------------------------     --------------------------------------------------------------------
+    #     input_features                           Required. Spatially enabled DataFrame containing features to be classified
+    #     ------------------------------------     --------------------------------------------------------------------
+    #     imagery                                  Required. MapImageLayer or ImageryLayer with imagery
+    #     ------------------------------------     --------------------------------------------------------------------
+    #     class_value_field                        Optional string. The column in the returned dataframe that contains the class value
+    #     ------------------------------------     --------------------------------------------------------------------
+    #     confidence_score_field                   Optional string. The column in the returned dataframe that contains the confidence scores as output by the image detection model
+    #     ------------------------------------     --------------------------------------------------------------------
+    #     context                                  Optional dictionary. Context contains additional settings that affect task execution.
+    #                                             Dictionary can contain value for following keys:
+    #
+    #                                             - cellSize - Set the output raster cell size, or resolution
+    #     ====================================     ====================================================================
+    #
+    #     :return:
+    #         The spatially enabled dataframe with colmns for the inferred class value and confidence scores
+    #
+    #     """
+    #     sdf = input_features.copy()
+    #     cellsize = 1.0
+    #
+    #     if context is not None:
+    #         try:
+    #             cellsize = context['cellSize']
+    #         except:
+    #             pass
+    #
+    #     chipsize = self._data.chip_size
+    #
+    #     w = cellsize * chipsize
+    #     with tempfile.TemporaryDirectory() as tmpdir:
+    #         for index, row in input_features.iterrows():
+    #             g = row['SHAPE']
+    #             x, y = g.centroid
+    #             ext = (x - w/2, y - w/2, x + w/2, y + w/2)
+    #
+    #             filename = imagery.export_map(ext, size='{0},{1}'.format(chipsize, chipsize), f='image', format='jpg',save_folder=tmpdir, save_file='test.jpg')
+    #             prediction = self.predict(filename)
+    #             sdf[class_value_field] = self._data.classes[int(prediction[1])]
+    #             sdf[confidence_score_field] = float(prediction[2][ [1]]*100)
+    #
+    #     return sdf
+
+    def classify_features(self, feature_layer, labeled_tiles_directory, input_label_field, output_label_field, confidence_field=None):
 
         """
-        Classifies the area occupied by geographical features based on the imagery they overlaps with.
+        Classifies the labeled tiles and updates the feature layer with the prediction results with column output_label_field.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        input_features                           Required. Spatially enabled DataFrame containing features to be classified
+        feature_layer                            Required. Feature Layer for classification.
         ------------------------------------     --------------------------------------------------------------------
-        imagery                                  Required. MapImageLayer or ImageryLayer with imagery
+        labeled_tiles_directory                  Required. Folder structure containing images and labels folder. The
+                                                 chips should have been generated using the export training data tool in
+                                                 the Labeled Tiles format, and the labels should contain the OBJECTIDs
+                                                 of the features to be classified.
         ------------------------------------     --------------------------------------------------------------------
-        class_value_field                        Optional string. The column in the returned dataframe that contains the class value
+        input_label_field                        Required. Value field name which created the labeled tiles. This field
+                                                 should contain the OBJECTIDs of the features to be classified.
         ------------------------------------     --------------------------------------------------------------------
-        confidence_score_field                   Optional string. The column in the returned dataframe that contains the confidence scores as output by the image detection model
+        output_label_field                       Required. Output column name to be added in the layer which contains predictions.
         ------------------------------------     --------------------------------------------------------------------
-        context                                  Optional dictionary. Context contains additional settings that affect task execution.
-                                                Dictionary can contain value for following keys:
-
-                                                - cellSize - Set the output raster cell size, or resolution
+        confidence_field                         Optional. Output column name to be added in the layer which contains the confidence score.
         ====================================     ====================================================================
 
         :return:
-            The spatially enabled dataframe with colmns for the inferred class value and confidence scores
+            Boolean : True/False if operation is sucessful
 
         """
-        sdf = input_features.copy()
-        cellsize = 1.0
 
-        if context is not None:
-            try:
-                cellsize = context['cellSize']
-            except:
-                pass
+        ALLOWED_FILE_FORMATS = ['tif', 'jpg', 'png']
+        IMAGES_FOLDER = 'images/'
+        LABELS_FOLDER = 'labels/'
 
-        chipsize = self._data.chip_size
+        files = []
 
-        w = cellsize * chipsize
-        with tempfile.TemporaryDirectory() as tmpdir:
-            for index, row in input_features.iterrows():
-                g = row['SHAPE']
-                x, y = g.centroid
-                ext = (x - w/2, y - w/2, x + w/2, y + w/2)
+        for ext in ALLOWED_FILE_FORMATS:
+            files.extend(glob.glob(os.path.join(labeled_tiles_directory, IMAGES_FOLDER + '*.' + ext)))
 
-                filename = imagery.export_map(ext, size='{0},{1}'.format(chipsize, chipsize), f='image', format='jpg',save_folder=tmpdir, save_file='test.jpg')
-                prediction = self.predict(filename)
-                sdf[class_value_field] = self._data.classes[int(prediction[1])]
-                sdf[confidence_score_field] = float(prediction[2][prediction[1]]*100)
+        predictions = {}
+        for file in files:
+            xml_path = os.path.join(os.path.dirname(os.path.dirname(file)),
+                                    os.path.join(LABELS_FOLDER, os.path.basename(file).split('.')[0] + '.xml'))
 
-        return sdf
+            if not os.path.exists(xml_path):
+                continue
+
+            tree = ElementTree.parse(xml_path)
+            root = tree.getroot()
+
+            name_field = root.findall('object/name')
+            if len(name_field) != 1:
+                continue
+
+            file_prediction = self.predict(file)
+
+            predictions[name_field[0].text] = {
+                'prediction': file_prediction[0].obj,
+                'score': str(file_prediction[2].data.max().tolist())
+            }
+
+        features = feature_layer.query().features
+        features_to_update = []
+        for feature in features:
+            if predictions.get(str(feature.attributes[input_label_field])):
+                feature.attributes[output_label_field] = predictions.get(str(feature.attributes[input_label_field]))['prediction']
+                if confidence_field:
+                    feature.attributes[confidence_field] = predictions.get(str(feature.attributes[input_label_field]))['score']
+
+                features_to_update.append(feature)
+
+        field_template = {
+            "name": output_label_field,
+            "type": "esriFieldTypeString",
+            "alias": output_label_field,
+            "sqlType": "sqlTypeOther",
+            "length": 256,
+            "nullable": True,
+            "editable": True,
+            "visible": True,
+            "domain": None,
+            "defaultValue": ''
+        }
+
+        confidence_field_template = {
+            "name": confidence_field,
+            "type": "esriFieldTypeString",
+            "alias": confidence_field,
+            "sqlType": "sqlTypeOther",
+            "length": 256,
+            "nullable": True,
+            "editable": True,
+            "visible": True,
+            "domain": None,
+            "defaultValue": ''
+        }
+
+        feature_layer.manager.add_to_definition({'fields': [field_template]})
+
+        if confidence_field:
+            feature_layer.manager.add_to_definition({'fields': [confidence_field_template]})
+
+        try:
+            start = 0
+            stop = 100
+            count = 100
+
+            features_updated = features_to_update[start:stop]
+            feature_layer.edit_features(updates=features_updated)
+
+            time.sleep(2)
+            while count == len(features_updated):
+                start = stop
+                stop = stop + 100
+                features_updated = features_to_update[start:stop]
+                feature_layer.edit_features(updates=features_updated)
+                time.sleep(2)
+        except Exception as e:
+            feature_layer.manager.delete_from_definition({'fields': [field_template]})
+            if confidence_field:
+                feature_layer.manager.delete_from_definition({'fields': [confidence_field_template]})
+
+            return False
+
+        return True

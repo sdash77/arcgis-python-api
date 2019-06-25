@@ -222,10 +222,43 @@ print('not implemented')
 """
 
 image_classifier_prf = """
+
 import numpy as np
 import json
 import sys, os, importlib
+import math
+
 sys.path.append(os.path.dirname(__file__))
+
+def chunk_it(image, tile_size):
+    s = image.shape
+    num_rows = math.ceil(s[0]/tile_size)
+    num_cols = math.ceil(s[1]/tile_size)
+    r = np.array_split(image, num_rows)
+    rows = []
+    for x in r:
+        x = np.array_split(x, num_cols, axis=1)
+        rows.append(x)
+    return rows, num_rows, num_cols
+
+def crop_center(img, pad):
+    if pad == 0:
+        return img
+    return img[pad:-pad, pad: -pad, :]
+
+def crop_flatten(chunked, pad):
+    imgs = []
+    for r, row  in enumerate(chunked):
+        for c, col in enumerate(row):
+            col = crop_center(col, pad)
+            imgs.append(col)
+    return imgs
+
+def patch_chips(imgs, n_rows, n_cols):
+    h_stacks = []
+    for i in range(n_rows):
+        h_stacks.append(np.hstack(imgs[i*n_cols:n_cols*(i+1) ]))
+    return np.vstack(h_stacks)
 
 attribute_table = {
     'displayFieldName': '',
@@ -277,8 +310,7 @@ attribute_table = {
 class ArcGISImageClassifier:
     def __init__(self):
         self.name = 'Image Classifier'
-        self.description = 'Image classification python raster function to inference a tensorflow ' \
-                           'deep learning model'
+        self.description = 'Image classification python raster function to inference a tensorflow '                            'deep learning model'
 
     def initialize(self, **kwargs):
         if 'model' not in kwargs:
@@ -371,14 +403,20 @@ class ArcGISImageClassifier:
 
         return kwargs
 
+
     def updatePixels(self, tlc, shape, props, **pixelBlocks):
         # set pixel values in invalid areas to 0
+           
         raster_mask = pixelBlocks['raster_mask']
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
         pixelBlocks['raster_pixels'] = raster_pixels
 
-        pixelBlocks['output_pixels'] = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)
-        return pixelBlocks
+        xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)
+        chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
+        xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
+        xx = xx.transpose(2, 0, 1)
+        pixelBlocks['output_pixels'] = xx
 
+        return pixelBlocks
 """
