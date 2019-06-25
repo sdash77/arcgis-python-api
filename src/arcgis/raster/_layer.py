@@ -34,13 +34,13 @@ def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
 
     return fnarg_ra
 ###########################################################################
-class ImageLayerCacheManager(_GISResource):
+class ImageryLayerCacheManager(_GISResource): 
     """ 
     Allows for administration of ArcGIS Online hosted image layers.
     """
     
     def __init__(self, url, gis=None, img_lyr=None):
-        super(ImageLayerCacheManager, self).__init__(url, gis)
+        super(ImageryLayerCacheManager, self).__init__(url, gis)
         self._img_lyr = img_lyr
         self._gis = gis
         self._url = url
@@ -397,7 +397,7 @@ class ImageryLayer(Layer):
         """
         Provides access to the tools to update, add, and remove cache on the ImageLayer
         
-        :returns: ImageLayerCacheManager or None
+        :returns: ImageryLayerCacheManager or None
         """
         def _str_replace(mystring, rd):
             """Replaces a value based on a key/value pair where the
@@ -421,7 +421,7 @@ class ImageryLayer(Layer):
             if self._gis._portal.is_arcgisonline:
                 rd = {'/rest/services/': '/rest/admin/services/'}
                 adminurl = _str_replace(mystring=self.url, rd=rd)
-                self._ilm = ImageLayerCacheManager(url=adminurl, gis=self._gis, img_lyr=self)
+                self._ilm = ImageryLayerCacheManager(url=adminurl, gis=self._gis, img_lyr=self)
         return self._ilm
     
     @property
