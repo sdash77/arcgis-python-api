@@ -7,6 +7,7 @@ from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
 from arcgis.geometry import Geometry
 from arcgis.features import FeatureSet
+from arcgis.gis import _GISResource
 import logging
 import arcgis as _arcgis
 import base64
@@ -32,8 +33,309 @@ def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
                 fnarg_ra[key]["mosaicRule"] = mosaic_rule
 
     return fnarg_ra
+###########################################################################
+class ImageLayerCacheManager(_GISResource):
+    """ 
+    Allows for administration of ArcGIS Online hosted image layers.
+    """
+    
+    def __init__(self, url, gis=None, img_lyr=None):
+        super(ImageLayerCacheManager, self).__init__(url, gis)
+        self._img_lyr = img_lyr
+        self._gis = gis
+        self._url = url
+    # ----------------------------------------------------------------------
+    def refresh(self):
+        """
+        The refresh operation refreshes a service, which clears the web
+        server cache for the service.
+        """
+        url = self._url + "/refresh"
+        params = {
+            "f": "json"
+        }
+        res = self._con.post(self._url, params)
+        if 'success' in res:
+            return res['success']
+        return res
 
+    # ----------------------------------------------------------------------
+    def cancel_job(self, job_id):
+        """
+        The cancel job operation supports cancelling a job while update
+        tiles is running from a hosted feature service. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
+
+        Inputs:
+           job_id - job id to cancel
+        """
+        url = self._url + "/jobs/%s/cancel" % job_id
+        params = {
+            "f": "json"
+        }
+        return self._con.post(url, params)
+    # ----------------------------------------------------------------------
+    @property
+    def jobs(self):
+        """returns a list of all the jobs on the tile server"""
+        url = self._url + "/jobs"
+        params = {
+            "f": "json"
+        }
+        res = self._con.post(url, params)        
+        if "jobs" in res:
+            return res['jobs']
+        return res
+    # ----------------------------------------------------------------------
+    def job_status(self, job_id):
+        """
+        Gets the Current Job Status
+        
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        job_id                required String. The unique identifier of the job in question.
+        =================     ====================================================================
+
+        
+        :returns: dict
+        """
+        url = self._url + "/jobs/%s/status" % job_id
+        params = {
+            "f": "json"
+        }
+        res = self._con.get(url, params)        
+        return res
+    # ----------------------------------------------------------------------
+    def job_statistics(self, job_id):
+        """
+        Returns the job statistics for the given job_id
+        
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        job_id                required String. The unique identifier of the job in question.
+        =================     ====================================================================
+
+
+        :returns: dict
+
+        """
+        url = self._url + "/jobs/%s" % job_id
+        params = {
+            "f": "json"
+        }
+        return self._con.post(url, params)
+    #----------------------------------------------------------------------
+    def import_tiles(self, item,
+                     levels=None, extent=None,
+                     merge=False, replace=False):
+        """
+        Imports cache from a new ImageLayer Tile Package.
+        
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item                Required ItemId or Item. The TPK file's item id.
+                            This TPK file contains to-be-extracted bundle files
+                            which are then merged into an existing cache service.
+        ---------------     ----------------------------------------------------
+        levels              Optional String / List of integers, The level of details
+                            to update. Example: "1,2,10,20" or [1,2,10,20]
+        ---------------     ----------------------------------------------------
+        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
+                            example: "-100,-50,200,500" or
+                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is false and applicable to
+                            compact cache storage format. It controls whether
+                            the bundle files from the TPK file are merged with
+                            the one in the existing cached service. Otherwise,
+                            the bundle files are overwritten.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean. Default is false, applicable to
+                            compact cache storage format and used when
+                            merge=true. It controls whether the new tiles will
+                            replace the existing ones when merging bundles.
+        ===============     ====================================================
+
+        :returns: Dict
+
+        """
+        params = {
+            'f' : 'json',
+            'sourceItemId' : None,
+            'extent' : extent,
+            'levels' : levels,
+            'mergeBundle' : merge,
+            'replaceTiles' : replace
+        }
+        if isinstance(item, str):
+            params['sourceItemId'] = item
+        elif isinstance(item, Item):
+            params['sourceItemId'] = item.itemid
+        else:
+            raise ValueError("The `item` must be a string or Item")
+        url = self._url + "/importTiles"
+        res = self._con.post(url, params)
+        return res
+    #----------------------------------------------------------------------
+    def update_tiles(self, levels=None, extent=None, merge=False, replace=False):
+        """
+        The starts tile generation for ArcGIS Online.  The levels of detail
+        and the extent are needed to determine the area where tiles need
+        to be rebuilt.
+
+        ..Note: This operation is for ArcGIS Online only.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        levels              Optional String / List of integers, The level of details
+                            to update. Example: "1,2,10,20" or [1,2,10,20]
+        ---------------     ----------------------------------------------------
+        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
+                            example: "-100,-50,200,500" or
+                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is `False`. When true the updated 
+                            cache is merged with the existing cache.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean.  The default is False.  The updated
+                            tiles will remove the existing tiles. 
+        ===============     ====================================================
+
+        :returns:
+           Dictionary. If the product is not ArcGIS Online tile service, the
+           result will be None.
+        """
+        if self._gis._portal.is_arcgisonline:
+            url = "%s/updateTiles" % self._url
+            params = {
+                "f": "json",
+                "mergeBundle": json.dumps(merge),
+                "replaceTiles" :json.dumps(replace)
+            }
+            if levels:
+                if isinstance(levels, list):
+                    levels = ",".join(str(e) for e in levels)
+                params['levels'] = levels
+            if extent:
+                if isinstance(extent, dict):
+                    extent2 = "{},{},{},{}".format(extent['xmin'], extent['ymin'],
+                                                  extent['xmax'], extent['ymax'])
+                    extent = extent2
+                params['extent'] = extent
+            return self._con.post(url, params)
+        return None
+    #----------------------------------------------------------------------
+    @property
+    def rerun_job(self, job_id, code):
+        """
+        The rerun job operation supports re-running a canceled job from a
+        hosted map service. The result of this operation is a response
+        indicating success or failure with error code and description.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        code                required string, parameter used to re-run a given
+                            jobs with a specific error
+                            code: ALL | ERROR | CANCELED
+        ---------------     ----------------------------------------------------
+        job_id              required string, job to reprocess
+        ===============     ====================================================
+
+        :returns:
+           boolean or dictionary
+        """
+        url = self._url + "/jobs/%s/rerun" % job_id
+        params = {
+            "f" : "json",
+            "rerun": code
+        }
+        return self._con.post(url, params)
+    # ----------------------------------------------------------------------
+    def edit_tile_service(self,
+                          service_definition=None,
+                          min_scale=None,
+                          max_scale=None,
+                          source_item_id=None,
+                          export_tiles_allowed=False,
+                          max_export_tile_count=100000):
+        """
+        This operation updates a Tile Service's properties
+
+        Inputs:
+           service_definition - updates a service definition
+           min_scale - sets the services minimum scale for caching
+           max_scale - sets the service's maximum scale for caching
+           source_item_id - The Source Item ID is the GeoWarehouse Item ID of the map service
+           export_tiles_allowed - sets the value to let users export tiles
+           max_export_tile_count - sets the maximum amount of tiles to be exported
+             from a single call.
+        """
+        params = {
+            "f": "json",
+        }
+        if not service_definition is None:
+            params["serviceDefinition"] = service_definition
+        if not min_scale is None:
+            params['minScale'] = float(min_scale)
+        if not max_scale is None:
+            params['maxScale'] = float(max_scale)
+        if not source_item_id is None:
+            params["sourceItemId"] = source_item_id
+        if not export_tiles_allowed is None:
+            params["exportTilesAllowed"] = export_tiles_allowed
+        if not max_export_tile_count is None:
+            params["maxExportTileCount"] = int(max_export_tile_count)
+        url = self._url + "/edit"
+        res =  self._con.post(url, params)
+        if 'success' in res:
+            if res['success']:
+                self._img_lyr._hydrated = False
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def delete_tiles(self, levels, extent=None ):
+        """
+        Deletes tiles for the current cache
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        extent              optional dictionary,  If specified, the tiles within
+                            this extent will be deleted or will be deleted based
+                            on the service's full extent.
+                            Example:
+                            6224324.092137296,487347.5253569535,
+                            11473407.698535524,4239488.369818687
+                            the minx, miny, maxx, maxy values or,
+                            {"xmin":6224324.092137296,"ymin":487347.5253569535,
+                            "xmax":11473407.698535524,"ymax":4239488.369818687,
+                            "spatialReference":{"wkid":102100}} the JSON
+                            representation of the Extent object.
+        ---------------     ----------------------------------------------------
+        levels              required string, The level to delete.
+                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
+        ===============     ====================================================
+
+        :returns:
+           dictionary
+        """
+        params = {
+            "f" : "json",
+            "levels" : levels,
+        }
+        if extent:
+            params['extent'] = extent
+        url = self._url + "/deleteTiles"
+        return self._con.post(url, params)
+###########################################################################  
 class ImageryLayer(Layer):
+    _ilm = None
     def __init__(self, url, gis=None):
         self._datastore_raster = False
         self._uri = None
@@ -90,7 +392,38 @@ class ImageryLayer(Layer):
             return RasterManager(self)
         else:
             return None
-
+    @property
+    def cache_manager(self):
+        """
+        Provides access to the tools to update, add, and remove cache on the ImageLayer
+        
+        :returns: ImageLayerCacheManager or None
+        """
+        def _str_replace(mystring, rd):
+            """Replaces a value based on a key/value pair where the
+            key is the text to replace and the value is the new value.
+        
+            The find/replace is case insensitive.
+        
+            """
+            import re
+            patternDict = {}
+            myDict = {}
+            for key,value in rd.items():
+                pattern = re.compile(re.escape(key), re.IGNORECASE)
+                patternDict[value] = pattern
+            for key in patternDict:
+                regex_obj = patternDict[key]
+                mystring = regex_obj.sub(key, mystring)
+            return mystring
+        
+        if self._ilm is None:
+            if self._gis._portal.is_arcgisonline:
+                rd = {'/rest/services/': '/rest/admin/services/'}
+                adminurl = _str_replace(mystring=self.url, rd=rd)
+                self._ilm = ImageLayerCacheManager(url=adminurl, gis=self._gis, img_lyr=self)
+        return self._ilm
+    
     @property
     def tiles(self):
         """
