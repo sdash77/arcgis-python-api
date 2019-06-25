@@ -8,6 +8,7 @@ summarize_within calculates statistics for area features and attributes that ove
 """
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
+import arcgis.network as network
 
 def aggregate_points(
                      point_layer,
@@ -117,74 +118,189 @@ def summarize_nearby(sum_nearby_layer,
                      gis=None,
                      estimate=False):
     """
-    The SummarizeNearby task finds features that are within a specified distance of features in the input layer.
+    .. image:: _static/images/summarize_nearby/summarize_nearby.png 
+
+    The ``summarize_nearby`` method finds features that are within a specified distance of features in the input layer.
     Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a
-    drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:Calculate
-    the total population within five minutes of driving time of a proposed new store location.Calculate the number of
-    freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of
-    store accessibility.
+    drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:
 
-    Parameters
-    ----------
-    sum_nearby_layer : Required layer (see Feature Input in documentation)
-        Point, line, or polygon features from which distances will be measured to features in the summarizeLayer.
-    summary_layer : Required layer (see Feature Input in documentation)
-        Point, line, or polygon features. Features in this layer that are within the specified distance to features in
-        the sumNearbyLayer will be summarized.
-    near_type : Optional string
-        Defines what kind of distance measurement you want to use to create areas around the nearbyLayer features.
-    distances : Required list of floats
-        An array of double values that defines the search distance for creating areas mentioned above
-    units : Optional string
-        The linear unit for distances parameter above. Eg. Miles, Kilometers, Minutes Seconds etc
-    time_of_day : Optional datetime.datetime
-        For timeOfDay, set the time and day according to the number of milliseconds elapsed since the Unix epoc
-        (January 1, 1970 UTC). When specified and if relevant for the nearType parameter, the traffic conditions during
-        the time of the day will be considered.
-    time_zone_for_time_of_day : Optional string
-        Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the
-        location of the origins.
-    return_boundaries : Optional bool
-        If true, will return a result layer of areas that contain the requested summary information.  The resulting
-        areas are defined by the specified nearType.  For example, if using a StraightLine of 5 miles, your result will
-        contain areas with a 5 mile radius around the input features and specified summary information.If false, the
-        resulting layer will return the same features as the input analysis layer with requested summary information.
-    sum_shape : Optional bool
-        A boolean value that instructs the task to calculate count of points, length of lines or areas of polygons of
-        the summaryLayer within each polygon in sumWithinLayer.
-    shape_units : Optional string
-        Specify units to summarize the length or areas when sumShape is set to true. Units is not required to summarize
-        points.
-    summary_fields : Optional list of strings
-        A list of field names and statistical summary type that you wish to calculate for all features in the
-        summaryLayer that are within each polygon in the sumWithinLayer . Eg: ["fieldname1 summary",
-        "fieldname2 summary"]
-    group_by_field : Optional string
-        Specify a field from the summaryLayer features to calculate statistics separately for each unique value of the
-        field.
-    minority_majority : Optional bool
-        This boolean parameter is applicable only when a groupByField is specified. If true, the minority
-        (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will
-        be calculated.
-    percent_shape : Optional bool
-        This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of
-        shape (eg. length for lines) for each unique groupByField value is calculated.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    estimate :
-        Optional Boolean. If True, the number of credits to run the operation will be returned.
+    * Calculate the total population within five minutes of driving time of a proposed new store location.
+    * Calculate the number of freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of
+      store accessibility.
 
-    Returns
-    -------
-    dict with the following keys:
-       "result_layer" : layer (FeatureCollection)
-       "group_by_summary" : layer (FeatureCollection)
+    =========================    ====================================================================================================================
+    **Parameter**                **Description**
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    sum_nearby_layer             Required feature layer. Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    summary_layer                Required layer. Point, line, or polygon features. Features in this layer that are within the specified distance to features in the ``sum_nearby_layer`` will be summarized. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    near_type                    Optional string. Defines what kind of distance measurement you want to use: straight-line distance, or by measuring travel 
+                                 time or travel distance along a street network using various modes of transportation known as travel modes. 
+                                 
+                                 The default is 'StraightLine'.
+
+                                 Choice list: ['StraightLine', 'Driving Distance', 'Driving Time', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    distances                    Optional float. Float values that defines the search distance (for 'StraightLine' and distance based travel modes) or time (for time based travel modes). 
+                                 You can enter a single distance value or multiple values, separating each value with a space. Features that are within (or equal to) the distances you 
+                                 enter will be summarized. The units of the distance values is supplied by the units parameter.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    units                        Otional string. If ``near_type`` is 'StraightLine' or a distance-based travel mode, this is the linear unit to be used with the distance value(s) specified in distances.   
+
+                                 Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+ 
+                                 If ``near_type`` is a time based travel mode, the following values can be used as units:
+                                 
+                                 Choice list: ['Seconds', 'Minutes', 'Hours']
+
+                                 The default is 'Meters'.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    time_of_day                  Optional datetime.datetime. Specify whether travel times should consider traffic conditions. To use traffic in the analysis, 
+                                 set ``near_type`` to a travel mode object whose impedance_attribute_name property is set to travel_time and assign a value 
+                                 to ``time_of_day``. (A travel mode with other impedance_attribute_name values don't support traffic.) The ``time_of_day`` value represents 
+                                 the time at which travel begins, or departs, from the origin points. The time is specified as datetime.datetime.
+
+                                 The service supports two kinds of traffic: typical and live. Typical traffic references travel speeds that are made up of historical 
+                                 averages for each five-minute interval spanning a week. Live traffic retrieves speeds from a traffic feed that processes phone probe 
+                                 records, sensors, and other data sources to record actual travel speeds and predict speeds for the near future.
+                                
+                                 The `data coverage <http://www.arcgis.com/home/webmap/viewer.html?webmap=b7a893e8e1e04311bd925ea25cb8d7c7>`_ page shows the countries 
+                                 Esri currently provides traffic data for.
+                                
+                                 Typical Traffic:
+
+                                 To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day 
+                                 of the week to one of the following dates from 1990:
+
+                                 * Monday—1/1/1990
+                                 * Tuesday—1/2/1990
+                                 * Wednesday—1/3/1990
+                                 * Thursday—1/4/1990
+                                 * Friday—1/5/1990
+                                 * Saturday—1/6/1990
+                                 * Sunday—1/7/1990
+                                 Set the time and date as datetime.datetime.
+
+                                 For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to 
+                                 datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
+                                
+                                 Live Traffic:
+
+                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
+
+                                 Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you 
+                                 specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, 
+                                 the task falls back to typical traffic speeds.
+                                 
+                                 Examples:
+                                 from datetime import datetime
+
+                                 * ``time_of_day``- datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                 * ``time_of_day``- datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                 * ``time_of_day``- datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014, 
+                                   live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
+                                 * ``time_of_day``- datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015, 
+                                   live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.                      
+
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    time_zone_for_time_of_day     Optional string. Specify the time zone or zones of the ``time_of_day`` parameter. 
+                                
+                                  Choice list: ['GeoLocal', 'UTC']
+                                           
+                                  GeoLocal-refers to the time zone in which the originsLayer points are located.
+                                           
+                                  UTC-refers to Coordinated Universal Time.    
+                                 
+                                  The default is 'GeoLocal'.          
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    return_boundaries            Optional boolean. If true, the ``result_layer`` will contain areas defined by the specified ``near_type``. For example, if using 'StraightLine' of 5 miles, 
+                                 the ``result_layer`` will contain areas with a 5 mile radius around the input ``sum_nearby_layer`` features.
+
+                                 If False, the ``result_ayer`` will contain the same features as the ``sum_nearby_layer``.
+
+                                 The default is True.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    sum_shape                    Optional boolean. A boolean value that instructs the task to calculate statistics based on shape type of the ``summary_layer``, 
+                                 such as the length of lines or areas of polygons of the ``summary_layer`` within each polygon in ``sum_within_layer``. 
+                                 
+                                 The default is True.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    shape_units                  Optional string. If ``sum_shape`` is true, you must specify the units of the shape summary.
+                                 Values:
+
+                                 When ``summary_layer`` contains polygons: Values: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareFeet', 'SquareYards', 'SquareMiles']
+                                 When ``summary_layer`` contains lines: Values: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    summary_fields               Optional list of strings.A list of field names and statistical summary types that you want to calculate. 
+                                 Note that the count is always returned by default.
+
+                                 fieldName is the name of one of the numeric fields found in the input join layer.
+
+                                 statisticType is one of the following:
+
+                                 * ``SUM``-Adds the total value of all the points in each polygon
+                                 * ``MEAN``-Calculates the average of all the points in each polygon
+                                 * ``MIN``-Finds the smallest value of all the points in each polygon
+                                 * ``MAX``-Finds the largest value of all the points in each polygon
+                                 * ``STDDEV``-Finds the standard deviation of all the points in each polygon 
+
+                                 Example: ["fieldName summaryType","fieldName summaryType", ...]
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    group_by_field               Optional string. This is a field of the ``summary_layer`` features that you can use to calculate statistics separately for each unique attribute value. 
+                                 For example, suppose the ``summary_layer`` contains point locations of businesses that store hazardous materials, and one of the fields is HazardClass 
+                                 containing codes that describe the type of hazardous material stored. To calculate summaries by each unique value of HazardClass, use HazardClass as 
+                                 the ``group_by_field`` field.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    minority_majority            Optional boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. If true, the minority (least dominant) or the 
+                                 majority (most dominant) attribute values for each group field within each nearby area are calculated. Two new fields are added to 
+                                 the ``result_layer`` prefixed with Majority_ and Minority_.
+                                 
+                                 The default is False.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    percent_shape                Optional boolean. This Boolean parameter is applicable only when a ``group_by_field`` is specified. If set to true, 
+                                 the percentage of each unique ``group_by_field`` value is calculated for each ``sum_nearby_layer`` feature. 
+                                 
+                                 The default is False.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    output_name                  Optional string. If provided, the task will create a feature service of the results. You define the name of the service. 
+                                 If ``output_name`` is not supplied, the task will return a feature collection.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    context                      Optional string. Context contains additional settings that affect task execution. For  ``summarize_nearby``, there are two settings.
+
+                                 #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the ``sum_nearby_layer`` and ``summary_layer`` that intersect the bounding box will be analyzed.
+                                 #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    estimate                     Optional boolean. Returns the number of credit for the operation.
+    =========================    ====================================================================================================================
+
+    :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
+         
+         dict with the following keys:
+             
+             "result_layer" : layer (FeatureCollection)
+             
+             "group_by_summary" : layer (FeatureCollection)
+
+    .. code-block:: python
+
+         # USAGE EXAMPLE: To find hospital facilities that are within 5 miles of a school.
+         summarize_nearby(sum_nearby_layer=item2.layers[0],
+                          summary_layer=item1.layers[0],
+                          near_type='StraightLine',
+                          distances=[5],
+                          units='Miles',
+                          time_zone_for_time_of_day='GeoLocal',
+                          return_boundaries=False,
+                          sum_shape=True,
+                          shape_units=None,
+                          output_name='nearest hospitals to schools')        
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    if isinstance(near_type, str):
+        if near_type != 'StraightLine':
+            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+            near_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == near_type][0]            
     return gis._tools.featureanalysis.summarize_nearby(
                      sum_nearby_layer,
                      summary_layer,
