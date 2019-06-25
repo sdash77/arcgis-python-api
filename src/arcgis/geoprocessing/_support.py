@@ -245,6 +245,7 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
                                                     param_url)
 
                 params = {"f": "json"}
+                _set_env_params(params, {})
                 param_result = gptool._con.post(result_url, params, token=gptool._token)
 
                 job_value = param_result.get("value")
