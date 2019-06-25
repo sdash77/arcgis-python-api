@@ -8748,13 +8748,20 @@ class Item(dict):
            self._gis._portal.is_arcgisonline and \
            fileType.lower() == 'tilepackage':
             from ..mapping._types import MapImageLayer
+            from ..raster._layer import ImageryLayer
             if len(ret) > 0 and \
                'success' in ret[0] and \
                ret[0]['success'] == False:
                 raise Exception(ret[0]['error'])
             ms_url = self._gis.content.get(ret[0]['serviceItemId']).url
-            ms = MapImageLayer(url=ms_url, gis=self._gis)
-
+            if ms_url.lower().find("mapserver") > -1:
+                ms = MapImageLayer(url=ms_url, gis=self._gis)
+                manager = ms.manager
+            elif ms_url.lower().find("imageserver") > -1:
+                ms = ImageryLayer(url=ms_url, gis=self._gis)
+                manager = ms.cache_manager
+                if not self._gis._portal.is_arcgisonline:
+                    return Item(self._gis, ret[0]['serviceItemId'])
             serviceitem_id = ret[0]['serviceItemId']
             try:
                 # first edit the tile service to set min, max scales
@@ -8764,17 +8771,20 @@ class Item(dict):
                 else:
                     min_scale = ms.properties.minScale
                     max_scale = ms.properties.maxScale
-                edit_result = ms.manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
+                
+                edit_result = manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
 
                 # Get LoD from Map Image Layer
                 full_extent = dict(ms.properties.fullExtent)
                 lod_dict = ms.properties.tileInfo['lods']
                 lod = [current_lod['level'] for current_lod in lod_dict
                        if (min_scale <= current_lod['scale'] <= max_scale)]
-                ret = ms.manager.update_tiles(levels=lod, extent=full_extent)
+                ret = manager.update_tiles(levels=lod, extent=full_extent)
             except Exception as tiles_ex:
                 raise Exception('Error unpacking tiles :' + str(tiles_ex))
         elif not buildInitialCache and output_type is not None and output_type.lower() in ['sceneservice']:
+            return Item(self._gis, ret[0]['serviceItemId'])
+        elif not buildInitialCache and ret[0]['type'].lower() == 'image service':
             return Item(self._gis, ret[0]['serviceItemId'])
         else:
             serviceitem_id = self._check_publish_status(ret, folder)
