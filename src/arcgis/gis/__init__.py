@@ -7285,7 +7285,7 @@ class Item(dict):
             else:
                 return download_path
 
-    def export(self, title, export_format, parameters=None, wait=True):
+    def export(self, title, export_format, parameters=None, wait=True, enforce_fld_vis=None):
         """
         Exports a service item to the specified export format.
         Available only to users with an organizational subscription.
@@ -7309,6 +7309,13 @@ class Item(dict):
         wait                Optional boolean. Default is True, which forces a wait for the
                             export to complete; use False for when it is okay to proceed while
                             the export continues to completion.
+        ---------------     --------------------------------------------------------------------
+        enforce_fld_vis     Optional boolean. Be default when you are the owner of an item and 
+                            the `export` operation is called, the data provides all the columns.  
+                            If the export is being perform on a view, to ensure the view's 
+                            column definition is honor, then set the value to True. When the 
+                            owner of the service and the value is set to False, all data and 
+                            columns will be exported.
         ===============     ====================================================================
 
 
@@ -7335,6 +7342,12 @@ class Item(dict):
         }
         if parameters:
             params.update({'exportParameters': parameters})
+        if not enforce_fld_vis is None and \
+           'View Service' in self.typeKeywords:
+            if 'exportParameters' in params:
+                params['exportParameters']["enforceFieldVisibility"] = enforce_fld_vis
+            else:
+                params['exportParameters'] = {"enforceFieldVisibility" : enforce_fld_vis }
         res = self._portal.con.post(data_path, params)
         export_item = Item(gis=self._gis, itemid=res['exportItemId'])
         if wait == True:
