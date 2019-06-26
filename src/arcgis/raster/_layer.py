@@ -2776,6 +2776,8 @@ class ImageryLayer(Layer):
         Performs volumetric calculation on an elevation service. Results are always in square meters (area) and cubic
         meters (volume). If a service does not have vertical spatial reference and z unit is not in meters, user
         needs to apply a conversion factor when interpreting results.
+        
+        **Available in 10.7+ only**
 
         =================     ====================================================================
         **Argument**          **Description**
