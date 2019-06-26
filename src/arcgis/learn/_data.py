@@ -157,12 +157,12 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         except KeyError:          
             color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
-        if [-1, -1, -1] in color_mapping.values():
-            for c_idx, c_color in color_mapping.items():
-                if c_color[0] == -1:
-                    color_mapping[c_idx] = [random.choice(range(256)) for i in range(3)]
+        # if [-1, -1, -1] in color_mapping.values():
+        #     for c_idx, c_color in color_mapping.items():
+        #         if c_color[0] == -1:
+        #             color_mapping[c_idx] = [random.choice(range(256)) for i in range(3)]
 
-        color_mapping[0] = [0, 0, 0] 
+        #color_mapping[0] = [0, 0, 0] 
 
     if dataset_type is None:
 
@@ -191,33 +191,9 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         def get_y_func(x, ext=right):
             return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
         
-        src = ArcGISSegmentationItemList.from_folder(path/'images')
-
-        pixel_values = []
-        classes = class_mapping.keys()
-        n_classes = len(classes)
-        for x in src.items:
-            if len(pixel_values) < n_classes:
-                lbl = np.array(pilImage.open(get_y_func(x)))
-                for val in np.unique(lbl):
-                    if not val in pixel_values:
-                        pixel_values.append(val)
-
-        pixel_values.sort()
-
-        if (len(pixel_values) < n_classes):
-            warnings.warn('Could not find pixel values in images for all classes in the emd file.')
-        
-        if max(pixel_values) == max(classes):
-            pixel_values = classes
-
-        pixel_mapping = { i+1:y for i, (c, y) in enumerate(zip(classes, pixel_values))}
-
-        if not list(color_mapping.keys())[0] == 1:  # check if the first class if '1'. Assuming if first class value is '1' then the classes are contiguous
-            color_mapping = { i+1:value for i, value in enumerate(color_mapping.values())}  # Convert non-contiguous to contiguous color-mapping.
-
-        src = (src.random_split_by_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, pixel_mapping = pixel_mapping)) #TODO : Handel NoData case
+        src = (ArcGISSegmentationItemList.from_folder(path/'images')
+           .random_split_by_pct(val_split_pct, seed=seed)
+           .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)) #TODO : Handel NoData case
 
         if transforms is None:
             transforms = get_transforms(flip_vert=True,
