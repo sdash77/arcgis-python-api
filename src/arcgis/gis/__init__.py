@@ -3358,7 +3358,7 @@ class ContentManager(object):
             from arcgis._impl.common._utils import bytesto
             is_file = os.path.isfile(data)
             if is_file and \
-               bytesto(os.stat(data).st_size) < 15:
+               bytesto(os.stat(data).st_size) < 7:
                 multipart = False
             else:
                 multipart = True
