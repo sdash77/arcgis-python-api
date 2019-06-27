@@ -205,29 +205,39 @@ def summarize_elevation(input_features: FeatureSet = {},
                         dem_resolution: str = None,
                         include_slope_aspect: bool = False,
                         gis=None) -> FeatureSet:
-    """
+    """   
+    .. image:: _static/images/summarize_elevation/summarize_elevation.png     
 
+    The ``summarize_elevation`` method calculates summary statistics for features you provide based 
+    on ArcGIS Online Elevation data. It accepts point, line, or polygon input and returns statistics 
+    for the elevation, slope, and aspect of the features. 
 
-Calculates summary statistics of elevation for each input feature.
+    =========================    =========================================================
+    **Parameter**                **Description**
+    -------------------------    ---------------------------------------------------------
+    input_features               Reqauired FeatureSet. Input features to summarize the elevation for. The features can be point, line, or area. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    feature_id_field             Optional string. The unique ID field to use for the input features.  
+    -------------------------    ---------------------------------------------------------
+    dem_resolution               Optional string. The approximate spatial resolution (cell size) of the source elevation data used for the calculation.
+                                 
+                                 Choice list:[' ', 'FINEST', '10m', '30m', '90m']
+                                 
+                                 The default value is None. 
+    -------------------------    ---------------------------------------------------------
+    include_slope_aspect         Optional boolean. Determines if slope and aspect for the input feature(s) will be included in the output. The slope and aspect values in the output are in degrees.
+                                 
+                                 The default value is False.
+    =========================    =========================================================
 
-Parameters:
+    :returns: result_layer : Output Summary as a FeatureSet
 
-   input_features: Input Features (FeatureSet). Required parameter.  Input point, line, or area features to summarize the elevation for.
+    .. code-block:: python
 
-   feature_id_field: Feature ID Field (str). Optional parameter.  The Unique ID field to use for the input features.
-
-   dem_resolution: DEM Resolution (str). Optional parameter.  The approximate spatial resolution (cell size) of the source elevation data used for the calculation. The default is 90m.The resolution keyword is an approximation of the spatial resolution of the digital elevation model. Many elevation sources are distributed with units of arc seconds, the keyword is an approximation in meters for easier understanding.FINEST    The finest units available for the extent are used.10m    the elevation source resolution is 1/3 arc second, or approximately 10 meters.30m    the elevation source resolution is 1 arc second, or approximately 30 meters.90m    the elevation source resolution is 3 arc second, or approximately 90 meters.
-      Choice list:[' ', 'FINEST', '10m', '30m', '90m']
-
-   include_slope_aspect: Include Slope and Aspect (bool). Optional parameter.  Determines if slope and aspect for the input feature(s) will be included in the output.Checked    Slope and aspect values will be included in the output.Unchecked    Only the elevation values will be included in the output.
-
-gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-Returns:
-   output_summary - Output Summary as a FeatureSet
-
-See http://ec2-35-161-157-22.us-west-2.compute.amazonaws.com:6080/arcgis/rest/directories/arcgisoutput/Tools/Elevation_GPServer/Tools_Elevation/SummarizeElevation.htm for additional help.
+        # USAGE EXAMPLE: To calculate summary statistics for mountain polyline features.
+        summarize = summarize_elevation(input_features=mountain_fs,
+                           dem_resolution='FINEST',
+                           include_slope_aspect=True)  
     """
     kwargs = locals()
 
