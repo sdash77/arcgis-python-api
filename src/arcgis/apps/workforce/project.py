@@ -48,12 +48,18 @@ class Project:
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         self._update_cached_objects()
 
+    def _update_cached_assignment_types(self):
+        """
+            Updates the cached assignment types
+        """
+        self._cached_assignment_types = {a.code: a for a in self.assignment_types.search()}
+
     def _update_cached_objects(self):
         """
             Caches the types, workers, and dispatchers for quicker assignment creation when querying
             Should be called when querying assignments
         """
-        self._cached_assignment_types = {a.code: a for a in self.assignment_types.search()}
+        self._update_cached_assignment_types()
         self._cached_workers = {w.id: w for w in self.workers.search()}
         self._cached_dispatchers = {d.id: d for d in self.dispatchers.search()}
         for d in self._cached_dispatchers.values():
