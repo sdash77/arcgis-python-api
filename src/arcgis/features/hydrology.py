@@ -20,8 +20,8 @@ def _evaluate_spatial_input(input_points):
     :param input_points: FeatureSet or Spatially Enabled DataFrame
     :return: FeatureSet
     """
-    if isinstance(FeatureSet):
-        return FeatureSet
+    if isinstance(input_points, FeatureSet):
+        return input_points
 
     elif isinstance(input_points, DataFrame) and _is_geoenabled(input_points):
         return input_points.spatial.to_featureset()
@@ -36,7 +36,10 @@ def _evaluate_spatial_input(input_points):
 def trace_downstream(input_points, point_id_field=None, source_database='Finest', generalize=False,
                      gis=None):
     """
-    The Trace Downstream method delineates the downstream path from a specified location. 
+    
+    .. image:: _static/images/trace_downstream/trace_downstream.png   
+
+    The ``trace_downstream`` method delineates the downstream path from a specified location. 
     Esri-curated elevation data is used to create an output polyline delineating the flow path 
     downstream from the specified input location. This method accesses a service using multiple 
     source databases which are available for different geographic areas and at different 
@@ -45,16 +48,14 @@ def trace_downstream(input_points, point_id_field=None, source_database='Finest'
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    input_points           Required Feature Set or Spatially Enabled DataFrame
+    input_points           Required FeatureSet or Spatially Enabled DataFrame
                            Points delineating the starting location to calculate the downstream 
-                           location from.
+                           location from. See :ref:`Feature Input<FeatureInput>`.
     ------------------     --------------------------------------------------------------------
-    point_id_field         Optional String
-                           Field used to identify the feature from the source data. This is 
+    point_id_field         Optional string. Field used to identify the feature from the source data. This is 
                            useful for relating the results back to the original source data.
     ------------------     --------------------------------------------------------------------
-    source_database        Optional String - Default "Finest"
-                           Keyword indicating the source data that will be used in the
+    source_database        Optional string. Keyword indicating the source data that will be used in the
                            analysis. This keyword is an approximation of the spatial resolution
                            of the digital elevation model used to build the foundation
                            hydrologic  database. Since many elevation sources are distributed
@@ -70,20 +71,28 @@ def trace_downstream(input_points, point_id_field=None, source_database='Finest'
                              approximately 30 meter resolution, elevation data.
                            - 90m: The hydrologic source was built from 3 arc second -
                              approximately 90 meter resolution, elevation data.
+
+                           The default value is 'Finest'.
     ------------------     --------------------------------------------------------------------
-    generalize             Optional Boolean - Default False
-                           Determines if the output downstream trace lines will be smoothed 
+    generalize             Optional boolean. Determines if the output downstream trace lines will be smoothed 
                            into simpler lines.
+
+                           The default value is False.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS Object instance
-                           If not provided as input, a GIS object instance logged into an 
+    gis                    Optional GIS Object instance. If not provided as input, a GIS object instance logged into an 
                            active portal with elevation helper services defined must already 
                            be created in the active Python session. A GIS object instance can 
                            also be optionally explicitly passed in through this parameter.
     ==================     ====================================================================
 
-    :return:
-       FeatureSet
+    :return: FeatureSet
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To trace downstream path from from the outlet points.
+        path = trace_downstream(input_points=fs,
+                                source_database='Finest',
+                                generalize=False)
     """
     kwargs = locals()
 
