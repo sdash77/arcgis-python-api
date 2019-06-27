@@ -6,6 +6,7 @@ except ImportError:
 import arcgis
 from pathlib import Path
 import os
+import tempfile
 
 class SaveModelCallback(TrackerCallback):
 
@@ -97,28 +98,30 @@ class ArcGISModel(object):
         self.learn.unfreeze()
         
     def _save(self, name_or_path, zip_files=True):
+        temp = self.learn.path
+
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
-            # to make fastai save to both path and with name
-            temp = self.learn.path
+            # to make fastai save to both path and with name    
             self.learn.path = path
             self.learn.model_dir = ''
             if not os.path.exists(self.learn.path):
                 os.makedirs(self.learn.path)
-            saved_path = self.learn.save(name, return_path=True)
-            # undoing changes to self.learn.path and self.learn.model
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
         else:
-            temp = self.learn.path
             # fixing fastai bug
             self.learn.path = self.learn.path.parent
             self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
             if not os.path.exists(self.learn.path / self.learn.model_dir):
                 os.makedirs(self.learn.path / self.learn.model_dir)
-            saved_path = self.learn.save(name_or_path,  return_path=True)
+            name = name_or_path
+
+        try:
+            saved_path = self.learn.save(name,  return_path=True)
             # undoing changes to self.learn.path
+        except Exception as e:  
+            raise e
+        finally:
             self.learn.path = temp
             self.learn.model_dir = 'models'
 
@@ -153,7 +156,9 @@ class ArcGISModel(object):
         
     def _create_zip(self, zipname, path):
         import shutil
-        zip_file = shutil.make_archive(zipname, 'zip', path)
+
+        temp_dir = tempfile.TemporaryDirectory().name
+        zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
         if os.path.exists(os.path.join(path, zipname) + '.zip'):
             os.remove(os.path.join(path, zipname) + '.zip')
         shutil.move(zip_file, path)
@@ -173,10 +178,10 @@ class ArcGISModel(object):
                                 be passed
         =====================   ===========================================
         """
+        temp = self.learn.path
         if '\\' in name_or_path or '/' in name_or_path:
             path = Path(name_or_path)
             # to make fastai from both path and with name
-            temp = self.learn.path
             if path.is_file():
                 name = path.stem
                 self.learn.path = path.parent
@@ -184,16 +189,17 @@ class ArcGISModel(object):
                 name = path.parts[-1]
                 self.learn.path = path
             self.learn.model_dir = ''
-            self.learn.load(name)
-            # undoing changes to self.learn.path and self.learn.model_dir
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
         else:
-            temp = self.learn.path
             # fixing fastai bug
             self.learn.path = self.learn.path.parent
             self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
-            self.learn.load(name_or_path)
+            name = name_or_path
+
+        try:
+            self.learn.load(name)
+        except Exception as e:
+            raise e
+        finally:
             # undoing changes to self.learn.path
             self.learn.path = temp
-            self.learn.model_dir = 'models'  
+            self.learn.model_dir = 'models'

@@ -105,7 +105,7 @@ class BCE_Loss(nn.Module):
         t = torch.Tensor(t[:,1:].contiguous()).to(pred.device)
         x = pred[:,1:]
         w = self.get_weight(x,t)
-        return F.binary_cross_entropy_with_logits(x, t, w, size_average=False)/(self.num_classes-1)
+        return F.binary_cross_entropy_with_logits(x, t, w, reduction='sum')/(self.num_classes-1)
     
     def get_weight(self,x,t): return None
 
