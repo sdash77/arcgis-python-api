@@ -59,6 +59,7 @@ def add_assignment_types(project, assignment_types):
             max_code = assignment_type.code
             coded_values.append(assignment_type.coded_value)
             project.assignments_layer.manager.update_definition({"fields": [assignment_type_field]})
+        project._update_cached_assignment_types()
     return assignment_types
 
 
@@ -78,6 +79,7 @@ def update_assignment_types(project, assignment_types):
                 if assignment_type.code == coded_value['code']:
                     coded_values[i] = assignment_type.coded_value
         project.assignments_layer.manager.update_definition({"fields": [assignment_type_field]})
+        project._update_cached_assignment_types()
     return assignment_types
 
 
@@ -106,6 +108,7 @@ def delete_assignment_types(project, assignment_types):
                         if coded_value['code'] not in assignment_type_codes]
         assignment_type_field['domain']['codedValues'] = coded_values
         project.assignments_layer.manager.update_definition({"fields": [assignment_type_field]})
+        project._update_cached_assignment_types()
 
 
 def get_assignment_type_field(project, feature_layer):

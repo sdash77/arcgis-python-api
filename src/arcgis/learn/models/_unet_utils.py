@@ -55,7 +55,6 @@ class ArcGISSegmentationLabelList(ImageItemList):
             if len(bounds) < 3: # Two handle two classes i am adding one number to the classes which is not already in bounds
                 bounds = bounds + [max(bounds)+1]
             self.mplnorm = mpl.colors.BoundaryNorm(bounds, len(bounds))
-            
         else:
             import matplotlib as mpl
             bounds = list(color_mapping.keys())

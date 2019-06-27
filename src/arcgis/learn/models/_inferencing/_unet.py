@@ -137,7 +137,7 @@ class ChildImageClassifier:
                 {
                     'name': 'padding',
                     'dataType': 'numeric',
-                    'value': 0,
+                    'value': int(self.json_info['ImageHeight'])//4,
                     'required': False,
                     'displayName': 'Padding',
                     'description': 'Padding'

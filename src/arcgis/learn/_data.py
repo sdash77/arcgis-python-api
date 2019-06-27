@@ -136,19 +136,15 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
 
-    
-    color_mapping = None
+    json_file = path / 'esri_model_definition.emd'
+    with open(json_file) as f:
+        emd = json.load(f)
 
     if class_mapping is None:
-        json_file = path / 'esri_model_definition.emd'
-        with open(json_file) as f:
-            emd = json.load(f)
-
-    if class_mapping is None:
-            try:
-                class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
-            except KeyError:
-                class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
+        try:
+            class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+        except KeyError:
+            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
     
     color_mapping = None
     if color_mapping is None:
