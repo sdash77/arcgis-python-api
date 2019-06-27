@@ -48,6 +48,7 @@ class ArcGISSegmentationLabelList(ImageItemList):
         self.color_mapping = color_mapping
         self.copy_new.append('classes')
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
+
         if is_no_color(list(color_mapping.values())):
             self.cmap = 'tab20'  ## compute cmap from palette
             import matplotlib as mpl
@@ -62,6 +63,11 @@ class ArcGISSegmentationLabelList(ImageItemList):
                 bounds = bounds + [max(bounds)+1]
             self.cmap = mpl.colors.ListedColormap(np.array(list(color_mapping.values()))/255)
             self.mplnorm = mpl.colors.BoundaryNorm(bounds, self.cmap.N)
+
+        if len(color_mapping.keys()) == 1:
+            self.cmap = 'tab20'
+            self.mplnorm = None
+        
 
     def open(self, fn):
         with warnings.catch_warnings():
