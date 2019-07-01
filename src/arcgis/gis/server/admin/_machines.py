@@ -290,6 +290,20 @@ class Machine(BaseServer):
         return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     @property
+    def hardware(self):
+        """
+        This resource displays hardware information for the machine in your
+        ArcGIS Notebook Server site. It updates the information when it
+        detects any change to the configuration of your machine, as well
+        as each time the machine is restarted.
+
+        :return: dict
+        """
+        url = self._url + "/hardware"
+        params = {'f' : 'json'}
+        return self._con.get(url, params)    
+    #----------------------------------------------------------------------
+    @property
     def status(self):
         """
         Gets the status/state of this machine.
