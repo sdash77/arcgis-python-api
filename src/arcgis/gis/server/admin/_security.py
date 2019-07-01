@@ -453,7 +453,7 @@ class UserManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         username               Required string. The user or users to find. 
         ------------------     --------------------------------------------------------------------
-        max_count              Optional integer. The maximum number of users to return for this 
+        max_results            Optional integer. The maximum number of users to return for this 
                                query. The default is 25.
         ==================     ====================================================================
         
