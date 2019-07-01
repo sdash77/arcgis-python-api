@@ -293,9 +293,9 @@ class Machine(BaseServer):
     def hardware(self):
         """
         This resource displays hardware information for the machine in your
-        ArcGIS Notebook Server site. It updates the information when it
-        detects any change to the configuration of your machine, as well
-        as each time the machine is restarted.
+        ArcGIS Server site. It updates the information when it detects any 
+        change to the configuration of your machine, as well as each time 
+        the machine is restarted.
 
         :return: dict
         """
