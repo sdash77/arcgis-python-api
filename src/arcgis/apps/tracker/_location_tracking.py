@@ -268,7 +268,7 @@ class LocationTrackingManager:
     def retention_period_enabled(self):
         """A boolean indicating if the retention period is enabled"""
         try:
-            return bool(self.tracks_layer.manager.properties["adminLayerInfo"]["tableMetadata"]["dataRetention"])
+            return self.tracks_layer.manager.properties["adminLayerInfo"]["tableMetadata"]["dataRetention"].lower() == "true"
         except:
             return None
 
