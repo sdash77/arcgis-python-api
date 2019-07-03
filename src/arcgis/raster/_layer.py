@@ -1630,6 +1630,7 @@ class ImageryLayer(Layer):
         params['maximumCellSizeFactor'] = maximum_cell_size_factor
         params['attributes'] = attributes
         params['geodataTransforms'] = geodata_transforms
+
         if not item_ids is None:
             params['itemIds'] = item_ids
         if not service_url is None:
