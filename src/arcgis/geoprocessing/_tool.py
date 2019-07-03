@@ -181,7 +181,7 @@ def _generate_fn(task, tbx):
 
         src_code += ',\n' \
 
-    src_code += ' '*num_spaces + 'gis=None) -> ' + name_type['return'].__name__ + ':\n'
+    src_code += ' '*num_spaces + 'gis=None, future=False) -> ' + name_type['return'].__name__ + ':\n'
 
     src_code += '\n\t"""\n\n' + helpstring + '\n\t"""\n'
 
@@ -205,8 +205,13 @@ def _generate_fn(task, tbx):
         src_code += '\n\t                 {"name":"' + retval['name'] + '", "display_name":"' + \
                                             retval['display_name'] + '", "type":' + retval['type'].__name__ + "},"
     src_code += '\n\t                ]\n\n'
-
-    src_code += '\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)'
+    src_code += '\tif future:\n\t'
+    src_code += '\n\t\texecutor =  concurrent.futures.ThreadPoolExecutor(1)\n'
+    src_code += '\n\t\tfuture = executor.submit(_execute_gp_tool, *(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)) \n'
+    src_code += '\n\t\texecutor.shutdown(False)\n'
+    src_code += '\n\t\treturn future\n'
+    src_code += '\telse:\n'
+    src_code += '\t\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)'
 
     src_code += '\n\n\n'
     return src_code
@@ -271,6 +276,7 @@ def _inspect_tool(taskprops, map_as_result):
 
     # gis=None
     helpstring += '\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n'
+    helpstring += '\n\n\tfuture: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.\n'
 
     if len(return_values) == 1:
         helpstring = helpstring + "\n\nReturns: " # + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
@@ -411,6 +417,7 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
+import concurrent.futures
 
 _log = _logging.getLogger(__name__)
     """
