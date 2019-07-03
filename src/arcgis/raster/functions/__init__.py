@@ -4197,6 +4197,8 @@ class RFT:
                                         break
                                 else:
                                     value["value"]=v
+                                    if((key=="RasterInfo")) and isinstance(v, dict):
+                                        v.update({"type":"RasterInfo"})
                                     if (isinstance(value["value"], numbers.Number) and value["isDataset"]==True):
                                         value["value"]={"type":"Scalar","value":v}
                                         break
