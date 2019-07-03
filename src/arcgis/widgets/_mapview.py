@@ -729,11 +729,12 @@ class MapView(widgets.DOMWidget):
         self.webmap.add_layer(item, webmap_options)
 
     def _add_layer_to_widget(self, item, options):
-        from arcgis.features import FeatureSet, Feature, FeatureCollection
+        from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
         from arcgis.raster import ImageryLayer
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
+        from arcgis.mapping import MapImageLayer, VectorTileLayer
 
         if isinstance(item, Item):
             for layer in item.layers:
@@ -767,8 +768,29 @@ class MapView(widgets.DOMWidget):
                 raise Exception("dict layers must have 'type' and 'url'")
             if "renderer" in options:
                 item["renderer"] = options["renderer"]
-            item["_hashFromPython"] = self._get_hash(item)
-            self._add_notype_layer(item, item)
+            added_successful = False
+            try:
+                if item['type'] == 'FeatureLayer':
+                    layer = FeatureLayer(item.pop('url'))
+                    self._add_layer_to_widget(layer, item)
+                elif item['type'] == 'ImageryLayer':
+                    layer = ImageryLayer(item.pop('url'))
+                    self._add_layer_to_widget(layer, item)
+                elif item['type'] in ['MapImageLayer', 'TileLayer']:
+                    mil_item = MapImageLayer(item.pop('url'))
+                    for layer in mil_item:
+                        self._add_layer_to_widget(layer, item)
+                elif item['type'] == 'VectorTileLayer':
+                    layer = VectorTileLayer(item.pop('url'))
+                    self._add_layer_to_widget(layer, item)
+            except:
+                pass
+            else:
+                added_successful = True
+            finally:
+                if not added_successful:
+                    item["_hashFromPython"] = self._get_hash(item)
+                    self._add_notype_layer(item, item)
         elif _is_iterable(item):
             # If it's any iterable not previously checked, attempt to infer
             if 'layers' in item:
@@ -1045,7 +1067,7 @@ class MapView(widgets.DOMWidget):
             wm_layer_id = wm_layer["id"]
             if wm_layer_id in js_layers:
                 js_layer = js_layers[wm_layer_id] # js representation of wm layer
-                if js_layer["renderer"]:
+                if "renderer" in js_layer and js_layer["renderer"]:
                     renderer = js_layer["renderer"]
                     id = js_layer["id"]
                     self._apply_renderer_to_webmap_layer_id(renderer, id)
@@ -1225,13 +1247,14 @@ class MapView(widgets.DOMWidget):
             raise RuntimeError("Webmap Item object missing. You should use "\
                                "`save()` to save a new web scene item")
         self.mode = "2D"
-        self.webmap._basemap['baseMapLayers'] = \
-            self._readonly_webmap_from_js['basemap']['baseMapLayers']
+        if 'basemap' in self._readonly_webmap_from_js:
+            self.webmap._basemap['baseMapLayers'] = \
+                self._readonly_webmap_from_js['basemap']['baseMapLayers']
         self.webmap._extent = self.extent
         self._update_webmap_layers_from_js()
         return self.webmap.item.update(item_properties=item_properties,
                                        thumbnail=thumbnail,
-                                           metadata=metadata)
+                                       metadata=metadata)
 
     def _update_as_webscene(self, item_properties, thumbnail, metadata):
         if not self.webscene_item:
