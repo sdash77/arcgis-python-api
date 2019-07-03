@@ -6,6 +6,7 @@ copy_to_data_store copies data to your ArcGIS Data Store and creates a layer in 
 """
 import json as _json
 import logging as _logging
+import datetime as _datetime
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
@@ -678,7 +679,7 @@ def calculate_fields(input_layer,
         "track_fields" : (str, "trackFields"),
         "time_boundary_split" : (int, "timeBoundarySplit"),
         "time_split_unit" : (str, "timeBoundarySplitUnit"),
-        "time_reference" : (datetime.datetime, "timeBoundaryReference"),
+        "time_reference" : (_datetime.datetime, "timeBoundaryReference"),
         "output_name": (str, "outputName"),
         "output": (_FeatureSet, "output"),
         "context": (str, "context")
