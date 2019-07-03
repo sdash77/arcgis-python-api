@@ -509,6 +509,10 @@ def find_point_clusters(
 
     output_service=_create_output_service(gis, output_name, output_service_name, 'Find Point Clusters')
 
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})    
+
     _set_context(params)
 
     param_db={

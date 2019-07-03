@@ -2076,17 +2076,39 @@ class MapImageLayer(Layer):
 
         self.layers = layers
         self.tables = tables
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+    
+        The find/replace is case insensitive.
+    
+        """
+        import re
+        patternDict = {}
+        myDict = {}
+        for key,value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring    
 
     @property
     def manager(self):
         if self._admin is None:
             """accesses the administration service"""
-            url = self._url
-            res = search("/rest/", url).span()
-            addText = "admin/"
-            part1 = url[:res[1]]
-            part2 = url[res[1]:]
-            adminURL = url.replace("/rest/", "/admin/").replace("/MapServer", ".MapServer")#"%s%s%s" % (part1, addText, part2)
+            if self._gis._portal.is_arcgisonline:
+                rd = {'/rest/services/': '/rest/admin/services/'}
+            else:
+                rd = {"/rest/" : "/admin/",
+                      "/MapServer" : ".MapServer"}
+            adminURL = self._str_replace(self._url, rd)
+            #res = search("/rest/", url).span()
+            #addText = "admin/"
+            #part1 = url[:res[1]]
+            #part2 = url[res[1]:]
+            #adminURL = url.replace("/rest/", "/admin/").replace("/MapServer", ".MapServer")#"%s%s%s" % (part1, addText, part2)
 
             self._admin = MapImageLayerManager(adminURL, self._gis, self)
         return self._admin

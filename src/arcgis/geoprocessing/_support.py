@@ -4,6 +4,7 @@ import datetime
 import inspect
 import logging
 import sys
+import json
 import time
 import datetime
 import collections
@@ -285,7 +286,8 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                     if type(param_value) == FeatureSet:
                         gp_params[gp_param_name] = param_value.to_dict()
                     elif  _is_geoenabled(param_value):
-                        gp_params[gp_param_name] = param_value.spatial.__feature_set__
+                        gp_params[gp_param_name] = json.loads(json.dumps(param_value.spatial.__feature_set__, 
+                                                                         default=_date_handler))
                     elif type(param_value) == str:
 
                         try:

@@ -3358,7 +3358,7 @@ class ContentManager(object):
             from arcgis._impl.common._utils import bytesto
             is_file = os.path.isfile(data)
             if is_file and \
-               bytesto(os.stat(data).st_size) < 15:
+               bytesto(os.stat(data).st_size) < 7:
                 multipart = False
             else:
                 multipart = True
@@ -7285,7 +7285,7 @@ class Item(dict):
             else:
                 return download_path
 
-    def export(self, title, export_format, parameters=None, wait=True):
+    def export(self, title, export_format, parameters=None, wait=True, enforce_fld_vis=None):
         """
         Exports a service item to the specified export format.
         Available only to users with an organizational subscription.
@@ -7309,6 +7309,13 @@ class Item(dict):
         wait                Optional boolean. Default is True, which forces a wait for the
                             export to complete; use False for when it is okay to proceed while
                             the export continues to completion.
+        ---------------     --------------------------------------------------------------------
+        enforce_fld_vis     Optional boolean. Be default when you are the owner of an item and 
+                            the `export` operation is called, the data provides all the columns.  
+                            If the export is being perform on a view, to ensure the view's 
+                            column definition is honor, then set the value to True. When the 
+                            owner of the service and the value is set to False, all data and 
+                            columns will be exported.
         ===============     ====================================================================
 
 
@@ -7335,6 +7342,12 @@ class Item(dict):
         }
         if parameters:
             params.update({'exportParameters': parameters})
+        if not enforce_fld_vis is None and \
+           'View Service' in self.typeKeywords:
+            if 'exportParameters' in params:
+                params['exportParameters']["enforceFieldVisibility"] = enforce_fld_vis
+            else:
+                params['exportParameters'] = {"enforceFieldVisibility" : enforce_fld_vis }
         res = self._portal.con.post(data_path, params)
         export_item = Item(gis=self._gis, itemid=res['exportItemId'])
         if wait == True:
@@ -8748,13 +8761,20 @@ class Item(dict):
            self._gis._portal.is_arcgisonline and \
            fileType.lower() == 'tilepackage':
             from ..mapping._types import MapImageLayer
+            from ..raster._layer import ImageryLayer
             if len(ret) > 0 and \
                'success' in ret[0] and \
                ret[0]['success'] == False:
                 raise Exception(ret[0]['error'])
             ms_url = self._gis.content.get(ret[0]['serviceItemId']).url
-            ms = MapImageLayer(url=ms_url, gis=self._gis)
-
+            if ms_url.lower().find("mapserver") > -1:
+                ms = MapImageLayer(url=ms_url, gis=self._gis)
+                manager = ms.manager
+            elif ms_url.lower().find("imageserver") > -1:
+                ms = ImageryLayer(url=ms_url, gis=self._gis)
+                manager = ms.cache_manager
+                if not self._gis._portal.is_arcgisonline:
+                    return Item(self._gis, ret[0]['serviceItemId'])
             serviceitem_id = ret[0]['serviceItemId']
             try:
                 # first edit the tile service to set min, max scales
@@ -8764,17 +8784,20 @@ class Item(dict):
                 else:
                     min_scale = ms.properties.minScale
                     max_scale = ms.properties.maxScale
-                edit_result = ms.manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
+                
+                edit_result = manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
 
                 # Get LoD from Map Image Layer
                 full_extent = dict(ms.properties.fullExtent)
                 lod_dict = ms.properties.tileInfo['lods']
                 lod = [current_lod['level'] for current_lod in lod_dict
                        if (min_scale <= current_lod['scale'] <= max_scale)]
-                ret = ms.manager.update_tiles(levels=lod, extent=full_extent)
+                ret = manager.update_tiles(levels=lod, extent=full_extent)
             except Exception as tiles_ex:
                 raise Exception('Error unpacking tiles :' + str(tiles_ex))
         elif not buildInitialCache and output_type is not None and output_type.lower() in ['sceneservice']:
+            return Item(self._gis, ret[0]['serviceItemId'])
+        elif not buildInitialCache and ret[0]['type'].lower() == 'image service':
             return Item(self._gis, ret[0]['serviceItemId'])
         else:
             serviceitem_id = self._check_publish_status(ret, folder)

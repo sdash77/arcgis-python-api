@@ -920,7 +920,7 @@ class Toolbox(_AsyncResource):
                 if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     if type(value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
                         params[key] = value.to_dict()
-                    elif _is_geoenabled(value):
+                    elif _is_geoenabled(value) or hasattr(value, 'spatial'):
                         params[key] = value.spatial.__feature_set__
                     elif type(value) in [SpatialDataFrame]:
                         params[key] = value.__feature_set__
