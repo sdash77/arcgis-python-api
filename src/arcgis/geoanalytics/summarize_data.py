@@ -170,102 +170,147 @@ def aggregate_points(point_layer,
                      output_name = None,
                      gis=None):
     """
-    Using a layer of point features and either a layer of area features or bins defined by a specified distance, this tool determines which points fall within each area or bin and calculates statistics about all the points within each area or bin. You may optionally apply time slicing with this tool.
+    .. image:: _static/images/aggregate_points/aggregate_points.png 
 
-    For example
+    This ``aggregate_points`` tool works with a layer of point features and a layer of areas. 
+    The layer of areas can be an input polygon layer or it can be square or hexagonal bins calculated 
+    when the task is run. The tool first determines which points fall within each specified area. 
+    After determining this point-in-area spatial relationship, statistics about all points in the 
+    area are calculated and assigned to the area. The most basic statistic is the count of the 
+    number of points within the area, but you can get other statistics as well.
 
-    * Given point locations of crime incidents, count the number of crimes per county or other administrative district.
+    For example, suppose you have point features of coffee shop locations and area features of counties, 
+    and you want to summarize coffee sales by county. Assuming the coffee shops have a TOTAL_SALES attribute, 
+    you can get the sum of all TOTAL_SALES within each county, the minimum or maximum TOTAL_SALES within each 
+    county, or other statistics like the count, range, standard deviation, and variance.
 
-    * Find the highest and lowest monthly revenues for franchise locations using 100 km bins.
+    This tool can also work on data that is time-enabled. If time is enabled on the input points, then 
+    the time slicing options are available. Time slicing allows you to calculate the point-in area relationship 
+    while looking at a specific slice in time. For example, you could look at hourly intervals, which would 
+    result in outputs for each hour.
 
-    This tool works with a layer of point features and a layer of areas features. Input area features can be from a polygon layer or they can be square or hexagonal bins calculated when the tool is run. The tool first determines which points fall within each specified area. After determining this point-in-area spatial relationship, statistics about all points in the area are calculated and assigned to the area. The most basic statistic is the count of the number of points within the area, but you can get other statistics as well.
+    For an example with time, suppose you had point features of every transaction made at a coffee shop location and no area layer. 
+    The data has been recorded over a year, and each transaction has a location and a time stamp. Assuming each transaction has a 
+    TOTAL_SALES attribute, you can get the sum of all TOTAL SALES within the space and time of interest. If these transactions are 
+    for a single city, we could generate areas that are one kilometer grids, and look at weekly time slices to summarize the 
+    transactions in both time and space.
 
-    For example, suppose you have point features of coffee shop locations and area features of counties, and you want to summarize coffee sales by county. Assuming the coffee shops have a TOTAL_SALES attribute, you can get the sum of all TOTAL_SALES within each county, the minimum or maximum TOTAL_SALES within each county, or other statistics such as the count, range, standard deviation, and variance.
+    =================================================     ========================================================================
+    **Argument**                                          **Description**
+    -------------------------------------------------     ------------------------------------------------------------------------
+    point_layer                                           Required point feature layer. The point features that will be aggregated 
+                                                          into the polygons in the ``polygon_layer`` or bins of the specified ``bin_size``.
+                                                          See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    bin_type                                              Optional string. If ``polygon_layer`` is not defined, it is required.
+                                             
+                                                          The type of bin that will be generated and into which points will be aggregated. 
 
-    This tool can also work with data that is time-enabled. If time is enabled on the input points, then the time slicing options are available. Time slicing allows you to calculate the point-in-area relationship while looking at a specific slice in time. For example, you could look at hourly intervals, which would result in outputs for each hour.
+                                                          Choice list:['Square', 'Hexagon'].
 
-    For an example with time, suppose you had point features of every transaction made at various coffee shop locations and no area layer. The data has been recorded over a year and each transaction has a location and a time stamp. Assuming each transaction has a TOTAL_SALES attribute, you can get the sum of all TOTAL_SALES within the space and time of interest. If these transactions are for a single city, we could generate areas that are 1-kilometer grids and look at weekly time slices to summarize the transactions in both time and space.
+                                                          The default value is "Square".
 
+                                                          When generating bins for Square, the number and units specified determine the height 
+                                                          and length of the square. For Hexagon, the number and units specified determine the 
+                                                          distance between parallel sides. Either ``bin_type`` or ``polygon_layer`` must be specified. 
+                                                          If ``bin_type`` is chosen, ``bin_size`` and ``bin_size_unit`` specifying the size of the bins must be included.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    bin_size (Required if ``bin_type`` is used)           Optional float. The distance for the bins of type binType that 
+                                                          the ``point_layer`` will be aggregated into. When generating bins, for Square, 
+                                                          the number and units specified determine the height and length of the square. 
+                                                          For Hexagon, the number and units specified determine the distance between parallel sides.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    bin_size_unit (Required if ``bin_size`` is used)      Optional string. The distance unit for the bins that the ``point_layer`` will be aggregated into.
+ 
+                                                          Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-    ====================================     ====================================================================
-    **Argument**                             **Description**
-    ------------------------------------     --------------------------------------------------------------------
-    point_layer                              Required Input Points layer (features).
-    ------------------------------------     --------------------------------------------------------------------
-    bin_type                                 Optional string parameter. If polygon_layer is not defined, it is required.
-                                             Choice list:['Square', 'Hexagon']
-    ------------------------------------     --------------------------------------------------------------------
-    bin_size                                 Bin Size (float). Optional parameter.
-    ------------------------------------     --------------------------------------------------------------------
-    bin_size_unit                            Bin Size Unit (str). Optional parameter.
-                                             Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
-    ------------------------------------     --------------------------------------------------------------------
-    polygon_layer                            Optional Input Polygons layer (features). If bin_type and bin properties are not defined, it is
-                                             required.
-    ------------------------------------     --------------------------------------------------------------------
-    time_step_interval                       Time Step Interval (int). Optional parameter.
-    ------------------------------------     --------------------------------------------------------------------
-    time_step_interval_unit                  Time Step Interval Unit (str). Optional parameter.
-                                             Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
-    ------------------------------------     --------------------------------------------------------------------
-    time_step_repeat_interval                Time Step Repeat Interval (int). Optional parameter.
-    ------------------------------------     --------------------------------------------------------------------
-    time_step_repeat_interval_unit           Time Step Repeat Interval Unit (str). Optional parameter.
-                                             Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
-    ------------------------------------     --------------------------------------------------------------------
-    time_step_reference                      Time Step Reference (datetime). Optional parameter.
-    ------------------------------------     --------------------------------------------------------------------
-    summary_fields                           Summary Statistics (str/list). Optional parameter.
+                                                          When generating bins for Square, the number and units specified determine the height and 
+                                                          length of the square. For Hexagon, the number and units specified determine the distance 
+                                                          between parallel sides. Either ``bin_type`` or ``polygon_layer`` must be specified. 
+                                                          If ``bin_type`` is chosen, ``bin_size`` and ``bin_size_unit`` specifying the size of the bins must be included.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    polygon_layer                                         Optional polygon feature layer. The polygon features (areas) into which the input points will be aggregated.
+                                                          See :ref:`Feature Input<FeatureInput>`.
 
-                                             The summary_fields string must enclose a Python list. Each list item must be a Python dictionary
-                                             with two keys. See the Key:Value definitions below.
+                                                          One of ``polygon_layer`` or bins ``bin_size`` and  ``bin_size_unit`` is required.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_interval                                    Optional integer. A numeric value that specifies duration of the time step interval. This option is only 
+                                                          available if the input points are time-enabled and represent an instant in time.
 
-                                             See URL 1 below for full details.
-    ------------------------------------     --------------------------------------------------------------------
-    output_name                              Output Features Name (str). Optional parameter.
-    ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    ====================================     ====================================================================
+                                                          The default value is 'None'.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_interval_unit                               Optional string. A string that specifies units of the time step interval. This option is only available if the 
+                                                          input points are time-enabled and represent an instant in time.
 
+                                                          Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
-    *Key:Value Dictionary Options for Argument summary_fields*
+                                                          The default value is 'None'.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_repeat_interval                             Optional integer. A numeric value that specifies how often the time step repeat occurs. 
+                                                          This option is only available if the input points are time-enabled and of time type instant.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_repeat_interval_unit                        Optional string. A string that specifies the temporal unit of the step repeat. 
+                                                          This option is only available if the input points are time-enabled and of time type instant.
 
+                                                          Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
-    =================  =====================================================================
-    **Key**            **Value**
-    -----------------  ---------------------------------------------------------------------
-    statisticType      Required string. Indicates statistic to summarize. See URL 1 below for full explanation.
+                                                          The default value is 'None'.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_reference                                   Optional datetime. A date that specifies the reference time to align the time slices to, represented in milliseconds from epoch. 
+                                                          The default is January 1, 1970, at 12:00 a.m. (epoch time stamp 0). This option is only available if the 
+                                                          input points are time-enabled and of time type instant.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    summary_fields                                        Optional list of dicts. A list of field names and statistical summary types that you want to calculate 
+                                                          for all points within each polygon or bin. Note that the count of points within each polygon is always 
+                                                          returned. By default, all statistics are returned.
 
-                       Choice list numeric fields:['Count', 'Sum', 'Mean', 'Min', 'Max', 'Range', 'Stddev', 'Var']
+                                                          Example: [{"statisticType": "Count", "onStatisticField": "fieldName1"}, {"statisticType": "Any", "onStatisticField": "fieldName2"}]
+                                                        
+                                                          fieldName is the name of the fields in the input point layer.
 
-                       Choice list for string fields:['Count', 'Any']
-    -----------------  ---------------------------------------------------------------------
-    onStatisticField   Required string. Provides the field name to summarize.
+                                                          statisticType is one of the following for numeric fields:
+    
+                                                              * ``Count`` -Totals the number of values of all the points in each polygon.
+                                                              * ``Sum`` -Adds the total value of all the points in each polygon.
+                                                              * ``Mean`` -Calculates the average of all the points in each polygon.
+                                                              * ``Min`` -Finds the smallest value of all the points in each polygon.
+                                                              * ``Max`` -Finds the largest value of all the points in each polygon.
+                                                              * ``Range`` -Finds the difference between the Min and Max values.
+                                                              * ``Stddev`` -Finds the standard deviation of all the points in each polygon.
+                                                              * ``Var`` -Finds the variance of all the points in each polygon.
 
-                       See https://developers.arcgis.com/python/guide/working-with-feature-layers-and-features/#Querying-feature-layers
-                       for instructions to query a feature layer for field names.
-    =================  =====================================================================
+                                                          statisticType is one of the following for string fields:
 
+                                                              * ``Count`` -Totals the number of strings for all the points in each polygon.
+                                                              * ``Any` `-Returns a sample string of a point in each polygon.   
+    -------------------------------------------------     ------------------------------------------------------------------------
+    output_name                                           Required string. The method will create a feature service of the results. You define the name of the service.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    context                                               Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+                                             
+                                                              * Extent (``extent``)—A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                              * Processing spatial reference (``processSR``)—The features will be projected into this coordinate system for analysis.
+                                                              * Output spatial reference (``outSR``)—The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                              * Data store (``dataStore``)—Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    =================================================     ========================================================================
 
-    For detailed explanation see:
-
-    URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Aggregate_Points/02r3000002rr000000/
-
-        **Returns:** Output Features as Item
-
-    *Example*
+    :returns: result_layer : Output Features as feature layer item.
 
     .. code-block:: python
 
-            # Usage Example: Using summary_fields on a layer.
+            # Usage Example: To aggregate number of 911 calls within 1 km summarized by Day count.
 
-            agg_pts_item = aggregate_points(input_points_layer,
-                              bin_size=0.5,
-                              bin_type='Hexagon',
-                              bin_size_unit='Miles',
-                              summary_fields=[{"statisticType": "Count", "onStatisticField": "fieldName1"}, {"statisticType": "Any", "onStatisticField": "fieldName2"}]
-                              )
+            agg_result = aggregate_points(calls, 
+                                          bin_size=1, 
+                                          bin_size_unit='Kilometers', 
+                                          time_step_interval=1, 
+                                          time_step_interval_unit="Years",
+                                          summary_fields=[{"statisticType": "Count", "onStatisticField": "Day"}],
+                                          output_name='testaggregatepoints01')
     """
+
     kwargs = locals()
 
     gis = _arcgis.env.active_gis if gis is None else gis
