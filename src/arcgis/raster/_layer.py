@@ -1952,10 +1952,10 @@ class ImageryLayer(Layer):
         }
         if item_ids is None and service_url is None:
             raise Exception("An itemId or service_url must be provided")
-        if isinstance(item_ids, str):
-            item_ids = [item_ids]
-        if isinstance(service_url, str):
-            service_url = [service_url]
+
+        if isinstance(item_ids, (list,tuple)):
+            item_ids = ",".join(item_ids)
+
         params['geodataTransformApplyMethod'] = geodata_transform_apply_method
         params['rasterType'] = raster_type
         params['buildPyramids'] = build_pyramids
@@ -1965,6 +1965,7 @@ class ImageryLayer(Layer):
         params['maximumCellSizeFactor'] = maximum_cell_size_factor
         params['attributes'] = attributes
         params['geodataTransforms'] = geodata_transforms
+
         if not item_ids is None:
             params['itemIds'] = item_ids
         if not service_url is None:
