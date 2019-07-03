@@ -55,18 +55,18 @@ class ImageryLayer(Layer):
             raster_analytics_server_url = None
             hosting_server_url = None
             for ds in gis._datastores:
-                if 'serverFunction' in ds._server.keys() and ds._server['serverFunction'] == 'ImageHosting':
+                if ('serverFunction' in ds._server.keys()) and 'ImageHosting' in ds._server['serverFunction']:
                     image_hosting_server_url = ds._server['url']
                     break
-                elif 'serverFunction' in ds._server.keys() and ds._server['serverFunction'] == 'RasterAnalytics':
+                elif ('serverFunction' in ds._server.keys()) and 'RasterAnalytics' in ds._server['serverFunction']:
                     raster_analytics_server_url = ds._server['url']
-                elif 'serverFunction' in ds._server.keys() and ds._server['serverFunction'] == '':
+                elif ('serverFunction' in ds._server.keys()) and ds._server['serverFunction'] is '':
                     hosting_server_url = ds._server['url']
             if image_hosting_server_url:
                 url = image_hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
             elif raster_analytics_server_url:
                 url = raster_analytics_server_url + "/rest/services/System/RasterRendering/ImageServer"
-            else:
+            elif hosting_server_url:
                 url = hosting_server_url + "/rest/services/System/RasterRendering/ImageServer"
 
         super(ImageryLayer, self).__init__(url, gis)

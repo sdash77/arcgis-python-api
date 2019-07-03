@@ -4060,7 +4060,10 @@ class RFT:
         except:
             _LOGGER.warning("Unable to find the arguments for the current raster function template. "
                   "This might be because the server could not process the template "
-                  "or the template is invalid.")
+                  "or the template is invalid."
+                  "(Ensure that the user account has access to Raster Utilities of the server. "
+                  "To share the Raster utilities to all user accounts. Please refer Sharing Raster Utilities section in "
+                  "https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.raster.functions.RFT.html)")
 
     @property
     def __doc__(self):
@@ -4110,7 +4113,8 @@ class RFT:
         except:
             _LOGGER.warning("Unable to apply the current raster function template on the imagery layer. " 
                   "This might be because the server could not process the template, "
-                  "the template is invalid or not populated with correct arguments.")
+                  "the template is invalid or not populated with correct arguments. "
+                  "(Make sure that Raster rendering service is turned on, inorder to display the output dynamically.)")
 
         
     def to_json(self, gis =None):
