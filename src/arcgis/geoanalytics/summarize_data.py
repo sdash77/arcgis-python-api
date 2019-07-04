@@ -284,7 +284,7 @@ def aggregate_points(point_layer,
                                                               * ``Count`` -Totals the number of strings for all the points in each polygon.
                                                               * ``Any` `-Returns a sample string of a point in each polygon.   
     -------------------------------------------------     ------------------------------------------------------------------------
-    output_name                                           Required string. The method will create a feature service of the results. You define the name of the service.
+    output_name                                           Optional string. The method will create a feature service of the results. You define the name of the service.
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
