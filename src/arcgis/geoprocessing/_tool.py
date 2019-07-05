@@ -205,13 +205,15 @@ def _generate_fn(task, tbx):
         src_code += '\n\t                 {"name":"' + retval['name'] + '", "display_name":"' + \
                                             retval['display_name'] + '", "type":' + retval['type'].__name__ + "},"
     src_code += '\n\t                ]\n\n'
-    src_code += '\tif future:\n\t'
-    src_code += '\n\t\texecutor =  concurrent.futures.ThreadPoolExecutor(1)\n'
-    src_code += '\n\t\tfuture = executor.submit(_execute_gp_tool, *(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)) \n'
-    src_code += '\n\t\texecutor.shutdown(False)\n'
-    src_code += '\n\t\treturn future\n'
-    src_code += '\telse:\n'
-    src_code += '\t\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)'
+    #src_code += '\tif future:\n\t'
+    #src_code += '\n\t\texecutor =  concurrent.futures.ThreadPoolExecutor(1)\n'
+    #src_code += '\n\t\tfuture = executor.submit(_execute_gp_tool, *(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)) \n'
+    #src_code += '\n\t\texecutor.shutdown(False)\n'
+    #src_code += '\n\t\treturn future\n'
+    #src_code += '\telse:\n'
+    src_code += '\n\tprint(future)\n'
+                                           
+    src_code += '\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url, future=future)'
 
     src_code += '\n\n\n'
     return src_code

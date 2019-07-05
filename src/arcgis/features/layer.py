@@ -1923,6 +1923,7 @@ class FeatureLayerCollection(_GISResource):
                         queries=None,
                         geometry=None,
                         geometry_type=None,
+                        in_sr=None,
                         version=None,
                         return_inserts=False,
                         return_updates=False,

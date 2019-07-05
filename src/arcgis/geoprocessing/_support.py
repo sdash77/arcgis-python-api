@@ -8,6 +8,7 @@ import json
 import time
 import datetime
 import collections
+import concurrent.futures
 
 import arcgis
 from arcgis.gis import GIS
@@ -16,7 +17,7 @@ from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
 from arcgis._impl.common._utils import _date_handler
-
+from arcgis.geoprocessing._job import GPJob
 
 _log = logging.getLogger(__name__)
 
@@ -96,6 +97,9 @@ def _layer_input_gp(input_layer):
 
     elif isinstance(input_layer, arcgis.features.FeatureCollection):
         input_param = input_layer.properties
+
+    elif isinstance(input_layer, arcgis.features.FeatureSet):
+        input_param = input_layer.to_dict()
 
     elif isinstance(input_layer, arcgis.gis.Layer):
         input_param = input_layer._lyr_dict
@@ -254,9 +258,37 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
         return result_values
     else:
         raise Exception("Unable to get analysis job results.")
+    
+def _future_op(gptool, task_url, job_info, job_id, param_db, return_values, return_messages):
+    
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    resp = _analysis_job_results(gptool, task_url, job_info, job_id)
 
+    # ---------------------async-out---------------------#
+    output_dict = {}
+    for retParamName in resp.keys():
+        output_val = resp[retParamName]
+        try:
+            ret_param_name, ret_val = _get_output_value(gptool, output_val, param_db, retParamName)
+            output_dict[ret_param_name] = ret_val
+        except KeyError:
+            pass # cannot handle unexpected output as return tuple will change
 
-def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False, add_token=True, return_messages=False):
+    # tools with output map service - add another output:
+    # result_layer = '' #***self.properties.resultMapServerName
+    if gptool.properties.resultMapServerName != '':
+        job_id = job_info.get("jobId")
+        result_layer_url = gptool._url.replace('/GPServer', '/MapServer') + '/jobs/' + job_id
+
+        output_dict['result_layer'] = MapImageLayer(result_layer_url, gptool._gis)
+
+    num_returns = len(resp)
+    if return_messages:
+        return _return_output(num_returns, output_dict, return_values), job_info
+
+    return _return_output(num_returns, output_dict, return_values)    
+
+def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False, add_token=True, return_messages=False, future=False):
     if gis is None:
         gis = arcgis.env.active_gis
 
@@ -333,6 +365,12 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
         else:
             job_info = gptool._con.post(submit_url, gp_params)
         job_id = job_info['jobId']
+        if future:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            future = executor.submit(_future_op, *(gptool, task_url, job_info, job_id, param_db, return_values, return_messages))
+            executor.shutdown(False)
+            gpjob = GPJob(future=future, gptool=gptool, jobid=job_id, task_url=task_url, gis=gptool._gis)
+            return gpjob
         job_info = _analysis_job_status(gptool, task_url, job_info)
         resp = _analysis_job_results(gptool, task_url, job_info, job_id)
 
