@@ -556,55 +556,136 @@ def calculate_density(
     output_name=None,
     gis=None):
     """
+    .. image:: _static/images/calculate_density/calculate_density.png 
 
+    The ``calculate_density`` tool creates a density map from point features by spreading known quantities of some 
+    phenomenon (represented as attributes of the points) across the map. The result is a layer of areas classified 
+    from least dense to most dense.
 
+    For point input, each point should represent the location of some event or incident, and the result layer 
+    represents a count of the incident per unit area. A higher density value in a new location means that there 
+    are more points near that location. In many cases, the result layer can be interpreted as a risk surface 
+    for future events. For example, if the input points represent locations of lightning strikes, the result 
+    layer can be interpreted as a risk surface for future lightning strikes.
 
+    Other use cases of this tool include the following:
 
-Parameters:
+    * Creating crime density maps to help police departments properly allocate resources to high crime areas.
+    * Calculating densities of hospitals within a county. The result layer will show areas with high and low accessibility to 
+      ospitals, and this information can be used to decide where new hospitals should be built.
+    * Identifying areas that are at high risk of forest fires based on historical locations of forest fires.
+    * Locating communities that are far from major highways in order to plan where new roads should be constructed.
 
-   input_layer: Input Points (Feature layer). Required parameter.
+    =================================================     ========================================================================
+    **Argument**                                          **Description**
+    -------------------------------------------------     ------------------------------------------------------------------------
+    input_layer                                           Required point feature layer. The point layer on which the density will be calculated.
 
-   fields: Population Field (str). Optional parameter.
+                                                          Analysis using ``Square`` or ``Hexagon`` bins requires a projected coordinate system. 
+                                                          When aggregating layers into bins, the input layer or processing extent (``processSR``) must 
+                                                          have a projected coordinate system. At 10.5.1, 10.6, and 10.6.1, if a projected coordinate 
+                                                          system is not specified when running analysis, the World Cylindrical Equal 
+                                                          Area (WKID 54034) projection will be used. At 10.7 or later, if a projected coordinate system 
+                                                          is not specified when running analysis, a projection will be picked based on the extent of the data.
+                                                          See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    fields                                                Optional string. Provides one or more field specifying the number of incidents at each location. 
+                                                          You can calculate the density on multiple fields, and the count of points will always have the density calculated.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    weight                                                Required string. The type of weighting applied to the density calculation. There are two options:
 
-   weight: Weight (str). Required parameter.
-      Choice list:['Uniform', 'Kernel']
+                                                            * ``Uniform`` - Calculates a magnitude-per-area. This is the default.
+                                                            * ``Kernel`` - Applies a kernel function to fit a smooth tapered surface to each point.
 
-   bin_type: Output Bin Type (str). Required parameter.
-      Choice list:['Square', 'Hexagon']
+                                                          The default value is "Uniform".
+    -------------------------------------------------     ------------------------------------------------------------------------
+    bin_type                                              Required string. The type of bin used to calculate density.
 
-   bin_size: Output Bin Size (float). Required parameter.
+                                                          Choice list: ['Hexagon', 'Square']. 
+    -------------------------------------------------     ------------------------------------------------------------------------
+    bin_size                                              Required float. The distance for the bins that the ``input_layer`` will be analyzed using. 
+                                                          When generating bins, for Square, the number and units specified determine the 
+                                                          height and length of the square. For ``Hexagon``, the number and units specified 
+                                                          determine the distance between parallel sides.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    bin_size_unit                                         Required string. The distance unit for the bins for which the density will be calculated. 
+                                                          The linear unit to be used with the value specified in ``bin_size``.
+                                                          
+                                                          The default is 'Meters'.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_interval                                    Optional integer. A numeric value that specifies duration of the time step interval. This option is 
+                                                          only available if the input points are time-enabled and represent an instant in time.
 
-   bin_size_unit: Output Bin Size Unit (str). Required parameter.
-      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+                                                          The default value is 'None'. 
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_interval_unit                               Optional string. A string that specifies units of the time step interval. 
+                                                          This option is only available if the input points are time-enabled and represent an instant in time.
 
-   time_step_interval: Time Step Interval (int). Optional parameter.
+                                                          Choice list: ['Milliseconds', 'Seconds', 'Minutes', 'Hours', 'Days', 'Weeks', 'Months', 'Years']
 
-   time_step_interval_unit: Time Step Interval Unit (str). Optional parameter.
-      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+                                                          The default value is 'None'.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_repeat_interval                             Optional integer. A numeric value that specifies how often the time step repeat occurs. 
+                                                          This option is only available if the input points are time-enabled and of time type instant.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_repeat_interval_unit                        Optional string. A string that specifies the temporal unit of the step repeat. 
+                                                          This option is only available if the input points are time-enabled and of time type instant.
 
-   time_step_repeat_interval: Time Step Repeat Interval (int). Optional parameter.
+                                                          Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
-   time_step_repeat_interval_unit: Time Step Repeat Interval Unit (str). Optional parameter.
-      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+                                                          The default value is 'None'.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    time_step_reference                                   Optional datetime. A date that specifies the reference time to align the time slices to, 
+                                                          represented in milliseconds from epoch. If time_step_reference is set 
+                                                          to 'None', time stepping will align to January 1st, 1970 (datetime(1970, 1, 1)). 
+                                                          This option is only available if the input points are time-enabled and of time type instant.
 
-   time_step_reference: Time Step Reference (_datetime). Optional parameter.
+                                                          The default value is 'None'.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    radius                                                Required integer. The size of the neighborhood within which to calculate the density. 
+                                                          The radius size must be larger than the ``bin_size``.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    radius_unit                                           Required string. The distance unit for the radius defining the neighborhood for which the density will be calculated. 
+                                                          The linear unit to be used with the value specified in ``bin_size``.             
+                                                          
+                                                          Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-   radius: Radius (float). Required parameter.
+                                                          The default value is 'Meters'.     
+    -------------------------------------------------     ------------------------------------------------------------------------
+    area_units                                            Optional string. The desired output units of the density values. If density values are very small, you can increase the 
+                                                          size of the area units (for example, square meters to square kilometers) to return larger values. 
+                                                          This value only scales the result. Possible area units are:
 
-   radius_unit: Radius Unit (str). Required parameter.
-      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+                                                          Choice list: ['SquareMeters', 'SquareKilometers', 'Hectares', 'SquareFeet', 'SquareYards', 'SquareMiles', 'Acres'].
 
-   area_units: Area Unit Scale Factor (str). Optional parameter.
-      Choice list:['SquareMeters', 'SquareKilometers', 'Hectares', 'SquareFeet', 'SquareYards', 'SquareMiles', 'Acres']
+                                                          The default value is "SquareKilometers".
+    -------------------------------------------------     ------------------------------------------------------------------------
+    output_name                                           Optional string. The method will create a feature service of the results. You define the name of the service.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    context                                               Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+                                             
+                                                            * Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                            * Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                            * Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                            * Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    =================================================     ========================================================================
 
-   output_name: Output Features Name (str). Required parameter.
+    :returns: result_layer : Output Features as feature layer item.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    .. code-block:: python
 
+            # Usage Example: Aggregate the number of Hurricanes within 1 meter to calculate density of Hurricane damage.
 
-Returns:
-   output - Output Features as a feature layer collection item
-
+            cal_den_result = calculate_density(input_layer=hurricane_lyr,
+                                               fields='Damage',
+                                               weight='Uniform',
+                                               bin_type='Square',
+                                               bin_size=1,
+                                               bin_size_unit="Meters",
+                                               radius=2,
+                                               radius_unit="Yards")
 
     """
     kwargs=locals()
