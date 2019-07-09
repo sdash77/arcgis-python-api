@@ -30,7 +30,8 @@ def build_multivariable_grid(input_layers,
                            bin_unit="Meters",
                            bin_type="Square",
                            output_name=None,
-                           gis=None):
+                           gis=None,
+                           future=False):
     """
     Only available at ArcGIS Enterprise 10.6.1 and later.
 
@@ -102,6 +103,9 @@ def build_multivariable_grid(input_layers,
     output_name               Optional string. output name of the layer
     -----------------------   -------------------------------------------------------------------
     gis                       Optional GIS.  The enterprise site that you want to connect to.
+    -----------------------   ---------------------------------------------------------------
+    future                    optional Boolean. If True, a GPJob is returned instead of 
+                              results. The GPJob can be queried on the status of the execution.
     =======================   ===================================================================
 
     :returns: Feature Layer
@@ -149,7 +153,7 @@ def build_multivariable_grid(input_layers,
     ]
 
     try:
-        _execute_gp_tool(gis, "BuildMultiVariableGrid", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "BuildMultiVariableGrid", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -157,18 +161,19 @@ def build_multivariable_grid(input_layers,
 
 
 def aggregate_points(point_layer,
-                     bin_type = None,
-                     bin_size = None,
-                     bin_size_unit = None,
-                     polygon_layer = None,
-                     time_step_interval = None,
-                     time_step_interval_unit = None,
-                     time_step_repeat_interval = None,
-                     time_step_repeat_interval_unit = None,
-                     time_step_reference = None,
-                     summary_fields = None,
-                     output_name = None,
-                     gis=None):
+                     bin_type=None,
+                     bin_size=None,
+                     bin_size_unit=None,
+                     polygon_layer=None,
+                     time_step_interval=None,
+                     time_step_interval_unit=None,
+                     time_step_repeat_interval=None,
+                     time_step_repeat_interval_unit=None,
+                     time_step_reference=None,
+                     summary_fields=None,
+                     output_name=None,
+                     gis=None,
+                     future=False):
     """
     .. image:: _static/images/aggregate_points/aggregate_points.png 
 
@@ -294,6 +299,9 @@ def aggregate_points(point_layer,
                                                               * Processing spatial reference (``processSR``)—The features will be projected into this coordinate system for analysis.
                                                               * Output spatial reference (``outSR``)—The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                               * Data store (``dataStore``)—Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    future                                                optional Boolean. If True, a GPJob is returned instead of 
+                                                          results. The GPJob can be queried on the status of the execution.
     =================================================     ========================================================================
 
     :returns: result_layer : Output Features as feature layer item.
@@ -358,7 +366,7 @@ def aggregate_points(point_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -381,7 +389,8 @@ def describe_dataset(input_layer,
                      extent_output=False,
                      sample_size=None,
                      output_name=None,
-                     gis=None):
+                     gis=None,
+                     future=False):
     """
     The Describe Dataset task provides an overview of your big data. The tool outputs a JSON
     detailing the input layer's geometry and time settings, schema, and summary statistics for each
@@ -412,6 +421,9 @@ def describe_dataset(input_layer,
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
+    ----------------  ---------------------------------------------------------------
+    future            optional Boolean. If True, a GPJob is returned instead of 
+                      results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
     :returns: FeatureLayer
@@ -456,7 +468,7 @@ def describe_dataset(input_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -478,7 +490,8 @@ def join_features(target_layer,
                   attribute_relationship = None,
                   join_condition = None,
                   output_name = None,
-                  gis=None):
+                  gis=None,
+                  future=False):
     """
     Using either feature layers or tabular data, you can join features and records based on
     specific relationships between the input layers or tables. Joins will be determined by
@@ -553,6 +566,9 @@ def join_features(target_layer,
                                       results. You define the name of the service.
     --------------------------------  ---------------------------------------------------------------
     gis                               Optional GIS. The GIS object where the analysis will take place.
+    --------------------------------  ---------------------------------------------------------------
+    future                            Optional Boolean. If True, a GPJob is returned instead of 
+                                      results. The GPJob can be queried on the status of the execution.
     ================================  ===============================================================
 
 
@@ -608,7 +624,7 @@ def join_features(target_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -639,7 +655,8 @@ def reconstruct_tracks(input_layer,
                        time_boundary_split_unit=None,
                        time_boundary_reference=None,
                        output_name = None,
-                       gis=None):
+                       gis=None,
+                       future=False):
     """
 
     Using a time-enabled layer of point or polygon features that represent an instant in time, this tool determines which input features belong in a track and will order the inputs sequentially in time. Statistics are optionally calculated for the input features within each track.
@@ -689,7 +706,8 @@ def reconstruct_tracks(input_layer,
 
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
+   future: Optional, if True, the return value will be a GPJob.
+   
 Returns:
    output - Output Features as a Feature Layer Collection Item
 
@@ -741,7 +759,7 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -761,7 +779,8 @@ def summarize_attributes(input_layer,
                          fields = None,
                          summary_fields = None,
                          output_name = None,
-                         gis=None):
+                         gis=None,
+                         future=False):
     """
     Using either feature or tabular data, this tool summarizes statistics for specified fields.
 
@@ -787,7 +806,7 @@ def summarize_attributes(input_layer,
 
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
+   future: Optional, if True, the response is returned as a GPJob.
 Returns:
    output - Output Features as a _FeatureSet
 
@@ -834,7 +853,7 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -858,7 +877,8 @@ def summarize_within(summarized_layer,
                      minority_majority=False,
                      percent_shape=False,
                      output_name = None,
-                     gis=None):
+                     gis=None,
+                     future=False):
     """
     Finds areas (and portions of areas) that overlap between two layers and calculates statistics about the overlap.
 
@@ -957,7 +977,7 @@ Returns:
     ]
 
     try:
-        _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()

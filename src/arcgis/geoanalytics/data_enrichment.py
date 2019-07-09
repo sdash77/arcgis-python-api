@@ -18,7 +18,8 @@ def enrich_from_grid(input_layer,
                      grid_layer,
                      enrichment_attributes=None,
                      output_name=None,
-                     gis=None):
+                     gis=None,
+                     future=False):
     """
     The Enrich From Multi-Variable Grid task joins attributes from a multi-variable grid to a point
     layer. The multi-variable grid must be created using the Build Multi-Variable Grid task.
@@ -51,6 +52,9 @@ def enrich_from_grid(input_layer,
                             results. You define the name of the service.
     ----------------------  ---------------------------------------------------------------
     gis                     optional GIS. The GIS object where the analysis will take place.
+    ----------------------  ---------------------------------------------------------------
+    future                  optional Boolean. If True, a GPJob is returned instead of 
+                            results. The GPJob can be queried on the status of the execution.
     ======================  ===============================================================
 
     :returns: FeatureLayer
@@ -95,7 +99,7 @@ def enrich_from_grid(input_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()

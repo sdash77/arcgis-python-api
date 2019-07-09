@@ -25,7 +25,8 @@ def geocode_locations(input_layer,
                       output_name=None,
                       geocode_service=None,
                       geocode_parameters=None,
-                      gis=None):
+                      gis=None,
+                      future=False):
     """
     The Geocode Locations task geocodes a table from a big data file share. The task uses a geocode
     utility service configured with your portal.
@@ -89,6 +90,9 @@ def geocode_locations(input_layer,
     --------------------------   ---------------------------------------------------------------
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
+    --------------------------   ---------------------------------------------------------------
+    future                       optional Boolean. If True, a GPJob is returned instead of 
+                                 results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
 
@@ -183,7 +187,8 @@ def geocode_locations(input_layer,
     ]
     try:
         res = _execute_gp_tool(gis, tool_name, params, param_db,
-                               return_values, _use_async, url, True)
+                               return_values, _use_async, url, True,
+                               future=future)
         return output_service
     except:
         output_service.delete()
@@ -199,7 +204,8 @@ def detect_incidents(input_layer,
                      time_split_unit=None,
                      time_reference=None,
                      output_name=None,
-                     gis=None):
+                     gis=None,
+                     future=False):
     """
     The Detect Incidents task works with a time-enabled layer of points,
     lines, areas, or tables that represents an instant in time. Using
@@ -280,6 +286,9 @@ def detect_incidents(input_layer,
     --------------------------   ---------------------------------------------------------------
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
+    --------------------------   ---------------------------------------------------------------
+    future                       optional Boolean. If True, a GPJob is returned instead of 
+                                 results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
     :returns:
@@ -327,7 +336,7 @@ def detect_incidents(input_layer,
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -344,7 +353,8 @@ def find_similar_locations(
     number_of_results = 10,
     append_fields = None,
     output_name = None,
-    gis = None):
+    gis = None,
+    future=False):
     """
 
     Based on criteria you specify, find similar locations by measuring the similarity of locations in your candidate search layer to one or more reference locations.
@@ -378,7 +388,8 @@ def find_similar_locations(
 
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
+   future: Optional, If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+   
 Returns:
    output - Output feature layer Item
 
@@ -424,7 +435,7 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()

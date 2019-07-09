@@ -31,7 +31,8 @@ def forest(input_layer,
            importance_tbl=False,
            exp_var_matching=None,
            output_name=None,
-           gis=None):
+           gis=None,
+           future=False):
     """
     The 'forest' method is a forest-based classification and regression
     task that creates models and generates predictions using an adaptation of
@@ -173,6 +174,9 @@ def forest(input_layer,
     --------------------------   ---------------------------------------------------------------
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
+    --------------------------   ---------------------------------------------------------------
+    future                       optional Boolean. If True, a GPJob is returned instead of 
+                                 results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
     :returns:
@@ -250,7 +254,7 @@ def forest(input_layer,
         kwargs["features_to_predict"] = input_layer
         #param_db.pop("features_to_predict")
     try:
-        res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True)
+        res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -267,7 +271,8 @@ def glr(input_layer,
         exp_var_matching=None,
         dep_mapping=None,
         output_name=None,
-        gis=None):
+        gis=None,
+        future=False):
     """
 
     This tool performs Generalized Linear Regression (glr) to generate
@@ -367,6 +372,9 @@ def glr(input_layer,
     --------------------------   ---------------------------------------------------------------
     gis                          Optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
+    --------------------------   ---------------------------------------------------------------
+    future                       optional Boolean. If True, a GPJob is returned instead of 
+                                 results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
     :returns:
@@ -439,7 +447,7 @@ def glr(input_layer,
     ]
 
     try:
-        res = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True)
+        res = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -455,7 +463,8 @@ def find_point_clusters(
     search_distance=None,
     distance_unit=None,
     output_name=None,
-    gis=None):
+    gis=None,
+    future=False):
     """
     This tool extracts clusters from your input point features and identifies any surrounding noise.
 
@@ -485,6 +494,9 @@ def find_point_clusters(
     --------------------------   ---------------------------------------------------------------
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
+    --------------------------   ---------------------------------------------------------------
+    future                       optional Boolean. If True, a GPJob is returned instead of 
+                                 results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
     :returns:
@@ -530,7 +542,7 @@ def find_point_clusters(
     ]
 
     try:
-        _execute_gp_tool(gis, "FindPointClusters", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "FindPointClusters", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -554,7 +566,8 @@ def calculate_density(
     radius_unit=None,
     area_units="""SquareKilometers""",
     output_name=None,
-    gis=None):
+    gis=None,
+    future=False):
     """
     .. image:: _static/images/calculate_density/calculate_density.png 
 
@@ -670,6 +683,9 @@ def calculate_density(
                                                             * Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                             * Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                             * Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    future                                                optional Boolean. If True, a GPJob is returned instead of 
+                                                          results. The GPJob can be queried on the status of the execution.
     =================================================     ========================================================================
 
     :returns: result_layer : Output Features as feature layer item.
@@ -736,7 +752,7 @@ def calculate_density(
     ]
 
     try:
-        _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -771,7 +787,8 @@ def find_hot_spots(
     time_step_alignment=None,
     time_step_reference=None,
     output_name=None,
-    gis=None):
+    gis=None,
+    future=False):
     """
 
     Parameters:
@@ -802,7 +819,8 @@ def find_hot_spots(
 
        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
+       future: Optional, If True, the results are returned asynchronously as a GPJob.
+       
     Returns:
        output - Output Features as a feature layer collection item
 
@@ -854,7 +872,7 @@ def find_hot_spots(
     ]
 
     try:
-        _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -882,7 +900,8 @@ def create_space_time_cube(point_layer: _FeatureSet,
                            summary_fields: str=None,
                            output_name: str=None,
                            context: str=None,
-                           gis=None) -> DataFile:
+                           gis=None,
+                           future: bool=False) -> DataFile:
     """
     Summarizes a set of points into a netCDF data structure by aggregating them into space-time bins. Within each bin,
     the points are counted and specified attributes are aggregated. For all bin locations, the trend for counts and
@@ -915,6 +934,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
 
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+        future: Optional, If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
     Returns:
        output_cube - Output Space Time Cube as a DataFile
@@ -949,5 +969,5 @@ def create_space_time_cube(point_layer: _FeatureSet,
         {"name": "output_cube", "display_name": "Output Space Time Cube", "type": DataFile},
     ]
 
-    return _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True)
+    return _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True, future=future)
 
