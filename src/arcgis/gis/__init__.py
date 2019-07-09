@@ -7708,9 +7708,42 @@ class Item(dict):
         # find if portal is ArcGIS Online
         if self._gis._portal.is_arcgisonline:
             # Call with owner info
-            resp = self._portal.con.get('content/users/' + self._user_id + "/items/" + self.itemid)
+            if self._user_id != self._gis.users.me.username:
+                url = "{resturl}content/items/{itemid}/groups".format(
+                    resturl=self._gis._portal.resturl,
+                    itemid=self.itemid
+                )
+                resp = self._portal.con.post(url, {'f': 'json'})
+                ret_dict = {'everyone': self.access == 'public',
+                            'org': (self.access == 'public' or self.access == 'org'),
+                            'groups': []}
+                for grpid in resp['admin']:
+                    try:
+                        grp = Group(gis=self._gis, groupid=grpid['id'])
+                        ret_dict['groups'].append(grp)
+                    except:
+                        pass
+                return ret_dict
+            else:
+                resp = self._portal.con.get('content/users/' + self._user_id + "/items/" + self.itemid)
 
         else:  # gis is a portal, find if item resides in a folder
+            if self._user_id != self._gis.users.me.username:
+                url = "{resturl}content/items/{itemid}/groups".format(
+                    resturl=self._gis._portal.resturl,
+                    itemid=self.itemid
+                )
+                resp = self._portal.con.post(url, {'f': 'json'})
+                ret_dict = {'everyone': self.access == 'public',
+                            'org': (self.access == 'public' or self.access == 'org'),
+                            'groups': []}
+                for grpid in resp['admin']:
+                    try:
+                        grp = Group(gis=self._gis, groupid=grpid['id'])
+                        ret_dict['groups'].append(grp)
+                    except:
+                        pass
+                return ret_dict            
             if self.ownerFolder is not None:
                 resp = self._portal.con.get('content/users/' + self._user_id + '/' + self.ownerFolder + "/items/" +
                                             self.itemid)
@@ -7787,18 +7820,29 @@ class Item(dict):
         elif isinstance(groups, str):
             #old API - groups sent as comma separated group ids
             group_ids = groups
-        url = "{resturl}/content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
-                                                                  owner=self.owner)
-        params = {
-            'f' : 'json',
-            'items' : self.id,
-            "groups": group_ids,
-            "everyone": everyone,
-            "account": org
-        }
-        if allow_members_to_edit:
-            params['owner'] =self.owner
-            params['confirmItemControl'] = allow_members_to_edit  # True
+        if self.owner == self._gis.users.me.username:
+            
+            url = "{resturl}content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
+                                                                      owner=self.owner)
+            params = {
+                'f' : 'json',
+                'items' : self.id,
+                "groups": group_ids,
+                "everyone": everyone,
+                "account": org
+            }
+            if allow_members_to_edit:
+                params['owner'] = self.owner
+                params['confirmItemControl'] = allow_members_to_edit  # True            
+        else:
+            url = "{resturl}/content/items/{itemid}/share".format(resturl=self._gis._portal.resturl,
+                                                                  itemid=self.itemid)
+            params = {
+                'f' : 'json',
+                "groups": group_ids,
+                "everyone": everyone,
+                "account": org
+            }            
 
         res = self._portal.con.post(url, params)
         self._hydrated = False
