@@ -20,7 +20,6 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-_log = logging.getLogger(__name__)
 
 from urllib.error import  HTTPError
 
@@ -238,7 +237,9 @@ class GIS(object):
             raise ValueError("A `profile` name must not be an empty string.")
         elif profile is not None:
             # Load config
-            cfg_file_path = os.path.expanduser("~") + '/.arcgisprofile'
+            pm = self.profiles
+            
+            cfg_file_path = pm._cfg_file_path
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
@@ -255,28 +256,15 @@ class GIS(object):
                                            "".format(cfg_file_path))
 
             # Add any __init__() args to config/keyring store
-            if profile not in config.keys():
+            if profile not in pm.list():
                 _log.info("Adding new profile {} to config...".format(profile))
-                config.add_section(profile)
-                self._add_timestamp_to_profile_data_in_config(config, profile)
-            self._update_profile_data_in_config(config, profile, url, username,
-                                                key_file, cert_file, client_id)
-            if password is not None:
-                self._securely_store_password(profile, password)
-            self._write_any_config_changes_to_file(config, cfg_file_path)
-
-            # Update __init__() args with data from config file/keyring store
-            if config.has_option(profile,   "url"):
-                url =       config[profile]["url"]
-            if config.has_option(profile,   "username"):
-                username =  config[profile]["username"]
-            if config.has_option(profile,   "key_file"):
-                key_file =  config[profile]["key_file"]
-            if config.has_option(profile,   "cert_file"):
-                cert_file = config[profile]["cert_file"]
-            if config.has_option(profile,   "client_id"):
-                client_id = config[profile]["client_id"]
-            password = self._securely_get_password(profile)
+                pm.create(profile=profile, url=url, username=username, password=password, 
+                          key_file=key_file, cert_file=cert_file, client_id=client_id)
+            elif profile in pm.list():
+                # run an update to be safe.
+                pm.update(profile, url=url, username=username, password=password, 
+                          key_file=key_file, cert_file=cert_file, client_id=client_id)
+            url, username, password, key_file, cert_file, client_id = pm._retrieve(profile)
 
         if url is None:
             url = "https://www.arcgis.com"
@@ -699,6 +687,17 @@ class GIS(object):
             return result.scheme != "" and result.netloc != ""
         except:
             return False
+    
+    @property
+    def profiles(self):
+        """
+        Returns tools to managed locally stored credentials
+        
+        :returns: ProfileManager
+        
+        """
+        from arcgis.gis._impl._profile import ProfileManager
+        return ProfileManager()
 
     @_lazy_property
     def users(self):
