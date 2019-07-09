@@ -1417,7 +1417,7 @@ class Service(BaseServer):
         """
         if self._ii is None:
             u_url = self._url + "/iteminfo"
-            self._ii = ItemInforamtionManager(url=u_url,
+            self._ii = ItemInformationManager(url=u_url,
                                        con=self._con)
         return self._ii
     #----------------------------------------------------------------------
@@ -1573,7 +1573,7 @@ class Job(BaseServer):
             return res['status']
         return res
 ###########################################################################
-class ItemInforamtionManager(BaseServer):
+class ItemInformationManager(BaseServer):
     """
     The item information resource stores metadata about a service.
     Typically, this information is available to clients that want to index
