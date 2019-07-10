@@ -10,7 +10,7 @@ plan_routes determines the best way to route a fleet of vehicles to visit many s
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
-from .analysis import _run_async
+from arcgis.features._async import _run_async
 
 def connect_origins_to_destinations(origins_layer,
                                     destinations_layer,

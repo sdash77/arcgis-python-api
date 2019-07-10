@@ -9,14 +9,7 @@ summarize_within calculates statistics for area features and attributes that ove
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
-import concurrent.futures
-
-def _run_async(fn, **inputs):
-    """runs the inputs asynchronously"""
-    tp = concurrent.futures.ThreadPoolExecutor(1)
-    future = tp.submit(fn=fn, **inputs)
-    tp.shutdown(False)
-    return future
+from arcgis.features._async import _run_async
 
 def aggregate_points(
                      point_layer,
