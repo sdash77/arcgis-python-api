@@ -7,7 +7,13 @@ interpolate_points predicts values at new locations based on measurements found 
 """
 
 import arcgis as _arcgis
-
+import concurrent.futures
+def _run_async(fn, **inputs):
+    """runs the inputs asynchronously"""
+    tp = concurrent.futures.ThreadPoolExecutor(1)
+    future = tp.submit(fn=fn, **inputs)
+    tp.shutdown(False)
+    return future
 def calculate_density(
         input_layer,
         field=None,
@@ -22,7 +28,8 @@ def calculate_density(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False, 
+        future=False):
     """
     The calculate_density function creates a density map from point or line features by spreading known quantities of
     some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
@@ -81,6 +88,8 @@ def calculate_density(
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    -------------------------    ---------------------------------------------------------
+    future                       Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     =========================    =========================================================
 
 
@@ -104,6 +113,24 @@ def calculate_density(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "input_layer": input_layer,
+            "field" : field,
+            "cell_size" : cell_size,
+            "cell_size_units" : cell_size_units,
+            "radius" : radius,
+            "radius_units" : radius_units,
+            "bounding_polygon_layer" : bounding_polygon_layer,
+            "area_units" : area_units,
+            "classification_type" : classification_type,
+            "num_classes" : num_classes,
+            "output_name" : output_name,
+            "context" : context,
+            "estimate": estimate            
+        }
+        _run_async(fn=gis._tools.featureanalysis.calculate_density,
+                   **inputs)
     return gis._tools.featureanalysis.calculate_density(
         input_layer,
         field,
@@ -128,7 +155,8 @@ def summarize_center_and_dispersion(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False, 
+        future=False):
 
     """
     The Summarize Center and Dispersion task finds central features and directional distributions.
@@ -172,6 +200,8 @@ def summarize_center_and_dispersion(
                             specified, the active GIS is used.
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
+    --------------------    ---------------------------------------------------------
+    future                  Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     ====================    =========================================================
 
     :returns: Python dictionary with the following keys:
@@ -183,6 +213,19 @@ def summarize_center_and_dispersion(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "analysis_layer," : analysis_layer,
+            "summarize_type" : summarize_type,
+            "ellipse_size" : ellipse_size,
+            "weight_field" : weight_field,
+            "group_field" : group_field,
+            "output_name" : output_name,
+            "context" : context,
+            "estimate": estimate            
+        }
+        _run_async(fn=gis._tools.featureanalysis.summarize_center_and_dispersion,
+                   **inputs)    
     return gis._tools.featureanalysis.summarize_center_and_dispersion(
         analysis_layer,
         summarize_type,
@@ -200,7 +243,7 @@ def find_point_clusters(
         search_distance_unit=None,
         output_name=None,
         context=None,
-        gis=None, estimate=False):
+        gis=None, estimate=False, future=False):
 
     """
     .. image:: _static/images/find_point_clusters/find_point_clusters.png 
@@ -264,6 +307,8 @@ def find_point_clusters(
                             specified, the active GIS is used.
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
+    --------------------    ---------------------------------------------------------
+    future                  Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     ====================    =========================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature collection.
@@ -280,6 +325,18 @@ def find_point_clusters(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "analysis_layer," : analysis_layer,
+            "min_features_cluster" : min_features_cluster,
+            "search_distance" : search_distance,
+            "search_distance_unit" : search_distance_unit,
+            "output_name" : output_name,
+            "context" : context,
+            "estimate": estimate            
+        }
+        _run_async(fn=gis._tools.featureanalysis.find_point_clusters,
+                   **inputs)       
     return gis._tools.featureanalysis.find_point_clusters(
         analysis_layer,
         min_features_cluster,
@@ -303,7 +360,8 @@ def find_hot_spots(
         cell_size=None,
         cell_size_unit=None,
         distance_band=None,
-        distance_band_unit=None):
+        distance_band_unit=None,
+        future=False):
     """
     .. image:: _static/images/find_hot_spots/find_hot_spots.png 
 
@@ -374,6 +432,8 @@ def find_hot_spots(
                                                                            in order to assess local clustering.
     -------------------------------------------------------------------    ---------------------------------------------------------
     distance_band_unit                                                     Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
+    -------------------------------------------------------------------    ---------------------------------------------------------
+    future                                                                 Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     ===================================================================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -388,6 +448,24 @@ def find_hot_spots(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "analysis_layer," : analysis_layer,
+            "analysis_field" : analysis_field,
+            "divided_by_field" : divided_by_field,
+            "bounding_polygon_layer" : bounding_polygon_layer,
+            "aggregation_polygon_layer" : aggregation_polygon_layer,
+            "shape_type":shape_type,
+            "cell_size":cell_size,
+            "cell_size_unit":cell_size_unit,
+            'distance_band':distance_band,
+            "distance_band_unit":distance_band_unit,
+            "output_name" : output_name,
+            "context" : context,
+            "estimate": estimate            
+        }
+        _run_async(fn=gis._tools.featureanalysis.find_hot_spots,
+                   **inputs)           
     return gis._tools.featureanalysis.find_hot_spots(
         analysis_layer,
         analysis_field,
@@ -418,7 +496,8 @@ def find_outliers(analysis_layer,
                   output_name=None,
                   context=None,
                   gis=None,
-                  estimate=False):
+                  estimate=False,
+                  future=False):
     """
     .. image:: _static/images/find_outliers/find_outliers.png 
 
@@ -496,6 +575,8 @@ def find_outliers(analysis_layer,
                                                                         #. Output Spatial Reference (outSR)—the data will be projected into the output spatial reference prior to analysis.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
+    ------------------------------------------------------------------  ---------------------------------------------------------------
+    future                                                              Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     ==================================================================  ===============================================================
 
     :Returns:
@@ -514,6 +595,25 @@ def find_outliers(analysis_layer,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "analysis_layer," : analysis_layer,
+            "analysis_field" : analysis_field,
+            "divided_by_field" : divided_by_field,
+            "bounding_polygon_layer" : bounding_polygon_layer,
+            "aggregation_polygon_layer" : aggregation_polygon_layer,
+            "permutations" : permutations,
+            "shape_type":shape_type,
+            "cell_size":cell_size,
+            "cell_units":cell_units,
+            'distance_band':distance_band,
+            "band_units":band_units,
+            "output_name" : output_name,
+            "context" : context,
+            "estimate": estimate            
+        }
+        _run_async(fn=gis._tools.featureanalysis.find_outliers,
+                   **inputs)               
     return gis._tools.featureanalysis.find_outliers(analysis_layer,
                                                     analysis_field,
                                                     divided_by_field,
@@ -543,7 +643,8 @@ def interpolate_points(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        future=False):
     """
     .. image:: _static/images/interpolate_points/interpolate_points.png 
 
@@ -670,6 +771,8 @@ def interpolate_points(
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------  -------------------------------------------------------------------------------------------     
     estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
+    ---------------------------  -------------------------------------------------------------------------------------------    
+    future                       Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     ===========================  ===========================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -693,6 +796,23 @@ def interpolate_points(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "input_layer" : input_layer,
+            "field" : field,
+            "interpolate_option" : interpolate_option,
+            "output_prediction_error" : output_prediction_error,
+            "classification_type" : classification_type,
+            "num_classes" : num_classes,
+            "class_breaks" : class_breaks,
+            "bounding_polygon_layer" : bounding_polygon_layer,
+            "predict_at_point_layer" : predict_at_point_layer,
+            "output_name" : output_name,
+            "context" : context,
+            "estimate": estimate            
+        }
+        _run_async(fn=gis._tools.featureanalysis.interpolate_points,
+                   **inputs)                   
     return gis._tools.featureanalysis.interpolate_points(
         input_layer,
         field,

@@ -9,6 +9,14 @@ summarize_within calculates statistics for area features and attributes that ove
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
+import concurrent.futures
+
+def _run_async(fn, **inputs):
+    """runs the inputs asynchronously"""
+    tp = concurrent.futures.ThreadPoolExecutor(1)
+    future = tp.submit(fn=fn, **inputs)
+    tp.shutdown(False)
+    return future
 
 def aggregate_points(
                      point_layer,
@@ -21,7 +29,8 @@ def aggregate_points(
                      output_name=None,
                      context=None,
                      gis=None,
-                     estimate=False):
+                     estimate=False,
+                     future=False):
     """
     The Aggregate Points task works with a layer of point features and a layer of polygon features. It first figures out which points fall within each polygon's area.
     After determining this point-in-polygon spatial relationship, statistics about all points in the polygon are calculated and assigned to the area. The most basic statistic is the count of the number of points within the polygon, but you can get other statistics as well.
@@ -85,7 +94,23 @@ def aggregate_points(
 
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.featureanalysis.aggregate_points(
+    if future:
+        inputs = {
+            "point_layer" : point_layer,
+            "polygon_layer" : polygon_layer,
+            "keep_boundaries_with_no_points" : keep_boundaries_with_no_points,
+            "summary_fields" : summary_fields,
+            "group_by_field" : group_by_field,
+            "minority_majority" : minority_majority,
+            "percent_points" : percent_points,
+            "output_name" :output_name,
+            "context" : context,
+            "estimate" : estimate            
+        }
+        return _run_async(fn=gis._tools.featureanalysis.aggregate_points, 
+                          **inputs)
+    else:
+        return gis._tools.featureanalysis.aggregate_points(
                      point_layer,
                      polygon_layer,
                      keep_boundaries_with_no_points,
@@ -116,7 +141,8 @@ def summarize_nearby(sum_nearby_layer,
                      output_name=None,
                      context=None,
                      gis=None,
-                     estimate=False):
+                     estimate=False,
+                     future=False):
     """
     .. image:: _static/images/summarize_nearby/summarize_nearby.png 
 
@@ -272,6 +298,8 @@ def summarize_nearby(sum_nearby_layer,
                                  #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
     estimate                     Optional boolean. Returns the number of credit for the operation.
+    -------------------------    --------------------------------------------------------------------------------------------------------------------
+    future                       Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     =========================    ====================================================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -301,6 +329,28 @@ def summarize_nearby(sum_nearby_layer,
         if near_type != 'StraightLine':
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
             near_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == near_type][0]            
+    if future:
+        inputs = {
+            "sum_nearby_layer" : sum_nearby_layer,
+            "summary_layer" : summary_layer,
+            "near_type" : near_type,
+            "distances": distances,
+            "units" : units,
+            "time_of_day" : _date_handler(time_of_day),
+            "time_zone_for_time_of_day" : time_zone_for_time_of_day,
+            "return_boundaries" : return_boundaries,
+            "sum_shape": sum_shape,
+            "shape_units" : shape_units,
+            "summary_fields" : summary_fields,
+            "group_by_field" : group_by_field,
+            "minority_majority" : minority_majority,
+            "percent_shape" : percent_shape,
+            "output_name" :output_name,
+            "context" : context,
+            "estimate" : estimate            
+        }
+        return _run_async(fn=gis._tools.featureanalysis.summarize_nearby, 
+                          **inputs)
     return gis._tools.featureanalysis.summarize_nearby(
                      sum_nearby_layer,
                      summary_layer,
@@ -330,7 +380,8 @@ def summarize_center_and_dispersion(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        future=False):
 
     """
     .. image:: _static/images/summarize_center_and_dispersion/summarize_center_and_dispersion.png 
@@ -373,6 +424,8 @@ def summarize_center_and_dispersion(
                             #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
     --------------------    ---------------------------------------------------------
     estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
+    --------------------    ---------------------------------------------------------
+    future                  Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     ====================    =========================================================
 
     :returns: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
@@ -394,6 +447,19 @@ def summarize_center_and_dispersion(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "analysis_layer" : analysis_layer,
+            "summarize_type": summarize_type,
+            "ellipse_size" : ellipse_size,
+            "weight_field" : weight_field,
+            "group_field" : group_field,
+            "output_name" :output_name,
+            "context" : context,
+            "estimate" : estimate            
+        }
+        return _run_async(fn=gis._tools.featureanalysis.summarize_center_and_dispersion, 
+                          **inputs)    
     return gis._tools.featureanalysis.summarize_center_and_dispersion(
         analysis_layer,
         summarize_type,
@@ -416,7 +482,8 @@ def summarize_within(sum_within_layer,
                      output_name=None,
                      context=None,
                      gis=None,
-                     estimate=False):
+                     estimate=False,
+                     future=False):
     """
     .. image:: _static/images/summarize_within/summarize_within.png 
 
@@ -490,6 +557,8 @@ def summarize_within(sum_within_layer,
                                              #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
     -------------------------------------    ---------------------------------------------------------
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
+    -------------------------------------    ---------------------------------------------------------
+    future                                   Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
     =====================================    =========================================================
 
     :returns: Item if ``output_name`` is set. else results in a Python dict with the following keys:
@@ -513,6 +582,22 @@ def summarize_within(sum_within_layer,
                                              context={"extent":{"xmin":-13160690.837046918,"ymin":4041586.5461609075,"xmax":-13132466.464352652,"ymax":4058001.397985127,"spatialReference":{"wkid":102100,"latestWkid":3857}}})           
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "sum_within_layer" : sum_within_layer,
+            "summary_layer" : summary_layer,
+            "sum_shape" : sum_shape,
+            "shape_units" : shape_units,
+            "summary_fields" : summary_fields,
+            "group_by_field" : group_by_field,
+            "minority_majority" : minority_majority,
+            "percent_shape" : percent_shape,
+            "output_name" :output_name,
+            "context" : context,
+            "estimate" : estimate            
+        }
+        return _run_async(fn=gis._tools.featureanalysis.summarize_within, 
+                          **inputs)        
     return gis._tools.featureanalysis.summarize_within(
                      sum_within_layer,
                      summary_layer,
@@ -538,7 +623,8 @@ def join_features(target_layer,
                   output_name=None,
                   context=None,
                   gis=None,
-                  estimate=False):
+                  estimate=False,
+                  future=False):
     """
     .. image:: _static/images/join_features/join_features.png 
 
@@ -615,6 +701,8 @@ def join_features(target_layer,
                                                                                                      #. Output Spatial Reference (``outSR``)—The output features will be projected into the output spatial reference.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     estimate                                                                                         Optional boolean. If True, the number of credits to run the operation will be returned.
+    --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
+    future                                                                                           Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
     ============================================================================================     =================================================================================================================================
     
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else feature collection.
@@ -629,6 +717,22 @@ def join_features(target_layer,
                                                       context={"extent":{"xmin":-9375809.87305117,"ymin":4031882.3806860778,"xmax":-9370182.196843527,"ymax":4034872.9794178144,"spatialReference":{"wkid":102100,"latestWkid":3857}}}, )
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    if future:
+        inputs = {
+            "target_layer" : target_layer,
+            "join_layer" : join_layer,
+            "spatial_relationship" : spatial_relationship,
+            "spatial_relationship_distance" : spatial_relationship_distance,
+            "spatial_relationship_distance_units" : spatial_relationship_distance_units,
+            "attribute_relationship" : attribute_relationship,
+            "join_operation" : join_operation,
+            "summary_fields" : summary_fields,
+            "output_name" :output_name,
+            "context" : context,
+            "estimate" : estimate            
+        }
+        return _run_async(fn=gis._tools.featureanalysis.join_features, 
+                          **inputs)      
     return gis._tools.featureanalysis.join_features(
         target_layer,
         join_layer,

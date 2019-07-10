@@ -8,6 +8,7 @@ travel time or distance from a location.
 
 import arcgis as _arcgis
 import arcgis.network as network
+from .analyze_patterns import _run_async
 
 def enrich_layer(input_layer,
                  data_collections=[],
@@ -20,7 +21,8 @@ def enrich_layer(input_layer,
                  context=None,
                  gis=None,
                  estimate=False,
-                 return_boundaries=False):
+                 return_boundaries=False,
+                 future=False):
     """
     .. image:: _static/images/enrich_layer/enrich_layer.png 
 
@@ -85,6 +87,8 @@ def enrich_layer(input_layer,
                                                                               analysis_variables variables.
  
                                                                               The default value is False.    
+    ---------------------------------------------------------------------     --------------------------------------------------------------------    
+    future                                                                    Optional boolean. If True, the result will be a oncurrent.futures.Future object and results will be returned asynchronously.
     =====================================================================     ====================================================================
     
     :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -105,7 +109,24 @@ def enrich_layer(input_layer,
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
             buffer_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == buffer_type][0]    
         else:
-            pass;     
+            pass
+    if future:
+        inputs = {
+            "input_layer" : input_layer,
+            "data_collections" : data_collections,
+            "analysis_variables" : analysis_variables,
+            "country" : country,
+            "buffer_type" : buffer_type,
+            "distance" : distance,
+            "units" : units,
+            
+            "return_boundaries":return_boundaries,
+            "output_name" : output_name,
+            "context" : context,
+            "estimate": estimate            
+        }
+        _run_async(fn=gis._tools.featureanalysis.enrich_layer,
+                   **inputs)            
     return gis._tools.featureanalysis.enrich_layer(
                  input_layer,
                  data_collections,

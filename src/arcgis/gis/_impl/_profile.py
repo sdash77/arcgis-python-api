@@ -142,16 +142,22 @@ class ProfileManager(object):
                "for Python doc (http://bit.ly/2CK2wG8)."\
                "".format(keyring.get_keyring())  
     #----------------------------------------------------------------------
-    def list(self):
+    def list(self, as_df=False):
         """
         returns a list of profile names in the configuration file
         
-        :returns: List
+        :returns: List if `as_df=False` or Pandas DataFrame if `as_df=True`
         """
-        if self._cfg_exists:
+        if self._cfg_exists and as_df == False:
             config = configparser.ConfigParser()
             config.read(self._cfg_file_path)
             return config.sections()
+        elif self._cfg_exists and as_df:
+            import pandas as pd
+            all_profiles = []
+            for p in self.list():
+                all_profiles.append(self.get(p))
+            return pd.DataFrame(data=all_profiles)
         return []        
     #--------------------------------------------------------------------------
     def get(self, profile):
@@ -208,7 +214,7 @@ class ProfileManager(object):
             if profile in profiles:
                 config = configparser.ConfigParser()
                 with open(profile_file, 'r') as reader:
-                    config.readfp(reader)     
+                    config.read_file(reader)     
                 data = dict(config.items(profile))
                 try:
                     keyring.delete_password(service_name="arcgis_python_api_profile_passwords", 
@@ -309,7 +315,7 @@ class ProfileManager(object):
     #----------------------------------------------------------------------
     def save_as(self, profile, gis):
         """
-        Saves the provided of active `GIS` connection to a profile
+        Saves and adds the provided `GIS` to the profile.
         
         =====================================================================     ====================================================================
         **Parameter**                                                             **Description**
@@ -364,4 +370,4 @@ class ProfileManager(object):
                 client_id = config[profile]["client_id"]
             
             password = self._securely_get_password(profile)        
-            return url, username, password, key_file, cert_file, client_id
+        return url, username, password, key_file, cert_file, client_id
