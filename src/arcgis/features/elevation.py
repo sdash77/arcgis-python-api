@@ -25,9 +25,10 @@ def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
             dem_resolution: str = None,
             maximum_sample_distance: float = None,
             maximum_sample_distance_units: str = """Meters""",
-            gis=None) -> FeatureSet:
-    """            
-    .. image:: _static/images/elevation_profile/elevation_profile.png 
+            gis=None,
+            future=False) -> FeatureSet:
+    """
+    .. image:: _static/images/elevation_profile/elevation_profile.png
 
     The profile method is used to create profiles along input lines from which a profile graph can be created.
 
@@ -46,10 +47,12 @@ def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
     maximum_sample_distance                  Optional float. The maximum sampling distance along the line to sample elevation values.
     -------------------------------------    ---------------------------------------------------------------------------
     maximum_sample_distance_units            Optional string. The units for the MaximumSampleDistance.
-  
+
                                              Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    -------------------------------------    ---------------------------------------------------------------------------
+    future                                   Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     =====================================    ===========================================================================
-    
+
     :Returns: Output Profile as a FeatureSet
 
     .. code-block:: python
@@ -79,7 +82,7 @@ def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
 
     url = gis.properties.helperServices.elevation.url
 
-    return _execute_gp_tool(gis, "Profile", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(gis, "Profile", kwargs, param_db, return_values, _use_async, url, future=future)
 
 
 def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
@@ -98,9 +101,10 @@ def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
              surface_offset: float = None,
              surface_offset_units: str = """Meters""",
              generalize_viewshed_polygons: bool = True,
-             gis=None) -> FeatureSet:
+             gis=None,
+             future=False) -> FeatureSet:
     """
-    .. image:: _static/images/elevation_viewshed/elevation_viewshed.png         
+    .. image:: _static/images/elevation_viewshed/elevation_viewshed.png
 
     The ``viewshed`` method is used to identify visible areas based on observer locations you provide as well as ArcGIS Online Elevation data.
 
@@ -109,24 +113,24 @@ def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
     -------------------------------    ---------------------------------------------------------
     input_points                       Required FeatureSet. The point features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------    ---------------------------------------------------------
-    maximum_distance                   Optional float. This is a cutoff distance where the computation of visible areas stops. 
+    maximum_distance                   Optional float. This is a cutoff distance where the computation of visible areas stops.
                                        Beyond this distance, it is unknown whether the analysis points and the other objects can see each other.
 
                                        It is useful for modeling current weather conditions or a given time of day, such as dusk. Large values increase computation time.
 
-                                       Unless specified, a default maximum distance will be computed based on the resolution and extent of the source DEM. 
+                                       Unless specified, a default maximum distance will be computed based on the resolution and extent of the source DEM.
                                        The allowed maximum value is 50 kilometers.
 
                                        Use ``maximum_distance_units`` to set the units for ``maximum_distance``.
     -------------------------------    ---------------------------------------------------------
     maximum_distance_units             Optional string. The units for the ``maximum_distance`` parameter.
-                                
+
                                        Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles'].
-                                 
+
                                        The default is 'Meters'.
     -------------------------------    ---------------------------------------------------------
     dem_resolution                     Optional string. The approximate spatial resolution (cell size) of the source elevation data used for the calculation.
-                                       The resolution values are an approximation of the spatial resolution of the digital elevation model. 
+                                       The resolution values are an approximation of the spatial resolution of the digital elevation model.
                                        While many elevation sources are distributed in units of arc seconds, the keyword is an approximation of those resolutions in meters for easier understanding.
 
                                        Choice list:[' ', 'FINEST', '10m', '30m', '90m'].
@@ -135,7 +139,7 @@ def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
     -------------------------------    ---------------------------------------------------------
     observer_height                    Optional float. This is the height above the ground of the observer locations.
 
-                                       The default is 1.75 meters, which is approximately the average height of a person. 
+                                       The default is 1.75 meters, which is approximately the average height of a person.
                                        If you are looking from an elevated location, such as an observation tower or a tall building, use that height instead.
 
                                        Use ``observer_height_units`` to set the units for ``observer_height``.
@@ -149,15 +153,17 @@ def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
                                        The default value is 0.0. If you are trying to see buildings or wind turbines, use their height here.
     -------------------------------    ---------------------------------------------------------
     surface_offset_units               Optional string. The units for the ``surface_offset`` parameter.
-                                 
+
                                        Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
     -------------------------------    ---------------------------------------------------------
     generalize_viewshed_polygons       Optional boolean. Determines whether or not the viewshed polygons are to be generalized.
 
-                                       The viewshed calculation is based on a raster elevation model that creates a result with 
-                                       stair-stepped edges. To create a more pleasing appearance and improve performance, the 
-                                       default behavior is to generalize the polygons. The generalization process smooths the 
+                                       The viewshed calculation is based on a raster elevation model that creates a result with
+                                       stair-stepped edges. To create a more pleasing appearance and improve performance, the
+                                       default behavior is to generalize the polygons. The generalization process smooths the
                                        boundary of the visible areas and may remove some single-cell visible areas.
+    -------------------------------    ---------------------------------------------------------
+    future                             Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     ===============================    =========================================================
 
     :returns: output_viewshed - Output Viewshed as a FeatureSet (polygons of visible areas for a given set of input observation points.)
@@ -197,37 +203,40 @@ def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
 
     url = gis.properties.helperServices.elevation.url
 
-    return _execute_gp_tool(gis, "Viewshed", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(gis, "Viewshed", kwargs, param_db, return_values, _use_async, url, future=future)
 
 
 def summarize_elevation(input_features: FeatureSet = {},
                         feature_id_field: str = None,
                         dem_resolution: str = None,
                         include_slope_aspect: bool = False,
-                        gis=None) -> FeatureSet:
-    """   
-    .. image:: _static/images/summarize_elevation/summarize_elevation.png     
+                        gis=None,
+                        future=False) -> FeatureSet:
+    """
+    .. image:: _static/images/summarize_elevation/summarize_elevation.png
 
-    The ``summarize_elevation`` method calculates summary statistics for features you provide based 
-    on ArcGIS Online Elevation data. It accepts point, line, or polygon input and returns statistics 
-    for the elevation, slope, and aspect of the features. 
+    The ``summarize_elevation`` method calculates summary statistics for features you provide based
+    on ArcGIS Online Elevation data. It accepts point, line, or polygon input and returns statistics
+    for the elevation, slope, and aspect of the features.
 
     =========================    =========================================================
     **Parameter**                **Description**
     -------------------------    ---------------------------------------------------------
     input_features               Reqauired FeatureSet. Input features to summarize the elevation for. The features can be point, line, or area. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
-    feature_id_field             Optional string. The unique ID field to use for the input features.  
+    feature_id_field             Optional string. The unique ID field to use for the input features.
     -------------------------    ---------------------------------------------------------
     dem_resolution               Optional string. The approximate spatial resolution (cell size) of the source elevation data used for the calculation.
-                                 
+
                                  Choice list:[' ', 'FINEST', '10m', '30m', '90m']
-                                 
-                                 The default value is None. 
+
+                                 The default value is None.
     -------------------------    ---------------------------------------------------------
     include_slope_aspect         Optional boolean. Determines if slope and aspect for the input feature(s) will be included in the output. The slope and aspect values in the output are in degrees.
-                                 
+
                                  The default value is False.
+    -------------------------    ---------------------------------------------------------
+    future                       Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns: result_layer : Output Summary as a FeatureSet
@@ -237,7 +246,7 @@ def summarize_elevation(input_features: FeatureSet = {},
         # USAGE EXAMPLE: To calculate summary statistics for mountain polyline features.
         summarize = summarize_elevation(input_features=mountain_fs,
                            dem_resolution='FINEST',
-                           include_slope_aspect=True)  
+                           include_slope_aspect=True)
     """
     kwargs = locals()
 
@@ -257,6 +266,6 @@ def summarize_elevation(input_features: FeatureSet = {},
 
     url = gis.properties.helperServices.elevation.url
 
-    return _execute_gp_tool(gis, "SummarizeElevation", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(gis, "SummarizeElevation", kwargs, param_db, return_values, _use_async, url, future=future)
 
 

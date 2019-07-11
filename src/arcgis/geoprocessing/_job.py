@@ -7,12 +7,12 @@ class GPJob(object):
     of any geoprocessing task.  To request a GPJob task, the code must be called with `future=True`
     or else the operation will occur synchronously.  This class is not intended for users to call
     directly.
-    
-    
+
+
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    future            Required concurrent.Futures.Future.  The async object created by 
+    future            Required ccurrent.futures.Future.  The async object created by
                       the geoprocessing (GP) task.
     ----------------  ---------------------------------------------------------------
     gptool            Required Layer. The Geoprocessing Service
@@ -23,7 +23,7 @@ class GPJob(object):
     ----------------  ---------------------------------------------------------------
     gis               Required GIS. The GIS connection object
     ================  ===============================================================
-    
+
     """
     _future = None
     _jobid = None
@@ -61,14 +61,14 @@ class GPJob(object):
     def status(self):
         """
         returns the GP status
-        
+
         :returns: String
         """
         url = self._url + "/jobs/%s" % self._jobid
         params = {'f' : 'json',
                   'returnMessages': True}
-        
-        
+
+
         res = self._gis._con.post(url, params)
         if 'jobStatus' in res:
             return res['jobStatus']
@@ -77,10 +77,10 @@ class GPJob(object):
     def cancel(self):
         """
         Attempt to cancel the call. If the call is currently being executed
-        or finished running and cannot be cancelled then the method will 
-        return False, otherwise the call will be cancelled and the method 
+        or finished running and cannot be cancelled then the method will
+        return False, otherwise the call will be cancelled and the method
         will return True.
-        
+
         :returns: boolean
         """
         if self.done():
@@ -106,7 +106,7 @@ class GPJob(object):
     def cancelled(self):
         """
         Return True if the call was successfully cancelled.
-        
+
         :returns: boolean
         """
         return self._future.cancelled()
@@ -114,24 +114,24 @@ class GPJob(object):
     def running(self):
         """
         Return True if the call is currently being executed and cannot be cancelled.
-        
+
         :returns: boolean
         """
-        return self._future.running()    
+        return self._future.running()
     #----------------------------------------------------------------------
     def done(self):
         """
         Return True if the call was successfully cancelled or finished running.
-        
+
         :returns: boolean
         """
-        return self._future.done()     
+        return self._future.done()
     #----------------------------------------------------------------------
     def result(self):
         """
-        Return the value returned by the call. If the call hasn't yet completed 
+        Return the value returned by the call. If the call hasn't yet completed
         then this method will wait.
-        
+
         :returns: object
         """
         if self.cancelled():

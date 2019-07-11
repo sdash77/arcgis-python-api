@@ -1,4 +1,5 @@
 import concurrent.futures
+
 def _run_async(fn, **inputs):
     """runs the inputs asynchronously"""
     tp = concurrent.futures.ThreadPoolExecutor(1)
