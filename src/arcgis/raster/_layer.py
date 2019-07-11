@@ -2584,7 +2584,7 @@ class ImageryLayer(Layer):
         if self._datastore_raster:
             params["Raster"]=self._uri
 
-        sample_data = self._con.get(url, params, token=self._token)['samples']
+        sample_data = self._con.post(path=url, postdata=params, token=self._token)['samples']
         from copy import deepcopy
         new_sample_data = deepcopy(sample_data)
         # region: Try to convert values to list of numbers if it makes sense
