@@ -125,7 +125,7 @@ def enrich_layer(input_layer,
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.enrich_layer,
+        return _run_async(fn=gis._tools.featureanalysis.enrich_layer,
                    **inputs)
     return gis._tools.featureanalysis.enrich_layer(
                  input_layer,

@@ -284,7 +284,7 @@ def find_existing_locations(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.find_existing_locations,
+        return _run_async(fn=gis._tools.featureanalysis.find_existing_locations,
                    **inputs)
     return gis._tools.featureanalysis.find_existing_locations(
         input_layers,
@@ -551,7 +551,7 @@ def derive_new_locations(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.derive_new_locations,
+        return _run_async(fn=gis._tools.featureanalysis.derive_new_locations,
                    **inputs)
     return gis._tools.featureanalysis.derive_new_locations(
         input_layers,
@@ -677,7 +677,7 @@ def find_similar_locations(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.find_similar_locations,
+        return _run_async(fn=gis._tools.featureanalysis.find_similar_locations,
                    **inputs)
     return gis._tools.featureanalysis.find_similar_locations(
         input_layer,
@@ -748,7 +748,7 @@ def find_centroids(input_layer,
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.find_centroids,
+        return _run_async(fn=gis._tools.featureanalysis.find_centroids,
                    **inputs)
     return gis._tools.featureanalysis.find_centroids(input_layer,
                                                      point_location,
@@ -1015,7 +1015,7 @@ def choose_best_facilities(goal='Allocate',
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.choose_best_facilities,
+        return _run_async(fn=gis._tools.featureanalysis.choose_best_facilities,
                    **inputs)
     return gis._tools.featureanalysis.choose_best_facilities(
         goal,
@@ -1185,7 +1185,7 @@ def create_viewshed(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.create_viewshed,
+        return _run_async(fn=gis._tools.featureanalysis.create_viewshed,
                    **inputs)
     return gis._tools.featureanalysis.create_viewshed(
         input_layer,
@@ -1307,7 +1307,7 @@ def create_watersheds(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.create_watersheds,
+        return _run_async(fn=gis._tools.featureanalysis.create_watersheds,
                    **inputs)
     return gis._tools.featureanalysis.create_watersheds(
         input_layer,
@@ -1433,7 +1433,7 @@ def trace_downstream(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.trace_downstream,
+        return _run_async(fn=gis._tools.featureanalysis.trace_downstream,
                    **inputs)
     return gis._tools.featureanalysis.trace_downstream(
         input_layer,

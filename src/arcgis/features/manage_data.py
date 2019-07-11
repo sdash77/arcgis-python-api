@@ -107,7 +107,7 @@ def dissolve_boundaries(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.dissolve_boundaries,
+        return _run_async(fn=gis._tools.featureanalysis.dissolve_boundaries,
                    **inputs)
     return gis._tools.featureanalysis.dissolve_boundaries(
         input_layer,
@@ -195,7 +195,7 @@ def extract_data(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.extract_data,
+        return _run_async(fn=gis._tools.featureanalysis.extract_data,
                    **inputs)
     return gis._tools.featureanalysis.extract_data(
         input_layers,
@@ -292,7 +292,7 @@ def merge_layers(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.merge_layers,
+        return _run_async(fn=gis._tools.featureanalysis.merge_layers,
                    **inputs)
     return gis._tools.featureanalysis.merge_layers(
         input_layer,
@@ -421,7 +421,7 @@ def overlay_layers(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.overlay_layers,
+        return _run_async(fn=gis._tools.featureanalysis.overlay_layers,
                    **inputs)
     return gis._tools.featureanalysis.overlay_layers(
         input_layer,
@@ -531,7 +531,7 @@ def create_route_layers(route_data_item,
             "delete_route_data_item" : delete_route_data_item,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.create_route_layers,
+        return _run_async(fn=gis._tools.featureanalysis.create_route_layers,
                    **inputs)
     return gis._tools.featureanalysis.create_route_layers(
         route_data_item,

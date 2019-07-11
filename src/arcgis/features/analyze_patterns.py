@@ -124,7 +124,7 @@ def calculate_density(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.calculate_density,
+        return _run_async(fn=gis._tools.featureanalysis.calculate_density,
                    **inputs)
     return gis._tools.featureanalysis.calculate_density(
         input_layer,
@@ -219,7 +219,7 @@ def summarize_center_and_dispersion(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.summarize_center_and_dispersion,
+        return _run_async(fn=gis._tools.featureanalysis.summarize_center_and_dispersion,
                    **inputs)
     return gis._tools.featureanalysis.summarize_center_and_dispersion(
         analysis_layer,
@@ -330,7 +330,7 @@ def find_point_clusters(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.find_point_clusters,
+        return _run_async(fn=gis._tools.featureanalysis.find_point_clusters,
                    **inputs)
     return gis._tools.featureanalysis.find_point_clusters(
         analysis_layer,
@@ -459,7 +459,7 @@ def find_hot_spots(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.find_hot_spots,
+        return _run_async(fn=gis._tools.featureanalysis.find_hot_spots,
                    **inputs)
     return gis._tools.featureanalysis.find_hot_spots(
         analysis_layer,
@@ -607,7 +607,7 @@ def find_outliers(analysis_layer,
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.find_outliers,
+        return _run_async(fn=gis._tools.featureanalysis.find_outliers,
                    **inputs)
     return gis._tools.featureanalysis.find_outliers(analysis_layer,
                                                     analysis_field,
@@ -806,7 +806,7 @@ def interpolate_points(
             "context" : context,
             "estimate": estimate
         }
-        _run_async(fn=gis._tools.featureanalysis.interpolate_points,
+        return _run_async(fn=gis._tools.featureanalysis.interpolate_points,
                    **inputs)
     return gis._tools.featureanalysis.interpolate_points(
         input_layer,
