@@ -238,7 +238,7 @@ class GIS(object):
         elif profile is not None:
             # Load config
             pm = self.profiles
-            
+
             cfg_file_path = pm._cfg_file_path
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
@@ -258,11 +258,11 @@ class GIS(object):
             # Add any __init__() args to config/keyring store
             if profile not in pm.list():
                 _log.info("Adding new profile {} to config...".format(profile))
-                pm.create(profile=profile, url=url, username=username, password=password, 
+                pm.create(profile=profile, url=url, username=username, password=password,
                           key_file=key_file, cert_file=cert_file, client_id=client_id)
             elif profile in pm.list():
                 # run an update to be safe.
-                pm.update(profile, url=url, username=username, password=password, 
+                pm.update(profile, url=url, username=username, password=password,
                           key_file=key_file, cert_file=cert_file, client_id=client_id)
             url, username, password, key_file, cert_file, client_id = pm._retrieve(profile)
 
@@ -687,14 +687,14 @@ class GIS(object):
             return result.scheme != "" and result.netloc != ""
         except:
             return False
-    
+
     @property
     def profiles(self):
         """
         Returns tools to managed locally stored credentials
-        
+
         :returns: ProfileManager
-        
+
         """
         from arcgis.gis._impl._profile import ProfileManager
         return ProfileManager()
@@ -3125,7 +3125,7 @@ class ContentManager(object):
                     for ffile in future_files:
                         if os.path.isfile(ffile):
                             os.remove(ffile)
-                       
+
         if all(messages):
             # commit the addition
             url = "{base}content/users/{user}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
@@ -5748,8 +5748,7 @@ class Group(dict):
             res = self._portal.con.post(url, params)
             self._hydrated = False
             self._hydrate()
-        else:
-            raise ValueError("Input must be True/False.")
+
 
 
 
@@ -7309,11 +7308,11 @@ class Item(dict):
                             export to complete; use False for when it is okay to proceed while
                             the export continues to completion.
         ---------------     --------------------------------------------------------------------
-        enforce_fld_vis     Optional boolean. Be default when you are the owner of an item and 
-                            the `export` operation is called, the data provides all the columns.  
-                            If the export is being perform on a view, to ensure the view's 
-                            column definition is honor, then set the value to True. When the 
-                            owner of the service and the value is set to False, all data and 
+        enforce_fld_vis     Optional boolean. Be default when you are the owner of an item and
+                            the `export` operation is called, the data provides all the columns.
+                            If the export is being perform on a view, to ensure the view's
+                            column definition is honor, then set the value to True. When the
+                            owner of the service and the value is set to False, all data and
                             columns will be exported.
         ===============     ====================================================================
 
@@ -7742,7 +7741,7 @@ class Item(dict):
                         ret_dict['groups'].append(grp)
                     except:
                         pass
-                return ret_dict            
+                return ret_dict
             if self.ownerFolder is not None:
                 resp = self._portal.con.get('content/users/' + self._user_id + '/' + self.ownerFolder + "/items/" +
                                             self.itemid)
@@ -7820,7 +7819,7 @@ class Item(dict):
             #old API - groups sent as comma separated group ids
             group_ids = groups
         if self.owner == self._gis.users.me.username:
-            
+
             url = "{resturl}content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
                                                                       owner=self.owner)
             params = {
@@ -7832,7 +7831,7 @@ class Item(dict):
             }
             if allow_members_to_edit:
                 params['owner'] = self.owner
-                params['confirmItemControl'] = allow_members_to_edit  # True            
+                params['confirmItemControl'] = allow_members_to_edit  # True
         else:
             url = "{resturl}/content/items/{itemid}/share".format(resturl=self._gis._portal.resturl,
                                                                   itemid=self.itemid)
@@ -7841,7 +7840,7 @@ class Item(dict):
                 "groups": group_ids,
                 "everyone": everyone,
                 "account": org
-            }            
+            }
 
         res = self._portal.con.post(url, params)
         self._hydrated = False
@@ -8827,7 +8826,7 @@ class Item(dict):
                 else:
                     min_scale = ms.properties.minScale
                     max_scale = ms.properties.maxScale
-                
+
                 edit_result = manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
 
                 # Get LoD from Map Image Layer
