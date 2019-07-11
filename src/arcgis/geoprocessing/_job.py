@@ -59,8 +59,9 @@ class GPJob(object):
             print(infomsg)
         except Exception as e:
             msg = str(e)
-            _log.info('{jobid} finished with error: {msg}'.format(jobid=jobid, msg=msg))
-            print('{jobid} finished with error: {msg}'.format(jobid=jobid, msg=msg))
+            msg = '{jobid} failed: {msg}'.format(jobid=jobid, msg=msg)
+            _log.info(msg)
+            print(msg)
     #----------------------------------------------------------------------
     def __str__(self):
         return "<%s GP Job: %s>" % (self.task, self._jobid)
