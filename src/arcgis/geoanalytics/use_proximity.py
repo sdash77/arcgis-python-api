@@ -9,7 +9,7 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet, FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 
 _log = _logging.getLogger(__name__)
 
@@ -128,6 +128,9 @@ Returns:
     ]
 
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:

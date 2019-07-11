@@ -10,7 +10,7 @@ import datetime as _datetime
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 
 _log = _logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ def run_python_script(code, layers=None, gis=None, future=False):
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            Optional Boolean. If True, a GPJob is returned instead of 
+    future            Optional Boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
@@ -121,6 +121,9 @@ def run_python_script(code, layers=None, gis=None, future=False):
     }
 
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=False, future=future)
+            return GAJob(gpjob=gpjob, return_service=None)
         res, msg = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=True, future=future)
         return msg
     except:
@@ -188,7 +191,7 @@ def dissolve_boundaries(input_layer,
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of 
+    future            optional Boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
@@ -234,6 +237,9 @@ def dissolve_boundaries(input_layer,
     ]
 
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -241,8 +247,8 @@ def dissolve_boundaries(input_layer,
         raise
     return
 
-def merge_layers(input_layer, merge_layer, 
-                 merge_attributes=None, output_name=None, 
+def merge_layers(input_layer, merge_layer,
+                 merge_attributes=None, output_name=None,
                  gis=None, future=False):
     """
     The Merge Layers task combines two feature layers to create a single output layer. The tool
@@ -321,7 +327,7 @@ def merge_layers(input_layer, merge_layer,
     ----------------  ---------------------------------------------------------------
     gis               Optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of 
+    future            optional Boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
@@ -366,6 +372,9 @@ def merge_layers(input_layer, merge_layer,
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -396,7 +405,7 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, future=False
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of 
+    future            optional Boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
@@ -439,6 +448,9 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, future=False
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -473,7 +485,7 @@ def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_na
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of 
+    future            optional Boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
@@ -522,6 +534,9 @@ def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_na
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -569,7 +584,7 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
     gis               optional GIS, the GIS on which this tool runs. If not
                       specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of 
+    future            optional Boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
@@ -598,6 +613,9 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
     return_values = [
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=None)
         _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return True
     except:
@@ -663,7 +681,7 @@ def calculate_fields(input_layer,
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional Boolean. If True, a GPJob is returned instead of 
+    future                       Optional Boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
     ==========================   ================================================================
 
@@ -713,6 +731,9 @@ def calculate_fields(input_layer,
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -747,7 +768,7 @@ def copy_to_data_store(
    output_name: Output Layer Name (str). Required parameter.
 
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-   
+
    future: Optional. If True, the result comes back as a GPJob.
 
 Returns:
@@ -789,6 +810,9 @@ Returns:
         {"name": "output", "display_name": "Output Layer", "type": _FeatureSet},
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:

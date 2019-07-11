@@ -11,7 +11,7 @@ import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 
 _log=_logging.getLogger(__name__)
 
@@ -175,7 +175,7 @@ def forest(input_layer,
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of 
+    future                       optional Boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
@@ -254,6 +254,9 @@ def forest(input_layer,
         kwargs["features_to_predict"] = input_layer
         #param_db.pop("features_to_predict")
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -373,7 +376,7 @@ def glr(input_layer,
     gis                          Optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of 
+    future                       optional Boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
@@ -447,6 +450,9 @@ def glr(input_layer,
     ]
 
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -495,7 +501,7 @@ def find_point_clusters(
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of 
+    future                       optional Boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
@@ -523,7 +529,7 @@ def find_point_clusters(
 
     params['output_name'] = _json.dumps({
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})    
+        "itemProperties": {"itemId" : output_service.itemid}})
 
     _set_context(params)
 
@@ -542,6 +548,9 @@ def find_point_clusters(
     ]
 
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "FindPointClusters", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, "FindPointClusters", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -569,22 +578,22 @@ def calculate_density(
     gis=None,
     future=False):
     """
-    .. image:: _static/images/calculate_density/calculate_density.png 
+    .. image:: _static/images/calculate_density/calculate_density.png
 
-    The ``calculate_density`` tool creates a density map from point features by spreading known quantities of some 
-    phenomenon (represented as attributes of the points) across the map. The result is a layer of areas classified 
+    The ``calculate_density`` tool creates a density map from point features by spreading known quantities of some
+    phenomenon (represented as attributes of the points) across the map. The result is a layer of areas classified
     from least dense to most dense.
 
-    For point input, each point should represent the location of some event or incident, and the result layer 
-    represents a count of the incident per unit area. A higher density value in a new location means that there 
-    are more points near that location. In many cases, the result layer can be interpreted as a risk surface 
-    for future events. For example, if the input points represent locations of lightning strikes, the result 
+    For point input, each point should represent the location of some event or incident, and the result layer
+    represents a count of the incident per unit area. A higher density value in a new location means that there
+    are more points near that location. In many cases, the result layer can be interpreted as a risk surface
+    for future events. For example, if the input points represent locations of lightning strikes, the result
     layer can be interpreted as a risk surface for future lightning strikes.
 
     Other use cases of this tool include the following:
 
     * Creating crime density maps to help police departments properly allocate resources to high crime areas.
-    * Calculating densities of hospitals within a county. The result layer will show areas with high and low accessibility to 
+    * Calculating densities of hospitals within a county. The result layer will show areas with high and low accessibility to
       ospitals, and this information can be used to decide where new hospitals should be built.
     * Identifying areas that are at high risk of forest fires based on historical locations of forest fires.
     * Locating communities that are far from major highways in order to plan where new roads should be constructed.
@@ -594,15 +603,15 @@ def calculate_density(
     -------------------------------------------------     ------------------------------------------------------------------------
     input_layer                                           Required point feature layer. The point layer on which the density will be calculated.
 
-                                                          Analysis using ``Square`` or ``Hexagon`` bins requires a projected coordinate system. 
-                                                          When aggregating layers into bins, the input layer or processing extent (``processSR``) must 
-                                                          have a projected coordinate system. At 10.5.1, 10.6, and 10.6.1, if a projected coordinate 
-                                                          system is not specified when running analysis, the World Cylindrical Equal 
-                                                          Area (WKID 54034) projection will be used. At 10.7 or later, if a projected coordinate system 
+                                                          Analysis using ``Square`` or ``Hexagon`` bins requires a projected coordinate system.
+                                                          When aggregating layers into bins, the input layer or processing extent (``processSR``) must
+                                                          have a projected coordinate system. At 10.5.1, 10.6, and 10.6.1, if a projected coordinate
+                                                          system is not specified when running analysis, the World Cylindrical Equal
+                                                          Area (WKID 54034) projection will be used. At 10.7 or later, if a projected coordinate system
                                                           is not specified when running analysis, a projection will be picked based on the extent of the data.
                                                           See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------     ------------------------------------------------------------------------
-    fields                                                Optional string. Provides one or more field specifying the number of incidents at each location. 
+    fields                                                Optional string. Provides one or more field specifying the number of incidents at each location.
                                                           You can calculate the density on multiple fields, and the count of points will always have the density calculated.
     -------------------------------------------------     ------------------------------------------------------------------------
     weight                                                Required string. The type of weighting applied to the density calculation. There are two options:
@@ -614,59 +623,59 @@ def calculate_density(
     -------------------------------------------------     ------------------------------------------------------------------------
     bin_type                                              Required string. The type of bin used to calculate density.
 
-                                                          Choice list: ['Hexagon', 'Square']. 
+                                                          Choice list: ['Hexagon', 'Square'].
     -------------------------------------------------     ------------------------------------------------------------------------
-    bin_size                                              Required float. The distance for the bins that the ``input_layer`` will be analyzed using. 
-                                                          When generating bins, for Square, the number and units specified determine the 
-                                                          height and length of the square. For ``Hexagon``, the number and units specified 
+    bin_size                                              Required float. The distance for the bins that the ``input_layer`` will be analyzed using.
+                                                          When generating bins, for Square, the number and units specified determine the
+                                                          height and length of the square. For ``Hexagon``, the number and units specified
                                                           determine the distance between parallel sides.
     -------------------------------------------------     ------------------------------------------------------------------------
-    bin_size_unit                                         Required string. The distance unit for the bins for which the density will be calculated. 
+    bin_size_unit                                         Required string. The distance unit for the bins for which the density will be calculated.
                                                           The linear unit to be used with the value specified in ``bin_size``.
-                                                          
+
                                                           The default is 'Meters'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_interval                                    Optional integer. A numeric value that specifies duration of the time step interval. This option is 
+    time_step_interval                                    Optional integer. A numeric value that specifies duration of the time step interval. This option is
                                                           only available if the input points are time-enabled and represent an instant in time.
 
-                                                          The default value is 'None'. 
+                                                          The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_interval_unit                               Optional string. A string that specifies units of the time step interval. 
+    time_step_interval_unit                               Optional string. A string that specifies units of the time step interval.
                                                           This option is only available if the input points are time-enabled and represent an instant in time.
 
                                                           Choice list: ['Milliseconds', 'Seconds', 'Minutes', 'Hours', 'Days', 'Weeks', 'Months', 'Years']
 
                                                           The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_repeat_interval                             Optional integer. A numeric value that specifies how often the time step repeat occurs. 
+    time_step_repeat_interval                             Optional integer. A numeric value that specifies how often the time step repeat occurs.
                                                           This option is only available if the input points are time-enabled and of time type instant.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_repeat_interval_unit                        Optional string. A string that specifies the temporal unit of the step repeat. 
+    time_step_repeat_interval_unit                        Optional string. A string that specifies the temporal unit of the step repeat.
                                                           This option is only available if the input points are time-enabled and of time type instant.
 
                                                           Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
                                                           The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_reference                                   Optional datetime. A date that specifies the reference time to align the time slices to, 
-                                                          represented in milliseconds from epoch. If time_step_reference is set 
-                                                          to 'None', time stepping will align to January 1st, 1970 (datetime(1970, 1, 1)). 
+    time_step_reference                                   Optional datetime. A date that specifies the reference time to align the time slices to,
+                                                          represented in milliseconds from epoch. If time_step_reference is set
+                                                          to 'None', time stepping will align to January 1st, 1970 (datetime(1970, 1, 1)).
                                                           This option is only available if the input points are time-enabled and of time type instant.
 
                                                           The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    radius                                                Required integer. The size of the neighborhood within which to calculate the density. 
+    radius                                                Required integer. The size of the neighborhood within which to calculate the density.
                                                           The radius size must be larger than the ``bin_size``.
     -------------------------------------------------     ------------------------------------------------------------------------
-    radius_unit                                           Required string. The distance unit for the radius defining the neighborhood for which the density will be calculated. 
-                                                          The linear unit to be used with the value specified in ``bin_size``.             
-                                                          
+    radius_unit                                           Required string. The distance unit for the radius defining the neighborhood for which the density will be calculated.
+                                                          The linear unit to be used with the value specified in ``bin_size``.
+
                                                           Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-                                                          The default value is 'Meters'.     
+                                                          The default value is 'Meters'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    area_units                                            Optional string. The desired output units of the density values. If density values are very small, you can increase the 
-                                                          size of the area units (for example, square meters to square kilometers) to return larger values. 
+    area_units                                            Optional string. The desired output units of the density values. If density values are very small, you can increase the
+                                                          size of the area units (for example, square meters to square kilometers) to return larger values.
                                                           This value only scales the result. Possible area units are:
 
                                                           Choice list: ['SquareMeters', 'SquareKilometers', 'Hectares', 'SquareFeet', 'SquareYards', 'SquareMiles', 'Acres'].
@@ -678,13 +687,13 @@ def calculate_density(
     gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
     context                                               Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
-                                             
+
                                                             * Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                             * Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                             * Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                             * Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     -------------------------------------------------     ------------------------------------------------------------------------
-    future                                                optional Boolean. If True, a GPJob is returned instead of 
+    future                                                optional Boolean. If True, a GPJob is returned instead of
                                                           results. The GPJob can be queried on the status of the execution.
     =================================================     ========================================================================
 
@@ -752,6 +761,9 @@ def calculate_density(
     ]
 
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, "CalculateDensity", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -819,8 +831,8 @@ def find_hot_spots(
 
        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-       future: Optional, If True, the results are returned asynchronously as a GPJob.
-       
+       future: Optional, If True, the results are returned asynchronously as a GAJob.
+
     Returns:
        output - Output Features as a feature layer collection item
 
@@ -872,6 +884,9 @@ def find_hot_spots(
     ]
 
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, "FindHotSpots", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -968,6 +983,9 @@ def create_space_time_cube(point_layer: _FeatureSet,
     return_values=[
         {"name": "output_cube", "display_name": "Output Space Time Cube", "type": DataFile},
     ]
-
+    if future:
+        output_service = None
+        gpjob = _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True, future=future)
+        return GAJob(gpjob=gpjob, return_service=output_service)
     return _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True, future=future)
 

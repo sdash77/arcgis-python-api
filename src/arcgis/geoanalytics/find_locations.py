@@ -9,7 +9,7 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 import datetime
 _log = _logging.getLogger(__name__)
 
@@ -91,7 +91,7 @@ def geocode_locations(input_layer,
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of 
+    future                       optional Boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
@@ -186,6 +186,9 @@ def geocode_locations(input_layer,
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, tool_name, params, param_db,
                                return_values, _use_async, url, True,
                                future=future)
@@ -287,7 +290,7 @@ def detect_incidents(input_layer,
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of 
+    future                       optional Boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
@@ -336,6 +339,9 @@ def detect_incidents(input_layer,
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
@@ -389,7 +395,7 @@ def find_similar_locations(
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
    future: Optional, If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
-   
+
 Returns:
    output - Output feature layer Item
 
@@ -435,6 +441,9 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
         _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:

@@ -1,6 +1,7 @@
 import os
 from concurrent.futures import Future
-
+import logging
+_log = logging.getLogger(__name__)
 class GPJob(object):
     """
     Represents a Single Geoprocessing Job.  The `GPJob` class allows for the asynchronous operation
@@ -22,6 +23,10 @@ class GPJob(object):
     task_url          Required String. The URL to the GP Task.
     ----------------  ---------------------------------------------------------------
     gis               Required GIS. The GIS connection object
+    ----------------  ---------------------------------------------------------------
+    notify            Optional Boolean.  When set to True, a message will inform the
+                      user that the geoprocessing task has completed. The default is
+                      False.
     ================  ===============================================================
 
     """
@@ -31,16 +36,31 @@ class GPJob(object):
     _gis = None
     _task_name = None
     #----------------------------------------------------------------------
-    def __init__(self, future, gptool, jobid, task_url, gis):
+    def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
         initializer
         """
         assert isinstance(future, Future)
         self._future = future
+        if notify:
+            self._future.add_done_callback(self._notify)
         self._gptool = gptool
         self._jobid = jobid
         self._url = task_url
         self._gis = gis
+    #----------------------------------------------------------------------
+    def _notify(self, future):
+        """prints finished method"""
+        jobid = str(self).replace("<", "").replace(">", "")
+        try:
+            res = future.result()
+            infomsg = '{jobid} finished successfully.'.format(jobid=jobid)
+            _log.info(infomsg)
+            print(infomsg)
+        except Exception as e:
+            msg = str(e)
+            _log.info('{jobid} finished with error: {msg}'.format(jobid=jobid, msg=msg))
+            print('{jobid} finished with error: {msg}'.format(jobid=jobid, msg=msg))
     #----------------------------------------------------------------------
     def __str__(self):
         return "<%s GP Job: %s>" % (self.task, self._jobid)

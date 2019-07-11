@@ -1,3 +1,4 @@
+import os
 import json
 import string
 import random
@@ -5,6 +6,7 @@ import random
 import arcgis
 from arcgis.gis import Layer
 from arcgis.features import FeatureCollection
+from arcgis.geoprocessing._job import GPJob
 
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
@@ -127,3 +129,106 @@ def _create_output_service(gis, output_name, output_service_name='Analysis featu
     output_service.update(item_properties)
     return output_service
 
+
+
+class GAJob(object):
+    """
+    Represents a Single GeoAnalytics Job.  The `GAJob` class allows for the asynchronous operation
+    of any geoprocessing task.  To request a GAJob task, the code must be called with `future=True`
+    or else the operation will occur synchronously.  This class is not intended for users to call
+    directly.
+
+
+    ================  ===============================================================
+    **Argument**      **Description**
+    ----------------  ---------------------------------------------------------------
+    gpjob             Required GPJob. The geoprocessing job.
+    ----------------  ---------------------------------------------------------------
+    return_service    Optional Item. The service to return to the user.
+    ================  ===============================================================
+
+    """
+    _gpjob = None
+    _return_service = None
+    #----------------------------------------------------------------------
+    def __init__(self, gpjob, return_service=None):
+        """
+        initializer
+        """
+        assert isinstance(gpjob, GPJob)
+        self._gpjob = gpjob
+        self._return_service = return_service
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return "<%s GA Job: %s>" % (self.task, self._gpjob._jobid)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return "<%s GA Job: %s>" % (self.task, self._gpjob._jobid)
+    #----------------------------------------------------------------------
+    @property
+    def task(self):
+        """Returns the task name.
+        :returns: string
+        """
+        return self._gpjob.task
+    #----------------------------------------------------------------------
+    @property
+    def status(self):
+        """
+        returns the GP status
+
+        :returns: String
+        """
+        return self._gpjob.status
+    #----------------------------------------------------------------------
+    def cancel(self):
+        """
+        Attempt to cancel the call. If the call is currently being executed
+        or finished running and cannot be cancelled then the method will
+        return False, otherwise the call will be cancelled and the method
+        will return True.
+
+        :returns: boolean
+        """
+        cancel = self._gpjob.cancel()
+        if self._return_service:
+            self._return_service.delete()
+        return cancel
+
+    #----------------------------------------------------------------------
+    def cancelled(self):
+        """
+        Return True if the call was successfully cancelled.
+
+        :returns: boolean
+        """
+        return self._gpjob.cancelled()
+    #----------------------------------------------------------------------
+    def running(self):
+        """
+        Return True if the call is currently being executed and cannot be cancelled.
+
+        :returns: boolean
+        """
+        return self._gpjob.running()
+    #----------------------------------------------------------------------
+    def done(self):
+        """
+        Return True if the call was successfully cancelled or finished running.
+
+        :returns: boolean
+        """
+        return self._gpjob.done()
+    #----------------------------------------------------------------------
+    def result(self):
+        """
+        Return the value returned by the call. If the call hasn't yet completed
+        then this method will wait.
+
+        :returns: object
+        """
+        res = self._gpjob.result()
+        if self._return_service:
+            return self._return_service
+        else:
+            return res

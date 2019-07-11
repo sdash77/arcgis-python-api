@@ -258,9 +258,9 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
         return result_values
     else:
         raise Exception("Unable to get analysis job results.")
-    
+
 def _future_op(gptool, task_url, job_info, job_id, param_db, return_values, return_messages):
-    
+
     job_info = _analysis_job_status(gptool, task_url, job_info)
     resp = _analysis_job_results(gptool, task_url, job_info, job_id)
 
@@ -286,7 +286,7 @@ def _future_op(gptool, task_url, job_info, job_id, param_db, return_values, retu
     if return_messages:
         return _return_output(num_returns, output_dict, return_values), job_info
 
-    return _return_output(num_returns, output_dict, return_values)    
+    return _return_output(num_returns, output_dict, return_values)
 
 def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False, add_token=True, return_messages=False, future=False):
     if gis is None:
@@ -318,7 +318,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                     if type(param_value) == FeatureSet:
                         gp_params[gp_param_name] = param_value.to_dict()
                     elif  _is_geoenabled(param_value):
-                        gp_params[gp_param_name] = json.loads(json.dumps(param_value.spatial.__feature_set__, 
+                        gp_params[gp_param_name] = json.loads(json.dumps(param_value.spatial.__feature_set__,
                                                                          default=_date_handler))
                     elif type(param_value) == str:
 
@@ -369,7 +369,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             executor =  concurrent.futures.ThreadPoolExecutor(1)
             future = executor.submit(_future_op, *(gptool, task_url, job_info, job_id, param_db, return_values, return_messages))
             executor.shutdown(False)
-            gpjob = GPJob(future=future, gptool=gptool, jobid=job_id, task_url=task_url, gis=gptool._gis)
+            gpjob = GPJob(future=future, gptool=gptool, jobid=job_id, task_url=task_url, gis=gptool._gis, notify=arcgis.env.verbose)
             return gpjob
         job_info = _analysis_job_status(gptool, task_url, job_info)
         resp = _analysis_job_results(gptool, task_url, job_info, job_id)
