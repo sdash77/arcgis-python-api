@@ -172,7 +172,10 @@ def _analysis_job(gptool, task, params):
     submit_url = "{}/submitJob".format(task_url)
 
     params["f"] = "json"
-    resp = gptool._con.post(submit_url, params, token=gptool._token)
+    try:
+        resp = gptool._con.post(submit_url, params, token=gptool._token)
+    except RuntimeError:
+        resp = gptool._con.post(submit_url, params)
     # print(resp)
     return task_url, resp, resp['jobId']
 
@@ -185,7 +188,12 @@ def _analysis_job_status(gptool, task_url, job_info):
         job_id = job_info.get("jobId")
         job_url = "{}/jobs/{}".format(task_url, job_id)
         params = {"f": "json"}
-        job_response = gptool._con.post(job_url, params, token=gptool._token)
+        try:
+            job_response = gptool._con.post(job_url, params, token=gptool._token)
+        except RuntimeError:
+            job_response = gptool._con.post(job_url, params)
+        except Exception as err:
+            job_response = gptool._con.get(job_url, params)
 
         # Query and report the Analysis job status.
         #
@@ -194,7 +202,11 @@ def _analysis_job_status(gptool, task_url, job_info):
             while not job_response.get("jobStatus") == "esriJobSucceeded":
                 time.sleep(1)
 
-                job_response = gptool._con.post(job_url, params, token=gptool._token)
+                try:
+                    job_response = gptool._con.post(job_url, params, token=gptool._token)
+                except RuntimeError:
+                    job_response = gptool._con.post(job_url, params)
+
                 # print(job_response)
                 messages = job_response['messages'] if 'messages' in job_response else []
                 num = len(messages)
@@ -251,7 +263,10 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
 
                 params = {"f": "json"}
                 _set_env_params(params, {})
-                param_result = gptool._con.post(result_url, params, token=gptool._token)
+                try:
+                    param_result = gptool._con.post(result_url, params, token=gptool._token)
+                except:
+                    param_result = gptool._con.post(result_url, params)
 
                 job_value = param_result.get("value")
                 result_values[key] = job_value
@@ -360,7 +375,7 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
     if use_async:
         task_url = "{}/{}".format(url, task_name)
         submit_url = "{}/submitJob".format(task_url)
-        if add_token:
+        if add_token and submit_url.lower().find("arcgis.com") == -1:
             job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
         else:
             job_info = gptool._con.post(submit_url, gp_params)

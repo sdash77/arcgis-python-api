@@ -9846,7 +9846,10 @@ class _GISResource(object):
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
-            dictdata = self._con.post(self.url, params, token=self._lazy_token)
+            try:
+                dictdata = self._con.post(self.url, params, token=self._lazy_token)
+            except:
+                dictdata = self._con.get(self.url, params, token=self._lazy_token)
 
         self._lazy_properties = PropertyMap(dictdata)
 
