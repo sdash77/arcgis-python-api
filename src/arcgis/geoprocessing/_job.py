@@ -35,6 +35,8 @@ class GPJob(object):
     _url = None
     _gis = None
     _task_name = None
+    _is_fa = False
+    _is_ra = False
     #----------------------------------------------------------------------
     def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
@@ -157,4 +159,34 @@ class GPJob(object):
         """
         if self.cancelled():
             return None
+        if self._is_fa:
+            return self._process_fa(self._future.result())
+        elif self._is_ra:
+            return self._process_fa(self._future.result())
         return self._future.result()
+
+    def _process_fa(self, result):
+        import arcgis
+        if hasattr(result, '_fields'):
+            r = {}
+            for key in result._fields:
+                value = getattr(result, key)
+                if isinstance(value, dict) and 'featureSet' in value:
+                    r[key] = arcgis.features.FeatureCollection(value)
+                elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
+                    r[key] = arcgis.gis.Item(self._gis, value['itemId'])
+                elif len(str(value)) > 0 and value:
+                    r[key] = value
+            if len(r) == 1:
+                return r[list(r.keys())[0]]
+            return r
+        else:
+            value = result
+            if len(value['itemId']) > 0:
+                itemid = value['itemId']
+                return arcgis.gis.Item(gis=self._gis, itemid=itemid)
+            elif isinstance(value, dict) and 'featureSet' in value:
+                return arcgis.features.FeatureCollection(value)
+            return value
+        return result
+
