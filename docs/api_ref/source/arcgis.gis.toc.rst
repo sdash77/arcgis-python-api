@@ -108,7 +108,7 @@ ResourceManager
 
 ProfileManager
 ---------------------------
-..autoclass:: arcgis.gis.ProfileManager
+..autoclass:: arcgis.gis._impl._profile.ProfileManager
     :members:
     :undoc-members:
     :show-inheritance:
