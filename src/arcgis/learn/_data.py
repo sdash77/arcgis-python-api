@@ -1,6 +1,8 @@
 try:
-    from fastai.vision.data import imagenet_stats, ImageItemList
-    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
+    from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
+    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr
+    from fastai.vision import ImageDataBunch
+    from fastai.torch_core import data_collate
     import torch
     from pathlib import Path
     from functools import partial
@@ -19,33 +21,25 @@ except:
     HAS_FASTAI = False
 
 def _raise_fastai_import_error():
-    raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai=1.0.39 pytorch=1.0.0 torchvision"')
+    raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai pytorch torchvision"')
 
 def _bb_pad_collate(samples, pad_idx=0):
     "Function that collect `samples` of labelled bboxes and adds padding with `pad_idx`."
-    arr = []
-    for s in samples:
-        try:
-            arr.append(len(s[1].data[1]))
-        except Exception as e:
-            # set_trace()
-            # print(s[1].data[1],s[1].data[1],e)
-            arr.append(0)
-    max_len = max(arr)
-#    max_len = max([len(s[1].data[1]) for s in samples])
+    if isinstance(samples[0][1], int):
+        return data_collate(samples)
+    max_len = max([len(s[1].data[1]) for s in samples])
     bboxes = torch.zeros(len(samples), max_len, 4)
     labels = torch.zeros(len(samples), max_len).long() + pad_idx
     imgs = []
     for i,s in enumerate(samples):
         imgs.append(s[0].data[None])
         bbs, lbls = s[1].data
-        # print(bbs, lbls)
-        try:
+
+        if not (bbs.nelement() == 0):
             bboxes[i,-len(lbls):] = bbs
-            labels[i,-len(lbls):] = lbls
-        except Exception as e:
-            pass
-    return torch.cat(imgs,0), (bboxes,labels)
+            labels[i,-len(lbls):] = torch.tensor(lbls, device=bbs.device).long()
+    return torch.cat(imgs,0), (bboxes,labels)    
+
 
 def _get_bbox_lbls(imagefile, class_mapping):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
@@ -81,6 +75,8 @@ def _get_lbls(imagefile, class_mapping):
 
     return classes[0]
 
+
+
 def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type = None):
     """
     Prepares a Fast.ai DataBunch from the exported Pascal VOC image chips
@@ -109,7 +105,9 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     transforms              Optional tuple. Fast.ai transforms for data
                             augmentation of training and validation datasets
                             respectively (We have set good defaults which work
-                            for satellite imagery well).
+                            for satellite imagery well). If transforms is set
+                            to `False` no transformation will take place and 
+                            `chip_size` parameter will also not take effect.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
                             into batches(usually default works).
@@ -136,22 +134,23 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
 
-    json_file = path / 'esri_model_definition.emd'
-    with open(json_file) as f:
-        emd = json.load(f)
-
-    if class_mapping is None:
-        try:
-            class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
-        except KeyError:
-            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
-    
     color_mapping = None
-    if color_mapping is None:
-        try:
-            color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
-        except KeyError:          
-            color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
+    if not dataset_type in ['Imagenet']:
+        json_file = path / 'esri_model_definition.emd'
+        with open(json_file) as f:
+            emd = json.load(f)
+
+        if class_mapping is None:
+            try:
+                class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+            except KeyError:
+                class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
+        
+        if color_mapping is None:
+            try:
+                color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
+            except KeyError:          
+                color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
         # if [-1, -1, -1] in color_mapping.values():
         #     for c_idx, c_color in color_mapping.items():
@@ -178,6 +177,8 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         #     dataset_type = 'RCNN_Masks'
         # elif (left in imagefile_types) and (right in bboxfile_types):
         #     dataset_type = 'PASCAL_VOC_rectangles'
+        # elif (left in imagefile_types) and (right in bboxfile_types):
+        #     dataset_type = 'LabelledTiles'
         # else:
         #     raise NotImplementedError('Cannot infer dataset type. The dataset type is not implemented')            
         
@@ -188,7 +189,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
         
         src = (ArcGISSegmentationItemList.from_folder(path/'images')
-           .random_split_by_pct(val_split_pct, seed=seed)
+           .split_by_rand_pct(val_split_pct, seed=seed)
            .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)) #TODO : Handel NoData case
 
         if transforms is None:
@@ -211,7 +212,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping)
 
         src = (SSDObjectItemList.from_folder(path/'images')
-           .random_split_by_pct(val_split_pct, seed=seed)
+           .split_by_rand_pct(val_split_pct, seed=seed)
            .label_from_func(get_y_func))
 
         if transforms is None:
@@ -230,8 +231,8 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
         get_y_func = partial(_get_lbls, class_mapping=class_mapping)
 
-        src = (ImageItemList.from_folder(path/'images')
-           .random_split_by_pct(val_split_pct, seed=42)
+        src = (ImageList.from_folder(path/'images')
+           .split_by_rand_pct(val_split_pct, seed=42)
            .label_from_func(get_y_func))
 
         if transforms is None:
@@ -253,16 +254,32 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             .transform(transforms, size=chip_size)
             .databunch(bs=batch_size, **databunch_kwargs)
             .normalize(imagenet_stats))
+
+    elif dataset_type == 'Imagenet':
+
+        if transforms is None:
+            ranges = (0, 1)
+            train_tfms = [rotate(degrees=30, p=0.5),
+                flip_lr(),
+                brightness(change=(0.4, 0.6)),
+                contrast(scale=(0.75, 1.5))]
+            val_tfms = []
+            transforms = (train_tfms, val_tfms)  
+
+            data = ImageDataBunch.from_folder(path, ds_tfms=transforms, size=chip_size, **databunch_kwargs).normalize(imagenet_stats)      
         
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))    
 
-    data.chip_size = chip_size
+    if transforms == False:
+        data.chip_size = data.x[0].shape[-1]
+    else:
+        data.chip_size = chip_size
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
     show_batch_func = data.show_batch
     show_batch_func = partial(show_batch_func, rows=min(int(math.sqrt(batch_size)), 5))
     data.show_batch = show_batch_func
     data.orig_path = path
-
+    
     return data

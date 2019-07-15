@@ -1,4 +1,6 @@
 try:
+    import arcgis as _arcgis
+    import pandas
     from ._arcgis_model import ArcGISModel
     import tempfile
     import numpy as np
@@ -16,13 +18,15 @@ try:
     from fastai.vision.image import open_image
     from fastai.vision.data import ImageDataBunch
     from fastai.vision import imagenet_stats
-    from fastai.vision.learner import create_cnn, ClassificationInterpretation
+    from fastai.vision.learner import cnn_learner, ClassificationInterpretation
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch.nn.functional as functional
     import tempfile
     import glob
     import time
     import xml.etree.ElementTree as ElementTree
+    import PIL.Image
+    import PIL.ExifTags
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -86,7 +90,7 @@ class FeatureClassifier(ArcGISModel):
         self._code = feature_classifier_prf
 
         self._data = data
-        self.learn = create_cnn(data, self._backbone, metrics=accuracy)
+        self.learn = cnn_learner(data, self._backbone, metrics=accuracy)
         self.learn.model = self.learn.model.to(self._device)
 
         if pretrained_path is not None:
@@ -162,7 +166,7 @@ class FeatureClassifier(ArcGISModel):
 
                 tempdata = ImageDataBunch.single_from_classes(
                     tempfile.TemporaryDirectory().name, sorted(list(class_mapping.values())),
-                    tfms=transforms, size=chip_size).normalize(imagenet_stats)
+                    ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
                 tempdata.chip_size = chip_size
                 return cls(tempdata, **model_params, pretrained_path=str(model_file))
         else:
@@ -175,59 +179,134 @@ class FeatureClassifier(ArcGISModel):
         interp = ClassificationInterpretation.from_learner(self.learn)
         interp.plot_confusion_matrix()
 
-    # def classify_features(self, input_features, imagery,
-    #                class_value_field=None,
-    #                confidence_score_field=None,
-    #                context=None):
-    #
-    #     """
-    #     Classifies the area occupied by geographical features based on the imagery they overlaps with.
-    #
-    #     ====================================     ====================================================================
-    #     **Argument**                             **Description**
-    #     ------------------------------------     --------------------------------------------------------------------
-    #     input_features                           Required. Spatially enabled DataFrame containing features to be classified
-    #     ------------------------------------     --------------------------------------------------------------------
-    #     imagery                                  Required. MapImageLayer or ImageryLayer with imagery
-    #     ------------------------------------     --------------------------------------------------------------------
-    #     class_value_field                        Optional string. The column in the returned dataframe that contains the class value
-    #     ------------------------------------     --------------------------------------------------------------------
-    #     confidence_score_field                   Optional string. The column in the returned dataframe that contains the confidence scores as output by the image detection model
-    #     ------------------------------------     --------------------------------------------------------------------
-    #     context                                  Optional dictionary. Context contains additional settings that affect task execution.
-    #                                             Dictionary can contain value for following keys:
-    #
-    #                                             - cellSize - Set the output raster cell size, or resolution
-    #     ====================================     ====================================================================
-    #
-    #     :return:
-    #         The spatially enabled dataframe with colmns for the inferred class value and confidence scores
-    #
-    #     """
-    #     sdf = input_features.copy()
-    #     cellsize = 1.0
-    #
-    #     if context is not None:
-    #         try:
-    #             cellsize = context['cellSize']
-    #         except:
-    #             pass
-    #
-    #     chipsize = self._data.chip_size
-    #
-    #     w = cellsize * chipsize
-    #     with tempfile.TemporaryDirectory() as tmpdir:
-    #         for index, row in input_features.iterrows():
-    #             g = row['SHAPE']
-    #             x, y = g.centroid
-    #             ext = (x - w/2, y - w/2, x + w/2, y + w/2)
-    #
-    #             filename = imagery.export_map(ext, size='{0},{1}'.format(chipsize, chipsize), f='image', format='jpg',save_folder=tmpdir, save_file='test.jpg')
-    #             prediction = self.predict(filename)
-    #             sdf[class_value_field] = self._data.classes[int(prediction[1])]
-    #             sdf[confidence_score_field] = float(prediction[2][ [1]]*100)
-    #
-    #     return sdf
+    def plot_hard_examples(self, num_examples):
+        """
+        Plots a confusion matrix of the model predictions to evaluate accuracy
+        
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        num_examples            Number of hard examples to plot
+                                `prepare_data` function.
+        """
+        interp = ClassificationInterpretation.from_learner(self.learn)
+        interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=True)        
+
+    @staticmethod
+    def convert_to_degrees(value, reference):
+        d0 = value[0][0]
+        d1 = value[0][1]
+        d = float(d0) / float(d1)
+
+        m0 = value[1][0]
+        m1 = value[1][1]
+        m = float(m0) / float(m1)
+
+        s0 = value[2][0]
+        s1 = value[2][1]
+        s = float(s0) / float(s1)
+
+        degrees = d + (m / 60.0) + (s / 3600.0)
+
+        if reference == "S" or reference == "W":
+            degrees = 0 - degrees
+        
+        return degrees
+
+    def predict_folder_and_create_layer(self, folder, feature_layer_name, gis=None, prediction_field='predict', confidence_field='confidence'):
+        """
+        Predicts on images present in the given folder and creates a feature layer.
+        
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        folder                  Required String. Folder to inference on.
+        ---------------------   -------------------------------------------
+        feature_layer_name      Required String. The name of the feature layer used to publish.   
+        ---------------------   -------------------------------------------
+        gis                     Optional GIS Object, the GIS on which this tool runs. If not specified,
+                                the active GIS is used.      
+        ---------------------   -------------------------------------------
+        prediction_field        Optional String. The field name to use to add predictions.             
+        ---------------------   -------------------------------------------
+        confidence_field        Optional String. The field name to use to add confidence.                                                                               
+        =====================   ===========================================
+
+        :returns: `FeatureCollection` Object                              
+        """        
+        return self._create_feature_layer(
+            self._extract_images_geo_data(folder),
+            _arcgis.env.active_gis if gis is None else gis,
+            feature_layer_name,
+            prediction_field,
+            confidence_field
+        )
+
+    def _extract_images_geo_data(self, folder):
+        ALLOWED_FILE_FORMATS = ['tif', 'jpg', 'png']
+
+        files = []
+
+        for ext in ALLOWED_FILE_FORMATS:
+            files.extend(glob.glob(os.path.join(folder, '*.' + ext)))
+        
+        images_data = []
+
+        for file in files:
+            img = PIL.Image.open(file)
+            exif = {
+                PIL.ExifTags.TAGS[k]: v
+                for k, v in img._getexif().items()
+                if k in PIL.ExifTags.TAGS
+            }
+
+            images_data.append(
+                {
+                    'image_path': file,
+                    'y': FeatureClassifier.convert_to_degrees(exif['GPSInfo'][2], exif['GPSInfo'][1]),
+                    'x': FeatureClassifier.convert_to_degrees(exif['GPSInfo'][4], exif['GPSInfo'][3])
+                }
+            )
+        
+        return images_data
+
+    def _create_feature_layer(self, images_data, gis_user, feature_layer_name, prediction_field, confidence_field):
+        data = []
+        images = {}
+        for image_data in images_data:
+            prediction = self.predict(image_data['image_path'])
+            images[os.path.basename(image_data['image_path'])] = image_data['image_path']
+            data.append(
+                [   
+                    os.path.basename(image_data['image_path']),
+                    prediction[0].obj,
+                    prediction[2].data.max().tolist(),
+                    image_data['x'],
+                    image_data['y']
+                ]
+            )
+        
+        dataframe = pandas.DataFrame(data, columns=['Image_Name', prediction_field, confidence_field, 'X', 'Y'])
+        spatial_dataframe = dataframe.spatial.from_xy(df=dataframe, sr=4326, x_column='X', y_column='Y')
+
+        feature_collection = gis_user.content.import_data(spatial_dataframe, title=feature_layer_name)
+
+        feature_layer = feature_collection.layers[0]
+        feature_layer.manager.add_to_definition({"hasAttachments":True})
+
+        df = feature_layer.query(as_df=True)
+        object_field = feature_layer.properties['objectIdField']
+
+        for image_name, image_path in images.items():
+            object_id = df[object_field].where(df['Image_Name'] == image_name).values[0]  #assuming image_name is unique
+            if np.isnan(object_id):
+                continue #skipping those values which are not present.                            
+            feature_layer.attachments.add(
+                object_id,
+                image_path
+            )
+
+        return feature_collection
 
     def classify_features(self, feature_layer, labeled_tiles_directory, input_label_field, output_label_field, confidence_field=None):
 

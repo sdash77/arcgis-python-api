@@ -1,6 +1,6 @@
 from fastai.vision import ImageSegment, Image
 from fastai.vision.image import open_image, show_image, pil2tensor
-from fastai.vision.data import SegmentationProcessor, ImageItemList
+from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
 import torch
@@ -39,7 +39,7 @@ def is_no_color(color_mapping):
         color_mapping = list(color_mapping.values())
     return (np.array(color_mapping) == [-1., -1., -1.]).any()
 
-class ArcGISSegmentationLabelList(ImageItemList):
+class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
     _processor = SegmentationProcessor
     def __init__(self, items, classes=None, class_mapping=None, color_mapping=None, **kwargs):
@@ -92,7 +92,7 @@ class ArcGISSegmentationLabelList(ImageItemList):
     def reconstruct(self, t): 
         return ArcGISImageSegment(t, cmap=self.cmap, norm=self.mplnorm)
 
-class ArcGISSegmentationItemList(ImageItemList):
+class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
 
@@ -106,4 +106,4 @@ class LabelCallback(LearnerCallback):
         modified_target = torch.zeros_like(last_target)
         for label, idx in self.label_mapping.items():
             modified_target[last_target==label] = idx
-        return last_input, modified_target
+        return {'last_input':last_input, 'last_target':modified_target}

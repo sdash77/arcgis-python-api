@@ -7,6 +7,10 @@ import arcgis
 from pathlib import Path
 import os
 import tempfile
+import logging
+logger = logging.getLogger() 
+
+
 
 class SaveModelCallback(TrackerCallback):
 
@@ -50,7 +54,7 @@ class ArcGISModel(object):
         self.learn.recorder.plot()
     
     
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
+    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
@@ -79,12 +83,26 @@ class ArcGISModel(object):
                                 training.
         =====================   ===========================================
         """
+        if lr is None:
+            if arcgis.env.verbose:
+                logger.info('Finding optimum learning rate.')
+            self.learn.lr_find()
+            self.learn.recorder.plot(suggestion=True)
+            lr = self.learn.recorder.min_grad_lr
+            import matplotlib.pyplot as plt
+            plt.show()
+            from IPython.display import clear_output
+            clear_output()
+            lr = slice(lr/10, lr)        
+        
+        if arcgis.env.verbose:
+            logger.info('Fitting the model.')        
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         kwargs.pop('callbacks', None)
         if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='val_loss', min_delta=0.01, patience=5))
+            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='valid_loss', min_delta=0.01, patience=5))
         if checkpoint:
-            callbacks.append(SaveModelCallback(self, monitor='val_loss', every='improvement', name='checkpoint'))
+            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name='checkpoint'))
 
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
@@ -196,7 +214,7 @@ class ArcGISModel(object):
             name = name_or_path
 
         try:
-            self.learn.load(name)
+            self.learn.load(name, purge=False)
         except Exception as e:
             raise e
         finally:
