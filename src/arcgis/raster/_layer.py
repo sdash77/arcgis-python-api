@@ -485,6 +485,13 @@ class ImageryLayer(Layer):
             if self._mosaic_rule is not None:
                 options_dict["imageServiceParameters"]["mosaicRule"] = self._mosaic_rule
 
+        if self._datastore_raster:
+            options_dict["imageServiceParameters"]["raster"] =self._uri
+            if isinstance(self._uri, bytes):
+                if('renderingRule' in options_dict["imageServiceParameters"]):
+                    del options_dict["imageServiceParameters"]['renderingRule']
+                options_dict["imageServiceParameters"]["raster"] =self._fn
+
             lyr_dict.update({
                 "options": json.dumps(options_dict)
             })
