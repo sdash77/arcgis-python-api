@@ -5,7 +5,7 @@ import platform
 import configparser
 
 import keyring
-from arcgis.gis import GIS
+
 
 
 _log = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class ProfileManager(object):
     """
     _gis = None
     _os = None
-    _cfg_file_path = None  
+    _cfg_file_path = None
     #######################################################################
     def __init__(self):
         self._os = platform.system()
@@ -140,12 +140,12 @@ class ProfileManager(object):
                "keyring module securely. Read more about this at the "\
                "keyring API doc (http://bit.ly/2EWDP7B) and the ArcGIS API "\
                "for Python doc (http://bit.ly/2CK2wG8)."\
-               "".format(keyring.get_keyring())  
+               "".format(keyring.get_keyring())
     #----------------------------------------------------------------------
     def list(self, as_df=False):
         """
         returns a list of profile names in the configuration file
-        
+
         :returns: List if `as_df=False` or Pandas DataFrame if `as_df=True`
         """
         if self._cfg_exists and as_df == False:
@@ -158,20 +158,20 @@ class ProfileManager(object):
             for p in self.list():
                 all_profiles.append(self.get(p))
             return pd.DataFrame(data=all_profiles)
-        return []        
+        return []
     #--------------------------------------------------------------------------
     def get(self, profile):
         """
-        Returns the profile information for a given entry. 
-        
+        Returns the profile information for a given entry.
+
         =====================================================================     ====================================================================
         **Parameter**                                                             **Description**
-        ---------------------------------------------------------------------     --------------------------------------------------------------------           
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         profile                                                                   Required String. The name of the profile to get the information about.
         =====================================================================     ====================================================================
-        
+
         :returns: Dict
-        
+
         """
         profile_file = self._cfg_file_path
         if self._cfg_exists:
@@ -182,48 +182,48 @@ class ProfileManager(object):
             for key in keys:
                 try:
                     if key == 'date_modified':
-                        
+
                         values[key] = _datetime.datetime.strptime(
                             config.get(
-                                profile, 
-                                key), 
+                                profile,
+                                key),
                             "%Y-%m-%d %H:%M:%S.%f")
                     else:
                         values[key] = config.get(profile, key)
                 except:
                     values[key] = None
             return values
-        return None    
+        return None
     #--------------------------------------------------------------------------
     def delete(self, profile):
         """
         Deletes a profile from the .arcgisprofile file
-    
+
         =====================================================================     ====================================================================
         **Parameter**                                                             **Description**
-        ---------------------------------------------------------------------     --------------------------------------------------------------------           
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         profile                                                                   Required String. The name of the profile to delete.
         =====================================================================     ====================================================================
-        
+
         :returns: Boolean
         """
-        
+
         profile_file = self._cfg_file_path
-        if self._cfg_exists:    
+        if self._cfg_exists:
             profiles = self.list()
             if profile in profiles:
                 config = configparser.ConfigParser()
                 with open(profile_file, 'r') as reader:
-                    config.read_file(reader)     
+                    config.read_file(reader)
                 data = dict(config.items(profile))
                 try:
-                    keyring.delete_password(service_name="arcgis_python_api_profile_passwords", 
-                                            username=profile)            
+                    keyring.delete_password(service_name="arcgis_python_api_profile_passwords",
+                                            username=profile)
                 except: pass
                 config.remove_section(section=profile)
                 with open(profile_file, "w") as f:
-                    config.write(f)     
-    
+                    config.write(f)
+
                 return True
             else:
                 raise ValueError("Profile not found.")
@@ -231,31 +231,31 @@ class ProfileManager(object):
     #----------------------------------------------------------------------
     def update(self, profile, url=None,
                username=None, password=None,
-               key_file=None, cert_file=None, 
+               key_file=None, cert_file=None,
                client_id=None):
         """
         Updates an existing profile in the credential manager.
-        
+
         =====================================================================     ====================================================================
         **Parameter**                                                             **Description**
-        ---------------------------------------------------------------------     --------------------------------------------------------------------           
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         profile                                                                   Required String. The name of the profile to update.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         url                                                                       Optional String.  The site url.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         username                                                                  Optional String.  The login user name.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         password                                                                  Optional String.  The login user password.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
-        key_file                                                                  Optional String.  The key file for PKI security. 
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        key_file                                                                  Optional String.  The key file for PKI security.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         cert_file                                                                 Optional String.  The cert file for PKI security.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         client_id                                                                 Optional String.  The client ID for oauth login.
-        =====================================================================     ====================================================================        
-        
+        =====================================================================     ====================================================================
+
         :returns: boolean
-        
+
         """
         if profile not in self.list():
             raise ValueError(f"Could not find profile {profile}. Use `create` to generate a new profile.")
@@ -264,31 +264,31 @@ class ProfileManager(object):
     #----------------------------------------------------------------------
     def create(self, profile, url=None,
                username=None, password=None,
-               key_file=None, cert_file=None, 
+               key_file=None, cert_file=None,
                client_id=None):
         """
         Adds a new entry into the Profile Store.
-        
+
         =====================================================================     ====================================================================
         **Parameter**                                                             **Description**
-        ---------------------------------------------------------------------     --------------------------------------------------------------------           
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         profile                                                                   Required String. The name of the profile to add.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         url                                                                       Optional String.  The site url.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         username                                                                  Optional String.  The login user name.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         password                                                                  Optional String.  The login user password.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
-        key_file                                                                  Optional String.  The key file for PKI security. 
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        key_file                                                                  Optional String.  The key file for PKI security.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         cert_file                                                                 Optional String.  The cert file for PKI security.
-        ---------------------------------------------------------------------     --------------------------------------------------------------------     
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         client_id                                                                 Optional String.  The client ID for oauth login.
-        =====================================================================     ====================================================================        
-        
+        =====================================================================     ====================================================================
+
         :returns: boolean
-        
+
         """
         try:
             config = configparser.ConfigParser()
@@ -298,16 +298,16 @@ class ProfileManager(object):
                 _log.info("Adding new profile {} to config...".format(profile))
                 config.add_section(profile)
                 self._add_timestamp_to_profile_data_in_config(config, profile)
-            self._update_profile_data_in_config(config=config, 
-                                                profile=profile, 
-                                                url=url, 
+            self._update_profile_data_in_config(config=config,
+                                                profile=profile,
+                                                url=url,
                                                 username=username,
-                                                key_file=key_file, 
-                                                cert_file=cert_file, 
+                                                key_file=key_file,
+                                                cert_file=cert_file,
                                                 client_id=client_id)
             if password is not None:
                 self._securely_store_password(profile, password)
-            self._write_config(config, self._cfg_file_path)        
+            self._write_config(config, self._cfg_file_path)
             self._cfg_exists = True
             return True
         except:
@@ -316,18 +316,19 @@ class ProfileManager(object):
     def save_as(self, profile, gis):
         """
         Saves and adds the provided `GIS` to the profile.
-        
+
         =====================================================================     ====================================================================
         **Parameter**                                                             **Description**
-        ---------------------------------------------------------------------     --------------------------------------------------------------------           
-        name                                                                      Required String. The name of the profile to save.  
-        ---------------------------------------------------------------------     --------------------------------------------------------------------           
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
+        name                                                                      Required String. The name of the profile to save.
+        ---------------------------------------------------------------------     --------------------------------------------------------------------
         gis                                                                       Required GIS. The connection object to update the profile with.
-        =====================================================================     ====================================================================    
-        
+        =====================================================================     ====================================================================
+
         :returns: Boolean
-        
+
         """
+        from arcgis.gis import GIS
         url = gis._url
         u = gis._username
         p = gis._password
@@ -338,11 +339,11 @@ class ProfileManager(object):
             cfg_file_path = self._cfg_file_path
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
-                config.read(cfg_file_path)            
+                config.read(cfg_file_path)
             self._update_profile_data_in_config(config, profile=profile, url=url, username=u,
                                                key_file=kf, cert_file=cf, client_id=ci)
             if p is not None:
-                self._securely_store_password(profile, p)    
+                self._securely_store_password(profile, p)
             self._write_config(config, cfg_file_path)
             return True
         else:
@@ -357,7 +358,7 @@ class ProfileManager(object):
             cfg_file_path = self._cfg_file_path
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
-                config.read(cfg_file_path)                   
+                config.read(cfg_file_path)
             if config.has_option(profile,   "url"):
                 url = config[profile]["url"]
             if config.has_option(profile,   "username"):
@@ -368,6 +369,6 @@ class ProfileManager(object):
                 cert_file = config[profile]["cert_file"]
             if config.has_option(profile,   "client_id"):
                 client_id = config[profile]["client_id"]
-            
-            password = self._securely_get_password(profile)        
+
+            password = self._securely_get_password(profile)
         return url, username, password, key_file, cert_file, client_id
