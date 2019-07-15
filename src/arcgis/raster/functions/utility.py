@@ -32,7 +32,13 @@ def _raster_input(raster, raster2=None):
                         raster2 = raster2._fn
                     else:
                         if(raster2._datastore_raster is False):
-                            raster2 = _replace_raster_url(raster2._fn, raster2._url)
+                            if "url" in raster2._lyr_dict:
+                                url = raster2._lyr_dict["url"]
+                                if "serviceToken" in raster2._lyr_dict:
+                                    url = url+"?token="+ raster2._lyr_dict["serviceToken"]
+                                raster2 = _replace_raster_url(raster2._fn, url)
+                            else:
+                                raster2 = _replace_raster_url(raster2._fn, raster2._url)
                         else:
                             raster2 = _replace_raster_url(raster2._fn, raster2._uri)
                  else:
@@ -46,7 +52,13 @@ def _raster_input(raster, raster2=None):
                             raster2 = ['$' + str(x) for x in oids]
                     else:
                         if(raster2._datastore_raster is False):
-                            raster2 = raster2._url
+                            if "url" in raster2._lyr_dict:
+                                url = raster2._lyr_dict["url"]
+                                if "serviceToken" in raster2._lyr_dict:
+                                    url = url+"?token="+ raster2._lyr_dict["serviceToken"]
+                                raster2 = url
+                            else:
+                                raster2 = raster2._url
                         else:
                             raster2 = raster2._uri
         elif isinstance(raster2, ImageryLayer) and not isinstance(raster, ImageryLayer):
@@ -183,7 +195,13 @@ def _get_raster_url(raster, layer):
                 if raster._url == layer._url:
                     raster = raster._fn
                 else:
-                    raster = _replace_raster_url(raster._fn, raster._url)
+                    if "url" in raster._lyr_dict:
+                        url = raster._lyr_dict["url"]
+                        if "serviceToken" in raster._lyr_dict:
+                            url = url+"?token="+ raster._lyr_dict["serviceToken"]
+                        raster = _replace_raster_url(raster._fn, url)
+                    else:
+                        raster = _replace_raster_url(raster._fn, raster._url)
 
         else:
             if raster._datastore_raster and layer._datastore_raster:
@@ -195,7 +213,13 @@ def _get_raster_url(raster, layer):
                 if raster._url == layer._url:
                     raster = '$$'
                 else:
-                    raster = raster._url
+                    if "url" in raster._lyr_dict:
+                        url = raster._lyr_dict["url"]
+                        if "serviceToken" in raster._lyr_dict:
+                            url = url+"?token="+ raster._lyr_dict["serviceToken"]
+                        raster = url
+                    else:
+                        raster = raster._url
 
             # oids = raster.filtered_rasters()
             # if oids is None:
