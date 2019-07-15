@@ -29,7 +29,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
-
+from arcgis.gis._impl._profile import ProfileManager
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -696,7 +696,7 @@ class GIS(object):
         :returns: ProfileManager
 
         """
-        from arcgis.gis._impl._profile import ProfileManager
+
         return ProfileManager()
 
     @_lazy_property

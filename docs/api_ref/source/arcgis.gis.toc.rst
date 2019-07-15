@@ -106,6 +106,12 @@ ResourceManager
     :undoc-members:
     :show-inheritance:
 
+ProfileManager
+---------------------------
+..autoclass:: arcgis.gis.ProfileManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 --------------
