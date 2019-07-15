@@ -83,6 +83,7 @@ class UnetClassifier(ArcGISModel):
         acc_metric = partial(accuracy, void_code=0, class_mapping=data.class_mapping)
         self._data = data
         self.learn = unet_learner(data, arch=self._backbone, metrics=acc_metric, wd=1e-2, bottle=True, last_cross=True)
+        self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
         self.learn.model = self.learn.model.to(self._device)
 
         if pretrained_path is not None:
@@ -138,52 +139,11 @@ class UnetClassifier(ArcGISModel):
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
 
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
-        """
-        Train the model for the specified number of epocs and using the
-        specified learning rates
-        
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        epochs                  Required integer. Number of cycles of training
-                                on the data. Increase it if underfitting.
-        ---------------------   -------------------------------------------
-        lr                      Required float or slice of floats. Learning rate
-                                to be used for training the model. Select from
-                                the `lr_find` plot.
-        ---------------------   -------------------------------------------
-        one_cycle               Optional boolean. Parameter to select 1cycle
-                                learning rate schedule. If set to `False` no 
-                                learning rate schedule is used.       
-        ---------------------   -------------------------------------------
-        early_stopping          Optional boolean. Parameter to add early stopping.
-                                If set to `True` training will stop if validation
-                                loss stops improving for 5 epochs.       
-        ---------------------   -------------------------------------------
-        checkpoint              Optional boolean. Parameter to save the best model
-                                during training. If set to `True` the best model 
-                                based on validation loss will be saved during 
-                                training.
-        =====================   ===========================================
-        """
-        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
-        kwargs.pop('callbacks', None)
-        callbacks.append(LabelCallback(self.learn))
-        if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='val_loss', min_delta=0.01, patience=5))
-        if checkpoint:
-            callbacks.append(SaveModelCallback(self, monitor='val_loss', every='improvement', name='checkpoint'))
-
-        if one_cycle:
-            self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
-        else:
-            self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
-
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
         """
+        self.learn.callbacks = [x for x in self.learn.callbacks if not isinstance(x, LabelCallback)]
         if rows > self._data.batch_size:
             rows = self._data.batch_size
         self.learn.show_results(rows=rows, **kwargs)             

@@ -5,10 +5,12 @@ import os
 from ._codetemplate import code
 from functools import partial
 import arcgis
+import logging
+logger = logging.getLogger() 
 
 try:
     import torch
-    from fastai.vision.learner import create_cnn
+    from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
     from torchvision.models import resnet34
@@ -132,7 +134,7 @@ class SingleShotDetector(object):
         ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
 
         self._data = data
-        self.learn = create_cnn(data=data, arch=self._backbone, custom_head=ssd_head)
+        self.learn = cnn_learner(data=data, base_arch=self._backbone, custom_head=ssd_head)
         self.learn.model = self.learn.model.to(self._device)
 
         if pretrained_path is not None:
@@ -189,9 +191,9 @@ class SingleShotDetector(object):
         from IPython.display import clear_output
         self.learn.lr_find()
         clear_output()
-        self.learn.recorder.plot()
+        self.learn.recorder.plot(suggestion=True)
 
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3), one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
+    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
@@ -202,9 +204,10 @@ class SingleShotDetector(object):
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
         ---------------------   -------------------------------------------
-        lr                      Required float or slice of floats. Learning rate
+        lr                      Optional float or slice of floats. Learning rate
                                 to be used for training the model. Select from
-                                the `lr_find` plot.
+                                the `lr_find` plot. If `None` uses a optimum
+                                learning rate to train the model, calculated in 
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
                                 learning rate schedule. If set to `False` no 
@@ -220,12 +223,26 @@ class SingleShotDetector(object):
                                 training.
         =====================   ===========================================
         """
+        if lr is None:
+            if arcgis.env.verbose:
+                logger.info('Finding optimum learning rate.')
+            self.learn.lr_find()
+            self.learn.recorder.plot(suggestion=True)
+            lr = self.learn.recorder.min_grad_lr
+            import matplotlib.pyplot as plt
+            plt.show()
+            from IPython.display import clear_output
+            clear_output()
+            lr = slice(lr/10, lr)        
+        
+        if arcgis.env.verbose:
+            logger.info('Fitting the model.')    
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         kwargs.pop('callbacks', None)
         if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='val_loss', min_delta=0.01, patience=5))
+            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='valid_loss', min_delta=0.01, patience=5))
         if checkpoint:
-            callbacks.append(SaveModelCallback(self, monitor='val_loss', every='improvement', name='checkpoint'))
+            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name='checkpoint'))
 
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
@@ -299,7 +316,7 @@ class SingleShotDetector(object):
         try:
             gt_overlap,gt_idx = self._map_to_ground_truth(overlaps,print_it)
         except Exception as e:
-            return 0.,0.
+            return torch.tensor(0.).to(self._device), torch.tensor(0.).to(self._device)
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
         pos_idx = torch.nonzero(pos)[:,0]
@@ -460,7 +477,7 @@ class SingleShotDetector(object):
             name = name_or_path
 
         try:
-            self.learn.load(name)
+            self.learn.load(name, purge=False)
         except Exception as e:
             raise e
         finally:

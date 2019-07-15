@@ -53,7 +53,19 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                             var mosaicRuleJSON = 
                                 noTypeLayer.options.imageServiceParameters.mosaicRule;
                             var mosaicRule = MosaicRule.fromJSON(mosaicRuleJSON);
-                            typedLayer.mosaicRule = mosaicRule;}}
+                            typedLayer.mosaicRule = mosaicRule;}
+                        if ('raster' in noTypeLayer.options.imageServiceParameters) {
+                            var raster =
+                                noTypeLayer.options.imageServiceParameters.raster;
+                            var encodedRaster;
+                            if (typeof raster == "string") {
+                                encodedRaster = raster;
+                            }
+                            else {
+                                encodedRaster =
+                                    btoa(JSON.stringify(raster));
+                            }
+                            typedLayer.raster = encodedRaster;}}
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "KMLLayer") {
                 var typedLayer = new KMLLayer(noTypeLayer.url);
