@@ -108,10 +108,11 @@ ResourceManager
 
 ProfileManager
 ---------------------------
-..autoclass:: arcgis.gis._impl._profile.ProfileManager
+.. autoclass:: arcgis.gis._impl._profile.ProfileManager
     :members:
     :undoc-members:
     :show-inheritance:
+
 
 Submodules
 --------------
