@@ -9,10 +9,6 @@ maps and creating a single map containing all the information found in the stack
 """
 import arcgis as _arcgis
 
-def generate_tesselation():
-    pass
-
-
 def dissolve_boundaries(
         input_layer,
         dissolve_fields=[],
