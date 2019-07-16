@@ -182,49 +182,55 @@ def _analysis_job_status(gptool, task_url, job_info):
     if "jobId" in job_info:
         # Get the id of the Analysis job to track the status.
         #
-        job_id = job_info.get("jobId")
-        job_url = "{}/jobs/{}".format(task_url, job_id)
-        params = {"f": "json"}
-        job_response = gptool._con.post(job_url, params, token=gptool._token)
+        try:
+            job_id = job_info.get("jobId")
+            job_url = "{}/jobs/{}".format(task_url, job_id)
+            params = {"f": "json"}
+            job_response = gptool._con.post(job_url, params, token=gptool._token)
 
-        # Query and report the Analysis job status.
-        #
-        num_messages = 0
-        if "jobStatus" in job_response:
-            while not job_response.get("jobStatus") == "esriJobSucceeded":
-                time.sleep(1)
+            # Query and report the Analysis job status.
+            #
+            num_messages = 0
+            if "jobStatus" in job_response:
+                while not job_response.get("jobStatus") == "esriJobSucceeded":
+                    time.sleep(1)
 
-                job_response = gptool._con.post(job_url, params, token=gptool._token)
-                # print(job_response)
-                messages = job_response['messages'] if 'messages' in job_response else []
-                num = len(messages)
-                if num > num_messages:
-                    for index in range(num_messages, num):
-                        msg = messages[index]
-                        if arcgis.env.verbose:
-                            print(msg['description'])
-                        if msg['type'] == 'esriJobMessageTypeInformative':
-                            _log.info(msg['description'])
-                        elif msg['type'] == 'esriJobMessageTypeWarning':
-                            _log.warning(msg['description'])
-                        elif msg['type'] == 'esriJobMessageTypeError':
-                            _log.error(msg['description'])
-                            # print(msg['description'], file=sys.stderr)
-                        else:
-                            _log.warning(msg['description'])
-                    num_messages = num
+                    job_response = gptool._con.post(job_url, params, token=gptool._token)
+                    # print(job_response)
+                    messages = job_response['messages'] if 'messages' in job_response else []
+                    num = len(messages)
+                    if num > num_messages:
+                        for index in range(num_messages, num):
+                            msg = messages[index]
+                            if arcgis.env.verbose:
+                                print(msg['description'])
+                            if msg['type'] == 'esriJobMessageTypeInformative':
+                                _log.info(msg['description'])
+                            elif msg['type'] == 'esriJobMessageTypeWarning':
+                                _log.warning(msg['description'])
+                            elif msg['type'] == 'esriJobMessageTypeError':
+                                _log.error(msg['description'])
+                                # print(msg['description'], file=sys.stderr)
+                            else:
+                                _log.warning(msg['description'])
+                        num_messages = num
 
-                if job_response.get("jobStatus") == "esriJobFailed":
-                    raise Exception("Job failed.")
-                elif job_response.get("jobStatus") == "esriJobCancelled":
-                    raise Exception("Job cancelled.")
-                elif job_response.get("jobStatus") == "esriJobTimedOut":
-                    raise Exception("Job timed out.")
+                    if job_response.get("jobStatus") == "esriJobFailed":
+                        raise Exception("Job failed.")
+                    elif job_response.get("jobStatus") == "esriJobCancelled":
+                        raise Exception("Job cancelled.")
+                    elif job_response.get("jobStatus") == "esriJobTimedOut":
+                        raise Exception("Job timed out.")
 
-            if "results" in job_response:
-                return job_response
-        else:
-            raise Exception("No job results.")
+                if "results" in job_response:
+                    return job_response
+            else:
+                raise Exception("No job results.")
+        except KeyboardInterrupt:
+                cancel_url = "%s/jobs/%s/cancel" % (task_url, job_info['jobId'])
+                params = {'f' : "json"}
+                job_info = gptool._con.get(path=cancel_url, params=params)
+                job_info = _analysis_job_status(gptool,task_url, job_info)
     else:
         raise Exception("No job url.")
 
