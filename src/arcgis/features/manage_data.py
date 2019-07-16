@@ -9,6 +9,69 @@ maps and creating a single map containing all the information found in the stack
 """
 import arcgis as _arcgis
 
+#----------------------------------------------------------------------
+def generate_tesselation(extent_layer,
+                         bin_size=1,
+                         bin_size_unit="SquareKilimeters",
+                         bin_type="SQUARE",
+                         intersect_study_area=False,
+                         output_name=None,
+                         context=None,
+                         gis=None,
+                         estimate=False,
+                         future=False):
+    """
+    Generates a tessellated grid of regular polygons.
+
+    ====================================     ====================================================================
+    **Parameter**                            **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    extent_layer                             Required layer. A layer defining the processing extent.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_size                                 Optional Float. The size of each individual shape that makes up the tessellation.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_size_unit                            Optional String. Size unit of each individual shape. The allowed
+                                             values are: 'SquareKilometers', 'Hectares', 'SquareMeters',
+                                             'SquareMiles', 'Acres', 'SquareYards', 'SquareFeet', 'SquareInches',
+                                             'Miles', 'Yards', 'Feet', 'Kilometers', 'Meters', and
+                                             'NauticalMiles'.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_type                                 Optional String. The type of shape to tessellate.
+                                             Allowed values are: 'SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND', or
+                                             'TRANSVERSEHEXAGON'.
+    ------------------------------------     --------------------------------------------------------------------
+    intersect_study_area                     Optional Boolean. A boolean defines whether to keep only tessellations intersect with the study area.
+
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional string. If provided, the task will create a feature service of the results.
+                                             You define the name of the service. If output_name is not supplied, the task will return a feature collection.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional string. Context contains additional settings that affect task execution. For dissolve_boundaries Points, there are two settings.
+
+                                             #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                             #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ====================================     ====================================================================
+
+
+    :returns: FeatureLayer or Feature Layer Collection
+
+    """
+    gis = _arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.featureanalysis.generate_tesselation(bin_type=bin_type,
+                                             bin_size=bin_size,
+                                             bin_size_unit=bin_size_unit,
+                                             extent_layer=extent_layer,
+                                             intersect_study_area=intersect_study_area,
+                                             output_name=output_name, estimate=estimate,
+                                             context=context, future=future)
+
 def dissolve_boundaries(
         input_layer,
         dissolve_fields=[],
