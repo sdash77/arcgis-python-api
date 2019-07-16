@@ -169,16 +169,20 @@ class GPJob(object):
         import arcgis
         if hasattr(result, '_fields'):
             r = {}
+            iids = []
             for key in result._fields:
                 value = getattr(result, key)
                 if isinstance(value, dict) and 'featureSet' in value:
                     r[key] = arcgis.features.FeatureCollection(value)
                 elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
-                    r[key] = arcgis.gis.Item(self._gis, value['itemId'])
+                    if not value['itemId'] in iids:
+                        r[key] = arcgis.gis.Item(self._gis, value['itemId'])
+                        iids.append(value['itemId'])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
             if len(r) == 1:
                 return r[list(r.keys())[0]]
+
             return r
         else:
             value = result
