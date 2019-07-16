@@ -630,8 +630,8 @@ class ImageryLayer(Layer):
                     del params['renderingRule']
                     params["Raster"]=self._uri
 
-            return self._con.get(path=url,
-                                 params=params)
+            return self._con.post(path=url,
+                                 postdata=params)
         return None
     #----------------------------------------------------------------------
     @property
@@ -2635,7 +2635,7 @@ class ImageryLayer(Layer):
             if isinstance(self._uri, bytes):
                 del params['renderingRule']
 
-        return self._con.get(url, params, token=self._token)
+        return self._con.post(path=url, postdata=params, token=self._token)
 
 
 
