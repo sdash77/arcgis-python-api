@@ -30,39 +30,40 @@ def build_multivariable_grid(input_layers,
                              bin_unit="Meters",
                              bin_type="Square",
                              output_name=None,
-                             gis=None):
-    """    
+                             gis=None,
+                             future=False):
+    """
 
-    .. image:: _static/images/Grid/Grid.png 
+    .. image:: _static/images/Grid/Grid.png
 
-    The ``build_multivariable_grid`` task works with one or more layers of point, line, or polygon features. 
-    The task generates a grid of square or hexagonal bins and compiles information about each input layer into each bin. 
+    The ``build_multivariable_grid`` task works with one or more layers of point, line, or polygon features.
+    The task generates a grid of square or hexagonal bins and compiles information about each input layer into each bin.
     For each input layer, this information can include the following variables:
 
         * ``Distance to Nearest`` - The distance from each bin to the nearest feature.
         * ``Attribute of Nearest`` - An attribute value of the feature nearest to each bin.
         * ``Attribute Summary of Related`` - A statistical summary of all features within ``search_distance`` of each bin.
 
-    Only variables you specify in ``variable_calculations`` will be included in the result layer. These variables can help 
-    you understand the proximity of your data throughout the extent of your analysis. The results can help you answer 
+    Only variables you specify in ``variable_calculations`` will be included in the result layer. These variables can help
+    you understand the proximity of your data throughout the extent of your analysis. The results can help you answer
     questions such as the following:
 
         * Given multiple layers of public transportation infrastructure, what part of the city is least accessible by public transportation?
         * Given layers of lakes and rivers, what is the name of the water body closest to each location in the U.S.?
         * Given a layer of household income, where in the U.S. is the variation of income in the surrounding 50 miles the greatest?
 
-    The result of ``build_multivariable_grid`` can also be used in prediction and classification workflows. The task allows you 
-    to calculate and compile information from many different data sources into a single, spatially continuous layer in one step. 
-    This layer can then be used with the Enrich From Multi-Variable Grid task to quickly enrich point features with the variables 
+    The result of ``build_multivariable_grid`` can also be used in prediction and classification workflows. The task allows you
+    to calculate and compile information from many different data sources into a single, spatially continuous layer in one step.
+    This layer can then be used with the Enrich From Multi-Variable Grid task to quickly enrich point features with the variables
     you have calculated, reducing the amount of effort required to build prediction and classification models from point data.
 
     ===================================================================    =============================================================================
     **Argument**                                                                                    **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    input_layers                                                           Required list of layers. A list of input layers that will be used in analysis. 
+    input_layers                                                           Required list of layers. A list of input layers that will be used in analysis.
                                                                            See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    variable_calculations                                                  Required list of dicts. A dict containing objects that describe 
+    variable_calculations                                                  Required list of dicts. A dict containing objects that describe
                                                                            the variables that will be calculated for each layer in ``input_layers``.
 
                                                                            [
@@ -99,11 +100,11 @@ def build_multivariable_grid(input_layers,
                                                                                 ...
                                                                             ]
 
-                                                                           layer is the index of the layer in ``input_layers`` that will be 
+                                                                           layer is the index of the layer in ``input_layers`` that will be
                                                                            used to calculate the specified variables.
 
-                                                                           Variables is an array of dict objects that describe the variables 
-                                                                           you want to include in the result layer. The array must contain at least 
+                                                                           Variables is an array of dict objects that describe the variables
+                                                                           you want to include in the result layer. The array must contain at least
                                                                            one variable for each layer.
 
                                                                            type can be one of the following variable types:
@@ -114,23 +115,23 @@ def build_multivariable_grid(input_layers,
 
                                                                            Each type must be configured with a unique set of parameters:
 
-                                                                            * ``outFieldName`` is the name of the field that will be created in the result 
+                                                                            * ``outFieldName`` is the name of the field that will be created in the result
                                                                               layer to store a variable. This is required.
-                                                                            * ``searchDistance`` and searchDistanceUnit are a number and linear unit. 
-                                                                              For DistanceToNearest and AttributeOfNearest, searchDistance and searchDistanceUnit 
-                                                                              are required and define the maximum distance that the tool will search from the 
-                                                                              center of each bin to find a feature in the layer. If no feature is within the 
-                                                                              distance, null is returned. For AttributeSummaryOfRelated, searchDistance and 
-                                                                              searchDistanceUnit are optional and define the radius of a circular neighborhood 
-                                                                              surrounding each bin. All features that intersect this neighborhood will be used 
-                                                                              to calculate statisticType. If a distance is not defined, only features that 
+                                                                            * ``searchDistance`` and searchDistanceUnit are a number and linear unit.
+                                                                              For DistanceToNearest and AttributeOfNearest, searchDistance and searchDistanceUnit
+                                                                              are required and define the maximum distance that the tool will search from the
+                                                                              center of each bin to find a feature in the layer. If no feature is within the
+                                                                              distance, null is returned. For AttributeSummaryOfRelated, searchDistance and
+                                                                              searchDistanceUnit are optional and define the radius of a circular neighborhood
+                                                                              surrounding each bin. All features that intersect this neighborhood will be used
+                                                                              to calculate statisticType. If a distance is not defined, only features that
                                                                               intersect a bin will be used to calculate statisticType.
                                                                             * ``attributeField`` is required by AttributeOfNearest and is the name of a field `
-                                                                              in the input layer. The value of this field in the closest feature to each bin will 
+                                                                              in the input layer. The value of this field in the closest feature to each bin will
                                                                               be included in the result layer.
-                                                                            * ``statisticField`` is required by AttributeSummaryOfRelated and is the name of a 
+                                                                            * ``statisticField`` is required by AttributeSummaryOfRelated and is the name of a
                                                                               field in the input layer. This field's values will be used to calculate statisticType.
-                                                                            * ``statisticType`` is required by AttributeSummaryOfRelated and is one of the following 
+                                                                            * ``statisticType`` is required by AttributeSummaryOfRelated and is one of the following
                                                                               when statisticField is a numeric field:
 
                                                                                 * ``Count`` - Totals the number of features near or intersecting each bin.
@@ -149,13 +150,13 @@ def build_multivariable_grid(input_layers,
 
                                                                             * ``filter`` is optional for all variable types and is formatted as described in the Feature Input topic.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    bin_size                                                               Required float. The distance for the bins of type ``bin_type`` in the output polygon layer. 
-                                                                           ``variable_calculations`` will be calculated at the center of each bin. When generating bins, 
-                                                                           for Square, the number and units specified determine the height and length of the square. 
+    bin_size                                                               Required float. The distance for the bins of type ``bin_type`` in the output polygon layer.
+                                                                           ``variable_calculations`` will be calculated at the center of each bin. When generating bins,
+                                                                           for Square, the number and units specified determine the height and length of the square.
                                                                            For Hexagon, the number and units specified determine the distance between parallel sides.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     bin_unit                                                               Optional string. The distance unit for the bins that will be used to calculate ``variable_calculations``.
-                                                                           
+
                                                                            Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     bin_type                                                               Optional string. The type of bin that will be used to generate the result grid. Bin options are the following:
@@ -163,11 +164,11 @@ def build_multivariable_grid(input_layers,
                                                                            Choice list: ['Hexagon', 'Square']
 
                                                                            .. Note::
-                                                                            Analysis using Square or Hexagon bins requires a projected coordinate system. 
-                                                                            When aggregating layers into bins, the input layers or processing extent (``processSR``) 
-                                                                            must have a projected coordinate system. If a projected coordinate system is not 
-                                                                            specified when running analysis, the World Cylindrical Equal Area (WKID 54034) projection 
-                                                                            will be used. At 10.7 or later, if a projected coordinate system is not specified when 
+                                                                            Analysis using Square or Hexagon bins requires a projected coordinate system.
+                                                                            When aggregating layers into bins, the input layers or processing extent (``processSR``)
+                                                                            must have a projected coordinate system. If a projected coordinate system is not
+                                                                            specified when running analysis, the World Cylindrical Equal Area (WKID 54034) projection
+                                                                            will be used. At 10.7 or later, if a projected coordinate system is not specified when
                                                                             running analysis, a projection will be picked based on the extent of the data.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
@@ -184,7 +185,7 @@ def build_multivariable_grid(input_layers,
 
     .. code-block:: python
 
-            # Usage Example: To create multivariable grid by summarizing information such as distance to nearest 
+            # Usage Example: To create multivariable grid by summarizing information such as distance to nearest
 
             variables = [ { "layer":0,
                             "variables":[
