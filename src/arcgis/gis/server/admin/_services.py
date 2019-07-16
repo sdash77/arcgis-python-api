@@ -1412,7 +1412,7 @@ class Service(BaseServer):
     def iteminformation(self):
         """ returns the item information
 
-        :returns: ItemInforamtionManager
+        :returns: ItemInformationManager
 
         """
         if self._ii is None:
@@ -1710,6 +1710,19 @@ class ItemInformationManager(BaseServer):
         url = "{base}/edit".format(base=self._url)
         params = {'f': 'json'}
         return self._con.post(url, params)
+###########################################################################
+class ItemInforamtionManager(ItemInformationManager):
+    """
+    The item information resource stores metadata about a service.
+    Typically, this information is available to clients that want to index
+    or harvest information about the service.
+
+    Item information is represented in JSON. The property `properties` allows
+    users to access the schema and see the current format of the JSON.
+
+
+    """
+    pass
 
 
 
