@@ -34,14 +34,14 @@ __all__ = ['GIS', 'geocode', 'features',
            'find_hot_spots',
            'find_nearest',
            'find_similar_locations',
-           'find_centroids'
+           'find_centroids',
            'interpolate_points',
            'join_features',
            'merge_layers',
            'overlay_layers',
            'plan_routes',
            'summarize_nearby',
-           'summazize_center_and_dispersion'
+           'summarize_center_and_dispersion',
            'summarize_within',
            'trace_downstream']
 
