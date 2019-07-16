@@ -195,12 +195,12 @@ def _analysis_job_status(gptool, task_url, job_info):
         except Exception as err:
             job_response = gptool._con.get(job_url, params)
 
-        # Query and report the Analysis job status.
-        #
-        num_messages = 0
-        if "jobStatus" in job_response:
-            while not job_response.get("jobStatus") == "esriJobSucceeded":
-                time.sleep(1)
+            # Query and report the Analysis job status.
+            #
+            num_messages = 0
+            if "jobStatus" in job_response:
+                while not job_response.get("jobStatus") == "esriJobSucceeded":
+                    time.sleep(1)
 
                 try:
                     job_response = gptool._con.post(job_url, params, token=gptool._token)
@@ -226,17 +226,22 @@ def _analysis_job_status(gptool, task_url, job_info):
                             _log.warning(msg['description'])
                     num_messages = num
 
-                if job_response.get("jobStatus") == "esriJobFailed":
-                    raise Exception("Job failed.")
-                elif job_response.get("jobStatus") == "esriJobCancelled":
-                    raise Exception("Job cancelled.")
-                elif job_response.get("jobStatus") == "esriJobTimedOut":
-                    raise Exception("Job timed out.")
+                    if job_response.get("jobStatus") == "esriJobFailed":
+                        raise Exception("Job failed.")
+                    elif job_response.get("jobStatus") == "esriJobCancelled":
+                        raise Exception("Job cancelled.")
+                    elif job_response.get("jobStatus") == "esriJobTimedOut":
+                        raise Exception("Job timed out.")
 
-            if "results" in job_response:
-                return job_response
-        else:
-            raise Exception("No job results.")
+                if "results" in job_response:
+                    return job_response
+            else:
+                raise Exception("No job results.")
+        except KeyboardInterrupt:
+                cancel_url = "%s/jobs/%s/cancel" % (task_url, job_info['jobId'])
+                params = {'f' : "json"}
+                job_info = gptool._con.get(path=cancel_url, params=params)
+                job_info = _analysis_job_status(gptool,task_url, job_info)
     else:
         raise Exception("No job url.")
 

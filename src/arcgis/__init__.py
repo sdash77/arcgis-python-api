@@ -41,7 +41,7 @@ __all__ = ['GIS', 'geocode', 'features',
            'overlay_layers',
            'plan_routes',
            'summarize_nearby',
-           'summazize_center_and_dispersion'
+           'summarize_center_and_dispersion',
            'summarize_within',
            'trace_downstream']
 
