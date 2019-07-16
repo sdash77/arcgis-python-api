@@ -87,7 +87,7 @@ def enrich_layer(input_layer,
 
                                                                               The default value is False.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    future                                                                    Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                                                    Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =====================================================================     ====================================================================
 
     :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.

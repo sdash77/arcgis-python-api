@@ -9,6 +9,10 @@ maps and creating a single map containing all the information found in the stack
 """
 import arcgis as _arcgis
 
+def generate_tesselation():
+    pass
+
+
 def dissolve_boundaries(
         input_layer,
         dissolve_fields=[],
@@ -80,7 +84,7 @@ def dissolve_boundaries(
 
                                              The default value is True.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ====================================     ====================================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -159,7 +163,7 @@ def extract_data(
     -----------------------------------    ---------------------------------------------------------
     gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -----------------------------------    ---------------------------------------------------------
-    future                                 Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                 Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ===================================    =========================================================
 
     .. code-block:: python
@@ -246,7 +250,7 @@ def merge_layers(
     ----------------  ---------------------------------------------------------------
     estimate          Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future            Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ================  ===============================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -360,7 +364,7 @@ def overlay_layers(
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future            Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ================  ===============================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -440,7 +444,7 @@ def create_route_layers(route_data_item,
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns: result_layer : list (items)

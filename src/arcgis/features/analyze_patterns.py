@@ -84,7 +84,7 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
 
@@ -178,7 +178,7 @@ def summarize_center_and_dispersion(
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                  Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ====================    =========================================================
 
     :returns: Python dictionary with the following keys:
@@ -273,7 +273,7 @@ def find_point_clusters(
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                  Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ====================    =========================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature collection.
@@ -386,7 +386,7 @@ def find_hot_spots(
     -------------------------------------------------------------------    ---------------------------------------------------------
     distance_band_unit                                                     Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
     -------------------------------------------------------------------    ---------------------------------------------------------
-    future                                                                 Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                                                 Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ===================================================================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -512,7 +512,7 @@ def find_outliers(analysis_layer,
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    future                                                              Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                                              Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ==================================================================  ===============================================================
 
     :Returns:
@@ -690,7 +690,7 @@ def interpolate_points(
     ---------------------------  -------------------------------------------------------------------------------------------
     estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
     ---------------------------  -------------------------------------------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ===========================  ===========================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:

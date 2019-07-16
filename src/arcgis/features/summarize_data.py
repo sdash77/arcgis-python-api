@@ -275,7 +275,7 @@ def summarize_nearby(sum_nearby_layer,
     -------------------------    --------------------------------------------------------------------------------------------------------------------
     estimate                     Optional boolean. Returns the number of credit for the operation.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    ====================================================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -380,7 +380,7 @@ def summarize_center_and_dispersion(
     --------------------    ---------------------------------------------------------
     estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                  Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ====================    =========================================================
 
     :returns: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
@@ -500,7 +500,7 @@ def summarize_within(sum_within_layer,
     -------------------------------------    ---------------------------------------------------------
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------    ---------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =====================================    =========================================================
 
     :returns: Item if ``output_name`` is set. else results in a Python dict with the following keys:
@@ -628,7 +628,7 @@ def join_features(target_layer,
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     estimate                                                                                         Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
-    future                                                                                           Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                                                                           Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ============================================================================================     =================================================================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else feature collection.

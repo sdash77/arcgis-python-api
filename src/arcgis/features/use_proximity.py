@@ -174,7 +174,7 @@ def connect_origins_to_destinations(origins_layer,
 
                                            One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------    ---------------------------------------------------------
-    future                                 Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                 Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ===================================    =========================================================
 
 
@@ -349,7 +349,7 @@ def create_buffers(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -545,7 +545,7 @@ def create_drive_time_areas(input_layer,
 
                                  One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -736,7 +736,7 @@ def find_nearest(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
     :Returns:
@@ -1035,7 +1035,7 @@ def plan_routes(
 
                                     One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     ----------------------------    --------------------------------------------------------------------------------------------------
-    future                          Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                          Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ============================    ==================================================================================================
 
     :returns: feature layer Item if ``output_name`` is specified, else dict with the following keys:

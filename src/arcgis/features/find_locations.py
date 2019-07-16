@@ -253,7 +253,7 @@ def find_existing_locations(
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =====================================    ======================================================================================================
 
     :Returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -515,7 +515,7 @@ def derive_new_locations(
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =====================================    ======================================================================================================
 
     .. code-block:: python
@@ -629,7 +629,7 @@ def find_similar_locations(
     -----------------------  -------------------------------------------------------------------------------------------
     estimate                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------  -------------------------------------------------------------------------------------------
-    future                   Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =======================  ===========================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -693,7 +693,7 @@ def find_centroids(input_layer,
     ----------------  ---------------------------------------------------------------
     estimate          Optional boolean. If True, the number of credits to run the operation will be returned.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future            Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ================  ===============================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -918,7 +918,7 @@ def choose_best_facilities(goal='Allocate',
 
                                              One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =====================================    =========================================================
 
 
@@ -1085,7 +1085,7 @@ def create_viewshed(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -1196,7 +1196,7 @@ def create_watersheds(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -1306,7 +1306,7 @@ def trace_downstream(
     -------------------------------------    ---------------------------------------------------------
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------    ---------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a current.futures.Future object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =====================================    =========================================================
 
     :returns: feature layer collection if ``output_name`` is set, else feature collection.
