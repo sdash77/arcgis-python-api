@@ -34,25 +34,25 @@ def _evaluate_spatial_input(input_points):
 
 
 def trace_downstream(input_points, point_id_field=None, source_database='Finest', generalize=False,
-                     gis=None):
+                     gis=None, future=False):
     """
-    
-    .. image:: _static/images/trace_downstream/trace_downstream.png   
 
-    The ``trace_downstream`` method delineates the downstream path from a specified location. 
-    Esri-curated elevation data is used to create an output polyline delineating the flow path 
-    downstream from the specified input location. This method accesses a service using multiple 
-    source databases which are available for different geographic areas and at different 
+    .. image:: _static/images/trace_downstream/trace_downstream.png
+
+    The ``trace_downstream`` method delineates the downstream path from a specified location.
+    Esri-curated elevation data is used to create an output polyline delineating the flow path
+    downstream from the specified input location. This method accesses a service using multiple
+    source databases which are available for different geographic areas and at different
     spatial scales.
-    
+
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
     input_points           Required FeatureSet or Spatially Enabled DataFrame
-                           Points delineating the starting location to calculate the downstream 
+                           Points delineating the starting location to calculate the downstream
                            location from. See :ref:`Feature Input<FeatureInput>`.
     ------------------     --------------------------------------------------------------------
-    point_id_field         Optional string. Field used to identify the feature from the source data. This is 
+    point_id_field         Optional string. Field used to identify the feature from the source data. This is
                            useful for relating the results back to the original source data.
     ------------------     --------------------------------------------------------------------
     source_database        Optional string. Keyword indicating the source data that will be used in the
@@ -74,15 +74,17 @@ def trace_downstream(input_points, point_id_field=None, source_database='Finest'
 
                            The default value is 'Finest'.
     ------------------     --------------------------------------------------------------------
-    generalize             Optional boolean. Determines if the output downstream trace lines will be smoothed 
+    generalize             Optional boolean. Determines if the output downstream trace lines will be smoothed
                            into simpler lines.
 
                            The default value is False.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS Object instance. If not provided as input, a GIS object instance logged into an 
-                           active portal with elevation helper services defined must already 
-                           be created in the active Python session. A GIS object instance can 
+    gis                    Optional GIS Object instance. If not provided as input, a GIS object instance logged into an
+                           active portal with elevation helper services defined must already
+                           be created in the active Python session. A GIS object instance can
                            also be optionally explicitly passed in through this parameter.
+    ------------------     --------------------------------------------------------------------
+    future                 Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     ==================     ====================================================================
 
     :return: FeatureSet
@@ -129,13 +131,14 @@ def trace_downstream(input_points, point_id_field=None, source_database='Finest'
 
     url = gis.properties.helperServices.hydrology.url
 
-    return _execute_gp_tool(gis, "TraceDownstream", kwargs, param_db, return_values, True, url)
+    return _execute_gp_tool(gis, "TraceDownstream", kwargs, param_db, return_values, True, url, future=future)
 
 
 def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance_units='Meters',
-              source_database='Finest', generalize=False, gis=None, return_snapped_points=True):
+              source_database='Finest', generalize=False, gis=None, return_snapped_points=True,
+              future=False):
     """
-    .. image:: _static/images/create_watersheds/create_watersheds.png 
+    .. image:: _static/images/create_watersheds/create_watersheds.png
 
     The ``watershed`` is used to identify catchment areas based on a particular location you
     provide and ArcGIS Online Elevation data.
@@ -152,16 +155,16 @@ def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance
     ------------------------     --------------------------------------------------------------------
     snap_distance                Optional float. The maximum distance to move the location of an input point.
 
-                                 Interactive input points and documented gage locations may not exactly align with the stream location in the DEM. 
+                                 Interactive input points and documented gage locations may not exactly align with the stream location in the DEM.
                                  This parameter allows the task to move the point to a nearby location with the largest contributing area.
- 
-                                 The snap distance should always be larger than the source data resolution. By default, the snapping distance 
+
+                                 The snap distance should always be larger than the source data resolution. By default, the snapping distance
                                  is calculated as the resolution of the source data multiplied by 5.
-                           
+
                                  The default value is 10.
     ------------------------     --------------------------------------------------------------------
     snap_distance_units          Optional String. The linear units specified for the snap distance.
-    
+
                                  Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles'].
 
                                  The default value is 'Meters'.
@@ -190,10 +193,12 @@ def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance
                                  be created in the active Python session. A GIS object instance can
                                  also be optionally explicitly passed in through this parameter.
     ------------------------     --------------------------------------------------------------------
-    return_snapped_points        Optional boolean. Determines if a point feature at the watershed’s pour point will be returned. 
+    return_snapped_points        Optional boolean. Determines if a point feature at the watershed’s pour point will be returned.
                                  If snapping is enabled, this might not be the same as the input point.
 
                                  The default value is True.
+    ------------------------     --------------------------------------------------------------------
+    future                       Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
     ========================     ====================================================================
 
     :return:
@@ -202,10 +207,10 @@ def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance
     .. code-block:: python
 
             # USAGE EXAMPLE: To identify catchment areas around Chennai lakes.
-            lakes_watershed = watershed(input_points=lakes_fs, 
-                                        snap_distance=10, 
+            lakes_watershed = watershed(input_points=lakes_fs,
+                                        snap_distance=10,
                                         snap_distance_units='Meters',
-                                        source_database='Finest', 
+                                        source_database='Finest',
                                         generalize=False)
     """
 
@@ -218,7 +223,7 @@ def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance
         "snap_distance_units": (int, 'SnapDistanceUnits'),
         "source_database": (str, 'SourceDatabase'),
         "generalize": (str, 'Generalize'),
-        "return_snapped_points": (str, 'ReturnSnappedPoints'),        
+        "return_snapped_points": (str, 'ReturnSnappedPoints'),
         "watershed_area": (FeatureSet, "WatershedArea"),
         "snapped_points": (FeatureSet, "SnappedPoints")
     }
@@ -246,4 +251,4 @@ def watershed(input_points, point_id_field=None, snap_distance=10, snap_distance
 
     url = gis.properties.helperServices.hydrology.url
 
-    return _execute_gp_tool(gis, "Watershed", kwargs, param_db, return_values, True, url)
+    return _execute_gp_tool(gis, "Watershed", kwargs, param_db, return_values, True, url, future=future)

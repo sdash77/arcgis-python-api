@@ -17,35 +17,36 @@ def dissolve_boundaries(
         context=None,
         gis=None,
         estimate=False,
-        multi_part_features=True):
+        multi_part_features=True,
+        future=False):
     """
-    .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png 
+    .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png
 
     The dissolve_boundaries method finds polygons that overlap or share a common boundary and merges them together to form a single polygon.
 
-    You can control which boundaries are merged by specifying a field. For example, if you have a layer of counties, and each county 
-    has a State_Name attribute, you can dissolve boundaries using the State_Name attribute. Adjacent counties will be merged together 
+    You can control which boundaries are merged by specifying a field. For example, if you have a layer of counties, and each county
+    has a State_Name attribute, you can dissolve boundaries using the State_Name attribute. Adjacent counties will be merged together
     if they have the same value for State_Name. The end result is a layer of state boundaries.
- 
+
     ====================================     ====================================================================
     **Parameter**                            **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------     --------------------------------------------------------------------
-    dissolve_fields                          Optional list of strings. One or more fields on the input_layer that control which polygons 
-                                             are merged. If you don't supply dissolve_fields , or you supply an empty list of fields, polygons 
+    dissolve_fields                          Optional list of strings. One or more fields on the input_layer that control which polygons
+                                             are merged. If you don't supply dissolve_fields , or you supply an empty list of fields, polygons
                                              that share a common border (that is, they are adjacent) or polygon areas that overlap will be dissolved into one polygon.
 
-                                             If you do supply values for the dissolve_fields parameter, polygons that share a common border 
-                                             and contain the same value in one or more fields will be dissolved. For example, if you have a layer of counties, 
-                                             and each county has a State_Name attribute, you can dissolve boundaries using the State_Name attribute. 
-                                             Adjacent counties will be merged together if they have the same value for State_Name. The end result is a layer of 
+                                             If you do supply values for the dissolve_fields parameter, polygons that share a common border
+                                             and contain the same value in one or more fields will be dissolved. For example, if you have a layer of counties,
+                                             and each county has a State_Name attribute, you can dissolve boundaries using the State_Name attribute.
+                                             Adjacent counties will be merged together if they have the same value for State_Name. The end result is a layer of
                                              state boundaries.If two or more fields are specified, the values in these fields must be the same for the boundary to be dissolved.
     ------------------------------------     --------------------------------------------------------------------
-    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish to calculate from the polygons 
-                                             that are dissolved together. For example, if you are dissolving counties based on State_Name, and each county had a Population field, you can sum Population. 
+    summary_fields                           Optional list of strings. A list of field names and statistical summary type that you wish to calculate from the polygons
+                                             that are dissolved together. For example, if you are dissolving counties based on State_Name, and each county had a Population field, you can sum Population.
                                              The result would be a layer of state boundaries with total population.
-                                             
+
                                              fieldName is the name of one of the numeric fields found in the input_layer.
                                              summary type is one of the following:
 
@@ -55,21 +56,21 @@ def dissolve_boundaries(
                                              * Max—Finds the largest value of all the points in each polygon.
                                              * Stddev—Finds the standard deviation of all the points in each polygon.
                                              Example [fieldName1 summaryType1,fieldName2 summaryType2].
-    ------------------------------------     --------------------------------------------------------------------                       
-    output_name                              Optional string. If provided, the task will create a feature service of the results. 
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional string. If provided, the task will create a feature service of the results.
                                              You define the name of the service. If output_name is not supplied, the task will return a feature collection.
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional string. Context contains additional settings that affect task execution. For dissolve_boundaries Points, there are two settings.
-                                             
+
                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              #. Output Spatial Reference (outSR)—the output features will be projected into the output spatial reference.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
-    ------------------------------------     --------------------------------------------------------------------                       
-    multi_part_features                      Optional boolean. Specifies whether multipart features (i.e. features which share a common 
-                                             attribute table but are not visibly connected) are allowed in the output feature class.    
+    ------------------------------------     --------------------------------------------------------------------
+    multi_part_features                      Optional boolean. Specifies whether multipart features (i.e. features which share a common
+                                             attribute table but are not visibly connected) are allowed in the output feature class.
 
                                              Choice list: ['True', 'False'].
 
@@ -77,7 +78,9 @@ def dissolve_boundaries(
 
                                              False: Specifies multipart features are not allowed. Instead of creating multipart features, individual features will be created for each part.
 
-                                             The default value is True.    
+                                             The default value is True.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ====================================     ====================================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -89,9 +92,9 @@ def dissolve_boundaries(
         diss_counties = dissolve_boundaries(input_layer=usa_counties,
                                             dissolve_fields=["STATE_NAME"],
                                             summary_fields=["POPULATION STDDEV"],
-                                            output_name="DissolveBoundaries")    
-    """                           
-  
+                                            output_name="DissolveBoundaries")
+    """
+
     gis = _arcgis.env.active_gis if gis is None else gis
 
     return gis._tools.featureanalysis.dissolve_boundaries(
@@ -101,7 +104,7 @@ def dissolve_boundaries(
         output_name,
         context,
         estimate=estimate,
-        multi_part_features=multi_part_features)
+        multi_part_features=multi_part_features, future=future)
 
 
 def extract_data(
@@ -112,12 +115,13 @@ def extract_data(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        future=False):
     """
-    .. image:: _static/images/extract_data/extract_data.png 
+    .. image:: _static/images/extract_data/extract_data.png
 
-    The ``extract_data`` method is used to extract data from one or more layers within a given extent. 
-    The extracted data format can be a file geodatabase, shapefiles, csv, or kml. 
+    The ``extract_data`` method is used to extract data from one or more layers within a given extent.
+    The extracted data format can be a file geodatabase, shapefiles, csv, or kml.
     File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
     ===================================    =========================================================
@@ -127,18 +131,18 @@ def extract_data(
     -----------------------------------    ---------------------------------------------------------
     extent                                 Optional layer. The extent is the area of interest used to extract the input features. If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------    ---------------------------------------------------------
-    clip                                   Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped 
-                                           within the extent. By default, features are not clipped and all features intersecting the extent are returned. 
+    clip                                   Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
+                                           within the extent. By default, features are not clipped and all features intersecting the extent are returned.
 
-                                           The default is false.     
+                                           The default is false.
     -----------------------------------    ---------------------------------------------------------
     data_format                            Optional string. A keyword defining the output data format for your extracted data.
-                                           
+
                                            Choice list: ['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']
-                                           
+
                                            The default is 'CSV'.
 
-                                           If FILEGEODATABASE is specified, and the input layer has `attachments <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_ , the attachments will be extracted 
+                                           If FILEGEODATABASE is specified, and the input layer has `attachments <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_ , the attachments will be extracted
                                            to the output file geodatabase if clip is false. If clip is true, attachments will not be extracted.
     -----------------------------------    ---------------------------------------------------------
     output_name                            Optional string or dict. ``output_name`` is used to name the item in your My contents page. For more information on these item properties, see the Item resource page in the `ArcGIS REST API <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
@@ -148,25 +152,28 @@ def extract_data(
                                                                                 "snippet": "<snippet>",
                                                                                 "description": "<description>"
                                                                                 }
-    -----------------------------------    ---------------------------------------------------------   
+    -----------------------------------    ---------------------------------------------------------
     context                                Optional string. Context contains additional settings that affect method execution. For ``extract_data``, there is one setting.
 
                                            #. Output Spatial Reference (outSR)—the extracted features will be projected into the output spatial reference.
-    -----------------------------------    ---------------------------------------------------------   
+    -----------------------------------    ---------------------------------------------------------
     gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    ===================================    =========================================================    
+    -----------------------------------    ---------------------------------------------------------
+    future                                 Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    ===================================    =========================================================
 
     .. code-block:: python
 
-        # USAGE EXAMPLE: To extract data from highways layer with the extent of a state boundary. 
-        
+        # USAGE EXAMPLE: To extract data from highways layer with the extent of a state boundary.
+
         ext_state_highway = extract_data(input_layers=[highways.layers[0]],
                                  extent=state_area_boundary.layers[0],
                                  clip=True,
                                  data_format='shapefile',
-                                 output_name='state highway extracted')	    
+                                 output_name='state highway extracted')
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+
     return gis._tools.featureanalysis.extract_data(
         input_layers,
         extent,
@@ -174,7 +181,7 @@ def extract_data(
         data_format,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 
 def merge_layers(
@@ -184,12 +191,13 @@ def merge_layers(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        future=False):
     """
-    .. image:: _static/images/merge_layers/merge_layers.png 
+    .. image:: _static/images/merge_layers/merge_layers.png
 
-    The ``merge_layers`` method copies features from two layers into a new layer. 
-    The layers to be merged must all contain the same feature types (points, lines, or polygons). 
+    The ``merge_layers`` method copies features from two layers into a new layer.
+    The layers to be merged must all contain the same feature types (points, lines, or polygons).
     You can control how the fields from the input layers are joined and copied. For example:
 
     * I have three layers for England, Wales, and Scotland and I want a single layer of Great Britain.
@@ -200,7 +208,7 @@ def merge_layers(
     ----------------  ---------------------------------------------------------------
     input_layer       Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    merge_layer       Required feature layer. The point, line, or polygon features to merge with the ``input_layer``. 
+    merge_layer       Required feature layer. The point, line, or polygon features to merge with the ``input_layer``.
                       The ``merge_layer`` must contain the same feature type (point, line, or polygon) as the ``input_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
     merge_attributes  Optional list. Defines how the fields in ``merge_layer`` will be
@@ -220,23 +228,25 @@ def merge_layers(
                       specified ``merge_layer`` field:
 
                       + ``Remove`` - The field in the ``merge_layer`` will be removed from the output layer.
-                      + ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer. 
+                      + ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer.
                         You cannot rename a field in the ``merge_layer`` to a field in the ``input_layer``. If you want to make field names equivalent, use Match.
-                      + ``Match`` - A field in the ``merge_layer`` is made equivalent to a field in the ``input_layer`` specified by merge value. 
-                        For example, the ``input_layer`` has a field named CODE and the ``merge_layer`` has a field named STATUS. 
-                        You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the ``merge_layer``. 
+                      + ``Match`` - A field in the ``merge_layer`` is made equivalent to a field in the ``input_layer`` specified by merge value.
+                        For example, the ``input_layer`` has a field named CODE and the ``merge_layer`` has a field named STATUS.
+                        You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the ``merge_layer``.
                         Type casting is supported (for example, float to integer, integer to string) except for string to numeric.
     ----------------  ---------------------------------------------------------------
     output_name       Optional string. If provided, the method will create a feature service of the results. You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
     ----------------  ---------------------------------------------------------------
     context           Optional dict. Context contains additional settings that affect task execution. For ``merge_layers``, there are two settings.
-                                
+
                       #. Extent (``extent``)-a bounding box that defines the analysis area. Only those features in the ``input_layer`` and the ``merge_layer`` that intersect the bounding box will be merged into the output layer.
-                      #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.    
+                      #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
     estimate          Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    ----------------  ---------------------------------------------------------------
+    future            Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ================  ===============================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -250,13 +260,14 @@ def merge_layers(
                               output_name="merge layers")
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+
     return gis._tools.featureanalysis.merge_layers(
         input_layer,
         merge_layer,
         merging_attributes,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 
 def overlay_layers(
@@ -269,7 +280,8 @@ def overlay_layers(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        future=False):
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
 
@@ -278,12 +290,12 @@ def overlay_layers(
     .. |Erase| image:: _static/images/overlay_layers/Erase.png
 
 
-    The ``overlay_layers`` method combines two or more layers into one single layer. 
-    You can think of overlay as peering through a stack of maps and creating a single map containing 
-    all the information found in the stack. In fact, before the advent of GIS, cartographers would 
-    literally copy maps onto clear acetate sheets, overlay these sheets on a light table, and hand 
-    draw a new map from the overlaid data. Overlay is much more than a merging of line work; all the 
-    attributes of the features taking part in the overlay are carried through to the final product. 
+    The ``overlay_layers`` method combines two or more layers into one single layer.
+    You can think of overlay as peering through a stack of maps and creating a single map containing
+    all the information found in the stack. In fact, before the advent of GIS, cartographers would
+    literally copy maps onto clear acetate sheets, overlay these sheets on a light table, and hand
+    draw a new map from the overlaid data. Overlay is much more than a merging of line work; all the
+    attributes of the features taking part in the overlay are carried through to the final product.
     Overlay is used to answer one of the most basic questions of geography, "what is on top of what?" For example:
 
     + What parcels are within the 100-year floodplain? (Within is just another way of saying on top of.)
@@ -294,7 +306,7 @@ def overlay_layers(
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required layer. The point, line, or polygon features that will be 
+    input_layer       Required layer. The point, line, or polygon features that will be
                       overlayed with the ``overlay_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
     overlay_layer     Required layer. The features that will be overlaid with the ``input_layer`` features. See :ref:`Feature Input<FeatureInput>`.
@@ -319,34 +331,36 @@ def overlay_layers(
                       The default value is 'Intersect'.
 
     ----------------  ---------------------------------------------------------------
-    snap_to_input      Optional boolean. A Boolean value indicating if feature vertices in the ``input_layer`` are allowed to move. 
-                       The default is false and means if the distance between features is less than the ``tolerance`` value, all features from both 
+    snap_to_input      Optional boolean. A Boolean value indicating if feature vertices in the ``input_layer`` are allowed to move.
+                       The default is false and means if the distance between features is less than the ``tolerance`` value, all features from both
                        layers can move to allow snapping to each other. When set to true, only features in ``overlay_layer`` can move to snap to the ``input_layer`` features.
     ----------------  ---------------------------------------------------------------
-    output_type       Optional string. The type of intersection you want to find. 
+    output_type       Optional string. The type of intersection you want to find.
                       This parameter is only valid when the ``overlay_type`` is Intersect.
 
                       Choice list: ['Input', 'Line', 'Point']
 
                         *  ``Input`` - The features returned will be the same geometry type as
-                           the ``input_layer`` or ``overlay_layer`` with the lowest dimension geometry. 
-                           If all inputs are polygons, the output will contain polygons. If one or more of 
-                           the inputs are lines and none of the inputs are points, the output will be line. 
+                           the ``input_layer`` or ``overlay_layer`` with the lowest dimension geometry.
+                           If all inputs are polygons, the output will contain polygons. If one or more of
+                           the inputs are lines and none of the inputs are points, the output will be line.
                            If one or more of the inputs are points, the output will contain points. This is the default.
                         *  ``Line`` - Line intersections will be returned. This is only valid if none of the inputs are points.
                         *  ``Point`` - Point intersections will be returned. If the inputs are line or polygon, the output will be a multipoint layer.
     ----------------  ---------------------------------------------------------------
-    tolerance         Optional float. A float value of the minimum distance separating all feature coordinates 
+    tolerance         Optional float. A float value of the minimum distance separating all feature coordinates
                       as well as the distance a coordinate can move in X or Y (or both). The units of tolerance are the same as the units of the ``input_layer``.
-    ----------------  --------------------------------------------------------------- 
+    ----------------  ---------------------------------------------------------------
     output_name       Optional string. If provided, the task will create a feature service of the results. You define the name of the service. If ``output_name`` is not supplied, the task will return a feature collection.
-    ----------------  --------------------------------------------------------------- 
+    ----------------  ---------------------------------------------------------------
     context           Optional string. Context contains additional settings that affect task execution. For ``overlay_layers``, there are two settings.
 
                       #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the ``input_layer`` and ``overlay_layer`` and that intersect the bounding box will be overlaid.
                       #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ----------------  ---------------------------------------------------------------
+    future            Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ================  ===============================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -359,9 +373,10 @@ def overlay_layers(
                                        neighbourhood,
                                        output_name="Cliped buffer")
 
- 
+
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+
     return gis._tools.featureanalysis.overlay_layers(
         input_layer,
         overlay_layer,
@@ -371,7 +386,7 @@ def overlay_layers(
         tolerance,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def create_route_layers(route_data_item,
                         delete_route_data_item=False,
@@ -380,35 +395,36 @@ def create_route_layers(route_data_item,
                         route_name_prefix=None,
                         folder_name=None,
                         gis=None,
-                        estimate=False):
-    
+                        estimate=False,
+                        future=False):
+
     """
     The ``create_route_layers`` method creates route layer items on the portal from the input route data.
 
-    A route layer includes all the information for a particular route such as the stops assigned to 
-    the route as well as the travel directions. Creating route layers is useful if you want to share 
+    A route layer includes all the information for a particular route such as the stops assigned to
+    the route as well as the travel directions. Creating route layers is useful if you want to share
     individual routes with other members in your organization.
 
 
     =========================    =========================================================
     **Parameter**                **Description**
     -------------------------    ---------------------------------------------------------
-    route_data                   Required item. The item id for the route data item that is used to create route layer items. 
+    route_data                   Required item. The item id for the route data item that is used to create route layer items.
                                  Before running this task, the route data must be added to your portal as an item.
     -------------------------    ---------------------------------------------------------
-    delete_route_data_item       Required boolean. Indicates if the input route data item should be deleted. You may want to 
+    delete_route_data_item       Required boolean. Indicates if the input route data item should be deleted. You may want to
                                  delete the route data in case it is no longer required after the route layers have been created from it.
 
-                                 When ``delete_route_data_item`` is set to true and the task fails to delete the route data item, 
+                                 When ``delete_route_data_item`` is set to true and the task fails to delete the route data item,
                                  it will return a warning message but still continue execution.
 
                                  The default value is False.
     -------------------------    ---------------------------------------------------------
-    tags                         Optional string. Tags used to describe and identify the route layer items. 
+    tags                         Optional string. Tags used to describe and identify the route layer items.
                                  Individual tags are separated using a comma. The route name is always
                                  added as a tag even when a value for this argument is not specified.
     -------------------------    ---------------------------------------------------------
-    summary                      Optional string. The summary displayed as part of the item information for the route layer item. 
+    summary                      Optional string. The summary displayed as part of the item information for the route layer item.
                                  If a value for this argument is not specified, a default summary text "Route and directions for <Route Name>" is used.
     -------------------------    ---------------------------------------------------------
     route_name_prefix            Optional string. A qualifier added to the title of every route layer item. This can be used to designate all routes that are shared for a
@@ -423,6 +439,8 @@ def create_route_layers(route_data_item,
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
+    -------------------------    ---------------------------------------------------------
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns: result_layer : list (items)
@@ -435,7 +453,7 @@ def create_route_layers(route_data_item,
                             tags="datascience",
                             summary="example of create route layers method",
                             route_name_prefix="santa_ana",
-                            folder_name="create route layers")        
+                            folder_name="create route layers")
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     output_name = {}
@@ -465,4 +483,4 @@ def create_route_layers(route_data_item,
     return gis._tools.featureanalysis.create_route_layers(
         route_data_item,
         delete_route_data_item,
-        output_name, estimate=estimate)
+        output_name, estimate=estimate, future=future)

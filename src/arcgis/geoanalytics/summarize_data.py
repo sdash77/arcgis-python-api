@@ -16,7 +16,7 @@ import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 
 _log = _logging.getLogger(__name__)
 
@@ -30,39 +30,40 @@ def build_multivariable_grid(input_layers,
                              bin_unit="Meters",
                              bin_type="Square",
                              output_name=None,
-                             gis=None):
-    """    
+                             gis=None,
+                             future=False):
+    """
 
-    .. image:: _static/images/Grid/Grid.png 
+    .. image:: _static/images/Grid/Grid.png
 
-    The ``build_multivariable_grid`` task works with one or more layers of point, line, or polygon features. 
-    The task generates a grid of square or hexagonal bins and compiles information about each input layer into each bin. 
+    The ``build_multivariable_grid`` task works with one or more layers of point, line, or polygon features.
+    The task generates a grid of square or hexagonal bins and compiles information about each input layer into each bin.
     For each input layer, this information can include the following variables:
 
         * ``Distance to Nearest`` - The distance from each bin to the nearest feature.
         * ``Attribute of Nearest`` - An attribute value of the feature nearest to each bin.
         * ``Attribute Summary of Related`` - A statistical summary of all features within ``search_distance`` of each bin.
 
-    Only variables you specify in ``variable_calculations`` will be included in the result layer. These variables can help 
-    you understand the proximity of your data throughout the extent of your analysis. The results can help you answer 
+    Only variables you specify in ``variable_calculations`` will be included in the result layer. These variables can help
+    you understand the proximity of your data throughout the extent of your analysis. The results can help you answer
     questions such as the following:
 
         * Given multiple layers of public transportation infrastructure, what part of the city is least accessible by public transportation?
         * Given layers of lakes and rivers, what is the name of the water body closest to each location in the U.S.?
         * Given a layer of household income, where in the U.S. is the variation of income in the surrounding 50 miles the greatest?
 
-    The result of ``build_multivariable_grid`` can also be used in prediction and classification workflows. The task allows you 
-    to calculate and compile information from many different data sources into a single, spatially continuous layer in one step. 
-    This layer can then be used with the Enrich From Multi-Variable Grid task to quickly enrich point features with the variables 
+    The result of ``build_multivariable_grid`` can also be used in prediction and classification workflows. The task allows you
+    to calculate and compile information from many different data sources into a single, spatially continuous layer in one step.
+    This layer can then be used with the Enrich From Multi-Variable Grid task to quickly enrich point features with the variables
     you have calculated, reducing the amount of effort required to build prediction and classification models from point data.
 
     ===================================================================    =============================================================================
     **Argument**                                                                                    **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    input_layers                                                           Required list of layers. A list of input layers that will be used in analysis. 
+    input_layers                                                           Required list of layers. A list of input layers that will be used in analysis.
                                                                            See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    variable_calculations                                                  Required list of dicts. A dict containing objects that describe 
+    variable_calculations                                                  Required list of dicts. A dict containing objects that describe
                                                                            the variables that will be calculated for each layer in ``input_layers``.
 
                                                                            [
@@ -99,11 +100,11 @@ def build_multivariable_grid(input_layers,
                                                                                 ...
                                                                             ]
 
-                                                                           layer is the index of the layer in ``input_layers`` that will be 
+                                                                           layer is the index of the layer in ``input_layers`` that will be
                                                                            used to calculate the specified variables.
 
-                                                                           Variables is an array of dict objects that describe the variables 
-                                                                           you want to include in the result layer. The array must contain at least 
+                                                                           Variables is an array of dict objects that describe the variables
+                                                                           you want to include in the result layer. The array must contain at least
                                                                            one variable for each layer.
 
                                                                            type can be one of the following variable types:
@@ -114,23 +115,23 @@ def build_multivariable_grid(input_layers,
 
                                                                            Each type must be configured with a unique set of parameters:
 
-                                                                            * ``outFieldName`` is the name of the field that will be created in the result 
+                                                                            * ``outFieldName`` is the name of the field that will be created in the result
                                                                               layer to store a variable. This is required.
-                                                                            * ``searchDistance`` and searchDistanceUnit are a number and linear unit. 
-                                                                              For DistanceToNearest and AttributeOfNearest, searchDistance and searchDistanceUnit 
-                                                                              are required and define the maximum distance that the tool will search from the 
-                                                                              center of each bin to find a feature in the layer. If no feature is within the 
-                                                                              distance, null is returned. For AttributeSummaryOfRelated, searchDistance and 
-                                                                              searchDistanceUnit are optional and define the radius of a circular neighborhood 
-                                                                              surrounding each bin. All features that intersect this neighborhood will be used 
-                                                                              to calculate statisticType. If a distance is not defined, only features that 
+                                                                            * ``searchDistance`` and searchDistanceUnit are a number and linear unit.
+                                                                              For DistanceToNearest and AttributeOfNearest, searchDistance and searchDistanceUnit
+                                                                              are required and define the maximum distance that the tool will search from the
+                                                                              center of each bin to find a feature in the layer. If no feature is within the
+                                                                              distance, null is returned. For AttributeSummaryOfRelated, searchDistance and
+                                                                              searchDistanceUnit are optional and define the radius of a circular neighborhood
+                                                                              surrounding each bin. All features that intersect this neighborhood will be used
+                                                                              to calculate statisticType. If a distance is not defined, only features that
                                                                               intersect a bin will be used to calculate statisticType.
                                                                             * ``attributeField`` is required by AttributeOfNearest and is the name of a field `
-                                                                              in the input layer. The value of this field in the closest feature to each bin will 
+                                                                              in the input layer. The value of this field in the closest feature to each bin will
                                                                               be included in the result layer.
-                                                                            * ``statisticField`` is required by AttributeSummaryOfRelated and is the name of a 
+                                                                            * ``statisticField`` is required by AttributeSummaryOfRelated and is the name of a
                                                                               field in the input layer. This field's values will be used to calculate statisticType.
-                                                                            * ``statisticType`` is required by AttributeSummaryOfRelated and is one of the following 
+                                                                            * ``statisticType`` is required by AttributeSummaryOfRelated and is one of the following
                                                                               when statisticField is a numeric field:
 
                                                                                 * ``Count`` - Totals the number of features near or intersecting each bin.
@@ -149,13 +150,13 @@ def build_multivariable_grid(input_layers,
 
                                                                             * ``filter`` is optional for all variable types and is formatted as described in the Feature Input topic.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    bin_size                                                               Required float. The distance for the bins of type ``bin_type`` in the output polygon layer. 
-                                                                           ``variable_calculations`` will be calculated at the center of each bin. When generating bins, 
-                                                                           for Square, the number and units specified determine the height and length of the square. 
+    bin_size                                                               Required float. The distance for the bins of type ``bin_type`` in the output polygon layer.
+                                                                           ``variable_calculations`` will be calculated at the center of each bin. When generating bins,
+                                                                           for Square, the number and units specified determine the height and length of the square.
                                                                            For Hexagon, the number and units specified determine the distance between parallel sides.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     bin_unit                                                               Optional string. The distance unit for the bins that will be used to calculate ``variable_calculations``.
-                                                                           
+
                                                                            Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     bin_type                                                               Optional string. The type of bin that will be used to generate the result grid. Bin options are the following:
@@ -163,11 +164,11 @@ def build_multivariable_grid(input_layers,
                                                                            Choice list: ['Hexagon', 'Square']
 
                                                                            .. Note::
-                                                                            Analysis using Square or Hexagon bins requires a projected coordinate system. 
-                                                                            When aggregating layers into bins, the input layers or processing extent (``processSR``) 
-                                                                            must have a projected coordinate system. If a projected coordinate system is not 
-                                                                            specified when running analysis, the World Cylindrical Equal Area (WKID 54034) projection 
-                                                                            will be used. At 10.7 or later, if a projected coordinate system is not specified when 
+                                                                            Analysis using Square or Hexagon bins requires a projected coordinate system.
+                                                                            When aggregating layers into bins, the input layers or processing extent (``processSR``)
+                                                                            must have a projected coordinate system. If a projected coordinate system is not
+                                                                            specified when running analysis, the World Cylindrical Equal Area (WKID 54034) projection
+                                                                            will be used. At 10.7 or later, if a projected coordinate system is not specified when
                                                                             running analysis, a projection will be picked based on the extent of the data.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
@@ -184,7 +185,7 @@ def build_multivariable_grid(input_layers,
 
     .. code-block:: python
 
-            # Usage Example: To create multivariable grid by summarizing information such as distance to nearest 
+            # Usage Example: To create multivariable grid by summarizing information such as distance to nearest
 
             variables = [ { "layer":0,
                             "variables":[
@@ -256,7 +257,11 @@ def build_multivariable_grid(input_layers,
     ]
 
     try:
-        _execute_gp_tool(gis, "BuildMultiVariableGrid", params, param_db, return_values, _use_async, url, True)
+        if future:
+
+            gpjob = _execute_gp_tool(gis, "BuildMultiVariableGrid", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, "BuildMultiVariableGrid", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -264,76 +269,77 @@ def build_multivariable_grid(input_layers,
 
 
 def aggregate_points(point_layer,
-                     bin_type = None,
-                     bin_size = None,
-                     bin_size_unit = None,
-                     polygon_layer = None,
-                     time_step_interval = None,
-                     time_step_interval_unit = None,
-                     time_step_repeat_interval = None,
-                     time_step_repeat_interval_unit = None,
-                     time_step_reference = None,
-                     summary_fields = None,
-                     output_name = None,
-                     gis=None):
+                     bin_type=None,
+                     bin_size=None,
+                     bin_size_unit=None,
+                     polygon_layer=None,
+                     time_step_interval=None,
+                     time_step_interval_unit=None,
+                     time_step_repeat_interval=None,
+                     time_step_repeat_interval_unit=None,
+                     time_step_reference=None,
+                     summary_fields=None,
+                     output_name=None,
+                     gis=None,
+                     future=False):
     """
-    .. image:: _static/images/aggregate_points/aggregate_points.png 
+    .. image:: _static/images/aggregate_points/aggregate_points.png
 
-    This ``aggregate_points`` tool works with a layer of point features and a layer of areas. 
-    The layer of areas can be an input polygon layer or it can be square or hexagonal bins calculated 
-    when the task is run. The tool first determines which points fall within each specified area. 
-    After determining this point-in-area spatial relationship, statistics about all points in the 
-    area are calculated and assigned to the area. The most basic statistic is the count of the 
+    This ``aggregate_points`` tool works with a layer of point features and a layer of areas.
+    The layer of areas can be an input polygon layer or it can be square or hexagonal bins calculated
+    when the task is run. The tool first determines which points fall within each specified area.
+    After determining this point-in-area spatial relationship, statistics about all points in the
+    area are calculated and assigned to the area. The most basic statistic is the count of the
     number of points within the area, but you can get other statistics as well.
 
-    For example, suppose you have point features of coffee shop locations and area features of counties, 
-    and you want to summarize coffee sales by county. Assuming the coffee shops have a TOTAL_SALES attribute, 
-    you can get the sum of all TOTAL_SALES within each county, the minimum or maximum TOTAL_SALES within each 
+    For example, suppose you have point features of coffee shop locations and area features of counties,
+    and you want to summarize coffee sales by county. Assuming the coffee shops have a TOTAL_SALES attribute,
+    you can get the sum of all TOTAL_SALES within each county, the minimum or maximum TOTAL_SALES within each
     county, or other statistics like the count, range, standard deviation, and variance.
 
-    This tool can also work on data that is time-enabled. If time is enabled on the input points, then 
-    the time slicing options are available. Time slicing allows you to calculate the point-in area relationship 
-    while looking at a specific slice in time. For example, you could look at hourly intervals, which would 
+    This tool can also work on data that is time-enabled. If time is enabled on the input points, then
+    the time slicing options are available. Time slicing allows you to calculate the point-in area relationship
+    while looking at a specific slice in time. For example, you could look at hourly intervals, which would
     result in outputs for each hour.
 
-    For an example with time, suppose you had point features of every transaction made at a coffee shop location and no area layer. 
-    The data has been recorded over a year, and each transaction has a location and a time stamp. Assuming each transaction has a 
-    TOTAL_SALES attribute, you can get the sum of all TOTAL SALES within the space and time of interest. If these transactions are 
-    for a single city, we could generate areas that are one kilometer grids, and look at weekly time slices to summarize the 
+    For an example with time, suppose you had point features of every transaction made at a coffee shop location and no area layer.
+    The data has been recorded over a year, and each transaction has a location and a time stamp. Assuming each transaction has a
+    TOTAL_SALES attribute, you can get the sum of all TOTAL SALES within the space and time of interest. If these transactions are
+    for a single city, we could generate areas that are one kilometer grids, and look at weekly time slices to summarize the
     transactions in both time and space.
 
     =================================================     ========================================================================
     **Argument**                                          **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
-    point_layer                                           Required point feature layer. The point features that will be aggregated 
+    point_layer                                           Required point feature layer. The point features that will be aggregated
                                                           into the polygons in the ``polygon_layer`` or bins of the specified ``bin_size``.
                                                           See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------     ------------------------------------------------------------------------
     bin_type                                              Optional string. If ``polygon_layer`` is not defined, it is required.
-                                             
-                                                          The type of bin that will be generated and into which points will be aggregated. 
+
+                                                          The type of bin that will be generated and into which points will be aggregated.
 
                                                           Choice list:['Square', 'Hexagon'].
 
                                                           The default value is "Square".
 
-                                                          When generating bins for Square, the number and units specified determine the height 
-                                                          and length of the square. For Hexagon, the number and units specified determine the 
-                                                          distance between parallel sides. Either ``bin_type`` or ``polygon_layer`` must be specified. 
+                                                          When generating bins for Square, the number and units specified determine the height
+                                                          and length of the square. For Hexagon, the number and units specified determine the
+                                                          distance between parallel sides. Either ``bin_type`` or ``polygon_layer`` must be specified.
                                                           If ``bin_type`` is chosen, ``bin_size`` and ``bin_size_unit`` specifying the size of the bins must be included.
     -------------------------------------------------     ------------------------------------------------------------------------
-    bin_size (Required if ``bin_type`` is used)           Optional float. The distance for the bins of type binType that 
-                                                          the ``point_layer`` will be aggregated into. When generating bins, for Square, 
-                                                          the number and units specified determine the height and length of the square. 
+    bin_size (Required if ``bin_type`` is used)           Optional float. The distance for the bins of type binType that
+                                                          the ``point_layer`` will be aggregated into. When generating bins, for Square,
+                                                          the number and units specified determine the height and length of the square.
                                                           For Hexagon, the number and units specified determine the distance between parallel sides.
     -------------------------------------------------     ------------------------------------------------------------------------
     bin_size_unit (Required if ``bin_size`` is used)      Optional string. The distance unit for the bins that the ``point_layer`` will be aggregated into.
- 
+
                                                           Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-                                                          When generating bins for Square, the number and units specified determine the height and 
-                                                          length of the square. For Hexagon, the number and units specified determine the distance 
-                                                          between parallel sides. Either ``bin_type`` or ``polygon_layer`` must be specified. 
+                                                          When generating bins for Square, the number and units specified determine the height and
+                                                          length of the square. For Hexagon, the number and units specified determine the distance
+                                                          between parallel sides. Either ``bin_type`` or ``polygon_layer`` must be specified.
                                                           If ``bin_type`` is chosen, ``bin_size`` and ``bin_size_unit`` specifying the size of the bins must be included.
     -------------------------------------------------     ------------------------------------------------------------------------
     polygon_layer                                         Optional polygon feature layer. The polygon features (areas) into which the input points will be aggregated.
@@ -341,42 +347,42 @@ def aggregate_points(point_layer,
 
                                                           One of ``polygon_layer`` or bins ``bin_size`` and  ``bin_size_unit`` is required.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_interval                                    Optional integer. A numeric value that specifies duration of the time step interval. This option is only 
+    time_step_interval                                    Optional integer. A numeric value that specifies duration of the time step interval. This option is only
                                                           available if the input points are time-enabled and represent an instant in time.
 
                                                           The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_interval_unit                               Optional string. A string that specifies units of the time step interval. This option is only available if the 
+    time_step_interval_unit                               Optional string. A string that specifies units of the time step interval. This option is only available if the
                                                           input points are time-enabled and represent an instant in time.
 
                                                           Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
                                                           The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_repeat_interval                             Optional integer. A numeric value that specifies how often the time step repeat occurs. 
+    time_step_repeat_interval                             Optional integer. A numeric value that specifies how often the time step repeat occurs.
                                                           This option is only available if the input points are time-enabled and of time type instant.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_repeat_interval_unit                        Optional string. A string that specifies the temporal unit of the step repeat. 
+    time_step_repeat_interval_unit                        Optional string. A string that specifies the temporal unit of the step repeat.
                                                           This option is only available if the input points are time-enabled and of time type instant.
 
                                                           Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
 
                                                           The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_reference                                   Optional datetime. A date that specifies the reference time to align the time slices to, represented in milliseconds from epoch. 
-                                                          The default is January 1, 1970, at 12:00 a.m. (epoch time stamp 0). This option is only available if the 
+    time_step_reference                                   Optional datetime. A date that specifies the reference time to align the time slices to, represented in milliseconds from epoch.
+                                                          The default is January 1, 1970, at 12:00 a.m. (epoch time stamp 0). This option is only available if the
                                                           input points are time-enabled and of time type instant.
     -------------------------------------------------     ------------------------------------------------------------------------
-    summary_fields                                        Optional list of dicts. A list of field names and statistical summary types that you want to calculate 
-                                                          for all points within each polygon or bin. Note that the count of points within each polygon is always 
+    summary_fields                                        Optional list of dicts. A list of field names and statistical summary types that you want to calculate
+                                                          for all points within each polygon or bin. Note that the count of points within each polygon is always
                                                           returned. By default, all statistics are returned.
 
                                                           Example: [{"statisticType": "Count", "onStatisticField": "fieldName1"}, {"statisticType": "Any", "onStatisticField": "fieldName2"}]
-                                                        
+
                                                           fieldName is the name of the fields in the input point layer.
 
                                                           statisticType is one of the following for numeric fields:
-    
+
                                                               * ``Count`` -Totals the number of values of all the points in each polygon.
                                                               * ``Sum`` -Adds the total value of all the points in each polygon.
                                                               * ``Mean`` -Calculates the average of all the points in each polygon.
@@ -389,18 +395,21 @@ def aggregate_points(point_layer,
                                                           statisticType is one of the following for string fields:
 
                                                               * ``Count`` -Totals the number of strings for all the points in each polygon.
-                                                              * ``Any` `-Returns a sample string of a point in each polygon.   
+                                                              * ``Any` `-Returns a sample string of a point in each polygon.
     -------------------------------------------------     ------------------------------------------------------------------------
     output_name                                           Optional string. The method will create a feature service of the results. You define the name of the service.
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
     context                                               Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
-                                             
+
                                                               * Extent (``extent``)—A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                               * Processing spatial reference (``processSR``)—The features will be projected into this coordinate system for analysis.
                                                               * Output spatial reference (``outSR``)—The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                               * Data store (``dataStore``)—Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    -------------------------------------------------     ------------------------------------------------------------------------
+    future                                                optional Boolean. If True, a GPJob is returned instead of
+                                                          results. The GPJob can be queried on the status of the execution.
     =================================================     ========================================================================
 
     :returns: result_layer : Output Features as feature layer item.
@@ -409,10 +418,10 @@ def aggregate_points(point_layer,
 
             # Usage Example: To aggregate number of 911 calls within 1 km summarized by Day count.
 
-            agg_result = aggregate_points(calls, 
-                                          bin_size=1, 
-                                          bin_size_unit='Kilometers', 
-                                          time_step_interval=1, 
+            agg_result = aggregate_points(calls,
+                                          bin_size=1,
+                                          bin_size_unit='Kilometers',
+                                          time_step_interval=1,
                                           time_step_interval_unit="Years",
                                           summary_fields=[{"statisticType": "Count", "onStatisticField": "Day"}],
                                           output_name='testaggregatepoints01')
@@ -465,7 +474,7 @@ def aggregate_points(point_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True)
+        _execute_gp_tool(gis, "AggregatePoints", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -488,7 +497,8 @@ def describe_dataset(input_layer,
                      extent_output=False,
                      sample_size=None,
                      output_name=None,
-                     gis=None):
+                     gis=None,
+                     future=False):
     """
     The Describe Dataset task provides an overview of your big data. The tool outputs a JSON
     detailing the input layer's geometry and time settings, schema, and summary statistics for each
@@ -519,6 +529,9 @@ def describe_dataset(input_layer,
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
+    ----------------  ---------------------------------------------------------------
+    future            optional Boolean. If True, a GPJob is returned instead of
+                      results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
     :returns: FeatureLayer
@@ -563,7 +576,10 @@ def describe_dataset(input_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -585,7 +601,8 @@ def join_features(target_layer,
                   attribute_relationship = None,
                   join_condition = None,
                   output_name = None,
-                  gis=None):
+                  gis=None,
+                  future=False):
     """
     Using either feature layers or tabular data, you can join features and records based on
     specific relationships between the input layers or tables. Joins will be determined by
@@ -660,6 +677,9 @@ def join_features(target_layer,
                                       results. You define the name of the service.
     --------------------------------  ---------------------------------------------------------------
     gis                               Optional GIS. The GIS object where the analysis will take place.
+    --------------------------------  ---------------------------------------------------------------
+    future                            Optional Boolean. If True, a GPJob is returned instead of
+                                      results. The GPJob can be queried on the status of the execution.
     ================================  ===============================================================
 
 
@@ -715,7 +735,10 @@ def join_features(target_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -746,7 +769,8 @@ def reconstruct_tracks(input_layer,
                        time_boundary_split_unit=None,
                        time_boundary_reference=None,
                        output_name = None,
-                       gis=None):
+                       gis=None,
+                       future=False):
     """
 
     Using a time-enabled layer of point or polygon features that represent an instant in time, this tool determines which input features belong in a track and will order the inputs sequentially in time. Statistics are optionally calculated for the input features within each track.
@@ -796,6 +820,7 @@ def reconstruct_tracks(input_layer,
 
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+   future: Optional, if True, the return value will be a GPJob.
 
 Returns:
    output - Output Features as a Feature Layer Collection Item
@@ -848,7 +873,10 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, "ReconstructTracks", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -868,7 +896,8 @@ def summarize_attributes(input_layer,
                          fields = None,
                          summary_fields = None,
                          output_name = None,
-                         gis=None):
+                         gis=None,
+                         future=False):
     """
     Using either feature or tabular data, this tool summarizes statistics for specified fields.
 
@@ -894,7 +923,7 @@ def summarize_attributes(input_layer,
 
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
+   future: Optional, if True, the response is returned as a GPJob.
 Returns:
    output - Output Features as a _FeatureSet
 
@@ -941,7 +970,10 @@ Returns:
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, "SummarizeAttributes", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -965,7 +997,8 @@ def summarize_within(summarized_layer,
                      minority_majority=False,
                      percent_shape=False,
                      output_name = None,
-                     gis=None):
+                     gis=None,
+                     future=False):
     """
     Finds areas (and portions of areas) that overlap between two layers and calculates statistics about the overlap.
 
@@ -1064,7 +1097,10 @@ Returns:
     ]
 
     try:
-        _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, "SummarizeWithin", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()

@@ -467,7 +467,7 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     def _wkt(obj, fmt='%.16f'):
         """converts an arcgis.Geometry to WKT"""
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
+        HASARCPY, HASSHAPELY = obj._check_geometry_engine()
         if HASARCPY:
             import arcpy
         if isinstance(obj, Point):

@@ -10,13 +10,13 @@ import datetime as _datetime
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 
 _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def run_python_script(code, layers=None, gis=None):
+def run_python_script(code, layers=None, gis=None, future=False):
     """
 
     The `run_python_script` method executes a Python script on your ArcGIS
@@ -82,6 +82,9 @@ def run_python_script(code, layers=None, gis=None):
     layers            Optional List. A list of FeatureLayers to operate on.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
+    ----------------  ---------------------------------------------------------------
+    future            Optional Boolean. If True, a GPJob is returned instead of
+                      results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
     :returns: Dictionary of messages from the code provided.
@@ -118,7 +121,10 @@ def run_python_script(code, layers=None, gis=None):
     }
 
     try:
-        res, msg = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=False, future=future)
+            return GAJob(gpjob=gpjob, return_service=None)
+        res, msg = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=True, future=future)
         return msg
     except:
         raise
@@ -129,7 +135,8 @@ def dissolve_boundaries(input_layer,
                         summary_fields=None,
                         multipart=False,
                         output_name=None,
-                        gis=None):
+                        gis=None,
+                        future=False):
     """
 
     The Dissolve Boundaries task finds polygons that intersect or have the same field values and merges them together to form a single polygon.
@@ -183,6 +190,9 @@ def dissolve_boundaries(input_layer,
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
+    ----------------  ---------------------------------------------------------------
+    future            optional Boolean. If True, a GPJob is returned instead of
+                      results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
     :returns: FeatureLayer
@@ -227,14 +237,19 @@ def dissolve_boundaries(input_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
         raise
     return
 
-def merge_layers(input_layer, merge_layer, merge_attributes=None, output_name=None, gis=None):
+def merge_layers(input_layer, merge_layer,
+                 merge_attributes=None, output_name=None,
+                 gis=None, future=False):
     """
     The Merge Layers task combines two feature layers to create a single output layer. The tool
     requires that both layers have the same geometry type (tabular, point, line, or polygon). If
@@ -311,6 +326,9 @@ def merge_layers(input_layer, merge_layer, merge_attributes=None, output_name=No
     output_name       Optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               Optional GIS. The GIS object where the analysis will take place.
+    ----------------  ---------------------------------------------------------------
+    future            optional Boolean. If True, a GPJob is returned instead of
+                      results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
     :returns: FeatureLayer
@@ -354,7 +372,10 @@ def merge_layers(input_layer, merge_layer, merge_attributes=None, output_name=No
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -363,7 +384,7 @@ def merge_layers(input_layer, merge_layer, merge_attributes=None, output_name=No
     return
 
 
-def clip_layer(input_layer, clip_layer, output_name=None, gis=None):
+def clip_layer(input_layer, clip_layer, output_name=None, gis=None, future=False):
     """
     Clip_layer features from one layer to the extent of a boundary layer. Use this tool to cut out a piece
     of one feature class using one or more of the features in another feature class as a cookie
@@ -383,6 +404,9 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None):
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
+    ----------------  ---------------------------------------------------------------
+    future            optional Boolean. If True, a GPJob is returned instead of
+                      results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
     :returns: FeatureLayer
@@ -424,7 +448,10 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None):
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -433,7 +460,7 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None):
     return
 
 
-def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_name=None, gis=None):
+def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_name=None, gis=None, future=False):
     """
     Only available at ArcGIS Enterprise 10.6.1 and later.
 
@@ -457,6 +484,9 @@ def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_na
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
+    ----------------  ---------------------------------------------------------------
+    future            optional Boolean. If True, a GPJob is returned instead of
+                      results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
     :returns: FeatureLayer
@@ -504,7 +534,10 @@ def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_na
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -513,7 +546,7 @@ def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_na
     return
 
 
-def append_data(input_layer, append_layer, field_mapping=None, gis=None):
+def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=False):
     """
     Only available at ArcGIS Enterprise 10.6.1 and later.
 
@@ -550,6 +583,9 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None):
     ----------------  ---------------------------------------------------------------
     gis               optional GIS, the GIS on which this tool runs. If not
                       specified, the active GIS is used.
+    ----------------  ---------------------------------------------------------------
+    future            optional Boolean. If True, a GPJob is returned instead of
+                      results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
     :returns: boolean
@@ -577,7 +613,10 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None):
     return_values = [
     ]
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=None)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return True
     except:
         raise
@@ -595,7 +634,8 @@ def calculate_fields(input_layer,
                      time_split_unit=None,
                      time_reference=None,
                      output_name=None,
-                     gis=None
+                     gis=None,
+                     future=False
                      ):
     """
     The Calculate Field task works with a layer to create and populate a
@@ -640,7 +680,10 @@ def calculate_fields(input_layer,
     --------------------------   ---------------------------------------------------------------
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
-    ==========================  ================================================================
+    --------------------------   ---------------------------------------------------------------
+    future                       Optional Boolean. If True, a GPJob is returned instead of
+                                 results. The GPJob can be queried on the status of the execution.
+    ==========================   ================================================================
 
     :returns:
        Feature Layer
@@ -688,7 +731,10 @@ def calculate_fields(input_layer,
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()
@@ -698,8 +744,9 @@ def calculate_fields(input_layer,
 
 def copy_to_data_store(
     input_layer,
-    output_name = None,
-    gis = None):
+    output_name=None,
+    gis=None,
+    future=False):
     """
 
     Copies an input feature layer or table to an ArcGIS Data Store and creates a layer in your web GIS.
@@ -722,6 +769,7 @@ def copy_to_data_store(
 
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+   future: Optional. If True, the result comes back as a GPJob.
 
 Returns:
    output - Output Layer as a feature layer collection item
@@ -762,7 +810,10 @@ Returns:
         {"name": "output", "display_name": "Output Layer", "type": _FeatureSet},
     ]
     try:
-        _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()

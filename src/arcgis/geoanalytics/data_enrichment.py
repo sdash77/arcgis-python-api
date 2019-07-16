@@ -8,7 +8,7 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
 from arcgis.geoprocessing._support import _execute_gp_tool
-from arcgis.geoanalytics._util import _id_generator, _feature_input, _set_context, _create_output_service
+from arcgis.geoanalytics._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 
 _log = _logging.getLogger(__name__)
 
@@ -18,7 +18,8 @@ def enrich_from_grid(input_layer,
                      grid_layer,
                      enrichment_attributes=None,
                      output_name=None,
-                     gis=None):
+                     gis=None,
+                     future=False):
     """
     The Enrich From Multi-Variable Grid task joins attributes from a multi-variable grid to a point
     layer. The multi-variable grid must be created using the Build Multi-Variable Grid task.
@@ -51,6 +52,9 @@ def enrich_from_grid(input_layer,
                             results. You define the name of the service.
     ----------------------  ---------------------------------------------------------------
     gis                     optional GIS. The GIS object where the analysis will take place.
+    ----------------------  ---------------------------------------------------------------
+    future                  optional Boolean. If True, a GPJob is returned instead of
+                            results. The GPJob can be queried on the status of the execution.
     ======================  ===============================================================
 
     :returns: FeatureLayer
@@ -95,7 +99,10 @@ def enrich_from_grid(input_layer,
     ]
 
     try:
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()

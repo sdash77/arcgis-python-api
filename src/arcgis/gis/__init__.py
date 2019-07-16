@@ -20,7 +20,6 @@ from contextlib import contextmanager
 import functools
 from datetime import datetime
 import logging
-_log = logging.getLogger(__name__)
 
 from urllib.error import  HTTPError
 
@@ -30,7 +29,6 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis._impl.connection import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
-
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -238,7 +236,9 @@ class GIS(object):
             raise ValueError("A `profile` name must not be an empty string.")
         elif profile is not None:
             # Load config
-            cfg_file_path = os.path.expanduser("~") + '/.arcgisprofile'
+            pm = self.profiles
+
+            cfg_file_path = pm._cfg_file_path
             config = configparser.ConfigParser()
             if os.path.isfile(cfg_file_path):
                 config.read(cfg_file_path)
@@ -255,28 +255,15 @@ class GIS(object):
                                            "".format(cfg_file_path))
 
             # Add any __init__() args to config/keyring store
-            if profile not in config.keys():
+            if profile not in pm.list():
                 _log.info("Adding new profile {} to config...".format(profile))
-                config.add_section(profile)
-                self._add_timestamp_to_profile_data_in_config(config, profile)
-            self._update_profile_data_in_config(config, profile, url, username,
-                                                key_file, cert_file, client_id)
-            if password is not None:
-                self._securely_store_password(profile, password)
-            self._write_any_config_changes_to_file(config, cfg_file_path)
-
-            # Update __init__() args with data from config file/keyring store
-            if config.has_option(profile,   "url"):
-                url =       config[profile]["url"]
-            if config.has_option(profile,   "username"):
-                username =  config[profile]["username"]
-            if config.has_option(profile,   "key_file"):
-                key_file =  config[profile]["key_file"]
-            if config.has_option(profile,   "cert_file"):
-                cert_file = config[profile]["cert_file"]
-            if config.has_option(profile,   "client_id"):
-                client_id = config[profile]["client_id"]
-            password = self._securely_get_password(profile)
+                pm.create(profile=profile, url=url, username=username, password=password,
+                          key_file=key_file, cert_file=cert_file, client_id=client_id)
+            elif profile in pm.list():
+                # run an update to be safe.
+                pm.update(profile, url=url, username=username, password=password,
+                          key_file=key_file, cert_file=cert_file, client_id=client_id)
+            url, username, password, key_file, cert_file, client_id = pm._retrieve(profile)
 
         if url is None:
             url = "https://www.arcgis.com"
@@ -699,6 +686,17 @@ class GIS(object):
             return result.scheme != "" and result.netloc != ""
         except:
             return False
+
+    @property
+    def profiles(self):
+        """
+        Returns tools to managed locally stored credentials
+
+        :returns: ProfileManager
+
+        """
+        from arcgis.gis._impl._profile import ProfileManager
+        return ProfileManager()
 
     @_lazy_property
     def users(self):
@@ -3126,7 +3124,7 @@ class ContentManager(object):
                     for ffile in future_files:
                         if os.path.isfile(ffile):
                             os.remove(ffile)
-                       
+
         if all(messages):
             # commit the addition
             url = "{base}content/users/{user}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
@@ -5749,8 +5747,7 @@ class Group(dict):
             res = self._portal.con.post(url, params)
             self._hydrated = False
             self._hydrate()
-        else:
-            raise ValueError("Input must be True/False.")
+
 
 
 
@@ -7310,11 +7307,11 @@ class Item(dict):
                             export to complete; use False for when it is okay to proceed while
                             the export continues to completion.
         ---------------     --------------------------------------------------------------------
-        enforce_fld_vis     Optional boolean. Be default when you are the owner of an item and 
-                            the `export` operation is called, the data provides all the columns.  
-                            If the export is being perform on a view, to ensure the view's 
-                            column definition is honor, then set the value to True. When the 
-                            owner of the service and the value is set to False, all data and 
+        enforce_fld_vis     Optional boolean. Be default when you are the owner of an item and
+                            the `export` operation is called, the data provides all the columns.
+                            If the export is being perform on a view, to ensure the view's
+                            column definition is honor, then set the value to True. When the
+                            owner of the service and the value is set to False, all data and
                             columns will be exported.
         ===============     ====================================================================
 
@@ -7708,9 +7705,42 @@ class Item(dict):
         # find if portal is ArcGIS Online
         if self._gis._portal.is_arcgisonline:
             # Call with owner info
-            resp = self._portal.con.get('content/users/' + self._user_id + "/items/" + self.itemid)
+            if self._user_id != self._gis.users.me.username:
+                url = "{resturl}content/items/{itemid}/groups".format(
+                    resturl=self._gis._portal.resturl,
+                    itemid=self.itemid
+                )
+                resp = self._portal.con.post(url, {'f': 'json'})
+                ret_dict = {'everyone': self.access == 'public',
+                            'org': (self.access == 'public' or self.access == 'org'),
+                            'groups': []}
+                for grpid in resp['admin']:
+                    try:
+                        grp = Group(gis=self._gis, groupid=grpid['id'])
+                        ret_dict['groups'].append(grp)
+                    except:
+                        pass
+                return ret_dict
+            else:
+                resp = self._portal.con.get('content/users/' + self._user_id + "/items/" + self.itemid)
 
         else:  # gis is a portal, find if item resides in a folder
+            if self._user_id != self._gis.users.me.username:
+                url = "{resturl}content/items/{itemid}/groups".format(
+                    resturl=self._gis._portal.resturl,
+                    itemid=self.itemid
+                )
+                resp = self._portal.con.post(url, {'f': 'json'})
+                ret_dict = {'everyone': self.access == 'public',
+                            'org': (self.access == 'public' or self.access == 'org'),
+                            'groups': []}
+                for grpid in resp['admin']:
+                    try:
+                        grp = Group(gis=self._gis, groupid=grpid['id'])
+                        ret_dict['groups'].append(grp)
+                    except:
+                        pass
+                return ret_dict
             if self.ownerFolder is not None:
                 resp = self._portal.con.get('content/users/' + self._user_id + '/' + self.ownerFolder + "/items/" +
                                             self.itemid)
@@ -7787,18 +7817,29 @@ class Item(dict):
         elif isinstance(groups, str):
             #old API - groups sent as comma separated group ids
             group_ids = groups
-        url = "{resturl}/content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
-                                                                  owner=self.owner)
-        params = {
-            'f' : 'json',
-            'items' : self.id,
-            "groups": group_ids,
-            "everyone": everyone,
-            "account": org
-        }
-        if allow_members_to_edit:
-            params['owner'] =self.owner
-            params['confirmItemControl'] = allow_members_to_edit  # True
+        if self.owner == self._gis.users.me.username:
+
+            url = "{resturl}content/users/{owner}/shareItems".format(resturl=self._gis._portal.resturl,
+                                                                      owner=self.owner)
+            params = {
+                'f' : 'json',
+                'items' : self.id,
+                "groups": group_ids,
+                "everyone": everyone,
+                "account": org
+            }
+            if allow_members_to_edit:
+                params['owner'] = self.owner
+                params['confirmItemControl'] = allow_members_to_edit  # True
+        else:
+            url = "{resturl}/content/items/{itemid}/share".format(resturl=self._gis._portal.resturl,
+                                                                  itemid=self.itemid)
+            params = {
+                'f' : 'json',
+                "groups": group_ids,
+                "everyone": everyone,
+                "account": org
+            }
 
         res = self._portal.con.post(url, params)
         self._hydrated = False
@@ -8784,7 +8825,7 @@ class Item(dict):
                 else:
                     min_scale = ms.properties.minScale
                     max_scale = ms.properties.maxScale
-                
+
                 edit_result = manager.edit_tile_service(min_scale=min_scale, max_scale=max_scale)
 
                 # Get LoD from Map Image Layer
@@ -9804,7 +9845,10 @@ class _GISResource(object):
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
-            dictdata = self._con.post(self.url, params, token=self._lazy_token)
+            try:
+                dictdata = self._con.post(self.url, params, token=self._lazy_token)
+            except:
+                dictdata = self._con.get(self.url, params, token=self._lazy_token)
 
         self._lazy_properties = PropertyMap(dictdata)
 

@@ -2121,7 +2121,7 @@ class GeoAccessor(object):
         *Optional parameters when ArcPy library is available in the current environment*:
 
         ===========================     ====================================================================
-        **Key**                         **Value**
+        **Optional Argument**           **Description**
         ---------------------------     --------------------------------------------------------------------
         sql_clause                      sql clause to parse data down. To learn more see
                                         `ArcPy Search Cursor <https://pro.arcgis.com/en/pro-app/arcpy/data-access/searchcursor-class.htm>`_
@@ -2129,6 +2129,9 @@ class GeoAccessor(object):
         where_clause                    where statement. To learn more see `ArcPy SQL reference <https://pro.arcgis.com/en/pro-app/help/mapping/navigation/sql-reference-for-elements-used-in-query-expressions.htm>`_
         ---------------------------     --------------------------------------------------------------------
         fields                          list of strings specifying the field names.
+        ---------------------------     --------------------------------------------------------------------
+        spatial_filter                  A `Geometry` object that will filter the results.  This requires 
+                                        `arcpy` to work.
         ===========================     ====================================================================
 
         :returns: pandas.core.frame.DataFrame

@@ -9,7 +9,7 @@ import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet, FeatureCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
-from ._util import _id_generator, _feature_input, _set_context, _create_output_service
+from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
 
 _log = _logging.getLogger(__name__)
 
@@ -27,7 +27,8 @@ def create_buffers(
     multipart = False,
     output_name = None,
     context = None,
-    gis = None):
+    gis = None,
+    future = False):
     """
 
     A buffer is an area that covers a given distance from a point, line, or polygon feature.
@@ -70,6 +71,8 @@ Parameters:
 
    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
+
+   future: Optional, If True, the value is returned as a GPJob.
 
 Returns:
    output - Output Features as a feature layer collection item
@@ -125,7 +128,10 @@ Returns:
     ]
 
     try:
-        _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True)
+        if future:
+            gpjob = _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        _execute_gp_tool(gis, "CreateBuffers", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
         output_service.delete()

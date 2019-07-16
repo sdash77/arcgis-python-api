@@ -8,6 +8,7 @@ interpolate_points predicts values at new locations based on measurements found 
 
 import arcgis as _arcgis
 
+
 def calculate_density(
         input_layer,
         field=None,
@@ -22,7 +23,8 @@ def calculate_density(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        future=False):
     """
     The calculate_density function creates a density map from point or line features by spreading known quantities of
     some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
@@ -32,13 +34,13 @@ def calculate_density(
     a count of the incident per unit area. A higher density value in a new location means that there are more points near
     that location. In many cases, the result layer can be interpreted as a risk surface for future events. For example,
     if the input points represent locations of lightning strikes, the result layer can be interpreted as a risk surface
-    for future lightning strikes.	
-            
-    For line input, the line density surface represents the total amount of line that is near each location. The units of	
-    the calculated density values are the length of line per unit area. For example, if the lines represent rivers, the	
-    result layer will represent the total length of rivers that are within the search radius. This result can be used to	
+    for future lightning strikes.
+
+    For line input, the line density surface represents the total amount of line that is near each location. The units of
+    the calculated density values are the length of line per unit area. For example, if the lines represent rivers, the
+    result layer will represent the total length of rivers that are within the search radius. This result can be used to
     identify areas that are hospitable to grazing animals.
-    
+
     =========================    =========================================================
     **Argument**                 **Description**
     -------------------------    ---------------------------------------------------------
@@ -60,27 +62,29 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     area_units                   Optional string. The units of the calculated density values.
                                  Choice list: ['areaUnits', 'SquareMiles']
-    -------------------------    ---------------------------------------------------------	
+    -------------------------    ---------------------------------------------------------
     classification_type          Optional string. Determines how density values will be classified into polygons.
-                                 Choice list: ['EqualInterval', 'GeometricInterval', 'NaturalBreaks', 'EqualArea', 'StandardDeviation']	
-                                    * EqualInterval—Polygons are created such that the range of density values is equal for each area.	
-                                    * GeometricInterval—Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.	
-                                    * NaturalBreaks—Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.	
-                                    * EqualArea—Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.	
+                                 Choice list: ['EqualInterval', 'GeometricInterval', 'NaturalBreaks', 'EqualArea', 'StandardDeviation']
+                                    * EqualInterval—Polygons are created such that the range of density values is equal for each area.
+                                    * GeometricInterval—Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
+                                    * NaturalBreaks—Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.
+                                    * EqualArea—Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.
                                     * StandardDeviation—Polygons are created based upon the standard deviation of the predicted density values.
     -------------------------    ---------------------------------------------------------
     num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classification_type parameter.
     -------------------------    ---------------------------------------------------------
-    output_name                  Optional string. Additional properties such as output feature service name.	
+    output_name                  Optional string. Additional properties such as output feature service name.
     -------------------------    ---------------------------------------------------------
     context                      Optional string. Additional settings such as processing extent and output spatial reference. For calculate_density, there are two settings.
 
-                                 #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input_layer that intersect the bounding box will be analyzed.	
+                                 #. Extent (extent)-a bounding box that defines the analysis area. Only those points in the input_layer that intersect the bounding box will be analyzed.
                                  #. Output Spatial Reference (outSR)—the output features will be projected into the output spatial reference.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    -------------------------    ---------------------------------------------------------
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     =========================    =========================================================
 
 
@@ -88,17 +92,17 @@ def calculate_density(
 
     .. code-block:: python
 
-        USAGE EXAMPLE: To create a layer that shows density of collisions within 2 miles.	
+        USAGE EXAMPLE: To create a layer that shows density of collisions within 2 miles.
                        The density is classified based upon the standard deviation.
-                       The range of density values is divided into 5 classes.	
-        	
-        collision_density = calculate_density(input_layer=collisions,	
-                                        radius=2,	
-                                        radius_units='Miles',	
-                                        bounding_polygon_layer=zoning_lyr,	
-                                        area_units='SquareMiles',	
-                                        classification_type='StandardDeviation',	
-                                        num_classes=5,	
+                       The range of density values is divided into 5 classes.
+
+        collision_density = calculate_density(input_layer=collisions,
+                                        radius=2,
+                                        radius_units='Miles',
+                                        bounding_polygon_layer=zoning_lyr,
+                                        area_units='SquareMiles',
+                                        classification_type='StandardDeviation',
+                                        num_classes=5,
                                         output_name='density_of_incidents')
 
     """
@@ -117,7 +121,7 @@ def calculate_density(
         num_classes,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def summarize_center_and_dispersion(
         analysis_layer,
@@ -128,7 +132,8 @@ def summarize_center_and_dispersion(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        future=False):
 
     """
     The Summarize Center and Dispersion task finds central features and directional distributions.
@@ -172,6 +177,8 @@ def summarize_center_and_dispersion(
                             specified, the active GIS is used.
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
+    --------------------    ---------------------------------------------------------
+    future                  Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ====================    =========================================================
 
     :returns: Python dictionary with the following keys:
@@ -183,6 +190,7 @@ def summarize_center_and_dispersion(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
     return gis._tools.featureanalysis.summarize_center_and_dispersion(
         analysis_layer,
         summarize_type,
@@ -191,7 +199,7 @@ def summarize_center_and_dispersion(
         group_field,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def find_point_clusters(
         analysis_layer,
@@ -200,34 +208,34 @@ def find_point_clusters(
         search_distance_unit=None,
         output_name=None,
         context=None,
-        gis=None, estimate=False):
+        gis=None, estimate=False, future=False):
 
     """
-    .. image:: _static/images/find_point_clusters/find_point_clusters.png 
+    .. image:: _static/images/find_point_clusters/find_point_clusters.png
 
-    The ``find_point_clusters`` method finds clusters of point features within surrounding 
+    The ``find_point_clusters`` method finds clusters of point features within surrounding
     noise based on their spatial distribution.
 
-    This method uses unsupervised machine learning clustering algorithms to detect 
-    patterns of point features based purely on spatial location and, optionally, 
+    This method uses unsupervised machine learning clustering algorithms to detect
+    patterns of point features based purely on spatial location and, optionally,
     the distance to a specified number of features.
 
-    The result map shows each cluster identified as well as features considered 
-    noise. Multiple clusters will be assigned each color. Colors will be assigned 
+    The result map shows each cluster identified as well as features considered
+    noise. Multiple clusters will be assigned each color. Colors will be assigned
     and repeated so that each cluster is visually distinct from its neighboring clusters.
 
-    This method utilizes two related algorithms. By default the HDBSCAN algorithm is 
-    used to find clusters. If a ``search_distance`` is specified, the DBSCAN algorithm 
-    is used. DBSCAN is only appropriate if there is a very clear search distance to use 
-    for your analysis and will return clusters with similar densities. When 
-    no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters 
+    This method utilizes two related algorithms. By default the HDBSCAN algorithm is
+    used to find clusters. If a ``search_distance`` is specified, the DBSCAN algorithm
+    is used. DBSCAN is only appropriate if there is a very clear search distance to use
+    for your analysis and will return clusters with similar densities. When
+    no ``search_distance`` is specified, HDBSCAN will use a range of distances to separate clusters
     of varying densities from sparser noise resulting in more data-driven clusters.
 
     ====================    =========================================================
     **Argument**            **Description**
     --------------------    ---------------------------------------------------------
     analysis_layer          Required layer. The point feature layer for which
-                            density-based clustering will be calculated. 
+                            density-based clustering will be calculated.
                             See :ref:`Feature Input<FeatureInput>`.
     --------------------    ---------------------------------------------------------
     min_features_cluster    Required integer. The minimum number of features to be
@@ -242,17 +250,17 @@ def find_point_clusters(
                             next closest feature in the cluster, it will not be
                             included in the cluster.
     --------------------    ---------------------------------------------------------
-    search_distance_unit    Optional string. The linear unit to be used with the distance 
-                            value specified for ``search_distance``. You must provide a 
+    search_distance_unit    Optional string. The linear unit to be used with the distance
+                            value specified for ``search_distance``. You must provide a
                             value if ``search_distance`` has been set.
 
                             Choice list: ['Feet', 'Miles', 'Meters', 'Kilometers']
 
                             The default is 'Miles'.
     --------------------    ---------------------------------------------------------
-    output_name             Optional string. If provided, the method will create a 
-                            feature service of the results. You define the name of 
-                            the service. If ``output_name`` is not supplied, the method 
+    output_name             Optional string. If provided, the method will create a
+                            feature service of the results. You define the name of
+                            the service. If ``output_name`` is not supplied, the method
                             will return a feature collection.
     --------------------    ---------------------------------------------------------
     context                 Optional string. Context contains additional settings that affect method execution. For ``find_point_clusters``, there are two settings.
@@ -264,6 +272,8 @@ def find_point_clusters(
                             specified, the active GIS is used.
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
+    --------------------    ---------------------------------------------------------
+    future                  Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ====================    =========================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature collection.
@@ -276,7 +286,7 @@ def find_point_clusters(
                                       search_distance=2,
                                       search_distance_unit='Kilometers',
                                       output_name='find point clusters')
-                
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -287,7 +297,7 @@ def find_point_clusters(
         search_distance_unit,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def find_hot_spots(
         analysis_layer,
@@ -303,19 +313,20 @@ def find_hot_spots(
         cell_size=None,
         cell_size_unit=None,
         distance_band=None,
-        distance_band_unit=None):
+        distance_band_unit=None,
+        future=False):
     """
-    .. image:: _static/images/find_hot_spots/find_hot_spots.png 
+    .. image:: _static/images/find_hot_spots/find_hot_spots.png
 
-    The ``find_hot_spots`` method analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with 
-    points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically 
-    significant spatial clusters of high values (hot spots) and low values (cold spots). For point data when no field is specified, hot spots 
+    The ``find_hot_spots`` method analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with
+    points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically
+    significant spatial clusters of high values (hot spots) and low values (cold spots). For point data when no field is specified, hot spots
     are locations with lots of points and cold spots are locations with very few points.
 
-    The result map layer shows hot spots in red and cold spots in blue. The darkest red features indicate the strongest clustering of high values 
-    or point densities; you can be 99 percent confident that the clustering associated with these features could not be the result of random chance. 
-    Similarly, the darkest blue features are associated with the strongest spatial clustering of low values or the lowest point densities. 
-    Features that are beige are not part of a statistically significant cluster; the spatial pattern associated with these features could very likely 
+    The result map layer shows hot spots in red and cold spots in blue. The darkest red features indicate the strongest clustering of high values
+    or point densities; you can be 99 percent confident that the clustering associated with these features could not be the result of random chance.
+    Similarly, the darkest blue features are associated with the strongest spatial clustering of low values or the lowest point densities.
+    Features that are beige are not part of a statistically significant cluster; the spatial pattern associated with these features could very likely
     be the result of random processes and random chance.
 
     ===================================================================    =========================================================
@@ -332,21 +343,21 @@ def find_hot_spots(
 
                                                                            If an ``analysis_field`` is not supplied, hot spot results are based on point densities only.
     -------------------------------------------------------------------    ---------------------------------------------------------
-    divided_by_field                                                       Optional string. The numeric field in the ``analysis_layer`` that will be used to normalize your data. 
+    divided_by_field                                                       Optional string. The numeric field in the ``analysis_layer`` that will be used to normalize your data.
                                                                            For example, if your points represent crimes, dividing by total population would result in an analysis of crimes per capita rather than raw crime counts.
 
-                                                                           You can use esriPopulation to geoenrich each area feature with the most recent population values, which will then be 
+                                                                           You can use esriPopulation to geoenrich each area feature with the most recent population values, which will then be
                                                                            used as the attribute to divide by. This option will use credits.
     -------------------------------------------------------------------    ---------------------------------------------------------
-    bounding_polygon_layer                                                 Optional layer. When the analysis layer is points and no ``analysis_field`` is specified, you can provide polygons features that define where incidents could have occurred. 
-                                                                           For example, if you are analyzing boating accidents in a harbor, the outline of the harbor might provide a good boundary for where accidents could occur. 
+    bounding_polygon_layer                                                 Optional layer. When the analysis layer is points and no ``analysis_field`` is specified, you can provide polygons features that define where incidents could have occurred.
+                                                                           For example, if you are analyzing boating accidents in a harbor, the outline of the harbor might provide a good boundary for where accidents could occur.
                                                                            When no bounding areas are provided, only locations with at least one point will be included in the analysis. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------    ---------------------------------------------------------
-    aggregation_polygon_layer                                              Optional layer. When the ``analysis_layer`` contains points and no ``analysis_field`` is specified, 
-                                                                           you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units. 
+    aggregation_polygon_layer                                              Optional layer. When the ``analysis_layer`` contains points and no ``analysis_field`` is specified,
+                                                                           you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
                                                                            The number of points that fall within each polygon are counted, and the point count in each polygon is analyzed. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------    ---------------------------------------------------------
-    output_name                                                            Optional string. If provided, the task will create a feature service of the results. 
+    output_name                                                            Optional string. If provided, the task will create a feature service of the results.
                                                                            You define the name of the service. If ``output_name`` is not supplied, the task will return a feature collection.
     -------------------------------------------------------------------    ---------------------------------------------------------
     context                                                                Optional string. Context contains additional settings that affects method execution. For ``find_hot_spots``, there are two settings.
@@ -359,21 +370,23 @@ def find_hot_spots(
     estimate                                                               Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------------------------------------------------    ---------------------------------------------------------
     shape_type                                                             Optional string. The shape of the polygon mesh the input features will be aggregated into.
-                                                                          
+
                                                                             * ``Fishnet``-The input features will be aggregated into a grid of square (fishnet) cells.
                                                                             * ``Hexagon``-The input features will be aggregated into a grid of hexagonal cells.
     -------------------------------------------------------------------    ---------------------------------------------------------
-    cell_size                                                              Optional float. The size of the grid cells used to aggregate your features. 
+    cell_size                                                              Optional float. The size of the grid cells used to aggregate your features.
                                                                            When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
     -------------------------------------------------------------------    ---------------------------------------------------------
     cell_size_unit                                                         Optional string. The units of the ``cell_size`` value. You must provide a value if ``cell_size`` has been set.
-                                                                        
+
                                                                            Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
     -------------------------------------------------------------------    ---------------------------------------------------------
-    distance_band                                                          Optional float. The spatial extent of the analysis neighborhood. This value determines which features are analyzed together 
+    distance_band                                                          Optional float. The spatial extent of the analysis neighborhood. This value determines which features are analyzed together
                                                                            in order to assess local clustering.
     -------------------------------------------------------------------    ---------------------------------------------------------
     distance_band_unit                                                     Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
+    -------------------------------------------------------------------    ---------------------------------------------------------
+    future                                                                 Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ===================================================================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -401,7 +414,8 @@ def find_hot_spots(
         cell_size=cell_size,
         cell_size_unit=cell_size_unit,
         distance_band=distance_band,
-        distance_band_unit=distance_band_unit)
+        distance_band_unit=distance_band_unit,
+        future=future)
 
 
 def find_outliers(analysis_layer,
@@ -418,16 +432,17 @@ def find_outliers(analysis_layer,
                   output_name=None,
                   context=None,
                   gis=None,
-                  estimate=False):
+                  estimate=False,
+                  future=False):
     """
-    .. image:: _static/images/find_outliers/find_outliers.png 
+    .. image:: _static/images/find_outliers/find_outliers.png
 
-    The ``find_outliers`` method analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points 
-    or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant 
+    The ``find_outliers`` method analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points
+    or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant
     spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
 
-    The result map layer shows high outliers in red and low outliers in dark blue. Clusters of high values appear pink and clusters of low values 
-    appear light blue. Features that are beige are not a statistically significant outlier and not part of a statistically significant cluster; the 
+    The result map layer shows high outliers in red and low outliers in dark blue. Clusters of high values appear pink and clusters of low values
+    appear light blue. Features that are beige are not a statistically significant outlier and not part of a statistically significant cluster; the
     spatial pattern associated with these features could very likely be the result of random processes and random chance.
 
     ==================================================================  ===============================================================
@@ -440,27 +455,27 @@ def find_outliers(analysis_layer,
                                                                         * counts (such as the number of traffic accidents)
                                                                         * rates (such as the number of crimes per square mile)
                                                                         * averages (such as the mean math test score)
-                                                                        * indices (such as a customer satisfaction score)  
+                                                                        * indices (such as a customer satisfaction score)
 
                                                                         If an ``analysis_field`` is not supplied, hot spot results are based on point densities only.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    divided_by_field                                                    Optional string. The numeric field in the ``analysis_layer`` that will be used to normalize your data. 
-                                                                        For example, if your points represent crimes, dividing by total population would result in an analysis 
+    divided_by_field                                                    Optional string. The numeric field in the ``analysis_layer`` that will be used to normalize your data.
+                                                                        For example, if your points represent crimes, dividing by total population would result in an analysis
                                                                         of crimes per capita rather than raw crime counts.
 
-                                                                        You can use esriPopulation to geoenrich each area feature with the most recent population values, 
+                                                                        You can use esriPopulation to geoenrich each area feature with the most recent population values,
                                                                         which will then be used as the attribute to divide by. This option will use credits.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    bounding_polygon_layer                                              Optional layer. When the analysis layer is points and no ``analysis_field`` is specified, you can provide polygon features that define where incidents could have occurred. 
-                                                                        For example, if you are analyzing boating accidents in a harbor, the outline of the harbor might provide a good boundary for where accidents could occur. 
+    bounding_polygon_layer                                              Optional layer. When the analysis layer is points and no ``analysis_field`` is specified, you can provide polygon features that define where incidents could have occurred.
+                                                                        For example, if you are analyzing boating accidents in a harbor, the outline of the harbor might provide a good boundary for where accidents could occur.
                                                                         When no bounding areas are provided, only locations with at least one point will be included in the analysis. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    aggregation_polygon_layer                                           Optional layer. When the ``analysis_layer`` contains points and no ``analysis_field`` is specified, you can provide polygon features into which the 
-                                                                        points will be aggregated and analyzed, such as administrative units. The number of points that fall within each polygon 
+    aggregation_polygon_layer                                           Optional layer. When the ``analysis_layer`` contains points and no ``analysis_field`` is specified, you can provide polygon features into which the
+                                                                        points will be aggregated and analyzed, such as administrative units. The number of points that fall within each polygon
                                                                         are counted, and the point count in each polygon is analyzed. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    permutations                                                        Optional string. Permutations are used to determine how likely it would be to find the actual spatial distribution of the values you are analyzing. 
-                                                                        Choosing the number of permutations is a balance between precision and increased processing time. A lower number of permutations 
+    permutations                                                        Optional string. Permutations are used to determine how likely it would be to find the actual spatial distribution of the values you are analyzing.
+                                                                        Choosing the number of permutations is a balance between precision and increased processing time. A lower number of permutations
                                                                         can be used when first exploring a problem, but it is best practice to increase the permutations to the highest number feasible for final results.
 
                                                                         Choice list: ['Speed', 'Balance', 'Presision']
@@ -474,17 +489,17 @@ def find_outliers(analysis_layer,
                                                                         * ``Fishnet``—The input features will be aggregated into a grid of square (fishnet) cells.
                                                                         * ``Hexagon``—The input features will be aggregated into a grid of hexagonal cells.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    cell_size                                                           Optional float. The size of the grid cells used to aggregate your features. When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.                                                                 
+    cell_size                                                           Optional float. The size of the grid cells used to aggregate your features. When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     cell_units                                                          Optional string. The units of the ``cell_size`` value. You must provide a value if ``cell_size`` has been set.
-                                                                         
+
                                                                         Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    distance_band                                                       Optional float. The spatial extent of the analysis neighborhood. This value determines which features are analyzed together 
+    distance_band                                                       Optional float. The spatial extent of the analysis neighborhood. This value determines which features are analyzed together
                                                                         in order to assess local clustering.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     band_units                                                          Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
-                                                        
+
                                                                         Choice list: ['Meters', 'Miles', 'Feet', 'Kilometers']
     ------------------------------------------------------------------  ---------------------------------------------------------------
     output_name                                                         Optional string. If provided, the method will create a feature service of the results. You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
@@ -496,21 +511,23 @@ def find_outliers(analysis_layer,
                                                                         #. Output Spatial Reference (outSR)—the data will be projected into the output spatial reference prior to analysis.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
+    ------------------------------------------------------------------  ---------------------------------------------------------------
+    future                                                              Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ==================================================================  ===============================================================
 
     :Returns:
     Item if output_name is set. else results in a dict with the following keys:
 
        "find_outliers_result_layer" : layer (FeatureCollection)
-       
+
        "process_info" : list of messages
     .. code-block:: python
 
          #USAGE EXAMPLE: To find statistically significant outliers within the collision clusters.
-         outliers = find_outliers(analysis_layer=collisions, 
-                                  shape_type='fishnet', 
+         outliers = find_outliers(analysis_layer=collisions,
+                                  shape_type='fishnet',
                                   output_name='find outliers')
- 
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -527,7 +544,8 @@ def find_outliers(analysis_layer,
                                                     band_units,
                                                     output_name,
                                                     context,
-                                                    estimate=estimate)
+                                                    estimate=estimate,
+                                                    future=future)
 
 
 def interpolate_points(
@@ -543,30 +561,31 @@ def interpolate_points(
         output_name=None,
         context=None,
         gis=None,
-        estimate=False):
+        estimate=False,
+        future=False):
     """
-    .. image:: _static/images/interpolate_points/interpolate_points.png 
+    .. image:: _static/images/interpolate_points/interpolate_points.png
 
-    The ``interpolate_points`` method allows you to predict values at new locations based on measurements 
-    from a collection of points. The method takes point data with values at each point and returns 
+    The ``interpolate_points`` method allows you to predict values at new locations based on measurements
+    from a collection of points. The method takes point data with values at each point and returns
     areas classified by predicted values. For example:
 
-    * An air quality management district has sensors that measure pollution levels. 
-      ``interpolate_points`` can be used to predict pollution levels at locations that don't have sensors, 
+    * An air quality management district has sensors that measure pollution levels.
+      ``interpolate_points`` can be used to predict pollution levels at locations that don't have sensors,
       such as locations with at-risk populations—schools or hospitals, for example.
     * Predict heavy metal concentrations in crops based on samples taken from individual plants.
-    * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other 
-      indicators (such as electrical conductivity) in order to study their relationships to crop yield 
+    * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other
+      indicators (such as electrical conductivity) in order to study their relationships to crop yield
       and prescribe precise amounts of fertilizer for each location in the field.
-    * Meteorological applications include prediction of temperatures, rainfall, 
+    * Meteorological applications include prediction of temperatures, rainfall,
       and associated variables (such as acid rain).
 
-    ``interpolate_points`` uses the `Empirical Bayesian 
-    Kriging <http://desktop.arcgis.com/en/arcmap/latest/tools/geostatistical-analyst-toolbox/empirical-bayesian-kriging.htm>`_ 
-    geoprocessing tool to perform the interpolation. The parameters that are supplied to 
+    ``interpolate_points`` uses the `Empirical Bayesian
+    Kriging <http://desktop.arcgis.com/en/arcmap/latest/tools/geostatistical-analyst-toolbox/empirical-bayesian-kriging.htm>`_
+    geoprocessing tool to perform the interpolation. The parameters that are supplied to
     the Empirical Bayesian Kriging tool are controlled by the ``interpolate_option`` request parameter.
 
-    If a value of 1 is provided for ``interpolate_option``, empirical Bayesian kriging will 
+    If a value of 1 is provided for ``interpolate_option``, empirical Bayesian kriging will
     use the following parameters:
 
     * transformation_type—NONE
@@ -577,7 +596,7 @@ def interpolate_points(
     * nbrMin—8
     * nbrMax—8
 
-    If a value of 5 is provided for ``interpolate_option``, empirical Bayesian kriging 
+    If a value of 5 is provided for ``interpolate_option``, empirical Bayesian kriging
     will use the following parameters:
 
     * transformation_type—NONE
@@ -587,8 +606,8 @@ def interpolate_points(
     * number_semivariograms—100
     * nbrMin—10
     * nbrMax—10
-    
-    If a value of 9 is provided for ``interpolate_option``, empirical Bayesian kriging 
+
+    If a value of 9 is provided for ``interpolate_option``, empirical Bayesian kriging
     will use the following parameters:
 
     * transformation_type—EMPIRICAL
@@ -601,75 +620,77 @@ def interpolate_points(
 
     ===========================  ===========================================================================================
     **Argument**                 **Description**
-    ---------------------------  -------------------------------------------------------------------------------------------        
+    ---------------------------  -------------------------------------------------------------------------------------------
     input_layer                  Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  ------------------------------------------------------------------------------------------- 
+    ---------------------------  -------------------------------------------------------------------------------------------
     field                        Required string. Name of the numeric field containing the values you wish to interpolate.
-    ---------------------------  -------------------------------------------------------------------------------------------     
-    interpolate_option           Optional integer. Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate). 
+    ---------------------------  -------------------------------------------------------------------------------------------
+    interpolate_option           Optional integer. Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate).
                                  More accurate predictions take longer to calculate.
 
                                  Choice list: [1, 5, 9].
-                                 
-                                 The default is 5. 
-    ---------------------------  -------------------------------------------------------------------------------------------      
-    output_prediction_error      Optional boolean. If True, a polygon layer of standard errors for the interpolation 
+
+                                 The default is 5.
+    ---------------------------  -------------------------------------------------------------------------------------------
+    output_prediction_error      Optional boolean. If True, a polygon layer of standard errors for the interpolation
                                  predictions will be returned in the ``prediction_error`` output parameter.
 
-                                 Standard errors are useful because they provide information about the reliability of the predicted values. 
-                                 A simple rule of thumb is that the true value will fall within two standard errors of the predicted 
-                                 value 95 percent of the time. For example, suppose a new location gets a predicted value of 50 with a 
-                                 standard error of 5. This means that this task's best guess is that the true value at that location is 50, 
-                                 but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values, 
-                                 multiply the standard error by 2, add this value to the predicted value to get the upper end of the range, 
+                                 Standard errors are useful because they provide information about the reliability of the predicted values.
+                                 A simple rule of thumb is that the true value will fall within two standard errors of the predicted
+                                 value 95 percent of the time. For example, suppose a new location gets a predicted value of 50 with a
+                                 standard error of 5. This means that this task's best guess is that the true value at that location is 50,
+                                 but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values,
+                                 multiply the standard error by 2, add this value to the predicted value to get the upper end of the range,
                                  and subtract it from the predicted value to get the lower end of the range.
-    ---------------------------  -------------------------------------------------------------------------------------------  
+    ---------------------------  -------------------------------------------------------------------------------------------
     classification_type          Optional string. Determines how predicted values will be classified into areas.
-                                 
-                                 * ``EqualArea``—Polygons are created such that the number of data values in each area is equal. 
+
+                                 * ``EqualArea``—Polygons are created such that the number of data values in each area is equal.
                                    For example, if the data has more large values than small values, more areas will be created for large values.
                                  * ``EqualInterval``—Polygons are created such that the range of predicted values is equal for each area.
-                                 * ``GeometricInterval``—Polygons are based on class intervals that have a geometrical series. 
-                                   This method ensures that each class range has approximately the same number of values within 
+                                 * ``GeometricInterval``—Polygons are based on class intervals that have a geometrical series.
+                                   This method ensures that each class range has approximately the same number of values within
                                    each class and that the change between intervals is consistent.
-                                 * ``Manual``—You to define your own range of values for areas. These values will be entered in 
+                                 * ``Manual``—You to define your own range of values for areas. These values will be entered in
                                    the ``class_breaks`` parameter below.
-                                 
+
                                  Choice list: ['EqualArea', 'EqualInterval', 'GeometricInterval', 'Manual']
-                                 
+
                                  The default is 'GeometricInterval'.
-    ---------------------------  -------------------------------------------------------------------------------------------     
-    num_classes                  Optional integer. This value is used to divide the range of interpolated values into distinct classes. 
-                                 The range of values in each class is determined by the ``classification_type`` parameter. 
+    ---------------------------  -------------------------------------------------------------------------------------------
+    num_classes                  Optional integer. This value is used to divide the range of interpolated values into distinct classes.
+                                 The range of values in each class is determined by the ``classification_type`` parameter.
                                  Each class defines the boundaries of the result polygons.
 
                                  The default is 10. The maximum value is 32.
-    ---------------------------  -------------------------------------------------------------------------------------------      
-    class_breaks                 Optional list of floats. If ``classification_type`` is Manual, supply desired class break values separated by spaces. 
-                                 These values define the upper limit of each class, so the number of classes will equal the number of entered values. 
-                                 Areas will not be created for any locations with predicted values above the largest entered break value. 
+    ---------------------------  -------------------------------------------------------------------------------------------
+    class_breaks                 Optional list of floats. If ``classification_type`` is Manual, supply desired class break values separated by spaces.
+                                 These values define the upper limit of each class, so the number of classes will equal the number of entered values.
+                                 Areas will not be created for any locations with predicted values above the largest entered break value.
                                  You must enter at least two values and no more than 32.
-    ---------------------------  -------------------------------------------------------------------------------------------    
-    bounding_polygon_layer       Optional layer. A layer specifying the polygon(s) where you want values to be interpolated.  For example, 
-                                 if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this 
+    ---------------------------  -------------------------------------------------------------------------------------------
+    bounding_polygon_layer       Optional layer. A layer specifying the polygon(s) where you want values to be interpolated.  For example,
+                                 if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this
                                  parameter and the output will only contain polygons within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  -------------------------------------------------------------------------------------------       
-    predict_at_point_layer       Optional layer. An optional layer specifying point locations to calculate prediction values. 
-                                 This allows you to make predictions at specific locations of interest. For example, if the ``input_layer`` represents 
-                                 measurements of pollution levels, you can use this parameter to predict the pollution levels of locations with large 
-                                 at-risk populations, such as schools or hospitals. You can then use this information to give recommendations to health 
+    ---------------------------  -------------------------------------------------------------------------------------------
+    predict_at_point_layer       Optional layer. An optional layer specifying point locations to calculate prediction values.
+                                 This allows you to make predictions at specific locations of interest. For example, if the ``input_layer`` represents
+                                 measurements of pollution levels, you can use this parameter to predict the pollution levels of locations with large
+                                 at-risk populations, such as schools or hospitals. You can then use this information to give recommendations to health
                                  officials in those locations.
 
                                  If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  -------------------------------------------------------------------------------------------    
-    output_name                  Optional string. If provided, the method will create a feature service of the results. 
+    ---------------------------  -------------------------------------------------------------------------------------------
+    output_name                  Optional string. If provided, the method will create a feature service of the results.
                                  You define the name of the service. If ``output_name`` is not supplied, the method will return a feature collection.
-    ---------------------------  -------------------------------------------------------------------------------------------         
+    ---------------------------  -------------------------------------------------------------------------------------------
     context                      Optional string. Additional settings such as processing extent and output spatial reference.
-    ---------------------------  -------------------------------------------------------------------------------------------          
+    ---------------------------  -------------------------------------------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    ---------------------------  -------------------------------------------------------------------------------------------     
+    ---------------------------  -------------------------------------------------------------------------------------------
     estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
+    ---------------------------  -------------------------------------------------------------------------------------------
+    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
     ===========================  ===========================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -689,7 +710,7 @@ def interpolate_points(
                                           output_prediction_error=True,
                                           classification_type='GeometricInterval',
                                           num_classes=10,
-                                          output_name='interpolate coal mines production')                 
+                                          output_name='interpolate coal mines production')
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -705,5 +726,6 @@ def interpolate_points(
         predict_at_point_layer,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate,
+        future=future)
 

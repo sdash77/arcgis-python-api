@@ -205,14 +205,7 @@ def _generate_fn(task, tbx):
         src_code += '\n\t                 {"name":"' + retval['name'] + '", "display_name":"' + \
                                             retval['display_name'] + '", "type":' + retval['type'].__name__ + "},"
     src_code += '\n\t                ]\n\n'
-    #src_code += '\tif future:\n\t'
-    #src_code += '\n\t\texecutor =  concurrent.futures.ThreadPoolExecutor(1)\n'
-    #src_code += '\n\t\tfuture = executor.submit(_execute_gp_tool, *(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)) \n'
-    #src_code += '\n\t\texecutor.shutdown(False)\n'
-    #src_code += '\n\t\treturn future\n'
-    #src_code += '\telse:\n'
-    src_code += '\n\tprint(future)\n'
-                                           
+
     src_code += '\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url, future=future)'
 
     src_code += '\n\n\n'
@@ -435,10 +428,21 @@ _log = _logging.getLogger(__name__)
 
     src_code += '\n_url = "' + url + '"'
     src_code += '\n_use_async = ' + str(use_async) + '\n\n'
+    if len(tbx.properties.tasks) < 4:
+        for task in tbx.properties.tasks:
+            fn_src = _generate_fn(task, tbx)
+            src_code += fn_src
+    else:
+        source = []
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(8) as executor:
 
-    for task in tbx.properties.tasks:
-        fn_src = _generate_fn(task, tbx)
-        src_code += fn_src
+            for task in tbx.properties.tasks:
+                #_generate_fn(task, tbx)
+                f = executor.submit(fn=_generate_fn, **{"task": task, "tbx" :tbx})
+                source.append(f)
+        for fn_src in source:
+            src_code += fn_src.result()
 
     return _import_code(src_code, 'name', verbose)
     #print(src_code)
