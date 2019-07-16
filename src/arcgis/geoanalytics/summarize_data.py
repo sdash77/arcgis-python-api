@@ -25,87 +25,194 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 
 def build_multivariable_grid(input_layers,
-                           variable_calculations,
-                           bin_size,
-                           bin_unit="Meters",
-                           bin_type="Square",
-                           output_name=None,
-                           gis=None):
-    """
-    Only available at ArcGIS Enterprise 10.6.1 and later.
+                             variable_calculations,
+                             bin_size,
+                             bin_unit="Meters",
+                             bin_type="Square",
+                             output_name=None,
+                             gis=None):
+    """    
 
-    The Build Multi-Variable Grid task works with one or more layers of point, line, or polygon
-    features. The task generates a grid of square or hexagonal bins and compiles information about
-    each input layer into each bin. For each input layer, this information can include the following
-    variables:
+    .. image:: _static/images/Grid/Grid.png 
 
-        + Distance to Nearest - The distance from each bin to the nearest feature.
-        + Attribute of Nearest - An attribute value of the feature nearest to each bin.
-        + Attribute Summary of Related - A statistical summary of all features within
-          search distance of each bin.
+    The ``build_multivariable_grid`` task works with one or more layers of point, line, or polygon features. 
+    The task generates a grid of square or hexagonal bins and compiles information about each input layer into each bin. 
+    For each input layer, this information can include the following variables:
 
-    Only variables you specify in variable_calculations will be included in the result layer. These
-    variables can help you understand the proximity of your data throughout the extent of your
-    analysis. The results can help you answer questions such as the following:
+        * ``Distance to Nearest`` - The distance from each bin to the nearest feature.
+        * ``Attribute of Nearest`` - An attribute value of the feature nearest to each bin.
+        * ``Attribute Summary of Related`` - A statistical summary of all features within ``search_distance`` of each bin.
 
-        + Given multiple layers of public transportation infrastructure, where in the city is least
-          accessible by public transportation?
-        + Given layers of lakes and rivers, what is the name of the water body closest to each
-          location in the US?
-        + Given a layer of household income, where in the US is the variation of income in the
-          surrounding 50 miles the largest?
+    Only variables you specify in ``variable_calculations`` will be included in the result layer. These variables can help 
+    you understand the proximity of your data throughout the extent of your analysis. The results can help you answer 
+    questions such as the following:
 
-    The result of Build Multi-Variable Grid can also be used in prediction and classification
-    workflows. The task allows you to calculate and compile information from many different data
-    sources into a single, spatially continuous layer in one step, reducing the amount of effort
-    required to build prediction and classification models.
+        * Given multiple layers of public transportation infrastructure, what part of the city is least accessible by public transportation?
+        * Given layers of lakes and rivers, what is the name of the water body closest to each location in the U.S.?
+        * Given a layer of household income, where in the U.S. is the variation of income in the surrounding 50 miles the greatest?
 
+    The result of ``build_multivariable_grid`` can also be used in prediction and classification workflows. The task allows you 
+    to calculate and compile information from many different data sources into a single, spatially continuous layer in one step. 
+    This layer can then be used with the Enrich From Multi-Variable Grid task to quickly enrich point features with the variables 
+    you have calculated, reducing the amount of effort required to build prediction and classification models from point data.
 
-    =======================   ===================================================================
-    **Arguments**             **Description**
-    -----------------------   -------------------------------------------------------------------
-    input_layers              Required list of FeatureLayers. A list of input layers that will be
-                              used in analysis. Each input layer follows the same formatting as
-                              described in the Feature Input topic. This can be one of the
-                              following:
+    ===================================================================    =============================================================================
+    **Argument**                                                                                    **Description**
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    input_layers                                                           Required list of layers. A list of input layers that will be used in analysis. 
+                                                                           See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    variable_calculations                                                  Required list of dicts. A dict containing objects that describe 
+                                                                           the variables that will be calculated for each layer in ``input_layers``.
 
-                                 - A URL to a feature service layer with an optional filter to
-                                   select specific features
-                                 - A URL to a big data catalog service layer with an optional
-                                   filter to select specific features
-                                 - A feature collection
+                                                                           [
+                                                                                {
+                                                                                    "layer":<index>,
+                                                                                    "variables":[
+                                                                                        {
+                                                                                            "type":"DistanceToNearest",
+                                                                                            "outFieldName":"<output field name>",
+                                                                                            "searchDistance":<number>,
+                                                                                            "searchDistanceUnit":"<unit>",
+                                                                                            "filter":"<filter>"
+                                                                                        },
+                                                                                        {
+                                                                                            "type":"AttributeOfNearest",
+                                                                                            "outFieldName":"<output field name>",
+                                                                                            "attributeField":"<field name>",
+                                                                                            "searchDistance":<number>,
+                                                                                            "searchDistanceUnit":"<unit>",
+                                                                                            "filter":"<filter>"
+                                                                                        },
+                                                                                        {
+                                                                                            "type":"AttributeSummaryOfRelated",
+                                                                                            "outFieldName":"<output field name>",
+                                                                                            "statisticType":"<statistic type>",
+                                                                                            "statisticField":"<field name>",
+                                                                                            "searchDistance":<number>,
+                                                                                            "searchDistanceUnit":"<unit>",
+                                                                                            "filter":"<filter>"
+                                                                                        },
+                                                                                        ...
+                                                                                    ]
+                                                                                },
+                                                                                ...
+                                                                            ]
 
-    -----------------------   -------------------------------------------------------------------
-    variable_calculations     Required list of dictionaries. A JSON array containing objects that
-                              describe the input layers and the attributes that will be
-                              calculated for each layer.
-    -----------------------   -------------------------------------------------------------------
-    bin_size                  Required float. The distance for the bins of type binType in the
-                              output polygon layer. Enrichment attributes will be calculated at
-                              the center of each bin. When generating bins, for Square, the
-                              number and units specified determine the height and length of the
-                              square. For Hexagon, the number and units specified determine the
-                              distance between parallel sides.
-    -----------------------   -------------------------------------------------------------------
-    bin_unit                  Optional string. The distance unit for the bins that will be used
-                              to calculate enrichment attributes.
+                                                                           layer is the index of the layer in ``input_layers`` that will be 
+                                                                           used to calculate the specified variables.
 
-                              Values: Meters (default), Kilometers, Feet, Miles, NauticalMiles,
-                              or Yards
-    -----------------------   -------------------------------------------------------------------
-    bin_type                  Optional string. The type of bin that will be generated. Bin
-                              options are the following:
+                                                                           Variables is an array of dict objects that describe the variables 
+                                                                           you want to include in the result layer. The array must contain at least 
+                                                                           one variable for each layer.
 
-                                + Hexagon.
-                                + Square (default)
-    -----------------------   -------------------------------------------------------------------
-    output_name               Optional string. output name of the layer
-    -----------------------   -------------------------------------------------------------------
-    gis                       Optional GIS.  The enterprise site that you want to connect to.
-    =======================   ===================================================================
+                                                                           type can be one of the following variable types:
 
-    :returns: Feature Layer
+                                                                                * DistanceToNearest
+                                                                                * AttributeOfNearest
+                                                                                * AttributeSummaryOfRelated
 
+                                                                           Each type must be configured with a unique set of parameters:
+
+                                                                            * ``outFieldName`` is the name of the field that will be created in the result 
+                                                                              layer to store a variable. This is required.
+                                                                            * ``searchDistance`` and searchDistanceUnit are a number and linear unit. 
+                                                                              For DistanceToNearest and AttributeOfNearest, searchDistance and searchDistanceUnit 
+                                                                              are required and define the maximum distance that the tool will search from the 
+                                                                              center of each bin to find a feature in the layer. If no feature is within the 
+                                                                              distance, null is returned. For AttributeSummaryOfRelated, searchDistance and 
+                                                                              searchDistanceUnit are optional and define the radius of a circular neighborhood 
+                                                                              surrounding each bin. All features that intersect this neighborhood will be used 
+                                                                              to calculate statisticType. If a distance is not defined, only features that 
+                                                                              intersect a bin will be used to calculate statisticType.
+                                                                            * ``attributeField`` is required by AttributeOfNearest and is the name of a field `
+                                                                              in the input layer. The value of this field in the closest feature to each bin will 
+                                                                              be included in the result layer.
+                                                                            * ``statisticField`` is required by AttributeSummaryOfRelated and is the name of a 
+                                                                              field in the input layer. This field's values will be used to calculate statisticType.
+                                                                            * ``statisticType`` is required by AttributeSummaryOfRelated and is one of the following 
+                                                                              when statisticField is a numeric field:
+
+                                                                                * ``Count`` - Totals the number of features near or intersecting each bin.
+                                                                                * ``Sum`` - Adds the total value of all features near or intersecting each bin.
+                                                                                * ``Mean`` - Calculates the average of all features near or intersecting each bin.
+                                                                                * ``Min`` - Finds the smallest value of all features near or intersecting each bin.
+                                                                                * ``Max`` - Finds the largest value of all features near or intersecting each bin.
+                                                                                * ``Range`` - Finds the difference between Min and Max.
+                                                                                * ``Stddev`` - Finds the standard deviation of all features near or intersecting each bin.
+                                                                                * ``Var`` - Finds the variance of all features near or intersecting each bin.
+
+                                                                            * ``statisticType`` is one of the following when statisticField is a string field:
+
+                                                                                * Count—Totals the number of strings for all features near or intersecting each bin.
+                                                                                * Any—Returns a sample string of all features near or intersecting each bin.
+
+                                                                            * ``filter`` is optional for all variable types and is formatted as described in the Feature Input topic.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    bin_size                                                               Required float. The distance for the bins of type ``bin_type`` in the output polygon layer. 
+                                                                           ``variable_calculations`` will be calculated at the center of each bin. When generating bins, 
+                                                                           for Square, the number and units specified determine the height and length of the square. 
+                                                                           For Hexagon, the number and units specified determine the distance between parallel sides.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    bin_unit                                                               Optional string. The distance unit for the bins that will be used to calculate ``variable_calculations``.
+                                                                           
+                                                                           Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    bin_type                                                               Optional string. The type of bin that will be used to generate the result grid. Bin options are the following:
+
+                                                                           Choice list: ['Hexagon', 'Square']
+
+                                                                           .. Note::
+                                                                            Analysis using Square or Hexagon bins requires a projected coordinate system. 
+                                                                            When aggregating layers into bins, the input layers or processing extent (``processSR``) 
+                                                                            must have a projected coordinate system. If a projected coordinate system is not 
+                                                                            specified when running analysis, the World Cylindrical Equal Area (WKID 54034) projection 
+                                                                            will be used. At 10.7 or later, if a projected coordinate system is not specified when 
+                                                                            running analysis, a projection will be picked based on the extent of the data.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
+    -------------------------------------------------------------------    -----------------------------------------------------------------------------
+    context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                           #. Extent (``extent``)—A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                           #. Processing spatial reference (``processSR``)—The features will be projected into this coordinate system for analysis.
+                                                                           #. Output spatial reference (``outSR``)—The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                           #. Data store (``dataStore``)—Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    ===================================================================    =============================================================================
+
+    :returns: boolean
+
+    .. code-block:: python
+
+            # Usage Example: To create multivariable grid by summarizing information such as distance to nearest 
+
+            variables = [ { "layer":0,
+                            "variables":[
+                                { "type":"DistanceToNearest",
+                                  "outFieldName":"road",
+                                  "searchDistance":10,
+                                  "searchDistanceUnit":"Kilometers"
+                                }
+                            ]
+                          },
+                          { "layer":1,
+                          "variables":[
+                              { "type":"AttributeSummaryOfRelated",
+                                "outFieldName":"MeanPopAge",
+                                "statisticType":"Mean",
+                                "statisticField":"Age",
+                                "searchDistance":50,
+                                "searchDistanceUnit":"Kilometers"
+                              }
+                          ]
+                          }
+                        ]
+            grid = build_multivariable_grid(input_layers=[lyr0, lyr1],
+                                            variable_calculations=variables,
+                                            bin_size=100,
+                                            bin_unit='Meters',
+                                            bin_type='Square',
+                                            output_name="multi_variable_grid")
     """
     kwargs=locals()
 
