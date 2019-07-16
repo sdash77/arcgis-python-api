@@ -9,10 +9,9 @@ summarize_within calculates statistics for area features and attributes that ove
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
-from arcgis.features._async import _run_async
 
-def aggregate_points(
-                     point_layer,
+
+def aggregate_points(point_layer,
                      polygon_layer,
                      keep_boundaries_with_no_points=True,
                      summary_fields=[],
@@ -87,23 +86,7 @@ def aggregate_points(
 
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "point_layer" : point_layer,
-            "polygon_layer" : polygon_layer,
-            "keep_boundaries_with_no_points" : keep_boundaries_with_no_points,
-            "summary_fields" : summary_fields,
-            "group_by_field" : group_by_field,
-            "minority_majority" : minority_majority,
-            "percent_points" : percent_points,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.aggregate_points,
-                          **inputs)
-    else:
-        return gis._tools.featureanalysis.aggregate_points(
+    return gis._tools.featureanalysis.aggregate_points(
                      point_layer,
                      polygon_layer,
                      keep_boundaries_with_no_points,
@@ -113,7 +96,7 @@ def aggregate_points(
                      percent_points,
                      output_name,
                      context,
-                     estimate=estimate)
+                     estimate=estimate, future=future)
 
 
 
@@ -322,28 +305,7 @@ def summarize_nearby(sum_nearby_layer,
         if near_type != 'StraightLine':
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
             near_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == near_type][0]
-    if future:
-        inputs = {
-            "sum_nearby_layer" : sum_nearby_layer,
-            "summary_layer" : summary_layer,
-            "near_type" : near_type,
-            "distances": distances,
-            "units" : units,
-            "time_of_day" : _date_handler(time_of_day),
-            "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-            "return_boundaries" : return_boundaries,
-            "sum_shape": sum_shape,
-            "shape_units" : shape_units,
-            "summary_fields" : summary_fields,
-            "group_by_field" : group_by_field,
-            "minority_majority" : minority_majority,
-            "percent_shape" : percent_shape,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.summarize_nearby,
-                          **inputs)
+
     return gis._tools.featureanalysis.summarize_nearby(
                      sum_nearby_layer,
                      summary_layer,
@@ -361,7 +323,7 @@ def summarize_nearby(sum_nearby_layer,
                      percent_shape,
                      output_name,
                      context,
-                     estimate=estimate)
+                     estimate=estimate, future=future)
 
 
 def summarize_center_and_dispersion(
@@ -440,19 +402,6 @@ def summarize_center_and_dispersion(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "analysis_layer" : analysis_layer,
-            "summarize_type": summarize_type,
-            "ellipse_size" : ellipse_size,
-            "weight_field" : weight_field,
-            "group_field" : group_field,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.summarize_center_and_dispersion,
-                          **inputs)
     return gis._tools.featureanalysis.summarize_center_and_dispersion(
         analysis_layer,
         summarize_type,
@@ -461,7 +410,7 @@ def summarize_center_and_dispersion(
         group_field,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 
 def summarize_within(sum_within_layer,
@@ -575,22 +524,6 @@ def summarize_within(sum_within_layer,
                                              context={"extent":{"xmin":-13160690.837046918,"ymin":4041586.5461609075,"xmax":-13132466.464352652,"ymax":4058001.397985127,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "sum_within_layer" : sum_within_layer,
-            "summary_layer" : summary_layer,
-            "sum_shape" : sum_shape,
-            "shape_units" : shape_units,
-            "summary_fields" : summary_fields,
-            "group_by_field" : group_by_field,
-            "minority_majority" : minority_majority,
-            "percent_shape" : percent_shape,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.summarize_within,
-                          **inputs)
     return gis._tools.featureanalysis.summarize_within(
                      sum_within_layer,
                      summary_layer,
@@ -602,7 +535,7 @@ def summarize_within(sum_within_layer,
                      percent_shape,
                      output_name,
                      context,
-                     estimate=estimate)
+                     estimate=estimate, future=future)
 
 
 def join_features(target_layer,
@@ -710,22 +643,7 @@ def join_features(target_layer,
                                                       context={"extent":{"xmin":-9375809.87305117,"ymin":4031882.3806860778,"xmax":-9370182.196843527,"ymax":4034872.9794178144,"spatialReference":{"wkid":102100,"latestWkid":3857}}}, )
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "target_layer" : target_layer,
-            "join_layer" : join_layer,
-            "spatial_relationship" : spatial_relationship,
-            "spatial_relationship_distance" : spatial_relationship_distance,
-            "spatial_relationship_distance_units" : spatial_relationship_distance_units,
-            "attribute_relationship" : attribute_relationship,
-            "join_operation" : join_operation,
-            "summary_fields" : summary_fields,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.join_features,
-                          **inputs)
+
     return gis._tools.featureanalysis.join_features(
         target_layer,
         join_layer,
@@ -737,4 +655,4 @@ def join_features(target_layer,
         summary_fields,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)

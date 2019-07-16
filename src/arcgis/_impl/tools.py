@@ -27,13 +27,203 @@ from arcgis.geocoding import Geocoder
 from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
 from arcgis.features import Feature, FeatureSet, FeatureCollection
 from six.moves.urllib.error import HTTPError
-
+from arcgis.geoprocessing import import_toolbox
 _log = logging.getLogger(__name__)
 
 
 __all__ = ['_GeoanalyticsTools', '_FeatureAnalysisTools', '_GeometryService', '_RasterAnalysisTools']
+#--------------------------------------------------------------------------
+def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+#--------------------------------------------------------------------------
+@contextmanager
+def _tempinput(data):
+    temp = tempfile.NamedTemporaryFile(delete=False)
+    temp.write((bytes(data, 'UTF-8')))
+    temp.close()
+    yield temp.name
+    os.unlink(temp.name)
+###########################################################################
+class BaseAnalytics(object):
+    def _feature_input(self, input_layer):
 
+        point_fs = {
+            "layerDefinition":{
+                "currentVersion":10.11,
+                "copyrightText":"",
+               "defaultVisibility":True,
+              "relationships":[
 
+                  ],
+              "isDataVersioned":False,
+              "supportsRollbackOnFailureParameter":True,
+              "supportsStatistics":True,
+              "supportsAdvancedQueries":True,
+              "geometryType":"esriGeometryPoint",
+              "minScale":0,
+              "maxScale":0,
+              "objectIdField":"OBJECTID",
+              "templates":[
+
+                  ],
+              "type":"Feature Layer",
+              "displayField":"TITLE",
+              "visibilityField":"VISIBLE",
+              "name":"startDrawPoint",
+              "hasAttachments":False,
+              "typeIdField":"TYPEID",
+              "capabilities":"Query",
+              "allowGeometryUpdates":True,
+              "htmlPopupType":"",
+              "hasM":False,
+              "hasZ":False,
+              "globalIdField":"",
+              "supportedQueryFormats":"JSON",
+              "hasStaticData":False,
+              "maxRecordCount":-1,
+              "indexes":[
+
+                  ],
+              "types":[
+
+                  ],
+              "fields":[
+                  {
+                      "alias":"OBJECTID",
+                      "name":"OBJECTID",
+                     "type":"esriFieldTypeOID",
+                    "editable":False
+                    },
+                  {
+                      "alias":"Title",
+                     "name":"TITLE",
+                     "length":50,
+                    "type":"esriFieldTypeString",
+                    "editable":True
+                    },
+                  {
+                     "alias":"Visible",
+                     "name":"VISIBLE",
+                     "type":"esriFieldTypeInteger",
+                    "editable":True
+                    },
+                 {
+                     "alias":"Description",
+                     "name":"DESCRIPTION",
+                     "length":1073741822,
+                    "type":"esriFieldTypeString",
+                    "editable":True
+                    },
+                 {
+                     "alias":"Type ID",
+                     "name":"TYPEID",
+                     "type":"esriFieldTypeInteger",
+                    "editable":True
+                 }
+              ]
+              },
+            "featureSet":{
+                "features":[
+                   {
+                       "geometry":{
+                          "x":80.27032792000051,
+                         "y":13.085227147000467,
+                        "spatialReference":{
+                           "wkid": 4326,
+                           "latestWkid":4326
+                       }
+                       },
+                      "attributes":{
+                         "description":"blayer desc",
+                        "title":"blayer",
+                      "OBJECTID":0,
+                       "VISIBLE":1
+                       },
+                     "symbol":{
+                        "angle":0,
+                      "xoffset":0,
+                        "yoffset":8.15625,
+                       "type":"esriPMS",
+                       "url":"https://cdn.arcgis.com/cdn/7674/js/jsapi/esri/dijit/images/Directions/greenPoint.png",
+                       "imageData":"iVBORw0KGgoAAAANSUhEUgAAABUAAAAdCAYAAABFRCf7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyRpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYxIDY0LjE0MDk0OSwgMjAxMC8xMi8wNy0xMDo1NzowMSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENTNS4xIE1hY2ludG9zaCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo4OTI1MkU2ODE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo4OTI1MkU2OTE0QzUxMUUyQURFMUNDNThGMTA3MjkzMSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjg5MjUyRTY2MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjg5MjUyRTY3MTRDNTExRTJBREUxQ0M1OEYxMDcyOTMxIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+iVNkdQAABJlJREFUeNp0VltvG0UUnpkdr72261CnCQWEIA9FqOKlqooARUKCtAUhoA+VoBVRhfgFXKSKJ97goRL8ARCIclGgL0VUkBBAoBaVoggEQQVSAhFS06SJje3Y3t25cc7srL3YjddHs3N85pvvfOfMyJRs83n8o+P7POI9yQibooTeBa68ISbSRv+hifpCGHX2s6dnfrrRWjroOPzB0T0+zZ0q8uDRSrniF/MB8X2fADhR8IRRRDphh7Q6rbgtOucU0Sdnj59Z2hb00PtHD+Zp/p2x6uitO4o7iLYP8DMafjVE2wXUboALm50W2ahtXO3q8MTX02fnh0Affu/IkSAXnL55dLzMPU6kURZMIZQhFtRk2VBKcpQTIQVZ21hrdUX4zDcnPv2kBzr59mP3BLnChfGx8YrHPKIAELSzMPhQk+ydzpOvIYwywjFeK7K+vt6IlZw8/+y5RZ4gm9eCUrGCmkUyBkCV0Sd5UlBtTLIhRWQE9ixwsVwe6dY3X4WwJ+j9bx7a7/v5i6O7qlxisFZJAvBF7Rjty56CWlmszilj6BNgXd+syTCO7uNK62nuezyUkWWASTPHDtOjbgOHkJTOsbXAyJhIC+rlODdROM211gcQKBJxoh+EKAs4AGqybHVfBvdICNIU/IDHYbcJiS6le4wwbW1B9UDXJcg9QBxtbglh1BlAJzjoUxIGQZFRwtAypgnjtH0spDG9MWVs34xrN5uBLnEoTKQUgDLgZ6hliLunBaIDhy4LYhyotptZlphGyLUhfyspxxj3AIpaVqikdgyzoGn7p0xNj71rNamweCscWC0qoQ8YRm3K2OgpeFoc+j9FSUYKB+4OgxIK4RcZUJ6RsUgqCrShxWzza9035aw/lzYGY5P4xFSMR5vMcFpm87opL4HjXsr76dLhC2xYhgx3I0BfoS7RCp+3K/e8vn+Ke2zWK+cYofQG9yMlw1eK1aAni9oSWil9eOmFhXkPnbXZ1eXqwVsirfQU9Vynm75lymLbxvpSP4yqI4iR5uWlFxdOI56Xbro5t3qhOrW7ZmL1EOFwp7k6pRXuWaZgBmuwJSIl1fNXXvrxjRTLy2ZTm1v9YeTBXedNbCYZZ1U4pdt+NGiomuKKEvKp5ZM/f5z9zctc1vju1b9cv5q/M/icBd4+KNztlnGWKfYjAMqm+K7zZ/PYP6d+X3TrafbmR8N71QcrOPMLd5RGdj838WFup393orNLWRki6vFv197661i40m6AKwYLneG79BzDPNhNYFWwnfguGyKgPl32bwseoTnKekVpS9n49vorWwv1JsSVwAJHCHcW2Agsk3rBBZXBihhcn11biTfDixpPik1bEZyj34EVXXzJrUccWwrbZo5+B6ztRpvO1kLjjO5qW3YccZ5JeTAecQxqqV0Q6hM5KVIrNL5a/77yQPUyLbK9qiMv49zFhW6MMnPE0dwxlQ48ckXDNHJOq0C2xByreHtxhPk1sK4DEI5dut7+QWCZCyj9MXKLWmD/gl1Xtfhd6F2CI86dv+XiIrdOpeeCDd0VyW7KGbLptn9p/mrgNsIxwzKN0QO3IvlPgAEA3AQhIZtaN54AAAAASUVORK5CYII=",
+                       "contentType":"image/png",
+                       "width":15.75,
+                       "height":21.75
+                    }
+                   }
+                   ],
+               "geometryType":"esriGeometryPoint"
+               },
+            "nextObjectId":1
+        }
+
+        input_layer_url = ""
+        if isinstance(input_layer, arcgis.gis.Item):
+            if input_layer.type.lower() == 'feature service':
+                input_param = input_layer.layers[0]._lyr_dict
+            elif input_layer.type.lower() == 'feature collection':
+                fcdict = input_layer.get_data()
+                fc = arcgis.features.FeatureCollection(fcdict['layers'][0])
+                input_param =  fc.layer
+            else:
+                raise TypeError("item type must be feature service or feature collection")
+
+        elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
+            input_param = input_layer.layers[0]._lyr_dict
+
+        elif isinstance(input_layer, arcgis.features.FeatureCollection):
+            input_param =  input_layer.properties
+
+        elif isinstance(input_layer, arcgis.gis.Layer):
+            input_param = input_layer._lyr_dict
+
+        elif isinstance(input_layer, tuple): # geocoding location, convert to point featureset
+            input_param = point_fs
+            input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
+            input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
+
+        elif isinstance(input_layer, dict): # could add support for geometry one day using geometry -> featureset
+            if 'location' in input_layer: # geocoder result
+                geom = arcgis.geometry.Geometry(input_layer['location'])
+                fset = FeatureSet([Feature(geom)])
+                featcoll = {'layerDefinition': {
+                    "geometryType": "esriGeometryPoint",
+                    "objectIdField": "OBJECTID",
+                    "fields": [
+                            {
+                                "alias": "OBJECTID",
+                                "name": "OBJECTID",
+                                "type": "esriFieldTypeOID",
+                                "editable": False
+                            }
+                        ]
+                        }, 'featureSet': fset.to_dict()}
+                input_param = featcoll
+            else:
+                input_param =  input_layer
+        elif isinstance(input_layer, str):
+            input_layer_url = input_layer
+            input_param =  {"url": input_layer_url }
+        else:
+            raise Exception("Invalid format of input layer. url string, feature service Item, feature service instance or dict supported")
+
+        return input_param
+
+    def _raster_input(self, input_raster):
+        if isinstance(input_raster, arcgis.gis.Item):
+            if input_raster.type.lower() == 'image service':
+                input_param =  {"itemId": input_raster.itemid }
+            else:
+                raise TypeError("item type must be image service")
+        elif isinstance(input_raster, str):
+            input_param =  {"url": input_raster }
+        elif isinstance(input_raster, dict):
+            input_param =  input_raster
+        else:
+            raise Exception("Invalid format of input raster. image service Item or image service url, cloud raster uri or shared data path supported")
+
+        return input_param
+###########################################################################
 class _GISService(object):
     """ a GIS service
     """
@@ -102,20 +292,7 @@ class _GISService(object):
                 params[k] = v
                 del k,v
         return self._con.post(path=url, postdata=params, token=self._token)
-
-def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
-
-
-@contextmanager
-def _tempinput(data):
-    temp = tempfile.NamedTemporaryFile(delete=False)
-    temp.write((bytes(data, 'UTF-8')))
-    temp.close()
-    yield temp.name
-    os.unlink(temp.name)
-
-
+###########################################################################
 class _AsyncService(_GISService):
 
     def __init__(self, url, gis):
@@ -408,8 +585,2809 @@ class _AsyncService(_GISService):
 
         return input_param
 
+###########################################################################
+class _FeatureAnalysisTools(BaseAnalytics):
+    """FA Tools"""
+    _gptbx = None
+    _url = None
+    _gis = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis, verbose=False):
+        """initializer"""
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+        self._verbose = verbose
 
-class _FeatureAnalysisTools(_AsyncService):
+    #----------------------------------------------------------------------
+    def _refresh(self):
+        params = {"f": "json"}
+        try:
+            dictdata = self._con.post(self._url, params)
+        except:
+            dictdata = self._con.get(self._url, params)
+        self._properties = PropertyMap(dictdata)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the services properties"""
+        if self._properties is None:
+            self._refresh()
+        return self._properties
+    #----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx._is_fa = True
+        return self._gptbx
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def invoke(self, method, **kwargs):
+        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
+        url = self._url + "/" + method
+        params = { "f" : "json"}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+                del k,v
+        return self._con.post(path=url, postdata=params, token=self._con.token)
+    @property
+    def _tools(self):
+        return self.properties.tasks
+    #----------------------------------------------------------------------
+    def aggregate_points(self,
+                         point_layer,
+                         polygon_layer,
+                         keep_boundaries_with_no_points=True,
+                         summary_fields=None,
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_points=False,
+                         output_name=None,
+                         context=None,
+                         estimate=False,
+                         bin_type="SQUARE",
+                         bin_size=None,
+                         bin_size_unit=None,
+                         future=False):
+        """
+        Aggregate points task allows you to aggregate or count the total number of points that are distributed within specified areas or boundaries (polygons). You can also summarize Sum, Mean, Min, Max and Standard deviation calculations for attributes of the point layer to understand the general characteristics of aggregated points.
+
+        Parameters
+        ----------
+        point_layer : Required layer (see Feature Input in documentation)
+            Point layer to be aggregated
+        polygon_layer : Required layer (see Feature Input in documentation)
+            Polygon layer to which the points should be aggregated.
+        keep_boundaries_with_no_points : Optional bool
+            Specify whether the polygons without any points should be returned in the output.
+        summary_fields : Optional list of strings
+            A list of field names and summary type. Example [fieldName1 summaryType1,fieldName2 summaryType2].
+        group_by_field : Optional string
+            A field name from PointLayer based on which the points will be grouped.
+        minority_majority : Optional bool
+            This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
+        percent_points : Optional bool
+            This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage count of points for each unique groupByField value is calculated.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the estimated number of credits for the current task.
+        bin_type: Optional String
+        bin_size : Optional String
+        bin_size_unit: Optional String
+
+        Returns
+        -------
+        dict with the following keys:
+           "aggregated_layer" : layer (FeatureCollection)
+           "group_summary" : layer (FeatureCollection)
+        """
+
+        task ="AggregatePoints"
+
+
+        if summary_fields is None:
+            summary_fields = []
+        point_layer = self._feature_input(point_layer)
+        polygon_layer = self._feature_input(polygon_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            params = {}
+            params["pointLayer"] = point_layer
+            params["polygonLayer"] = polygon_layer
+
+            if keep_boundaries_with_no_points is not None:
+                params["keepBoundariesWithNoPoints"] = keep_boundaries_with_no_points
+            if summary_fields is not None:
+                params["summaryFields"] = summary_fields
+            if group_by_field is not None:
+                params["groupByField"] = group_by_field
+            if minority_majority is not None:
+                params["minorityMajority"] = minority_majority
+            if percent_points is not None:
+                params["percentPoints"] = percent_points
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.aggregate_points(point_layer=point_layer,
+                                            polygon_layer=polygon_layer,
+                                            keep_boundaries_with_no_points=keep_boundaries_with_no_points,
+                                            summary_fields=summary_fields,
+                                            group_by_field=group_by_field,
+                                            minority_majority=minority_majority,
+                                            percent_points=percent_points,
+                                            output_name=output_name,
+                                            context=context,
+                                            bin_type='SQUARE',
+                                            bin_size=None,
+                                            bin_size_unit=None,
+                                            gis=self._gis,
+                                            future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        ret = gpjob.result()
+        if output_name:
+            return ret['aggregate_layer']
+        return ret
+    #----------------------------------------------------------------------
+    def choose_best_facilities(self,
+                               goal='Allocate',
+                               demand_locations_layer=None,
+                               demand=1,
+                               demand_field=None,
+                               max_travel_range=2147483647,
+                               max_travel_range_field=None,
+                               max_travel_range_units='Minutes',
+                               travel_mode='Driving Time',
+                               time_of_day=None,
+                               time_zone_for_time_of_day='GeoLocal',
+                               travel_direction='FacilityToDemand',
+                               required_facilities_layer=None,
+                               required_facilities_capacity=2147483647,
+                               required_facilities_capacity_field=None,
+                               candidate_facilities_layer=None,
+                               candidate_count=1,
+                               candidate_facilities_capacity=2147483647,
+                               candidate_facilities_capacity_field=None,
+                               percent_demand_coverage=100,
+                               output_name=None,
+                               context=None,
+                               estimate=False,
+                               point_barrier_layer=None,
+                               line_barrier_layer=None,
+                               polygon_barrier_layer=None,
+                               future=False):
+        task ="ChooseBestFacilities"
+        if isinstance(travel_mode, str):
+            route_service = arcgis.network.RouteLayer(self._gis.properties.helperServices.route.url, gis=self._gis)
+            travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+        demand_locations_layer = self._feature_input(demand_locations_layer)
+        if required_facilities_layer:
+            required_facilities_layer = self._feature_input(required_facilities_layer)
+        if candidate_facilities_layer:
+            candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if point_barrier_layer:
+            point_barrier_layer = self._feature_input(point_barrier_layer)
+        if line_barrier_layer:
+            line_barrier_layer = self._feature_input(line_barrier_layer)
+        if polygon_barrier_layer:
+            polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
+
+
+        if estimate:
+            params = {}
+            if goal is not None:
+                params["goal"] = goal
+            params["demandLocationsLayer"] = demand_locations_layer
+            if demand is not None:
+                params["demand"] = demand
+            if demand_field is not None:
+                params["demandField"] = demand_field
+            if max_travel_range is not None:
+                params["maxTravelRange"] = max_travel_range
+            if max_travel_range_field is not None:
+                params["maxTravelRangeField"] = max_travel_range_field
+            if max_travel_range_units is not None:
+                params["maxTravelRangeUnits"] = max_travel_range_units
+            if travel_mode is not None:
+                params["travelMode"] = travel_mode
+            if time_of_day is not None:
+                params["timeOfDay"] = time_of_day
+            if time_zone_for_time_of_day is not None:
+                params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day
+            if travel_direction is not None:
+                params["travelDirection"] = travel_direction
+            if required_facilities_layer is not None:
+                params["requiredFacilitiesLayer"] = required_facilities_layer
+            if required_facilities_capacity is not None:
+                params["requiredFacilitiesCapacity"] = required_facilities_capacity
+            if required_facilities_capacity_field is not None:
+                params["requiredFacilitiesCapacityField"] = required_facilities_capacity_field
+            if candidate_facilities_layer is not None:
+                params["candidateFacilitiesLayer"] = candidate_facilities_layer
+            if candidate_count is not None:
+                params["candidateCount"] = candidate_count
+            if candidate_facilities_capacity is not None:
+                params["candidateFacilitiesCapacity"] = candidate_facilities_capacity
+            if candidate_facilities_capacity_field is not None:
+                params["candidateFacilitiesCapacityField"] = candidate_facilities_capacity_field
+            if percent_demand_coverage is not None:
+                params["percentDemandCoverage"] = percent_demand_coverage
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if point_barrier_layer is not None:
+                params["pointBarrierLayer"] = point_barrier_layer
+            if line_barrier_layer is not None:
+                params["lineBarrierLayer"] = line_barrier_layer
+            if polygon_barrier_layer is not None:
+                params["polygonBarrierLayer"] = polygon_barrier_layer
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+        gpjob = self._tbx.choose_best_facilities(goal=goal,
+                                         demand_locations_layer=demand_locations_layer,
+                                         demand=demand,
+                                         demand_field=demand_field,
+                                         max_travel_range=max_travel_range,
+                                         max_travel_range_field=max_travel_range_field,
+                                         max_travel_range_units=max_travel_range_units,
+                                         travel_mode=travel_mode,
+                                         time_of_day=time_of_day,
+                                         time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                         travel_direction=travel_direction,
+                                         required_facilities_layer=required_facilities_layer,
+                                         required_facilities_capacity=required_facilities_capacity,
+                                         required_facilities_capacity_field=required_facilities_capacity_field,
+                                         candidate_facilities_layer=candidate_facilities_layer,
+                                         candidate_count=candidate_count,
+                                         candidate_facilities_capacity=candidate_facilities_capacity,
+                                         candidate_facilities_capacity_field=candidate_facilities_capacity_field,
+                                         percent_demand_coverage=percent_demand_coverage,
+                                         output_name=output_name,
+                                         context=context,
+                                         point_barrier_layer=point_barrier_layer,
+                                         line_barrier_layer=line_barrier_layer,
+                                         polygon_barrier_layer=polygon_barrier_layer,
+                                         gis=self._gis,
+                                         future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def connect_origins_to_destinations(self,
+                                        origins_layer,
+                                        destinations_layer,
+                                        measurement_type="DrivingTime",
+                                        origins_layer_route_id_field=None,
+                                        destinations_layer_route_id_field=None,
+                                        time_of_day=None,
+                                        time_zone_for_time_of_day="GeoLocal",
+                                        output_name=None,
+                                        context=None,
+                                        estimate=False,
+                                        point_barrier_layer=None,
+                                        line_barrier_layer=None,
+                                        polygon_barrier_layer=None,
+                                        include_route_layer=False,
+                                        future=False):
+        """
+        Calculates routes between pairs of points.
+
+        Parameters
+        ----------
+        origins_layer : Required layer (see Feature Input in documentation)
+            The routes start from points in the origins layer.
+        destinations_layer : Required layer (see Feature Input in documentation)
+            The routes end at points in the destinations layer.
+        measurement_type : Required string
+            The routes can be determined by measuring travel distance or travel time along street network using different travel modes or by measuring straight line distance.
+        origins_layer_route_id_field : Optional string
+            The field in the origins layer containing the IDs that are used to match an origin with a destination.
+        destinations_layer_route_id_field : Optional string
+            The field in the destinations layer containing the IDs that are used to match an origin with a destination.
+        time_of_day : Optional datetime.date
+            When measurementType is DrivingTime, this value specifies the time of day to be used for driving time calculations based on traffic. WalkingTime and TruckingTime measurementType do not support calculations based on traffic.
+        time_zone_for_time_of_day : Optional string
+            Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the location of the origins.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+
+        Returns
+        -------
+        dict with the following keys:
+           "routes_layer" : layer (FeatureCollection)
+           "unassigned_origins_layer" : layer (FeatureCollection)
+           "unassigned_destinations_layer" : layer (FeatureCollection)
+        """
+        task ="ConnectOriginsToDestinations"
+        origins_layer = self._feature_input(origins_layer)
+        destinations_layer = self._feature_input(destinations_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if point_barrier_layer:
+            point_barrier_layer = self._feature_input(point_barrier_layer)
+        if line_barrier_layer:
+            line_barrier_layer = self._feature_input(line_barrier_layer)
+        if polygon_barrier_layer:
+            polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
+        if estimate:
+            params = {}
+
+            params["originsLayer"] = origins_layer
+            params["destinationsLayer"] = destinations_layer
+            params["measurementType"] = measurement_type
+            if origins_layer_route_id_field is not None:
+                params["originsLayerRouteIDField"] = origins_layer_route_id_field
+            if destinations_layer_route_id_field is not None:
+                params["destinationsLayerRouteIDField"] = destinations_layer_route_id_field
+            if time_of_day is not None:
+                params["timeOfDay"] = time_of_day
+            if time_zone_for_time_of_day is not None:
+                params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if point_barrier_layer is not None:
+                params["pointBarrierLayer"] = point_barrier_layer
+            if line_barrier_layer is not None:
+                params["lineBarrierLayer"] = line_barrier_layer
+            if polygon_barrier_layer is not None:
+                params["polygonBarrierLayer"] = polygon_barrier_layer
+
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                         parameters=params)
+        gpjob = self._tbx.connect_origins_to_destinations(origins_layer=origins_layer,
+                                                  destinations_layer=destinations_layer,
+                                                  measurement_type=measurement_type,
+                                                  origins_layer_route_id_field=origins_layer_route_id_field,
+                                                  destinations_layer_route_id_field=destinations_layer_route_id_field,
+                                                  time_of_day=time_of_day,
+                                                  time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                                  output_name=output_name,
+                                                  context=context,
+                                                  include_route_layers=include_route_layer,
+                                                  point_barrier_layer=point_barrier_layer,
+                                                  line_barrier_layer=line_barrier_layer,
+                                                  polygon_barrier_layer=polygon_barrier_layer,
+                                                  gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def create_drive_time_areas(self,
+                                input_layer,
+                                break_values=[5, 10, 15],
+                                break_units="Minutes",
+                                travel_mode="Driving Time",
+                                overlap_policy="Overlap",
+                                time_of_day=None,
+                                time_zone_for_time_of_day="GeoLocal",
+                                output_name=None,
+                                context=None,
+                                estimate=False,
+                                point_barrier_layer=None,
+                                line_barrier_layer=None,
+                                polygon_barrier_layer=None,
+                                future=False):
+        """
+
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+
+        break_values : Optional list of floats
+
+        break_units : Optional string
+
+        travel_mode : Optional string
+
+        overlap_policy : Optional string
+
+        time_of_day : Optional datetime.date
+
+        time_zone_for_time_of_day : Optional string
+
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+
+        Returns
+        -------
+        drive_time_areas_layer : layer (FeatureCollection)
+        """
+        params = {}
+        task ="CreateDriveTimeAreas"
+
+        input_layer = self._feature_input(input_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if point_barrier_layer:
+            point_barrier_layer = self._feature_input(point_barrier_layer)
+        if polygon_barrier_layer:
+            polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
+        if line_barrier_layer:
+            line_barrier_layer = self._feature_input(line_barrier_layer)
+        if estimate:
+            params["inputLayer"] = input_layer
+            if break_values is not None:
+                params["breakValues"] = break_values
+            if break_units is not None:
+                params["breakUnits"] = break_units
+            if travel_mode is not None:
+                params["travelMode"] = travel_mode
+            if overlap_policy is not None:
+                params["overlapPolicy"] = overlap_policy
+            if time_of_day is not None:
+                params["timeOfDay"] = time_of_day
+            if time_zone_for_time_of_day is not None:
+                params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if point_barrier_layer is not None:
+                params["pointBarrierLayer"] = point_barrier_layer
+            if line_barrier_layer is not None:
+                params["lineBarrierLayer"] = line_barrier_layer
+            if polygon_barrier_layer is not None:
+                params["polygonBarrierLayer"] = polygon_barrier_layer
+
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.create_drive_time_areas(input_layer=input_layer,
+                                                  break_values=break_values,
+                                                  break_units=break_units,
+                                                  travel_mode=travel_mode,
+                                                  overlap_policy=overlap_policy,
+                                                  time_of_day=time_of_day,
+                                                  time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                                  output_name=output_name,
+                                                  context=context, point_barrier_layer=point_barrier_layer,
+                                                  line_barrier_layer=line_barrier_layer,
+                                                  polygon_barrier_layer=polygon_barrier_layer,
+                                                  gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def create_route_layers(self,
+                            route_data_item,
+                            delete_route_data_item=False,
+                            output_name=None,
+                            estimate=False,
+                            context=None,
+                            future=False):
+        """
+
+
+        Parameters
+        ----------
+        route_data_item : Required item
+
+        delete_route_data_item : Required boolean
+
+        output_name: Optional dict
+
+        Returns
+        -------
+        route_layers : list (items)
+        """
+        if route_data_item:
+            route_data_item = {"itemId": route_data_item.itemid}
+        if output_name and isinstance(output_name, str):
+            output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            params = {}
+            if context:
+                params['context'] = context
+            params["routeData"] = route_data_item
+            params["deleteRouteData"] = delete_route_data_item
+            params["outputName"] = output_name
+            from arcgis.features._credits import _estimate_credits
+            task ="CreateRouteLayers"
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+        gpjob = self._tbx.create_route_layers(route_data=route_data_item, delete_route_data=delete_route_data_item,
+                                              output_name=output_name, context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def create_buffers(self,
+                       input_layer,
+                       distances=[],
+                       field=None,
+                       units="Meters",
+                       dissolve_type="None",
+                       ring_type="Disks",
+                       side_type="Full",
+                       end_type="Round",
+                       output_name=None,
+                       context=None,
+                       estimate=False,
+                       future=False):
+        """
+        Creates buffer polygon(s) around input features.
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+            The input to be buffered.
+        distances : Optional list of floats
+            The distance(s) that will be buffered.
+        field : Optional string
+            Buffers will be created using field values.
+        units : Optional string
+            The linear unit to be used with the distance value(s).
+        dissolve_type : Optional string
+            Specifies the dissolve to be performed to remove buffer overlap.
+        ring_type : Optional string
+            The ring type.
+        side_type : Optional string
+            The side(s) of the input that will be buffered.
+        end_type : Optional string
+            The shape of the buffer at the end of buffered line features.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+
+        Returns
+        -------
+        buffer_layer : layer (FeatureCollection)
+        """
+
+        task ="CreateBuffers"
+        input_layer = self._feature_input(input_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            params = {}
+
+            params["inputLayer"] = input_layer
+            if distances is not None:
+                params["distances"] = distances
+            if field is not None:
+                params["field"] = field
+            if units is not None:
+                params["units"] = units
+            if dissolve_type is not None:
+                params["dissolveType"] = dissolve_type
+            if ring_type is not None:
+                params["ringType"] = ring_type
+            if side_type is not None:
+                params["sideType"] = side_type
+            if end_type is not None:
+                params["endType"] = end_type
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.create_buffers(input_layer=input_layer,
+                                         distances=distances, field=field,
+                                         units=units, dissolve_type=dissolve_type,
+                                         ring_type=ring_type, side_type=side_type,
+                                         end_type=end_type, output_name=output_name,
+                                         context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        ret = gpjob.result()
+        return ret
+    #----------------------------------------------------------------------
+    def calculate_density(self,
+                          input_layer,
+                          field=None,
+                          cell_size=None,
+                          cell_size_units="Meters",
+                          radius=None,
+                          radius_units=None,
+                          bounding_polygon_layer=None,
+                          area_units=None,
+                          classification_type="EqualInterval",
+                          num_classes=10,
+                          output_name=None,
+                          context=None,
+                          estimate=False,
+                          future=False):
+        """
+        The Calculate Density task creates a density map from point or line features by spreading known quantities of some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas classified from least dense to most dense.
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+            The point or line features from which to calculate density.
+        field : Optional string
+            A numeric field name specifying the number of incidents at each location. If not specified, each location will be assumed to represent a single count.
+        cell_size : Optional float
+            This value is used to create a mesh of points where density values are calculated. The default is approximately 1/1000th of the smaller of the width and height of the analysis extent as defined in the context parameter.
+        cell_size_units : Optional string
+            The units of the cellSize value
+        radius : Optional float
+            A distance specifying how far to search to find point or line features when calculating density values.
+        radius_units : Optional string
+            The units of the radius parameter.
+        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
+            A layer specifying the polygon(s) where you want densities to be calculated.
+        area_units : Optional string
+            The units of the calculated density values.
+        classification_type : Optional string
+            Determines how density values will be classified into polygons.
+        num_classes : Optional int
+            This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classificationType parameter.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+
+        Returns
+        -------
+        result_layer : layer (FeatureCollection)
+        """
+
+        task ="CalculateDensity"
+
+        params = {}
+        if output_name is not None:
+            output_name = {"serviceProperties": {"name": output_name }}
+        input_layer = self._feature_input(input_layer)
+        if bounding_polygon_layer:
+            bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
+
+
+        if estimate:
+            params["inputLayer"] = input_layer
+            if field is not None:
+                params["field"] = field
+            if cell_size is not None:
+                params["cellSize"] = cell_size
+            if cell_size_units is not None:
+                params["cellSizeUnits"] = cell_size_units
+            if radius is not None:
+                params["radius"] = radius
+            if radius_units is not None:
+                params["radiusUnits"] = radius_units
+            if bounding_polygon_layer is not None:
+                params["boundingPolygonLayer"] = bounding_polygon_layer
+            if area_units is not None:
+                params["areaUnits"] = area_units
+            if classification_type is not None:
+                params["classificationType"] = classification_type
+            if num_classes is not None:
+                params["numClasses"] = num_classes
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.calculate_density(input_layer=input_layer, field=field, cell_size=cell_size,
+                                            cell_size_units=cell_size_units, radius=radius,
+                                            radius_units=radius_units, bounding_polygon_layer=bounding_polygon_layer,
+                                            area_units=area_units, classification_type=classification_type,
+                                            num_classes=num_classes,
+                                            output_name=output_name, context=context,
+                                            gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        ret = gpjob.result()
+        return ret
+    #----------------------------------------------------------------------
+    def create_viewshed(self,
+                        input_layer,
+                        dem_resolution="Finest",
+                        maximum_distance=None,
+                        max_distance_units="Meters",
+                        observer_height=None,
+                        observer_height_units="Meters",
+                        target_height=None,
+                        target_height_units="Meters",
+                        generalize=True,
+                        output_name=None,
+                        context=None,
+                        estimate=False,
+                        future=False):
+        """
+
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+
+        dem_resolution : Optional string
+
+        maximum_distance : Optional float
+
+        max_distance_units : Optional string
+
+        observer_height : Optional float
+
+        observer_height_units : Optional string
+
+        target_height : Optional float
+
+        target_height_units : Optional string
+
+        generalize : Optional bool
+
+        output_name : Optional string
+
+        context : Optional string
+
+        estimate: Optional Boolean. Returns the number of credit for the operation.
+
+        Returns
+        -------
+        viewshed_layer : layer (FeatureCollection)
+        """
+        task ="CreateViewshed"
+        input_layer = self._feature_input(input_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            params = {}
+
+            params["inputLayer"] = input_layer
+            if dem_resolution is not None:
+                params["demResolution"] = dem_resolution
+            if maximum_distance is not None:
+                params["maximumDistance"] = maximum_distance
+            if max_distance_units is not None:
+                params["maxDistanceUnits"] = max_distance_units
+            if observer_height is not None:
+                params["observerHeight"] = observer_height
+            if observer_height_units is not None:
+                params["observerHeightUnits"] = observer_height_units
+            if target_height is not None:
+                params["targetHeight"] = target_height
+            if target_height_units is not None:
+                params["targetHeightUnits"] = target_height_units
+            if generalize is not None:
+                params["generalize"] = generalize
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+        gpjob = self._tbx.create_viewshed(input_layer=input_layer,
+                                          dem_resolution=dem_resolution,
+                                          maximum_distance=maximum_distance,
+                                          max_distance_units=max_distance_units,
+                                          observer_height=observer_height,
+                                          observer_height_units=observer_height_units,
+                                          target_height=target_height,
+                                          target_height_units=target_height_units,
+                                          generalize=generalize,
+                                          output_name=output_name,
+                                          context=context,
+                                          gis=self._gis,
+                                          future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def create_watersheds(self,
+                          input_layer,
+                          search_distance=None,
+                          search_units="Meters",
+                          source_database="FINEST",
+                          generalize=True,
+                          output_name=None,
+                          context=None,
+                          estimate=False,
+                          future=False):
+        """
+
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+
+        search_distance : Optional float
+
+        search_units : Optional string
+
+        source_database : Optional string
+
+        generalize : Optional bool
+
+        output_name : Optional string
+
+        context : Optional string
+
+
+        Returns
+        -------
+        dict with the following keys:
+           "snap_pour_pts_layer" : layer (FeatureCollection)
+           "watershed_layer" : layer (FeatureCollection)
+        """
+        task ="CreateWatersheds"
+
+        params = {}
+        input_layer = self._feature_input(input_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params["inputLayer"] = input_layer
+            if search_distance is not None:
+                params["searchDistance"] = search_distance
+            if search_units is not None:
+                params["searchUnits"] = search_units
+            if source_database is not None:
+                params["sourceDatabase"] = source_database
+            if generalize is not None:
+                params["generalize"] = generalize
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.create_watersheds(input_layer=input_layer, search_distance=search_distance,
+                                            search_units=search_units, source_database=source_database,
+                                            generalize=generalize, output_name=output_name,
+                                            context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def derive_new_locations(self,
+                             input_layers=[],
+                             expressions=[],
+                             output_name=None,
+                             context=None,
+                             estimate=False,
+                             future=False):
+        """
+        The Derive New Locations task derives new features from the input layers that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).The Derive New Locations task is very similar to the Find Existing Locations task, the main difference is that the result of Derive New Locations can contain partial features.In both tasks, the attribute expression  where and the spatial relationships within and contains return the same result. This is because these relationships return entire features.When intersects or withinDistance is used, Derive New Locations creates new features in the result. For example, when intersecting a parcel feature and a flood zone area that partially overlap each other, Find Existing Locations will return the entire parcel whereas Derive New Locations will return just the portion of the parcel that is within the flood zone.
+
+        Parameters
+        ----------
+        input_layers : Required list of Feature Layers
+            A list of layers that will be used in the expressions parameter.
+        expressions : Required string
+            Specify a list of expressions. Please refer documentation at http://developers.arcgis.com for more information on expressions.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+        future: optional boolean
+            Returns a GPJob and performs the job asynchronous
+        Returns
+        -------
+        result_layer : layer (FeatureCollection)
+        """
+
+        task ="DeriveNewLocations"
+
+        params = {}
+
+        input_layers_param = []
+        for input_lyr in input_layers:
+            input_layers_param.append(self._feature_input(input_lyr))
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+        if estimate:
+            params["inputLayers"] = input_layers_param
+            params["expressions"] = expressions
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.derive_new_locations(input_layers=input_layers_param,
+                                               expressions=expressions, output_name=output_name,
+                                               context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def dissolve_boundaries(self,
+                            input_layer,
+                            dissolve_fields=[],
+                            summary_fields=[],
+                            output_name=None,
+                            context=None,
+                            estimate=False,
+                            multi_part_features=True,
+                            future=False):
+        """
+        Dissolve features based on specified fields.
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+            The layer containing polygon features that will be dissolved.
+        dissolve_fields : Optional list of strings
+            One or more fields from the input that control which polygons are merged. If no fields are supplied, all polygons that overlap or shared a common border will be dissolved into one polygon.
+        summary_fields : Optional list of strings
+            A list of field names and statistical types that will be used to summarize the output. Supported statistics include: Sum, Mean, Min, Max, and Stddev.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+        Returns
+        -------
+        dissolved_layer : layer (FeatureCollection)
+        """
+
+
+        input_layer = self._feature_input(input_layer)
+        output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            task ="DissolveBoundaries"
+
+            params = {}
+
+            params["inputLayer"] = input_layer
+            if dissolve_fields is not None:
+                params["dissolveFields"] = dissolve_fields
+            if summary_fields is not None:
+                params["summaryFields"] = summary_fields
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if  multi_part_features:
+                params["multiPartFeatures"] = multi_part_features
+
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.dissolve_boundaries(input_layer=input_layer,
+                                              dissolve_fields=dissolve_fields,
+                                              summary_fields=summary_fields,
+                                              multi_part_features=multi_part_features,
+                                              output_name=output_name,
+                                              context=context,
+                                              gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def enrich_layer(self,
+                     input_layer,
+                     data_collections=[],
+                     analysis_variables=[],
+                     country=None,
+                     buffer_type=None,
+                     distance=None,
+                     units=None,
+                     output_name=None,
+                     context=None,
+                     estimate=False,
+                     return_boundaries=False,
+                     future=False):
+        """
+        The Enrich Layer task enriches your data by getting facts about the people, places, and businesses that surround your data locations. For example: What kind of people live here? What do people like to do in this area? What are their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+            Feature layer to enrich with new data
+        data_collections : Optional list of strings
+            Data collections you wish to add to your features.
+        analysis_variables : Optional list of strings
+            A subset of specific variables instead of dataCollections.
+        country : Optional string
+            The two character country code that specifies the country of the input features. Eg. US (United States),  FR (France), GB (United Kingdom) etc.
+        buffer_type : Optional string
+            Area to be created around the point or line features for enrichment. Default is 1 Mile straight-line buffer radius.
+        distance : Optional float
+            A double value that defines the straight-line distance or time (when drivingTime is used).
+        units : Optional string
+            The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to calculate the area.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+
+        Returns
+        -------
+        enriched_layer : layer (FeatureCollection)
+        """
+
+        task ="EnrichLayer"
+
+        params = {}
+
+        input_layer = self._feature_input(input_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+        if estimate:
+            params["inputLayer"] = input_layer
+            if data_collections is not None:
+                params["dataCollections"] = data_collections
+            if analysis_variables is not None:
+                params["analysisVariables"] = analysis_variables
+            if country is not None:
+                params["country"] = country
+            if buffer_type is not None:
+                params["bufferType"] = buffer_type
+            if distance is not None:
+                params["distance"] = distance
+            if units is not None:
+                params["units"] = units
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if return_boundaries:
+                params["returnBoundaries"] = return_boundaries
+
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.enrich_layer(input_layer=input_layer, data_collections=data_collections,
+                                       analysis_variables=analysis_variables,
+                                       country=country, buffer_type=buffer_type,
+                                       distance=distance, units=units, return_boundaries=return_boundaries,
+                                       output_name=output_name, context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    #----------------------------------------------------------------------
+    def extract_data(self,
+                     input_layers=[],
+                     extent=None,
+                     clip=False,
+                     data_format=None,
+                     output_name=None,
+                     context=None,
+                     estimate=False,
+                     future=False):
+        """
+        Select and download data for a specified area of interest. Layers that you select will be added to a zip file or layer package.
+
+        Parameters
+        ----------
+        input_layers : Required list of Feature Layers
+            The layers from which you can extract features.
+        extent : Optional Feature Layer
+            The area that defines which features will be included in the output zip file or layer package.
+        clip : Optional bool
+            Select features that intersect the extent or clip features within the extent.
+        data_format : Optional string
+            Format of the data that will be extracted and downloaded.  Layer packages will always include file geodatabases. eg CSV, SHAPEFILE
+        output_name : Optional string
+            Additional properties such as output name of the item
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+
+        Returns
+        -------
+        an item in the GIS
+        """
+
+        task ="ExtractData"
+
+        params = {}
+
+        input_layers_param = []
+        for input_lyr in input_layers:
+            input_layers_param.append(self._feature_input(input_lyr))
+
+        params["inputLayers"] = input_layers_param
+        if extent is not None:
+            extent = self._feature_input(extent)
+            params["extent"] = extent
+        if clip is not None:
+            params["clip"] = clip
+        if data_format is not None:
+            params["dataFormat"] = data_format
+        if output_name is None:
+            output_name = 'Extracted_data_' + _id_generator()
+
+        if data_format.upper() == 'SHAPEFILE':
+            if isinstance(output_name, dict):
+                params["outputName"] = {"itemProperties": output_name}
+            else:
+                params["outputName"] = {"itemProperties": {"title": output_name, "description": "File generated from running the Extract Data tool.",
+                                                           "tags": "Analysis Results, Extract Data",
+                                                           "snippet": "Analysis file item generated from running the Extract Data tool.",
+                                                           "folderId": ""}}
+            output_name = params['outputName']
+        else:
+            params["outputName"] = {"serviceProperties": {"name": output_name }}
+            output_name = params['outputName']
+        if context is not None:
+            params["context"] = context
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.extract_data(input_layers=input_layers_param, extent=extent, clip=clip,
+                                       data_format=data_format,
+                                       output_name=output_name, context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def field_calculator(self,
+                         input_layer,
+                         expressions,
+                         output_name=None,
+                         context=None,
+                         estimate=False,
+                         future=True):
+        """
+        Calculates existing fields or creates and calculates new fields.
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+
+        expressions : Required string
+
+        output_name : Optional string
+
+        context : Optional string
+
+        estimate: Optional Boolean. Returns the number of credit for the operation.
+
+        Returns
+        -------
+        result_layer : layer (FeatureCollection)
+        """
+
+        task ="FieldCalculator"
+
+        params = {}
+        input_layer = self._feature_input(input_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params["inputLayer"] = input_layer
+            params["expressions"] = expressions
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.field_calculator(input_layer=input_layer,
+                                           expressions=expressions,
+                                           output_name=output_name,
+                                           context=context,
+                                           gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def find_centroids(self,
+                       input_layer,
+                       point_location=False,
+                       output_name=None,
+                       context=None,
+                       estimate=False,
+                       future=False):
+        """
+        The Find Centroids task that finds and generates points from the representative center (centroid) of each input multipoint, line, or area feature. Finding the centroid of a feature is very common for many analytical workflows where the resulting points can then be used in other analytic workflows.
+
+        For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        input_layer       Required FeatureLayer. The multipoint, line, or polygon features that will be used to generate centroid point features.
+        ----------------  ---------------------------------------------------------------
+        point_location    Optional Boolean. A Boolean value that determines the output location of the points.
+
+
+                          + true - Output points will be the nearest point to the actual centroid, but located inside or contained by the bounds of the input feature.
+                          + false - Output point locations will be determined by the calculated geometric center of each input feature. This is the default.
+
+
+        ----------------  ---------------------------------------------------------------
+        output_name       Optional String. Output feature service name.
+        ----------------  ---------------------------------------------------------------
+        context           Optional String. Additional settings such as processing extent and output spatial reference.
+        ----------------  ---------------------------------------------------------------
+        estimate          Optional Boolean. Returns the number of credit for the operation.
+        ================  ===============================================================
+
+        :Returns: dict
+
+        """
+        task = "FindCentroids"
+
+        params = {}
+        input_layer = self._feature_input(input_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params["inputLayer"] = input_layer
+            params['pointLocation'] = point_location
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
+                                         output_name=output_name, context=context, gis=self._gis,
+                                         future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    #----------------------------------------------------------------------
+    def find_existing_locations(self,
+                                input_layers=None,
+                                expressions=None,
+                                output_name=None,
+                                context=None,
+                                estimate=False,
+                                future=False):
+        """
+        The Find Existing Locations task selects features in the input layer that meet a query you specify. A query is made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an attribute expression is that a parcel must be vacant, which is an attribute of the Parcels layer (where STATUS = 'VACANT'). An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
+
+        Parameters
+        ----------
+        input_layers : Required list of Feature Layers
+            A list of layers that will be used in the expressions parameter.
+        expressions : Required string
+            Specify a list of expressions. Please refer documentation at http://developers.arcgis.com for more information on creating expressions.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+
+        Returns
+        -------
+        result_layer : layer (FeatureCollection)
+        """
+        if input_layers is None:
+            input_layers = []
+        if expressions is None:
+            expressions = []
+
+
+        input_layers_param = []
+        for input_lyr in input_layers:
+            input_layers_param.append(self._feature_input(input_lyr))
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            from arcgis.features._credits import _estimate_credits
+            task ="FindExistingLocations"
+            params = {}
+            params["inputLayers"] = input_layers_param
+            params["expressions"] = expressions
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.find_existing_locations(input_layers=input_layers, expressions=expressions,
+                                                  output_name=output_name, context=context,
+                                                  gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def find_hot_spots(self,
+                       analysis_layer,
+                       analysis_field=None,
+                       divided_by_field=None,
+                       bounding_polygon_layer=None,
+                       aggregation_polygon_layer=None,
+                       output_name=None,
+                       context=None,
+                       estimate=False,
+                       shape_type=None,
+                       cell_size=None,
+                       cell_size_unit=None,
+                       distance_band=None,
+                       distance_band_unit=None,
+                       future=False):
+        """
+        The Find Hot Spots task finds statistically significant clusters of incident points, weighted points, or weighted polygons. For incident data, the analysis field (weight) is obtained by aggregation. Output is a hot spot map.
+
+        Parameters
+        ----------
+        analysis_layer : Required layer (see Feature Input in documentation)
+            The point or polygon feature layer for which hot spots will be calculated.
+        analysis_field : Optional string
+            The numeric field in the AnalysisLayer that will be analyzed.
+        divided_by_field : Optional string
+
+        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
+            When the analysis layer is points and no AnalysisField is specified, you can provide polygons features that define where incidents could have occurred.
+        aggregation_polygon_layer : Optional layer (see Feature Input in documentation)
+            When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the credit usage for the current task.
+        shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
+
+          - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
+          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.
+
+
+        Returns
+        -------
+        dict with the following keys:
+           "hot_spots_result_layer" : layer (FeatureCollection)
+           "process_info" : list of messages
+        """
+        analysis_layer = self._feature_input(analysis_layer)
+        bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
+        aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        task ="FindHotSpots"
+
+
+
+
+        if estimate:
+            params = {}
+
+            params["analysisLayer"] = analysis_layer
+            if analysis_field is not None:
+                params["analysisField"] = analysis_field
+            if divided_by_field is not None:
+                params["dividedByField"] = divided_by_field
+            if bounding_polygon_layer is not None:
+                params["boundingPolygonLayer"] = bounding_polygon_layer
+            if aggregation_polygon_layer is not None:
+                params["aggregationPolygonLayer"] = aggregation_polygon_layer
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if shape_type is not None:
+                params["shapeType"] = shape_type
+            if cell_size is not None:
+                params["cellSize"] = cell_size
+            if cell_size_unit is not None:
+                params["cellSizeUnit"] = cell_size_unit
+            if distance_band is not None:
+                params["distanceBand"] = distance_band
+            if distance_band_unit is not None:
+                params["distanceBandUnit"] = distance_band_unit
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.find_hot_spots(analysis_layer=analysis_layer, analysis_field=analysis_field,
+                                         divided_by_field=divided_by_field,
+                                         bounding_polygon_layer=bounding_polygon_layer,
+                                         aggregation_polygon_layer=aggregation_polygon_layer,
+                                         shape_type=shape_type,
+                                         cell_size=cell_size, cell_size_units=cell_size_unit,
+                                         distance_band=distance_band, distance_band_units=distance_band_unit,
+                                         output_name=output_name, context=context,
+                                         gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def find_nearest(self,
+                     analysis_layer,
+                     near_layer,
+                     measurement_type="StraightLine",
+                     max_count=100,
+                     search_cutoff=2147483647,
+                     search_cutoff_units=None,
+                     time_of_day=None,
+                     time_zone_for_time_of_day="GeoLocal",
+                     output_name=None,
+                     context=None,
+                     estimate=False,
+                     include_route_layers=None,
+                     point_barrier_layer=None,
+                     line_barrier_layer=None,
+                     polygon_barrier_layer=None,
+                     future=False):
+        """
+        Measures the straight-line distance, driving distance, or driving time from features in the analysis layer to features in the near layer, and copies the nearest features in the near layer to a new layer. Returns a layer containing the nearest features and a line layer that links the start locations to their nearest locations.
+
+        Parameters
+        ----------
+        analysis_layer : Required layer (see Feature Input in documentation)
+            For each feature in this layer, the task finds the nearest features from the nearLayer.
+        near_layer : Required layer (see Feature Input in documentation)
+            The features from which the nearest locations are found.
+        measurement_type : Required string
+            The nearest locations can be determined by measuring straight-line distance, driving distance, or driving time
+        max_count : Optional int
+            The maximum number of near locations to find for each feature in analysisLayer.
+        search_cutoff : Optional float
+            Limits the search range to this value
+        search_cutoff_units : Optional string
+            The units for the value specified as searchCutoff
+        time_of_day : Optional datetime.date
+            When measurementType is DrivingTime, this value specifies the time of day to be used for driving time calculations based on traffic.
+        time_zone_for_time_of_day : Optional string
+
+        output_name : Optional string
+            Additional properties such as output feature service name
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference
+
+        Returns
+        -------
+        dict with the following keys:
+           "nearest_layer" : layer (FeatureCollection)
+           "connecting_lines_layer" : layer (FeatureCollection)
+        """
+
+        task ="FindNearest"
+
+        params = {}
+
+        params["analysisLayer"] = self._feature_input(analysis_layer)
+        params["nearLayer"] = self._feature_input(near_layer)
+        if point_barrier_layer:
+            point_barrier_layer = self._feature_input(point_barrier_layer)
+        if line_barrier_layer:
+            line_barrier_layer = self._feature_input(line_barrier_layer)
+        if polygon_barrier_layer:
+            polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params["measurementType"] = measurement_type
+            if max_count is not None:
+                params["maxCount"] = max_count
+            if search_cutoff is not None:
+                params["searchCutoff"] = search_cutoff
+            if search_cutoff_units is not None:
+                params["searchCutoffUnits"] = search_cutoff_units
+            if time_of_day is not None:
+                params["timeOfDay"] = time_of_day
+            if time_zone_for_time_of_day is not None:
+                params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if include_route_layers is not None:
+                params["includeRouteLayers"] = include_route_layers
+            if point_barrier_layer is not None:
+                params["pointBarrierLayer"] = point_barrier_layer
+            if line_barrier_layer is not None:
+                params["lineBarrierLayer"] = line_barrier_layer
+            if polygon_barrier_layer is not None:
+                params["polygonBarrierLayer"] = polygon_barrier_layer
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.find_nearest(analysis_layer=analysis_layer, near_layer=near_layer,
+                                       measurement_type=measurement_type, max_count=max_count,
+                                       search_cutoff=search_cutoff, search_cutoff_units=search_cutoff_units,
+                                       time_of_day=time_of_day, time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                       output_name=output_name, context=context,
+                                       include_route_layers=include_route_layers,
+                                       point_barrier_layer=point_barrier_layer,
+                                       line_barrier_layer=line_barrier_layer,
+                                       polygon_barrier_layer=polygon_barrier_layer,
+                                       gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def find_outliers(self,
+                      analysis_layer,
+                      analysis_field=None,
+                      divided_by_field=None,
+                     bounding_polygon_layer=None,
+                     aggregation_polygon_layer=None,
+                     permutations=None,
+                     shape_type=None,
+                     cell_size=None,
+                     cell_units=None,
+                     distance_band=None,
+                     band_units=None,
+                     output_name=None,
+                     context=None,
+                     estimate=False,
+                     future=False):
+        """
+        The Find Outliers task analyzes point data (such as crime incidents, traffic accidents, or trees) or field values associated with points or area features (such as the number of people in each census tract or the total sales for retail stores). It finds statistically significant spatial clusters of high values and low values and statistically significant high or low spatial outliers within those clusters.
+
+        The result map layer shows high outliers in red and low outliers in dark blue. Clusters of high values appear pink and clusters of low values appear light blue. Features that are beige are not a statistically significant outlier and not part of a statistically significant cluster; the spatial pattern associated with these features could very likely be the result of random processes and random chance.
+
+        Parameters
+        ----------
+        analysis_layer : Required layer (see Feature Input in documentation)
+            The point or polygon feature layer for which outliers will be calculated.
+        analysis_field : Optional string
+            The numeric field that will be analyzed.
+        divided_by_field : Optional string, The numeric field in the analysis_layer that will be used to normalize your data.
+        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
+            When the analysis layer is points and no analysisField is specified, you can provide polygon features that define where incidents could have occurred.
+        aggregation_polygon_layer : Optional layer (see Feature Input in documentation)
+            When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
+        permutations : Permutations are used to determine how likely it would be to find the actual spatial distribution of the values you are analyzing. Choosing the number of permutations is a balance between precision and increased processing time. A lower number of permutations can be used when first exploring a problem, but it is best practice to increase the permutations to the highest number feasible for final results.
+
+           - Speed implements 199 permutations and results in p-values with a precision of 0.01.
+           - Balance implements 499 permutations and results in p-values with a precision of 0.002.
+           - Precision implements 999 permutations and results in p-values with a precision of 0.001.
+           Values: Speed | Balance | Precision
+        shape_type : optional string, The shape of the polygon mesh the input features will be aggregated into.
+
+          - Fishnet - The input features will be aggregated into a grid of square (fishnet) cells.
+          - Hexagon - The input features will be aggregated into a grid of hexagonal cells.
+        cell_size : The size of the grid cells used to aggregate your features. When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
+        cell_units : The units of the cellSize value. You must provide a value if cellSize has been set.
+          Values: Miles | Feet | Kilometers | Meters
+        distance_band : The spatial extent of the analysis neighborhood. This value determines which features are analyzed together in order to assess local clustering.
+        band_units : The units of the distanceBand value. You must provide a value if distanceBand has been set.
+          Values: Miles | Feet | Kilometers | Meters
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+
+        Returns
+        -------
+        Item it output_name is set.
+        dict with the following keys:
+           "find_outliers_result_layer" : layer (FeatureCollection)
+           "process_info" : list of messages
+
+        """
+
+        task ="FindOutliers"
+
+        params = {}
+        analysis_layer = self._feature_input(analysis_layer)
+        if bounding_polygon_layer:
+            bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
+        if aggregation_polygon_layer:
+            aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params["analysisLayer"] = analysis_layer
+            if analysis_field is not None:
+                params["analysisField"] = analysis_field
+            if divided_by_field is not None:
+                params["dividedByField"] = divided_by_field
+            if bounding_polygon_layer is not None:
+                params["boundingPolygonLayer"] = bounding_polygon_layer
+            if aggregation_polygon_layer is not None:
+                params["aggregationPolygonLayer"] = aggregation_polygon_layer
+            if output_name is not None:
+                params["outputName"] = output_name
+            if permutations is not None:
+                params['permutations'] = permutations
+            if shape_type:
+                params['shapeType'] = shape_type
+            if cell_size:
+                params['cellSize'] = cell_size
+            if cell_units:
+                params['cellSizeUnits'] = cell_units
+            if distance_band:
+                params['distanceBand'] = distance_band
+            if band_units:
+                params['distanceBandUnits'] = band_units
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.find_outliers(analysis_layer=analysis_layer, analysis_field=analysis_field,
+                                        divided_by_field=divided_by_field, bounding_polygon_layer=bounding_polygon_layer,
+                                        aggregation_polygon_layer=aggregation_polygon_layer, permutations=permutations,
+                                        shape_type=shape_type, cell_size=cell_size, cell_size_units=cell_units,
+                                        distance_band=distance_band, distance_band_units=band_units,
+                                        output_name=output_name, context=context, gis=self._gis,
+                                        future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def find_point_clusters(self,
+                            analysis_layer,
+                            min_features_cluster,
+                            search_distance=None,
+                            search_distance_unit=None,
+                            output_name=None,
+                            context=None,
+                            estimate=False,
+                            future=False):
+        """
+        The Find Point Clusters task finds clusters of point features in surrounding
+        noise based on their spatial distribution. Output is a layer containing records
+        assigned to a cluster or noise.
+
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        analysis_layer          Required layer. The point feature layer for which
+                                density-based clustering will be calculated.
+        --------------------    ---------------------------------------------------------
+        min_features_cluster    Required integer. The minimum number of features to be
+                                considered a cluster. Any cluster with fewer features
+                                than the number provided will be considered noise.
+        --------------------    ---------------------------------------------------------
+        search_distance         Optional double. The maximum distance to consider. The
+                                Minimum Features per Cluster specified must be found
+                                within this distance for cluster membership. Individual
+                                clusters will be separated by at least this distance. If
+                                a feature is located further than this distance from the
+                                next closest feature in the cluster, it will not be
+                                included in the cluster.
+        --------------------    ---------------------------------------------------------
+        search_distance_unit    Optional string. The linear unit to be used for the
+                                search distance parameter.
+        --------------------    ---------------------------------------------------------
+        output_name             Optional string. Additional properties such as output
+                                feature service name.
+        --------------------    ---------------------------------------------------------
+        context                 Optional string. Additional settings such as processing
+                                extent and output spatial reference.
+        --------------------    ---------------------------------------------------------
+        estimate                Optional Boolean.  Returns the estimated number of
+                                credits for the current task.
+        ====================    =========================================================
+
+        :returns: Python dictionary with the following keys:
+            "point_clusters_result_layer" : layer (FeatureCollection)
+            "process_info" : list of messages
+        """
+
+        task ="FindPointClusters"
+
+        params = {}
+        analysis_layer = self._feature_input(analysis_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+        if estimate:
+            params["analysisLayer"] = analysis_layer
+            params["minFeaturesCluster"] = min_features_cluster
+            if search_distance is not None:
+                params["searchDistance"] = search_distance
+            if search_distance_unit is not None:
+                params["searchDistanceUnit "] = search_distance_unit
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.find_point_clusters(analysis_layer=analysis_layer,
+                                              min_features_cluster=min_features_cluster,
+                                              search_distance=search_distance,
+                                              search_distance_unit=search_distance_unit,
+                                              output_name=output_name,
+                                              context=context, gis=self._gis,
+                                              future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def find_similar_locations(self,
+                               input_layer,
+                               search_layer,
+                               analysis_fields=[],
+                               input_query=None,
+                               number_of_results=0,
+                               output_name=None,
+                               context=None,
+                               estimate=False,
+                               future=False):
+        """
+
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+
+        search_layer : Required layer (see Feature Input in documentation)
+
+        analysis_fields : Required list of strings
+
+        input_query : Optional string
+
+        number_of_results : Optional int
+
+        output_name : Optional string
+
+        context : Optional string
+
+
+        Returns
+        -------
+        dict with the following keys:
+           "similar_result_layer" : layer (FeatureCollection)
+           "process_info" : layer (FeatureCollection)
+        """
+
+        task ="FindSimilarLocations"
+        input_layer = self._feature_input(input_layer)
+        search_layer = self._feature_input(search_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            params = {}
+            params["inputLayer"] = input_layer
+            params["searchLayer"] = search_layer
+            params["analysisFields"] = analysis_fields
+            if input_query is not None:
+                params["inputQuery"] = input_query
+            if number_of_results is not None:
+                params["numberOfResults"] = number_of_results
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.find_similar_locations(input_layer=input_layer, search_layer=search_layer,
+                                                 analysis_fields=analysis_fields, input_query=input_query,
+                                                 number_of_results=number_of_results,
+                                                 output_name=output_name,
+                                                 context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def generate_tesselation(self,
+                             extent_layer,
+                             bin_size,
+                             bin_size_unit="SquareKilimeters",
+                             bin_type="SQUARE",
+                             intersect_study_area=False,
+                             output_name=None,
+                             context=None,
+                             estimate=False,
+                             future=False):
+        """
+        Generates a tessellated grid of regular polygons.
+
+        Parameters:
+
+           bin_type: binType (str). Required parameter.  The type of shape to tessellate.
+              Choice list:['SQUARE', 'HEXAGON', 'TRIANGLE', 'DIAMOND', 'TRANSVERSEHEXAGON']
+
+           bin_size: binSize (float). Optional parameter.  The size of each individual shape that makes up the tessellation.
+
+           bin_size_unit: binSizeUnit (str). Optional parameter.  Size unit of each individual shape.
+              Choice list:['SquareKilometers', 'Hectares', 'SquareMeters', 'SquareMiles', 'Acres', 'SquareYards', 'SquareFeet', 'SquareInches', 'Miles', 'Yards', 'Feet', 'Kilometers', 'Meters', 'NauticalMiles']
+
+           extent_layer: extentLayer (FeatureSet). Optional parameter.  A layer defining the processing extent.
+
+           intersect_study_area: intersectStudyArea (bool). Optional parameter.  A boolean defines whether to keep only tessellations intersect with the study area.
+
+           output_name: outputName (str). Optional parameter.  Additional properties such as output feature service name.
+
+           context: context (str). Optional parameter.  Additional settings such as processing extent and output spatial reference.
+
+           gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+           future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+        Returns:
+           tessellation_layer - FeatureLayer or Feature Layer Collection
+
+        """
+        extent_layer = self._feature_input(extent_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            task ="GenerateTessellations"
+            params = {}
+            if bin_type:
+                params["binType"] = bin_type
+            if bin_size:
+                params['binSize'] = bin_size
+            if bin_size_unit:
+                params["binSizeUnit"] = bin_size_unit
+            if extent_layer:
+                params["extentLayer"] = extent_layer
+            params["intersectStudyArea"] = intersect_study_area
+            if output_name:
+                params["outputName"] = output_name
+            if context:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.generate_tessellations(bin_type=bin_type,
+                                                 bin_size=bin_size,
+                                                 bin_size_unit=bin_size_unit,
+                                                 extent_layer=extent_layer,
+                                                 intersect_study_area=intersect_study_area,
+                                                 output_name=output_name,
+                                                 context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def interpolate_points(self,
+                           input_layer,
+                           field,
+                           interpolate_option="5",
+                           output_prediction_error=False,
+                           classification_type="GeometricInterval",
+                           num_classes=10,
+                           class_breaks=[],
+                           bounding_polygon_layer=None,
+                           predict_at_point_layer=None,
+                           output_name=None,
+                           context=None,
+                           estimate=False,
+                           future=False):
+        """
+        The Interpolate Points task allows you to predict values at new locations based on measurements from a collection of points. The task takes point data with values at each point and returns areas classified by predicted values.
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+            The point layer whose features will be interpolated.
+        field : Required string
+            Name of the numeric field containing the values you wish to interpolate.
+        interpolate_option : Optional string
+            Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate). More accurate predictions take longer to calculate.
+        output_prediction_error : Optional bool
+            If True, a polygon layer of standard errors for the interpolation predictions will be returned in the predictionError output parameter.
+        classification_type : Optional string
+            Determines how predicted values will be classified into areas.
+        num_classes : Optional int
+            This value is used to divide the range of interpolated values into distinct classes. The range of values in each class is determined by the classificationType parameter. Each class defines the boundaries of the result polygons.
+        class_breaks : Optional list of floats
+            If classificationType is Manual, supply desired class break values separated by spaces. These values define the upper limit of each class, so the number of classes will equal the number of entered values. Areas will not be created for any locations with predicted values above the largest entered break value. You must enter at least two values and no more than 32.
+        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
+            A layer specifying the polygon(s) where you want values to be interpolated.
+        predict_at_point_layer : Optional layer (see Feature Input in documentation)
+            An optional layer specifying point locations to calculate prediction values. This allows you to make predictions at specific locations of interest.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+
+        Returns
+        -------
+        dict with the following keys:
+           "result_layer" : layer (FeatureCollection)
+           "prediction_error" : layer (FeatureCollection)
+           "predicted_point_layer" : layer (FeatureCollection)
+        """
+
+        task ="InterpolatePoints"
+
+        params = {}
+        input_layer = self._feature_input(input_layer)
+        if bounding_polygon_layer:
+            bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
+        if predict_at_point_layer:
+            predict_at_point_layer = self._feature_input(predict_at_point_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params["inputLayer"] = input_layer
+            params["field"] = field
+            if interpolate_option is not None:
+                params["interpolateOption"] = interpolate_option
+            if output_prediction_error is not None:
+                params["outputPredictionError"] = output_prediction_error
+            if classification_type is not None:
+                params["classificationType"] = classification_type
+            if num_classes is not None:
+                params["numClasses"] = num_classes
+            if class_breaks is not None:
+                params["classBreaks"] = class_breaks
+            if bounding_polygon_layer is not None:
+                params["boundingPolygonLayer"] = bounding_polygon_layer
+            if predict_at_point_layer is not None:
+                params["predictAtPointLayer"] = predict_at_point_layer
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.interpolate_points(input_layer=input_layer, field=field,
+                                             interpolate_option=interpolate_option,
+                                             output_prediction_error=output_prediction_error,
+                                             classification_type=classification_type,
+                                             num_classes=num_classes,
+                                             class_breaks=class_breaks,
+                                             bounding_polygon_layer=bounding_polygon_layer,
+                                             predict_at_point_layer=predict_at_point_layer,
+                                             output_name=output_name,
+                                             context=context, gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def join_features(self,
+                      target_layer,
+                      join_layer,
+                      spatial_relationship,
+                      spatial_relationship_distance,
+                      spatial_relationship_distance_units,
+                      attribute_relationship,
+                      join_operation,
+                      summary_fields,
+                      output_name=None,
+                      context=None,
+                      estimate=False,
+                      records_to_match=None,
+                      future=False):
+        """
+        Join Features Tool
+        """
+        task ="JoinFeatures"
+        params = {}
+        target_layer = self._feature_input(target_layer)
+        join_layer = self._feature_input(join_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+        if estimate:
+            params["targetLayer"] = target_layer
+            params["joinLayer"] = join_layer
+            if spatial_relationship is not None:
+                params["spatialRelationship"] = spatial_relationship
+            if spatial_relationship_distance is not None:
+                params["spatialRelationshipDistance"] = spatial_relationship_distance
+            if spatial_relationship_distance_units is not None:
+                params["spatialRelationshipDistanceUnits"] = spatial_relationship_distance_units
+            if attribute_relationship is not None:
+                params["attributeRelationship"] = attribute_relationship
+            if summary_fields is not None:
+                params["summaryFields"] = summary_fields
+            if join_operation is not None:
+                params["joinOperation"] = join_operation
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.join_features(target_layer=target_layer, join_layer=join_layer,
+                                        spatial_relationship=spatial_relationship,
+                                        spatial_relationship_distance=spatial_relationship_distance,
+                                        spatial_relationship_distance_units=spatial_relationship_distance_units,
+                                        attribute_relationship=attribute_relationship,
+                                        join_operation=join_operation,
+                                        summary_fields=summary_fields,
+                                        records_to_match=records_to_match,
+                                        output_name=output_name,
+                                        context=context, gis=self._gis,
+                                        future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def merge_layers(self,
+                     input_layer,
+                     merge_layer,
+                     merging_attributes=[],
+                     output_name=None,
+                     context=None,
+                     estimate=False,
+                     future=False):
+        """
+        Combines two inputs of the same feature data type into a new output.
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+             The point, line, or polygon  features to merge with the mergeLayer.
+        merge_layer : Required layer (see Feature Input in documentation)
+            The point, line or polygon features to merge with inputLayer.  mergeLayer must contain the same feature type (point, line, or polygon) as the inputLayer.
+        merging_attributes : Optional list of strings
+            An array of values that describe how fields from the mergeLayer are to be modified.  By default all fields from both inputs will be carried across to the output.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+
+        Returns
+        -------
+        merged_layer : layer (FeatureCollection)
+        """
+
+        task ="MergeLayers"
+
+
+        input_layer = self._feature_input(input_layer)
+        merge_layer = self._feature_input(merge_layer)
+
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+        if estimate:
+            params = {}
+            params["inputLayer"] = input_layer
+            params["mergeLayer"] = merge_layer
+            if merging_attributes is not None:
+                params["mergingAttributes"] = merging_attributes
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.merge_layers(input_layer=input_layer, merge_layer=merge_layer,
+                                       merging_attributes=merging_attributes,
+                                       output_name=output_name, context=context,
+                                       gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def overlay_layers(self,
+                       input_layer,
+                       overlay_layer,
+                       overlay_type="Intersect",
+                       snap_to_input=False,
+                       output_type="Input",
+                       tolerance=None,
+                       output_name=None,
+                       context=None,
+                       estimate=False,
+                       future=False):
+        """
+        Overlays the input layer with the overlay layer. Overlay operations supported are Intersect, Union, and Erase.
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+            The input analysis layer.
+        overlay_layer : Required layer (see Feature Input in documentation)
+            The layer to be overlaid with the analysis layer.
+        overlay_type : Optional string
+            The overlay type (INTERSECT, UNION, or ERASE) defines how the analysis layer and the overlay layer are combined.
+        snap_to_input : Optional bool
+            When the distance between features is less than the tolerance, the features in the overlay layer will snap to the features in the input layer.
+        output_type : Optional string
+            The type of intersection (INPUT, LINE, POINT).
+        tolerance : Optional float
+            The minimum distance separating all feature coordinates (nodes and vertices) as well as the distance a coordinate can move in X or Y (or both).
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+
+        Returns
+        -------
+        output_layer : layer (FeatureCollection)
+        """
+
+        task ="OverlayLayers"
+
+        params = {}
+        input_layer = self._feature_input(input_layer)
+        overlay_layer = self._feature_input(overlay_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            params["inputLayer"] = input_layer
+            params["overlayLayer"] = overlay_layer
+            if overlay_type is not None:
+                params["overlayType"] = overlay_type
+            if snap_to_input is not None:
+                params["snapToInput"] = snap_to_input
+            if output_type is not None:
+                params["outputType"] = output_type
+            if tolerance is not None:
+                params["tolerance"] = tolerance
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.overlay_layers(input_layer=input_layer, overlay_layer=overlay_layer,
+                                         overlay_type=overlay_type, snap_to_input=snap_to_input,
+                                         output_type=output_type, tolerance=tolerance,
+                                         output_name=output_name, context=context,
+                                         gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def plan_routes(self,
+                    stops_layer,
+                    route_count,
+                    max_stops_per_route,
+                    route_start_time,
+                    start_layer,
+                    start_layer_route_id_field=None,
+                    return_to_start=True,
+                    end_layer=None,
+                    end_layer_route_id_field=None,
+                    travel_mode="Driving Time",
+                    stop_service_time=0,
+                    max_route_time=525600,
+                    include_route_layers=False,
+                    output_name=None,
+                    context=None,
+                    estimate=False,
+                    point_barrier_layer=None,
+                    line_barrier_layer=None,
+                    polygon_barrier_layer=None,
+                    future=False):
+        """
+
+
+        Parameters
+        ----------
+        stops_layer : Required layer (see Feature Input in documentation)
+
+        route_count : Required int
+
+        max_stops_per_route : Required int
+
+        route_start_time : Required datetime.date
+
+        start_layer : Required layer (see Feature Input in documentation)
+
+        start_layer_route_id_field : Optional string
+
+        return_to_start : Optional bool
+
+        end_layer : Optional layer (see Feature Input in documentation)
+
+        end_layer_route_id_field : Optional string
+
+        travel_mode : Optional string
+
+        stop_service_time : Optional float
+
+        max_route_time : Optional float
+
+        include_route_layers : Optional bool
+
+        output_name : Optional string
+
+        context : Optional string
+
+        point_barrier_layer: Optional FeatureSet/FeatureLayer
+
+        line_barrier_layer: Optional FeatureSet/FeatureLayer
+
+        polygon_barrier_layer: Optional FeatureSet/FeatureLayer
+
+        Returns
+        -------
+        dict with the following keys:
+           "routes_layer" : layer (FeatureCollection)
+           "assigned_stops_layer" : layer (FeatureCollection)
+           "unassigned_stops_layer" : layer (FeatureCollection)
+        """
+
+        task ="PlanRoutes"
+
+        params = {}
+        stops_layer = self._feature_input(stops_layer)
+        if start_layer:
+            start_layer = self._feature_input(start_layer)
+        if end_layer:
+            end_layer = self._feature_input(end_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if point_barrier_layer:
+            point_barrier_layer = self._feature_input(point_barrier_layer)
+        if line_barrier_layer:
+            line_barrier_layer = self._feature_input(line_barrier_layer)
+        if polygon_barrier_layer:
+            polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
+
+        if estimate:
+            params["stopsLayer"] = stops_layer
+            params["routeCount"] = route_count
+            params["maxStopsPerRoute"] = max_stops_per_route
+            params["routeStartTime"] = route_start_time
+            params["startLayer"] = start_layer
+            params["includeRouteLayers"] = include_route_layers
+            if start_layer_route_id_field is not None:
+                params["startLayerRouteIDField"] = start_layer_route_id_field
+            if return_to_start is not None:
+                params["returnToStart"] = return_to_start
+            if end_layer is not None:
+                params["endLayer"] = end_layer
+            if end_layer_route_id_field is not None:
+                params["endLayerRouteIDField"] = end_layer_route_id_field
+            if travel_mode is not None:
+                params["travelMode"] = travel_mode
+            if stop_service_time is not None:
+                params["stopServiceTime"] = stop_service_time
+            if max_route_time is not None:
+                params["maxRouteTime"] = max_route_time
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if point_barrier_layer:
+                params["pointBarrierLayer"] = point_barrier_layer
+            if line_barrier_layer:
+                params['lineBarrierLayer'] = line_barrier_layer
+            if polygon_barrier_layer:
+                params['polygonBarrierLayer'] = polygon_barrier_layer
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.plan_routes(stops_layer=stops_layer,
+                                      route_count=route_count,
+                                      max_stops_per_route=max_stops_per_route,
+                                      route_start_time=route_start_time,
+                                      start_layer=start_layer,
+                                      start_layer_route_id_field=start_layer_route_id_field,
+                                      return_to_start=return_to_start,
+                                      end_layer=end_layer,
+                                      end_layer_route_id_field=end_layer_route_id_field,
+                                      travel_mode=travel_mode,
+                                      stop_service_time=stop_service_time,
+                                      max_route_time=max_route_time,
+                                      output_name=output_name, context=context,
+                                      include_route_layers=include_route_layers,
+                                      point_barrier_layer=point_barrier_layer,
+                                      line_barrier_layer=line_barrier_layer,
+                                      polygon_barrier_layer=polygon_barrier_layer,
+                                      gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def summarize_center_and_dispersion(self,
+                                        analysis_layer,
+                                        summarize_type=["CentralFeature"],
+                                        ellipse_size=None,
+                                        weight_field=None,
+                                        group_field=None,
+                                        output_name=None,
+                                        context=None,
+                                        estimate=False,
+                                        future=False):
+        """
+        The Summarize Center and Dispersion task finds central features and directional distributions.
+
+        ====================    =========================================================
+        **Argument**            **Description**
+        --------------------    ---------------------------------------------------------
+        analysis_layer          The point, line, or polygon features to be analyzed. This
+                                parameter can be a URL to a feature service layer with an
+                                optional filter to select specific feaures, or a feature
+                                collection
+        --------------------    ---------------------------------------------------------
+        summarize_type          The method with which to summarize the analysis_layer.
+                                Choice List:
+                                ["CentralFeature", "MeanCenter", "MedianCenter",
+                                "Ellipse"]
+                                Example: "CentralFeature"
+        --------------------    ---------------------------------------------------------
+        ellipse_size            The size of the output ellipse in standard deviations.
+                                The default ellipse size is 1. Valid choices are 1, 2, or
+                                3 standard deviations.
+                                Choice List: [1, 2, 3]
+                                Examples:
+                                "1"
+                                [1, 2, 3]
+        --------------------    ---------------------------------------------------------
+        weight_field            A numeric field in the analysis_layer to be used to
+                                weight locations according to their relative importance.
+        --------------------    ---------------------------------------------------------
+        group_field             The field used to group features for separate directional
+                                distribution calculations. The group_field can be of
+                                integer, date, or string type.
+        --------------------    ---------------------------------------------------------
+        output_name             Optional string. Additional properties such as output
+                                feature service name.
+        --------------------    ---------------------------------------------------------
+        context                 Optional string. Additional settings such as processing
+                                extent and output spatial reference.
+        --------------------    ---------------------------------------------------------
+        gis                     Optional, the GIS on which this tool runs. If not
+                                specified, the active GIS is used.
+        --------------------    ---------------------------------------------------------
+        estimate                Optional Boolean.  Returns the estimated number of
+                                credits for the current task.
+        ====================    =========================================================
+
+        :returns:
+        If an output_name is provided, a
+
+        Python dictionary with the following keys:
+          "central_feature_result_layer" : layer (FeatureCollection)
+          "mean_feature_result_layer" : layer (FeatureCollection)
+          "median_feature_result_layer" : layer (FeatureCollection)
+          "ellipse_feature_result_layer" : layer (FeatureCollection)
+          "process_info" : list of messages
+        """
+
+        task ="SummarizeCenterAndDispersion"
+
+        params = {}
+        analysis_layer = self._feature_input(analysis_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+        if estimate:
+            params["analysisLayer"] = analysis_layer
+            params["summarizeType"] = summarize_type
+
+            if ellipse_size is not None:
+                params["ellipseSize"] = ellipse_size
+            if weight_field is not None:
+                params["weightField"] = weight_field
+            if group_field  is not None:
+                params["groupField"] = group_field
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.summarize_center_and_dispersion(analysis_layer=analysis_layer,
+                                                          summarize_type=summarize_type,
+                                                          ellipse_size=ellipse_size,
+                                                          weight_field=weight_field,
+                                                          group_field=group_field,
+                                                          output_name=output_name,
+                                                          context=context,
+                                                          gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def summarize_within(self,
+                         sum_within_layer,
+                         summary_layer,
+                         sum_shape=True,
+                         shape_units=None,
+                         summary_fields=[],
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_shape=False,
+                         output_name=None,
+                         context=None,
+                         estimate=False,
+                         bin_size=None,
+                         bin_type="SQUARE",
+                         bin_size_unit=None,
+                         future=False):
+        """
+        The SummarizeWithin task helps you to summarize and find statistics on the point, line, or polygon features (or portions of these features) that are within the boundaries of polygons in another layer. For example:Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
+
+        Parameters
+        ----------
+        sum_within_layer : Required layer (see Feature Input in documentation)
+            A polygon feature layer or featurecollection. Features, or portions of features, in the summaryLayer (below) that fall within the boundaries of these polygons will be summarized.
+        summary_layer : Required layer (see Feature Input in documentation)
+            Point, line, or polygon features that will be summarized for each polygon in the sumWithinLayer.
+        sum_shape : Optional bool
+            A boolean value that instructs the task to calculate count of points, length of lines or areas of polygons of the summaryLayer within each polygon in sumWithinLayer.
+        shape_units : Optional string
+            Specify units to summarize the length or areas when sumShape is set to true. Units is not required to summarize points.
+        summary_fields : Optional list of strings
+            A list of field names and statistical summary type that you wish to calculate for all features in the  summaryLayer that are within each polygon in the sumWithinLayer . Eg: ["fieldname1 summary", "fieldname2 summary"]
+        group_by_field : Optional string
+            Specify a field from the summaryLayer features to calculate statistics separately for each unique attribute value.
+        minority_majority : Optional bool
+            This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
+        percent_shape : Optional bool
+            This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+
+        Returns
+        -------
+        dict with the following keys:
+           "result_layer" : layer (FeatureCollection)
+           "group_by_summary" : layer (FeatureCollection)
+        """
+
+        task ="SummarizeWithin"
+
+        params = {}
+        sum_within_layer = self._feature_input(sum_within_layer)
+        summary_layer = self._feature_input(summary_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params["sumWithinLayer"] = sum_within_layer
+            params["summaryLayer"] = summary_layer
+            if sum_shape is not None:
+                params["sumShape"] = sum_shape
+            if shape_units is not None:
+                params["shapeUnits"] = shape_units
+            if summary_fields is not None:
+                params["summaryFields"] = summary_fields
+            if group_by_field is not None:
+                params["groupByField"] = group_by_field
+            if minority_majority is not None:
+                params["minorityMajority"] = minority_majority
+            if percent_shape is not None:
+                params["percentShape"] = percent_shape
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            if bin_size:
+                params['binSize'] = bin_size
+            if bin_size_unit:
+                params['binSizeUnit'] = bin_size_unit
+            if bin_type:
+                params['binType'] = bin_type
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.summarize_within(sum_within_layer=sum_within_layer,
+                                           summary_layer=summary_layer,
+                                           sum_shape=sum_shape,
+                                           shape_units=shape_units,
+                                           summary_fields=summary_fields,
+                                           group_by_field=group_by_field,
+                                           minority_majority=minority_majority,
+                                           percent_shape=percent_shape,
+                                           output_name=output_name,
+                                           context=context,
+                                           bin_type=bin_type, bin_size=bin_size,
+                                           bin_size_unit=bin_size_unit,
+                                           gis=self._gis, future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def trace_downstream(self,
+                         input_layer,
+                         split_distance=None,
+                         split_units="Kilometers",
+                         max_distance=None,
+                         max_distance_units="Kilometers",
+                         bounding_polygon_layer=None,
+                         source_database=None,
+                         generalize=True,
+                         output_name=None,
+                         context=None,
+                         estimate=False,
+                         future=False):
+        """
+
+
+        Parameters
+        ----------
+        input_layer : Required layer (see Feature Input in documentation)
+
+        split_distance : Optional float
+
+        split_units : Optional string
+
+        max_distance : Optional float
+
+        max_distance_units : Optional string
+
+        bounding_polygon_layer : Optional layer (see Feature Input in documentation)
+
+        source_database : Optional string
+
+        generalize : Optional bool
+
+        output_name : Optional string
+
+        context : Optional string
+
+
+        Returns
+        -------
+        trace_layer : layer (FeatureCollection)
+        """
+
+        task ="TraceDownstream"
+
+        params = {}
+        input_layer = self._feature_input(input_layer)
+        if bounding_polygon_layer:
+            bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params["inputLayer"] = input_layer
+            if split_distance is not None:
+                params["splitDistance"] = split_distance
+            if split_units is not None:
+                params["splitUnits"] = split_units
+            if max_distance is not None:
+                params["maxDistance"] = max_distance
+            if max_distance_units is not None:
+                params["maxDistanceUnits"] = max_distance_units
+            if bounding_polygon_layer is not None:
+                params["boundingPolygonLayer"] = bounding_polygon_layer
+            if source_database is not None:
+                params["sourceDatabase"] = source_database
+            if generalize is not None:
+                params["generalize"] = generalize
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+        gpjob = self._tbx.trace_downstream(input_layer=input_layer,
+                                           split_distance=split_distance,
+                                           split_units=split_units,
+                                           max_distance=max_distance,
+                                           max_distance_units=max_distance_units,
+                                           bounding_polygon_layer=bounding_polygon_layer,
+                                           source_database=source_database,
+                                           generalize=generalize,
+                                           output_name=output_name,
+                                           context=context,
+                                           gis=self._gis,
+                                           future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def summarize_nearby(self,
+                         sum_nearby_layer,
+                         summary_layer,
+                         near_type="StraightLine",
+                         distances=[],
+                         units="Meters",
+                         time_of_day=None,
+                         time_zone_for_time_of_day="GeoLocal",
+                         return_boundaries=True,
+                         sum_shape=True,
+                         shape_units=None,
+                         summary_fields=[],
+                         group_by_field=None,
+                         minority_majority=False,
+                         percent_shape=False,
+                         output_name=None,
+                         context=None,
+                         estimate=False,
+                         future=False):
+        """
+        The SummarizeNearby task finds features that are within a specified distance of features in the input layer. Distance can be measured as a straight-line distance, a drive-time distance (for example, within 10 minutes), or a drive distance (within 5 kilometers). Statistics are then calculated for the nearby features. For example:Calculate the total population within five minutes of driving time of a proposed new store location.Calculate the number of freeway access ramps within a one-mile driving distance of a proposed new store location to use as a measure of store accessibility.
+
+        Parameters
+        ----------
+        sum_nearby_layer : Required layer (see Feature Input in documentation)
+            Point, line, or polygon features from which distances will be measured to features in the summarizeLayer.
+        summary_layer : Required layer (see Feature Input in documentation)
+            Point, line, or polygon features. Features in this layer that are within the specified distance to features in the sumNearbyLayer will be summarized.
+        near_type : Optional string
+            Defines what kind of distance measurement you want to use to create areas around the nearbyLayer features.
+        distances : Required list of floats
+            An array of double values that defines the search distance for creating areas mentioned above
+        units : Optional string
+            The linear unit for distances parameter above. Eg. Miles, Kilometers, Minutes Seconds etc
+        time_of_day : Optional datetime.date
+            For timeOfDay, set the time and day according to the number of milliseconds elapsed since the Unix epoc (January 1, 1970 UTC). When specified and if relevant for the nearType parameter, the traffic conditions during the time of the day will be considered.
+        time_zone_for_time_of_day : Optional string
+            Determines if the value specified for timeOfDay is specified in UTC or in a time zone that is local to the location of the origins.
+        return_boundaries : Optional bool
+            If true, will return a result layer of areas that contain the requested summary information.  The resulting areas are defined by the specified nearType.  For example, if using a StraightLine of 5 miles, your result will contain areas with a 5 mile radius around the input features and specified summary information.If false, the resulting layer will return the same features as the input analysis layer with requested summary information.
+        sum_shape : Optional bool
+            A boolean value that instructs the task to calculate count of points, length of lines or areas of polygons of the summaryLayer within each polygon in sumWithinLayer.
+        shape_units : Optional string
+            Specify units to summarize the length or areas when sumShape is set to true. Units is not required to summarize points.
+        summary_fields : Optional list of strings
+            A list of field names and statistical summary type that you wish to calculate for all features in the summaryLayer that are within each polygon in the sumWithinLayer . Eg: ["fieldname1 summary", "fieldname2 summary"]
+        group_by_field : Optional string
+            Specify a field from the summaryLayer features to calculate statistics separately for each unique value of the field.
+        minority_majority : Optional bool
+            This boolean parameter is applicable only when a groupByField is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values within each group, within each boundary will be calculated.
+        percent_shape : Optional bool
+            This boolean parameter is applicable only when a groupByField is specified. If set to true, the percentage of shape (eg. length for lines) for each unique groupByField value is calculated.
+        output_name : Optional string
+            Additional properties such as output feature service name.
+        context : Optional string
+            Additional settings such as processing extent and output spatial reference.
+        estimate: Optional Boolean
+            Returns the number of credit for the operation.
+
+        Returns
+        -------
+        dict with the following keys:
+           "result_layer" : layer (FeatureCollection)
+           "group_by_summary" : layer (FeatureCollection)
+        """
+
+        task ="SummarizeNearby"
+
+
+        sum_nearby_layer = self._feature_input(sum_nearby_layer)
+        summary_layer = self._feature_input(summary_layer)
+
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
+
+
+        if estimate:
+            params = {}
+            if sum_nearby_layer:
+                params["sumNearbyLayer"] = sum_nearby_layer
+            if summary_layer:
+                params["summaryLayer"] = summary_layer
+            if near_type is not None:
+                params["nearType"] = near_type
+            params["distances"] = distances
+            if units is not None:
+                params["units"] = units
+            if time_of_day is not None:
+                params["timeOfDay"] = time_of_day
+            if time_zone_for_time_of_day is not None:
+                params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day
+            if return_boundaries is not None:
+                params["returnBoundaries"] = return_boundaries
+            if sum_shape is not None:
+                params["sumShape"] = sum_shape
+            if shape_units is not None:
+                params["shapeUnits"] = shape_units
+            if summary_fields is not None:
+                params["summaryFields"] = summary_fields
+            if group_by_field is not None:
+                params["groupByField"] = group_by_field
+            if minority_majority is not None:
+                params["minorityMajority"] = minority_majority
+            if percent_shape is not None:
+                params["percentShape"] = percent_shape
+            if output_name is not None:
+                params["outputName"] = output_name
+            if context is not None:
+                params["context"] = context
+            from arcgis.features._credits import _estimate_credits
+            return _estimate_credits(task=task,
+                                     parameters=params)
+
+
+        gpjob = self._tbx.summarize_nearby(sum_nearby_layer=sum_nearby_layer,
+                                           summary_layer=summary_layer,
+                                           near_type=near_type,
+                                           distances=distances,
+                                           units=units,
+                                           time_of_day=time_of_day,
+                                           time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                           return_boundaries=return_boundaries,
+                                           sum_shape=sum_shape,
+                                           shape_units=shape_units,
+                                           summary_fields=summary_fields,
+                                           group_by_field=group_by_field,
+                                           minority_majority=minority_majority,
+                                           percent_shape=percent_shape,
+                                           output_name=output_name,
+                                           context=context,
+                                           gis=self._gis,
+                                           future=True)
+        gpjob._is_fa = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+###########################################################################
+class _FeatureAnalysisToolsOld(_AsyncService):
     """
     Provides feature analysis tools from the Spatial Analysis service. The SpatialAnalysis service is used for supporting Spatial analysis capability
     in Portal for ArcGIS and ArcGIS Online.
@@ -589,7 +3567,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         params["analysisLayer"] = super()._feature_input(analysis_layer)
         params["summarizeType"] = summarize_type
-        
+
         if ellipse_size is not None:
             params["ellipseSize"] = ellipse_size
         if weight_field is not None:
@@ -792,9 +3770,9 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
         if shape_type is not None:
-            params["shapeType"] = shape_type     
+            params["shapeType"] = shape_type
         if cell_size is not None:
-            params["cellSize"] = cell_size               
+            params["cellSize"] = cell_size
         if cell_size_unit is not None:
             params["cellSizeUnit"] = cell_size_unit
         if distance_band is not None:
@@ -1093,7 +4071,7 @@ class _FeatureAnalysisTools(_AsyncService):
         if line_barrier_layer is not None:
             params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
         if polygon_barrier_layer is not None:
-            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)        
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)
 
 
         if estimate:
@@ -1462,7 +4440,7 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
         if return_boundaries:
-            params["returnBoundaries"] = return_boundaries            
+            params["returnBoundaries"] = return_boundaries
 
 
         if estimate:
@@ -1921,7 +4899,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         if goal is not None:
             params["goal"] = goal
-        params["demandLocationsLayer"] = super()._feature_input(demand_locations_layer)            
+        params["demandLocationsLayer"] = super()._feature_input(demand_locations_layer)
         if demand is not None:
             params["demand"] = demand
         if demand_field is not None:
@@ -1937,7 +4915,7 @@ class _FeatureAnalysisTools(_AsyncService):
         if time_of_day is not None:
             params["timeOfDay"] = time_of_day
         if time_zone_for_time_of_day is not None:
-            params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day  
+            params["timeZoneForTimeOfDay"] = time_zone_for_time_of_day
         if travel_direction is not None:
             params["travelDirection"] = travel_direction
         if required_facilities_layer is not None:
@@ -1947,15 +4925,15 @@ class _FeatureAnalysisTools(_AsyncService):
         if required_facilities_capacity_field is not None:
             params["requiredFacilitiesCapacityField"] = required_facilities_capacity_field
         if candidate_facilities_layer is not None:
-            params["candidateFacilitiesLayer"] = super()._feature_input(candidate_facilities_layer)            
+            params["candidateFacilitiesLayer"] = super()._feature_input(candidate_facilities_layer)
         if candidate_count is not None:
             params["candidateCount"] = candidate_count
         if candidate_facilities_capacity is not None:
             params["candidateFacilitiesCapacity"] = candidate_facilities_capacity
-        if candidate_facilities_capacity_field is not None:       
-            params["candidateFacilitiesCapacityField"] = candidate_facilities_capacity_field                 
+        if candidate_facilities_capacity_field is not None:
+            params["candidateFacilitiesCapacityField"] = candidate_facilities_capacity_field
         if percent_demand_coverage is not None:
-            params["percentDemandCoverage"] = percent_demand_coverage            
+            params["percentDemandCoverage"] = percent_demand_coverage
         if output_name is not None:
             params["outputName"] = {"serviceProperties": {"name": output_name }}
         if context is not None:
@@ -1965,7 +4943,7 @@ class _FeatureAnalysisTools(_AsyncService):
         if line_barrier_layer is not None:
             params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
         if polygon_barrier_layer is not None:
-            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)    
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)
 
         if estimate:
             from arcgis.features._credits import _estimate_credits
@@ -1991,7 +4969,7 @@ class _FeatureAnalysisTools(_AsyncService):
             allocation_lines_layer = arcgis.features.FeatureCollection(job_values['allocationLinesLayer'])
 
             assigned_facilities_layer = arcgis.features.FeatureCollection(job_values['assignedFacilitiesLayer'])
-            return { "allocated_demand_locations_layer":allocated_demand_locations_layer, "allocation_lines_layer":allocation_lines_layer, "assigned_facilities_layer":assigned_facilities_layer, }        
+            return { "allocated_demand_locations_layer":allocated_demand_locations_layer, "allocation_lines_layer":allocation_lines_layer, "assigned_facilities_layer":assigned_facilities_layer, }
 
 
     def interpolate_points(self,
@@ -2639,13 +5617,13 @@ class _FeatureAnalysisTools(_AsyncService):
         if context is not None:
             params["context"] = context
         if include_route_layers is not None:
-            params["includeRouteLayers"] = include_route_layers            
+            params["includeRouteLayers"] = include_route_layers
         if point_barrier_layer is not None:
             params["pointBarrierLayer"] = super()._feature_input(point_barrier_layer)
         if line_barrier_layer is not None:
             params["lineBarrierLayer"] = super()._feature_input(line_barrier_layer)
         if polygon_barrier_layer is not None:
-            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)        
+            params["polygonBarrierLayer"] = super()._feature_input(polygon_barrier_layer)
 
         if estimate:
             from arcgis.features._credits import _estimate_credits
@@ -3033,6 +6011,7 @@ class _FeatureAnalysisTools(_AsyncService):
 
         return route_layer_items
 
+###########################################################################
 class _RasterAnalysisTools(_AsyncService):
     "Exposes the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
 
@@ -3862,6 +6841,7 @@ class _RasterAnalysisTools(_AsyncService):
         return output_service
 
 
+###########################################################################
 class _GeoanalyticsTools(_AsyncService):
     """
     The Geoanalytics Tools from the GIS.
@@ -5390,6 +8370,7 @@ class _GeoanalyticsTools(_AsyncService):
     #     return { }
 
 
+###########################################################################
 class _GeometryService(_GISService):
     """
     A geometry service contains utility methods that provide access to
@@ -6668,6 +9649,7 @@ class _GeometryService(_GISService):
         return self._process_results(results)
 
 
+###########################################################################
 class _Tools(object):
     """
     Collection of GIS tools. This class holds references to the helper services and tools available

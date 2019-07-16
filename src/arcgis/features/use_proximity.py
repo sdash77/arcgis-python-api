@@ -10,7 +10,7 @@ plan_routes determines the best way to route a fleet of vehicles to visit many s
 import arcgis as _arcgis
 from arcgis._impl.common._utils import _date_handler
 import arcgis.network as network
-from arcgis.features._async import _run_async
+
 
 def connect_origins_to_destinations(origins_layer,
                                     destinations_layer,
@@ -203,21 +203,6 @@ def connect_origins_to_destinations(origins_layer,
                                          output_name="routes_from_offices_to_hq")
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "origins_layer" : origins_layer,
-            "destinations_layer":destinations_layer,
-            "measurement_type" : measurement_type,
-            "origins_layer_route_id_field" : origins_layer_route_id_field,
-            "destinations_layer_route_id_field" : destinations_layer_route_id_field,
-            "time_of_day" : _date_handler(time_of_day),
-            "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.connect_origins_to_destinations,
-                          **inputs)
     return gis._tools.featureanalysis.connect_origins_to_destinations(
         origins_layer,
         destinations_layer,
@@ -228,7 +213,7 @@ def connect_origins_to_destinations(origins_layer,
         time_zone_for_time_of_day,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 
 def create_buffers(
@@ -383,22 +368,6 @@ def create_buffers(
                                  context={"extent":{"xmin":-12555831.656684224,"ymin":5698027.566358956,"xmax":-11835489.102124758,"ymax":6104672.556836072,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer":input_layer,
-            "distances" : distances,
-            "field" : field,
-            "units" : units,
-            "dissolve_type" : dissolve_type,
-            "ring_type" : ring_type,
-            "side_type" : side_type,
-            "end_type" : end_type,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.create_buffers,
-                          **inputs)
     return gis._tools.featureanalysis.create_buffers(input_layer,
                                                      distances,
                                                      field,
@@ -409,7 +378,8 @@ def create_buffers(
                                                      end_type,
                                                      output_name,
                                                      context,
-                                                     estimate=estimate)
+                                                     estimate=estimate,
+                                                     future=future)
 
 
 def create_drive_time_areas(input_layer,
@@ -598,24 +568,7 @@ def create_drive_time_areas(input_layer,
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-    if future:
-        inputs = {
-            "input_layer":input_layer,
-            "break_values" : break_values,
-            "break_units" : break_units,
-            "travel_mode" : travel_mode,
-            "overlap_policy" : overlap_policy,
-            "time_of_day" : _date_handler(time_of_day),
-            "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-            "point_barrier_layer":point_barrier_layer,
-            "line_barrier_layer":line_barrier_layer,
-            "polygon_barrier_layer":polygon_barrier_layer,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.create_drive_time_areas,
-                          **inputs)
+
     return gis._tools.featureanalysis.create_drive_time_areas(
         input_layer,
         break_values,
@@ -629,7 +582,7 @@ def create_drive_time_areas(input_layer,
         estimate=estimate,
         point_barrier_layer=point_barrier_layer,
         line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer)
+        polygon_barrier_layer=polygon_barrier_layer, future=future)
 
 
 def find_nearest(
@@ -812,26 +765,7 @@ def find_nearest(
             measurement_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
         else:
             pass
-    if future:
-        inputs = {
-            "analysis_layer" : analysis_layer,
-            "near_layer" : near_layer,
-            "measurement_type" : measurement_type,
-            "max_count" : max_count,
-            "search_cutoff" : search_cutoff,
-            "search_cutoff_units" : search_cutoff_units,
-            "time_of_day" : _date_handler(time_of_day),
-            "time_zone_for_time_of_day": time_zone_for_time_of_day,
-            "include_route_layers" : include_route_layers,
-            "point_barrier_layer":point_barrier_layer,
-            "line_barrier_layer":line_barrier_layer,
-            "polygon_barrier_layer":polygon_barrier_layer,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.find_nearest,
-                          **inputs)
+
     return gis._tools.featureanalysis.find_nearest(
         analysis_layer,
         near_layer,
@@ -847,7 +781,8 @@ def find_nearest(
         include_route_layers=include_route_layers,
         point_barrier_layer=point_barrier_layer,
         line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer)
+        polygon_barrier_layer=polygon_barrier_layer,
+        future=future)
 
 
 def plan_routes(
@@ -1134,30 +1069,7 @@ def plan_routes(
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-    if future:
-        inputs = {
-            "stops_layer" : stops_layer,
-            "route_count" : route_count,
-            "max_stops_per_route" : max_stops_per_route,
-            "route_start_time" : _date_handler(route_start_time),
-            "start_layer" : start_layer,
-            "start_layer_route_id_field" : start_layer_route_id_field,
-            "return_to_start": return_to_start,
-            "end_layer": end_layer,
-            "end_layer_route_id_field" : end_layer_route_id_field,
-            "travel_mode": travel_mode,
-            "stop_service_time" : stop_service_time,
-            "max_route_time" : max_route_time,
-            "include_route_layers" : include_route_layers,
-            "point_barrier_layer":point_barrier_layer,
-            "line_barrier_layer":line_barrier_layer,
-            "polygon_barrier_layer":polygon_barrier_layer,
-            "output_name" :output_name,
-            "context" : context,
-            "estimate" : estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.plan_routes,
-                          **inputs)
+
     return gis._tools.featureanalysis.plan_routes(
         stops_layer,
         route_count,
@@ -1177,4 +1089,4 @@ def plan_routes(
         estimate=estimate,
         point_barrier_layer=point_barrier_layer,
         line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer)
+        polygon_barrier_layer=polygon_barrier_layer, future=future)

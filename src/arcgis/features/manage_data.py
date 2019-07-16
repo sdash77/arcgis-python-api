@@ -8,7 +8,6 @@ overlay_layers combines two or more layers into one single layer. You can think 
 maps and creating a single map containing all the information found in the stack.
 """
 import arcgis as _arcgis
-from arcgis.features._async import _run_async
 
 def dissolve_boundaries(
         input_layer,
@@ -97,18 +96,7 @@ def dissolve_boundaries(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "dissolve_fields" : dissolve_fields,
-            "summary_fields" : summary_fields,
-            "multi_part_features":multi_part_features,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.dissolve_boundaries,
-                   **inputs)
+
     return gis._tools.featureanalysis.dissolve_boundaries(
         input_layer,
         dissolve_fields,
@@ -116,7 +104,7 @@ def dissolve_boundaries(
         output_name,
         context,
         estimate=estimate,
-        multi_part_features=multi_part_features)
+        multi_part_features=multi_part_features, future=future)
 
 
 def extract_data(
@@ -185,18 +173,7 @@ def extract_data(
                                  output_name='state highway extracted')
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layers" : input_layers,
-            "extent" : extent,
-            "clip" : clip,
-            "data_format" : data_format,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.extract_data,
-                   **inputs)
+
     return gis._tools.featureanalysis.extract_data(
         input_layers,
         extent,
@@ -204,7 +181,7 @@ def extract_data(
         data_format,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 
 def merge_layers(
@@ -283,24 +260,14 @@ def merge_layers(
                               output_name="merge layers")
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "merge_layer" : merge_layer,
-            "merging_attributes" : merging_attributes,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.merge_layers,
-                   **inputs)
+
     return gis._tools.featureanalysis.merge_layers(
         input_layer,
         merge_layer,
         merging_attributes,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 
 def overlay_layers(
@@ -409,20 +376,7 @@ def overlay_layers(
 
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "overlay_layer" : overlay_layer,
-            "overlay_type" : overlay_type,
-            "snap_to_input" : snap_to_input,
-            "output_type" : output_type,
-            "tolerance" : tolerance,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.overlay_layers,
-                   **inputs)
+
     return gis._tools.featureanalysis.overlay_layers(
         input_layer,
         overlay_layer,
@@ -432,7 +386,7 @@ def overlay_layers(
         tolerance,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def create_route_layers(route_data_item,
                         delete_route_data_item=False,
@@ -525,15 +479,8 @@ def create_route_layers(route_data_item,
             output_item_properties["folderId"] = folder_id
     if output_item_properties:
         output_name["itemProperties"] = output_item_properties
-    if future:
-        inputs = {
-            "route_data_item" : route_data_item,
-            "delete_route_data_item" : delete_route_data_item,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.create_route_layers,
-                   **inputs)
+
     return gis._tools.featureanalysis.create_route_layers(
         route_data_item,
         delete_route_data_item,
-        output_name, estimate=estimate)
+        output_name, estimate=estimate, future=future)

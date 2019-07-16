@@ -7,7 +7,7 @@ interpolate_points predicts values at new locations based on measurements found 
 """
 
 import arcgis as _arcgis
-from arcgis.features._async import _run_async
+
 
 def calculate_density(
         input_layer,
@@ -108,24 +108,6 @@ def calculate_density(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer": input_layer,
-            "field" : field,
-            "cell_size" : cell_size,
-            "cell_size_units" : cell_size_units,
-            "radius" : radius,
-            "radius_units" : radius_units,
-            "bounding_polygon_layer" : bounding_polygon_layer,
-            "area_units" : area_units,
-            "classification_type" : classification_type,
-            "num_classes" : num_classes,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.calculate_density,
-                   **inputs)
     return gis._tools.featureanalysis.calculate_density(
         input_layer,
         field,
@@ -139,7 +121,7 @@ def calculate_density(
         num_classes,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def summarize_center_and_dispersion(
         analysis_layer,
@@ -208,19 +190,7 @@ def summarize_center_and_dispersion(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "analysis_layer," : analysis_layer,
-            "summarize_type" : summarize_type,
-            "ellipse_size" : ellipse_size,
-            "weight_field" : weight_field,
-            "group_field" : group_field,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.summarize_center_and_dispersion,
-                   **inputs)
+
     return gis._tools.featureanalysis.summarize_center_and_dispersion(
         analysis_layer,
         summarize_type,
@@ -229,7 +199,7 @@ def summarize_center_and_dispersion(
         group_field,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def find_point_clusters(
         analysis_layer,
@@ -320,18 +290,6 @@ def find_point_clusters(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "analysis_layer," : analysis_layer,
-            "min_features_cluster" : min_features_cluster,
-            "search_distance" : search_distance,
-            "search_distance_unit" : search_distance_unit,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.find_point_clusters,
-                   **inputs)
     return gis._tools.featureanalysis.find_point_clusters(
         analysis_layer,
         min_features_cluster,
@@ -339,7 +297,7 @@ def find_point_clusters(
         search_distance_unit,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def find_hot_spots(
         analysis_layer,
@@ -443,24 +401,6 @@ def find_hot_spots(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "analysis_layer," : analysis_layer,
-            "analysis_field" : analysis_field,
-            "divided_by_field" : divided_by_field,
-            "bounding_polygon_layer" : bounding_polygon_layer,
-            "aggregation_polygon_layer" : aggregation_polygon_layer,
-            "shape_type":shape_type,
-            "cell_size":cell_size,
-            "cell_size_unit":cell_size_unit,
-            'distance_band':distance_band,
-            "distance_band_unit":distance_band_unit,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.find_hot_spots,
-                   **inputs)
     return gis._tools.featureanalysis.find_hot_spots(
         analysis_layer,
         analysis_field,
@@ -474,7 +414,8 @@ def find_hot_spots(
         cell_size=cell_size,
         cell_size_unit=cell_size_unit,
         distance_band=distance_band,
-        distance_band_unit=distance_band_unit)
+        distance_band_unit=distance_band_unit,
+        future=future)
 
 
 def find_outliers(analysis_layer,
@@ -590,25 +531,6 @@ def find_outliers(analysis_layer,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "analysis_layer," : analysis_layer,
-            "analysis_field" : analysis_field,
-            "divided_by_field" : divided_by_field,
-            "bounding_polygon_layer" : bounding_polygon_layer,
-            "aggregation_polygon_layer" : aggregation_polygon_layer,
-            "permutations" : permutations,
-            "shape_type":shape_type,
-            "cell_size":cell_size,
-            "cell_units":cell_units,
-            'distance_band':distance_band,
-            "band_units":band_units,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.find_outliers,
-                   **inputs)
     return gis._tools.featureanalysis.find_outliers(analysis_layer,
                                                     analysis_field,
                                                     divided_by_field,
@@ -622,7 +544,8 @@ def find_outliers(analysis_layer,
                                                     band_units,
                                                     output_name,
                                                     context,
-                                                    estimate=estimate)
+                                                    estimate=estimate,
+                                                    future=future)
 
 
 def interpolate_points(
@@ -791,23 +714,6 @@ def interpolate_points(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "field" : field,
-            "interpolate_option" : interpolate_option,
-            "output_prediction_error" : output_prediction_error,
-            "classification_type" : classification_type,
-            "num_classes" : num_classes,
-            "class_breaks" : class_breaks,
-            "bounding_polygon_layer" : bounding_polygon_layer,
-            "predict_at_point_layer" : predict_at_point_layer,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.interpolate_points,
-                   **inputs)
     return gis._tools.featureanalysis.interpolate_points(
         input_layer,
         field,
@@ -820,5 +726,6 @@ def interpolate_points(
         predict_at_point_layer,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate,
+        future=future)
 

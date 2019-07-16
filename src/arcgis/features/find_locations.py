@@ -17,7 +17,7 @@ trace_downstream determines the flow paths in a downstream direction from the lo
 import arcgis as _arcgis
 
 import arcgis.network as network
-from arcgis.features._async import _run_async
+
 
 def find_existing_locations(
         input_layers=None,
@@ -276,22 +276,13 @@ def find_existing_locations(
     if expressions is None:
         expressions = []
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layers" : input_layers,
-            "expressions" : expressions,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.find_existing_locations,
-                   **inputs)
+
     return gis._tools.featureanalysis.find_existing_locations(
         input_layers,
         expressions,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate,future=future)
 
 
 def derive_new_locations(
@@ -543,24 +534,14 @@ def derive_new_locations(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layers" : input_layers,
-            "expressions" : expressions,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.derive_new_locations,
-                   **inputs)
+
     return gis._tools.featureanalysis.derive_new_locations(
         input_layers,
         expressions,
         output_name,
         context,
-        estimate=estimate)
-
-
+        estimate=estimate,
+        future=future)
 
 def find_similar_locations(
         input_layer,
@@ -666,19 +647,7 @@ def find_similar_locations(
                                                     number_of_results=4)
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "search_layer" : search_layer,
-            "analysis_fields" : analysis_fields,
-            "input_query" : input_query,
-            "number_of_results" : number_of_results,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.find_similar_locations,
-                   **inputs)
+
     return gis._tools.featureanalysis.find_similar_locations(
         input_layer,
         search_layer,
@@ -687,7 +656,7 @@ def find_similar_locations(
         number_of_results,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 def find_centroids(input_layer,
                    point_location=False,
@@ -740,21 +709,13 @@ def find_centroids(input_layer,
     gis = _arcgis.env.active_gis if gis is None else gis
     if gis._portal.is_arcgisonline == False:
         raise Exception("find_centroids is only available on ArcGIS Online.")
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "point_location" : point_location,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.find_centroids,
-                   **inputs)
+
     return gis._tools.featureanalysis.find_centroids(input_layer,
                                                      point_location,
                                                      output_name,
                                                      context,
-                                                     estimate=estimate)
+                                                     estimate=estimate,
+                                                     future=future)
 
 
 
@@ -987,36 +948,7 @@ def choose_best_facilities(goal='Allocate',
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
         travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-    if future:
-        inputs = {
-            "goal":goal,
-            "demand_locations_layer":demand_locations_layer,
-            "demand" : demand,
-            "demand_field" : demand_field,
-            "max_travel_range" : max_travel_range,
-            "max_travel_range_field" : max_travel_range_field,
-            "max_travel_range_units" : max_travel_range_units,
-            "travel_mode" : travel_mode,
-            "time_of_day" : time_of_day,
-            "time_zone_for_time_of_day" : time_zone_for_time_of_day,
-            "travel_direction" : travel_direction,
-            "required_facilities_layer" : required_facilities_layer,
-            "required_facilities_capacity" : required_facilities_capacity,
-            "required_facilities_capacity_field" : required_facilities_capacity_field,
-            "candidate_facilities_layer" : candidate_facilities_layer,
-            "candidate_count":candidate_count,
-            "candidate_facilities_capacity":candidate_facilities_capacity,
-            "candidate_facilities_capacity_field":candidate_facilities_capacity_field,
-            "percent_demand_coverage":percent_demand_coverage,
-            "point_barrier_layer":point_barrier_layer,
-            "line_barrier_layer":line_barrier_layer,
-            "polygon_barrier_layer":polygon_barrier_layer,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.choose_best_facilities,
-                   **inputs)
+
     return gis._tools.featureanalysis.choose_best_facilities(
         goal,
         demand_locations_layer,
@@ -1042,7 +974,8 @@ def choose_best_facilities(goal='Allocate',
         estimate=estimate,
         point_barrier_layer=point_barrier_layer,
         line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer)
+        polygon_barrier_layer=polygon_barrier_layer,
+        future=future)
 
 def create_viewshed(
         input_layer,
@@ -1170,23 +1103,7 @@ def create_viewshed(
 
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "dem_resolution" : dem_resolution,
-            "maximum_distance" : maximum_distance,
-            "max_distance_units" : max_distance_units,
-            "observer_height" : observer_height,
-            "observer_height_units" : observer_height_units,
-            "target_height" : target_height,
-            "target_height_units" : target_height_units,
-            "generalize" : generalize,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.create_viewshed,
-                   **inputs)
+
     return gis._tools.featureanalysis.create_viewshed(
         input_layer,
         dem_resolution,
@@ -1199,7 +1116,7 @@ def create_viewshed(
         generalize,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 
 def create_watersheds(
@@ -1296,19 +1213,7 @@ def create_watersheds(
 
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "search_distance" : search_distance,
-            "search_units" : search_units,
-            "source_database":source_database,
-            "generalize" : generalize,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.create_watersheds,
-                   **inputs)
+
     return gis._tools.featureanalysis.create_watersheds(
         input_layer,
         search_distance,
@@ -1317,7 +1222,7 @@ def create_watersheds(
         generalize,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
 
 
 def trace_downstream(
@@ -1419,22 +1324,7 @@ def trace_downstream(
                                 output_name='trace downstream')
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if future:
-        inputs = {
-            "input_layer" : input_layer,
-            "split_distance" : split_distance,
-            "split_units" : split_units,
-            "max_distance" : max_distance,
-            "max_distance_units" : max_distance_units,
-            "bounding_polygon_layer" : bounding_polygon_layer,
-            "source_database" : source_database,
-            "generalize" : generalize,
-            "output_name" : output_name,
-            "context" : context,
-            "estimate": estimate
-        }
-        return _run_async(fn=gis._tools.featureanalysis.trace_downstream,
-                   **inputs)
+
     return gis._tools.featureanalysis.trace_downstream(
         input_layer,
         split_distance,
@@ -1446,4 +1336,4 @@ def trace_downstream(
         generalize,
         output_name,
         context,
-        estimate=estimate)
+        estimate=estimate, future=future)
