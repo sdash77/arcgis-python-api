@@ -50,11 +50,11 @@ def dissolve_boundaries(
                                              fieldName is the name of one of the numeric fields found in the input_layer.
                                              summary type is one of the following:
 
-                                             * Sum—Adds the total value of all the points in each polygon
-                                             * Mean—Calculates the average of all the points in each polygon.
-                                             * Min—Finds the smallest value of all the points in each polygon.
-                                             * Max—Finds the largest value of all the points in each polygon.
-                                             * Stddev—Finds the standard deviation of all the points in each polygon.
+                                             * Sum Adds the total value of all the points in each polygon
+                                             * Mean Calculates the average of all the points in each polygon.
+                                             * Min Finds the smallest value of all the points in each polygon.
+                                             * Max Finds the largest value of all the points in each polygon.
+                                             * Stddev Finds the standard deviation of all the points in each polygon.
                                              Example [fieldName1 summaryType1,fieldName2 summaryType2].
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional string. If provided, the task will create a feature service of the results.
@@ -63,7 +63,7 @@ def dissolve_boundaries(
     context                                  Optional string. Context contains additional settings that affect task execution. For dissolve_boundaries Points, there are two settings.
 
                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                             #. Output Spatial Reference (outSR)—the output features will be projected into the output spatial reference.
+                                             #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -80,7 +80,7 @@ def dissolve_boundaries(
 
                                              The default value is True.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================================     ====================================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -155,11 +155,11 @@ def extract_data(
     -----------------------------------    ---------------------------------------------------------
     context                                Optional string. Context contains additional settings that affect method execution. For ``extract_data``, there is one setting.
 
-                                           #. Output Spatial Reference (outSR)—the extracted features will be projected into the output spatial reference.
+                                           #. Output Spatial Reference (outSR) the extracted features will be projected into the output spatial reference.
     -----------------------------------    ---------------------------------------------------------
     gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -----------------------------------    ---------------------------------------------------------
-    future                                 Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ===================================    =========================================================
 
     .. code-block:: python
@@ -240,13 +240,13 @@ def merge_layers(
     context           Optional dict. Context contains additional settings that affect task execution. For ``merge_layers``, there are two settings.
 
                       #. Extent (``extent``)-a bounding box that defines the analysis area. Only those features in the ``input_layer`` and the ``merge_layer`` that intersect the bounding box will be merged into the output layer.
-                      #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+                      #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
     estimate          Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future            Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ================  ===============================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -355,12 +355,12 @@ def overlay_layers(
     ----------------  ---------------------------------------------------------------
     context           Optional string. Context contains additional settings that affect task execution. For ``overlay_layers``, there are two settings.
 
-                      #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the ``input_layer`` and ``overlay_layer`` and that intersect the bounding box will be overlaid.
-                      #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+                      #. Extent (``extent``) a bounding box that defines the analysis area. Only those features in the ``input_layer`` and ``overlay_layer`` and that intersect the bounding box will be overlaid.
+                      #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future            Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ================  ===============================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -440,7 +440,7 @@ def create_route_layers(route_data_item,
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns: result_layer : list (items)

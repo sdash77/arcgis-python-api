@@ -802,17 +802,17 @@ def find_hot_spots(
     gis=None,
     future=False):
     """
-    .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png 
+    .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png
 
-    The ``find_hot_spots`` tool analyzes point data (such as crime incidents, traffic accidents, trees, and so on) 
-    or field values associated with points. It finds statistically significant spatial clusters of high incidents (hot spots) 
+    The ``find_hot_spots`` tool analyzes point data (such as crime incidents, traffic accidents, trees, and so on)
+    or field values associated with points. It finds statistically significant spatial clusters of high incidents (hot spots)
     and low incidents (cold spots). Hot spots are locations with lots of points and cold spots are locations with very few points.
 
-    The result map layer shows hot spots in red and cold spots in blue. The darkest red features indicate the strongest 
-    clustering of point densities; you can be 99 percent confident that the clustering associated with these features 
-    could not be the result of random chance. Similarly, the darkest blue features are associated with the strongest 
-    spatial clustering of the lowest point densities. Features that are beige are not part of a statistically 
-    significant cluster; the spatial pattern associated with these features could very likely be the result of random 
+    The result map layer shows hot spots in red and cold spots in blue. The darkest red features indicate the strongest
+    clustering of point densities; you can be 99 percent confident that the clustering associated with these features
+    could not be the result of random chance. Similarly, the darkest blue features are associated with the strongest
+    spatial clustering of the lowest point densities. Features that are beige are not part of a statistically
+    significant cluster; the spatial pattern associated with these features could very likely be the result of random
     processes and random chance.
 
     ==============================================================================================  ===============================================================
@@ -822,43 +822,43 @@ def find_hot_spots(
                                                                                                     See :ref:`Feature Input<FeatureInput>`.
 
                                                                                                     .. Note::
-                                                                                                        Analysis using bins requires a projected coordinate system. When aggregating layers into bins, 
-                                                                                                        the input layer or processing extent (``processSR``) must have a projected coordinate system. 
-                                                                                                        At 10.5.1, 10.6, and 10.6.1, if a projected coordinate system is not specified when running 
-                                                                                                        analysis, the World Cylindrical Equal Area (WKID 54034) projection will be used. At 10.7 or later, 
-                                                                                                        if a projected coordinate system is not specified when running analysis, a projection will be 
+                                                                                                        Analysis using bins requires a projected coordinate system. When aggregating layers into bins,
+                                                                                                        the input layer or processing extent (``processSR``) must have a projected coordinate system.
+                                                                                                        At 10.5.1, 10.6, and 10.6.1, if a projected coordinate system is not specified when running
+                                                                                                        analysis, the World Cylindrical Equal Area (WKID 54034) projection will be used. At 10.7 or later,
+                                                                                                        if a projected coordinate system is not specified when running analysis, a projection will be
                                                                                                         picked based on the extent of the data.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     bin_size                                                                                        Optional float. The distance for the square bins the ``point_layer`` will be aggregated into.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
-    bin_size_unit                                                                                   Optional string. The distance unit for the bins with which hot spots will be calculated. 
+    bin_size_unit                                                                                   Optional string. The distance unit for the bins with which hot spots will be calculated.
                                                                                                     The linear unit to be used with the value specified in ``bin_size``.
-                                                                                                    When generating bins the number and units specified determine the height and length of the square.  
+                                                                                                    When generating bins the number and units specified determine the height and length of the square.
 
                                                                                                     Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
 
-                                                                                                    The default value is ``Miles``. 
+                                                                                                    The default value is ``Miles``.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
-    neighborhood_distance                                                                           Optional float. The size of the neighborhood within which to calculate the hot spots. 
+    neighborhood_distance                                                                           Optional float. The size of the neighborhood within which to calculate the hot spots.
                                                                                                     The radius size must be larger than ``bin_size``.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
-    neighborhood_distance_unit                                                                      Optional string. The distance unit for the radius defining the neighborhood where the hot spots 
-                                                                                                    will be calculated. The linear unit to be used with the value specified in ``bin_size``. 
-                                                                                                    
+    neighborhood_distance_unit                                                                      Optional string. The distance unit for the radius defining the neighborhood where the hot spots
+                                                                                                    will be calculated. The linear unit to be used with the value specified in ``bin_size``.
+
                                                                                                     Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
-                                               
+
                                                                                                     The default value is 'Miles'.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     time_step_interval                                                                              Optional integer. A numeric value that specifies duration of the time step interval.
                                                                                                     This option is only available if the input points are time-enabled and represent an instant in time.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
-    time_step_interval_unit                                                                         Optional string. A string that specifies units of the time step interval. 
+    time_step_interval_unit                                                                         Optional string. A string that specifies units of the time step interval.
                                                                                                     This option is only available if the input points are time-enabled and represent an instant in time.
-    
+
                                                                                                     Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     time_step_alignment                                                                             Optional string. Defines how aggregation will occur based on a given ``time_step_interval``. Options are as follows:
-    
+
                                                                                                     Choice list:['EndTime', 'StartTime', 'ReferenceTime']
 
                                                                                                         * ``StartTime`` - Time is aligned to the first feature in time.
@@ -866,17 +866,17 @@ def find_hot_spots(
                                                                                                         * ``ReferenceTime`` - Time is aligned a specified time in ``time_step_reference``.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     time_step_reference (Required if ``time_step_alignment`` is ReferenceTime)                      Optional datetime. A date that specifies the reference time to align the time slices to.
-                                                                                                    This option is only available if the input points are time-enabled and of time type instant.                                                                                        
+                                                                                                    This option is only available if the input points are time-enabled and of time type instant.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     output_name                                                                                     Optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     context                                                                                         Optional string. Context contains additional settings that affect task execution. For this task, there are three settings:
 
-                                                                                                    #. Extent (``extent``)—A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                                                    #. Processing spatial reference (``processSR``)—The features will be projected into this coordinate system for analysis.
-                                                                                                    #. Output spatial reference (``outSR``)—The features will be projected into this coordinate system after the analysis to be saved. 
+                                                                                                    #. Extent (``extent``) A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                                    #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
+                                                                                                    #. Output spatial reference (``outSR``) The features will be projected into this coordinate system after the analysis to be saved.
                                                                                                        The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                                    #. Data store (``dataStore``)—Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                                    #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     gis                                                                                             Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ==============================================================================================  ===============================================================

@@ -87,7 +87,7 @@ def find_existing_locations(
                                              | <>       | Not equal                                                        |
                                              +----------+------------------------------------------------------------------+
                                              | LIKE '%  | A percent symbol (%) signifies a wildcard, meaning that          |
-                                             | <string>'| anything is acceptable in its place—one character, a             |
+                                             | <string>'| anything is acceptable in its place one character, a             |
                                              |          | hundred characters, or no character. This expression             |
                                              |          | would select Mississippi and Missouri among USA                  |
                                              |          | state names: STATE_NAME LIKE 'Miss%'                             |
@@ -160,11 +160,11 @@ def find_existing_locations(
                                              | notIntersects     | any part of a feature in selectingLayer, including touches                             |
                                              |                   | (where features share a common point).                                                 |
                                              |                   |                                                                                        |
-                                             |                   | * intersects—If a feature in layer intersects a feature in                             |
+                                             |                   | * intersects If a feature in layer intersects a feature in                             |
                                              |                   |   selectingLayer, the portion of the feature in layer that                             |
                                              |                   |   intersects the feature in selectingLayer is included in                              |
                                              |                   |   the output.                                                                          |
-                                             |                   | * notIntersects—If a feature in layer intersects a feature in                          |
+                                             |                   | * notIntersects If a feature in layer intersects a feature in                          |
                                              |                   |   selectingLayer, the portion of the feature in layer that                             |
                                              |                   |   intersects the feature in selectingLayer is excluded from                            |
                                              |                   |   the output.                                                                          |
@@ -173,10 +173,10 @@ def find_existing_locations(
                                              |                   |                                                                                        |
                                              |                   | The within a distance relationship uses the straight-line                              |
                                              | notWithinDistance | distance between features in layer to those in selectingLayer.                         |
-                                             |                   | withinDistance—The portion of the feature in layer that is                             |
+                                             |                   | withinDistance The portion of the feature in layer that is                             |
                                              |                   | within the specified distance of a feature in selectingLayer                           |
                                              |                   | is included in the output.                                                             |
-                                             |                   | notWithinDistance—The portion of the feature in layer that is                          |
+                                             |                   | notWithinDistance The portion of the feature in layer that is                          |
                                              |                   | within the specified distance of a feature in selectingLayer is                        |
                                              |                   | excluded from output. You can think of this relationship as                            |
                                              |                   | "is farther away than".                                                                |
@@ -189,9 +189,9 @@ def find_existing_locations(
                                              |                   | to touch the containing feature (that is, share a common                               |
                                              |                   | point along its boundary).                                                             |
                                              |                   |                                                                                        |
-                                             |                   | contains—If a feature in layer contains a feature in                                   |
+                                             |                   | contains If a feature in layer contains a feature in                                   |
                                              |                   | selectingLayer, the feature in layer is included in the output.                        |
-                                             |                   | notContains—If a feature in layer contains a feature in                                |
+                                             |                   | notContains If a feature in layer contains a feature in                                |
                                              |                   | selectingLayer, the feature in the first layer is excluded                             |
                                              +-------------------+----------------------------------------------------------------------------------------+
                                              | within            | |within|                                                                               |
@@ -202,9 +202,9 @@ def find_existing_locations(
                                              |                   | features are allowed to touch (that is, share a common point                           |
                                              |                   | along its boundary).                                                                   |
                                              |                   |                                                                                        |
-                                             |                   | * within—If a feature in layer is completely within a feature in                       |
+                                             |                   | * within If a feature in layer is completely within a feature in                       |
                                              |                   |   selectingLayer, the feature in layer is included in the output.                      |
-                                             |                   | * notWithin—If a feature in layer is completely within a feature                       |
+                                             |                   | * notWithin If a feature in layer is completely within a feature                       |
                                              |                   |   in selectingLayer, the feature in layer is excluded from the                         |
                                              |                   |   output.                                                                              |
                                              |                   |                                                                                        |
@@ -226,7 +226,7 @@ def find_existing_locations(
                                              |                   | feature in the first layer passes this test if it is nearest                           |
                                              |                   | to a feature in the second layer.                                                      |
                                              |                   |                                                                                        |
-                                             |                   | * nearest—If a feature in the first layer is nearest to a                              |
+                                             |                   | * nearest If a feature in the first layer is nearest to a                              |
                                              |                   |   feature in the second layer, the feature in the first layer                          |
                                              |                   |   is included in the output.                                                           |
                                              +-------------------+----------------------------------------------------------------------------------------+
@@ -253,7 +253,7 @@ def find_existing_locations(
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================    ======================================================================================================
 
     :Returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -359,7 +359,7 @@ def derive_new_locations(
                                              | <>       | Not equal                                                        |
                                              +----------+------------------------------------------------------------------+
                                              | LIKE '%  | A percent symbol (%) signifies a wildcard, meaning that          |
-                                             | <string>'| anything is acceptable in its place—one character, a             |
+                                             | <string>'| anything is acceptable in its place one character, a             |
                                              |          | hundred characters, or no character. This expression             |
                                              |          | would select Mississippi and Missouri among USA                  |
                                              |          | state names: STATE_NAME LIKE 'Miss%'                             |
@@ -432,11 +432,11 @@ def derive_new_locations(
                                              | notIntersects     | any part of a feature in selectingLayer, including touches                             |
                                              |                   | (where features share a common point).                                                 |
                                              |                   |                                                                                        |
-                                             |                   | * intersects—If a feature in layer intersects a feature in                             |
+                                             |                   | * intersects If a feature in layer intersects a feature in                             |
                                              |                   |   selectingLayer, the portion of the feature in layer that                             |
                                              |                   |   intersects the feature in selectingLayer is included in                              |
                                              |                   |   the output.                                                                          |
-                                             |                   | * notIntersects—If a feature in layer intersects a feature in                          |
+                                             |                   | * notIntersects If a feature in layer intersects a feature in                          |
                                              |                   |   selectingLayer, the portion of the feature in layer that                             |
                                              |                   |   intersects the feature in selectingLayer is excluded from                            |
                                              |                   |   the output.                                                                          |
@@ -445,10 +445,10 @@ def derive_new_locations(
                                              |                   |                                                                                        |
                                              |                   | The within a distance relationship uses the straight-line                              |
                                              | notWithinDistance | distance between features in layer to those in selectingLayer.                         |
-                                             |                   | withinDistance—The portion of the feature in layer that is                             |
+                                             |                   | withinDistance The portion of the feature in layer that is                             |
                                              |                   | within the specified distance of a feature in selectingLayer                           |
                                              |                   | is included in the output.                                                             |
-                                             |                   | notWithinDistance—The portion of the feature in layer that is                          |
+                                             |                   | notWithinDistance The portion of the feature in layer that is                          |
                                              |                   | within the specified distance of a feature in selectingLayer is                        |
                                              |                   | excluded from output. You can think of this relationship as                            |
                                              |                   | "is farther away than".                                                                |
@@ -461,9 +461,9 @@ def derive_new_locations(
                                              |                   | to touch the containing feature (that is, share a common                               |
                                              |                   | point along its boundary).                                                             |
                                              |                   |                                                                                        |
-                                             |                   | contains—If a feature in layer contains a feature in                                   |
+                                             |                   | contains If a feature in layer contains a feature in                                   |
                                              |                   | selectingLayer, the feature in layer is included in the output.                        |
-                                             |                   | notContains—If a feature in layer contains a feature in                                |
+                                             |                   | notContains If a feature in layer contains a feature in                                |
                                              |                   | selectingLayer, the feature in the first layer is excluded                             |
                                              +-------------------+----------------------------------------------------------------------------------------+
                                              | within            | |within|                                                                               |
@@ -474,9 +474,9 @@ def derive_new_locations(
                                              |                   | features are allowed to touch (that is, share a common point                           |
                                              |                   | along its boundary).                                                                   |
                                              |                   |                                                                                        |
-                                             |                   | * within—If a feature in layer is completely within a feature in                       |
+                                             |                   | * within If a feature in layer is completely within a feature in                       |
                                              |                   |   selectingLayer, the feature in layer is included in the output.                      |
-                                             |                   | * notWithin—If a feature in layer is completely within a feature                       |
+                                             |                   | * notWithin If a feature in layer is completely within a feature                       |
                                              |                   |   in selectingLayer, the feature in layer is excluded from the                         |
                                              |                   |   output.                                                                              |
                                              |                   |                                                                                        |
@@ -498,7 +498,7 @@ def derive_new_locations(
                                              |                   | feature in the first layer passes this test if it is nearest                           |
                                              |                   | to a feature in the second layer.                                                      |
                                              |                   |                                                                                        |
-                                             |                   | * nearest—If a feature in the first layer is nearest to a                              |
+                                             |                   | * nearest If a feature in the first layer is nearest to a                              |
                                              |                   |   feature in the second layer, the feature in the first layer                          |
                                              |                   |   is included in the output.                                                           |
                                              +-------------------+----------------------------------------------------------------------------------------+
@@ -515,7 +515,7 @@ def derive_new_locations(
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================    ======================================================================================================
 
     .. code-block:: python
@@ -623,13 +623,13 @@ def find_similar_locations(
     context                  Optional string. Context contains additional settings that affect method execution.
                              For ``find_similar_locations``, there are two settings.
 
-                             #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features
+                             #. Extent (``extent``) a bounding box that defines the analysis area. Only those features
                                 in the ``input_layer`` that intersect the bounding box will be analyzed.
-                             #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+                             #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
     -----------------------  -------------------------------------------------------------------------------------------
     estimate                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------  -------------------------------------------------------------------------------------------
-    future                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =======================  ===========================================================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -688,12 +688,12 @@ def find_centroids(input_layer,
     ----------------  ---------------------------------------------------------------
     context           Optional string. Context contains additional settings that affect method execution. For ``find_centroids``, there are two settings.
 
-                      #. Extent (``extent``)—a bounding box that defines the analysis area. Only those features in the ``input_layer`` that intersect the bounding box will be buffered.
-                      #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+                      #. Extent (``extent``) a bounding box that defines the analysis area. Only those features in the ``input_layer`` that intersect the bounding box will be buffered.
+                      #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
     ----------------  ---------------------------------------------------------------
     estimate          Optional boolean. If True, the number of credits to run the operation will be returned.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future            Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ================  ===============================================================
 
     :returns: result_layer : feature layer Item if ``output_name`` is specified, else Feature Collection.
@@ -820,13 +820,13 @@ def choose_best_facilities(goal='Allocate',
                                              is available, choose a time and day of the week, and then convert
                                              the day of the week to one of the following dates from 1990:
 
-                                             * Monday—1/1/1990
-                                             * Tuesday—1/2/1990
-                                             * Wednesday—1/3/1990
-                                             * Thursday—1/4/1990
-                                             * Friday—1/5/1990
-                                             * Saturday—1/6/1990
-                                             * Sunday—1/7/1990
+                                             * Monday 1/1/1990
+                                             * Tuesday 1/2/1990
+                                             * Wednesday 1/3/1990
+                                             * Thursday 1/4/1990
+                                             * Friday 1/5/1990
+                                             * Saturday 1/6/1990
+                                             * Sunday 1/7/1990
                                              Set the time and date as datetime.datetime.
 
                                              For example, to solve for 1:03 p.m. on Thursdays, set the
@@ -918,7 +918,7 @@ def choose_best_facilities(goal='Allocate',
 
                                              One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================    =========================================================
 
 
@@ -1079,13 +1079,13 @@ def create_viewshed(
                                  #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
                                     that intersect the bounding box will be analyzed.
 
-                                 #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+                                 #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -1190,13 +1190,13 @@ def create_watersheds(
                                  #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
                                     that intersect the bounding box will be analyzed.
 
-                                 #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+                                 #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
     :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -1300,13 +1300,13 @@ def trace_downstream(
     -------------------------------------    ---------------------------------------------------------
     context                                  Optional string. Context contains additional settings that affect task execution. For ``trace_downstream``, there are two settings.
 
-                                             #. Extent (``extent``)—a bounding box that defines the analysis area. Only those points
+                                             #. Extent (``extent``) a bounding box that defines the analysis area. Only those points
                                                 in the ``input_layer`` that intersect the bounding box will have a downstream trace generated.
-                                             #. Output Spatial Reference (``outSR``)—the output features will be projected into the output spatial reference.
+                                             #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
     -------------------------------------    ---------------------------------------------------------
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------    ---------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================    =========================================================
 
     :returns: feature layer collection if ``output_name`` is set, else feature collection.
