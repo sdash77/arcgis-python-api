@@ -56,9 +56,13 @@ def _bytes_to_str_cp850_workaround(bytes_):
     has issues printing out some characters (A error was seen printing out 
     the \u03BC Greek 'u'). These stack overflows: http://bit.ly/2HW4fXP and
     http://bit.ly/2DLdbfX provide some insight. The workaround is to
-    decode to cp850, replace all unprinteable characters, encode
+    decode to unicode, encode to cp850, decode from cp850, replacing 
+    unprinteable characters every step along the way with '?'
     """
-    return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
+    return bytes_.decode('utf-8',
+        'replace').encode('cp850',
+        'replace').decode('cp850',
+        'replace')
 
 def recursive_file_copy(src_dir_root, dst_dir_root, files_to_ignore=[]):
     """Given two dirs with the same folder structure, copy all files from
