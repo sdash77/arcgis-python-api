@@ -41,11 +41,11 @@ def aggregate_points(point_layer,
                                              Note that the count of points within each polygon is always returned.
                                              summary type is one of the following:
 
-                                             * Sum Adds the total value of all the points in each polygon
-                                             * Mean Calculates the average of all the points in each polygon.
-                                             * Min Finds the smallest value of all the points in each polygon.
-                                             * Max Finds the largest value of all the points in each polygon.
-                                             * Stddev Finds the standard deviation of all the points in each polygon.
+                                             * Sum - Adds the total value of all the points in each polygon
+                                             * Mean - Calculates the average of all the points in each polygon.
+                                             * Min - Finds the smallest value of all the points in each polygon.
+                                             * Max - Finds the largest value of all the points in each polygon.
+                                             * Stddev - Finds the standard deviation of all the points in each polygon.
                                              Example [fieldName1 summaryType1,fieldName2 summaryType2].
     ------------------------------------     --------------------------------------------------------------------
     group_by_field                           Optional string. A field name in the point_layer. Points that have the same value for the group by field will have their own counts and summary field statistics. You can create statistical groups using an attribute in the analysis layer. For example, if you are aggregating crimes to neighborhood boundaries, you may have an attribute Crime_type with five different crime types. Each unique crime type forms a group, and the statistics you choose will be calculated for each unique value of Crime_type. When you choose a grouping attribute, two results are created: the result layer and a related table containing the statistics.
@@ -175,13 +175,13 @@ def summarize_nearby(sum_nearby_layer,
                                  To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
                                  of the week to one of the following dates from 1990:
 
-                                 * Monday 1/1/1990
-                                 * Tuesday 1/2/1990
-                                 * Wednesday 1/3/1990
-                                 * Thursday 1/4/1990
-                                 * Friday 1/5/1990
-                                 * Saturday 1/6/1990
-                                 * Sunday 1/7/1990
+                                 * Monday - 1/1/1990
+                                 * Tuesday - 1/2/1990
+                                 * Wednesday - 1/3/1990
+                                 * Thursday - 1/4/1990
+                                 * Friday - 1/5/1990
+                                 * Saturday - 1/6/1990
+                                 * Sunday - 1/7/1990
                                  Set the time and date as datetime.datetime.
 
                                  For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
@@ -270,8 +270,8 @@ def summarize_nearby(sum_nearby_layer,
     -------------------------    --------------------------------------------------------------------------------------------------------------------
     context                      Optional string. Context contains additional settings that affect task execution. For  ``summarize_nearby``, there are two settings.
 
-                                 #. Extent (``extent``) a bounding box that defines the analysis area. Only those features in the ``sum_nearby_layer`` and ``summary_layer`` that intersect the bounding box will be analyzed.
-                                 #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                                 #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``sum_nearby_layer`` and ``summary_layer`` that intersect the bounding box will be analyzed.
+                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
     estimate                     Optional boolean. Returns the number of credit for the operation.
     -------------------------    --------------------------------------------------------------------------------------------------------------------
@@ -375,8 +375,8 @@ def summarize_center_and_dispersion(
     --------------------    ---------------------------------------------------------
     context                 Optional string. Context contains additional settings that affect task execution. For ``summarize_center_and_dispersion``, there are two settings.
 
-                            #. Extent (``extent``) a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
-                            #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                            #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
+                            #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     --------------------    ---------------------------------------------------------
     estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
@@ -495,8 +495,8 @@ def summarize_within(sum_within_layer,
     -------------------------------------    ---------------------------------------------------------
     context                                  Optional string. Context contains additional settings that affect task execution. For ``summarize_within``, there are two settings.
 
-                                             #. Extent (``extent``) a bounding box that defines the analysis area. Only those features in the ``sum_within_layer`` and the ``Summary_layer`` that intersect the bounding box will be summarized.
-                                             #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                                             #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``sum_within_layer`` and the ``Summary_layer`` that intersect the bounding box will be summarized.
+                                             #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     -------------------------------------    ---------------------------------------------------------
     estimate                                 Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------    ---------------------------------------------------------
@@ -588,7 +588,7 @@ def join_features(target_layer,
 
                                                                                                      Choice list: ['JoinOneToOne', 'JoinOneToMany']
 
-                                                                                                        * ``JoinOneToOne`` If multiple join features are found that have the same relationships with a
+                                                                                                        * ``JoinOneToOne`` - If multiple join features are found that have the same relationships with a
                                                                                                           single target feature, the attributes from the multiple join features will be aggregated using
                                                                                                           the specified summary statistics. For example, if a point target feature is found within two
                                                                                                           separate polygon join features, the attributes from the two polygons will be aggregated before
@@ -597,7 +597,7 @@ def join_features(target_layer,
                                                                                                           in the output feature class will be 10. There will always be a Count field calculated, with a
                                                                                                           value of 2, for the number of features specified. This is the default.
 
-                                                                                                        * ``JoinOneToMany`` If multiple join features are found that have the same relationship with
+                                                                                                        * ``JoinOneToMany`` - If multiple join features are found that have the same relationship with
                                                                                                           a single target feature, the output feature class will contain multiple copies (records) of
                                                                                                           the target feature. For example, if a single point target feature is found within two separate
                                                                                                           polygon join features, the output feature class will contain two copies of the target feature:
@@ -611,20 +611,20 @@ def join_features(target_layer,
 
                                                                                                      statisticType is one of the following:
 
-                                                                                                        * ``SUM`` Adds the total value of all the points in each polygon
-                                                                                                        * ``MEAN`` Calculates the average of all the points in each polygon
-                                                                                                        * ``MIN`` Finds the smallest value of all the points in each polygon
-                                                                                                        * ``MAX`` Finds the largest value of all the points in each polygon
-                                                                                                        * ``STDDEV`` Finds the standard deviation of all the points in each polygon
+                                                                                                        * ``SUM`` - Adds the total value of all the points in each polygon
+                                                                                                        * ``MEAN`` - Calculates the average of all the points in each polygon
+                                                                                                        * ``MIN`` - Finds the smallest value of all the points in each polygon
+                                                                                                        * ``MAX`` - Finds the largest value of all the points in each polygon
+                                                                                                        * ``STDDEV`` - Finds the standard deviation of all the points in each polygon
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     output_name                                                                                      Optional string. If provided, the method will create a feature service of the results. You define the name of the service.
                                                                                                      If ``output_name`` is not supplied, the task will return a feature collection.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     context                                                                                          Optional string. Context contains additional settings that affect method execution. For ``join_features``, there are the following two settings:
 
-                                                                                                     #. Extent (``extent``) A bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be analyzed.
+                                                                                                     #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be analyzed.
 
-                                                                                                     #. Output Spatial Reference (``outSR``) The output features will be projected into the output spatial reference.
+                                                                                                     #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------
     estimate                                                                                         Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------------------------------------

@@ -98,13 +98,13 @@ def connect_origins_to_destinations(origins_layer,
                                            To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
                                            of the week to one of the following dates from 1990:
 
-                                           * Monday 1/1/1990
-                                           * Tuesday 1/2/1990
-                                           * Wednesday 1/3/1990
-                                           * Thursday 1/4/1990
-                                           * Friday 1/5/1990
-                                           * Saturday 1/6/1990
-                                           * Sunday 1/7/1990
+                                           * Monday - 1/1/1990
+                                           * Tuesday - 1/2/1990
+                                           * Wednesday - 1/3/1990
+                                           * Thursday - 1/4/1990
+                                           * Friday - 1/5/1990
+                                           * Saturday - 1/6/1990
+                                           * Sunday - 1/7/1990
                                            Set the time and date as datetime.datetime.
 
                                            For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
@@ -276,9 +276,9 @@ def create_buffers(
                                  Choice list: ['None', 'Dissolve']
 
                                  +------------+---------------------------------------------------------------------------------+
-                                 | |None|     | ``None`` Overlapping areas are kept. This is the default.                       |
+                                 | |None|     | ``None``-Overlapping areas are kept. This is the default.                       |
                                  +------------+---------------------------------------------------------------------------------+
-                                 | |Dissolve| | ``Dissolve`` Overlapping areas are combined.                                    |
+                                 | |Dissolve| | ``Dissolve``-Overlapping areas are combined.                                    |
                                  +------------+---------------------------------------------------------------------------------+
 
     -------------------------    ---------------------------------------------------------
@@ -287,7 +287,7 @@ def create_buffers(
                                  Choice list: ['Disks', 'Rings']
 
                                  +-----------+--------------------------------------------------------------------------------------------------+
-                                 | |Disks|   | ``Disks`` buffers are concentric and will overlap. For example, if your distances are 10 and 14, |
+                                 | |Disks|   | ``Disks``-buffers are concentric and will overlap. For example, if your distances are 10 and 14, |
                                  |           | the result will be two buffers, one from 0 to 10 and one from 0 to 14. This is the default.      |
                                  +-----------+--------------------------------------------------------------------------------------------------+
                                  | |Rings|   | ``Rings`` buffers will not overlap. For example, if your distances are 10 and 14, the result will|
@@ -309,12 +309,12 @@ def create_buffers(
                                  Choice list: ['Full', 'Left', 'Right', 'Outside']
 
                                  +---------------+----------------------------------------------------------------------------------------------------+
-                                 | |Full|        | ``Full`` both sides of the line will be buffered. This is the default for line featuress.          |
+                                 | |Full|        | ``Full``-both sides of the line will be buffered. This is the default for line featuress.          |
                                  |               |                                                                                                    |
                                  +---------------+----------------------------------------------------------------------------------------------------+
-                                 | |Left|        | ``Left`` only the right side of the line will be buffered.                                         |
+                                 | |Left|        | ``Left``-only the right side of the line will be buffered.                                         |
                                  +---------------+----------------------------------------------------------------------------------------------------+
-                                 | |Right|       | ``Right`` only the right side of the line will be buffered.                                        |
+                                 | |Right|       | ``Right``-only the right side of the line will be buffered.                                        |
                                  +---------------+----------------------------------------------------------------------------------------------------+
                                  | |Outside|     | ``Outside`` when buffering a polygon, the polygon being buffered is excluded in the result buffer. |
                                  +---------------+----------------------------------------------------------------------------------------------------+
@@ -330,9 +330,9 @@ def create_buffers(
                                  Choice list: ['Round', 'Flat']
 
                                  +---------+-------------------------------------------------------------------------------+
-                                 | |Round| | ``Round`` buffers will be rounded at the ends of lines. This is the default.  |
+                                 | |Round| | ``Round``-buffers will be rounded at the ends of lines. This is the default.  |
                                  +---------+-------------------------------------------------------------------------------+
-                                 | |Flat|  | ``Flat`` buffers will be flat at the ends of lines.                           |
+                                 | |Flat|  | ``Flat``-buffers will be flat at the ends of lines.                           |
                                  +---------+-------------------------------------------------------------------------------+
 
     -------------------------    ---------------------------------------------------------
@@ -343,7 +343,7 @@ def create_buffers(
                                  #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
                                     that intersect the bounding box will be analyzed.
 
-                                 #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -478,13 +478,13 @@ def create_drive_time_areas(input_layer,
                                  To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day
                                  of the week to one of the following dates from 1990:
 
-                                 * Monday 1/1/1990
-                                 * Tuesday 1/2/1990
-                                 * Wednesday 1/3/1990
-                                 * Thursday 1/4/1990
-                                 * Friday 1/5/1990
-                                 * Saturday 1/6/1990
-                                 * Sunday 1/7/1990
+                                 * Monday - 1/1/1990
+                                 * Tuesday - 1/2/1990
+                                 * Wednesday - 1/3/1990
+                                 * Thursday - 1/4/1990
+                                 * Friday - 1/5/1990
+                                 * Saturday - 1/6/1990
+                                 * Sunday - 1/7/1990
                                  Set the time and date as datetime.datetime.
 
                                  For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to
@@ -524,7 +524,7 @@ def create_drive_time_areas(input_layer,
                                  #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
                                     that intersect the bounding box will be analyzed.
 
-                                 #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -661,13 +661,13 @@ def find_nearest(
 
                                  To ensure the task uses typical traffic in locations where it is available, choose a time and day of the week, and then convert the day of the week to one of the following dates from 1990:
 
-                                 * Monday 1/1/1990
-                                 * Tuesday 1/2/1990
-                                 * Wednesday 1/3/1990
-                                 * Thursday 1/4/1990
-                                 * Friday 1/5/1990
-                                 * Saturday 1/6/1990
-                                 * Sunday 1/7/1990
+                                 * Monday - 1/1/1990
+                                 * Tuesday - 1/2/1990
+                                 * Wednesday - 1/3/1990
+                                 * Thursday - 1/4/1990
+                                 * Friday - 1/5/1990
+                                 * Saturday - 1/6/1990
+                                 * Sunday - 1/7/1990
                                  Set the time and date as datetime.datetime.
 
                                  For example, to solve for 1:03 p.m. on Thursdays, set the time and date to 1:03 p.m., 4 January 1990; and convert to datetime eg. datetime.datetime(1990, 1, 4, 1, 3).
@@ -730,7 +730,7 @@ def find_nearest(
                                  #. Extent (``extent``)-a bounding box that defines the analysis area. Only those points in the ``input_layer``
                                     that intersect the bounding box will be analyzed.
 
-                                 #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                                 #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     -------------------------    ---------------------------------------------------------
     gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
@@ -1014,7 +1014,7 @@ def plan_routes(
     ----------------------------    --------------------------------------------------------------------------------------------------
     context                         Optional string. Context contains additional settings that affect task execution. For ``plan_routes``, there are two settings:
 
-                                    #. Extent (``extent``) A bounding box that defines the analysis area. Only those points in the inputLayer, start_layer, and endLayer that are within the bounding box can be visited by routes.
+                                    #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those points in the inputLayer, start_layer, and endLayer that are within the bounding box can be visited by routes.
 
                                     #. Output Spatial Reference (``outSR``)-If the output is a feature service, the spatial reference will be the same as ``stops_layer``. Setting outSR for feature services has no effect.
                                        If the output is a feature collection, the features will be in the spatial reference of the outSR value or the spatial reference of ``stops_layer`` when outSR is not specified.

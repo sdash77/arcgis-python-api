@@ -65,11 +65,11 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     classification_type          Optional string. Determines how density values will be classified into polygons.
                                  Choice list: ['EqualInterval', 'GeometricInterval', 'NaturalBreaks', 'EqualArea', 'StandardDeviation']
-                                    * EqualInterval Polygons are created such that the range of density values is equal for each area.
-                                    * GeometricInterval Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
-                                    * NaturalBreaks Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.
-                                    * EqualArea Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.
-                                    * StandardDeviation Polygons are created based upon the standard deviation of the predicted density values.
+                                    * EqualInterval - Polygons are created such that the range of density values is equal for each area.
+                                    * GeometricInterval - Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
+                                    * NaturalBreaks - Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.
+                                    * EqualArea - Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.
+                                    * StandardDeviation - Polygons are created based upon the standard deviation of the predicted density values.
     -------------------------    ---------------------------------------------------------
     num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classification_type parameter.
     -------------------------    ---------------------------------------------------------
@@ -265,8 +265,8 @@ def find_point_clusters(
     --------------------    ---------------------------------------------------------
     context                 Optional string. Context contains additional settings that affect method execution. For ``find_point_clusters``, there are two settings.
 
-                            #. Extent (``extent``) a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
-                            #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                            #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the input layer that intersect the bounding box will be buffered.
+                            #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     --------------------    ---------------------------------------------------------
     gis                     Optional, the GIS on which this tool runs. If not
                             specified, the active GIS is used.
@@ -362,8 +362,8 @@ def find_hot_spots(
     -------------------------------------------------------------------    ---------------------------------------------------------
     context                                                                Optional string. Context contains additional settings that affects method execution. For ``find_hot_spots``, there are two settings.
 
-                                                                           #. Extent (``extent``) a bounding box that defines the analysis area. Only those features in the ``analysis_layer`` that intersect the bounding box will be analyzed.
-                                                                           #. Output Spatial Reference (``outSR``) the data will be projected into the output spatial reference prior to analysis.
+                                                                           #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``analysis_layer`` that intersect the bounding box will be analyzed.
+                                                                           #. Output Spatial Reference (``outSR``) - the data will be projected into the output spatial reference prior to analysis.
     -------------------------------------------------------------------    ---------------------------------------------------------
     gis                                                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------------------------    ---------------------------------------------------------
@@ -480,14 +480,14 @@ def find_outliers(analysis_layer,
 
                                                                         Choice list: ['Speed', 'Balance', 'Presision']
 
-                                                                        * ``Speed`` implements 199 permutations and results in p-values with a precision of 0.01.
-                                                                        * ``Balance`` implements 499 permutations and results in p-values with a precision of 0.002.
-                                                                        * ``Precision`` implements 999 permutations and results in p-values with a precision of 0.001.
+                                                                        * ``Speed`` - implements 199 permutations and results in p-values with a precision of 0.01.
+                                                                        * ``Balance`` - implements 499 permutations and results in p-values with a precision of 0.002.
+                                                                        * ``Precision`` - implements 999 permutations and results in p-values with a precision of 0.001.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     shape_type                                                          Optional string. The shape of the polygon mesh the input features will be aggregated into.
 
-                                                                        * ``Fishnet`` The input features will be aggregated into a grid of square (fishnet) cells.
-                                                                        * ``Hexagon`` The input features will be aggregated into a grid of hexagonal cells.
+                                                                        * ``Fishnet`` - The input features will be aggregated into a grid of square (fishnet) cells.
+                                                                        * ``Hexagon`` -  The input features will be aggregated into a grid of hexagonal cells.
     ------------------------------------------------------------------  ---------------------------------------------------------------
     cell_size                                                           Optional float. The size of the grid cells used to aggregate your features. When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
     ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -572,7 +572,7 @@ def interpolate_points(
 
     * An air quality management district has sensors that measure pollution levels.
       ``interpolate_points`` can be used to predict pollution levels at locations that don't have sensors,
-      such as locations with at-risk populations schools or hospitals, for example.
+      such as locations with at-risk populations, schools, or hospitals, for example.
     * Predict heavy metal concentrations in crops based on samples taken from individual plants.
     * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other
       indicators (such as electrical conductivity) in order to study their relationships to crop yield
@@ -588,35 +588,35 @@ def interpolate_points(
     If a value of 1 is provided for ``interpolate_option``, empirical Bayesian kriging will
     use the following parameters:
 
-    * transformation_type NONE
-    * semivariogram_model_type POWER
-    * max_local_points 50
-    * overlap_factor 1
-    * number_semivariograms 30
-    * nbrMin 8
-    * nbrMax 8
+    * transformation_type - NONE
+    * semivariogram_model_type - POWER
+    * max_local_points - 50
+    * overlap_factor - 1
+    * number_semivariograms - 30
+    * nbrMin - 8
+    * nbrMax - 8
 
     If a value of 5 is provided for ``interpolate_option``, empirical Bayesian kriging
     will use the following parameters:
 
-    * transformation_type NONE
-    * semivariogram_model_type POWER
+    * transformation_type - NONE
+    * semivariogram_model_type - POWER
     * max_local_points 75
-    * overlap_factor 1.5
-    * number_semivariograms 100
-    * nbrMin 10
-    * nbrMax 10
+    * overlap_factor - 1.5
+    * number_semivariograms - 100
+    * nbrMin - 10
+    * nbrMax - 10
 
     If a value of 9 is provided for ``interpolate_option``, empirical Bayesian kriging
     will use the following parameters:
 
-    * transformation_type EMPIRICAL
-    * semivariogram_model_type K_BESSEL
-    * max_local_points 200
-    * overlap_factor 3
-    * number_semivariograms 200
-    * nbrMin 15
-    * nbrMax 15
+    * transformation_type - EMPIRICAL
+    * semivariogram_model_type - K_BESSEL
+    * max_local_points - 200
+    * overlap_factor - 3
+    * number_semivariograms - 200
+    * nbrMin - 15
+    * nbrMax - 15
 
     ===========================  ===========================================================================================
     **Argument**                 **Description**
@@ -645,13 +645,13 @@ def interpolate_points(
     ---------------------------  -------------------------------------------------------------------------------------------
     classification_type          Optional string. Determines how predicted values will be classified into areas.
 
-                                 * ``EqualArea`` Polygons are created such that the number of data values in each area is equal.
+                                 * ``EqualArea`` - Polygons are created such that the number of data values in each area is equal.
                                    For example, if the data has more large values than small values, more areas will be created for large values.
-                                 * ``EqualInterval`` Polygons are created such that the range of predicted values is equal for each area.
-                                 * ``GeometricInterval`` Polygons are based on class intervals that have a geometrical series.
+                                 * ``EqualInterval`` - Polygons are created such that the range of predicted values is equal for each area.
+                                 * ``GeometricInterval`` - Polygons are based on class intervals that have a geometrical series.
                                    This method ensures that each class range has approximately the same number of values within
                                    each class and that the change between intervals is consistent.
-                                 * ``Manual`` You to define your own range of values for areas. These values will be entered in
+                                 * ``Manual`` - You to define your own range of values for areas. These values will be entered in
                                    the ``class_breaks`` parameter below.
 
                                  Choice list: ['EqualArea', 'EqualInterval', 'GeometricInterval', 'Manual']

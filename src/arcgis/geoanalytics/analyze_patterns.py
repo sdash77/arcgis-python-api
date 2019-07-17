@@ -872,9 +872,9 @@ def find_hot_spots(
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     context                                                                                         Optional string. Context contains additional settings that affect task execution. For this task, there are three settings:
 
-                                                                                                    #. Extent (``extent``) A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                                    #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                                                                     #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
-                                                                                                    #. Output spatial reference (``outSR``) The features will be projected into this coordinate system after the analysis to be saved.
+                                                                                                    #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved.
                                                                                                        The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                                                                     #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------

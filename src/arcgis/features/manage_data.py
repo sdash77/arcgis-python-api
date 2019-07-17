@@ -50,11 +50,11 @@ def dissolve_boundaries(
                                              fieldName is the name of one of the numeric fields found in the input_layer.
                                              summary type is one of the following:
 
-                                             * Sum Adds the total value of all the points in each polygon
-                                             * Mean Calculates the average of all the points in each polygon.
-                                             * Min Finds the smallest value of all the points in each polygon.
-                                             * Max Finds the largest value of all the points in each polygon.
-                                             * Stddev Finds the standard deviation of all the points in each polygon.
+                                             * Sum - Adds the total value of all the points in each polygon
+                                             * Mean - Calculates the average of all the points in each polygon.
+                                             * Min - Finds the smallest value of all the points in each polygon.
+                                             * Max - Finds the largest value of all the points in each polygon.
+                                             * Stddev - Finds the standard deviation of all the points in each polygon.
                                              Example [fieldName1 summaryType1,fieldName2 summaryType2].
     ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional string. If provided, the task will create a feature service of the results.
@@ -240,7 +240,7 @@ def merge_layers(
     context           Optional dict. Context contains additional settings that affect task execution. For ``merge_layers``, there are two settings.
 
                       #. Extent (``extent``)-a bounding box that defines the analysis area. Only those features in the ``input_layer`` and the ``merge_layer`` that intersect the bounding box will be merged into the output layer.
-                      #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                      #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
@@ -355,8 +355,8 @@ def overlay_layers(
     ----------------  ---------------------------------------------------------------
     context           Optional string. Context contains additional settings that affect task execution. For ``overlay_layers``, there are two settings.
 
-                      #. Extent (``extent``) a bounding box that defines the analysis area. Only those features in the ``input_layer`` and ``overlay_layer`` and that intersect the bounding box will be overlaid.
-                      #. Output Spatial Reference (``outSR``) the output features will be projected into the output spatial reference.
+                      #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features in the ``input_layer`` and ``overlay_layer`` and that intersect the bounding box will be overlaid.
+                      #. Output Spatial Reference (``outSR``) - the output features will be projected into the output spatial reference.
     ----------------  ---------------------------------------------------------------
     gis               Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
