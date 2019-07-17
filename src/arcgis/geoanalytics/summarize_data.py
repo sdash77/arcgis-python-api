@@ -145,8 +145,8 @@ def build_multivariable_grid(input_layers,
 
                                                                             * ``statisticType`` is one of the following when statisticField is a string field:
 
-                                                                                * Count—Totals the number of strings for all features near or intersecting each bin.
-                                                                                * Any—Returns a sample string of all features near or intersecting each bin.
+                                                                                * Count Totals the number of strings for all features near or intersecting each bin.
+                                                                                * Any Returns a sample string of all features near or intersecting each bin.
 
                                                                             * ``filter`` is optional for all variable types and is formatted as described in the Feature Input topic.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
@@ -175,10 +175,10 @@ def build_multivariable_grid(input_layers,
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                                           #. Extent (``extent``)—A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                           #. Processing spatial reference (``processSR``)—The features will be projected into this coordinate system for analysis.
-                                                                           #. Output spatial reference (``outSR``)—The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                           #. Data store (``dataStore``)—Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                           #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                           #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
+                                                                           #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     ===================================================================    =============================================================================
 
     :returns: boolean
@@ -403,10 +403,10 @@ def aggregate_points(point_layer,
     -------------------------------------------------     ------------------------------------------------------------------------
     context                                               Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                              * Extent (``extent``)—A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                              * Processing spatial reference (``processSR``)—The features will be projected into this coordinate system for analysis.
-                                                              * Output spatial reference (``outSR``)—The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                              * Data store (``dataStore``)—Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                              *  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                              * Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
+                                                              * Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                              * Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     -------------------------------------------------     ------------------------------------------------------------------------
     future                                                optional Boolean. If True, a GPJob is returned instead of
                                                           results. The GPJob can be queried on the status of the execution.

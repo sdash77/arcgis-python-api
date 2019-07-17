@@ -36,8 +36,8 @@ default_orders = {
                {'alias': 'CurbApproach', 'name': 'CurbApproach', 'type': 'esriFieldTypeInteger'}],
     'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
     'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
-    
-    
+
+
 default_depots = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
@@ -58,7 +58,7 @@ default_depots = {
                                                  {'alias': 'NavLatency', 'name': 'NavLatency',
                                                   'type': 'esriFieldTypeDouble'}], 'geometryType': 'esriGeometryPoint',
                                       'displayFieldName': '', 'exceededTransferLimit': False,
-                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}   
+                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
 default_routes = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
@@ -101,7 +101,7 @@ default_routes = {
                                                  {'alias': 'AssignmentRule', 'name': 'AssignmentRule',
                                                   'type': 'esriFieldTypeInteger'}], 'features': [],
                                       'displayFieldName': '', 'exceededTransferLimit': False}
-                                      
+
 default_breaks = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'RouteName', 'name': 'RouteName',
@@ -123,7 +123,7 @@ default_breaks = {
                                                  {'alias': 'IsPaid', 'name': 'IsPaid', 'type': 'esriFieldTypeInteger'},
                                                  {'alias': 'Sequence', 'name': 'Sequence',
                                                   'type': 'esriFieldTypeInteger'}], 'features': [],
-                                      'displayFieldName': '', 'exceededTransferLimit': False}                                      
+                                      'displayFieldName': '', 'exceededTransferLimit': False}
 default_route_zones = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                  {'alias': 'RouteName', 'name': 'RouteName',
@@ -136,7 +136,7 @@ default_route_zones = {
                                                   'type': 'esriFieldTypeDouble'}],
                                       'geometryType': 'esriGeometryPolygon', 'displayFieldName': '',
                                       'exceededTransferLimit': False,
-                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}                                      
+                                      'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
 
 default_route_renewals = {
                                       'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
@@ -158,7 +158,7 @@ default_order_pairs = {
                                                   'type': 'esriFieldTypeString', 'length': 128},
                                                  {'alias': 'MaxTransitTime', 'name': 'MaxTransitTime',
                                                   'type': 'esriFieldTypeDouble'}], 'features': [],
-                                      'displayFieldName': '', 'exceededTransferLimit': False}                                      
+                                      'displayFieldName': '', 'exceededTransferLimit': False}
 
 default_point_barriers = {
                                       'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
@@ -487,10 +487,10 @@ default_param_values = {
                                                                                                                       'ParameterValue': '0',
                                                                                                                       'ParameterName': 'Vehicle Width (meters)'}}],
                                       'displayFieldName': '', 'exceededTransferLimit': False}
-                                      
+
 default_tolerance = {'distance': 10,
     'units': 'esriMeters'}
-                                                                                     
+
 def solve_vehicle_routing_problem(
     orders,
     depots,
@@ -1979,22 +1979,22 @@ Parameters:
 
     gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-    time_zone_usage_for_time_fields: Time Zone Usage for Time Fields (str). Optional parameter. Specifies the time zone for the input date-time fields supported by the tool. This parameter specifies the time zone           for the following fields: TimeWindowStart1, TimeWindowEnd1, TimeWindowStart2, TimeWindowEnd2, InboundArriveTime, and OutboundDepartTime on orders. TimeWindowStart1, TimeWindowEnd1, TimeWindowStart2, and         TimeWindowEnd2 on depots. EarliestStartTime and LatestStartTime on routes. TimeWindowStart and TimeWindowEnd on breaks. GEO_LOCAL — The date-time values associated with the orders or depots are in the           time zone in which the orders and depots are located. For routes, the date-time values are based on the time zone in which the starting depot for the route is located. If a route does not have a                 starting depot, all orders and depots across all the routes must be in a single time zone. For breaks, the date-time values are based on the time zone of the routes. For example, if your depot is                located in an area that follows eastern standard time and has the first time window values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as          8:00 a.m. and 5:00 p.m. eastern standard time. UTC — The date-time values associated with the orders or depots are in the in coordinated universal time (UTC) and are not based on the time zone in which          the orders or depots are located. For example, if your depot is located in an area that follows eastern standard time and has the first time window values (specified as TimeWindowStart1 and                      TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 12:00 p.m. and 9:00 p.m. eastern standard time assuming the eastern standard time is obeying the daylight saving time.                 Specifying the date-time values in UTC is useful if you do not know the time zone in which the orders or depots are located or when you have orders and depots in multiple time zones, and you want all            the date-time values to start simultaneously. The UTC option is applicable only when your network dataset defines a time zone attribute. Otherwise, all the date-time values are always treated as                 GEO_LOCAL. 
+    time_zone_usage_for_time_fields: Time Zone Usage for Time Fields (str). Optional parameter. Specifies the time zone for the input date-time fields supported by the tool. This parameter specifies the time zone           for the following fields: TimeWindowStart1, TimeWindowEnd1, TimeWindowStart2, TimeWindowEnd2, InboundArriveTime, and OutboundDepartTime on orders. TimeWindowStart1, TimeWindowEnd1, TimeWindowStart2, and         TimeWindowEnd2 on depots. EarliestStartTime and LatestStartTime on routes. TimeWindowStart and TimeWindowEnd on breaks. GEO_LOCAL   The date-time values associated with the orders or depots are in the           time zone in which the orders and depots are located. For routes, the date-time values are based on the time zone in which the starting depot for the route is located. If a route does not have a                 starting depot, all orders and depots across all the routes must be in a single time zone. For breaks, the date-time values are based on the time zone of the routes. For example, if your depot is                located in an area that follows eastern standard time and has the first time window values (specified as TimeWindowStart1 and TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as          8:00 a.m. and 5:00 p.m. eastern standard time. UTC   The date-time values associated with the orders or depots are in the in coordinated universal time (UTC) and are not based on the time zone in which          the orders or depots are located. For example, if your depot is located in an area that follows eastern standard time and has the first time window values (specified as TimeWindowStart1 and                      TimeWindowEnd1) of 8 AM and 5 PM, the time window values will be treated as 12:00 p.m. and 9:00 p.m. eastern standard time assuming the eastern standard time is obeying the daylight saving time.                 Specifying the date-time values in UTC is useful if you do not know the time zone in which the orders or depots are located or when you have orders and depots in multiple time zones, and you want all            the date-time values to start simultaneously. The UTC option is applicable only when your network dataset defines a time zone attribute. Otherwise, all the date-time values are always treated as                 GEO_LOCAL.
       Choice list:['UTC', 'GEO_LOCAL']
 
-    save_output_layer: Save Output Layer (bool). Optional parameter.  Specify if the tool should save the analysis settings as a network analysis layer file. You cannot directly work with this file even when you           open the file in an ArcGIS Desktop application like ArcMap. It is meant to be sent to Esri Technical Support to diagnose the quality of results returned from the tool. 
+    save_output_layer: Save Output Layer (bool). Optional parameter.  Specify if the tool should save the analysis settings as a network analysis layer file. You cannot directly work with this file even when you           open the file in an ArcGIS Desktop application like ArcMap. It is meant to be sent to Esri Technical Support to diagnose the quality of results returned from the tool.
            True:
                Save the network analysis layer file. The file is downloaded in a temporary directory on your machine. In ArcGIS Pro, the location of the downloaded file can be determined by viewing the value for the Output Network Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Network Analysis Layer parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.
            False:
-               Do not save the network analysis layer file. This is the default. 
-    
-    overrides: Overrides (str). Optional parameter. Specify additional settings that can influence the behavior of the solver when finding solutions for the network analysis problems. The value for this parameter          needs to be specified in JavaScript Object Notation (JSON). For example, a valid value is of the following form {"overrideSetting1" : "value1", "overrideSetting2" : "value2"}. The override setting name          is always enclosed in double quotes. The values can be a number, Boolean, or string. The default value for this parameter is no value, which indicates not to override any solver settings. Overrides are          advanced settings that should be used only after careful analysis of the results obtained before and after applying the settings. A list of supported override settings for each solver and their                  acceptable values can be obtained by contacting Esri Technical Support. 
+               Do not save the network analysis layer file. This is the default.
+
+    overrides: Overrides (str). Optional parameter. Specify additional settings that can influence the behavior of the solver when finding solutions for the network analysis problems. The value for this parameter          needs to be specified in JavaScript Object Notation (JSON). For example, a valid value is of the following form {"overrideSetting1" : "value1", "overrideSetting2" : "value2"}. The override setting name          is always enclosed in double quotes. The values can be a number, Boolean, or string. The default value for this parameter is no value, which indicates not to override any solver settings. Overrides are          advanced settings that should be used only after careful analysis of the results obtained before and after applying the settings. A list of supported override settings for each solver and their                  acceptable values can be obtained by contacting Esri Technical Support.
 
     save_route_data: Save Route Data (bool). Optional parameter. Choose whether the output includes a zip file that contains a file geodatabase holding the inputs and outputs of the analysis in a format that can be        used to share route layers with ArcGIS Online or Portal for ArcGIS.
            True:
                Save the route data as a zip file. The file is downloaded in a temporary directory on your machine. In ArcGIS Pro, the location of the downloaded file can be determined by viewing the value for the Output Route Data parameter in the entry corresponding to the tool execution in the Geoprocessing history of your Project. In ArcMap, the location of the file can be determined by accessing the Copy Location option in the shortcut menu on the Output Route Data parameter in the entry corresponding to the tool execution in the Geoprocessing Results window.
            False:
-               Do not save the route data. This is the default.  
+               Do not save the route data. This is the default.
 
     Returns the following as a named tuple:
        out_unassigned_stops - Output Unassigned Stops as a FeatureSet
@@ -2137,4 +2137,4 @@ solve_vehicle_routing_problem.__annotations__ = {
     'save_output_layer': bool,
     'overrides': str,
     'save_route_data': bool,
-    'return': tuple}    
+    'return': tuple}

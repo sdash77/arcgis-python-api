@@ -73,7 +73,7 @@ def enrich_layer(input_layer,
     context                                                                   Optional string. Context contains additional settings that affect task execution. For ``enrich_layer`` method, there are two settings.
 
                                                                               #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                                                              #. Output Spatial Reference (outSR)—the output features will be projected into the output spatial reference.
+                                                                              #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     gis                                                                       Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
@@ -87,7 +87,7 @@ def enrich_layer(input_layer,
 
                                                                               The default value is False.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    future                                                                    Optional boolean. If True, the result will be a GPJobobject and results will be returned asynchronously.
+    future                                                                    Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =====================================================================     ====================================================================
 
     :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
