@@ -12,7 +12,7 @@ import arcgis as _arcgis
 #----------------------------------------------------------------------
 def generate_tesselation(extent_layer,
                          bin_size=1,
-                         bin_size_unit="SquareKilimeters",
+                         bin_size_unit="SquareKilometers",
                          bin_type="SQUARE",
                          intersect_study_area=False,
                          output_name=None,
@@ -46,7 +46,7 @@ def generate_tesselation(extent_layer,
     output_name                              Optional string. If provided, the task will create a feature service of the results.
                                              You define the name of the service. If output_name is not supplied, the task will return a feature collection.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional string. Context contains additional settings that affect task execution. For dissolve_boundaries Points, there are two settings.
+    context                                  Optional string. Context contains additional settings that affect task execution. For `generate_tesselation`, there are two settings.
 
                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
