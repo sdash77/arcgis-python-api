@@ -64,7 +64,8 @@ class ProfileManager(object):
     #----------------------------------------------------------------------
     def _write_config(self, config, cfg_file_path):
         """write the config object to the .arcgisprofile file"""
-        config.write(open(cfg_file_path, "w"))
+        with open(cfg_file_path, "w") as writer:
+            config.write(writer)
     #----------------------------------------------------------------------
     def _securely_store_password(self, profile, password):
         """Securely stores the password in an O.S. specific store via the
