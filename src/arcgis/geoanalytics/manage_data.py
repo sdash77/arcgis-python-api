@@ -384,12 +384,14 @@ def merge_layers(input_layer, merge_layer,
     return
 
 
-def clip_layer(input_layer, clip_layer, output_name=None, gis=None, future=False):
+def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None, future=False):
     """
-    Clip_layer features from one layer to the extent of a boundary layer. Use this tool to cut out a piece
+    .. image:: _static/images/clip_layer/clip_layer.png 
+
+    ``clip_layer`` features from one layer to the extent of a boundary layer. Use this tool to cut out a piece
     of one feature class using one or more of the features in another feature class as a cookie
     cutter. This is particularly useful for creating a new feature layers - also referred to as study
-    area or area of interest (AOI)- that contains a geographic subset of the features in another,
+    area or area of interest (AOI) - that contains a geographic subset of the features in another,
     larger feature class.
 
     Only available at **ArcGIS Enterprise 10.7** and later.
@@ -397,19 +399,46 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, future=False
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       required FeatureLayer. The point, line or polygon features.
+    input_layer       Required feature layer. The point, line, or polygon features 
+                      that will be clipped to the areas of ``clip_layer`` features. 
+                      See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    clip_layer        required FeatureLayer. The features that will be clipping the input_layer features.
+    clip_layer        Required feature layer. The polygon features that define the 
+                      areas to which ``input_layer`` features will be clipped. 
+                      See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    output_name       optional string. The task will create a feature service of the results. You define the name of the service.
+    output_name       Optional string. The task will create a feature service of 
+                      the results. You define the name of the service.
+    ----------------  ---------------------------------------------------------------
+    context           Optional strin. The context parameter contains additional 
+                      settings that affect task execution. For this task, there are four settings:
+
+                      #. Extent (``extent``) - A bounding box that defines the analysis area. 
+                         Only those features that intersect the bounding box will be analyzed.
+                      #. Processing spatial reference (``processSR``) - The features will be 
+                         projected into this coordinate system for analysis.
+                      #. Output spatial reference (``outSR``) - The features will be projected 
+                         into this coordinate system after the analysis to be saved. 
+                         The output spatial reference for the spatiotemporal big data store is always WGS84.
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store. 
+                         The default is the spatiotemporal big data store.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of
+    future            Optional boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: FeatureLayer
+    :returns: feature layer collection
+
+    .. code-block:: python
+
+            # Usage Example: To clip the buffered area in the shape of Capitol Hill boundary.
+
+            clipped = clip_layer(input_layer=buffer, 
+                                 clip_layer=boundary,
+                                 output_name="clipped_buffer",
+                                 context={"extent":{'xmin': -77.50941999999998,'ymin': 38.389560000000074,'xmax': -76.50941999999998,'ymax': 39.389560000000074,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
 
     """
     kwargs = locals()
@@ -434,7 +463,10 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, future=False
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
