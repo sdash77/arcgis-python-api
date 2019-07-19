@@ -5725,8 +5725,8 @@ class Group(dict):
     @property
     def protected(self):
         """
-        Indicates if the group is protected from deletion.
-        Default value is false.
+        Indicates if the group is protected from deletion. Set it to `True`
+        to protect the group and `False` to unprotect it.
         """
         return self['protected']
     #----------------------------------------------------------------------
