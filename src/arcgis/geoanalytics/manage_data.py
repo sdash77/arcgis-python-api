@@ -667,58 +667,84 @@ def calculate_fields(input_layer,
                      time_reference=None,
                      output_name=None,
                      gis=None,
+                     context=None,
                      future=False
                      ):
     """
-    The Calculate Field task works with a layer to create and populate a
+
+    .. image:: _static/images/calculate_field/calculate_field.png 
+
+    The ``calculate_fields`` task works with a layer to create and populate a
     new field. The output is a new feature layer, that is the same as the
     input features, with the additional field added.
 
-    ==========================   ===============================================================
-    **Argument**                 **Description**
-    --------------------------   ---------------------------------------------------------------
-    input_layer                  required service , The table, point, line or polygon features
-                                 containing potential incidents.
-    --------------------------   ---------------------------------------------------------------
-    field_name                   required string, A string representing the name of the new
-                                 field. If the name already exists in the dataset, then a
-                                 numeric value will be appended to the field name.
-    --------------------------   ---------------------------------------------------------------
-    data_type                    required string, the type for the new field.
-                                 Values: Date, Double, Integer, String
-    --------------------------   ---------------------------------------------------------------
-    expression                   required string, An Arcade expression used to calculate the new
-                                 field values. You can use any of the Date, Logical,
-                                 Mathematical or Text function available with Arcade.
-    --------------------------   ---------------------------------------------------------------
-    track_aware                  optional boolean, Boolean value denoting if the expression is
-                                 track aware.
-                                 Default: False
-    --------------------------   ---------------------------------------------------------------
-    track_fields                 optional string, The fields used to identify distinct tracks.
-                                 There can be multiple track_fields. track_fields are only
-                                 required when track_aware is true.
-    --------------------------   ---------------------------------------------------------------
-    time_boundary_split          Optional Int.  A time boundary to detect and incident.
-    --------------------------   ---------------------------------------------------------------
-    time_split_unit              Optional String.  The unit to detect an incident is `time_boundary_split` is used.
-                                 Allowed values: Years, Months, Weeks, Days, Hours, Minutes, Seconds, Milliseconds
-    --------------------------   ---------------------------------------------------------------
-    time_reference               Optional Datetime. The starting date/time where analysis will
-                                 begin from.
-    --------------------------   ---------------------------------------------------------------
-    output_name                  optional string, The task will create a feature service of the
-                                 results. You define the name of the service.
-    --------------------------   ---------------------------------------------------------------
-    gis                          optional GIS, the GIS on which this tool runs. If not
-                                 specified, the active GIS is used.
-    --------------------------   ---------------------------------------------------------------
-    future                       Optional Boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
-    ==========================   ================================================================
+    =================================================   ===============================================================
+    **Argument**                                        **Description**
+    -------------------------------------------------   ---------------------------------------------------------------
+    input_layer                                         Required layer. The input features that will have a field added and calculated.
+                                                        See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------   ---------------------------------------------------------------
+    field_name                                          Required string. A string representing the name of the new
+                                                        field. If the name already exists in the dataset, then a
+                                                        numeric value will be appended to the field name.
+    -------------------------------------------------   ---------------------------------------------------------------
+    data_type                                           Required string. The type for the new field.
+    
+                                                        Choice list: ['Date', 'Double', 'Integer', 'String'`].
+    -------------------------------------------------   ---------------------------------------------------------------
+    expression                                          Required string. An Arcade expression used to calculate the new
+                                                        field values. You can use any of the Date, Logical,
+                                                        Mathematical or Text function available with Arcade.
+    -------------------------------------------------   ---------------------------------------------------------------
+    track_aware                                         Optional boolean. Boolean value denoting if the expression is
+                                                        track aware.
 
-    :returns:
-       Feature Layer
+                                                        The default value is 'False'.
+    -------------------------------------------------   ---------------------------------------------------------------
+    track_fields (Required if trackAware is True)       Optional string. The fields used to identify distinct tracks.
+                                                        There can be multiple track_fields. track_fields are only
+                                                        required when ``track_aware`` is True.
+    -------------------------------------------------   ---------------------------------------------------------------
+    time_boundary_split                                 Optional integer. A time boundary allows your to analyze values within a defined time span. 
+                                                        For example, if you use a time boundary of 1 day, starting on January 1st, 1980 tracks will 
+                                                        be analyzed 1 day at a time. The time boundary parameter was introduced in ArcGIS Enterprise 10.7.
+
+                                                        The time boundary parameters are only applicable if the analysis is ``track_aware``.
+                                                        The ``time_boundary_split`` parameter defines the scale of the time boundary. 
+                                                        In the case above, this would be 1. See the portal documentation for this tool to learn more.
+    -------------------------------------------------   ---------------------------------------------------------------
+    time_split_unit                                     Optional string.  The unit to detect an incident is `time_boundary_split` is used.
+
+                                                        Choice list: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds'].
+    -------------------------------------------------   ---------------------------------------------------------------
+    time_reference                                      Optional datetime.datetime. The starting date/time where analysis will
+                                                        begin from.
+    -------------------------------------------------   ---------------------------------------------------------------
+    output_name                                         Optional string, The task will create a feature service of the
+                                                        results. You define the name of the service.
+    -------------------------------------------------   ---------------------------------------------------------------
+    gis                                                 Optional GIS, the GIS on which this tool runs. If not
+                                                        specified, the active GIS is used.
+    -------------------------------------------------   ---------------------------------------------------------------
+    context                                             Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                        #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                        #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                        #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                        #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    =================================================   ===============================================================
+    
+
+    :returns: feature layer collection
+
+    .. code-block:: python
+
+            # Usage Example: To find maximum of the two attributes of an input layer.
+
+            result = calculate_fields(input_layer=lyr,
+                                      field_name="avg",
+                                      data_type="Double",
+                                      expression='max($feature["InputValue"],$feature["Value2"])')
     """
     kwargs = locals()
     tool_name = "CalculateField"
@@ -743,7 +769,10 @@ def calculate_fields(input_layer,
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
