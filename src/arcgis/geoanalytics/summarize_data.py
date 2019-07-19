@@ -498,44 +498,71 @@ def describe_dataset(input_layer,
                      sample_size=None,
                      output_name=None,
                      gis=None,
+                     context=None,
                      future=False):
     """
-    The Describe Dataset task provides an overview of your big data. The tool outputs a JSON
-    detailing the input layer's geometry and time settings, schema, and summary statistics for each
-    field. Optionally, the tool can output two types of descriptive feature layers: a feature layer
-    representing a sample of your input features, and a single polygon feature layer that
-    represents the extent of the input features. You can choose to output one or both.
+    .. image:: _static/images/describe_dataset/describe_dataset.png 
 
-        Usage Notes:
+    The ``describe_dataset`` task provides an overview of your big data.
+    The tool outputs a feature layer representing a sample of your 
+    input features or a single polygon feature layer that represents the extent of your 
+    input features. You can choose to output one, both, or none.
 
+    For example, imagine you are tasked with completing an analysis workflow on a large 
+    volume of data. You want to try the workflow, but it could take hours or days with 
+    your full dataset. Instead of using time and resources running the full analysis, 
+    first create a sample layer to efficiently test your workflow before running it 
+    on the full dataset.
+
+    .. note::
         Only available at ArcGIS Enterprise 10.7 and later.
 
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       required FeatureLayer. The point, line or polygon features.
+    input_layer       Required feature layer. The table, point, line, or polygon feature 
+                      layer that will be described, summarized, and sampled. 
+                      See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    extent_output     Optional Boolean. The task will output a single rectangle
-                      feature representing the extent of the input_layer if this value
-                      is set to true. The default is False.
+    extent_output     Optional boolean. The task will output a single rectangle
+                      feature representing the extent of the ``input_layer`` if this value
+                      is set to 'True'. 
+                      
+                      The default value is 'False'.
     ----------------  ---------------------------------------------------------------
     sample_size       Optional integer. The task will output a feature layer
-                      representing a sample of features from the input_layer. Specify
+                      representing a sample of features from the ``input_layer``. Specify
                       the number of sample features to return. If the input value is
                       0 or empty then no sample layer will be created. The output
                       will have the same schema, geometry, and time type as the input
-                      layer. The default is None.
+                      layer.
     ----------------  ---------------------------------------------------------------
-    output_name       optional string. The task will create a feature service of the results. You define the name of the service.
+    output_name       Optional string. The task will create a feature service of the results. 
+                      You define the name of the service.
     ----------------  ---------------------------------------------------------------
-    gis               optional GIS. The GIS object where the analysis will take place.
+    gis               Optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of
+    context           Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                      #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                      #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                      #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    ----------------  ---------------------------------------------------------------
+    future            Optional boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: FeatureLayer
+    :returns: feature layer collection
 
+    .. code-block:: python
+
+            # Usage Example: To get an overview of your big data item
+
+            data = describe_dataset(input_layer=big_data_layer, 
+                                    extent_output=True,
+                                    sample_size=2000,
+                                    output_name="describe dataset")
     """
     kwargs = locals()
     tool_name = "DescribeDataset"
@@ -560,7 +587,10 @@ def describe_dataset(input_layer,
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
