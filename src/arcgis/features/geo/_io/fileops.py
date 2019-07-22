@@ -495,7 +495,17 @@ def from_featureclass(filename, **kwargs):
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
                     return df
-    return
+    else:
+        if os.path.dirname(filename).lower().find('.gdb') > -1:
+            message = """
+            Cannot Open Geodatabase without Arcpy or Fiona 
+            \nPlease switch to Arcpy for full support or install fiona by this command `conda install fiona`
+            """.strip()
+            print(message)
+            raise Exception('Failed to import Feature Class from Geodatabase specified')
+        else:
+            raise Exception('Unsupported Data Format or Invalid Feature Class specified')
+    #return
 #--------------------------------------------------------------------------
 def to_featureclass(geo,
                     location,

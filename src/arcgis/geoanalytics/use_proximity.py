@@ -15,69 +15,135 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def create_buffers(
-    input_layer,
-    distance = 1,
-    distance_unit = "Miles",
-    field = None,
-    method = """Planar""",
-    dissolve_option = """None""",
-    dissolve_fields = None,
-    summary_fields = None,
-    multipart = False,
-    output_name = None,
-    context = None,
-    gis = None,
-    future = False):
+def create_buffers(input_layer,
+                   distance=1,
+                   distance_unit="Miles",
+                   field=None,
+                   method="Planar",
+                   dissolve_option="None",
+                   dissolve_fields=None,
+                   summary_fields=None,
+                   multipart=False,
+                   output_name=None,
+                   context=None,
+                   gis=None,
+                   future=False):
     """
 
-    A buffer is an area that covers a given distance from a point, line, or polygon feature.
+    .. image:: _static/images/create_buffers_geo/create_buffers_geo.png
 
-    Buffers are typically used to create areas that can be further analyzed using other tools. For example, if the question is What buildings are within 1 mile of the school?, the answer can be found by creating a 1-mile buffer around the school and overlaying the buffer with the layer containing building footprints. The end result is a layer of those buildings within 1 mile of the school.
+    Buffers are typically used to create areas that can be further analyzed 
+    using other tools such as ``aggregate_points``. For example, ask the question, 
+    "What buildings are within one mile of the school?" The answer can be found 
+    by creating a one-mile buffer around the school and overlaying the buffer 
+    with the layer containing building footprints. The end result is a layer 
+    of those buildings within one mile of the school.
 
-    For example
+    ================================================    =========================================================
+    **Parameter**                                       **Description**
+    ------------------------------------------------    ---------------------------------------------------------
+    input_layer                                         Required layer. The point, line, or polygon features to be buffered. 
+                                                        See :ref:`Feature Input<FeatureInput>`.
+    ------------------------------------------------    ---------------------------------------------------------
+    distance (Required if field is not provided)        Optional float. A float value used to buffer the input features. 
+                                                        You must supply a value for either the distance or field parameter. 
+                                                        You can only enter a single distance value. The units of the 
+                                                        distance value are supplied by the ``distance_unit`` parameter.
 
-    * Using linear river features, buffer each river by 50 times the width of the river to determine a proposed riparian boundary.
+                                                        The default value is 1.
+    ------------------------------------------------    ---------------------------------------------------------
+    distance_unit (Required if distance is used)        Optional string. The linear unit to be used with the value specified in distance.  
 
-    * Given areas representing countries, buffer each country by 200 nautical miles to determine the maritime boundary.
+                                                        Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']    
 
+                                                        The default value is "Miles"
+    ------------------------------------------------    ---------------------------------------------------------
+    field (Required if distance not provided)           Optional string. A field on the ``input_layer`` containing a buffer distance or a field expression.
+                                                        A buffer expression must begin with an equal sign (=). To learn more about buffer expressions 
+                                                        see: `Buffer Expressions <https://developers.arcgis.com/rest/services-reference/bufferexpressions.htm>`_
+    ------------------------------------------------    ---------------------------------------------------------
+    method                                              Optional string. The method used to apply the buffer with. There are two methods to choose from:
+    
+                                                        Choice list:['Geodesic', 'Planar']
 
+                                                        * ``Planar`` - This method applies a Euclidean buffers and is appropriate for local analysis on projected data. This is the default.
+                                                        * ``Geodesic`` - This method is appropriate for large areas and any geographic coordinate system.
+    ------------------------------------------------    ---------------------------------------------------------
+    dissolve_option                                     Optional string. Determines how output polygon attributes are processed.
+    
+                                                        Choice list:['All', 'List', 'None']    
 
-Parameters:
+                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
+                                                        |Value                             | Description                                                                                       |
+                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
+                                                        | All - All features are dissolved | You can calculate summary statistics and determine if you want multipart or single part features. |
+                                                        | into one feature.                |                                                                                                   |
+                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
+                                                        | List - Features with the same    | You can calculate summary statistics and determine if you want multipart or single part features. |
+                                                        | value in the specified field     |                                                                                                   |
+                                                        | will be dissolve together.       |                                                                                                   |
+                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
+                                                        | None - No features are dissolved.| There are no additional dissolve options.                                                         |
+                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
+    ------------------------------------------------    ---------------------------------------------------------
+    dissolve_field                                      Specifies the fields to dissolve on. Multiple fields may be provided.
+    ------------------------------------------------    ---------------------------------------------------------
+    summary_fields                                      Optional string. A list of field names and statistical summary types 
+                                                        that you want to calculate for resulting polygons. Summary statistics 
+                                                        are only available if dissolveOption = List or All. By default, all 
+                                                        statistics are returned.
 
-   input_layer: Input Features (_FeatureSet). Required parameter.
+                                                        Example: [{"statisticType": "statistic type", "onStatisticField": "field name"}, ..}]
+            
+                                                        fieldName is the name of the fields in the input point layer.
 
-   distance: Buffer Distance (float). Optional parameter.
+                                                        statisticType is one of the following for numeric fields:
 
-   distance_unit: Buffer Distance Unit (str). Optional parameter.
-      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+                                                            * ``Count`` - Totals the number of values of all the points in each polygon.
+                                                            * ``Sum`` - Adds the total value of all the points in each polygon.
+                                                            * ``Mean`` - Calculates the average of all the points in each polygon.
+                                                            * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                                            * ``Max`` - Finds the largest value of all the points in each polygon.
+                                                            * ``Range`` - Finds the difference between the Min and Max values.
+                                                            * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+                                                            * ``Var`` - Finds the variance of all the points in each polygon.
 
-   field: Buffer Distance Field (str). Optional parameter.
+                                                        statisticType is the following for string fields:
 
-   method: Method (str). Required parameter.
-      Choice list:['Geodesic', 'Planar']
+                                                            * ``Count`` - Totals the number of strings for all the points in each polygon.
+                                                            * ``Any`` - Returns a sample string of a point in each polygon.
 
-   dissolve_option: Dissolve Option (str). Optional parameter.
-      Choice list:['All', 'List', 'None']
+    ------------------------------------------------    ---------------------------------------------------------
+    multipart                                           Optional boolean. Determines if output features are multipart or single part. 
+                                                        This option is only available if a ``dissolve_option`` is applied.
+    ------------------------------------------------    ---------------------------------------------------------
+    output_name                                         Optional string. The task will create a feature service of the results. You define the name of the service.
+    ------------------------------------------------    ---------------------------------------------------------
+    gis                                                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.  
+    ------------------------------------------------    ---------------------------------------------------------
+    context                                             Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-   dissolve_fields: Dissolve Fields (str). Optional parameter.
+                                                        #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                        #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                        #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                        #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    ------------------------------------------------    ---------------------------------------------------------
+    future                                              Optional boolean. If 'True', the value is returned as a GPJob.
 
-   summary_fields: Summary Statistics (str). Optional parameter.
+                                                        The default value is 'False'
+    ================================================    =========================================================
 
-   multipart: Allow Multipart Geometries (bool). Optional parameter.
+    :returns: Output Features as a feature layer collection item
+    
+    .. code-block:: python
 
-   output_name: Output Features Name (str). Required parameter.
+            # Usage Example: To create buffer based on distance field.
 
-
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-   future: Optional, If True, the value is returned as a GPJob.
-
-Returns:
-   output - Output Features as a feature layer collection item
-
-
+            buffer = create_buffers(input_layer=lyr,
+                                    field='dist',
+                                    method='Geodesic',
+                                    dissolve_option='All',
+                                    dissolve_fields='Date')    
     """
     kwargs = locals()
 
@@ -93,8 +159,12 @@ Returns:
 
     params = {}
     for key, value in kwargs.items():
-        if value is not None:
-            params[key] = value
+        if key != 'field':
+            if value is not None:
+                params[key] = value
+        else:
+            params['distance'] = None
+            params['distance_unit'] = None
 
     if output_name is None:
         output_service_name = 'Create Buffers Analysis_' + _id_generator()
@@ -108,7 +178,11 @@ Returns:
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
+        
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
         "distance": (float, "distance"),

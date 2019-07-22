@@ -5725,8 +5725,8 @@ class Group(dict):
     @property
     def protected(self):
         """
-        Indicates if the group is protected from deletion.
-        Default value is false.
+        Indicates if the group is protected from deletion. Set it to `True`
+        to protect the group and `False` to unprotect it.
         """
         return self['protected']
     #----------------------------------------------------------------------
@@ -8294,18 +8294,27 @@ class Item(dict):
                 if as_df:
                     import pandas as pd
 
-                    res = pd.DataFrame(res['data'][0]['num'],
-                                       columns=['Date', 'Usage'])
-                    res.Date = res.astype(float) / 1000
-                    res.Date = res.Date.apply(lambda x : datetime.fromtimestamp(x))
-                    res.Usage = res.Usage.astype(int)
+                    if 'data' not in res or len(res['data']) == 0:
+                        res = pd.DataFrame([],
+                                           columns=['Date', 'Usage'])
+                    elif len(res['data']):
+                        res = pd.DataFrame(res['data'][0]['num'],
+                                           columns=['Date', 'Usage'])
+                        res.Date = res.astype(float) / 1000
+                        res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
+                        res.Usage = res.Usage.astype(int)
+
                 results.append(res)
                 del k,v
             if as_df:
-                return (pd.concat(results)
-                        .reset_index(drop=True)
-                        .drop_duplicates(keep='first',
-                                         inplace=False))
+                if len(results):
+                    return (pd.concat(results)
+                            .reset_index(drop=True)
+                            .drop_duplicates(keep='first',
+                                             inplace=False))
+                else:
+                    return (pd.DataFrame([],
+                                         columns=['Date', 'Usage']))
             else:
                 return results
         elif date_range.lower() in ['12m', '1y']:
@@ -8330,20 +8339,28 @@ class Item(dict):
                 if as_df:
                     import pandas as pd
 
-                    res = pd.DataFrame(res['data'][0]['num'],
-                                       columns=['Date', 'Usage'])
-                    res.Date = res.astype(float) / 1000
-                    res.Date = res.Date.apply(lambda x : datetime.fromtimestamp(x))
-                    res.Usage = res.Usage.astype(int)
+                    if 'data' not in res or len(res['data']) == 0:
+                        res = pd.DataFrame([],
+                                           columns=['Date', 'Usage'])
+                    elif len(res['data']):
+                        res = pd.DataFrame(res['data'][0]['num'],
+                                           columns=['Date', 'Usage'])
+                        res.Date = res.astype(float) / 1000
+                        res.Date = res.Date.apply(lambda x: datetime.fromtimestamp(x))
+                        res.Usage = res.Usage.astype(int)
 
                 results.append(res)
                 del k,v
 
             if as_df:
-                return (pd.concat(results)
-                        .reset_index(drop=True)
-                        .drop_duplicates(keep='first',
-                                         inplace=False))
+                if len(results):
+                    return (pd.concat(results)
+                            .reset_index(drop=True)
+                            .drop_duplicates(keep='first',
+                                             inplace=False))
+                else:
+                    return (pd.DataFrame([],
+                                         columns=['Date', 'Usage']))
             else:
                 return results
         else:
@@ -8354,11 +8371,15 @@ class Item(dict):
             res = self._portal.con.post(url, params)
             if as_df:
                 import pandas as pd
-                df = pd.DataFrame(res['data'][0]['num'],
-                                  columns=['Date', 'Usage'])
-                df.Date = df.astype(float) / 1000
-                df.Date = df.Date.apply(lambda x : datetime.fromtimestamp(x))
-                df.Usage = df.Usage.astype(int)
+                if 'data' not in res or len(res['data']) == 0:
+                    df = pd.DataFrame([],
+                                      columns=['Date', 'Usage'])
+                elif len(res['data']):
+                    df = pd.DataFrame(res['data'][0]['num'],
+                                      columns=['Date', 'Usage'])
+                    df.Date = df.astype(float) / 1000
+                    df.Date = df.Date.apply(lambda x : datetime.fromtimestamp(x))
+                    df.Usage = df.Usage.astype(int)
                 return df
             return res
         except:

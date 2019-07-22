@@ -607,8 +607,11 @@ class WebMap(collections.OrderedDict):
                                                          out_sr=4326)
 
                         #process and return the result
-                        e = [result[0]['x'],result[0]['y'],result[1]['x'],result[1]['y']]
-                        return ','.join(str(i) for i in e)
+                        if self._contains_nans(result):
+                            return ""
+                        else:
+                            e = [result[0]['x'],result[0]['y'],result[1]['x'],result[1]['y']]
+                            return ','.join(str(i) for i in e)
 
             #case when there is no spatialReference. Then simply extract the extent
             if 'xmin' in self._extent:
@@ -618,6 +621,15 @@ class WebMap(collections.OrderedDict):
 
         #if I don't know how to process the extent.
         return self._extent
+
+    def _contains_nans(self, result):
+        """a bool of if projection output `result` contains any NaNs"""
+        for value in result:
+            if "nan" in str(value['x']).lower():
+                return True
+            if "nan" in str(value['y']).lower():
+                return True
+        return False
 
     def save(self, item_properties, thumbnail=None, metadata=None, owner=None, folder=None):
         """

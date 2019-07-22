@@ -1,10 +1,8 @@
+from ._arcgis_model import ArcGISModel
 import tempfile
 from pathlib import Path
 import json
-import os
 from ._codetemplate import code
-from functools import partial
-import arcgis
 import logging
 logger = logging.getLogger() 
 
@@ -25,29 +23,32 @@ try:
 except Exception as e:
     HAS_FASTAI = False
 
+
 def _raise_fastai_import_error():
     raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai=1.0.39 pytorch=1.0.0 torchvision"')
 
+
 _EMD_TEMPLATE = {
     "Framework": "arcgis.learn.models._inferencing",
-    "InferenceFunction":"ArcGISObjectDetector.py",
+    "InferenceFunction": "ArcGISObjectDetector.py",
     "ModelConfiguration": "_DynamicSSD",
-    "ModelFile":"",
-    "ModelType":"ObjectDetection",
-    "ImageHeight":None,
-    "ImageWidth":None,
-    "ExtractBands":[0,1,2],
-    "Grids":None,
-    "Zooms":None,
-    "Ratios":None,
-    "Classes" : []
+    "ModelFile": "",
+    "ModelType": "ObjectDetection",
+    "ImageHeight": None,
+    "ImageWidth": None,
+    "ExtractBands": [0, 1, 2],
+    "Grids": None,
+    "Zooms": None,
+    "Ratios": None,
+    "Classes": []
 }
 
 _CLASS_TEMPLATE = {
         "Value": 0,
         "Name": "Pool",
         "Color": [0, 255, 0]
-      }
+}
+
 
 class _EmptyData():
     def __init__(self, path, c, loss_func, chip_size):
@@ -57,7 +58,8 @@ class _EmptyData():
         self.loss_func = loss_func
         self.chip_size = chip_size
 
-class SingleShotDetector(object):
+
+class SingleShotDetector(ArcGISModel):
 
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
@@ -118,6 +120,9 @@ class SingleShotDetector(object):
         if not HAS_FASTAI:
             _raise_fastai_import_error()
 
+        self._emd_template = _EMD_TEMPLATE
+        self._code = code
+
         if backbone is None:
             self._backbone = models.resnet34
         elif type(backbone) is str:
@@ -168,10 +173,8 @@ class SingleShotDetector(object):
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
-        try:
-            backbone = emd['backbone']
-        except KeyError:
-            backbone = 'resnet34'
+        backbone = emd.get('backbone', 'resnet34')
+
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
@@ -181,80 +184,6 @@ class SingleShotDetector(object):
             return cls(empty_data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone)
         else:
             return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone)
-
-
-    def lr_find(self):
-        """
-        Runs the Learning Rate Finder, and displays the graph of it's output.
-        Helps in choosing the optimum learning rate for training the model.
-        """
-        from IPython.display import clear_output
-        self.learn.lr_find()
-        clear_output()
-        self.learn.recorder.plot(suggestion=True)
-
-    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
-        """
-        Train the model for the specified number of epocs and using the
-        specified learning rates
-        
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        epochs                  Required integer. Number of cycles of training
-                                on the data. Increase it if underfitting.
-        ---------------------   -------------------------------------------
-        lr                      Optional float or slice of floats. Learning rate
-                                to be used for training the model. Select from
-                                the `lr_find` plot. If `None` uses a optimum
-                                learning rate to train the model, calculated in 
-        ---------------------   -------------------------------------------
-        one_cycle               Optional boolean. Parameter to select 1cycle
-                                learning rate schedule. If set to `False` no 
-                                learning rate schedule is used.       
-        ---------------------   -------------------------------------------
-        early_stopping          Optional boolean. Parameter to add early stopping.
-                                If set to `True` training will stop if validation
-                                loss stops improving for 5 epochs.       
-        ---------------------   -------------------------------------------
-        checkpoint              Optional boolean. Parameter to save the best model
-                                during training. If set to `True` the best model 
-                                based on validation loss will be saved during 
-                                training.
-        =====================   ===========================================
-        """
-        if lr is None:
-            if arcgis.env.verbose:
-                logger.info('Finding optimum learning rate.')
-            self.learn.lr_find()
-            self.learn.recorder.plot(suggestion=True)
-            lr = self.learn.recorder.min_grad_lr
-            import matplotlib.pyplot as plt
-            plt.show()
-            from IPython.display import clear_output
-            clear_output()
-            lr = slice(lr/10, lr)        
-        
-        if arcgis.env.verbose:
-            logger.info('Fitting the model.')    
-        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
-        kwargs.pop('callbacks', None)
-        if early_stopping:
-            callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='valid_loss', min_delta=0.01, patience=5))
-        if checkpoint:
-            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name='checkpoint'))
-
-        if one_cycle:
-            self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
-        else:
-            self.learn.fit(epochs, lr, callbacks=callbacks, **kwargs)
-
-
-    def unfreeze(self):
-        """
-        Unfreezes the earlier layers of the detector for fine-tuning.
-        """
-        self.learn.unfreeze()
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
 
@@ -306,7 +235,6 @@ class SingleShotDetector(object):
         for i,o in enumerate(prior_idx): gt_idx[o] = i
         return gt_overlap, gt_idx
 
-
     def _ssd_1_loss(self, b_c, b_bb, bbox, clas, print_it=False):
         bbox,clas = self._get_y(bbox,clas)
         bbox = self._normalize_bbox(bbox)
@@ -338,7 +266,6 @@ class SingleShotDetector(object):
         else:
             return self.location_loss_factor * lls + (1 - self.location_loss_factor) * lcs
 
-
     def _intersect(self,box_a, box_b):
         max_xy = torch.min(box_a[:, None, 2:], box_b[None, :, 2:])
         min_xy = torch.max(box_a[:, None, :2], box_b[None, :, :2])
@@ -355,15 +282,6 @@ class SingleShotDetector(object):
 
     def _normalize_bbox(self, bbox):
         return (bbox+1.)/2.
-
-    def _create_zip(self, zipname, path):
-        import shutil
-
-        temp_dir = tempfile.TemporaryDirectory().name
-        zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
-        if os.path.exists(os.path.join(path, zipname) + '.zip'):
-            os.remove(os.path.join(path, zipname) + '.zip')
-        shutil.move(zip_file, path)
 
     def _create_emd(self, path):
         import random
@@ -386,104 +304,6 @@ class SingleShotDetector(object):
 
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
-
-    def _save(self, name_or_path, zip_files=True):
-        temp = self.learn.path
-
-        if '\\' in name_or_path or '/' in name_or_path:
-            path = Path(name_or_path)
-            name = path.parts[-1]
-            # to make fastai save to both path and with name    
-            self.learn.path = path
-            self.learn.model_dir = ''
-            if not os.path.exists(self.learn.path):
-                os.makedirs(self.learn.path)
-        else:
-            # fixing fastai bug
-            self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
-            if not os.path.exists(self.learn.path / self.learn.model_dir):
-                os.makedirs(self.learn.path / self.learn.model_dir)
-            name = name_or_path
-
-        try:
-            saved_path = self.learn.save(name,  return_path=True)
-            # undoing changes to self.learn.path
-        except Exception as e:  
-            raise e
-        finally:
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
-
-        zip_name = self._create_emd(saved_path)
-        with open(saved_path.parent / _EMD_TEMPLATE['InferenceFunction'], 'w') as f:
-            f.write(code)
-        if zip_files:
-            self._create_zip(zip_name, str(saved_path.parent))
-        if arcgis.env.verbose:
-            print('Created model files at {spp}'.format(spp=saved_path.parent))            
-        return saved_path.parent
-
-    def save(self, name_or_path):
-        """
-        Saves the model weights, creates an Esri Model Definition and Deep
-        Learning Package zip for deployment to Image Server or ArcGIS Pro
-        Train the model for the specified number of epocs and using the
-        specified learning rates.
-        
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to save. It
-                                stores it at the pre-defined location. If path
-                                is passed then it stores at the specified path
-                                with model name as directory name. and creates
-                                all the intermediate directories.
-        =====================   ===========================================
-        """        
-        return self._save(name_or_path)
-
-
-    def load(self, name_or_path):
-        """
-        Loads a saved model for inferencing or fine tuning from the specified
-        path or model name.
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to load from
-                                the pre-defined location. If path is passed then
-                                it loads from the specified path with model name
-                                as directory name. Path to ".pth" file can also
-                                be passed
-        =====================   ===========================================
-        """
-        temp = self.learn.path
-        if '\\' in name_or_path or '/' in name_or_path:
-            path = Path(name_or_path)
-            # to make fastai from both path and with name
-            if path.is_file():
-                name = path.stem
-                self.learn.path = path.parent
-            else:
-                name = path.parts[-1]
-                self.learn.path = path
-            self.learn.model_dir = ''
-        else:
-            # fixing fastai bug
-            self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
-            name = name_or_path
-
-        try:
-            self.learn.load(name, purge=False)
-        except Exception as e:
-            raise e
-        finally:
-            # undoing changes to self.learn.path
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
