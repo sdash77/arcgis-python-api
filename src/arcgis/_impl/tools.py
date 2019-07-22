@@ -744,8 +744,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         ret = gpjob.result()
-        if output_name:
-            return ret['aggregate_layer']
         return ret
     #----------------------------------------------------------------------
     def choose_best_facilities(self,
