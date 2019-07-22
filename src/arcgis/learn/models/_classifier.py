@@ -42,11 +42,12 @@ _EMD_TEMPLATE = {
     "Classes" : []
 }
 
-_CLASS_TEMPLATE =     {
+_CLASS_TEMPLATE = {
       "Value" : 1,
       "Name" : "1",
       "Color" : []
-    }
+}
+
 
 class FeatureClassifier(ArcGISModel):
     """
@@ -95,7 +96,6 @@ class FeatureClassifier(ArcGISModel):
 
         if pretrained_path is not None:
             self.load(pretrained_path)
-
 
     def show_results(self, rows=5, **kwargs):
         """

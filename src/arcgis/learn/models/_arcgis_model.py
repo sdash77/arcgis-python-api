@@ -8,8 +8,17 @@ from pathlib import Path
 import os
 import tempfile
 import logging
-logger = logging.getLogger() 
+logger = logging.getLogger()
 
+
+def _create_zip(zipname, path):
+    import shutil
+
+    temp_dir = tempfile.TemporaryDirectory().name
+    zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
+    if os.path.exists(os.path.join(path, zipname) + '.zip'):
+        os.remove(os.path.join(path, zipname) + '.zip')
+    shutil.move(zip_file, path)
 
 
 class SaveModelCallback(TrackerCallback):
@@ -26,7 +35,7 @@ class SaveModelCallback(TrackerCallback):
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
-        if self.every=="epoch": self.model.save('{}_{}'.format(self.name, epoch))
+        if self.every == "epoch": self.model.save('{}_{}'.format(self.name, epoch))
         else: #every="improvement"
             current = self.get_monitor_value()
             if current is not None and self.operator(current, self.best):
@@ -37,9 +46,10 @@ class SaveModelCallback(TrackerCallback):
 
     def on_train_end(self, **kwargs):
         "Load the best model."      
-        if self.every=="improvement" and self.load_best_at_end:
+        if self.every == "improvement" and self.load_best_at_end:
             self.model.load('{}'.format(self.name))
             self.model.save('{}'.format(self.name))
+
 
 class ArcGISModel(object):
     
@@ -52,8 +62,7 @@ class ArcGISModel(object):
         self.learn.lr_find()
         clear_output()
         self.learn.recorder.plot()
-    
-    
+
     def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epocs and using the
@@ -89,12 +98,19 @@ class ArcGISModel(object):
             self.learn.lr_find()
             self.learn.recorder.plot(suggestion=True)
             lr = self.learn.recorder.min_grad_lr
-            import matplotlib.pyplot as plt
-            plt.show()
+
+            if kwargs.get('allow_plot', True):
+                import matplotlib.pyplot as plt
+                plt.show()
             from IPython.display import clear_output
             clear_output()
-            lr = slice(lr/10, lr)        
-        
+
+            lr = slice(lr/10, lr)
+
+        kwargs.pop('allow_plot', None)
+
+        self._learning_rate = lr
+
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
@@ -147,7 +163,7 @@ class ArcGISModel(object):
         with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
             f.write(self._code)
         if zip_files:
-            self._create_zip(zip_name, str(saved_path.parent))
+            _create_zip(zip_name, str(saved_path.parent))
         if arcgis.env.verbose:
             print('Created model files at {spp}'.format(spp=saved_path.parent))
         return saved_path.parent
@@ -170,16 +186,6 @@ class ArcGISModel(object):
         =====================   ===========================================
         """        
         return self._save(name_or_path)
-
-        
-    def _create_zip(self, zipname, path):
-        import shutil
-
-        temp_dir = tempfile.TemporaryDirectory().name
-        zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
-        if os.path.exists(os.path.join(path, zipname) + '.zip'):
-            os.remove(os.path.join(path, zipname) + '.zip')
-        shutil.move(zip_file, path)
         
     def load(self, name_or_path):
         """

@@ -1,4 +1,4 @@
-import os, json, tempfile
+import json, tempfile
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._ssd import _raise_fastai_import_error, _EmptyData
@@ -16,27 +16,29 @@ try:
 except Exception as e:
     HAS_FASTAI = False
 
-_CLASS_TEMPLATE =     {
-      "Value" : 1,
-      "Name" : "1",
-      "Color" : []
-    }
+_CLASS_TEMPLATE = {
+      "Value": 1,
+      "Name": "1",
+      "Color": []
+}
 
 _EMD_TEMPLATE = {
-    "Framework":"arcgis.learn.models._inferencing",
-    "ModelConfiguration":"_unet",
-    "ModelFile":"",
+    "Framework": "arcgis.learn.models._inferencing",
+    "ModelConfiguration": "_unet",
+    "ModelFile": "",
     "InferenceFunction": "ArcGISImageClassifier.py",
-    "ExtractBands":[0,1,2],
-    "ImageWidth":400,
-    "ImageHeight":400,
-    "Classes" : []
+    "ExtractBands": [0, 1, 2],
+    "ImageWidth": 400,
+    "ImageHeight": 400,
+    "Classes": []
 }
+
 
 def accuracy(input, target, void_code=0, class_mapping=None):  
     target = target.squeeze(1) 
     mask = target != void_code
     return (input.argmax(dim=1)[mask] == target[mask]).float().mean()
+
 
 class UnetClassifier(ArcGISModel):
 
@@ -60,7 +62,6 @@ class UnetClassifier(ArcGISModel):
     :returns: `UnetClassifier` Object
     """
 
-    
     def __init__(self, data, backbone=None, pretrained_path=None):
       
         super().__init__()
@@ -117,8 +118,7 @@ class UnetClassifier(ArcGISModel):
             return cls(empty_data, **model_params, pretrained_path=str(model_file))
         else:
             return cls(data, **model_params, pretrained_path=str(model_file))        
-        
-        
+
     def _create_emd(self, path):
         import random
         _EMD_TEMPLATE['ModelFile'] = path.name
