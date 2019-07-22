@@ -4186,8 +4186,13 @@ class ContentManager(object):
             if has_arcpy:
                 name = "%s%s.gdb" % (random.choice(string.ascii_lowercase),
                                      uuid4().hex[:5])
-                fgdb = arcpy.CreateFileGDB_management(out_folder_path=temp_dir,
-                                                      out_name=name)[0]
+                from arcgis.features.geo._tools._utils import run_and_hide
+                result = run_and_hide(fn=arcpy.CreateFileGDB_management,
+                                      **{
+                                          "out_folder_path" : temp_dir,
+                                          "out_name" : name
+                                      })
+                fgdb = result[0]
                 if isinstance(df, SpatialDataFrame) :
                     ds = df.to_featureclass(out_location=fgdb,
                                             out_name=os.path.basename(temp_dir))

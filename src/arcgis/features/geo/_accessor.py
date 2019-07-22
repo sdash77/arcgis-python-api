@@ -1917,13 +1917,13 @@ class GeoAccessor(object):
 
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
-
     #----------------------------------------------------------------------
     def to_featureclass(self, location, overwrite=True):
         """exports a geo enabled dataframe to a feature class."""
-        return to_featureclass(geo=self,
-                               location=location,
-                               overwrite=overwrite)
+        from ._tools._utils import run_and_hide
+        return run_and_hide(to_featureclass, **{"geo":self,
+                                                "location":location,
+                                                "overwrite":overwrite})
     #----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
         """
@@ -1943,9 +1943,13 @@ class GeoAccessor(object):
 
         """
         from arcgis.features.geo._io.fileops import to_table
-        return to_table(geo=self,
-                        location=location,
-                        overwrite=overwrite)
+        from ._tools._utils import run_and_hide
+        return run_and_hide(to_table, **{"geo":self,
+                                                "location":location,
+                                                "overwrite":overwrite})
+        #return to_table(geo=self,
+        #                location=location,
+        #                overwrite=overwrite)
 
     #----------------------------------------------------------------------
     def to_featurelayer(self,
@@ -2130,7 +2134,7 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         fields                          list of strings specifying the field names.
         ---------------------------     --------------------------------------------------------------------
-        spatial_filter                  A `Geometry` object that will filter the results.  This requires 
+        spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                         `arcpy` to work.
         ===========================     ====================================================================
 
