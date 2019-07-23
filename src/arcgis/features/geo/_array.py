@@ -61,8 +61,13 @@ class NumPyBackedExtensionArrayMixin(ExtensionArray):
     def nbytes(self):
         return self._itemsize * len(self)
 
-    def _formatting_values(self):
-        return np.array(self._format_values(), dtype='object')
+    def _formatter(self, boxed=False):
+        # Defer to the formatter from the GenericArrayFormatter calling us.
+        # This will infer the correct formatter from the dtype of the values.
+        return None
+
+    #def _formatting_values(self):
+    #    return np.array(self._format_values(), dtype='object')
 
     def copy(self, deep=False):
         return type(self)(self.data.copy())
@@ -106,6 +111,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
     can_hold_na = True
 
     def __init__(self, values, copy=True):
+        version = [int(i) for i in pd.__version__.split('.')]
+        if version < [0,24,0]:
+            self._formatting_values = self._formatting_values_backport
         self.data = np.array(values, dtype='O', copy=copy)
 
     @classmethod
@@ -173,7 +181,12 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         result[mask] = self.dtype.na_value
         return type(self)(result, copy=False)
 
-    def _formatting_values(self):
+    def _formatter(self, boxed=False):
+        # Defer to the formatter from the GenericArrayFormatter calling us.
+        # This will infer the correct formatter from the dtype of the values.
+        return None
+
+    def _formatting_values_backport(self):
         return np.array(self._format_values(), dtype='object')
 
     @classmethod
