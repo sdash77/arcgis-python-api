@@ -236,7 +236,7 @@ class GIS(object):
             raise ValueError("A `profile` name must not be an empty string.")
         elif profile is not None:
             # Load config
-            pm = self.profiles
+            pm = ProfileManager()
 
             cfg_file_path = pm._cfg_file_path
             config = configparser.ConfigParser()
