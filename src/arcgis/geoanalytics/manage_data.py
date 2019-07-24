@@ -1001,12 +1001,18 @@ def copy_to_data_store(
         output_name = output_service_name.replace(' ', '_')
     else:
         output_service_name = output_name.replace(' ', '_')
+    _set_context(params)
+    if 'context' in params and \
+       params['context'].lower().find('bigdatafileshares') > -1:
+        params['output_name'] = output_name
+        output_service = True
+    else:
+        output_service = _create_output_service(gis, output_name, output_service_name, 'Copy To Data Store')
+        params['output_name'] = _json.dumps({
+            "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+            "itemProperties": {"itemId" : output_service.itemid}})
 
-    output_service = _create_output_service(gis, output_name, output_service_name, 'Copy To Data Store')
-
-    params['output_name'] = _json.dumps({
-        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
-        "itemProperties": {"itemId" : output_service.itemid}})
+    #_set_context(params)
 
     if context is not None:
         params["context"] = context
@@ -1029,6 +1035,8 @@ def copy_to_data_store(
         _execute_gp_tool(gis, "CopyToDataStore", params, param_db, return_values, _use_async, url, True, future=future)
         return output_service
     except:
+        if isinstance(output_service, bool):
+            return False
         output_service.delete()
         raise
 
