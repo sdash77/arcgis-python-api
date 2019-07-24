@@ -748,8 +748,11 @@ class ImageryLayer(Layer):
         pixel_size            optional string or dict. The pixel level being identified (or the
                               resolution being looked at).
                               Syntax:
-                               - JSON structure: pixelSize={point}
-                               - Point simple syntax: pixelSize=<x>,<y>
+                                - dictionary structure: pixel_size={point}
+                                - Point simple syntax: pixel_size='<x>,<y>'
+                              Examples:
+                                - pixel_size={"x": 0.18, "y": 0.18}
+                                - pixel_size='0.18,0.18'
         --------------------  --------------------------------------------------------------------
         time_extent           optional list of datetime objects or datetime object.  The time
                               instant or time extent of the raster to be identified. This
@@ -895,10 +898,11 @@ class ImageryLayer(Layer):
                               the base resolution of the image layer. The raster at the specified pixel
                               size in the mosaic dataset will be used for measurement.
                               Syntax:
-                               - JSON structure: pixelSize={point}
-                               - Point simple syntax: pixelSize=<x>,<y>
-                              Example:
-                              pixel_size=0.18,0.18
+                                - dictionary structure: pixel_size={point}
+                                - Point simple syntax: pixel_size='<x>,<y>'
+                              Examples:
+                                - pixel_size={"x": 0.18, "y": 0.18}
+                                - pixel_size='0.18,0.18'
         -----------------     --------------------------------------------------------------------
         mosaic_rule           optional string or dict. Specifies the mosaic rule when defining how
                               individual images should be mosaicked. When a mosaic rule is not
@@ -1519,9 +1523,15 @@ class ImageryLayer(Layer):
         return_count_only               optional boolean. If True, then an integer is returned only based on
                                         the sql statement
         ------------------------------  --------------------------------------------------------------------
-        pixel_size                      optional dict or list. Query visible rasters at a given pixel size.
+        pixel_size                      optional dict or string. Query visible rasters at a given pixel size.
                                         If pixel_size is not specified, rasters at all resolutions can be
                                         queried.
+                                        Syntax:
+                                            - dictionary structure: pixel_size={point}
+                                            - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                            - pixel_size={"x": 0.18, "y": 0.18}
+                                            - pixel_size='0.18,0.18'
         ------------------------------  --------------------------------------------------------------------
         order_by_fields                 optional string. Order results by one or more field names. Use ASC
                                         or DESC for ascending or descending order, respectively.
@@ -2167,6 +2177,13 @@ class ImageryLayer(Layer):
                               pixel_size will default to the base resolution of the dataset. The
                               raster at the specified pixel size in the mosaic dataset will be
                               used for histogram calculation.
+
+                              Syntax:
+                                - dictionary structure: pixel_size={point}
+                                - Point simple syntax: pixel_size='<x>,<y>'
+                              Examples:
+                                - pixel_size={"x": 0.18, "y": 0.18}
+                                - pixel_size='0.18,0.18'
         =================     ====================================================================
 
         :returns: dictionary
@@ -2367,15 +2384,15 @@ class ImageryLayer(Layer):
                             pixel_size will default to the base resolution of the dataset.
                             The structure of the pixel_size parameter is the same as the
                             structure of the point object returned by the ArcGIS REST API.
-                            In addition to the JSON structure, you can specify the pixel size
+                            In addition to the dictionary structure, you can specify the pixel size
                             with a comma-separated syntax.
 
-                            Syntax:
-                               JSON structure: pixelSize={point}
-                               Point simple syntax: pixelSize=<x>,<y>
-                            Examples:
-                               pixelSize={"x": 0.18, "y": 0.18}
-                               pixelSize=0.18,0.18
+                              Syntax:
+                                - dictionary structure: pixel_size={point}
+                                - Point simple syntax: pixel_size='<x>,<y>'
+                              Examples:
+                                - pixel_size={"x": 0.18, "y": 0.18}
+                                - pixel_size='0.18,0.18'
         ===============     ====================================================================
 
         :returns: dictionary
@@ -2438,15 +2455,16 @@ class ImageryLayer(Layer):
                               pixel_size will default to the base resolution of the dataset.
                               The structure of the pixel_size parameter is the same as the
                               structure of the point object returned by the ArcGIS REST API.
-                              In addition to the JSON structure, you can specify the pixel size
-                              with a comma-separated syntax.
+                              In addition to the dictionary structure, you can specify the pixel size
+                              with a comma-separated string.
 
                               Syntax:
-                                 JSON structure: pixelSize={point}
-                                 Point simple syntax: pixelSize=<x>,<y>
+                                - dictionary structure: pixel_size={point}
+                                - Point simple syntax: pixel_size='<x>,<y>'
                               Examples:
-                                 pixelSize={"x": 0.18, "y": 0.18}
-                                 pixelSize=0.18,0.18
+                                - pixel_size={"x": 0.18, "y": 0.18}
+                                - pixel_size='0.18,0.18'
+
         =================     ====================================================================
 
         :returns: dict
@@ -2541,6 +2559,13 @@ class ImageryLayer(Layer):
                                  pixel_size will default to the base resolution of the dataset. The
                                  raster at the specified pixel size in the mosaic dataset will be
                                  used for histogram calculation.
+
+                                 Syntax:
+                                    - dictionary structure: pixel_size={point}
+                                    - Point simple syntax: pixel_size='<x>,<y>'
+                                 Examples:
+                                    - pixel_size={"x": 0.18, "y": 0.18}
+                                    - pixel_size='0.18,0.18'
         -----------------------  -----------------------------------------------------------------------
         return_first_value_only  optional boolean. Indicates whether to return all values at a
                                  point, or return the first non-NoData value based on the current
@@ -2806,7 +2831,13 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         constant_z            Optional integer. parameter to specify constant z value
         -----------------     --------------------------------------------------------------------
-        pixel_size            Optional dictionary. Defines the spatial resolution at which volume calculation is performed
+        pixel_size            Optional string or dictionary. Defines the spatial resolution at which volume calculation is performed
+                              Syntax:
+                                - dictionary structure: pixel_size={point}
+                                - Point simple syntax: pixel_size='<x>,<y>'
+                              Examples:
+                                - pixel_size={"x": 0.18, "y": 0.18}
+                                - pixel_size='0.18,0.18'
         =================     ====================================================================
 
         :returns: dictionary showing volume values for each geometry in the input geometries array

@@ -136,66 +136,104 @@ def dissolve_boundaries(input_layer,
                         multipart=False,
                         output_name=None,
                         gis=None,
+                        context=None,
                         future=False):
     """
+    .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png 
 
-    The Dissolve Boundaries task finds polygons that intersect or have the same field values and merges them together to form a single polygon.
+    The ``dissolve_boundaries`` task finds polygons that intersect or have the same field values 
+    and merges them together to form a single polygon.
 
-    Examples:
+    Example:
 
-        A city council wants to control liquor sales by refusing new licenses to stores within 1,000 feet of schools, libraries, and parks. After creating a 1,000-foot buffer around the schools, libraries, and parks, the buffered layers can be joined together and the boundaries can be dissolved to create a single layer of restricted areas.
+        A city council wants to control liquor sales by refusing new licenses to stores within 
+        1,000 feet of schools, libraries, and parks. After creating a 1,000-foot buffer around 
+        the schools, libraries, and parks, the buffered layers can be joined together and the 
+        boundaries can be dissolved to create a single layer of restricted areas.
 
-    Usage Notes:
-
-
-
-    Only available at ArcGIS Enterprise 10.7 and later.
+    .. note::
+        Only available at ArcGIS Enterprise 10.7 and later.
 
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       required FeatureLayer. The point, line or polygon features.
+    input_layer       Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
     dissolve_fields   Optional string. A comma seperated list of strings for each
-                      field that you want to dissolve on.
+                      field that you want to dissolve on.One or more fields in the ``input_layer`` that determine how polygons are merged based on field value.
+
+                      If you don't specify fields, polygons that intersect will be dissolved into one polygon by default.
+
+                      If you do specify fields, polygons that share the same value for each of the specified fields will be dissolved into one polygon.
     ----------------  ---------------------------------------------------------------
-    summary_fields    Optional list. Calculate one or more statistics for the
-                      dissolved areas by using the summary_fields parameter. The
-                      input is a list of key/value pairs in the following format:
+    summary_fields    Optional list of dicts. A list of field names and statistical summary types you want to calculate. 
+                      Note that the count is always returned. By default, all statistics are returned.
 
-                         [{"statisticType" : "<stat>", "onStatisticField" : "<field name>"}]
+                      Syntax: [{"statisticType" : "<stat>", "onStatisticField" : "<field name>"}]
 
-                      Allows statistics are:
+                      fieldName is the name of the fields in the input point layer.
 
-                        + Any (string fields only)
-                        + Count
-                        + Sum
-                        + Minimum
-                        + Maximum
-                        + Average
-                        + Variance
-                        + Standard Deviation
+                      statisticType is one of the following for numeric fields:
 
-                      Example:
+                        * ``Count`` - Totals the number of values of all the points in each polygon.
+                        * ``Sum`` - Adds the total value of all the points in each polygon.
+                        * ``Mean`` - Calculates the average of all the points in each polygon.
+                        * ``Min`` - Finds the smallest value of all the points in each polygon.
+                        * ``Max`` - Finds the largest value of all the points in each polygon.
+                        * ``Range`` - Finds the difference between the Min and Max values.
+                        * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+                        * ``Var`` - Finds the variance of all the points in each polygon.
+                        statisticType is one of the following for string fields:
 
-                       summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"},
-                                         {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"},
-                                         {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
+                        * ``Count`` - Totals the number of strings for all the points in each polygon.
+                        * ``Any`` - Returns a sample string of a point in each polygon.
+                  
+                      Example: summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"}, {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"}, {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
     ----------------  ---------------------------------------------------------------
-    multipart         Optional boolean. If True, the output service can contain
-                      multipart features. If False (default):, the output service
+    multipart         Optional boolean. If 'True', the output service can contain
+                      multipart features. If 'False', the output service
                       will only contain single-part features, and individual features
                       will be created for each part.
+
+                      The default value is 'False'.
     ----------------  ---------------------------------------------------------------
     output_name       optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of
+    context           Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
+
+                      #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                      #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                      #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                      #. Default aggregation styles (``defaultAggregationStyles``) - If set to true, results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+    ----------------  ---------------------------------------------------------------
+    future            optional boolean. If True, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: FeatureLayer
+    :returns: result_layer : Output Features as feature layer collection item.
+
+    .. code-block:: python
+
+            # Usage Example: This example dissolves boundaries of soil areas in Nebraska if they have 
+            # the same solubility. For dissolved features, it calculates the sum of the quadrat area, 
+            # the mean soil depth, and an example of the quadrat description.
+            
+            arcgis.env.out_spatial_reference = 3310
+            arcgis.env.output_datastore= "relational"
+            arcgis.env.defaultAggregations= True
+
+            summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"},
+                            {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"},
+                            {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
+
+            dissolve_result = dissolve_boundaries(input_layer=study_area_lyr,
+                                                  dissolve_fields="soil_suitability",
+                                                  summary_fields=summary_fields,
+                                                  multipart=True,
+                                                  output_name="Soil_Suitability_dissolved")
     """
     kwargs = locals()
     tool_name = "DissolveBoundaries"
@@ -220,7 +258,10 @@ def dissolve_boundaries(input_layer,
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
@@ -492,36 +533,120 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
     return
 
 
-def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_name=None, gis=None, future=False):
+def overlay_data(input_layer, 
+                 overlay_layer, 
+                 overlay_type="intersect", 
+                 output_name=None, 
+                 gis=None, 
+                 include_overlaps=True,
+                 context=None,
+                 future=False):
     """
-    Only available at ArcGIS Enterprise 10.6.1 and later.
+    .. image:: _static/images//overlay_layers/overlay_layers.png
 
-    ================  ===============================================================
-    **Argument**      **Description**
-    ----------------  ---------------------------------------------------------------
-    input_layer       required FeatureLayer. The point, line or polygon features.
-    ----------------  ---------------------------------------------------------------
-    overlay_layer     required FeatureLayer. The features that will be overlaid with the input_layer features.
-    ----------------  ---------------------------------------------------------------
-    overlay_type      optional string. The type of overlay to be performed.
-                      Values: intersect, erase
+    .. |Intersect| image:: _static/images/overlay_layers/Intersect.png
+    .. |Union| image:: _static/images/overlay_layers/Union.png
+    .. |Erase| image:: _static/images/overlay_layers/Erase.png
+    .. |identity| image:: _static/images/overlay_layers/identity.png
+    .. |symm| image:: _static/images/overlay_layers/Symmetric_Difference.png
 
-                      + intersect - Computes a geometric intersection of the input layers. Features or portions of features that overlap in both the inputLayer and overlayLayer layers will be written to the output layer. This is the default.
-                      + erase - Only those features or portions of features in the overlay_layer that are not within the features in the input_layer layer are written to the output.
-                      + union - Computes a geometric union of the input_layer and overlay_layer. All features and their attributes will be written to the layer.
-                      + identity - Computes a geometric intersection of the input features and identity features. Features or portions of features that overlap in both input_layer and overlay_layer will be written to the output layer.
-                      + symmetricaldifference - Features or portions of features in the input_layer and overlay_layer that do not overlap will be written to the output layer.
+    The ``overlay_data`` task combines two or more layers into one single layer. 
+    You can think of overlay as peering through a stack of maps and creating a single 
+    map containing all the information found in the stack. Overlay is used to answer 
+    one of the most basic questions of geography: What is on top of what? 
+    The following are examples:
 
-    ----------------  ---------------------------------------------------------------
-    output_name       optional string. The task will create a feature service of the results. You define the name of the service.
-    ----------------  ---------------------------------------------------------------
-    gis               optional GIS. The GIS object where the analysis will take place.
-    ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of
-                      results. The GPJob can be queried on the status of the execution.
-    ================  ===============================================================
+        * What parcels are within the 100-year floodplain? ("Within" is another way of saying "on top of.")
+        * What land use is within what soil type?
+        * What mines are within abandoned military bases?
 
-    :returns: FeatureLayer
+    .. note::
+        Only available at ArcGIS Enterprise 10.6.1 and later.
+
+    ======================  ===============================================================================
+    **Argument**            **Description**
+    ----------------------  -------------------------------------------------------------------------------
+    input_layer             Required layer. The point, line, or polygon features that will be overlaid with the ``overlay_layer`` features. See :ref:`Feature Input<FeatureInput>`.
+    ----------------------  -------------------------------------------------------------------------------
+    overlay_layer           Required layer. The features that will be overlaid with the ``input_layer`` features.
+    ----------------------  -------------------------------------------------------------------------------
+    overlay_type            optional string. The type of overlay to be performed.
+
+                            Choice list: ['intersect', 'erase', 'union', 'identity', 'symmetricaldifference']
+
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |Intersect| ``intersect``          | Computes a geometric intersection of the input layers.                            |
+                            |                                    | Features or portions of features that overlap in both the ``input_layer``         |
+                            |                                    | and ``overlay_layer`` layers will be written to the output layer.                 |
+                            |                                    |                                                                                   |
+                            |                                    | * Point — Point, Line, Polygon                                                    |
+                            |                                    | * Line — Point, Line, Polygon                                                     |
+                            |                                    | * Polygon— Point, Line, Polygon                                                   |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |Erase| ``erase``                  | Only those features or portions of features in the ``overlay_layer``              |
+                            |                                    | that are not within the features in the ``input_layer`` layer are                 |
+                            |                                    | written to the output.                                                            |
+                            |                                    |                                                                                   | 
+                            |                                    | * Point — Point                                                                   |
+                            |                                    | * Line — Line                                                                     |
+                            |                                    | * Polygon — Polygon                                                               |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |Union| ``union``                  | Computes a geometric union of the ``input_layer`` and ``overlay_layer``.          |
+                            |                                    | All features and their attributes will be written to the layer.                   |
+                            |                                    |                                                                                   |
+                            |                                    | * Polygon — Polygon                                                               |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |identity| ``identity``            | Computes a geometric intersection of the input features and                       |
+                            |                                    | identity features. Features or portions of features that overlap in both          |
+                            |                                    | ``input_layer`` and ``overlay_layer`` will be written to the output layer.        |
+                            |                                    |                                                                                   |
+                            |                                    |  * Point — Point, Polygon                                                         |
+                            |                                    |  * Line — Line, Polygon                                                           |
+                            |                                    |  * Polygon— Polygon                                                               |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |symm| ``symmetricaldifference``   | Features or portions of features in the ``input_layer``                           |
+                            |                                    | and ``overlay_layer`` that do not overlap will be written to the output layer.    | 
+                            |                                    |                                                                                   |
+                            |                                    | * Point — Point                                                                   |
+                            |                                    | * Line — Line                                                                     |
+                            |                                    | * Polygon— Polygon                                                                |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+    ----------------------  -------------------------------------------------------------------------------
+    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain any overlapping features. 
+                            This option should only be modified if you're not interested in self-intersection between 
+                            features for the input layer and self-intersection between features for the overlay layer. 
+                            Setting this value to false will improve performance. This parameter is only used when 
+                            ``include_overlaps`` is Intersect with 10.6 and 10.6.1.
+
+                            The default value is 'True'.
+    ----------------------  -------------------------------------------------------------------------------
+    output_name             Optional string. The task will create a feature service of the results. You define the name of the service.
+    ----------------------  -------------------------------------------------------------------------------
+    gis                     Optional GIS. The GIS object where the analysis will take place.
+    ----------------------  -------------------------------------------------------------------------------
+    context                 Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                            #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                            #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                            #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                            #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    ----------------------  -------------------------------------------------------------------------------
+    future                  Optional boolean. If 'True', a GPJob is returned instead of
+                            results. The GPJob can be queried on the status of the execution.
+
+                            The default value is 'False'.
+    ======================  ===============================================================================
+
+    :returns: result_layer : Output Features as feature layer item.
+
+    .. code-block:: python
+
+            # Usage Example: To find the intersecting areas between watersheds and grazing land in Missouri.
+
+            overlay_result = manage_data.overlay_data(input_layer=grazing_land, 
+                                          overlay_layer=watersheds_layer, 
+                                          overlay_type="Intersect", 
+                                          output_name="Watershed_intersections")   
     """
     kwargs = locals()
     tool_name = "OverlayLayers"
@@ -549,7 +674,10 @@ def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_na
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
@@ -807,35 +935,56 @@ def copy_to_data_store(
     input_layer,
     output_name=None,
     gis=None,
+    context=None,
     future=False):
     """
+    .. image:: _static/images/copy_to_data_store/copy_to_data_store.png 
 
-    Copies an input feature layer or table to an ArcGIS Data Store and creates a layer in your web GIS.
-
+    The ``copy_to_data_store`` task takes an input layer and copies it to a data store. 
+    Data is copied to ArcGIS Data Store, configured as either a relational or 
+    spatiotemporal big data store.
+    
     For example
 
-    * Copy a collection of .csv files in a big data file share to the spatiotemporal data store for visualization.
+        * Copy a collection of .csv files in a big data file share to the spatiotemporal data store for visualization.
+        * Copy the features in the current map extent that are stored in the spatiotemporal data store to the relational data store.
 
-    * Copy the features in the current map extent that are stored in the spatiotemporal data store to the relational data store.
+    This tool will take an input layer and copy it to a data store. Data will be copied to the ArcGIS Data Store 
+    and will be stored in your relational or spatiotemporal data store.
 
-    This tool will take an input layer and copy it to a data store. Data will be copied to the ArcGIS Data Store and will be stored in your relational or spatiotemporal data store.
+    For example, you could copy features that are stored in a big data file share to a relational data store 
+    and specify that only features within the current map extent will be copied. This would create a hosted 
+    feature service with only those features that were within the specified map extent.
 
-    For example, you could copy features that are stored in a big data file share to a relational data store and specify that only features within the current map extent will be copied. This would create a hosted feature service with only those features that were within the specified map extent.
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    input_layer                  Required layer. The table, point, line, or polygon features that will be copied. See :ref:`Feature Input<FeatureInput>`.
+    --------------------------   ---------------------------------------------------------------
+    output_name                  Optional string. The task will create a feature service of the results. You define the name of the service.
+    --------------------------   --------------------------------------------------------------- 
+    gis                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    --------------------------   --------------------------------------------------------------- 
+    context                      Optional string. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
-   Parameters:
+                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                 #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+    --------------------------   --------------------------------------------------------------- 
+     future                      Optional boolean. If 'True', the result comes back as a GPJob.
 
-   input_layer: Input Layer (feature layer). Required parameter.
+                                 The default value is 'False'.
+    ==========================   ===============================================================
 
-   output_name: Output Layer Name (str). Required parameter.
+    :returns: result_layer : Output Features as feature layer item.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    .. code-block:: python
 
-   future: Optional. If True, the result comes back as a GPJob.
-
-Returns:
-   output - Output Layer as a feature layer collection item
-
-
+            # Usage Example: To copy input layer to a data store. 
+            copy_result = copy_to_data_store(input_layer=earthquakes,
+                                             output_name="copy earthquakes data")
     """
     kwargs = locals()
 
@@ -859,7 +1008,10 @@ Returns:
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
