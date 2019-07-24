@@ -687,17 +687,6 @@ class GIS(object):
         except:
             return False
 
-    @property
-    def profiles(self):
-        """
-        Returns tools to managed locally stored credentials
-
-        :returns: ProfileManager
-
-        """
-        from arcgis.gis._impl._profile import ProfileManager
-        return ProfileManager()
-
     @_lazy_property
     def users(self):
         """
@@ -10026,3 +10015,5 @@ class Layer(_GISResource):
             domains.append({field.name:field_domain})
         return domains
 
+from arcgis.gis._impl._profile import ProfileManager
+login_profiles = ProfileManager()
