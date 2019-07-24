@@ -533,36 +533,120 @@ def clip_layer(input_layer, clip_layer, output_name=None, gis=None, context=None
     return
 
 
-def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_name=None, gis=None, future=False):
+def overlay_data(input_layer, 
+                 overlay_layer, 
+                 overlay_type="intersect", 
+                 output_name=None, 
+                 gis=None, 
+                 include_overlaps=True,
+                 context=None,
+                 future=False):
     """
-    Only available at ArcGIS Enterprise 10.6.1 and later.
+    .. image:: _static/images//overlay_layers/overlay_layers.png
 
-    ================  ===============================================================
-    **Argument**      **Description**
-    ----------------  ---------------------------------------------------------------
-    input_layer       required FeatureLayer. The point, line or polygon features.
-    ----------------  ---------------------------------------------------------------
-    overlay_layer     required FeatureLayer. The features that will be overlaid with the input_layer features.
-    ----------------  ---------------------------------------------------------------
-    overlay_type      optional string. The type of overlay to be performed.
-                      Values: intersect, erase
+    .. |Intersect| image:: _static/images/overlay_layers/Intersect.png
+    .. |Union| image:: _static/images/overlay_layers/Union.png
+    .. |Erase| image:: _static/images/overlay_layers/Erase.png
+    .. |identity| image:: _static/images/overlay_layers/identity.png
+    .. |symm| image:: _static/images/overlay_layers/Symmetric_Difference.png
 
-                      + intersect - Computes a geometric intersection of the input layers. Features or portions of features that overlap in both the inputLayer and overlayLayer layers will be written to the output layer. This is the default.
-                      + erase - Only those features or portions of features in the overlay_layer that are not within the features in the input_layer layer are written to the output.
-                      + union - Computes a geometric union of the input_layer and overlay_layer. All features and their attributes will be written to the layer.
-                      + identity - Computes a geometric intersection of the input features and identity features. Features or portions of features that overlap in both input_layer and overlay_layer will be written to the output layer.
-                      + symmetricaldifference - Features or portions of features in the input_layer and overlay_layer that do not overlap will be written to the output layer.
+    The ``overlay_data`` task combines two or more layers into one single layer. 
+    You can think of overlay as peering through a stack of maps and creating a single 
+    map containing all the information found in the stack. Overlay is used to answer 
+    one of the most basic questions of geography: What is on top of what? 
+    The following are examples:
 
-    ----------------  ---------------------------------------------------------------
-    output_name       optional string. The task will create a feature service of the results. You define the name of the service.
-    ----------------  ---------------------------------------------------------------
-    gis               optional GIS. The GIS object where the analysis will take place.
-    ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of
-                      results. The GPJob can be queried on the status of the execution.
-    ================  ===============================================================
+        * What parcels are within the 100-year floodplain? ("Within" is another way of saying "on top of.")
+        * What land use is within what soil type?
+        * What mines are within abandoned military bases?
 
-    :returns: FeatureLayer
+    .. note::
+        Only available at ArcGIS Enterprise 10.6.1 and later.
+
+    ======================  ===============================================================================
+    **Argument**            **Description**
+    ----------------------  -------------------------------------------------------------------------------
+    input_layer             Required layer. The point, line, or polygon features that will be overlaid with the ``overlay_layer`` features. See :ref:`Feature Input<FeatureInput>`.
+    ----------------------  -------------------------------------------------------------------------------
+    overlay_layer           Required layer. The features that will be overlaid with the ``input_layer`` features.
+    ----------------------  -------------------------------------------------------------------------------
+    overlay_type            optional string. The type of overlay to be performed.
+
+                            Choice list: ['intersect', 'erase', 'union', 'identity', 'symmetricaldifference']
+
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |Intersect| ``intersect``          | Computes a geometric intersection of the input layers.                            |
+                            |                                    | Features or portions of features that overlap in both the ``input_layer``         |
+                            |                                    | and ``overlay_layer`` layers will be written to the output layer.                 |
+                            |                                    |                                                                                   |
+                            |                                    | * Point — Point, Line, Polygon                                                    |
+                            |                                    | * Line — Point, Line, Polygon                                                     |
+                            |                                    | * Polygon— Point, Line, Polygon                                                   |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |Erase| ``erase``                  | Only those features or portions of features in the ``overlay_layer``              |
+                            |                                    | that are not within the features in the ``input_layer`` layer are                 |
+                            |                                    | written to the output.                                                            |
+                            |                                    |                                                                                   | 
+                            |                                    | * Point — Point                                                                   |
+                            |                                    | * Line — Line                                                                     |
+                            |                                    | * Polygon — Polygon                                                               |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |Union| ``union``                  | Computes a geometric union of the ``input_layer`` and ``overlay_layer``.          |
+                            |                                    | All features and their attributes will be written to the layer.                   |
+                            |                                    |                                                                                   |
+                            |                                    | * Polygon — Polygon                                                               |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |identity| ``identity``            | Computes a geometric intersection of the input features and                       |
+                            |                                    | identity features. Features or portions of features that overlap in both          |
+                            |                                    | ``input_layer`` and ``overlay_layer`` will be written to the output layer.        |
+                            |                                    |                                                                                   |
+                            |                                    |  * Point — Point, Polygon                                                         |
+                            |                                    |  * Line — Line, Polygon                                                           |
+                            |                                    |  * Polygon— Polygon                                                               |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+                            | |symm| ``symmetricaldifference``   | Features or portions of features in the ``input_layer``                           |
+                            |                                    | and ``overlay_layer`` that do not overlap will be written to the output layer.    | 
+                            |                                    |                                                                                   |
+                            |                                    | * Point — Point                                                                   |
+                            |                                    | * Line — Line                                                                     |
+                            |                                    | * Polygon— Polygon                                                                |
+                            +------------------------------------+-----------------------------------------------------------------------------------+
+    ----------------------  -------------------------------------------------------------------------------
+    include_overlaps        Optional boolean. Determines whether input features in the same dataset contain any overlapping features. 
+                            This option should only be modified if you're not interested in self-intersection between 
+                            features for the input layer and self-intersection between features for the overlay layer. 
+                            Setting this value to false will improve performance. This parameter is only used when 
+                            ``include_overlaps`` is Intersect with 10.6 and 10.6.1.
+
+                            The default value is 'True'.
+    ----------------------  -------------------------------------------------------------------------------
+    output_name             Optional string. The task will create a feature service of the results. You define the name of the service.
+    ----------------------  -------------------------------------------------------------------------------
+    gis                     Optional GIS. The GIS object where the analysis will take place.
+    ----------------------  -------------------------------------------------------------------------------
+    context                 Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                            #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                            #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                            #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                            #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    ----------------------  -------------------------------------------------------------------------------
+    future                  Optional boolean. If 'True', a GPJob is returned instead of
+                            results. The GPJob can be queried on the status of the execution.
+
+                            The default value is 'False'.
+    ======================  ===============================================================================
+
+    :returns: result_layer : Output Features as feature layer item.
+
+    .. code-block:: python
+
+            # Usage Example: To find the intersecting areas between watersheds and grazing land in Missouri.
+
+            overlay_result = manage_data.overlay_data(input_layer=grazing_land, 
+                                          overlay_layer=watersheds_layer, 
+                                          overlay_type="Intersect", 
+                                          output_name="Watershed_intersections")   
     """
     kwargs = locals()
     tool_name = "OverlayLayers"
@@ -590,7 +674,10 @@ def overlay_data(input_layer, overlay_layer, overlay_type="intersect", output_na
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
