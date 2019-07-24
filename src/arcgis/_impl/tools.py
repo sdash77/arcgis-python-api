@@ -1942,7 +1942,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["context"] = context
             return _estimate_credits(task=task,
                                      parameters=params)
-        gpjob = self._tbx.find_existing_locations(input_layers=input_layers, expressions=expressions,
+        gpjob = self._tbx.find_existing_locations(input_layers=input_layers_param, expressions=expressions,
                                                   output_name=output_name, context=context,
                                                   gis=self._gis, future=True)
         gpjob._is_fa = True
@@ -1999,8 +1999,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
            "process_info" : list of messages
         """
         analysis_layer = self._feature_input(analysis_layer)
-        bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-        aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
+        if bounding_polygon_layer:
+            bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
+        if aggregation_polygon_layer:
+            aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
         if output_name:
             output_name = {"serviceProperties": {"name": output_name }}
         task ="FindHotSpots"
@@ -2104,7 +2106,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task ="FindNearest"
 
         params = {}
-
+        analysis_layer = self._feature_input(analysis_layer)
+        near_layer = self._feature_input(near_layer)
         params["analysisLayer"] = self._feature_input(analysis_layer)
         params["nearLayer"] = self._feature_input(near_layer)
         if point_barrier_layer:
