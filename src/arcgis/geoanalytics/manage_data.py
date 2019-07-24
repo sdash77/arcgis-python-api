@@ -848,35 +848,56 @@ def copy_to_data_store(
     input_layer,
     output_name=None,
     gis=None,
+    context=None,
     future=False):
     """
+    .. image:: _static/images/copy_to_data_store/copy_to_data_store.png 
 
-    Copies an input feature layer or table to an ArcGIS Data Store and creates a layer in your web GIS.
-
+    The ``copy_to_data_store`` task takes an input layer and copies it to a data store. 
+    Data is copied to ArcGIS Data Store, configured as either a relational or 
+    spatiotemporal big data store.
+    
     For example
 
-    * Copy a collection of .csv files in a big data file share to the spatiotemporal data store for visualization.
+        * Copy a collection of .csv files in a big data file share to the spatiotemporal data store for visualization.
+        * Copy the features in the current map extent that are stored in the spatiotemporal data store to the relational data store.
 
-    * Copy the features in the current map extent that are stored in the spatiotemporal data store to the relational data store.
+    This tool will take an input layer and copy it to a data store. Data will be copied to the ArcGIS Data Store 
+    and will be stored in your relational or spatiotemporal data store.
 
-    This tool will take an input layer and copy it to a data store. Data will be copied to the ArcGIS Data Store and will be stored in your relational or spatiotemporal data store.
+    For example, you could copy features that are stored in a big data file share to a relational data store 
+    and specify that only features within the current map extent will be copied. This would create a hosted 
+    feature service with only those features that were within the specified map extent.
 
-    For example, you could copy features that are stored in a big data file share to a relational data store and specify that only features within the current map extent will be copied. This would create a hosted feature service with only those features that were within the specified map extent.
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    input_layer                  Required layer. The table, point, line, or polygon features that will be copied. See :ref:`Feature Input<FeatureInput>`.
+    --------------------------   ---------------------------------------------------------------
+    output_name                  Optional string. The task will create a feature service of the results. You define the name of the service.
+    --------------------------   --------------------------------------------------------------- 
+    gis                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    --------------------------   --------------------------------------------------------------- 
+    context                      Optional string. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
-   Parameters:
+                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                 #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+    --------------------------   --------------------------------------------------------------- 
+     future                      Optional boolean. If 'True', the result comes back as a GPJob.
 
-   input_layer: Input Layer (feature layer). Required parameter.
+                                 The default value is 'False'.
+    ==========================   ===============================================================
 
-   output_name: Output Layer Name (str). Required parameter.
+    :returns: result_layer : Output Features as feature layer item.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    .. code-block:: python
 
-   future: Optional. If True, the result comes back as a GPJob.
-
-Returns:
-   output - Output Layer as a feature layer collection item
-
-
+            # Usage Example: To copy input layer to a data store. 
+            copy_result = copy_to_data_store(input_layer=earthquakes,
+                                             output_name="copy earthquakes data")
     """
     kwargs = locals()
 
@@ -900,7 +921,10 @@ Returns:
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
