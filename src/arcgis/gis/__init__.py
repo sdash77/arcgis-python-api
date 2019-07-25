@@ -3289,6 +3289,7 @@ class ContentManager(object):
            The item if successfully added, None if unsuccessful.
         """
         import os
+        filetype = None
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
@@ -6423,6 +6424,8 @@ class User(dict):
     @property
     def linked_accounts(self):
         """returns all linked account for the current user as User objects"""
+        if self._gis._portal.is_arcgisonline == False:
+            return []
         url = "%s/sharing/rest/community/users/%s/linkedUsers" % (self._gis._url,
                                                                   self._user_id)
         start = 1
