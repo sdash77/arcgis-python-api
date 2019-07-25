@@ -3078,13 +3078,15 @@ class ContentManager(object):
         future_files = []
         with open(file_path, 'rb') as f:
             import copy
+            import uuid
             import concurrent.futures
             nthreads = 5
             with concurrent.futures.ThreadPoolExecutor(max_workers=nthreads) as tp:
                 future_parts = {}
+                base_file = uuid.uuid4().hex[:4]
                 for part_num, piece in enumerate(read_in_chunks(f), start=1):
                     params['partNum'] = part_num
-                    temp_file = os.path.join(tempfile.gettempdir(), "split.part%s" % part_num)
+                    temp_file = os.path.join(tempfile.gettempdir(), "split%s.part%s" % (base_file,part_num))
                     kwargs = {
                         "path" : url,
                         "postdata" : copy.copy(params),
@@ -3347,11 +3349,15 @@ class ContentManager(object):
             if is_file and \
                bytesto(os.stat(data).st_size) < 7:
                 multipart = False
+                item_properties.pop('multipart', None)
             else:
+                if 'multipart' in item_properties:
+                    item_properties['multipart'] = True
                 multipart = True
         except:
             is_file = False
             multipart = False
+            item_properties.pop('multipart', None)
         if multipart and \
            is_file:
             import copy
@@ -3373,6 +3379,8 @@ class ContentManager(object):
             item = Item(gis=self._gis, itemid=itemid)
             return item
         else:
+            if filetype:
+                item_properties['fileName'] = os.path.basename(data)
             itemid = self._portal.add_item(item_properties, data,
                                            thumbnail, metadata,
                                            owner_name, folder)
