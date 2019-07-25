@@ -259,7 +259,7 @@ class ProfileManager(object):
 
         """
         if profile not in self.list():
-            raise ValueError(f"Could not find profile {profile}. Use `create` to generate a new profile.")
+            raise ValueError("Could not find profile {}. Use `create` to generate a new profile.".format(profile))
         _log.info("Updating profile {} ...".format(profile))
         return self.create(profile, url, username, password, key_file, cert_file, client_id)
     #----------------------------------------------------------------------
