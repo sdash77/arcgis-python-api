@@ -11,6 +11,7 @@ try:
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
+    from fastai.vision.image import open_image
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
@@ -244,7 +245,7 @@ class SingleShotDetector(ArcGISModel):
         try:
             gt_overlap,gt_idx = self._map_to_ground_truth(overlaps,print_it)
         except Exception as e:
-            return torch.tensor(0.).to(self._device), torch.tensor(0.).to(self._device)
+            return torch.tensor(0., requires_grad=True).to(self._device), torch.tensor(0., requires_grad=True).to(self._device)
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
         pos_idx = torch.nonzero(pos)[:,0]
@@ -273,7 +274,7 @@ class SingleShotDetector(ArcGISModel):
         return inter[:, :, 0] * inter[:, :, 1]
 
     def _box_sz(self, b):
-        return ((b[:, 2]-b[:, 0]) * (b[:, 3]-b[:, 1]))
+        return (b[:, 2]-b[:, 0]) * (b[:, 3]-b[:, 1])
 
     def _jaccard(self, box_a, box_b):
         inter = self._intersect(box_a, box_b)
@@ -311,6 +312,19 @@ class SingleShotDetector(ArcGISModel):
         if rows > self._data.batch_size:
             rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+
+    def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=False, visualize=False):
+        image = open_image(image_path).apply_tfms(self._data.valid_ds.tfms)
+
+        if self._data.resize_to is not None:
+            image = image.resize(size=self._data.resize_to)
+
+        bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=return_scores, ssd=self)[0]
+
+        if visualize:
+            image.show(y=bbox)
+
+        return None if bbox is None else bbox.data
 
     def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False):
         """
