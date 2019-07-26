@@ -297,8 +297,7 @@ class SingleShotDetector(ArcGISModel):
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             _CLASS_TEMPLATE["Value"] = inverse_class_mapping[class_name]
             _CLASS_TEMPLATE["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) \
-                                                                  else self._data.color_mapping[inverse_class_mapping[class_name]]
+            color = [random.choice(range(256)) for i in range(3)]
             _CLASS_TEMPLATE["Color"] = color
             _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())
 

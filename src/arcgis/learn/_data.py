@@ -1,27 +1,27 @@
+import os
+from pathlib import Path
+from functools import partial
+import xml.etree.ElementTree as ET
+import math
+import sys
+import json
+
 try:
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr
     from fastai.vision import ImageDataBunch
     from fastai.torch_core import data_collate
     import torch
-    from pathlib import Path
-    from functools import partial
-    import xml.etree.ElementTree as ET
     from .models._ssd_utils import SSDObjectItemList
     from .models._unet_utils import ArcGISSegmentationItemList
-    import math
-    import sys
-    import json
-    import random
-    from PIL import Image as pilImage
-    import numpy as np
-    import warnings
     HAS_FASTAI = True
 except:
     HAS_FASTAI = False
 
+
 def _raise_fastai_import_error():
     raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai pytorch torchvision"')
+
 
 def _bb_pad_collate(samples, pad_idx=0):
     "Function that collect `samples` of labelled bboxes and adds padding with `pad_idx`."
@@ -41,40 +41,60 @@ def _bb_pad_collate(samples, pad_idx=0):
     return torch.cat(imgs,0), (bboxes,labels)    
 
 
-def _get_bbox_lbls(imagefile, class_mapping):
-    xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
+def _get_bbox_classes(xmlfile, class_mapping):
     tree = ET.parse(xmlfile)
     xmlroot = tree.getroot()
-    bboxes  = []
+    bboxes = []
     classes = []
-    for child in xmlroot:
-        if child.tag == 'object':
-            xmin, ymin, xmax, ymax = float(child[1][0].text),\
-            float(child[1][1].text),\
-            float(child[1][2].text),\
-            float(child[1][3].text)
-            bboxes.append([ymin, xmin, ymax, xmax])
-            classes.append(class_mapping[int(child[0].text)])
+    for tag_obj in xmlroot.findall('object'):
+        bnd_box = tag_obj.find('bndbox')
+        xmin, ymin, xmax, ymax = float(bnd_box.find('xmin').text), \
+                                 float(bnd_box.find('ymin').text), \
+                                 float(bnd_box.find('xmax').text), \
+                                 float(bnd_box.find('ymax').text)
+        bboxes.append([ymin, xmin, ymax, xmax])
+        data_class_text = tag_obj.find('name').text
+
+        if data_class_text.isnumeric():
+            data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else class_mapping[int(data_class_text)]
+        else:
+            data_class_mapping = class_mapping[data_class_text]
+
+        classes.append(data_class_mapping)
 
     return [bboxes, classes]
 
+
+def _get_bbox_lbls(imagefile, class_mapping):
+    xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
+    return _get_bbox_classes(xmlfile, class_mapping)
+
+
 def _get_lbls(imagefile, class_mapping):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
-    tree = ET.parse(xmlfile)
-    xmlroot = tree.getroot()
-    bboxes  = []
-    classes = []
-    for child in xmlroot:
-        if child.tag == 'object':
-            xmin, ymin, xmax, ymax = float(child[1][0].text),\
-            float(child[1][1].text),\
-            float(child[1][2].text),\
-            float(child[1][3].text)
-            bboxes.append([ymin, xmin, ymax, xmax])
-            classes.append(class_mapping[int(child[0].text)])
+    return _get_bbox_classes(xmlfile, class_mapping)[1][0]
 
-    return classes[0]
 
+def _check_esri_files(path):
+    if os.path.exists(path / 'esri_model_definition.emd') \
+        and os.path.exists(path / 'map.txt') \
+            and os.path.exists(path / 'esri_accumulated_stats.json'):
+        return True
+
+    return False
+
+
+def _get_class_mapping(path):
+    class_mapping = {}
+    for xmlfile in os.listdir(path):
+        if not xmlfile.endswith('.xml'):
+            continue
+        tree = ET.parse(os.path.join(path, xmlfile))
+        xmlroot = tree.getroot()
+        for tag_obj in xmlroot.findall('object'):
+            class_mapping[tag_obj.find('name').text] = tag_obj.find('name').text
+
+    return class_mapping
 
 
 def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type = None):
@@ -134,86 +154,64 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
 
+    has_esri_files = _check_esri_files(path)
+    alter_class_mapping = False
     color_mapping = None
-    if not dataset_type in ['Imagenet']:
+
+    if dataset_type is None and not has_esri_files:
+        raise Exception("Could not infer dataset type.")
+
+    if dataset_type != "Imagenet" and has_esri_files:
+        stats_file = path / 'esri_accumulated_stats.json'
+        with open(stats_file) as f:
+            stats = json.load(f)
+            dataset_type = stats['MetaDataMode']
+
+        with open(path / 'map.txt') as f:
+            line = f.readline()
+
+        right = line.split()[1].split('.')[-1].lower()
+
         json_file = path / 'esri_model_definition.emd'
         with open(json_file) as f:
             emd = json.load(f)
 
         if class_mapping is None:
             try:
-                class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+                class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
             except KeyError:
-                class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
-        
-        if color_mapping is None:
-            try:
-                color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
-            except KeyError:          
-                color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
+                class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
 
-        # if [-1, -1, -1] in color_mapping.values():
-        #     for c_idx, c_color in color_mapping.items():
-        #         if c_color[0] == -1:
-        #             color_mapping[c_idx] = [random.choice(range(256)) for i in range(3)]
+        color_mapping = {(i.get('Value') or i.get('ClassValue')): i['Color'] for i in emd.get('Classes', [])}
+    elif dataset_type == 'PASCAL_VOC_rectangles' and not has_esri_files:
+        if class_mapping is None:
+            class_mapping = _get_class_mapping(path / 'labels')
+            alter_class_mapping = True
 
-        #color_mapping[0] = [0, 0, 0] 
-
-    if dataset_type is None:
-
-        stats_file = path / 'esri_accumulated_stats.json'
-        with open(stats_file) as f:
-            stats = json.load(f)
-            dataset_type = stats['MetaDataMode']
-
-        # imagefile_types = ['png', 'jpg', 'tif', 'jpeg', 'tiff']
-        # bboxfile_types = ['xml', 'json']
-        with open(path / 'map.txt') as f:
-            line = f.readline()
-        # left = line.split()[0].split('.')[-1].lower()
-        right = line.split()[1].split('.')[-1].lower()
-        
-        # if (left in imagefile_types) and (right in imagefile_types):
-        #     dataset_type = 'RCNN_Masks'
-        # elif (left in imagefile_types) and (right in bboxfile_types):
-        #     dataset_type = 'PASCAL_VOC_rectangles'
-        # elif (left in imagefile_types) and (right in bboxfile_types):
-        #     dataset_type = 'LabelledTiles'
-        # else:
-        #     raise NotImplementedError('Cannot infer dataset type. The dataset type is not implemented')            
-        
-    
     if dataset_type in ['RCNN_Masks', 'Classified_Tiles']:
-        
+
         def get_y_func(x, ext=right):
             return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
         
         src = (ArcGISSegmentationItemList.from_folder(path/'images')
-           .split_by_rand_pct(val_split_pct, seed=seed)
-           .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)) #TODO : Handel NoData case
+                .split_by_rand_pct(val_split_pct, seed=seed)
+                .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)) # TODO : Handel NoData case
 
         if transforms is None:
             transforms = get_transforms(flip_vert=True,
                                         max_rotate=90.,
                                         max_zoom=3.0,
-                                        max_lighting=0.5) #,
-    #                                     xtra_tfms=[skew(direction=(1,8),
-    #                                     magnitude=(0.2,0.8))]) 
+                                        max_lighting=0.5)
 
-
-        data = (src
-            .transform(transforms, size=chip_size, tfm_y=True)
-            .databunch(bs=batch_size, **databunch_kwargs)
-            .normalize(imagenet_stats))
-        
-    elif dataset_type == 'PASCAL_VOC_rectangles': 
-
-
+        data = (src.transform(transforms, size=chip_size, tfm_y=True)
+                .databunch(bs=batch_size, **databunch_kwargs)
+                .normalize(imagenet_stats))
+    elif dataset_type == 'PASCAL_VOC_rectangles':
         get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping)
 
         src = (SSDObjectItemList.from_folder(path/'images')
-           .split_by_rand_pct(val_split_pct, seed=seed)
-           .label_from_func(get_y_func))
+                .split_by_rand_pct(val_split_pct, seed=seed)
+                .label_from_func(get_y_func))
 
         if transforms is None:
             ranges = (0,1)
@@ -222,59 +220,54 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             transforms = (train_tfms, val_tfms)
 
         data = (src
-            .transform(transforms, tfm_y=True)
-            .databunch(bs=batch_size, collate_fn=collate_fn, **databunch_kwargs)
-            .normalize(imagenet_stats))
+                .transform(transforms, tfm_y=True)
+                .databunch(bs=batch_size, collate_fn=collate_fn, **databunch_kwargs)
+                .normalize(imagenet_stats))
         
     elif dataset_type == 'Labeled_Tiles':
-
-
         get_y_func = partial(_get_lbls, class_mapping=class_mapping)
 
         src = (ImageList.from_folder(path/'images')
-           .split_by_rand_pct(val_split_pct, seed=42)
-           .label_from_func(get_y_func))
+                .split_by_rand_pct(val_split_pct, seed=42)
+                .label_from_func(get_y_func))
 
         if transforms is None:
-            # transforms = get_transforms(flip_vert=True,
-            #                             max_warp=0,
-            #                             max_rotate=90.,
-            #                             max_zoom=1.5,
-            #                             max_lighting=0.5)
             ranges = (0, 1)
-            train_tfms = [rotate(degrees=30, p=0.5),
-                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), 
+            train_tfms = [
+                rotate(degrees=30, p=0.5),
+                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
                 dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)),
-                # rand_zoom(scale=(0.75, 1.5))
-                ]
+            ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
         data = (src
-            .transform(transforms, size=chip_size)
-            .databunch(bs=batch_size, **databunch_kwargs)
-            .normalize(imagenet_stats))
+                .transform(transforms, size=chip_size)
+                .databunch(bs=batch_size, **databunch_kwargs)
+                .normalize(imagenet_stats))
 
     elif dataset_type == 'Imagenet':
-
         if transforms is None:
-            ranges = (0, 1)
-            train_tfms = [rotate(degrees=30, p=0.5),
+            train_tfms = [
+                rotate(degrees=30, p=0.5),
                 flip_lr(),
                 brightness(change=(0.4, 0.6)),
-                contrast(scale=(0.75, 1.5))]
+                contrast(scale=(0.75, 1.5))
+            ]
             val_tfms = []
             transforms = (train_tfms, val_tfms)  
 
-            data = ImageDataBunch.from_folder(path, ds_tfms=transforms, size=chip_size, **databunch_kwargs).normalize(imagenet_stats)      
-        
+        data = ImageDataBunch.from_folder(path, ds_tfms=transforms, size=chip_size, **databunch_kwargs).normalize(imagenet_stats)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))    
 
-    if transforms == False:
-        data.chip_size = data.x[0].shape[-1]
-    else:
-        data.chip_size = chip_size
+    data.chip_size = data.x[0].shape[-1] if transforms is False else chip_size
+    if alter_class_mapping:
+        new_mapping = {}
+        for i, class_name in enumerate(class_mapping.keys()):
+            new_mapping[i+1] = class_name
+        class_mapping = new_mapping
+
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
     show_batch_func = data.show_batch
