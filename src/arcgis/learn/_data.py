@@ -97,7 +97,7 @@ def _get_class_mapping(path):
     return class_mapping
 
 
-def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type = None):
+def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None, resize_to=None):
     """
     Prepares a Fast.ai DataBunch from the exported Pascal VOC image chips
     exported by Export Training Data tool in ArcGIS Pro or Image Server.
@@ -140,7 +140,8 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
                             'RCNN_Masks' and 'Classified_Tiles'                    
-                            
+    ---------------------   -------------------------------------------
+    resize_to            Optional integer. Resize the image to given size.
     =====================   ===========================================
 
     :returns: fastai DataBunch object
@@ -219,8 +220,14 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
+        kwargs_transforms = {
+            'tfm_y': True
+        }
+        if resize_to is not None:
+            kwargs_transforms['size'] = resize_to
+
         data = (src
-                .transform(transforms, tfm_y=True)
+                .transform(transforms, **kwargs_transforms)
                 .databunch(bs=batch_size, collate_fn=collate_fn, **databunch_kwargs)
                 .normalize(imagenet_stats))
         
@@ -274,5 +281,6 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     show_batch_func = partial(show_batch_func, rows=min(int(math.sqrt(batch_size)), 5))
     data.show_batch = show_batch_func
     data.orig_path = path
+    data.resize_to = resize_to
     
     return data
