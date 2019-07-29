@@ -181,7 +181,7 @@ class FeatureClassifier(ArcGISModel):
 
     def plot_hard_examples(self, num_examples):
         """
-        Plots a confusion matrix of the model predictions to evaluate accuracy
+        Plots the hard examples with their heatmaps.
         
         =====================   ===========================================
         **Argument**            **Description**
