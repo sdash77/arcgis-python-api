@@ -876,72 +876,160 @@ join_features.__annotations__ = {
 
 def reconstruct_tracks(input_layer,
                        track_fields,
-                       method = """Planar""",
-                       buffer_field = None,
-                       summary_fields = None,
+                       method="Planar",
+                       buffer_field=None,
+                       summary_fields=None,
                        distance_split=None,
                        distance_split_unit=None,
                        time_boundary_split=None,
                        time_boundary_split_unit=None,
                        time_boundary_reference=None,
-                       output_name = None,
+                       output_name=None,
                        gis=None,
+                       time_split=None,
+                       time_split_unit=None,
+                       context=None,
                        future=False):
     """
+    .. image:: _static/images/reconstruct_tracks/reconstruct_tracks.png 
 
-    Using a time-enabled layer of point or polygon features that represent an instant in time, this tool determines which input features belong in a track and will order the inputs sequentially in time. Statistics are optionally calculated for the input features within each track.
+    The ``reconstruct_tracks`` task works with a time-enabled layer of either point or polygon 
+    features that represents an instant in time. It first determines which features belong to a 
+    track using an identifier. Using the time at each location, the tracks are ordered sequentially 
+    and transformed into a line or polygon representing the path of movement over time. Optionally, 
+    the input can be buffered by a field, which will create a polygon at each location. These buffered 
+    points, or polygons if the inputs are polygons, are then joined sequentially to create a track as a 
+    polygon where the width is representative of the attribute of interest. Resulting tracks have start 
+    and end times that represent the time at the first and last feature in a given track. When the tracks 
+    are created, statistics about the input features are calculated and assigned to the output track. The 
+    most basic statistic is the count of points within the area, but other statistics can be calculated as 
+    well. Features in time-enabled layers can be represented in one of two ways:
 
-    For example
+        * Instant - A single moment in time
+        * Interval - A start and end time
+        
+    For example, suppose you have GPS measurements of hurricanes every 10 minutes. Each GPS measurement records 
+    the hurricane name, location, time of recording, and the wind speed. You could create tracks of the hurricanes 
+    using the name of the hurricane as the track identification, and all hurricanes' tracks would be generated. 
+    You could calculate statistics such as the mean, maximum, and minimum wind speed of each hurricane, as well 
+    as the count of measurements in each track.
 
-    * Given point locations and time of hurricane measurements, calculate the mean wind speed and max wind pressure of the hurricane.
+    ======================================================================================  ===============================================================
+    **Argument**                                                                            **Description**
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    input_layer                                                                             Required layer. The point or polygon features from which tracks 
+                                                                                            will be constructed. See :ref:`Feature Input<FeatureInput>`.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    track_fields                                                                            Required string. The fields used to identify distinct tracks. There can 
+                                                                                            be multiple ``track_fields``.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    method                                                                                  Optional string. The method used to apply reconstruct tracks and, optionally, 
+                                                                                            to apply the buffer. There are two methods to choose from:
 
-    * Find the highest and lowest monthly revenues for franchise locations using 100 km bins.
+                                                                                            * ``Planar`` - This method joins points using a plane method and will not 
+                                                                                              cross the international date line. For buffers, this method applies a Euclidean 
+                                                                                              buffer and is appropriate for local analysis on projected data. This is the default.
+                                                                                            * ``Geodesic`` - This method joins points geodesically and will allow tracks to cross 
+                                                                                              the international date line. For buffers, this method is appropriate for large areas 
+                                                                                              and any geographic coordinate system.
 
-        This tool works with a time-enabled layer of either point or polygon features that represent an instant in time. It first determines which features belong to a track using an identifier. Using the time at each location, the tracks are ordered sequentially and transformed into a line or polygon representing the path of movement over time. Optionally, the input may be buffered by a field, which will create a polygon at each location. These buffered points, or if the inputs are polygons, are then joined sequentially to create a track as a polygon where the width is representative of the attribute of interest. Resulting tracks have a start and end time, which represent temporally the first and last feature in a given track. When the tracks are created, statistics about the input features are calculated and assigned to the output track. The most basic statistic is the count of points within the area, but other statistics can be calculated as well.
+                                                                                            The default value is 'Planar'.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    buffer_field                                                                            Optional string. A field in the ``input_layer`` that contains a buffer distance or a buffer expression.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    summary_fields                                                                          Optional list of dicts. A list of field names and statistical summary types that you want to calculate for 
+                                                                                            all reconstructed track features. By default, all statistics are returned.
 
-    Features in time-enabled layers can be represented in one of two ways:
+                                                                                            Syntax: [{"statisticType" : "<statistic type>", "onStatisticField" : "<field name>" }, ...]
 
-    Instant-A single moment in time
-    Interval-A start and end time
-    For example, suppose you have GPS measurements of hurricanes every 10 minutes. Each GPS measurement records the hurricane's name, location, time of recording, and wind speed. With this information, you could create tracks for each hurricane using the name for track identification, and tracks for each hurricane would be generated. Additionally, you could calculate statistics such as the mean, max, and minimum wind speed of each hurricane, as well as the count of measurements within each track.
+                                                                                            fieldName is the name of the fields in the input point layer.
 
-    Using the same example, you could buffer your tracks by the wind speed. This would buffer each measurement by the wind speed field at that location, and join the buffered areas together, creating a polygon representative of the track path, as well as the changes in wind speed as the hurricanes progressed.
+                                                                                            statisticType is one of the following for numeric fields:
 
-    Parameters:
+                                                                                                * ``Count`` - Totals the number of values of all the points in each polygon.
+                                                                                                * ``Sum`` - Adds the total value of all the points in each polygon.
+                                                                                                * ``Mean`` - Calculates the average of all the points in each polygon.
+                                                                                                * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                                                                                * ``Max`` - Finds the largest value of all the points in each polygon.
+                                                                                                * ``Range`` - Finds the difference between the Min and Max values.
+                                                                                                * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+                                                                                                * ``Var`` - Finds the variance of all the points in each polygon.
 
-   input_layer: Input Features (feature input). Required parameter.
+                                                                                            statisticType is one of the following for string fields:
 
-   track_fields: Track Fields (str). Required parameter.
+                                                                                                * ``Count`` - Totals the number of strings for all the points in each polygon.
+                                                                                                * ``Any`` - Returns a sample string of a point in each polygon.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_boundary_split                                                                     Optional integer. A time boundary allows your to analyze values within a defined 
+                                                                                            time span. For example, if you use a time boundary of 1 day, starting on January 1st, 
+                                                                                            1980 tracks will be analyzed 1 day at a time. The time boundary parameter was introduced 
+                                                                                            in ArcGIS Enterprise 10.7.
 
-   method: Method (str). Required parameter.
-      Choice list:['Geodesic', 'Planar']
+                                                                                            The ``time_boundary_split`` parameter defines the scale of the time boundary. In the 
+                                                                                            case above, this would be 1.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_boundary_split_unit (Required if ``time_boundary_split`` is specified)             Optional string. The unit applied to the time boundary. ``time_boundary_split`` is required 
+                                                                                            if a ``time_boundary_split`` is provided.
 
-   buffer_field: Buffer Distance Field (str). Optional parameter.
+                                                                                            Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_boundary_reference                                                                 Optional datetime.datetime. A date that specifies the reference time to align the time boundary to, 
+                                                                                            represented in milliseconds from epoch.
+                                                                                            This option is only available if the ``time_boundary_split`` and ``time_boundary_split_unit`` are set.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    distance_split                                                                          Optional float. A distance used to split tracks. Any features in the ``input_layer`` that are in the same 
+                                                                                            track and are greater than this distance apart will be split into a new track. The units of the distance 
+                                                                                            values are supplied by the ``distance_split_unit`` parameter.
 
-   summary_fields: Summary Statistics (str/list). Optional parameter.
+                                                                                            If both ``distance_split`` and ``time_split`` are used, the track is split when at least one condition is met.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    distance_split_unit (Required if ``distance_split`` is specified)                       Optional string. The distance unit to be used with the distance value specified in ``distance_split``.
 
-   time_boundary_split: Duration Split Threshold (int). Optional parameter.
+                                                                                            Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'NauticalMiles', 'Yards'].
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    output_name                                                                             Optional string. The task will create a feature service of the results. You define the name of the service.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    gis                                                                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_split                                                                              Optional integer. A time duration used to split tracks. Any features in the ``input_layer`` that are in 
+                                                                                            the same track and are greater than this time apart will be split into a new track. The units of the distance 
+                                                                                            values are supplied by the ``time_split`` parameter.
 
-   time_boundary_split_unit: Duration Split Threshold Unit (str). Optional parameter.
-      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+                                                                                            If both ``distance_split`` and ``time_split`` are used, a track is split when at least one condition is met.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    time_split_unit  (Required if ``time_split`` is specified)                              Optional string. The temporal unit to be used with the temporal distance value specified in ``time_split``.
 
-   time_boundary_reference: Starting time location (datetime.datetime). Optional parameter.
+                                                                                            Choice list: ['Milliseconds', 'Seconds', 'Minutes', 'Hours', 'Days', 'Weeks', 'Months', 'Years']
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    context                                                                                 Optional dict. The context parameter contains additional settings that affect task execution. 
+                                                                                            For this task, there are four settings:
 
-   distance_split: A distance used to split tracks. Any features in the inputLayer that are in the same track and are greater than this distance apart will be split into a new track. The units of the distance values are supplied by the distance_unit parameter.
+                                                                                            #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                            #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                                                            #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                            #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    --------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    future                                                                                  Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
-   distance_split_unit: The distance unit to be used with the distance value specified in distanceSplit.
-       Values: Meters,Kilometers,Feet,Miles,NauticalMiles, or Yards
+                                                                                            The default value is 'False'.                            
+    ======================================================================================  ===============================================================
 
-   output_name: Output Features Name (str). Required parameter.
+    :returns: feature layer collection item
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    .. code-block:: python
 
-   future: Optional, if True, the return value will be a GPJob.
+            # Usage Example: To reconstruct hurricane tracks.    
 
-Returns:
-   output - Output Features as a Feature Layer Collection Item
-
-
+            tracks = reconstruct_tracks(input_layer=hurricane_lyr,
+                                        track_fields='season, trackID',
+                                        method='Geodesic',
+                                        buffer_field='size',
+                                        summary_fields=[{"statisticType" : "Range", "onStatisticField" : "Wind" }],
+                                        distance_split=1,
+                                        distance_split_unit='Kilometers',
+                                        time_boundary_split=1,
+                                        time_boundary_split_unit='Days',
+                                        output_name='reconstruct hurricane tracks')
     """
     kwargs = locals()
 
@@ -965,7 +1053,10 @@ Returns:
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     if isinstance(summary_fields, list):
         import json
