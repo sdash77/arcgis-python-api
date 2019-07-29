@@ -288,91 +288,105 @@ def dissolve_boundaries(input_layer,
         raise
     return
 
-def merge_layers(input_layer, merge_layer,
-                 merge_attributes=None, output_name=None,
-                 gis=None, future=False):
+def merge_layers(input_layer, 
+                 merge_layer,
+                 merge_attributes=None, 
+                 output_name=None,
+                 gis=None, 
+                 context=None,
+                 future=False):
     """
-    The Merge Layers task combines two feature layers to create a single output layer. The tool
+
+    .. image:: _static/images/merge_layers/merge_layers.png 
+    
+    The ``merge_layers`` task combines two feature layers to create a single output layer. The tool
     requires that both layers have the same geometry type (tabular, point, line, or polygon). If
     time is enabled on one layer, the other must also be time enabled and have the same time type
     (instant or interval). The result will always contain all fields from the input layer. All
     fields from the merge layer will be included by default, or you can specify custom merge rules
     to define the resulting schema. For example:
 
-    - I have three layers for England, Wales, and Scotland and I want a single layer of Great
-      Britain. I can use Merge Layers to combine the areas and maintain all fields from each area.
-    - I have two layers containing parcel information for contiguous townships. I want to join them
-      together into a single layer, keeping only the fields that have the same name and type in the
-      two layers.
+        * I have three layers for England, Wales, and Scotland and I want a single layer of Great
+          Britain. I can use Merge Layers to combine the areas and maintain all fields from each area.
+        * I have two layers containing parcel information for contiguous townships. I want to join them
+          together into a single layer, keeping only the fields that have the same name and type in the
+          two layers.
 
-    Only available at **ArcGIS Enterprise 10.7** and later.
+    .. note::
+        Only available at **ArcGIS Enterprise 10.7** and later.
 
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required FeatureLayer. The point, line or polygon features.
+    input_layer       Required layer. The table, point, line, or polygon features to 
+                      merge with the ``merge_layer`` parameter. All fields in ``input_layer`` 
+                      will be included in the result layer.  See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    merge_layer       Required FeatureLayer. The point, line, or polygon features to
-                      merge with the input_layer. The merge_layer must contain the
+    merge_layer       Required layer. The point, line, or polygon features to
+                      merge with the ``input_layer``. The ``merge_layer`` must contain the
                       same geometry type (tabular, point, line, or polygon) and the
-                      same time type (none, instant, or interval) as the input_layer.
-                      All fields in the merge_layer will be included in the result
-                      layer by default or you can define merge_attributes to
-                      customize the resulting schema.
+                      same time type (none, instant, or interval) as the ``input_layer``.
+                      All fields in the ``merge_layer`` will be included in the result
+                      layer by default or you can define ``merge_attributes`` to
+                      customize the resulting schema.  See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    merge_attributes  Optional list. Defines how the fields in mergeLayer will be
+    merge_attributes  Optional list of dicts. Defines how the fields in ``merge_layer`` will be
                       modified. By default, all fields from both inputs will be
                       included in the output layer.
 
                       If a field exists in one layer but not the other, the output
                       layer will still contain the field. The output field will
                       contain null values for the input features that did not have the
-                      field. For example, if the input_layer contains a field named
-                      TYPE but the merge_layer does not contain TYPE, the output will
+                      field. For example, if the ``input_layer`` contains a field named
+                      TYPE but the ``merge_layer`` does not contain TYPE, the output will
                       contain TYPE, but its values will be null for all the features
-                      copied from the merge_layer.
+                      copied from the ``merge_layer``.
 
-                      You can control how fields in the merge_layer are written to the
+                      You can control how fields in the ``merge_layer`` are written to the
                       output layer using the following merge types that operate on a
-                      specified merge_layer field:
+                      specified ``merge_layer`` field:
 
-                      + Remove - The field in the merge_layer will be removed from the output layer.
-                      + Rename - The field in the merge_layer will be renamed in the output layer. You cannot rename a field in the merge_layer to a field in the inputLayer. If you want to make field names equivalent, use Match.
-                      + Match - A field in the merge_layer is made equivalent to a field in the input_layer specified by mergeValue. For example, the input_layer has a field named CODE and the merge_layer has a field named STATUS. You can match STATUS to CODE, and the output will contain the CODE field with values of the STATUS field used for features copied from the merge_layer. Type casting is supported (for example, double to integer, integer to string) except for string to numeric.
-                      REST web example:
-
-                      Syntax: This example matches Average_Sales to Mean_Sales,
-                              removesBonus, and renamesField4 to Errors.
-
-                      ```
-
-                        [{
-                            "mergeLayerField": "Mean_Sales",
-                            "mergeType": "Match",
-                            "mergeValue": "Average_Sales"
-                        },
-                        {
-                            "mergeLayerField": "Bonus",
-                            "mergeType": "Remove",
-                        },
-                        {
-                            "mergeLayerField": "Field4",
-                            "mergeType": "Rename",
-                            "mergeValue": "Errors"
-                        }]
-
-                      ```
-
+                            * ``Remove`` - The field in the ``merge_layer`` will be removed from the output layer.
+                            * ``Rename`` - The field in the ``merge_layer`` will be renamed in the output layer. 
+                              You cannot rename a field in the ``merge_layer`` to a field in the ``input_layer``. 
+                              If you want to make field names equivalent, use Match.
+                            * ``Match`` - A field in the merge_layer is made equivalent to a field in the ``input_layer`` 
+                              specified by ``merge_layer``. For example, the input_layer has a field named CODE 
+                              and the merge_layer has a field named STATUS. You can match STATUS to CODE, and 
+                              the output will contain the CODE field with values of the STATUS field used for 
+                              features copied from the merge_layer. Type casting is supported (for example, 
+                              double to integer, integer to string) except for string to numeric.
+                    
+                      Example: [{"mergeLayerField": "Mean_Sales","mergeType": "Match","mergeValue": "Average_Sales"},{"mergeLayerField": "Bonus","mergeType": "Remove",},{"mergeLayerField": "Field4","mergeType": "Rename","mergeValue": "Errors"}]
     ----------------  ---------------------------------------------------------------
     output_name       Optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               Optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of
+    context           Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
+
+                      #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                      #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                      #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                      #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                      #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+    ----------------  ---------------------------------------------------------------    
+    future            Optional boolean. If 'True', a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
+
+                      The default value is 'False'.
     ================  ===============================================================
 
-    :returns: FeatureLayer
+    :returns: result_layer : Output Features as feature layer item.
+
+    .. code-block:: python
+
+            # Usage Example: To merge census blocks from two states into one output layer.
+
+            merge_result = merge_layers(input_layer=il_block,
+                                       merge_layer=wi_block,
+                                       merge_attributes=[{"mergeLayerField" : "State_Code", "mergeType" : "Match", "mergeValue" : "statecode"}],
+                                       output_name="IL_WI_Census_Blocks")
     """
     kwargs = locals()
     tool_name = "MergeLayers"
@@ -399,7 +413,10 @@ def merge_layers(input_layer, merge_layer,
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "input_layer": (_FeatureSet, "inputLayer"),
