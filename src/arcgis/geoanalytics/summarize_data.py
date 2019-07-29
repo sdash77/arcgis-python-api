@@ -1009,41 +1009,74 @@ reconstruct_tracks.__annotations__ = {
                        'output_name': str}
 
 def summarize_attributes(input_layer,
-                         fields = None,
-                         summary_fields = None,
-                         output_name = None,
+                         fields=None,
+                         summary_fields=None,
+                         output_name=None,
                          gis=None,
+                         context=None,
                          future=False):
     """
-    Using either feature or tabular data, this tool summarizes statistics for specified fields.
+    .. image:: _static/images/summarize_attributes/summarize_attributes.png 
 
-    For example
+    ===========================================================================  ===============================================================
+    **Argument**                                                                 **Description**
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    input_layer                                                                  Required layer. The features that will be summarized. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    fields                                                                       Optional string. The fields that will be used to summarize like features. For example, 
+                                                                                 if you chose a field called property type with the values of commercial and residential, 
+                                                                                 all of the features with property type residential would be summarized together with 
+                                                                                 summary statistics calculated and all of the commercial features would be summarized together.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    summary_fields                                                               Optional list of dicts. A list of field names and statistical summary types you want 
+                                                                                 to calculate for features that are summarized together. Note that the count of features 
+                                                                                 with the same fields values is always returned. By default, all statistics are returned.
 
-    * Given locations of grocery stores with a field COMPANY_NAME, summarize the stores by the company name to determine statistics for each company.
+                                                                                 Syntax: [{"statisticType" : "<statistic type>", "onStatisticField" : "<field name>" }, ...]
 
-    * Given a table of grocery stores with fields COMPANY_NAME and COUNTY, summarize the stores by the company name and county to determine statistics for each company within each county.
+                                                                                 fieldName is the name of the fields in the input point layer.
 
-    This tool summarizes all the matching values in one or more fields and calculates statistics on them. The most basic statistic is the count of features that have been summarized together, but you can calculate more advanced statistics as well.
+                                                                                 statisticType is one of the following for numeric fields:
 
-    For example, suppose you have point features of store locations with a field representing the DISTRICT_MANAGER_NAME and you want to summarize coffee sales by manager. You can specify the field DISTRICT_MANAGER_NAME as the field to dissolve on, and all rows of data representing individual managers will be summarized. This means all store locations that are managed by Manager1 will be summarized into one row with summary statistics calculated. In this instance, statistics like the count of the number of stores and the sum of TOTAL_SALES for all stores that Manager1 manages would be calculated as well as for any other manager listed in the DISTRICT_MANAGER_NAME field.
+                                                                                    * Count - Totals the number of values of all the points in each polygon.
+                                                                                    * Sum - Adds the total value of all the points in each polygon.
+                                                                                    * Mean - Calculates the average of all the points in each polygon.
+                                                                                    * Min - Finds the smallest value of all the points in each polygon.
+                                                                                    * Max - Finds the largest value of all the points in each polygon.
+                                                                                    * Range - Finds the difference between the Min and Max values.
+                                                                                    * Stddev - Finds the standard deviation of all the points in each polygon.
+                                                                                    * Var - Finds the variance of all the points in each polygon.
 
-    Parameters:
+                                                                                 statisticType is one of the following for string fields:
 
-   input_layer: Input Features (feature input). Required parameter.
+                                                                                    * Count - Totals the number of strings for all the points in each polygon.
+                                                                                    * Any - Returns a sample string of a point in each polygon.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    output_name                                                                  Optional string. The task will create a feature service of the results. You define the name of the service.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    gis                                                                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    context                                                                      Optional dict. Context contains additional settings that affect task execution. For this task, 
+                                                                                 there is one setting:
 
-   fields: Summary Fields (str). Required parameter.
+                                                                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    future                                                                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
-   summary_fields: Summary Statistics (str/list). Optional parameter.
+                                                                                 The default value is 'False'.
+    ===========================================================================  ===============================================================
 
-   output_name: Output Features Name (str). Required parameter.
+    :returns: feature layer collection
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    .. code-block:: python
 
-   future: Optional, if True, the response is returned as a GPJob.
-Returns:
-   output - Output Features as a _FeatureSet
+            # Usage Example: To summarize similar types of storms to find the sum of property damage.
 
-
+            summarized_result = summarize_attributes(input_layer=storms, 
+                                                     fields="Storm_type",
+                                                     summary_fields=[{"statisticType" : "Sum", "onStatisticField" : "PropertyDamage"}],
+                                                     output_name="summarized_storms")
     """
     kwargs = locals()
 
@@ -1068,7 +1101,10 @@ Returns:
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     if isinstance(summary_fields, list):
         import json
