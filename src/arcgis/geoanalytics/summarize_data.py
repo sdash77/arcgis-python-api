@@ -619,21 +619,24 @@ def describe_dataset(input_layer,
 
 def join_features(target_layer,
                   join_layer,
-                  join_operation = """JoinOneToOne""",
-                  join_fields = None,
-                  summary_fields = None,
-                  spatial_relationship = None,
-                  spatial_near_distance = None,
-                  spatial_near_distance_unit = None,
-                  temporal_relationship = None,
-                  temporal_near_distance = None,
-                  temporal_near_distance_unit = None,
-                  attribute_relationship = None,
-                  join_condition = None,
-                  output_name = None,
+                  join_operation="JoinOneToOne",
+                  join_fields=None,
+                  summary_fields=None,
+                  spatial_relationship="Equals",
+                  spatial_near_distance=None,
+                  spatial_near_distance_unit=None,
+                  temporal_relationship=None,
+                  temporal_near_distance=None,
+                  temporal_near_distance_unit=None,
+                  attribute_relationship=None,
+                  join_condition=None,
+                  output_name=None,
                   gis=None,
+                  context=None,
                   future=False):
     """
+    .. image:: _static/images/join_features_geo/join_features_geo.png 
+
     Using either feature layers or tabular data, you can join features and records based on
     specific relationships between the input layers or tables. Joins will be determined by
     spatial, temporal, and attribute relationships, and summary statistics can be optionally
@@ -641,82 +644,162 @@ def join_features(target_layer,
 
     For example
 
-    * Given point locations of crime incidents with a time, join the crime data to itself
-      specifying a spatial relationship of crimes within 1 kilometer of each other and that
-      occurred within 1 hour of each other to determine if there are a sequence of crimes
-      close to each other in space and time.
+        * Given point locations of crime incidents with a time, join the crime data to itself
+          specifying a spatial relationship of crimes within 1 kilometer of each other and that
+          occurred within 1 hour of each other to determine if there are a sequence of crimes
+          close to each other in space and time.
 
-    * Given a table of ZIP Codes with demographic information and area features representing
-      residential buildings, join the demographic information to the residences so each
-      residence now has the information.
+        * Given a table of ZIP Codes with demographic information and area features representing
+          residential buildings, join the demographic information to the residences so each
+          residence now has the information.
 
-    The Join Features task works with two layers. Join Features joins attributes from one
+    The ``join_features`` task works with two layers. ``join_features`` joins attributes from one
     feature to another based on spatial, temporal, and attribute relationships or some
     combination of the three. The tool determines all input features that meet the specified
     join conditions and joins the second input layer to the first. You can optionally join
     all features to the matching features or summarize the matching features.
 
-    Join Features can be applied to points, lines, areas, and tables. A temporal join
+    ``join_features`` can be applied to points, lines, areas, and tables. A temporal join
     requires that your input data is time-enabled, and a spatial join requires that your
     data has a geometry.
 
 
-    ================================  ===============================================================
-    **Argument**                      **Description**
-    --------------------------------  ---------------------------------------------------------------
-    target_layer                      Required FeatureLayer. Target Features (feature input)
-    --------------------------------  ---------------------------------------------------------------
-    join_layer                        Required FeatureLayer. Join Features (feature input).
-    --------------------------------  ---------------------------------------------------------------
-    join_operation                    Required String. The join operation. Allowed values:
-                                      JoinOneToOne and JoinOneToMany
-    --------------------------------  ---------------------------------------------------------------
-    join_fields                       Optional String. Join Fields
-    --------------------------------  ---------------------------------------------------------------
-    summary_fields                    Optional String. Summary Statistics
-    --------------------------------  ---------------------------------------------------------------
-    spatial_relationship              Optional String. The spatial relationship. Choice list: ['Equals',
-                                      'Intersects', 'Contains', 'Within', 'Crosses', 'Touches',
-                                      'Overlaps', 'Near', 'NearGeodesic']
-    --------------------------------  ---------------------------------------------------------------
-    spatial_near_distance             Optional Float. Near Spatial Distance. This is required if the
-                                      `spatial_relationship` is defined as `NearGeodesic`.
-    --------------------------------  ---------------------------------------------------------------
-    spatial_near_distance_unit        Optional String. Near Spatial Distance Unit. This is required
-                                      if the `spatial_relationship` is defined as `NearGeodesic`.
-                                      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers',
-                                                   'NauticalMiles']
-    --------------------------------  ---------------------------------------------------------------
-    temporal_relationship             Optional String. Temporal Relationship.
-                                      Choice list : ['Equals', 'Intersects', 'During', 'Contains',
-                                                     'Finishes', 'FinishedBy', 'Meets', 'MetBy',
-                                                     'Overlaps', 'OverlappedBy', 'Starts',
-                                                     'StartedBy', 'Near']
-    --------------------------------  ---------------------------------------------------------------
-    temporal_near_distance            Optional Integer. Near Temporal Distance (int)
-    --------------------------------  ---------------------------------------------------------------
-    temporal_near_distance_unit       Optional String.Near Temporal Distance Unit
-                                      Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours',
-                                                  'Minutes', 'Seconds', 'Milliseconds']
-    --------------------------------  ---------------------------------------------------------------
-    attribute_relationship            Optional String. Attribute Relationships
-    --------------------------------  ---------------------------------------------------------------
-    join_condition                    Optional String. Join Condition
-    --------------------------------  ---------------------------------------------------------------
-    output_name                       Optional String. The task will create a feature service of the
-                                      results. You define the name of the service.
-    --------------------------------  ---------------------------------------------------------------
-    gis                               Optional GIS. The GIS object where the analysis will take place.
-    --------------------------------  ---------------------------------------------------------------
-    future                            Optional Boolean. If True, a GPJob is returned instead of
-                                      results. The GPJob can be queried on the status of the execution.
-    ================================  ===============================================================
+    ==========================================================================================================  =============================================================================================
+    **Argument**                                                                                                **Description**
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    target_layer                                                                                                Required layer. The table, point, line, or polygon features to be joined to. See :ref:`Feature Input<FeatureInput>`.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    join_layer                                                                                                  Required layer. The point, line, or polygon features that will be joined to the ``target_layer``. 
+                                                                                                                See :ref:`Feature Input<FeatureInput>`.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    join_operation                                                                                              Optional string. A string representing the type of join that will be applied. 
+                                      
+                                                                                                                Choice list: ['JoinOneToOne', 'JoinOneToMany'].
 
+                                                                                                                    * ``JoinOneToOne`` - If multiple join features are found that have the same relationships 
+                                                                                                                      with a single target feature, the attributes from the multiple join features will be 
+                                                                                                                      aggregated using the specified summary statistics. For example, if a point target 
+                                                                                                                      feature is found within two separate polygon join features, the attributes from 
+                                                                                                                      the two polygons will be aggregated before being transferred to the output point 
+                                                                                                                      feature class. If one polygon has an attribute value of 3 and the other has a value 
+                                                                                                                      of 7, and a SummaryField of sum is selected, the aggregated value in the output 
+                                                                                                                      feature class will be 10. There will always be a Count field calculated, with a 
+                                                                                                                      value of 2, for the number of features specified. This is the default.
+                                                                                                                    * ``JoinOneToMany`` - If multiple join features are found that have the same relationship 
+                                                                                                                      with a single target feature, the output feature class will contain multiple copies (records) 
+                                                                                                                      of the target feature. For example, if a single point target feature is found within two 
+                                                                                                                      separate polygon join features, the output feature class will contain two copies of the 
+                                                                                                                      target feature: one record with the attributes of the first polygon, and another record 
+                                                                                                                      with the attributes of the second polygon. There are no summary statistics calculated 
+                                                                                                                      with this method.
 
+                                                                                                                The default value is 'JoinOneToOne'.      
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    join_fields                                                                                                 Optional list of dicts. A list of modifications to field names in the joinLayer to be 
+                                                                                                                made before completing analysis. Any field that is removed will not have 
+                                                                                                                statistics calculated on it.
+
+                                                                                                                Syntax: [{ "action" : "action", "field" : "fieldname1"}, { "action" : "action", "field" : "initial_fieldname", "to" : "new_fieldname"}]
+
+                                                                                                                ``action`` can be the following:
+
+                                                                                                                    * remove - Remove a field from analysis and output .
+                                                                                                                    * rename - Rename a field before running analysis.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    summary_fields                                                                                              Optional list of dicts. A list of field names and statistical summary types you want to calculate. 
+                                                                                                                Note that the count is always returned. By default, all statistics are returned.
+
+                                                                                                                Syntax: [{"statisticType" : "<statistic type>", "onStatisticField" : "<field name>" }, ...]
+
+                                                                                                                fieldName is the name of the fields in the target layer.
+
+                                                                                                                statisticType is one of the following for numeric fields:
+
+                                                                                                                    * ``Count`` - Totals the number of values of all the points in each polygon.
+                                                                                                                    * ``Sum`` - Adds the total value of all the points in each polygon.
+                                                                                                                    * ``Mean`` - Calculates the average of all the points in each polygon.
+                                                                                                                    * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                                                                                                    * ``Max`` - Finds the largest value of all the points in each polygon.
+                                                                                                                    * ``Range`` - Finds the difference between the Min and Max values.
+                                                                                                                    * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+                                                                                                                    * ``Var`` - Finds the variance of all the points in each polygon.
+
+                                                                                                                statisticType is one of the following for string fields:
+
+                                                                                                                    * ``Count`` - Totals the number of strings for all the points in each polygon.
+                                                                                                                    * ``Any`` - Returns a sample string of a point in each polygon.  
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    spatial_relationship                                                                                        Optional string. Defines the spatial relationship used to spatially join features.
+    
+                                                                                                                Choice list: ['Equals', 'Intersects', 'Contains', 'Within', 'Crosses', 'Touches', 'Overlaps', 'Near', 'NearGeodesic']
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    spatial_near_distance (Required if ``spatial_relationship`` is Near or NearGeodesic)                        Optional float.  A float value used for the search distance to determine if 
+                                                                                                                the target features are near the join features. This is only applied if ``Near``, 
+                                                                                                                or ``NearGeodesic`` is the selected ``spatial_relationship``. You can only enter a 
+                                                                                                                single distance value. The units of the distance values are supplied by the 
+                                                                                                                ``spatial_near_distance`` parameter.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    spatial_near_distance_unit (Required if ``spatial_relationship`` is Near or NearGeodesic)                   Optional string. The linear unit to be used with the distance value specified in ``spatial_near_distance``.
+                                                                                            
+                                                                                                                Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    temporal_relationship                                                                                       Optional string. Defines the temporal relationship used to temporally join features.
+                                                                                            
+                                                                                                                Choice list : ['Equals', 'Intersects', 'During', 'Contains', 
+                                                                                                                'Finishes', 'FinishedBy', 'Meets', 'MetBy', 'Overlaps', 'OverlappedBy', 'Starts', 'StartedBy', 'Near']
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    temporal_near_distance (Required if ``temporal_relationship`` is Near, NearBefore, or NearAfter)            Optional integer. An integer value used for the temporal search distance to determine 
+                                                                                                                if the target features are temporally near the join features. This is only applied if Near, 
+                                                                                                                NearBefore, or NearAfter is the selected ``temporal_relationship``. You can only enter a single 
+                                                                                                                distance value. The units of the distance values are supplied by the ``temporal_near_distance_unit`` parameter.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    temporal_near_distance_unit (Required if ``temporal_relationship`` is Near, NearBefore, or NearAfter)       Optional string.The temporal unit to be used with the distance value specified in ``temporal_near_distance``.
+
+                                                                                                                Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    attribute_relationship                                                                                      Optional list of dicts. A target field, relationship, and join field used to join equal attributes. 
+
+                                                                                                                Syntax: [{ "targetField" : "fieldname1", "joinField" : "fieldname2", "operator" : "operator" }]
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    join_condition                                                                                              Optional string. Applies a condition to specified fields. Only features with fields that meet 
+                                                                                                                these conditions will be joined. For example, to apply a join to a dataset for only those features 
+                                                                                                                where health_spending is greater than 20 percent of income, apply a join condition of target['health_spending'] > (join['income'] * .20) 
+                                                                                                                using the field health_spending from the first dataset (``target_layer``) and the income field from the second dataset (``join_layer``).
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    output_name                                                                                                 Optional string. The task will create a feature service of the
+                                                                                                                results. You define the name of the service.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    gis                                                                                                         Optional GIS. The GIS object where the analysis will take place.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    context                                                                                                     Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                                                                #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                                                #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                                                                                #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+    future                                                                                                      Optional boolean. If 'True', a GPJob is returned instead of
+                                                                                                                results. The GPJob can be queried on the status of the execution.
+
+                                                                                                                The default value is 'False'.
+    ==========================================================================================================  =============================================================================================
 
     :Returns: Output Features as Feature Layer Collection Item
 
+    .. code-block:: python
 
+            # Usage Example: To find power outages in your state that may have been caused by a lightning strike. 
+
+            output = join_features(target_layer=outages_layer, 
+                                   join_layer=lightning, 
+                                   join_operation="JoinOneToMany", 
+                                   spatial_relationship="Near", 
+                                   spatial_near_distance=20,  
+                                   spatial_near_distance_unit="Miles", 
+                                   temporal_relationship="NearAfter", 
+                                   temporal_near_distance=30, 
+                                   temporal_near_distance_unit="Minutes", 
+                                   output_name="LightningOutages")
     """
     kwargs = locals()
 
@@ -740,7 +823,10 @@ def join_features(target_layer,
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "target_layer": (_FeatureSet, "targetLayer"),
