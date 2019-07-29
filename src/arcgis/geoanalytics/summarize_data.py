@@ -1102,69 +1102,178 @@ summarize_attributes.__annotations__ = {
 
 def summarize_within(summarized_layer,
                      summary_polygons=None,
-                     bin_type = None,
-                     bin_size = None,
-                     bin_size_unit = None,
-                     standard_summary_fields = None,
-                     weighted_summary_fields = None,
-                     sum_shape = True,
-                     shape_units = None,
+                     bin_type=None,
+                     bin_size=None,
+                     bin_size_unit=None,
+                     standard_summary_fields=None,
+                     weighted_summary_fields=None,
+                     sum_shape=True,
+                     shape_units=None,
                      group_by_field=None,
                      minority_majority=False,
                      percent_shape=False,
-                     output_name = None,
+                     output_name=None,
                      gis=None,
+                     context=None,
                      future=False):
     """
-    Finds areas (and portions of areas) that overlap between two layers and calculates statistics about the overlap.
+    .. image:: _static/images/summarize_within_geo/summarize_within_geo.png 
 
-    For example
+    The ``summarize_within`` task finds features (and portions of features) that are within the 
+    boundaries of areas in the first input layer. The following are examples:
 
-    * Given a layer of watershed areas and a layer of land-use areas by land-use type, calculate total acreage of land-use type for each watershed.
+        * Given a layer of watershed boundaries and a layer of land-use boundaries, calculate the total acreage of land-use type for each watershed.
+        * Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.
+        * Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
+  
+    You can think of ``summarize_within`` as taking two layers and stacking them on top of each other. One of the layers, 
+    ``summary_polygons``, must be a polygon layer, and imagine that these polygon boundaries are all colored red. The other layer, 
+    ``summarized_layer``, can be any feature type—point, line, or polygon. After stacking these layers on top of each other, you 
+    peer down through the stack and count the number of features in ``summarized_layer`` that fall within the polygons with the 
+    red boundaries (``summary_polygons``). Not only can you count the number of features, you can calculate simple statistics about 
+    the attributes of the features in ``summarized_layer``, such as sum, mean, minimum, maximum, and so on.
 
-    * Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city.
+    ===========================================================================  ===============================================================
+    **Argument**                                                                 **Description**
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    summarized_layer                                                             Required layer. Point, line, or polygon features that will be summarized for each 
+                                                                                 polygon in ``summary_polygons`` or bins. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    summary_polygons                                                             Optional layer. The polygon features. Features, or portions of features, 
+                                                                                 in ``summarized_layer`` that fall within the boundaries of these polygons 
+                                                                                 will be summarized. You can choose to summarize within a polygon layer that you 
+                                                                                 provide or within square or hexagon bins that are generated when the tool runs.
+                                                                                 See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    bin_type (Required if ``summary_polygons`` is not specified)                 Optional string. The type of bin that will be generated and ``summarized_layer`` will be summarized into. 
 
+                                                                                 Choice list: ['Hexagon', 'Square']
 
+                                                                                 Either ``bin_type`` or ``summary_polygons`` must be specified. If ``bin_type`` is chosen, 
+                                                                                 then ``bin_size`` and ``bin_size_unit`` - specifying the size of the bin - must be included.
 
+                                                                                 .. note::
+                                                                                       Analysis using Square or Hexagon bins requires a projected coordinate system. 
+                                                                                       When aggregating layers into bins, the input layer or processing extent (``processSR``) 
+                                                                                       must have a projected coordinate system. At 10.5.1, 10.6, and 10.6.1, if a projected 
+                                                                                       coordinate system is not specified when running analysis, the World Cylindrical Equal 
+                                                                                       Area (WKID 54034) projection will be used. At 10.7 or later, if a projected coordinate 
+                                                                                       system is not specified when running analysis, a projection will be picked based on 
+                                                                                       the extent of the data.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    bin_size  (Required if ``bin_type`` is specified)                            Optional float. The distance for the bins of type ``bin_type``. 
+                                                                                 When generating bins, for Square, the number and units specified determine the 
+                                                                                 height and length of the square, and for Hexagon, the number and units specified 
+                                                                                 determine the distance between parallel sides.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    bin_size_unit (Required if ``bin_size`` is specified)                        Optional string. The linear distance unit for the bins that ``summarized_layer`` will be summarized into.
+                                                     
+                                                                                 Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    standard_summary_fields                                                      Optional list of dicts. A list of field names and statistical summary type that you want to calculate 
+                                                                                 for all features in ``summarized_layer`` that are within each polygon in ``summary_polygons`` or bins. 
+                                                                                 The standard statistics are calculated using the whole attribute values from any feature 
+                                                                                 that is within ``summary_polygons``.
 
-   Parameters:
+                                                                                 Syntax: [{"statisticType" : "<statistic type>", "onStatisticField" : "<field name>" }, ...]
 
-   summarized_layer: Layer To Summarize (feature input). Required parameter.
+                                                                                 fieldName is the name of the fields in the input point layer.
 
-   summary_polygons: Summary Polygons Layer (feature input). Optional parameter.
+                                                                                 statisticType is one of the following for numeric fields:
 
-   bin_type: Output Bin Type (str). Optional parameter.
-      Choice list:['Square', 'Hexagon']
+                                                                                    * ``Count`` - Totals the number of features in each polygon.
+                                                                                    * ``Sum`` - Adds the total value of all the features in each polygon.
+                                                                                    * ``Mean`` - Calculates the average of all the features in each polygon.
+                                                                                    * ``Min`` - Finds the smallest value of all the features in each polygon.
+                                                                                    * ``Max`` - Finds the largest value of all the features in each polygon.
+                                                                                    * ``Range`` - Finds the difference between Min and Max.
+                                                                                    * ``Stddev`` - Finds the standard deviation of all the features in each polygon.
+                                                                                    * ``Var`` - Finds the variance of all the features in each polygon.
 
-   bin_size: Output Bin Size (float). Optional parameter.
+                                                                                 statisticType is one of the following for string fields:
 
-   bin_size_unit: Output Bin Size Unit (str). Optional parameter.
-      Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+                                                                                    * ``Count`` - Totals the number of strings for all the features in each polygon.
+                                                                                    * ``Any`` - Returns a sample string of a feature in each polygon.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    weighted_summary_fields                                                      Optional list of dicts. A list of field names and statistical summary type that you want to calculate 
+                                                                                 for all features in ``summarized_layer`` that are within each polygon in ``summary_polygons`` or bins. 
+                                                                                 The weighted statistics are calculated using the geographically weighted attribute values 
+                                                                                 from features that are within ``summary_polygons``. Resulting fields from proportional statistics 
+                                                                                 will be denoted with a p. Weighted statistics can only be applied to ``summarized_layer`` that 
+                                                                                 are lines or polygons.
 
-   standard_summary_fields: Unweighted Summary Statistics (str). Optional parameter.
+                                                                                 Syntax: [{"statisticType" : "<statistic type>", "onStatisticField" : "<field name>" }, ...]
 
-   weighted_summary_fields: Proportional Summary Statistics (str). Optional parameter.
+                                                                                 fieldName is the name of the fields in the input point layer.
 
-   sum_shape: Summarize Shape (bool). Optional parameter.
+                                                                                 statisticType is one of the following for numeric fields:
 
-   shape_units: Shape Measure Output Unit (str). Optional parameter.
-      Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'SquareMeters', 'SquareKilometers', 'Hectares', 'SquareFeet', 'SquareYards', 'SquareMiles', 'Acres']
+                                                                                    * ``Count`` - The count of each field multiplied by the proportion of the summarized layer within the polygons.
+                                                                                    * ``Sum`` - The sum of weighted of values in each field. Where the weight applied is the proportion of the summarized layer within the polygons.
+                                                                                    * ``Mean`` - The weighted mean of values in each field. Where the weight applied is the proportion of the summarized layer within the polygons.
+                                                                                    * ``Min`` - The minimum of weighted values in each field. Where the weight applied is the proportion of the summarized layer within the polygons.
+                                                                                    * ``Max`` - The maximum of weighted values in each field. Where the weight applied is the proportion of the summarized layer within the polygons.
+                                                                                    * ``Range`` - Finds the difference between Min and Max.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    sum_shape                                                                    Optional boolean. A boolean value that instructs the task to calculate statistics based on the 
+                                                                                 shape type of ``summarized_layer``, such as the length of lines or areas of polygons 
+                                                                                 of ``summarized_layer`` within each polygon in ``summary_polygons``.
 
-   group_by_field: This is a field of the summarized_layer features that you can use to calculate statistics separately for each unique attribute value. For example, suppose the sumWithinLayer contains city boundaries and the summaryPolygons features are parcels. One of the fields of the parcels is Status which contains two values: VACANT and OCCUPIED. To calculate the total area of vacant and occupied parcels within the boundaries of cities, use Status as the groupByField field. This parameter is available at ArcGIS Enterprise 10.6.1+.
+                                                                                 The default value is 'True'.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    shape_units                                                                  Optional string. The units used to calculate ``sum_shape``.
 
-   minority_majority: This boolean parameter is applicable only when a group_by_field is specified. If true, the minority (least dominant) or the majority (most dominant) attribute values for each group field are calculated. Two new fields are added to the resultLayer prefixed with Majority_ and Minority_. This parameter is available at ArcGIS Enterprise 10.6.1+. The default is false.
+                                                                                 Values:
 
-   percent_shape: This boolean parameter is applicable only when a group_by_field is specified. If set to true, the percentage of each unique group_by_field value is calculated for each sum within layer polygon. The default is false. This parameter is available at ArcGIS Enterprise 10.6.1+.
+                                                                                    * When ``summarized_layer`` contains polygons, Choice list: ['Acres', 'Hectares', 'SquareMeters', 'SquareKilometers', 'SquareMiles', 'SquareYards', 'SquareFeet'].
+                                                                                    * When ``summarized_layer`` contains lines, Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    group_by_field                                                               Optional string. This is a field of the ``summarized_layer`` features that you can use to calculate 
+                                                                                 statistics separately for each unique attribute value. For example, suppose the ``summarized_layer`` contains city boundaries and the summaryPolygons features are parcels. `
+                                                                                 One of the fields of the parcels is Status which contains two values: VACANT and OCCUPIED. 
+                                                                                 To calculate the total area of vacant and occupied parcels within the boundaries of cities, 
+                                                                                 use Status as the ``group_by_field`` field. This parameter is available at ArcGIS Enterprise 10.6.1+.
 
-   output_name: Output Features Name (str). Required parameter.
+                                                                                 When a ``group_by_field`` field is provided, the service returns a table containing the 
+                                                                                 statistics in the groupBySummaryoutput parameter.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    minority_majority                                                            Optioal boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. 
+                                                                                 If true, the minority (least dominant) or the majority (most dominant) attribute values 
+                                                                                 for each group field are calculated. Two new fields are added to the ``result_layer`` prefixed with 
+                                                                                 Majority_ and Minority_. This parameter is available at ArcGIS Enterprise 10.6.1+.
 
-   gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+                                                                                 The default value is 'False'.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    percent_shape                                                                Optioal boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified. 
+                                                                                 If set to true, the percentage of each unique ``group_by_field`` value is calculated for 
+                                                                                 each sum within layer polygon. The default is false. This parameter is available at ArcGIS Enterprise 10.6.1+.
 
+                                                                                 The default value is 'False'.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    output_name                                                                  Optional string. The task will create a feature service of the results. You define the name of the service.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    context                                                                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-Returns:
-   output - Output Features as a layer Item
+                                                                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    gis                                                                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ---------------------------------------------------------------------------  ---------------------------------------------------------------
+    future                                                                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    ===========================================================================  ===============================================================
 
+    :returns: result_layer : Output Features as feature layer item.
 
+    .. code-block:: python
+
+            # Usage Example: To calculate the distance and average slope of bike lanes within each city district.
+
+            summarize_within_result = summarize_within(summary_polygons=districts, 
+                                                       summarized_layer=bike_lanes,
+                                                       weighted_summary_fields=[{"statisticType" : "Average","onStatisticField" : "Slope"}],
+                                                       output_name="summary_of_bike_lanes")
     """
     kwargs = locals()
 
@@ -1189,7 +1298,10 @@ Returns:
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "summary_polygons": (_FeatureSet, "summaryPolygons"),
