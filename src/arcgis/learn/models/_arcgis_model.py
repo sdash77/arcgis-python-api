@@ -14,10 +14,12 @@ logger = logging.getLogger()
 def _create_zip(zipname, path):
     import shutil
 
-    temp_dir = tempfile.TemporaryDirectory().name
-    zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
     if os.path.exists(os.path.join(path, zipname) + '.zip'):
         os.remove(os.path.join(path, zipname) + '.zip')
+        
+    temp_dir = tempfile.TemporaryDirectory().name    
+    zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
+    
     shutil.move(zip_file, path)
 
 
