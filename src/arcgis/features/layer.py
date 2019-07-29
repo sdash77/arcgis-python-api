@@ -964,9 +964,9 @@ class FeatureLayer(Layer):
             return self._query(url, params, raw=as_raw)
 
         result = None
-        if 'advancedQueryCapabilities' not in self.properties or \
-                'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
-                not self.properties['advancedQueryCapabilities']['supportsPagination']:
+        if ('advancedQueryCapabilities' not in self.properties or \
+           'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
+           not self.properties['advancedQueryCapabilities']['supportsPagination']):
             params['returnIdsOnly'] = True
             oid_info = self._query(url, params, raw=as_raw)
             params['returnIdsOnly'] = False
