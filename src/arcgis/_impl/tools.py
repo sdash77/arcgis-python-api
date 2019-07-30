@@ -2051,7 +2051,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        return gpjob.result()
+        result = gpjob.result()
+        if 'hot_spots_result_layer' in result:
+            return result['hot_spots_result_layer']
+        return result
     #----------------------------------------------------------------------
     def find_nearest(self,
                      analysis_layer,
