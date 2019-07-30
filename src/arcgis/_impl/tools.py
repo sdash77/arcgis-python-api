@@ -744,6 +744,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         ret = gpjob.result()
+        if 'aggregatedLayer' in ret and output_name:
+            return ret['aggregatedLayer']
         return ret
     #----------------------------------------------------------------------
     def choose_best_facilities(self,
@@ -875,7 +877,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        return gpjob.result()
+        ret = gpjob.result()
+        if output_name is not None and 'allocatedDemandLocationsLayer' in ret:
+            return ret['allocatedDemandLocationsLayer']
+        return ret
     #----------------------------------------------------------------------
     def connect_origins_to_destinations(self,
                                         origins_layer,
@@ -980,7 +985,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        return gpjob.result()
+        ret = gpjob.result()
+        if output_name is not None and 'routesLayer' in ret:
+            return ret['routesLayer']
+        return ret
     #----------------------------------------------------------------------
     def create_drive_time_areas(self,
                                 input_layer,
@@ -1080,7 +1088,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        return gpjob.result()
+        ret = gpjob.result()
+        if output_name is not None and \
+           'driveTimeAreasLayer' in ret:
+            return ret['driveTimeAreasLayer']
+        return ret
     #----------------------------------------------------------------------
     def create_route_layers(self,
                             route_data_item,
@@ -1125,7 +1137,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        return gpjob.result()
+        "routeLayers"
+        ret = gpjob.result()
+        if output_name is not None and \
+           "routeLayers" in ret:
+            return ret["routeLayers"]
+        return ret
     #----------------------------------------------------------------------
     def create_buffers(self,
                        input_layer,
@@ -1210,6 +1227,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         ret = gpjob.result()
+        if output_name is not None and \
+           'bufferLayer' in ret:
+            return ret['bufferLayer']
         return ret
     #----------------------------------------------------------------------
     def calculate_density(self,
@@ -1312,6 +1332,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         ret = gpjob.result()
+        if output_name is not None and 'resultLayer' in ret:
+            return ret['resultLayer']
         return ret
     #----------------------------------------------------------------------
     def create_viewshed(self,
@@ -1410,7 +1432,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        return gpjob.result()
+
+        ret = gpjob.result()
+        if output_name is not None and 'viewshedLayer' in ret:
+            return ret['viewshedLayer']
+        return ret
     #----------------------------------------------------------------------
     def create_watersheds(self,
                           input_layer,
@@ -1480,7 +1506,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        return gpjob.result()
+        ret = gpjob.result()
+        if output_name is not None and 'snapPourPtsLayer' in ret:
+            return ret['snapPourPtsLayer']
+        return ret
     #----------------------------------------------------------------------
     def derive_new_locations(self,
                              input_layers=[],
