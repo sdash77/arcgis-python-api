@@ -12,7 +12,7 @@ import concurrent.futures
 
 import arcgis
 from arcgis.gis import GIS
-from arcgis.features import FeatureSet, FeatureCollection
+from arcgis.features import FeatureSet, FeatureCollection, Table
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
@@ -474,10 +474,12 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
 
     ret_val = output_val
     if output_val is not None:
-        if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+        if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData, Table]:
             jsondict = output_val
             if 'mapImage' in jsondict:  # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
                 ret_val = jsondict
+            elif ret_type == Table and 'url' in jsondict:
+                ret_val = arcgis.features.Table(jsondict['url'], gptool._gis)
             elif ret_type == FeatureSet and 'url' in jsondict:
                 ret_val = arcgis.features.FeatureLayer(jsondict['url'], gptool._gis)
             else:

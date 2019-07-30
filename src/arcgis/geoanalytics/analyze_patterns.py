@@ -9,6 +9,7 @@ from datetime import datetime as _datetime
 import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
+from arcgis.features import Table as _Table
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
@@ -32,8 +33,11 @@ def forest(input_layer,
            exp_var_matching=None,
            output_name=None,
            gis=None,
+           context=None,
            future=False):
     """
+    .. image:: _static/images/forest/forest.png 
+
     The 'forest' method is a forest-based classification and regression
     task that creates models and generates predictions using an adaptation of
     Leo Breiman's random forest algorithm, which is a supervised machine
@@ -60,128 +64,175 @@ def forest(input_layer,
           bedrooms, distance to schools, proximity to major highways, average income, and crime counts
           can be used to predict sale prices of similar homes.
 
+    .. note::
+        Forest Based Classification and Regression is available at ArcGIS Enterprise 10.7.
 
-    **Forest Based Classification and Regression is available at ArcGIS Enterprise 10.7.**
+    =========================================================================   ===========================================================================
+    **Argument**                                                                **Description**
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    input_layer                                                                 Required layer. The features that will be used to train the dataset. 
+                                                                                This layer must include fields representing the variable to predict 
+                                                                                and the explanatory variables. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    var_prediction                                                              Required dict. The variable from the ``input_layer`` parameter
+                                                                                containing the values to be used to train the model, and a
+                                                                                boolean denoting if it's categorical. This field contains known
+                                                                                (training) values of the variable that will be used to predict
+                                                                                at unknown locations.
 
+                                                                                Syntax: {"fieldName":"<field name>", "categorical":bool}
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    var_explanatory                                                             Required list. A list of fields representing the explanatory
+                                                                                variables and a boolean value denoting whether the fields are
+                                                                                categorical. The explanatory variables help predict the value
+                                                                                or category of the ``var_prediction`` parameter. Use the
+                                                                                categorical parameter for any variables that represent classes
+                                                                                or categories (such as land cover or presence or absence).
+                                                                                Specify the variable as 'True' for any that represent classes or
+                                                                                categories such as land cover or presence or absence and 'False'
+                                                                                if the variable is continuous.
 
-    ==========================   ===============================================================
-    **Argument**                 **Description**
-    --------------------------   ---------------------------------------------------------------
-    input_layer                  required FeatureSet, The table, point, line or polygon features
-                                 containing potential incidents.
-    --------------------------   ---------------------------------------------------------------
-    var_prediction               Required dict. The variable from the input_layer parameter
-                                 containing the values to be used to train the model, and a
-                                 boolean denoting if it's categorical. This field contains known
-                                 (training) values of the variable that will be used to predict
-                                 at unknown locations.
-    --------------------------   ---------------------------------------------------------------
-    var_explanatory              Required List. A list of fields representing the explanatory
-                                 variables and a Boolean value denoting whether the fields are
-                                 categorical. The explanatory variables help predict the value
-                                 or category of the `var_prediction` parameter. Use the
-                                 categorical parameter for any variables that represent classes
-                                 or categories (such as land cover or presence or absence).
-                                 Specify the variable as true for any that represent classes or
-                                 categories such as land cover or presence or absence and false
-                                 if the variable is continuous.
-    --------------------------   ---------------------------------------------------------------
-    trees                        Required int. The number of trees to create in the forest model.
-                                 More trees will generally result in more accurate model
-                                 prediction, but the model will take longer to calculate.
-    --------------------------   ---------------------------------------------------------------
-    max_tree_depth               Optional int. The maximum number of splits that will be made
-                                 down a tree. Using a large maximum depth, more splits will be
-                                 created, which may increase the chances of overfitting the
-                                 model. The default is data driven and depends on the number of
-                                 trees created and the number of variables included.
-    --------------------------   ---------------------------------------------------------------
-    random_vars                  Optional Int. Specifies the number of explanatory variables
-                                 used to create each decision tree.Each of the decision trees in
-                                 the forest is created using a random subset of the explanatory
-                                 variables specified. Increasing the number of variables used in
-                                 each decision tree will increase the chances of overfitting
-                                 your model particularly if there is one or a couple dominant
-                                 variables. A common practice is to use the square root of the
-                                 total number of explanatory variables (fields, distances, and
-                                 rasters combined) if your variablePredict is numeric or divide
-                                 the total number of explanatory variables (fields, distances,
-                                 and rasters combined) by 3 if var_prediction is categorical.
-    --------------------------   ---------------------------------------------------------------
-    sample_size                  Optional int. Specifies the percentage of the input_layer used
-                                 for each decision tree. The default is 100 percent of the data.
-                                 Samples for each tree are taken randomly from two-thirds of the
-                                 data specified.
-    --------------------------   ---------------------------------------------------------------
-    min_leaf_size                Optional int. The minimum number of observations required to
-                                 keep a leaf (that is the terminal node on a tree without
-                                 further splits). The default minimum for regression is 5 and
-                                 the default for classification is 1. For very large data,
-                                 increasing these numbers will decrease the run time of the
-                                 tool.
-    --------------------------   ---------------------------------------------------------------
-    prediction_type              Specifies the operation mode of the tool. The tool can be run to
-                                 train a model to only assess performance, or train a model and
-                                 predict features. Prediction types are as follows:
+                                                                                Syntax: [{"fieldName":"<field name>", "categorical":bool},...]
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    trees                                                                       Required integer. The number of trees to create in the forest model.
+                                                                                More trees will generally result in more accurate model
+                                                                                prediction, but the model will take longer to calculate.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    max_tree_depth                                                              Optional integer. The maximum number of splits that will be made
+                                                                                down a tree. Using a large maximum depth, more splits will be
+                                                                                created, which may increase the chances of overfitting the
+                                                                                model. The default is data driven and depends on the number of
+                                                                                trees created and the number of variables included. 
+                                                                                The ``max_tree_depth`` must be positive and less than or equal to 30.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    random_vars                                                                 Optional integer. Specifies the number of explanatory variables
+                                                                                used to create each decision tree.Each of the decision trees in
+                                                                                the forest is created using a random subset of the explanatory
+                                                                                variables specified. Increasing the number of variables used in
+                                                                                each decision tree will increase the chances of overfitting
+                                                                                your model particularly if there is one or a couple dominant
+                                                                                variables. A common practice is to use the square root of the
+                                                                                total number of explanatory variables (fields, distances, and
+                                                                                rasters combined) if your variablePredict is numeric or divide
+                                                                                the total number of explanatory variables (fields, distances,
+                                                                                and rasters combined) by 3 if ``var_prediction`` is categorical.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    sample_size                                                                 Optional integer. Specifies the percentage of the ``input_layer`` used
+                                                                                for each decision tree.
+                                                                                Samples for each tree are taken randomly from two-thirds of the
+                                                                                data specified.
 
-                                    + Train - This is the default. A model will be trained, but
-                                      no predictions will be generated. Use this option to
-                                      assess the accuracy of your model before generating
-                                      predictions. This option will output model diagnostics in
-                                      the messages window and a chart of variable importance.
-                                    + TrainAndPredict - Predictions or classifications will be
-                                      generated for features. Explanatory variables must be
-                                      provided for both the training features and the features
-                                      to be predicted. The output of this option will be a
-                                      feature service, model diagnostics, and an optional
-                                      table of variable importance.
-    --------------------------   ---------------------------------------------------------------
-    features_to_predict          Optional dict. The variable from the `input_layer` parameter
-                                 containing the values to be used to train the model, and a
-                                 boolean denoting if it's categorical. This field contains known
-                                 (training) values of the variable that will be used to predict
-                                 at unknown locations.
-    --------------------------   ---------------------------------------------------------------
-    validation                   Optional Int. Specifies the percentage (between 10 percent
-                                 and 50 percent) of inFeatures to reserve as the test dataset
-                                 for validation. The model will be trained without this random
-                                 subset of data, and the observed values for those features will
-                                 be compared to the predicted value. The default is 10 percent.
-    --------------------------   ---------------------------------------------------------------
-    importance_tbl               Optional Boolean. Specifies whether an output table will be
-                                 generated that contains information describing the importance
-                                 of each explanatory variable used in the model created.
-    --------------------------   ---------------------------------------------------------------
-    exp_var_matching             A list of fields representing the explanatory variables and a
-                                 boolean values denoting if the fields are categorical. The
-                                 explanatory variables help predict the value or category of the
-                                 variable_predict. Use the categorical parameter for any
-                                 variables that represent classes or categories (such as
-                                 landcover or presence or absence). Specify the variable as
-                                 true for any that represent classes or categories such as
-                                 landcover or presence or absence and false if the variable is
-                                 continuous.
+                                                                                The default is 100 percent of the data.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    min_leaf_size                                                               Optional integer. The minimum number of observations required to
+                                                                                keep a leaf (that is the terminal node on a tree without
+                                                                                further splits). For very large data,
+                                                                                increasing these numbers will decrease the run time of the
+                                                                                tool.
 
-                                 Syntax: [{"fieldName":"<explanatory field name>", "categorical":true},
+                                                                                The default minimum for regression is 5 and
+                                                                                the default for classification is 1.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    prediction_type                                                             Optional string. Specifies the operation mode of the tool. The tool can be run to
+                                                                                train a model to only assess performance, or train a model and
+                                                                                predict features. Prediction types are as follows:
+                
+                                                                                    + ``Train`` - A model will be trained, but
+                                                                                      no predictions will be generated. Use this option to
+                                                                                      assess the accuracy of your model before generating
+                                                                                      predictions. This option will output model diagnostics in
+                                                                                      the messages window and a chart of variable importance.
+                                                                                    + ``TrainAndPredict`` - Predictions or classifications will be
+                                                                                      generated for features. Explanatory variables must be
+                                                                                      provided for both the training features and the features
+                                                                                      to be predicted. The output of this option will be a
+                                                                                      feature service, model diagnostics, and an optional
+                                                                                      table of variable importance.
+                
+                                                                                The default value is 'Train'.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    features_to_predict (Required if using ``TrainAndPredict``)                 Optional layer. A feature layer representing locations where predictions will be made. 
+                                                                                This layer must include explanatory variable fields that correspond to fields used in ``input_layer``. 
+                                                                                This parameter is only used when the ``prediction_type`` is ``TrainAndPredict`` and is required in that case. 
+                                                                                See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    validation                                                                  Optional integer. Specifies the percentage (between 10 percent
+                                                                                and 50 percent) of inFeatures to reserve as the test dataset
+                                                                                for validation. The model will be trained without this random
+                                                                                subset of data, and the observed values for those features will
+                                                                                be compared to the predicted value. 
+                                                                                
+                                                                                The default value is 10 percent.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    importance_tbl                                                              Optional boolean. Specifies whether an output table will be
+                                                                                generated that contains information describing the importance
+                                                                                of each explanatory variable used in the model created.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    exp_var_matching                                                            Optional list of dicts. A list of fields representing the explanatory variables and a
+                                                                                boolean values denoting if the fields are categorical. The
+                                                                                explanatory variables help predict the value or category of the
+                                                                                variable_predict. Use the categorical parameter for any
+                                                                                variables that represent classes or categories (such as
+                                                                                landcover or presence or absence). Specify the variable as
+                                                                                'True' for any that represent classes or categories such as
+                                                                                landcover or presence or absence and 'False' if the variable is
+                                                                                continuous.
+                
+                                                                                Syntax: [{"fieldName":"<explanatory field name>", "categorical":bool},
+                
+                                                                                    + fieldname is the name of the field in the ``input_layer`` used
+                                                                                      to predict the ``var_prediction``.
+                                                                                    + categorical is one of: 'True' or 'False'. A string field should
+                                                                                      always be 'True', and a continue value should always be set as 'False'.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    output_name                                                                 Optional string. The task will create a feature service of the
+                                                                                results. You define the name of the service.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    gis                                                                         Optional GIS. The GIS on which this tool runs. If not
+                                                                                specified, the active GIS is used.
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    context                                                                     Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+ 
+                                                                                #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                                                #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.  
+    -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+    future                                                                      Optional boolean. If 'True', a GPJob is returned instead of
+                                                                                results. The GPJob can be queried on the status of the execution.
 
-                                    + fieldname is the name of the field in the inFeatures used
-                                      to predict the variable_predict.
-                                    + categorical is one of: true or false. A string field should
-                                      always be true, and a continue value should always be set as false.
-    --------------------------   ---------------------------------------------------------------
-    output_name                  optional String, The task will create a feature service of the
-                                 results. You define the name of the service.
-    --------------------------   ---------------------------------------------------------------
-    gis                          optional GIS, the GIS on which this tool runs. If not
-                                 specified, the active GIS is used.
-    --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
-    ==========================   ===============================================================
+                                                                                The default value is 'False'.
+    =========================================================================   ===========================================================================
 
-    :returns:
-       Output feature layer item
+    :returns: named tuple with the following keys:
 
+        "output_trained" : featureLayer
+
+        "output_predicted" : featureLayer	
+
+        "variable_of_importance" : Table 
+
+        "process_info" : list
+
+    .. code-block:: python
+
+            # Usage Example: To predict the number of 911 calls in each block group.
+            predicted_result = forest(input_layer=call_lyr,
+                                      var_prediction={"fieldName":"Calls", "categorical":False},
+                                      var_explanatory=[{"fieldName":"Pop", "categorical":False},
+                                                        {"fieldName":"Unemployed", "categorical":False},
+                                                        {"fieldName":"AlcoholX", "categorical":False},
+                                                        {"fieldName":"UnEmpRate", "categorical":False},
+                                                        {"fieldName":"MedAge00", "categorical":False}],
+                                      trees=50,
+                                      max_tree_depth=10,
+                                      random_vars=3,
+                                      sample_size=100,
+                                      min_leaf_size=5,
+                                      prediction_type='TrainAndPredict',
+                                      validation=10,
+                                      importance_tbl=True,
+                                      output_name='train and predict number of 911 calls')
 
     """
     allowed_prediction_types = {
@@ -219,8 +270,10 @@ def forest(input_layer,
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
 
 
@@ -231,7 +284,6 @@ def forest(input_layer,
         "var_prediction" : (dict, "variablePredict"),
         "var_explanatory" : (list, "explanatoryVariables"),
         "exp_var_matching" : (list, "explanatoryVariableMatching"),
-        "return_importance_table" : (bool, "returnVariableOfImportanceTable"),
         "trees" : (int, "numberOfTrees"),
         "max_tree_depth" : (int, "maximumTreeDepth"),
         "min_leaf_size" : (int, "minimumLeafSize"),
@@ -240,25 +292,27 @@ def forest(input_layer,
         "validation" : (float, "percentageForValidation"),
         "output_name" : (str, "outputTrainedName"),
         "context": (str, "context"),
-        "importance_tbl" : (bool, "createVariableOfImportanceTable"),
+        "importance_tbl" : (bool, "createVariableImportanceTable"),
         "output_trained": (_FeatureSet, "outputTrained"),
         "output_predicted": (_FeatureSet, "outputPredicted"),
-        "variable_of_importance": (_FeatureSet, "variableOfImportance"),
+        "variable_of_importance": (_Table, "variableOfImportance"),
+        "process_info": (list, "processInfo")
     }
     return_values=[
         {"name": 'output_trained', "display_name": "Output Features", "type": _FeatureSet},
         {"name" : "output_predicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
-        {"name" : "variable_of_importance", "display_name" : "Variable of Importance", "type" : _FeatureSet}
+        {"name" : "variable_of_importance", "display_name" : "Variable of Importance", "type" : _Table},
+        {"name" : "process_info", "display_name" : "Process Information", "type" : list}
     ]
     if features_to_predict is None and prediction_type == 'TrainAndPredict':
-        kwargs["features_to_predict"] = input_layer
+        params["features_to_predict"] = input_layer
         #param_db.pop("features_to_predict")
     try:
         if future:
             gpjob = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, "ForestBasedClassificationAndRegression", params, param_db, return_values, _use_async, url, True, future=future)
-        return output_service
+        return res
     except:
         output_service.delete()
         raise
