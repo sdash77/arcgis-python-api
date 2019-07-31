@@ -329,10 +329,12 @@ def glr(input_layer,
         dep_mapping=None,
         output_name=None,
         gis=None,
+        context=None,
         future=False):
     """
+    .. image:: _static/images/glr/glr.png 
 
-    This tool performs Generalized Linear Regression (glr) to generate
+    This tool performs Generalized Linear Regression (``glr``) to generate
     predictions or to model a dependent variable's relationship to a set of
     explanatory variables. This tool can be used to fit continuous
     (Gaussian/OLS), binary (logistic), and count (Poisson) models.
@@ -347,73 +349,62 @@ def glr(input_layer,
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required FeatureSet. The layer containing the dependent and
-                                 independent variables.
+    input_layer                  Required layer. The layer containing the dependent and
+                                 independent variables. See :ref:`Feature Input<FeatureInput>`.
     --------------------------   ---------------------------------------------------------------
-    var_dependent                      Required String. The numeric field containing the observed
+    var_dependent                Required string. The numeric field containing the observed
                                  values you want to model.
     --------------------------   ---------------------------------------------------------------
-    var_explanatory              Required String. One or more fields representing independent
+    var_explanatory              Required list of strings. One or more fields representing independent
                                  explanatory variables in your regression model.
     --------------------------   ---------------------------------------------------------------
-    regression_family            Required String. This field specifies the type of data you are
+    regression_family            Optional string. This field specifies the type of data you are
                                  modeling.
 
                                  regression_family is one of the following:
 
-                                    + Continuous - The dependent_variable is continuous. The
-                                                   model used is Gaussian, and the tool performs
-                                                   ordinary least squares regression.
-                                    + Binary - The dependent_variable represents presence or
-                                               absence. Values must be 0 (absence) or 1 (presence)
-                                               values, or mapped to 0 and 1 values using the
-                                               parameter.
-                                    + Count - The dependent_variable is discrete and represents
-                                              events, such as crime counts, disease incidents,
-                                              or traffic accidents. The model used is Poisson
-                                              regression.
+                                    + ``Continuous`` - The dependent_variable is continuous. The
+                                      model used is Gaussian, and the tool performs
+                                      ordinary least squares regression.
+                                    + ``Binary`` - The dependent_variable represents presence or
+                                      absence. Values must be 0 (absence) or 1 (presence)
+                                      values, or mapped to 0 and 1 values using the
+                                      parameter.
+                                    + ``Count`` - The dependent_variable is discrete and represents
+                                      events, such as crime counts, disease incidents,
+                                      or traffic accidents. The model used is Poisson
+                                      regression.
+
+                                 The default value is 'Continuous'.             
     --------------------------   ---------------------------------------------------------------
-    features_to_predict          Required FeatureSet. A layer containing features representing
+    features_to_predict          Optional layer. A layer containing features representing
                                  locations where estimates should be computed. Each feature in
                                  this dataset should contain values for all the explanatory
                                  variables specified. The dependent variable for these features
                                  will be estimated using the model calibrated for the input
-                                 layer data.
-
-                                 Syntax: As described in Feature input, this parameter can be
-                                         one of the following:
-
-                                    + A URL to a feature service layer with an optional filter
-                                      to select specific features
-                                    + A URL to a big data catalog service layer with an
-                                      optional filter to select specific features
-                                    + A feature collection
+                                 layer data. See :ref:`Feature Input<FeatureInput>`.
     --------------------------   ---------------------------------------------------------------
-    gen_coeff_table              Optional Boolean. Determines if a table with coefficient values
+    gen_coeff_table              Optional boolean. Determines if a table with coefficient values
                                  will be returned. By default, the coefficient table is not
                                  returned.
     --------------------------   ---------------------------------------------------------------
-    exp_var_matching             Optional List. A list of the explanatoryVariables specified from
-                                 the input_layer and their corresponding fields from the
-                                 features_to_predict. By default, if an var_explanatoryiables is
+    exp_var_matching             Optional list of dicts. A list of the ``var_explanatory`` specified from
+                                 the ``input_layer`` and their corresponding fields from the
+                                 ``features_to_predict``. By default, if an ``var_explanatory`` variiables is
                                  not mapped, it will match to a field with the same name in the
-                                 features_to_predict. This parameter is only used if there is a
-                                 features_to_predict input. You do not need to use it if the
+                                 ``features_to_predict``. This parameter is only used if there is a
+                                 ``features_to_predict`` input. You do not need to use it if the
                                  names and types of the fields match between your two input
                                  datasets.
 
-                                 Syntax: [{"predictionLayerField":"<field name>",
-                                          "trainingLayerField": "<field name>"},...]
+                                 Syntax: [{"predictionLayerField":"<field name>","trainingLayerField": "<field name>"},...]
 
                                     + predictionLayerField is the name of a field specified in the
                                       var_explanatoryiables parameter.
                                     + trainingLayerField is the field that will match to the field
                                       in the var_explanatoryiables parameter.
-
-                                 REST scripting example:
-
     --------------------------   ---------------------------------------------------------------
-    dep_mapping                  Optional List. A list representing the values used to map to 0
+    dep_mapping                  Optional list of dicts. A list representing the values used to map to 0
                                  (absence) and 1 (presence) for binary regression.
 
                                  Syntax: [{"value0":"<false value>"},{"value1":"<true value>"}]
@@ -424,19 +415,45 @@ def glr(input_layer,
                                       (presence values).
 
     --------------------------   ---------------------------------------------------------------
-    output_name                  Optional String. The task will create a feature service of the
+    output_name                  Optional string. The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    gis                          Optional GIS, the GIS on which this tool runs. If not
+    gis                          Optional GIS. The GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of
+    context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    --------------------------   ---------------------------------------------------------------
+    future                       Optional boolean. If 'True', a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
+
+                                 The default value is 'False'. 
     ==========================   ===============================================================
 
-    :returns:
-       Output feature layer item
+    :returns: named tuple with the following keys:
 
+      "output" : featureLayer
+
+      "output_predicted" : featureLayer	
+
+      "coefficient_table" : Table 
+
+      "process_info" : list
+
+    .. code-block:: python
+
+            # Usage Example: To train a model for predicting 911 calls.
+            
+            result_predicted = glr(input_layer=911_calls_lyr,
+                                   var_dependent='Calls',
+                                   var_explanatory='Unemployed, AlcoholX, UnEmpRate, MedAge00',
+                                   regression_family='Count',
+                                   gen_coeff_table=True,
+                                   output_name="predicted calls")
 
     """
 
@@ -466,6 +483,11 @@ def glr(input_layer,
         if value is not None:
             params[key]=value
 
+    if isinstance(var_explanatory, list):
+        var_explanatory = ', '.join(var_explanatory)
+        params["var_explanatory"] = var_explanatory
+        
+
     if output_name is None:
         output_service_name='GLR_' + _id_generator()
         output_name=output_service_name.replace(' ', '_')
@@ -478,15 +500,17 @@ def glr(input_layer,
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db={
         "input_layer": (_FeatureSet, "inputLayer"),
         "regression_family" : (str, "regressionFamily"),
         "gen_coeff_table" : (bool, "generateCoefficientTable"),
         "exp_var_matching" : (list, "explanatoryVariableMatching"),
-        "var_dependent" : (list, "dependentVariable"),
+        "var_dependent" : (str, "dependentVariable"),
         "var_explanatory" : (list, "explanatoryVariables"),
         "features_to_predict" : (_FeatureSet, "featuresToPredict"),
         "dep_mapping" : (list, "dependentMapping"),
@@ -494,13 +518,14 @@ def glr(input_layer,
         "context": (str, "context"),
         "output": (_FeatureSet, "output"),
         "output_predicted": (_FeatureSet, "outputPredicted"),
-        "coefficient_table" : (_FeatureSet, "coefficientTable")
+        "coefficient_table" : (_Table, "coefficientTable"),
+        "process_info" : (list, "processInfo")
     }
     return_values=[
         {"name": 'output', "display_name": "Output Features", "type": _FeatureSet},
         {"name" : "output_predicted", "display_name" : "Output Predicted", "type" : _FeatureSet},
-        {"name" : "coefficient_table", "display_name" : "Coefficient Table", "type" : _FeatureSet},
-        #{"name" : "variable_of_importance", "display_name" : "Variable of Importance", "type" : _FeatureSet}
+        {"name" : "coefficient_table", "display_name" : "Coefficient Table", "type" : _Table},
+        {"name" : "process_info", "display_name" : "Process Information", "type" : list}
     ]
 
     try:
@@ -508,7 +533,7 @@ def glr(input_layer,
             gpjob = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
-        return output_service
+        return res
     except:
         output_service.delete()
         raise
