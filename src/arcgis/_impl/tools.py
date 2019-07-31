@@ -878,6 +878,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         ret = gpjob.result()
+        if output_name is not None and 'allocatedDemandLocationsLayer' in ret:
+            return ret['allocatedDemandLocationsLayer']
         return ret
     #----------------------------------------------------------------------
     def connect_origins_to_destinations(self,
@@ -984,6 +986,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         ret = gpjob.result()
+        if output_name is not None and 'routesLayer' in ret:
+            return ret['routesLayer']
         return ret
     #----------------------------------------------------------------------
     def create_drive_time_areas(self,

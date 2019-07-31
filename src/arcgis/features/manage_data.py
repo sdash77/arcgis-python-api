@@ -506,7 +506,7 @@ def create_route_layers(route_data_item,
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     =========================    =========================================================
 
-    :returns: result_layer : list (items)
+    :returns: result_layer : A list (items) or Item
 
     .. code-block:: python
 
