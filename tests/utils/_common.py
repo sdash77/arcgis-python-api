@@ -30,7 +30,7 @@ UNIT_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
     "unit"))
 SANITY_TESTS_DIR = os.path.abspath(os.path.join(
-    UNIT_TESTS_DIR,
+    TESTS_DIR,
     "sanity"))
 INTEGRATION_TESTS_DIR = os.path.abspath(os.path.join(
     TESTS_DIR,
@@ -57,7 +57,8 @@ DEFAULT_EMPTY_SUITE_FILE_PATH = os.path.abspath(os.path.join(
 # The python executable cmd that guarantees that `import arcgis` will pull
 # The `arcgis` from this repository's `geosaurus/src/arcgis`
 GEOSAURUS_PYTHON_EXEC = ['"' + sys.executable + '"', "-m", "pip", 
-                        "install", "-e", GEOSAURUS_SRC_DIR, "--no-deps",
+                        "install", "-e", '"' + GEOSAURUS_SRC_DIR + '"', 
+                        "--no-deps",
                             "&&",
                         '"' + sys.executable + '"']
 GEOSAURUS_PYTHON_EXEC_STR = " ".join(GEOSAURUS_PYTHON_EXEC)
@@ -98,7 +99,8 @@ def setup_env():
     log.info(f"Setting up env to use `arcgis` from {GEOSAURUS_ROOT_DIR}...")
     python_cmd =  [f'"{sys.executable}"',]
     pip_install_cmd = python_cmd + \
-        ["-m", "pip", "install", "-e", GEOSAURUS_SRC_DIR, "--no-deps" ]
+        ["-m", "pip", "install", "-e", 
+             '"' + GEOSAURUS_SRC_DIR + '"', "--no-deps" ]
     run_shell_command(" ".join(pip_install_cmd))
  
     jupyter_cmd = python_cmd + ["-m", "jupyter"]

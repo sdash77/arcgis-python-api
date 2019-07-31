@@ -15,4 +15,5 @@ def run_test_suite(suite_path, notebooks_root_dir, jenkins_job_url, **kwargs):
     run_suite(suite = suite,
               output_dir = STAGING_DIR,
               jenkins_job_url = jenkins_job_url,
-              run_setup_env = True)
+              run_setup_env = True,
+              run_sanity_tests_before = True)

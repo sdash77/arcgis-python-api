@@ -15,6 +15,7 @@ def run_sanity_tests(output_dir):
         run_pytest_on(sanity_test_paths, sanity_test_xml_output,
                       max_fail=0,
                       throw_exc_on_fail = True)
+        log.info("Sanity tests appear to have passed, continuing...")
         return sanity_test_xml_output
     except Exception as e:
         log.exception(e)
