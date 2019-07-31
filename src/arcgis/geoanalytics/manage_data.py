@@ -16,10 +16,10 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-def run_python_script(code, layers=None, gis=None, future=False):
+def run_python_script(code, layers=None, gis=None, context=None, future=False):
     """
 
-    The `run_python_script` method executes a Python script on your ArcGIS
+    The ``run_python_script`` method executes a Python script on your ArcGIS
     GeoAnalytics Server site. In the script, you can create an analysis
     pipeline by chaining together multiple GeoAnalytics Tools without
     writing intermediate results to a data store. You can also use other
@@ -37,7 +37,7 @@ def run_python_script(code, layers=None, gis=None, future=False):
     intermediate layers, while simplifying the steps to create the
     information product.
 
-    When you use Run Python Script, the Python code is executed on your
+    When you use ``run_python_script``, the Python code is executed on your
     GeoAnalytics Server. The script runs with the Python 3.6 environment
     that is installed with GeoAnalytics Server, and all console output is
     returned as job messages. Some Python modules can be used in your
@@ -77,19 +77,54 @@ def run_python_script(code, layers=None, gis=None, future=False):
     Dataset task to create a sample layer for this purpose.
 
     ================  ===============================================================
-    code              Required String/Python Method. Python code to execute.
+    code              Required string. The Python script that will run on your GeoAnalytics Server. This must be the full script as a string.
+
+                      The layers provided in inputLayers can be accessed in the script using the layers object. To learn more, 
+                      see `Reading and writing layers in pyspark <https://developers.arcgis.com/rest/services-reference/using-webgis-layers-in-pyspark.htm>`_.
+  
+                      GeoAnalytics Tools can be accessed with the geoanalytics object, which is instantiated in the script environment automatically. 
+                      To learn more, see `Using GeoAnalytics Tools in Run Python Script <https://developers.arcgis.com/rest/services-reference/using-geoanalytics-tools-in-pyspark.htm>`_.
+  
+                      For a collection of example scripts, see `Examples: Scripting custom analysis with the Run Python Script task <https://developers.arcgis.com/rest/services-reference/run-python-script-examples.htm>`_.
     ----------------  ---------------------------------------------------------------
-    layers            Optional List. A list of FeatureLayers to operate on.
+    layers            Optional list. A list of Feature layers to operate on. See :ref:`Feature Input<FeatureInput>`.
     ----------------  ---------------------------------------------------------------
     gis               optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
-    future            Optional Boolean. If True, a GPJob is returned instead of
+    context           Optional dict. This parameter is not used by the ``run_python_script`` tool.
+
+                      To control the output data store, use the "dataStore" option when writing DataFrames.
+  
+                      To set the processing or output spatial reference, use the project tool in the geoanalytics package.
+  
+                      To filter a layer when converting it to a DataFrame, use the "where" or "fields" option when loading the layer's URL.
+  
+                      To limit the extent of a layer when converting it to a DataFrame, use the "extent" option when loading the layer's URL.
+    ----------------  ---------------------------------------------------------------
+    future            Optional boolean. If 'True', a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: Dictionary of messages from the code provided.
+    :returns: list of dictionary of messages from the code provided.
 
+    .. code-block:: python
 
+            # Usage Example: Execute calculate_density tool using run_python_script.
+
+            code = '''
+            import time 
+            r = geoanalytics.calculate_density(input_layer=layers[0],
+                            fields='Damage',
+                            weight='Uniform',
+                            bin_type='Square',
+                            bin_size=1,
+                            bin_size_unit='Meters',
+                            radius=2,
+                            radius_unit='Yards')        
+                            
+            r.write.format('webgis').save('RunPythonScriptTest_{0}'.format(time.time()))              
+            '''
+            run_python_script(code=code, layers=[lyr])
     """
     if layers is None:
         layers = []
@@ -112,7 +147,10 @@ def run_python_script(code, layers=None, gis=None, future=False):
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.geoanalytics.url
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db = {
         "layers": (_FeatureSet, "inputLayers"),
@@ -125,10 +163,11 @@ def run_python_script(code, layers=None, gis=None, future=False):
             gpjob = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=False, future=future)
             return GAJob(gpjob=gpjob, return_service=None)
         res, msg = _execute_gp_tool(gis, tool_name, params, param_db, [], _use_async, url, True, return_messages=True, future=future)
+        msg = msg['messages']
         return msg
     except:
         raise
-    return None
+    return 
 
 def dissolve_boundaries(input_layer,
                         dissolve_fields=None,

@@ -1,16 +1,20 @@
 # Test that the imported arcgis API is the one from ../../src
 
 from utils._common import *
+from utils.imports import *
 
 def test_arcgis_being_imported_is_dev():
+    clear_arcgis_import_cache()
     import arcgis
     expected = os.path.join(GEOSAURUS_SRC_ARCGIS_DIR, "__init__.py").lower()
     actual = arcgis.__file__.lower()
     assert actual == expected
+    clear_arcgis_import_cache()
 
 # Test that each module can be imported without SyntaxError (basic sanity)
 # This type of import syntax (from foo import *) must be run in module level
 
+clear_arcgis_import_cache()
 from arcgis import *
 from arcgis.gis import *
 from arcgis.gis.admin import *
@@ -52,47 +56,9 @@ from arcgis.widgets import *
 from arcgis.apps import *
 from arcgis.apps.hub import *
 from arcgis.learn import *
+clear_arcgis_import_cache()
 
 def test_all_arcgis_submodule_imports():
     """Test individual imports inside of test itself"""
-    import arcgis
-    import arcgis.gis
-    import arcgis.gis.admin
-    import arcgis.gis.server
-    import arcgis.env
-    import arcgis.features
-    import arcgis.features.analysis
-    import arcgis.features.analyze_patterns
-    import arcgis.features.elevation
-    import arcgis.features.enrich_data
-    import arcgis.features.find_locations
-    import arcgis.features.hydrology
-    import arcgis.features.manage_data
-    import arcgis.features.managers
-    import arcgis.features.summarize_data
-    import arcgis.features.use_proximity
-    import arcgis.raster
-    import arcgis.raster.analytics
-    import arcgis.raster.functions
-    import arcgis.raster.functions.gbl
-    import arcgis.raster.orthomapping
-    import arcgis.network
-    import arcgis.network.analysis
-    import arcgis.geoanalytics.analyze_patterns
-    import arcgis.geoanalytics.data_enrichment
-    import arcgis.geoanalytics.find_locations
-    import arcgis.geoanalytics.manage_data
-    import arcgis.geoanalytics.summarize_data
-    import arcgis.geoanalytics.use_proximity
-    import arcgis.geocoding
-    import arcgis.geoenrichment
-    import arcgis.geometry
-    import arcgis.geometry.filters
-    import arcgis.geoprocessing
-    import arcgis.mapping
-    import arcgis.realtime
-    import arcgis.schematics
-    import arcgis.widgets
-    import arcgis.apps
-    import arcgis.apps.hub
-    import arcgis.learn
+    import_all_arcgis_submodules()
+

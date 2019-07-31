@@ -9,7 +9,7 @@ from utils._common import *
 
 file_uri_output_dir = pathlib.Path(TESTS_DIR).as_uri()
 
-def run_suite(suite, output_dir, run_setup_env,
+def run_suite(suite, output_dir, run_setup_env, run_sanity_tests_before=True,
               jenkins_job_url=file_uri_output_dir,):
     log.debug(f"running suite {json.dumps(suite)}")
     output_xml_results = []
@@ -17,8 +17,9 @@ def run_suite(suite, output_dir, run_setup_env,
     if run_setup_env:
         setup_env()
 
-    xml_output = run_sanity_tests(output_dir)
-    output_xml_results.append(xml_output)
+    if run_sanity_tests_before:
+        xml_output = run_sanity_tests(output_dir)
+        output_xml_results.append(xml_output)
 
     if "unit_tests_to_run" in suite and \
        suite["unit_tests_to_run"]["paths"]:

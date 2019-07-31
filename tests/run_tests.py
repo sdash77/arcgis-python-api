@@ -51,6 +51,8 @@ def _parse_cmd_line_args():
         help="By default, when this script finishes running a web browser "\
              "will pop up and display the results of the tests. To stop this "\
              "from happening, specify this flag.")
+    parser.add_argument("--no-sanity","-n", action="store_true",
+        help="Skip the sanity test suite (default: False)")
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Verbose logging output")
     args = parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
@@ -90,7 +92,9 @@ def _run_tests(args):
         suite = read_suite(DEFAULT_EMPTY_SUITE_FILE_PATH)
     _add_to_suite_cmd_arg_tests(suite, args.tests)
     _parse_suite(suite)
-    output_xml_files = run_suite(suite, args.output_dir, run_setup_env = False)
+    output_xml_files = run_suite(suite, args.output_dir,
+        run_setup_env = False,
+        run_sanity_tests_before = not args.no_sanity)
     if not args.no_browser_output:
         _display_results_in_browser(output_xml_files, args.output_dir)
 

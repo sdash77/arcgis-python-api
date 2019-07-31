@@ -1,7 +1,8 @@
+import arcgis as _arcgis 
+from ._arcgis_model import ArcGISModel
+
 try:
-    import arcgis as _arcgis
     import pandas
-    from ._arcgis_model import ArcGISModel
     import tempfile
     import numpy as np
     import json
