@@ -7,7 +7,26 @@ sys.path.append(os.path.dirname(__file__))
 import numpy as np
 import math
 
+def check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding):
+    return ((centroid[1] >= (start_y + padding)) and  \
+                (centroid[1] <= (start_y + (chip_sz - padding))) and \
+                (centroid[0] >= (start_x + padding)) and \
+                (centroid[0] <= (start_x + (chip_sz - padding))))
 
+def find_i_j(centroid, n_rows, n_cols, chip_sz, padding, filter_detections):
+    for i in range(n_rows):
+        for j in range(n_cols):
+            start_x = i * chip_sz
+            start_y = j * chip_sz
+
+            if (centroid[1] > (start_y)) and (centroid[1] < (start_y + (chip_sz))) and (centroid[0] > (start_x)) and (centroid[0] < (start_x + (chip_sz))):
+                in_center = check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding)
+                if filter_detections:
+                    if in_center: 
+                        return i, j, in_center
+                else:
+                    return i, j, in_center
+    return None
 
 
 def get_available_device(max_memory=0.8):
@@ -47,7 +66,7 @@ features = {
             'name': 'FID',
             'type': 'esriFieldTypeOID',
             'alias': 'FID'
-        },
+        },        
         {
             'name': 'Class',
             'type': 'esriFieldTypeString',
@@ -68,7 +87,7 @@ fields = {
             'name': 'OID',
             'type': 'esriFieldTypeOID',
             'alias': 'OID'
-        },
+        },      
         {
             'name': 'Class',
             'type': 'esriFieldTypeString',
@@ -188,7 +207,23 @@ class ArcGISObjectDetector:
 
         polygon_list, scores, classes = self.child_object_detector.vectorize(**pixelBlocks)
 
-        # bounding_boxes = bounding_boxes.tolist()
+        n_rows = int(math.sqrt(self.child_object_detector.batch_size))
+        n_cols = int(math.sqrt(self.child_object_detector.batch_size))
+        padding = self.child_object_detector.padding
+        keep_polygon = []
+
+        for idx, polygon in enumerate(polygon_list):
+            centroid = polygon.mean(0)
+            quadrant = find_i_j(centroid, n_rows, n_cols, self.json_info['ImageHeight'], padding, self.child_object_detector.filter_outer_padding_detections)        
+            if quadrant is not None:
+                i, j, in_center = quadrant             
+                polygon[:, 0] = polygon[:, 0] - (2*i + 1)*padding
+                polygon[:, 1] = polygon[:, 1] - (2*j + 1)*padding
+                keep_polygon.append(polygon)
+                if not in_center:
+                    scores[idx] = (self.child_object_detector.thres * 100) + scores[idx] * 0.01
+
+        polygon_list =  keep_polygon
         scores = scores.tolist()
         classes = classes.tolist()
         features['features'] = []
@@ -205,14 +240,15 @@ class ArcGISObjectDetector:
 
             features['features'].append({
                 'attributes': {
-                    'OID': i + 1,
+                    'OID': i + 1,                
                     'Class': self.json_info['Classes'][classes[i] - 1]['Name'],
                     'Confidence': scores[i]
                 },
                 'geometry': {
                     'rings': rings
                 }
-            })
+            })   
+
         return {'output_vectors': json.dumps(features)}
 
 """

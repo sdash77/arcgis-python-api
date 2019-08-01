@@ -201,7 +201,7 @@ class ChildObjectDetector:
                 {
                     'name': 'padding',
                     'dataType': 'numeric',
-                    'value': 0,
+                    'value': self.json_info['ImageHeight'] // 4,
                     'required': False,
                     'displayName': 'Padding',
                     'description': 'Padding'
@@ -229,7 +229,17 @@ class ChildObjectDetector:
                     'value': 64,
                     'displayName': 'Batch Size',
                     'description': 'Batch Size'
+                },
+                {
+                    'name': 'exclude_pad_detections',
+                    'dataType': 'string',
+                    'required': False,
+                    'domain': ('True', 'False'),
+                    'value': 'True',
+                    'displayName': 'Filter Outer Padding Detections',
+                    'description': 'Filter detections which are outside the specified padding'
                 }
+                
             ]
         )
         return required_parameters
@@ -238,7 +248,8 @@ class ChildObjectDetector:
         self.padding = int(scalars['padding'])
         self.nms_overlap = float(scalars['nms_overlap'])
         self.thres = float(scalars['threshold'])
-        self.batch_size = int(scalars['batch_size'])
+        self.batch_size = int(math.sqrt(int(scalars['batch_size']))) ** 2
+        self.filter_outer_padding_detections = scalars['exclude_pad_detections'].lower() in ['true', '1', 't', 'y', 'yes']
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
@@ -268,5 +279,5 @@ class ChildObjectDetector:
         bounding_boxes, scores, classes = util.detect_objects_image_space(self.model, batch, self.ssd._anchors, self.ssd._grid_sizes, self.device,\
                                                                         classes=[clas['Name'] for clas in self.json_info['Classes']],\
                                                                         nms_overlap=self.nms_overlap, thres=self.thres)
-
+                                                    
         return convert_bounding_boxes_to_coord_list(bounding_boxes), scores, classes
