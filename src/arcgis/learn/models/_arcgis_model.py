@@ -10,6 +10,10 @@ import tempfile
 import logging
 logger = logging.getLogger()
 
+#For lr computation, skip beginning and trailing values.
+losses_skipped = 5
+trailing_losses_skipped = 5
+
 
 def _create_zip(zipname, path):
     import shutil
@@ -55,15 +59,64 @@ class SaveModelCallback(TrackerCallback):
 
 class ArcGISModel(object):
     
-    def lr_find(self):
+    def lr_find(self, allow_plot=True):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
         Helps in choosing the optimum learning rate for training the model.
         """
-        from IPython.display import clear_output
         self.learn.lr_find()
+        from IPython.display import clear_output
         clear_output()
-        self.learn.recorder.plot()
+        lr, index = self._find_lr()
+        if allow_plot:
+            self._show_lr_plot(index)
+
+        return lr
+
+    def _show_lr_plot(self, index):
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 1)
+        ax.plot(
+            self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped],
+            self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
+        )
+        ax.set_ylabel("Loss")
+        ax.set_xlabel("Learning Rate")
+        ax.set_xscale('log')
+        ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.0e'))
+        ax.plot(
+            self.learn.recorder.lrs[index],
+            self.learn.recorder.losses[index],
+            markersize=10,
+            marker='o',
+            color='red'
+        )
+
+        plt.show()
+
+    def _find_lr(self):
+        losses = self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
+        lrs = self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped]
+
+        n = len(losses)
+
+        max_start = 0
+        max_end = 0
+
+        lds = [1] * n
+
+        for i in range(1, n):
+            for j in range(0, i):
+                if losses[i] < losses[j] and lds[i] < lds[j] + 1:
+                    lds[i] = lds[j] + 1
+                if lds[max_end] < lds[i]:
+                    max_end = i
+                    max_start = max_end - lds[max_end]
+
+        sections = (max_end - max_start) / 3
+        final_index = max_start + int(sections) + int(sections/2)
+
+        return lrs[final_index], losses_skipped + final_index
 
     def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
@@ -97,19 +150,9 @@ class ArcGISModel(object):
         if lr is None:
             if arcgis.env.verbose:
                 logger.info('Finding optimum learning rate.')
-            self.learn.lr_find()
-            self.learn.recorder.plot(suggestion=True)
-            lr = self.learn.recorder.min_grad_lr
 
-            if kwargs.get('allow_plot', True):
-                import matplotlib.pyplot as plt
-                plt.show()
-            from IPython.display import clear_output
-            clear_output()
-
+            lr = self.lr_find(allow_plot=False)
             lr = slice(lr/10, lr)
-
-        kwargs.pop('allow_plot', None)
 
         self._learning_rate = lr
 
