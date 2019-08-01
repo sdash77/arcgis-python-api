@@ -14,6 +14,7 @@ from datetime import datetime as _datetime
 import logging as _logging
 import arcgis as _arcgis
 from arcgis.features import FeatureSet as _FeatureSet
+from arcgis.features import Table as _Table
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
 from ._util import _id_generator, _feature_input, _set_context, _create_output_service, GAJob
@@ -846,16 +847,22 @@ def join_features(target_layer,
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
-    return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
-    ]
+    try:
+
+        if target_layer.properties['type'] == 'table':
+            param_db["output"] = (_Table, 'Output Features')
+            return_values = [{"name": "output", "display_name": "Output Features", "type": _Table},]
+        else: 
+            return_values = [{"name": "output", "display_name": "Output Features", "type": _FeatureSet},]
+    except:
+        return_values = [{"name": "output", "display_name": "Output Features", "type": _FeatureSet},]
 
     try:
         if future:
             gpjob = _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
-        return output_service
+        res = _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
+        return res
     except:
         output_service.delete()
         raise
