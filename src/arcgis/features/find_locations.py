@@ -922,7 +922,7 @@ def choose_best_facilities(goal='Allocate',
     =====================================    =========================================================
 
 
-    :returns: When an output_name is specified, an Item is returned, else a dict with the following keys:
+    :returns: When an output_name is specified, a FeatureLayerCollection Item with 3 layers is returned (see dictionary below for details), else a dict with the following keys:
 
        "allocated_demand_locations_layer" : layer (FeatureCollection)
 
