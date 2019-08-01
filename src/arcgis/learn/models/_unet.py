@@ -124,9 +124,7 @@ class UnetClassifier(ArcGISModel):
         _EMD_TEMPLATE['ModelFile'] = path.name
         _EMD_TEMPLATE['ImageHeight'] = self._data.chip_size
         _EMD_TEMPLATE['ImageWidth'] = self._data.chip_size
-        _EMD_TEMPLATE['ModelParameters'] = {
-                                            'backbone': self._backbone.__name__
-                                           }
+        _EMD_TEMPLATE['ModelParameters'] = {'backbone': self._backbone.__name__}
         _EMD_TEMPLATE['Classes'] = []
         for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
@@ -147,3 +145,11 @@ class UnetClassifier(ArcGISModel):
         if rows > self._data.batch_size:
             rows = self._data.batch_size
         self.learn.show_results(rows=rows, **kwargs)             
+
+    def _get_model_metrics(self, **kwargs):
+        checkpoint = kwargs.get('checkpoint', True)
+        model_accuracy = self.learn.recorder.metrics[-1][0]
+        if checkpoint:
+            model_accuracy = np.min(self.learn.recorder.metrics)
+
+        return float(model_accuracy)

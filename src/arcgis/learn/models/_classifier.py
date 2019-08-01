@@ -193,6 +193,26 @@ class FeatureClassifier(ArcGISModel):
         interp = ClassificationInterpretation.from_learner(self.learn)
         interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=True)        
 
+    def _get_model_metrics(self, **kwargs):
+
+        interp = ClassificationInterpretation.from_learner(self.learn)
+        cm = interp.confusion_matrix(slice_size=1)
+
+        message = ""
+        for value in self.learn.data.classes:
+            message = message + \
+                      + "\t" + f"predicted_{(self.learn.data.class_mapping.get(value) or self.learn.data.class_mapping.get(int(value)))}"
+
+        message = message + "\n"
+        for i in range(len(self.learn.data.classes)):
+            message = message + (self.learn.data.class_mapping.get(self.learn.data.classes[i]) or self.learn.data.class_mapping.get(
+                int(self.learn.data.classes[i]))) + "\t"
+            for val in cm[i]:
+                message = message + "\t" + str(val) + "\t"
+            message = message + "\n"
+
+        return message
+
     @staticmethod
     def convert_to_degrees(value, reference):
         d0 = value[0][0]
