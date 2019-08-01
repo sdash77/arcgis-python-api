@@ -21,6 +21,22 @@ def conv_params(in_size, out_size):
                     return stride, pad, filter_size
     return None, None, None
 
+def conv_paramsv2(in_size, out_size):
+    filters = [3]
+    strides = [1,2] # max_stride = 2
+    pads = [0,1] # max pad
+    
+    if out_size == 1:
+        return 1, 0, in_size
+    
+    for filter_size in filters:
+        for pad in pads:
+            for stride in strides:
+                if ((out_size - 1) * stride == (in_size - filter_size) + 2 * pad):
+                    return stride, pad, filter_size
+    return None, None, None
+
+
 class StdConv(nn.Module):
     def __init__(self, nin, nout, filter_size=3, stride=2, padding=1, drop=0.1):
         super().__init__()
@@ -30,7 +46,21 @@ class StdConv(nn.Module):
         
     def forward(self, x): 
         return self.drop(self.bn(F.relu(self.conv(x))))
+
+class StdConvv2(nn.Module):
+    def __init__(self, nin, nout, upsample_size=0, upsample=False, filter_size=3, stride=2, padding=1, drop=0.1):
+        super().__init__()
+        self.upsample = upsample
+        self.conv = nn.Conv2d(nin, nout, filter_size, stride=stride, padding=padding)
+        self.up = nn.Upsample(upsample_size)
+        self.bn = nn.BatchNorm2d(nout)
+        self.drop = nn.Dropout(drop)
         
+    def forward(self, x):
+        if self.upsample == True:
+             return self.drop(self.bn(F.relu(self.conv(self.up(x)))))
+        return self.drop(self.bn(F.relu(self.conv(x))))
+            
 def flatten_conv(x,k):
     bs,nf,gx,gy = x.size()
     x = x.permute(0,2,3,1).contiguous()
@@ -77,6 +107,61 @@ class SSDHead(nn.Module):
                 
             self.sconvs.append(StdConv(256, 256, filter_size, stride=stride, padding=pad, drop=drop))
             self.oconvs.append(OutConv(self._k, 256, num_classes=num_classes, bias=bias))
+       
+    def forward(self, x):
+        x = self.drop(F.relu(x))
+        x = self.sconvs[0](x)
+        out_classes = []
+        out_bboxes = []
+        for sconv, oconv in zip(self.sconvs[1:], self.oconvs):
+            x = sconv(x)
+            out_class, out_bbox = oconv(x)
+            out_classes.append(out_class)
+            out_bboxes.append(out_bbox)
+            
+        return [torch.cat(out_classes, dim=1),
+                torch.cat(out_bboxes, dim=1)]
+
+class SSDHeadv2(nn.Module):
+    def __init__(self, grids, anchors_per_cell, num_classes, num_features=7, drop=0.3, bias=-4., num_channels=512):
+        super().__init__()
+        self.drop = nn.Dropout(drop)
+        
+        self.sconvs = nn.ModuleList([])
+        self.oconvs = nn.ModuleList([])
+        
+        self.anc_grids = grids
+        
+        self._k = anchors_per_cell
+
+        
+        self.sconvs.append(StdConvv2(num_channels, 256, stride=1, drop=drop))
+        
+        
+        for i in range(len(grids)):
+            
+            upsample = False
+
+            if i == 0 and num_features >= grids[i]:
+                stride, pad, filter_size = conv_paramsv2(num_features, grids[i])
+                if stride is None:
+                    upsample = True
+                    stride, pad, filter_size = 1, 1, 3
+            elif i == 0 and num_features < grids[i]:
+                upsample = True
+                stride, pad, filter_size = 1, 1, 3
+
+            elif i != 0 and grids[i-1] > grids[i]:
+                stride, pad, filter_size = conv_paramsv2(grids[i-1], grids[i])
+                if stride is None:
+                    upsample=True
+                    stride, pad, filter_size = 1,1,3
+            else:
+                upsample=True
+                stride, pad, filter_size = 1,1,3
+                
+            self.sconvs.append(StdConvv2(256, 256, grids[i], upsample, filter_size, stride=stride, padding=pad, drop=drop))
+            self.oconvs.append(OutConv(self._k, 256, num_classes=num_classes, bias=bias))
                 
     def forward(self, x):
         x = self.drop(F.relu(x))
@@ -91,6 +176,7 @@ class SSDHead(nn.Module):
             
         return [torch.cat(out_classes, dim=1),
                 torch.cat(out_bboxes, dim=1)]
+
 
 def one_hot_embedding(labels, num_classes):
     return torch.eye(num_classes)[labels.data.cpu()]
