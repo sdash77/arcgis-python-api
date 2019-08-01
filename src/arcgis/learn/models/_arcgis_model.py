@@ -118,6 +118,9 @@ class ArcGISModel(object):
 
         return lrs[final_index], losses_skipped + final_index
 
+    def _get_model_metrics(self, **kwargs):
+        raise NotImplementedError
+
     def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epocs and using the

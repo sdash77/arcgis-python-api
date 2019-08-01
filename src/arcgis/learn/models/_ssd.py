@@ -363,3 +363,12 @@ class SingleShotDetector(ArcGISModel):
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
+
+    def _get_model_metrics(self, **kwargs):
+        kwargs_metrics = {
+            'detect_thresh': 0.5,
+            'iou_thresh': 0.5,
+            'mean': True
+        }
+
+        return self.average_precision_score(**kwargs_metrics)
