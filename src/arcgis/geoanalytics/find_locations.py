@@ -500,7 +500,11 @@ def find_similar_locations(
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :returns: result_layer : Output Features as feature layer item.
+    :returns: named tuple with the following keys:
+
+      "output" : featureLayer
+
+      "process_info" : list
 
     .. code-block:: python
 
@@ -552,16 +556,18 @@ def find_similar_locations(
         "output_name": (str, "outputName"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
+        "process_info": (list, "processInfo")
     }
     return_values = [
         {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+        {"name": "process_info", "display_name": "Process Information", "type": list}
     ]
     try:
         if future:
             gpjob = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
-        return output_service
+        res = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
+        return res
     except:
         output_service.delete()
         raise
