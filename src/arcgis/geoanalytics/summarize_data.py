@@ -554,7 +554,17 @@ def describe_dataset(input_layer,
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: feature layer collection
+    :returns: named tuple with the following keys:
+
+      "output_json" : dict
+
+      "output" : Table	
+
+      "extent_layer" : featureLayer 
+
+      "sample_layer" : featureLayer       
+
+      "process_info" : list
 
     .. code-block:: python
 
@@ -599,19 +609,27 @@ def describe_dataset(input_layer,
         "sample_size" : (int, "sampleSize"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
-        "output": (_FeatureSet, "output"),
+        "output_json": (dict, "outputJSON"),
+        "output": (_Table, "output"),
+        "extent_layer": (_FeatureSet, "extentLayer"),
+        "sample_layer": (_FeatureSet, "sampleLayer"),
+        "process_info": (list, "processInfo"),
     }
 
     return_values = [
-        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+        {"name": "output_json", "display_name": "Output Dictionary", "type": dict},
+        {"name": "output", "display_name": "Output Features", "type": _Table},
+        {"name": "extent_layer", "display_name": "Eextent Layer", "type": _FeatureSet},
+        {"name": "sample_layer", "display_name": "Sample Layer", "type": _FeatureSet},
+        {"name": "process_info", "display_name": "process_info", "type": list},
     ]
 
     try:
         if future:
             gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
-        _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
-        return output_service
+        res = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
+        return res
     except:
         output_service.delete()
         raise
