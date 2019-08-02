@@ -676,6 +676,100 @@ class Test_WebMap_AGO(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_add_imageryLayer_and_remove(self):
+        """
+        Compose a new web, add an imagery layer with built-in raster function
+        :return:
+        """
+        try:
+            usa_map = self.gis.map('USA', zoomlevel=4)  # you can specify the zoom level when creating a map
+
+            # Add timezone layer
+            fl_item = self.gis.content.get('312cebfea2624e108e234220b04460b8')
+            usa_map.add_layer(fl_item)
+
+            # Draw capitals with custom marker
+            from arcgis.geocoding import geocode
+            usa_extent = geocode('USA')[0]['extent']
+            usa_capitols_fset = geocode('Capitol', search_extent=usa_extent, max_locations=10, as_featureset=True)
+            capitol_symbol = {"angle": 0, "xoffset": 0, "yoffset": 0, "type": "picture-marker",
+                              "url": "http://static.arcgis.com/images/Symbols/PeoplePlaces/esriBusinessMarker_57.png",
+                              "contentType": "image/png", "width": 24, "height": 24}
+            usa_map.draw(usa_capitols_fset, symbol=capitol_symbol)
+
+            # Add the layer we will remove layer
+            landsat_item = GIS().content.search("Landsat 8 Views", "Imagery Layer", max_items=2)[0]
+            hash_ = usa_map._get_hash(landsat_item.layers[0])
+            print(hash_)
+            usa_map.add_layer(landsat_item.layers[0])
+
+            # fl - add 2nd time
+            fl_item2 = self.gis.content.get('312cebfea2624e108e234220b04460b8')
+            hash_ = usa_map._get_hash(fl_item2)
+            print(hash_)
+            usa_map.add_layer(fl_item2)
+            print(usa_map._hashed_layers)
+
+            # imagery - add 2nd time
+            landsat_item = GIS().content.search("Landsat 8 Views", "Imagery Layer", max_items=2)[0]
+            img_item2 = landsat_item.layers[0]
+            hash_ = usa_map._get_hash(img_item2)
+            print(hash_)
+            usa_map.add_layer(img_item2)
+            print(usa_map._hashed_layers)
+
+            # fl - add 3rd time
+            fl_item = self.gis.content.get('312cebfea2624e108e234220b04460b8')
+            hash_ = usa_map._get_hash(fl_item)
+            print(hash_)
+            usa_map.add_layer(fl_item)
+            print(usa_map._hashed_layers)
+
+            # imagery - add 3rd time
+            landsat_item = GIS().content.search("Landsat 8 Views", "Imagery Layer", max_items=2)[0]
+            img_item = landsat_item.layers[0]
+            hash_ = usa_map._get_hash(img_item)
+            print(hash_)
+            usa_map.add_layer(img_item)
+            print(usa_map._hashed_layers)
+
+            self.assertEqual(len(usa_map._hashed_layers), 6, msg="One or more layers failed to be added.")
+
+            import datetime
+            wm_title = 'NoImageryLayer-{}'.format(datetime.datetime.now())
+            wm_item = usa_map.save({'title': wm_title,
+                          'snippet': '# of Imagery Layer should be 3',
+                          'tags': 'test'})
+
+            from arcgis.mapping import WebMap
+            wm = WebMap(wm_item)
+            wm_len = len(wm.layers)
+            print(wm._webmapdict['operationalLayers'])
+
+            usa_map.remove_layers([fl_item2, img_item2])
+            self.assertEqual(len(usa_map._hashed_layers), 4, msg="One or more layers failed to be removed.")
+
+            usa_map.update(mode='2D',
+                           item_properties={'title': wm_title,
+                                            'snippet': '# of Imagery Layer should be 2',
+                                            'tags': 'test'})
+            wm_item2 = self.gis.content.get(wm_item.id)
+            wm = WebMap(wm_item2)
+            print(wm._webmapdict['operationalLayers'])
+            self.assertEqual(len(wm.layers), wm_len-2, msg="Removed layers are not updated onto the web map.")
+
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
 #TestModule
 def tearDownModule():
     print("**End GIS module Tests**")

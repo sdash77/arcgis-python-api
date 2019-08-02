@@ -1254,7 +1254,8 @@ class MapView(widgets.DOMWidget):
         self._update_webmap_layers_from_js()
         return self.webmap.item.update(item_properties=item_properties,
                                        thumbnail=thumbnail,
-                                       metadata=metadata)
+                                       metadata=metadata,
+                                       data=self.webmap._webmapdict)
 
     def _update_as_webscene(self, item_properties, thumbnail, metadata):
         if not self.webscene_item:
@@ -1263,7 +1264,8 @@ class MapView(widgets.DOMWidget):
         self.mode = "3D"
         result = self.webscene_item.update(item_properties=item_properties,
                                            thumbnail=thumbnail,
-                                           metadata=metadata)
+                                           metadata=metadata,
+                                           data=self.webscene_item.get_data())
         self._trigger_webscene_save_to_this_portal_id = ""
         self._trigger_webscene_save_to_this_portal_id = self.webscene_item.id
         return result

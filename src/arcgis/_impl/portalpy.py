@@ -2173,12 +2173,12 @@ class Portal(object):
         # Build the files list (tuples)
         files = []
         if data:
-            if _is_http_url(data):
+            if isinstance(data, dict):
+                postdata['text'] = json.dumps(data)
+            elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):
                 files.append(('file', data, os.path.basename(data)))
-            elif isinstance(data, dict):
-                postdata['text'] = json.dumps(data)
             else:
                 postdata['text'] = data
         if metadata:
