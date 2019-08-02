@@ -201,7 +201,8 @@ class FeatureClassifier(ArcGISModel):
         message = ""
         for value in self.learn.data.classes:
             message = message + \
-                      + "\t" + f"predicted_{(self.learn.data.class_mapping.get(value) or self.learn.data.class_mapping.get(int(value)))}"
+                      "\t" + f"predicted_{(self.learn.data.class_mapping.get(value) or self.learn.data.class_mapping.get(int(value)))}"
+
 
         message = message + "\n"
         for i in range(len(self.learn.data.classes)):
