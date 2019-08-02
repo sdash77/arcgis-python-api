@@ -127,7 +127,8 @@ class ProfileManager(object):
         supported_keyrings = [ keyring.backends.OS_X.Keyring,
                                keyring.backends.SecretService.Keyring,
                                keyring.backends.Windows.WinVaultKeyring,
-                               keyring.backends.kwallet.DBusKeyring ]
+                               keyring.backends.kwallet.DBusKeyring,
+                               keyring.backends.chainer.ChainerBackend ]
         current_keyring = type(keyring.get_keyring())
         return current_keyring in supported_keyrings
     #----------------------------------------------------------------------
