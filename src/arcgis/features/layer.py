@@ -5,6 +5,8 @@ Users create, import, export, analyze, edit, and visualize features, i.e. entiti
 
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
+import requests
+import pandas
 import json
 import os
 from re import search
@@ -186,6 +188,76 @@ class FeatureLayer(Layer):
         The feature layer collection to which this layer belongs.
         """
         self._storage = value
+
+    def export_attachments(self, output_folder, label_field=None):
+        """
+        Exports attachments from the feature layer in Imagenet format using the output_label_field.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        output_folder                            Required. Output folder where the attachments will be stored.
+        ------------------------------------     --------------------------------------------------------------------
+        label_field                              Optional. Value field name which classifies the attachments.
+                                                 If None, a default folder is created.
+        ====================================     ====================================================================
+
+        :return:
+            Dictionay : Mapping of object id with list of paths to attachments.
+
+        """
+
+        if not self.properties['hasAttachments']:
+            raise Exception("Feature Layer doesn't have any attachments.")
+
+        if not os.path.exists(output_folder):
+            raise Exception("Invalid output folder path.")
+
+        data_classes = {}
+        object_attachments_mapping = {}
+
+        object_id_field = self.properties['objectIdField']
+
+        dataframe_merged = pandas.merge(
+            self.query().sdf,
+            self.attachments.search(as_df=True),
+            left_on=object_id_field,
+            right_on='PARENTOBJECTID'
+        )
+
+        token = self._con.token
+
+        for row in dataframe_merged.iterrows():
+            folder = "default"
+            if label_field is not None:
+                folder = row[1][label_field]
+
+            path = os.path.join(output_folder, folder)
+            if not data_classes.get(folder):
+                data_classes[folder] = 1
+                if not os.path.exists(path):
+                    os.mkdir(path)
+
+            if token is not None:
+                url = '{}/{}/attachments/{}?token={}'.format(self.url, row[1][object_id_field], row[1]["ID"],
+                                                             self._con.token)
+            else:
+                url = '{}/{}/attachments/{}'.format(self.url, row[1][object_id_field], row[1]["ID"])
+
+            if not object_attachments_mapping.get(row[1][object_id_field]):
+                object_attachments_mapping[row[1][object_id_field]] = []
+
+            attachment_path = os.path.join(path, f'attachments_{row[1]["ID"]}.jpg')
+            object_attachments_mapping[row[1][object_id_field]].append(attachment_path)
+
+            if os.path.exists(attachment_path):
+                continue
+            content = requests.get(url).content
+            file = open(attachment_path, 'wb')
+            file.write(content)
+            file.close()
+
+        return object_attachments_mapping
 
     #----------------------------------------------------------------------
     def generate_renderer(self, definition, where=None):

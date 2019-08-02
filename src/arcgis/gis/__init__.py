@@ -8078,7 +8078,7 @@ class Item(dict):
     def usage(self, date_range='7D', as_df=True):
         """
 
-        ArcGIS Enterprise 10.7+ and ArcGIS Online Only
+        ArcGIS Online Only
 
         For item owners and administrators, usage provides usage details about an item that help you
         gauge its popularity. Usage details show how many times the item has been used for the time
@@ -8134,6 +8134,8 @@ class Item(dict):
         :returns: Pandas DataFrame or Dictionary
 
         """
+        if not self._portal.is_arcgisonline:
+            raise ValueError("Usage() only supported for ArcGIS Online items.")
         end_date = None
         if end_date is None:
             end_date = datetime.now()

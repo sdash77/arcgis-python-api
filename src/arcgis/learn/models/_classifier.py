@@ -203,7 +203,6 @@ class FeatureClassifier(ArcGISModel):
             message = message + \
                       "\t" + f"predicted_{(self.learn.data.class_mapping.get(value) or self.learn.data.class_mapping.get(int(value)))}"
 
-
         message = message + "\n"
         for i in range(len(self.learn.data.classes)):
             message = message + (self.learn.data.class_mapping.get(self.learn.data.classes[i]) or self.learn.data.class_mapping.get(
@@ -322,7 +321,7 @@ class FeatureClassifier(ArcGISModel):
         for image_name, image_path in images.items():
             object_id = df[object_field].where(df['Image_Name'] == image_name).values[0]  #assuming image_name is unique
             if np.isnan(object_id):
-                continue #skipping those values which are not present.                            
+                continue #skipping those values which are not present.
             feature_layer.attachments.add(
                 object_id,
                 image_path
