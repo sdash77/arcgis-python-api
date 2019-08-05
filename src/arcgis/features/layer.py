@@ -5,8 +5,6 @@ Users create, import, export, analyze, edit, and visualize features, i.e. entiti
 
 A FeatureLayerCollection is a collection of feature layers and tables, with the associated relationships among the entities.
 """
-import requests
-import pandas
 import json
 import os
 from re import search
@@ -206,6 +204,8 @@ class FeatureLayer(Layer):
             Dictionay : Mapping of object id with list of paths to attachments.
 
         """
+        import requests
+        import pandas
 
         if not self.properties['hasAttachments']:
             raise Exception("Feature Layer doesn't have any attachments.")

@@ -128,26 +128,35 @@ class SingleShotDetector(ArcGISModel):
 
         if backbone is None:
             self._backbone = models.resnet34
+            backbone_name = 'res'
         elif type(backbone) is str:
             self._backbone = getattr(models, backbone)
+            backbone_name = backbone[:3]
         else:
             self._backbone = backbone
+            backbone_name = 'custom'
 
         self._create_anchors(grids, zooms, ratios)
 
         feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
         num_features = feature_sizes[-1][-1]
         num_channels = feature_sizes[-1][1]
-
+        backbone_cut = None
         if ssd_version == 1:
             ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
         elif ssd_version == 2:
-            ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+            if(abs(num_features-grids[0]) > 4 and backbone_name == 'res'):
+                num_features = feature_sizes[-2][-1]
+                num_channels = feature_sizes[-2][1]
+                backbone_cut = -3
+                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+            else:
+                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
         else:
             raise Exception('SSDVersion can only be 1 or 2')
 
         self._data = data
-        self.learn = cnn_learner(data=data, base_arch=self._backbone, custom_head=ssd_head)
+        self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, custom_head=ssd_head)
         self.learn.model = self.learn.model.to(self._device)
 
         if pretrained_path is not None:
