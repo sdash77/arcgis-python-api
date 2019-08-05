@@ -26,41 +26,51 @@ def geocode_locations(input_layer,
                       geocode_service=None,
                       geocode_parameters=None,
                       gis=None,
+                      context=None,
                       future=False):
     """
-    The Geocode Locations task geocodes a table from a big data file share. The task uses a geocode
-    utility service configured with your portal.
+    .. image:: _static/images/geocode_locations/geocode_locations.png 
 
-    For more information on setting up a geocoding service see:
-    http://server.arcgis.com/en/portal/latest/administer/windows/configure-portal-to-geocode-addresses.htm
+    The ``geocode_locations`` task geocodes a table from a big data file share. 
+    The task uses a geocode utility service configured with your portal. If you 
+    do not have a geocode utility service configured, talk to your administrator. 
+    `Learn more about configuring a locator 
+    service <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-portal-to-geocode-addresses.htm>`_.
+
+    When preparing to use the Geocode Location task be sure to review `Best Practices 
+    for geocoding with GeoAnalytics Server <https://enterprise.arcgis.com/en/portal/latest/use/geoanalytics-geocoding-best-practices.htm>`_.
 
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  required Layer, URL, Item of address locations to geocode.
+    input_layer                  Required layer. The tabular input that will be geocoded. See :ref:`Feature Input<FeatureInput>`.
     --------------------------   ---------------------------------------------------------------
-    country                      optional string.  If all your data is in one country, this helps
+    country                      Optional string. If all your data is in one country, this helps
                                  improve performance for locators that accept that variable.
     --------------------------   ---------------------------------------------------------------
-    category                     optional string. Enter a category for more precise geocoding
+    category                     Optional string. Enter a category for more precise geocoding
                                  results, if applicable. Some geocoding services do not support
                                  category, and the available options depend on your geocode service.
     --------------------------   ---------------------------------------------------------------
-    include_attributes           optional boolean. A boolean value to return the output fields
-                                 from the geocoding service in the results.
+    include_attributes           Optional boolean. A Boolean value to return the output fields 
+                                 from the geocoding service in the results. To output all available 
+                                 output fields, set this value to 'True'. Setting the value to false will 
+                                 return your original data and with geocode coordinates. Some geocoding 
+                                 services do not support output fields, and the available options depend 
+                                 on your geocode service.
     --------------------------   ---------------------------------------------------------------
-    locator_parameters           optional dictionary. Additional parameters specific to your
-                                 locator.
+    locator_parameters           Optional dict. Additional parameters specific to your locator.
     --------------------------   ---------------------------------------------------------------
-    output_name                  optional string, The task will create a feature service of the
+    output_name                  Optional string. The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    geocode_service              optional string or Geocoder.  URL endpoint of the Geocoding
-                                 Service of GeoCoder object. If none is provided, the service
-                                 will use the first geocoder registered with portal that has
-                                 batch enabled.
+    geocode_service              Optional string or Geocoder. The URL of the geocode service 
+                                 that you want to geocode your addresses against. The URL must end in 
+                                 geocodeServer and allow batch requests. The geocode service must be 
+                                 configured to allow for batch geocoding. For more information, 
+                                 see `Configuring batch geocoding <https://enterprise.arcgis.com/en/portal/latest/administer/windows/configure-portal-to-geocode-addresses.htm>`_
     --------------------------   ---------------------------------------------------------------
-    geocode_parameters           optional dictionary.  This includes parameters that help parse
+    geocode_parameters           optional dict. This includes parameters that help parse
                                  the input data, as well the field lengths and a field mapping.
                                  This value is the output from the AnalyzeGeocodeInput tool
                                  available on your server designated to geocode. It is important
@@ -88,15 +98,33 @@ def geocode_locations(input_layer,
                                  Example: [['ObjectID', 'OBJECTID'], ['Address', 'Address'],
                                           ['Region', 'Region'], ['Postal', 'Postal']]
     --------------------------   ---------------------------------------------------------------
-    gis                          optional GIS, the GIS on which this tool runs. If not
+    gis                          Optional GIS. The GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of
+    context                      Optional dict. Context contains additional settings that affect task execution. 
+                                 For this task, there are three settings:
+
+                                 Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                 Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                 Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    --------------------------   ---------------------------------------------------------------
+    future                       Optional boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
 
     :returns: Feature Layer
+
+    .. code-block:: python
+
+            # Usage Example: To geocode a big data file share of mailing addresses in the United States Northwest.
+
+            geocode_server = "https://mymachine.domain.com/server/rest/services/USALocator/GeocodeServer"
+            geo_parameters = {"field_info": "[('ObjectID', 'TEXT', 255), ('Street', 'TEXT', 255), ('City', 'TEXT', 255), ('Region', 'TEXT', 255), ('State', 'TEXT', 255)]", "column_names": "", "file_type": "table", "header_row_exists": "true", "field_mapping": "[[\"Street\", \"Street\"], [\"City\", \"City\"], [\"State\", \"State\"], [\"ZIP\", \"ZIP\"]]"}
+            geocode_result = find_locations.geocode_locations(input_layer=NW_addresses, 
+                                                        output_name="geocoded_NW_USA",
+                                                        geocode_service=geocode_server,
+                                                        geocode_parameters = geo_parameters)
 
     """
     from arcgis.features.layer import Layer
