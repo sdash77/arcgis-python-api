@@ -32,7 +32,7 @@ def conv_paramsv2(in_size, out_size):
     for filter_size in filters:
         for pad in pads:
             for stride in strides:
-                if ((out_size - 1) * stride == (in_size - filter_size) + 2 * pad):
+                if (((in_size - filter_size) + 2 * pad) // stride) + 1 == out_size:
                     return stride, pad, filter_size
     return None, None, None
 
@@ -158,7 +158,7 @@ class SSDHeadv2(nn.Module):
                     stride, pad, filter_size = 1,1,3
             else:
                 upsample=True
-                stride, pad, filter_size = 1,1,3
+                stride, pad, filter_size = 1,1,3 
                 
             self.sconvs.append(StdConvv2(256, 256, grids[i], upsample, filter_size, stride=stride, padding=pad, drop=drop))
             self.oconvs.append(OutConv(self._k, 256, num_classes=num_classes, bias=bias))
