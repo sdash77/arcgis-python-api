@@ -95,6 +95,7 @@ class FeatureClassifier(ArcGISModel):
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy)
         self.learn.model = self.learn.model.to(self._device)
 
+        _set_multigpu_callback(self)
         if pretrained_path is not None:
             self.load(pretrained_path)
 
