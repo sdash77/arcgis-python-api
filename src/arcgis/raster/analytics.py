@@ -1406,6 +1406,8 @@ def classify(input_raster,
     if additional_input_raster is not None:
         params["additionalInputRaster"] = _layer_input(additional_input_raster)
 
+    _set_context(params)
+
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
     job_info = _analysis_job_status(gptool, task_url, job_info)
@@ -1520,6 +1522,8 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
     if isinstance(remove_tiling_artifacts, bool):
         remove_tiling_artifacts = str(remove_tiling_artifacts).lower()
     params["removeTilingArtifacts"] = remove_tiling_artifacts
+
+    _set_context(params)
 
     task_url, job_info, job_id = _analysis_job(gptool, task, params)
 
