@@ -321,7 +321,7 @@ def from_featureclass(filename, **kwargs):
     ---------------------------     --------------------------------------------------------------------
     fields                          list of strings specifying the field names.
     ---------------------------     --------------------------------------------------------------------
-    spatial_filter                  A `Geometry` object that will filter the results.  This requires 
+    spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                     `arcpy` to work.
     ===========================     ====================================================================
 
@@ -342,11 +342,11 @@ def from_featureclass(filename, **kwargs):
                 "esriSpatialRelIntersects" : "INTERSECT",
                 "esriSpatialRelContains" : "CONTAINS",
                 "esriSpatialRelCrosses" : "CROSSED_BY_THE_OUTLINE_OF",
-                "esriSpatialRelEnvelopeIntersects" : "INTERSECT", 
+                "esriSpatialRelEnvelopeIntersects" : "INTERSECT",
                 "esriSpatialRelIndexIntersects" : "INTERSECT",
                 "esriSpatialRelOverlaps" : "INTERSECT",
                 "esriSpatialRelTouches" : "BOUNDARY_TOUCHES",
-                "esriSpatialRelWithin" : "WITHIN"                
+                "esriSpatialRelWithin" : "WITHIN"
             }
             relto = _sf_lu[spatial_filter['spatialRel']]
             geom = spatial_filter['geometry']
@@ -498,7 +498,7 @@ def from_featureclass(filename, **kwargs):
     else:
         if os.path.dirname(filename).lower().find('.gdb') > -1:
             message = """
-            Cannot Open Geodatabase without Arcpy or Fiona 
+            Cannot Open Geodatabase without Arcpy or Fiona
             \nPlease switch to Arcpy for full support or install fiona by this command `conda install fiona`
             """.strip()
             print(message)
@@ -734,7 +734,8 @@ def _pyshp_to_shapefile(df, out_path, out_name):
         try:
             from urllib import request
             wkid = df.spatial.sr['wkid']
-
+            if wkid == 102100:
+                wkid = 3857
             prj_filename = out_fc.replace('.shp', '.prj')
 
             url = 'http://epsg.io/{}.esriwkt'.format(wkid)
@@ -844,7 +845,8 @@ def _pyshp2(df, out_path, out_name):
         try:
             from urllib import request
             wkid = df.spatial.sr['wkid']
-
+            if wkid == 102100:
+                wkid = 3857
             prj_filename = out_fc.replace('.shp', '.prj')
 
             url = 'http://epsg.io/{}.esriwkt'.format(wkid)
