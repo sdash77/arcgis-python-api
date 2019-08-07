@@ -195,12 +195,9 @@ class FeatureLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         output_folder                            Required. Output folder where the attachments will be stored.
         ------------------------------------     --------------------------------------------------------------------
-        label_field                              Optional. Value field name which classifies the attachments.
+        label_field                              Optional. Field which contains the label/category of each feature.
                                                  If None, a default folder is created.
         ====================================     ====================================================================
-
-        :return:
-            Dictionary : Mapping of object id with list of paths to attachments.
 
         """
         import pandas
@@ -255,7 +252,7 @@ class FeatureLayer(Layer):
             md5_hash = hashlib.md5(content).hexdigest()
             attachment_path = os.path.join(path, f'{md5_hash}.jpg')
 
-            object_attachments_mapping[row[1][object_id_field]].append(attachment_path)
+            object_attachments_mapping[row[1][object_id_field]].append(os.path.join('images', os.path.join(folder, f'{md5_hash}.jpg')))
 
             if os.path.exists(attachment_path):
                 continue
@@ -267,8 +264,6 @@ class FeatureLayer(Layer):
         file = open(mapping_path, 'w')
         file.write(json.dumps(object_attachments_mapping))
         file.close()
-
-        return object_attachments_mapping
 
     #----------------------------------------------------------------------
     def generate_renderer(self, definition, where=None):

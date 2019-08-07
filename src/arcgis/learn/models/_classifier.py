@@ -407,6 +407,7 @@ class FeatureClassifier(ArcGISModel):
     def _classify_attachments(
             self,
             feature_layer,
+            data_folder,
             feature_attachments_mapping,
             input_label_field,
             output_label_field,
@@ -425,7 +426,7 @@ class FeatureClassifier(ArcGISModel):
 
             predictions = []
             for attachment in feature_attachments:
-                prediction = self.predict(attachment)
+                prediction = self.predict(os.path.join(data_folder, attachment))
                 predictions.append((prediction[0].obj, prediction[2].data.max().tolist()))
 
             final_prediction = predict_function(predictions)
@@ -491,10 +492,18 @@ class FeatureClassifier(ArcGISModel):
 
         return features_to_update
 
-    def classify_features(self, feature_layer, labeled_tiles_directory, input_label_field, output_label_field, confidence_field=None, predict_function=_prediction_function):
+    def classify_features(
+        self,
+        feature_layer,
+        labeled_tiles_directory,
+        input_label_field,
+        output_label_field,
+        confidence_field=None,
+        predict_function=None
+    ):
 
         """
-        Classifies the labeled tiles and updates the feature layer with the prediction results with column output_label_field.
+        Classifies the exported images and updates the feature layer with the prediction results in the output_label_field.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -508,21 +517,25 @@ class FeatureClassifier(ArcGISModel):
         ------------------------------------     --------------------------------------------------------------------
         input_label_field                        Required. Value field name which created the labeled tiles. This field
                                                  should contain the OBJECTIDs of the features to be classified. In case of
-                                                 attachments this is the OBJECTID of the attachments.
+                                                 attachments this field is not used.
         ------------------------------------     --------------------------------------------------------------------
         output_label_field                       Required. Output column name to be added in the layer which contains predictions.
         ------------------------------------     --------------------------------------------------------------------
         confidence_field                         Optional. Output column name to be added in the layer which contains the confidence score.
         ------------------------------------     --------------------------------------------------------------------
-        predict_function                         Optional. Used for calculation of final prediction result. Takes as input a list of tuples.
+        predict_function                         Optional. Used for calculation of final prediction result when each feature
+                                                 has more than one attachment. The predict_function takes as input a list of tuples.
                                                  Each tuple has first element as the class predicted and second element is the confidence score.
-                                                 The function should return the final tuple classifying the feature.
+                                                 The function should return the final tuple classifying the feature and its confidence
         ====================================     ====================================================================
 
         :return:
             Boolean : True/False if operation is sucessful
 
         """
+
+        if predict_function is None:
+            predict_function = _prediction_function
 
         if input_label_field and _check_esri_files(Path(labeled_tiles_directory)):
             features_to_update = self._classify_labeled_tiles(
@@ -539,8 +552,9 @@ class FeatureClassifier(ArcGISModel):
 
             features_to_update = self._classify_attachments(
                 feature_layer,
+                labeled_tiles_directory,
                 feature_attachments_mapping,
-                input_label_field,
+                feature_layer.properties['objectIdField'],
                 output_label_field,
                 confidence_field,
                 predict_function
