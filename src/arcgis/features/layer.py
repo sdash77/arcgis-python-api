@@ -9,7 +9,6 @@ import json
 import os
 from re import search
 import time
-
 import six
 from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
@@ -196,16 +195,14 @@ class FeatureLayer(Layer):
         ------------------------------------     --------------------------------------------------------------------
         output_folder                            Required. Output folder where the attachments will be stored.
         ------------------------------------     --------------------------------------------------------------------
-        label_field                              Optional. Value field name which classifies the attachments.
+        label_field                              Optional. Field which contains the label/category of each feature.
                                                  If None, a default folder is created.
         ====================================     ====================================================================
 
-        :return:
-            Dictionay : Mapping of object id with list of paths to attachments.
-
         """
-        import requests
         import pandas
+        import urllib
+        import hashlib
 
         if not self.properties['hasAttachments']:
             raise Exception("Feature Layer doesn't have any attachments.")
@@ -213,7 +210,6 @@ class FeatureLayer(Layer):
         if not os.path.exists(output_folder):
             raise Exception("Invalid output folder path.")
 
-        data_classes = {}
         object_attachments_mapping = {}
 
         object_id_field = self.properties['objectIdField']
@@ -227,16 +223,20 @@ class FeatureLayer(Layer):
 
         token = self._con.token
 
+        internal_folder = os.path.join(output_folder, 'images')
+        if not os.path.exists(internal_folder):
+            os.mkdir(internal_folder)
+
+        folder = 'images'
         for row in dataframe_merged.iterrows():
-            folder = "default"
+
             if label_field is not None:
                 folder = row[1][label_field]
 
-            path = os.path.join(output_folder, folder)
-            if not data_classes.get(folder):
-                data_classes[folder] = 1
-                if not os.path.exists(path):
-                    os.mkdir(path)
+            path = os.path.join(internal_folder, folder)
+
+            if not os.path.exists(path):
+                os.mkdir(path)
 
             if token is not None:
                 url = '{}/{}/attachments/{}?token={}'.format(self.url, row[1][object_id_field], row[1]["ID"],
@@ -247,17 +247,23 @@ class FeatureLayer(Layer):
             if not object_attachments_mapping.get(row[1][object_id_field]):
                 object_attachments_mapping[row[1][object_id_field]] = []
 
-            attachment_path = os.path.join(path, f'attachments_{row[1]["ID"]}.jpg')
-            object_attachments_mapping[row[1][object_id_field]].append(attachment_path)
+            content = urllib.request.urlopen(url).read()
+
+            md5_hash = hashlib.md5(content).hexdigest()
+            attachment_path = os.path.join(path, f'{md5_hash}.jpg')
+
+            object_attachments_mapping[row[1][object_id_field]].append(os.path.join('images', os.path.join(folder, f'{md5_hash}.jpg')))
 
             if os.path.exists(attachment_path):
                 continue
-            content = requests.get(url).content
             file = open(attachment_path, 'wb')
             file.write(content)
             file.close()
 
-        return object_attachments_mapping
+        mapping_path = os.path.join(output_folder, 'mapping.txt')
+        file = open(mapping_path, 'w')
+        file.write(json.dumps(object_attachments_mapping))
+        file.close()
 
     #----------------------------------------------------------------------
     def generate_renderer(self, definition, where=None):

@@ -262,9 +262,14 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                 contrast(scale=(0.75, 1.5))
             ]
             val_tfms = []
-            transforms = (train_tfms, val_tfms)  
-
+            transforms = (train_tfms, val_tfms)
+        databunch_kwargs['valid_pct'] = val_split_pct
         data = ImageDataBunch.from_folder(path, ds_tfms=transforms, size=chip_size, **databunch_kwargs).normalize(imagenet_stats)
+        class_mapping = {}
+        index = 1
+        for class_name in data.classes:
+            class_mapping[index] = class_name
+            index = index + 1
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))    
 

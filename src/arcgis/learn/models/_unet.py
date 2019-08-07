@@ -5,7 +5,7 @@ from ._ssd import _raise_fastai_import_error, _EmptyData
 from functools import partial
 
 try:
-    from ._arcgis_model import ArcGISModel, SaveModelCallback
+    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
     import torch
     from torchvision import models
     from fastai.vision.learner import unet_learner
@@ -87,6 +87,7 @@ class UnetClassifier(ArcGISModel):
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
         self.learn.model = self.learn.model.to(self._device)
 
+        _set_multigpu_callback(self)
         if pretrained_path is not None:
             self.load(pretrained_path)
         

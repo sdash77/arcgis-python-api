@@ -18,7 +18,7 @@ try:
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     from ._unet_utils import is_no_color
     HAS_FASTAI = True
 except Exception as e:
@@ -159,15 +159,15 @@ class SingleShotDetector(ArcGISModel):
         self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, custom_head=ssd_head)
         self.learn.model = self.learn.model.to(self._device)
 
-        if pretrained_path is not None:
-            self.load(pretrained_path)
-
         if focal_loss:
             self._loss_f = FocalLoss(data.c)
         else:
             self._loss_f = BCE_Loss(data.c)
-
         self.learn.loss_func = self._ssd_loss
+
+        _set_multigpu_callback(self)
+        if pretrained_path is not None:
+            self.load(pretrained_path)        
 
     @classmethod
     def from_emd(cls, data, emd_path):

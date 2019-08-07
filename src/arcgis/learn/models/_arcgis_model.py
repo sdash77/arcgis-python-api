@@ -1,8 +1,13 @@
 try:
-    from fastai.callbacks import TrackerCallback, EarlyStoppingCallback
+    from fastai.callbacks import TrackerCallback, EarlyStoppingCallback, LearnerCallback
+    from torch import nn
+    import torch
 except ImportError:
     class TrackerCallback():
         pass
+    class LearnerCallback():
+        pass
+    
 import arcgis
 from pathlib import Path
 import os
@@ -13,6 +18,27 @@ logger = logging.getLogger()
 #For lr computation, skip beginning and trailing values.
 losses_skipped = 5
 trailing_losses_skipped = 5
+
+class _MultiGPUCallback(LearnerCallback):
+    """
+    Parallize over multiple GPUs only if multiple GPUs are present.
+    """
+    def __init__(self, learn):
+        super(_MultiGPUCallback, self).__init__(learn)
+        
+        self.multi_gpu = torch.cuda.device_count() > 1
+
+    def on_train_begin(self, **kwargs):
+        if self.multi_gpu:
+            logger.info('Training on multiple GPUs')
+            self.learn.model = nn.DataParallel(self.learn.model)
+    
+    def on_train_end(self, **kwargs):
+        if self.multi_gpu:
+            self.learn.model = self.learn.model.module
+
+def _set_multigpu_callback(model):
+    model.learn.callback_fns.append(_MultiGPUCallback)
 
 
 def _create_zip(zipname, path):

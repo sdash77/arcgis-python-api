@@ -1,6 +1,5 @@
 var isSmartMapRenderer = function(renderer){
-    return isHeatMapRenderer(renderer) ||
-           isClassedSizeRenderer(renderer) ||
+    return isClassedSizeRenderer(renderer) ||
            isClassedColorRenderer(renderer)
 }
 

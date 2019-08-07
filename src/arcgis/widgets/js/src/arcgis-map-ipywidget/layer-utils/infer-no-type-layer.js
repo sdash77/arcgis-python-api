@@ -6,6 +6,14 @@ var config = require("config");
 var esriLoader = getEsriLoader(config);
 var options = config.EsriLoaderOptions;
 
+var _uuid4 = function() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, 
+          function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+}
+
 var inferNoTypeLayer = function(noTypeLayer, widget){
     ///Take a generic object, constructs the correct layer type, returns
     //a promise that let's you use the typedLayer this func constructs.
@@ -175,6 +183,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
 
                 //Assemble everything from the featureLayer BUT the renderer
                 var typedLayer = new FeatureLayer({
+                    title: _uuid4(), 
                     fields: featureSet.fields,
                     objectIdField: layerDefinition.objectIdField,
                     geometryType: featureSet.geometryType,
@@ -186,6 +195,8 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 //Get the correct renderer and rendererOptions to
                 if("renderer" in noTypeLayer.options){
                     renderer = noTypeLayer.options.renderer;
+                } else if(layerDefinition.drawingInfo.renderer.renderer === "autocast"){
+                    renderer = "autocast";
                 } else {
                     renderer = layerDefinition.drawingInfo.renderer.type;
                 }
