@@ -22,6 +22,7 @@ try:
     from fastai.vision.learner import cnn_learner, ClassificationInterpretation
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch.nn.functional as functional
+    from .._data import _check_esri_files
     import tempfile
     import glob
     import time
@@ -48,6 +49,22 @@ _CLASS_TEMPLATE = {
       "Name" : "1",
       "Color" : []
 }
+
+
+def _prediction_function(predictions):
+    classes = {}
+    max_prediction_value = 0
+    max_prediction_class = None
+    for prediction in predictions:
+        if not classes.get(prediction[0]):
+            classes[prediction[0]] = prediction[1]
+        else:
+            classes[prediction[0]] = classes[prediction[0]] + prediction[1]
+        if max_prediction_value < classes[prediction[0]]:
+            max_prediction_value = classes[prediction[0]]
+            max_prediction_class = prediction[0]
+
+    return max_prediction_class, max_prediction_value
 
 
 class FeatureClassifier(ArcGISModel):
@@ -116,10 +133,9 @@ class FeatureClassifier(ArcGISModel):
         _EMD_TEMPLATE['ModelFile'] = path.name
         _EMD_TEMPLATE['ImageHeight'] = self._data.chip_size
         _EMD_TEMPLATE['ImageWidth'] = self._data.chip_size
-        _EMD_TEMPLATE['ModelParameters'] = {
-                                            'backbone': self._backbone.__name__
-                                           }
+        _EMD_TEMPLATE['ModelParameters'] = {'backbone': self._backbone.__name__}
         _EMD_TEMPLATE['Classes'] = []
+
         for i, class_name in enumerate(self._data.classes):
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             _CLASS_TEMPLATE["Value"] = inverse_class_mapping[class_name]
@@ -129,6 +145,7 @@ class FeatureClassifier(ArcGISModel):
             _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())
 
         json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
+
         return path.stem
 
     @classmethod
@@ -330,75 +347,8 @@ class FeatureClassifier(ArcGISModel):
 
         return feature_collection
 
-    def classify_features(self, feature_layer, labeled_tiles_directory, input_label_field, output_label_field, confidence_field=None):
-
-        """
-        Classifies the labeled tiles and updates the feature layer with the prediction results with column output_label_field.
-
-        ====================================     ====================================================================
-        **Argument**                             **Description**
-        ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Feature Layer for classification.
-        ------------------------------------     --------------------------------------------------------------------
-        labeled_tiles_directory                  Required. Folder structure containing images and labels folder. The
-                                                 chips should have been generated using the export training data tool in
-                                                 the Labeled Tiles format, and the labels should contain the OBJECTIDs
-                                                 of the features to be classified.
-        ------------------------------------     --------------------------------------------------------------------
-        input_label_field                        Required. Value field name which created the labeled tiles. This field
-                                                 should contain the OBJECTIDs of the features to be classified.
-        ------------------------------------     --------------------------------------------------------------------
-        output_label_field                       Required. Output column name to be added in the layer which contains predictions.
-        ------------------------------------     --------------------------------------------------------------------
-        confidence_field                         Optional. Output column name to be added in the layer which contains the confidence score.
-        ====================================     ====================================================================
-
-        :return:
-            Boolean : True/False if operation is sucessful
-
-        """
-
-        ALLOWED_FILE_FORMATS = ['tif', 'jpg', 'png']
-        IMAGES_FOLDER = 'images/'
-        LABELS_FOLDER = 'labels/'
-
-        files = []
-
-        for ext in ALLOWED_FILE_FORMATS:
-            files.extend(glob.glob(os.path.join(labeled_tiles_directory, IMAGES_FOLDER + '*.' + ext)))
-
-        predictions = {}
-        for file in files:
-            xml_path = os.path.join(os.path.dirname(os.path.dirname(file)),
-                                    os.path.join(LABELS_FOLDER, os.path.basename(file).split('.')[0] + '.xml'))
-
-            if not os.path.exists(xml_path):
-                continue
-
-            tree = ElementTree.parse(xml_path)
-            root = tree.getroot()
-
-            name_field = root.findall('object/name')
-            if len(name_field) != 1:
-                continue
-
-            file_prediction = self.predict(file)
-
-            predictions[name_field[0].text] = {
-                'prediction': file_prediction[0].obj,
-                'score': str(file_prediction[2].data.max().tolist())
-            }
-
-        features = feature_layer.query().features
-        features_to_update = []
-        for feature in features:
-            if predictions.get(str(feature.attributes[input_label_field])):
-                feature.attributes[output_label_field] = predictions.get(str(feature.attributes[input_label_field]))['prediction']
-                if confidence_field:
-                    feature.attributes[confidence_field] = predictions.get(str(feature.attributes[input_label_field]))['score']
-
-                features_to_update.append(feature)
-
+    @staticmethod
+    def _update_predictions_layer(feature_layer, features_to_update, output_label_field, confidence_field=None):
         field_template = {
             "name": output_label_field,
             "type": "esriFieldTypeString",
@@ -445,7 +395,7 @@ class FeatureClassifier(ArcGISModel):
                 features_updated = features_to_update[start:stop]
                 feature_layer.edit_features(updates=features_updated)
                 time.sleep(2)
-        except Exception as e:
+        except Exception:
             feature_layer.manager.delete_from_definition({'fields': [field_template]})
             if confidence_field:
                 feature_layer.manager.delete_from_definition({'fields': [confidence_field_template]})
@@ -453,3 +403,154 @@ class FeatureClassifier(ArcGISModel):
             return False
 
         return True
+
+    def _classify_attachments(
+            self,
+            feature_layer,
+            feature_attachments_mapping,
+            input_label_field,
+            output_label_field,
+            confidence_field=None,
+            predict_function=_prediction_function
+    ):
+
+        features = feature_layer.query().features
+        features_to_update = []
+
+        for feature in features:
+            feature_attachments = (feature_attachments_mapping.get(str(feature.attributes[input_label_field])) or \
+                                   feature_attachments_mapping.get(int(feature.attributes[input_label_field])))
+            if not feature_attachments:
+                continue
+
+            predictions = []
+            for attachment in feature_attachments:
+                prediction = self.predict(attachment)
+                predictions.append((prediction[0].obj, prediction[2].data.max().tolist()))
+
+            final_prediction = predict_function(predictions)
+
+            feature.attributes[output_label_field] = final_prediction[0]
+            if confidence_field:
+                feature.attributes[confidence_field] = final_prediction[1]
+
+            features_to_update.append(feature)
+
+        return features_to_update
+
+    def _classify_labeled_tiles(
+            self,
+            feature_layer,
+            labeled_tiles_directory,
+            input_label_field,
+            output_label_field,
+            confidence_field=None
+    ):
+        ALLOWED_FILE_FORMATS = ['tif', 'jpg', 'png']
+        IMAGES_FOLDER = 'images/'
+        LABELS_FOLDER = 'labels/'
+
+        files = []
+
+        for ext in ALLOWED_FILE_FORMATS:
+            files.extend(glob.glob(os.path.join(labeled_tiles_directory, IMAGES_FOLDER + '*.' + ext)))
+
+        predictions = {}
+        for file in files:
+            xml_path = os.path.join(os.path.dirname(os.path.dirname(file)),
+                                    os.path.join(LABELS_FOLDER, os.path.basename(file).split('.')[0] + '.xml'))
+
+            if not os.path.exists(xml_path):
+                continue
+
+            tree = ElementTree.parse(xml_path)
+            root = tree.getroot()
+
+            name_field = root.findall('object/name')
+            if len(name_field) != 1:
+                continue
+
+            file_prediction = self.predict(file)
+
+            predictions[name_field[0].text] = {
+                'prediction': file_prediction[0].obj,
+                'score': str(file_prediction[2].data.max().tolist())
+            }
+
+        features = feature_layer.query().features
+        features_to_update = []
+        for feature in features:
+            if predictions.get(str(feature.attributes[input_label_field])):
+                feature.attributes[output_label_field] = predictions.get(str(feature.attributes[input_label_field]))[
+                    'prediction']
+                if confidence_field:
+                    feature.attributes[confidence_field] = predictions.get(str(feature.attributes[input_label_field]))[
+                        'score']
+
+                features_to_update.append(feature)
+
+        return features_to_update
+
+    def classify_features(self, feature_layer, labeled_tiles_directory, input_label_field, output_label_field, confidence_field=None, predict_function=_prediction_function):
+
+        """
+        Classifies the labeled tiles and updates the feature layer with the prediction results with column output_label_field.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        feature_layer                            Required. Feature Layer for classification.
+        ------------------------------------     --------------------------------------------------------------------
+        labeled_tiles_directory                  Required. Folder structure containing images and labels folder. The
+                                                 chips should have been generated using the export training data tool in
+                                                 the Labeled Tiles format, and the labels should contain the OBJECTIDs
+                                                 of the features to be classified.
+        ------------------------------------     --------------------------------------------------------------------
+        input_label_field                        Required. Value field name which created the labeled tiles. This field
+                                                 should contain the OBJECTIDs of the features to be classified. In case of
+                                                 attachments this is the OBJECTID of the attachments.
+        ------------------------------------     --------------------------------------------------------------------
+        output_label_field                       Required. Output column name to be added in the layer which contains predictions.
+        ------------------------------------     --------------------------------------------------------------------
+        confidence_field                         Optional. Output column name to be added in the layer which contains the confidence score.
+        ------------------------------------     --------------------------------------------------------------------
+        predict_function                         Optional. Used for calculation of final prediction result. Takes as input a list of tuples.
+                                                 Each tuple has first element as the class predicted and second element is the confidence score.
+                                                 The function should return the final tuple classifying the feature.
+        ====================================     ====================================================================
+
+        :return:
+            Boolean : True/False if operation is sucessful
+
+        """
+
+        if input_label_field and _check_esri_files(Path(labeled_tiles_directory)):
+            features_to_update = self._classify_labeled_tiles(
+                feature_layer,
+                labeled_tiles_directory,
+                input_label_field,
+                output_label_field,
+                confidence_field
+            )
+        elif os.path.exists(os.path.join(labeled_tiles_directory, 'mapping.txt')):
+            json_file = os.path.join(labeled_tiles_directory, 'mapping.txt')
+            with open(json_file) as file:
+                feature_attachments_mapping = json.load(file)
+
+            features_to_update = self._classify_attachments(
+                feature_layer,
+                feature_attachments_mapping,
+                input_label_field,
+                output_label_field,
+                confidence_field,
+                predict_function
+            )
+        else:
+            return False
+
+        return FeatureClassifier._update_predictions_layer(
+            feature_layer,
+            features_to_update,
+            output_label_field,
+            confidence_field
+        )
