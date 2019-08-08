@@ -15,8 +15,8 @@ try:
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2
-    from .._data import prepare_data
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2, kmeans, avg_iou
+    from .._data import prepare_data, _get_bbox_lbls
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     from ._unet_utils import is_no_color
@@ -106,7 +106,7 @@ class SingleShotDetector(ArcGISModel):
     :returns: `SingleShotDetector` Object
     """
 
-    def __init__(self, data, grids=[4, 2, 1], zooms=[0.7, 1., 1.3], ratios=[[1., 1.], [1., 0.5], [0.5, 1.]],
+    def __init__(self, data, grids=None, zooms=[1.], ratios=[[1., 1.]],
                  backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None, location_loss_factor=None, ssd_version=2):
 
         super().__init__()
@@ -136,16 +136,53 @@ class SingleShotDetector(ArcGISModel):
             self._backbone = backbone
             backbone_name = 'custom'
 
-        self._create_anchors(grids, zooms, ratios)
-
-        feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
-        num_features = feature_sizes[-1][-1]
-        num_channels = feature_sizes[-1][1]
         backbone_cut = None
+
         if ssd_version == 1:
+
+            self._create_anchors(grids, zooms, ratios)
+
+            feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
+            num_features = feature_sizes[-1][-1]
+            num_channels = feature_sizes[-1][1]
+
             ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
         elif ssd_version == 2:
-            if(abs(num_features-grids[0]) > 4 and backbone_name == 'res'):
+
+            # find bounding boxes height and width
+        
+            if grids == None:
+                hw = [] 
+                for i in data.items:
+                    bbs, _ = _get_bbox_lbls(i, data.class_mapping)
+                    for bb in bbs:
+                        h, w = bb[2] - bb[0], bb[3] - bb[1]
+                        hw.append(tuple(map(float, (w*1.25, h*1.25))))
+                hw = np.array(hw)
+                
+                # find most suitable centroids for dataset
+                centroid = kmeans(hw , 1) 
+                avg = avg_iou(hw, centroid)
+
+                for num_anchor in range(2, 5):
+                    new_centroid = kmeans(hw, num_anchor)
+                    new_avg = avg_iou(hw, new_centroid)
+                    if (new_avg - avg) < 0.05:
+                       break
+                    avg = new_avg
+                    centroid = new_centroid.copy()
+
+                # find grid size
+
+                grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
+            
+            self._create_anchors(grids, zooms, ratios)
+
+            feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
+            num_features = feature_sizes[-1][-1]
+            num_channels = feature_sizes[-1][1] 
+
+            if(grids[0] > 8 and abs(num_features - grids[0]) > 4 and backbone_name == 'res'):
                 num_features = feature_sizes[-2][-1]
                 num_channels = feature_sizes[-2][1]
                 backbone_cut = -3

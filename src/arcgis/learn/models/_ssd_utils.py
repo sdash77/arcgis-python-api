@@ -5,6 +5,7 @@ from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastprogress import progress_bar
 import numpy as np
+import random
 
 def conv_params(in_size, out_size):
     filters = [3,2,5,4]
@@ -354,3 +355,54 @@ def compute_class_AP(ssd, dl, n_classes, iou_thresh=0.5, detect_thresh=0.35, num
             aps.append(compute_ap(precision, recall))
         else: aps.append(0.)
     return aps
+
+def iou(ann, centroids): 
+    
+    similarities = []
+
+    for centroid in centroids:
+
+        inter = np.prod(np.minimum(ann, centroid))       
+        union = np.prod(ann) + np.prod(centroid) - inter
+        similarities.append(inter/union)
+
+    return np.array(similarities)
+
+
+def avg_iou(bboxes, centroids):
+    
+    sum = 0.
+    
+    for bbox in bboxes:
+        sum += max(iou(bbox, centroids))
+        
+    return sum/bboxes.shape[0]
+
+
+def kmeans(bboxes, num_anchor):
+    # Method based on https://github.com/experiencor/keras-yolo3
+
+    num_points, dim = bboxes.shape
+    prev_centroids = np.ones(num_points)*(-1)
+    indices = [random.randrange(num_points) for i in range(num_anchor)]
+    centroids = bboxes[indices]
+    
+    while True:
+        distances = []
+        for bbox in bboxes:
+            d = 1 - iou(bbox, centroids)
+            distances.append(d)
+        distances = np.array(distances)
+        cur_centroids = np.argmin(distances, axis=1)
+        
+        if (prev_centroids == cur_centroids).all() :
+            return centroids
+        
+        centroid_sums = np.zeros((num_points, dim), np.float)
+        for i in range(num_points):
+            centroid_sums[cur_centroids[i]] += bboxes[i]
+        for i in range(num_anchor):
+            centroids[i] = centroid_sums[i]/(np.sum(cur_centroids == i) + 1e-6)
+            
+        prev_centroids = cur_centroids.copy()
+    
