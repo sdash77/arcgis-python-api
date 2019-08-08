@@ -1985,7 +1985,7 @@ class FeatureLayerCollection(_GISResource):
         :returns: list of dictionaries
 
         """
-        if not isinstance(layers (tuple, list)):
+        if not isinstance(layers, (tuple, list)):
             raise ValueError("The layer variable must be a list.")
         url = "{base}/queryDomains".format(base=self._url)
         params = {'f':'json'}
