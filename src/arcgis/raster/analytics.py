@@ -1782,7 +1782,9 @@ def add_image(image_collection,
               gis=None,
               **kwargs):
     """
-    Add a collection of images to an existing image_collection. Provides provision to use input rasters by reference 
+    .. image:: _static/images/add_image/add_image.png 
+
+    Add a collection of images to an existing image collection. It provides provision to use input rasters by reference 
     and to specify image collection properties through context parameter.
 
     It can be used when new data is available to be included in the same 
@@ -1792,48 +1794,68 @@ def add_image(image_collection,
     ==================                   ====================================================================
     **Argument**                         **Description**
     ------------------                   --------------------------------------------------------------------
-    input_rasters                        Required, the list of input rasters to be added to
+    input_rasters                        Required list. The list of input rasters to be added to
                                          the image collection being created. This parameter can
-                                         be any one of the following:
+                                         be any one of the following types:
+    
                                          - List of portal Items of the images
                                          - An image service URL
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
     ------------------                   --------------------------------------------------------------------
-    image_collection                     Required, the item representing the image collection to add input_rasters to.
+    image_collection                     Required item. The item representing the image collection to add ``input_rasters`` to.
                   
                                          The image collection must be an existing image collection.
-                                         This is the output image collection (mosaic dataset) item or url or uri
+                                         This is the output image collection (mosaic dataset) item or url or uri.
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     Required, the name of the raster type to use for adding data to 
+    raster_type_name                     Required string. The name of the raster type to use for adding data to 
                                          the image collection.
+
+                                         Choice list: ['UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
     ------------------                   --------------------------------------------------------------------
-    raster_type_params                   Optional,  additional raster_type specific parameters.
+    raster_type_params                   Optional dict. Additional raster type specific parameters.
         
                                          The process of add rasters to the image collection can be
                                          controlled by specifying additional raster type arguments.
-
-                                         The raster type parameters argument is a dictionary.
+                                         
+                                         Syntax: {"gps": [["image1.jpg", "10", "2", "300"], ["image2.jpg", "10", "3", "300"], ["image3.jpg", "10", "4", "300"]],
+                                         "cameraProperties": {"Maker": "Canon", "Model": "5D Mark II", "FocalLength": 20, "PixelSize": 10, "x0": 0, "y0": 0, "columns": 4000, "rows": 3000},
+                                         "constantZ": 300,"isAltitudeFlightHeight": "True","dem": {"url": "https://..."}
     ------------------                   --------------------------------------------------------------------
-    context                               Optional, The context parameter is used to provide additional input parameters
-                                            {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+    context                              Optional dict. The context parameter is used to provide additional input parameters.
+
+                                         Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":'True'}
                                             
-                                            use image_collection_properties key to set value for imageCollectionType.
-                                            Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+                                         Use ``image_collection_properties`` key to set value for imageCollectionType.
+
+                                         .. note::
+
+                                            The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
                                             Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
                                             Therefore, if the image collection is created by reference, the requester should set this 
                                             property based on the type of images in the image collection using the following keywords. 
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
-
-                                            If byref is set to True, the data will not be uploaded. If it is not set, the default is False
+ 
+                                         If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
     ------------------                   --------------------------------------------------------------------
     gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================                   ====================================================================
 
-    :return:
-        The imagery layer item
+    :returns: The imagery layer item
 
+    .. code-block:: python
+
+            # Usage Example: To add an image to an existing image collection.
+
+            params = {"gps":[["YUN_0040.JPG",34.006989,-117.09279,725.13]],
+                      "cameraProperties":{"maker":"Yuneec","model":"E90","focallength":8,"columns":5472,"rows":3648,"pixelsize":0.0024},
+                      "isAltitudeFlightHeight":"false",
+                      "averagezdem": {"url": "https://rais.dev.geocloud.com/arcgis/rest/services/Hosted/WorldSRTM90m/ImageServer"}}
+
+            add_image(image_collection=image_collection, input_rasters=[image_item], raster_type_name="UAV/UAS", raster_type_params=params)
+  
     """
+
 
     gis = _arcgis.env.active_gis if gis is None else gis
     url = gis.properties.helperServices.rasterAnalytics.url
