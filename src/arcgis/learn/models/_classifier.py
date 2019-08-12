@@ -1,5 +1,5 @@
 import arcgis as _arcgis 
-from ._arcgis_model import ArcGISModel
+from ._arcgis_model import ArcGISModel, _set_multigpu_callback
 
 try:
     import pandas
