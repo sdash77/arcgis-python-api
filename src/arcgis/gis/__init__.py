@@ -3183,7 +3183,9 @@ class ContentManager(object):
             extn = os.path.splitext(os.path.basename(data))[1].upper()
 
             filetype = None
-            if (extn == '.CSV'):
+            if (extn == 'GPKG'):
+                filetype = "GeoPackage"
+            elif (extn == '.CSV'):
                 filetype = 'CSV'
             elif (extn == '.SD'):
                 filetype = 'Service Definition'
@@ -8521,7 +8523,9 @@ class Item(dict):
         }
         buildInitialCache = build_initial_cache
         if file_type is None:
-            if self['type'] == 'Service Definition':
+            if self['type'] == "GeoPackage":
+                fileType = "gpkg"
+            elif self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'
             elif self['type'] == 'Microsoft Excel':
                 fileType = 'excel'
@@ -8557,7 +8561,7 @@ class Item(dict):
 
         if publish_parameters is None:
             if fileType == 'shapefile' and not overwrite:
-                publish_parameters =  {"hasStaticData":True, "name":os.path.splitext(self['name'])[0],
+                publish_parameters =  {"hasStaticData":True, "name": os.path.splitext(self['name'])[0].replace(" ", "_"),
                                        "maxRecordCount":2000, "layerInfo":{"capabilities":"Query"} }
 
             elif fileType in ['CSV', 'excel'] and not overwrite:
