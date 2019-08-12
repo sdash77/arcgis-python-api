@@ -443,7 +443,8 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
                    19 = EVI,
                    20 = IronOxide,
                    21 = FerrousMinerals,
-                   22 = ClayMinerals
+                   22 = ClayMinerals,
+                   23 = WNDWI
 
     :return: band_arithmetic applied to the input raster
     """
@@ -781,6 +782,23 @@ def clay_minerals(raster, band_indexes="6 7", astype=None):
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 22)
+
+def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
+    """
+    The Weighted Normalized Difference Water Index (WNDWI) is a water index
+    developed to reduce error typically encountered in other water indices,
+    including water turbidity, small water bodies, or shadow in remote sensing scenes.
+    Supported from 10.8.
+
+    WNDWI = [Green – α * NIR – (1 – α) * SWIR ] / [Green + α * NIR + (1 – α) * SWIR]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green NIR SWIR α", e.g., "2 5 6 0.5"
+    :param astype: output pixel type
+    :return: output raster
+
+    """
+    return band_arithmetic(raster, band_indexes, astype, 23)
 
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
