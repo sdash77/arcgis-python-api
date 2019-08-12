@@ -865,6 +865,12 @@ def join_features(target_layer,
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
+
+    return_values = [
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+
+    ]
+    
     try:
         if future:
             gpjob = _execute_gp_tool(gis, "JoinFeatures", params, param_db, return_values, _use_async, url, True, future=future)
