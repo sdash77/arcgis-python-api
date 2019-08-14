@@ -1,0 +1,43 @@
+{
+  "Version" : 1,
+  "NumBands" : 3,
+  "TileSizeX" : 448,
+  "TileSizeY" : 448,
+  "NumClasses" : 1,
+  "NumTiles" : 548,
+  "OutputFeatures" : true,
+  "MetaDataMode" : "PASCAL_VOC_rectangles",
+  "Classes" : [
+    {
+      "ClassValue" : 1,
+      "ClassName" : "Palm"
+    }
+  ],
+  "FeatureStats" : {
+    "NumClasses" : 1,
+    "NumImagesTotal" : 548,
+    "NumFeaturesTotal" : 3694,
+    "NumImagesPerClass" : [
+      548
+    ],
+    "NumFeaturesPerClass" : [
+      3694
+    ],
+    "NumFeaturesPerImage" : {
+      "Min" : 1,
+      "Max" : 24,
+      "Mean" : 6.7408759124087592,
+      "Sum" : 3694,
+      "Count" : 548
+    },
+    "FeatureAreaPerClass" : [
+      {
+        "Min" : 2.5970000389549299e-15,
+        "Max" : 4.374728228195934e-09,
+        "Mean" : 1.7426678155589698e-09,
+        "Sum" : 6.4374149106748342e-06,
+        "Count" : 3694
+      }
+    ]
+  }
+}

@@ -20,6 +20,7 @@ try:
     from fastai.vision.data import ImageDataBunch
     from fastai.vision import imagenet_stats
     from fastai.vision.learner import cnn_learner, ClassificationInterpretation
+    from ._arcgis_model import _set_multigpu_callback
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch.nn.functional as functional
     from .._data import _check_esri_files
