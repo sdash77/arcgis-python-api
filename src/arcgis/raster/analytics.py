@@ -1962,6 +1962,8 @@ def delete_image_collection(image_collection,
                             gis=None,
                             **kwargs):
     '''
+    .. image:: _static/images/delete_image_collection/delete_image_collection.png 
+
     Delete the image collection. This service tool will delete the image collection
     image service, that is, the portal-hosted image layer item. It will not delete 
     the source images that the image collection references.
@@ -1978,8 +1980,13 @@ def delete_image_collection(image_collection,
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
-    :return:
-        Boolean value indicating whether the deletion was successful or not
+    :returns: Boolean value indicating whether the deletion was successful or not.
+
+    .. code-block:: python
+
+            # Usage Example: To delete an existing image collection.
+
+            delete_flag = delete_image_collection(image_collection=image_collection_item)
 
     '''
 
