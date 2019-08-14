@@ -191,13 +191,21 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         with open(json_file) as f:
             emd = json.load(f)
 
+        # Create Class Mapping from EMD if not specified by user
         if class_mapping is None:
             try:
                 class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
             except KeyError:
                 class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
 
-        color_mapping = {(i.get('Value') or i.get('ClassValue')): i['Color'] for i in emd.get('Classes', [])}
+        color_mapping = {(i.get('Value', 0) or i.get('ClassValue', 0)): i['Color'] for i in emd.get('Classes', [])}
+
+        if color_mapping.get(None):
+            del color_mapping[None]
+
+        if class_mapping.get(None):
+            del class_mapping[None]
+
     elif dataset_type == 'PASCAL_VOC_rectangles' and not has_esri_files:
         if class_mapping is None:
             class_mapping = _get_class_mapping(path / 'labels')
@@ -207,7 +215,13 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
         def get_y_func(x, ext=right):
             return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
-        
+
+        if class_mapping.get(0):
+            del class_mapping[0]
+
+        if color_mapping.get(0):
+            del color_mapping[0]
+
         src = (ArcGISSegmentationItemList.from_folder(path/'images')
                 .split_by_rand_pct(val_split_pct, seed=seed)
                 .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)) # TODO : Handel NoData case
