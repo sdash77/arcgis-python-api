@@ -42,7 +42,7 @@ def _bb_pad_collate(samples, pad_idx=0):
     return torch.cat(imgs,0), (bboxes,labels)    
 
 
-def _get_bbox_classes(xmlfile, class_mapping, not_label_count = None, height_width = None):
+def _get_bbox_classes(xmlfile, class_mapping, not_label_count = [0], height_width = []):
 
 
     if not os.path.exists(xmlfile):
@@ -161,6 +161,8 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     :returns: fastai DataBunch object
     """
 
+    height_width = []
+
     if not HAS_FASTAI:
         _raise_fastai_import_error()
 
@@ -241,7 +243,6 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         src = (SSDObjectItemList.from_folder(path/'images')
                 .split_by_rand_pct(val_split_pct, seed=seed))
 
-        height_width = []
         not_label_count = [0]
         get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping, not_label_count = not_label_count, height_width = height_width)
 
