@@ -272,7 +272,10 @@ class SingleShotDetector(ArcGISModel):
         return torch.cat([ctr-hw/2, ctr+hw/2], dim=1)
 
     def _get_y(self, bbox, clas):
-        bbox = bbox.view(-1,4) #/sz
+        try:
+            bbox = bbox.view(-1, 4)  # /sz
+        except Exception:
+            bbox = torch.zeros(size=[0, 4])
         bb_keep = ((bbox[:,2]-bbox[:,0])>0).nonzero()[:,0]
         return bbox[bb_keep],clas[bb_keep]
 
