@@ -1,6 +1,6 @@
 import arcgis as _arcgis 
 from ._arcgis_model import ArcGISModel, _set_multigpu_callback
-
+import random
 try:
     import pandas
     import tempfile
@@ -130,7 +130,6 @@ class FeatureClassifier(ArcGISModel):
         return self.learn.predict(img)
 
     def _create_emd(self, path):
-        import random
         _EMD_TEMPLATE['ModelFile'] = path.name
         _EMD_TEMPLATE['ImageHeight'] = self._data.chip_size
         _EMD_TEMPLATE['ImageWidth'] = self._data.chip_size
@@ -387,14 +386,23 @@ class FeatureClassifier(ArcGISModel):
             count = 100
 
             features_updated = features_to_update[start:stop]
-            feature_layer.edit_features(updates=features_updated)
+            response = feature_layer.edit_features(updates=features_updated)
+
+            for resp in response.get('updateResults', []):
+                if resp.get('success', False):
+                    continue
+                warnings.warn(f"Something went wrong for data {resp}")
 
             time.sleep(2)
             while count == len(features_updated):
                 start = stop
                 stop = stop + 100
                 features_updated = features_to_update[start:stop]
-                feature_layer.edit_features(updates=features_updated)
+                response = feature_layer.edit_features(updates=features_updated)
+                for resp in response.get('updateResults', []):
+                    if resp.get('success', False):
+                        continue
+                    warnings.warn(f"Something went wrong for data {resp}")
                 time.sleep(2)
         except Exception:
             feature_layer.manager.delete_from_definition({'fields': [field_template]})
@@ -479,7 +487,7 @@ class FeatureClassifier(ArcGISModel):
                 'score': str(file_prediction[2].data.max().tolist())
             }
 
-        features = feature_layer.query().features
+        features = feature_layer.query(output_fields=[input_label_field]).features
         features_to_update = []
         for feature in features:
             if predictions.get(str(feature.attributes[input_label_field])):
@@ -568,4 +576,101 @@ class FeatureClassifier(ArcGISModel):
             features_to_update,
             output_label_field,
             confidence_field
+        )
+
+    def categorize_features(
+        self,
+        feature_layer,
+        input_raster=None,
+        output_label_field='Prediction',
+        confidence_field='Confidence',
+        cell_size=1,
+        predict_function=None
+    ):
+
+        """
+        Categorizes each feature by classifying it's attachments or an image of its geographical area (using the provided Imagery Layer)
+        and updates the feature layer with the prediction results in the output_label_field.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        feature_layer                            Required. Feature Layer for classification with read, write, edit permissions.
+        ------------------------------------     --------------------------------------------------------------------
+        input_raster                             Optional. ImageryLayer to be used for exporting image chips. (Requires arcpy)
+        ------------------------------------     --------------------------------------------------------------------
+        output_label_field                       Required. Output field to be added in the layer, containing predictions.
+        ------------------------------------     --------------------------------------------------------------------
+        cell_size                                Optional. Cell size to be used for exporting the image chips.
+        ------------------------------------     --------------------------------------------------------------------
+        confidence_field                         Optional. Output column name to be added in the layer which contains the confidence score.
+        ------------------------------------     --------------------------------------------------------------------
+        predict_function                         Optional. Used for calculation of final prediction result when each feature
+                                                 has more than one attachment. The predict_function takes as input a list of tuples.
+                                                 Each tuple has first element as the class predicted and second element is the confidence score.
+                                                 The function should return the final tuple classifying the feature and its confidence.
+        ====================================     ====================================================================
+
+        :return:
+            Boolean : True if operation is successful, False otherwise
+
+        """
+
+        out_folder = tempfile.TemporaryDirectory().name
+        class_value_field = None
+
+        if isinstance(feature_layer, str):
+            from arcgis.features import FeatureLayer
+            feature_layer = FeatureLayer(feature_layer)
+
+        if input_raster is not None:
+            if isinstance(input_raster, str):
+                from arcgis.raster import ImageryLayer
+                input_raster = ImageryLayer(input_raster)
+
+            import arcpy
+
+            feature_layer_url = f"{feature_layer.url}"
+            input_raster_url = f"{input_raster.url}"
+
+            if feature_layer._token is not None:
+                feature_layer_url = feature_layer_url + f"?token={feature_layer._token}"
+
+            if input_raster._token is not None:
+                input_raster_url = input_raster_url + f"?token={input_raster._token}"
+
+            class_value_field = feature_layer.properties['objectIdField']
+
+            copy_field_name = ''.join([chr(ord('a') + round(random.random() * 100 % 25)) for i in range(5)])
+            arcpy.AddField_management(feature_layer_url, copy_field_name, "LONG", field_length="20")
+            arcpy.CalculateField_management(
+                feature_layer.url,
+                copy_field_name,
+                class_value_field,
+                "SQL"
+            )
+
+            arcpy.env.cellSize = cell_size
+            arcpy.ia.ExportTrainingDataForDeepLearning(
+                input_raster_url,
+                out_folder,
+                in_class_data=feature_layer_url,
+                image_chip_format="TIFF",
+                tile_size_x=self._data.chip_size,
+                tile_size_y=self._data.chip_size,
+                metadata_format="Labeled_Tiles",
+                class_value_field=copy_field_name
+            )
+            arcpy.DeleteField_management(feature_layer_url, [copy_field_name])
+        else:
+            os.mkdir(out_folder)
+            feature_layer.export_attachments(out_folder)
+
+        return self.classify_features(
+            feature_layer,
+            out_folder,
+            class_value_field,
+            output_label_field,
+            confidence_field=confidence_field,
+            predict_function=predict_function
         )
