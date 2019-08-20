@@ -132,7 +132,7 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
     params = {'f': 'json'}
 
     if inspect.isfunction(code):
-        params['code'] = inspect.getsource(code)
+        params['code'] = exec(inspect.getsource(code) + '\n' + code.__name__ + '()')
     elif isinstance(code, str):
         params['code'] = code
     else:
