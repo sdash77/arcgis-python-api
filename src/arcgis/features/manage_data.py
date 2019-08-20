@@ -10,7 +10,7 @@ maps and creating a single map containing all the information found in the stack
 import arcgis as _arcgis
 
 #----------------------------------------------------------------------
-def generate_tesselation(extent_layer,
+def generate_tessellation(extent_layer,
                          bin_size=1,
                          bin_size_unit="SquareKilometers",
                          bin_type="SQUARE",
