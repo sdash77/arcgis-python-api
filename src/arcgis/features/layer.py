@@ -1039,6 +1039,7 @@ class FeatureLayer(Layer):
                             df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
                 return df
 
+            params['resultRecordCount'] = record_count
             return self._query(url, params, raw=as_raw)
 
         result = None
@@ -1061,9 +1062,9 @@ class FeatureLayer(Layer):
             i = 0
             count = 0
             df = None
-            params['resultRecordCount'] = max_records
             dfs = []
             while True:
+                params['resultRecordCount'] = max_records
                 params['resultOffset'] = max_records * i
                 if as_df == False:
                     records = self._query(url, params, raw=as_raw)
@@ -1742,11 +1743,42 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def _query(self, url, params, raw=False):
         """ returns results of query """
-        result = self._con.post(path=url,
-                                postdata=params, token=self._token)
+        try:
+            result = self._con.post(path=url,
+                                    postdata=params, token=self._token)
+        except Exception as queryException:
+            error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            if any(ele in queryException.__str__() for ele in error_list):
+                # half the max record count
+                max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
+                offset = int(params['resultOffset']) if 'resultOffset' in params else 0
+                if max_record < 250:
+                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
+                    raise queryException
+                else:
+                    max_rec = int((max_record + 1) / 2)
+                    i = 0
+                    result = None
+                    while max_rec * i < max_record:
+                        params['resultRecordCount'] = max_rec if max_rec*(i+1) <= max_record else (max_record - max_rec*i)
+                        params['resultOffset'] = offset + max_rec * i
+                        try:
+                            records = self._query(url, params, raw=True)
+                            if result:
+                                for feature in records['features']:
+                                    result['features'].append(feature)
+                            else:
+                                result = records
+                            i += 1
+                        except Exception as queryException2:
+                            raise queryException2
+
+            else:
+                raise queryException
+
         if 'error' in result:
             raise ValueError(result)
-        if  params['returnCountOnly']:
+        if params['returnCountOnly']:
             return result['count']
         elif params['returnIdsOnly']:
             return result
