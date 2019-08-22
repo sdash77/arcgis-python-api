@@ -1,0 +1,6 @@
+images = 548 *3*448*448
+features = 3694
+features per image = [min = 1, mean = 6.74, max = 24]
+classes = 1
+cls name              cls value     images   features    min size   mean size    max size
+Palm                          1        548       3694        0.00        0.00        0.00

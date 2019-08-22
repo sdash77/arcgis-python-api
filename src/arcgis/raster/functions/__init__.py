@@ -417,7 +417,7 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: band indexes or expression
+    :param band_indexes: band indexes or expression. Band indexes can be given as a space seperated string or a list of integers or floating point values. e.g., "4 3" or [4,3]. For user defined methods the band index can be given as an expression such as "(B3 - B1)/(B3 + B1)"
     :param astype: output pixel type
     :param method: int. The type of band arithmetic algorithm you want to deploy. 
                    You can define your custom algorithm, or choose a predefined index.
@@ -443,12 +443,16 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
                    19 = EVI,
                    20 = IronOxide,
                    21 = FerrousMinerals,
-                   22 = ClayMinerals
+                   22 = ClayMinerals,
+                   23 = WNDWI
 
     :return: band_arithmetic applied to the input raster
     """
 
     layer, raster, raster_ra = _raster_input(raster)
+
+    if isinstance(band_indexes, list):
+         band_indexes = " ".join(str(index) for index in band_indexes)
 
     template_dict = {
         "rasterFunction": "BandArithmetic",
@@ -471,7 +475,7 @@ def ndvi(raster, band_indexes="4 3", astype=None):
     NDVI = ((NIR - Red)/(NIR + Red))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: Band Indexes "NIR Red", e.g., "4 3"
+    :param band_indexes: Band Indexes "NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: Normalized Difference Vegetation Index raster
     """
@@ -484,7 +488,7 @@ def savi(raster, band_indexes="4 3 0.33", astype=None):
     where L represents amount of green vegetative cover, e.g., 0.5
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "BandIndexes": "NIR Red L", for example, "4 3 0.33"
+    :param band_indexes: "BandIndexes": "NIR Red L", for example, "4 3 0.33" or [4,3,0.33]
     :param astype: output pixel type
     :return: output raster
     """
@@ -496,7 +500,7 @@ def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", astype=None):
     TSAVI = (s(NIR-s*Red-a))/(a*NIR+Red-a*s+X*(1+s^2))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Red s a X", e.g., "4 3 0.33 0.50 1.50" where a = the soil line intercept, s = the soil line slope, X = an adjustment factor that is set to minimize soil noise
+    :param band_indexes: "NIR Red s a X", e.g., "4 3 0.33 0.50 1.50" or [4,3,0.33,0.50,1.50] where a = the soil line intercept, s = the soil line slope, X = an adjustment factor that is set to minimize soil noise
     :param astype: output pixel type
     :return: output raster
     """
@@ -508,7 +512,7 @@ def msavi(raster, band_indexes="4 3", astype=None):
     MSAVI2 = (1/2)*(2(NIR+1)-sqrt((2*NIR+1)^2-8(NIR-Red)))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Red", e.g., "4 3"
+    :param band_indexes: "NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -521,7 +525,7 @@ def gemi(raster, band_indexes="4 3", astype=None):
     where eta = (2*(NIR^2-Red^2)+1.5*NIR+0.5*Red)/(NIR+Red+0.5)
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red", e.g., "4 3"
+    :param band_indexes:"NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -533,7 +537,7 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
     PVI = (NIR-a*Red-b)/(sqrt(1+a^2))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red a b", e.g., "4 3 0.3 0.5"
+    :param band_indexes:"NIR Red a b", e.g., "4 3 0.3 0.5" or [4,3,0.3,0.5]
     :param astype: output pixel type
     :return: output raster
     """
@@ -545,7 +549,7 @@ def gvitm(raster, band_indexes= "1 2 3 4 5 6", astype=None):
     GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-1.1800*Band7
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red", e.g., "4 3"
+    :param band_indexes:"NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -559,7 +563,7 @@ def sultan(raster, band_indexes="1 2 3 4 5 6", astype=None):
         Band 3 = (Band3 / Band4) x (Band5 / Band4) x 100
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"Band1 Band2 Band3 Band4 Band5 Band6", e.g., "1 2 3 4 5 6"
+    :param band_indexes:"Band1 Band2 Band3 Band4 Band5 Band6", e.g., "1 2 3 4 5 6" or [1,2,3,4,5,6]
     :param astype: output pixel type
     :return: output raster
     """
@@ -572,7 +576,7 @@ def vari(raster, band_indexes="3 2 1", astype=None):
     VARI = (Green - Red)/(Green + Red - Blue)
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "Red Green Blue", e.g., "3 2 1"
+    :param band_indexes: "Red Green Blue", e.g., "3 2 1" or [3,2,1]
     :param astype: output pixel type
     :return: output raster
     """
@@ -585,7 +589,7 @@ def gndvi(raster, band_indexes="4 2", astype=None):
     GNDVI = (NIR-Green)/(NIR+Green)
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "Red Green Blue", e.g., "3 2 1"
+    :param band_indexes: "NIR Green", e.g., "5 3" or [5,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -598,7 +602,7 @@ def sr(raster, band_indexes="4 3", astype=None):
     SR = NIR / Red
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Red", e.g., "3 2 1"
+    :param band_indexes: "NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -617,7 +621,7 @@ def ndvire(raster, band_indexes="7 6", astype=None):
     NDVIre = (NIR-RedEdge)/(NIR+RedEdge)
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR RedEdge", e.g., "7 6"
+    :param band_indexes: "NIR RedEdge", e.g., "7 6" or [7,6]
     :param astype: output pixel type
     :return: output raster
     """
@@ -637,7 +641,7 @@ def srre(raster, band_indexes="7 6", astype=None):
     SRre = NIR / RedEdge
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR RedEdge", e.g., "7 6"
+    :param band_indexes: "NIR RedEdge", e.g., "7 6" or [7,6]
     :param astype: output pixel type
     :return: output raster
     """
@@ -653,7 +657,7 @@ def mtvi2(raster, band_indexes="7 5 3", astype=None):
     MTVI2 = (1.5*(1.2*(NIR-Green)-2.5*(Red-Green))/sqrt((2*NIR+1)^2-(6*NIR-5*sqrt(Red))-0.5))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Red Green", e.g., "7 5 3"
+    :param band_indexes: "NIR Red Green", e.g., "7 5 3" or [7,5,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -668,7 +672,7 @@ def rtvi_core(raster, band_indexes="7 6 3", astype=None):
     RTVICore = [100(NIR-RedEdge)-10(NIR-Green)]
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR RedEdge Green", e.g., "7 6 3"
+    :param band_indexes: "NIR RedEdge Green", e.g., "7 6 3" or [7,6,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -683,7 +687,7 @@ def cire(raster, band_indexes="7 6", astype=None):
     CIre = [(NIR / RedEdge)-1]
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR RedEdge", e.g., "3 2 1"
+    :param band_indexes: "NIR RedEdge", e.g., "7 6" or [7,6]
     :param astype: output pixel type
     :return: output raster
     """
@@ -698,7 +702,7 @@ def cig(raster, band_indexes="7 3", astype=None):
     CIg = [(NIR / Green)-1]
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Green", e.g., "7 3"
+    :param band_indexes: "NIR Green", e.g., "7 3" or [7,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -713,7 +717,7 @@ def ndwi(raster, band_indexes="5 3", astype=None):
     NDWI = (Green - NIR)/(Green +NIR)
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Green", e.g., "5 3"
+    :param band_indexes: "NIR Green", e.g., "5 3" or [5,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -729,7 +733,7 @@ def evi(raster, band_indexes="5 4 2", astype=None):
     EVI =  2.5 * [(NIR - Red)/(NIR + (6*Red) - (7.5*Blue) + 1)]
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Red Blue", e.g., "5 4 2"
+    :param band_indexes: "NIR Red Blue", e.g., "5 4 2" or [5,4,2]
     :param astype: output pixel type
     :return: output raster
     """
@@ -745,7 +749,7 @@ def iron_oxide(raster, band_indexes="4 2", astype=None):
     IronOxide = Red / Blue
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "Red Blue", e.g., "4 2"
+    :param band_indexes: "Red Blue", e.g., "4 2" or [4,2]
     :param astype: output pixel type
     :return: output raster
     """
@@ -761,7 +765,7 @@ def ferrous_minerals(raster, band_indexes="6 5", astype=None):
     FM = SWIR / NIR
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "SWIR NIR", e.g., "6 5"
+    :param band_indexes: "SWIR NIR", e.g., "6 5" or [6,5]
     :param astype: output pixel type
     :return: output raster
     """
@@ -776,11 +780,28 @@ def clay_minerals(raster, band_indexes="6 7", astype=None):
     CM = SWIR1 / SWIR2
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "SWIR1 SWIR2", e.g., "6 7"
+    :param band_indexes: "SWIR1 SWIR2", e.g., "6 7" or [6,7]
     :param astype: output pixel type
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 22)
+
+def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
+    """
+    The Weighted Normalized Difference Water Index (WNDWI) is a water index
+    developed to reduce error typically encountered in other water indices,
+    including water turbidity, small water bodies, or shadow in remote sensing scenes.
+    Supported from 10.8.
+
+    WNDWI = [Green – α * NIR – (1 – α) * SWIR ] / [Green + α * NIR + (1 – α) * SWIR]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green NIR SWIR α", e.g., "2 5 6 0.5" or [2,5,6,0.5]
+    :param astype: output pixel type
+    :return: output raster
+
+    """
+    return band_arithmetic(raster, band_indexes, astype, 23)
 
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """

@@ -1,6 +1,8 @@
 name: geosaurus_dev_env
 channels:
 - defaults
+- fastai
+- pytorch
 dependencies:
 - ipywidgets >=7
 - pandas >=0.23
@@ -23,6 +25,10 @@ dependencies:
 - selenium
 - scipy
 - pillow
+- fastai=1.0.54
+- torchvision=0.3.0
+- pytorch=1.1.0
+- cudatoolkit
 - pip:
   - unittest-xml-reporting
   - setuptools >=38.6

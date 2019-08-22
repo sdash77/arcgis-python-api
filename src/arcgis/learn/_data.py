@@ -4,7 +4,8 @@ from functools import partial
 import xml.etree.ElementTree as ET
 import math
 import sys
-import json
+import json 
+import logging                                                                                                                                                                     
 
 try:
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
@@ -35,13 +36,19 @@ def _bb_pad_collate(samples, pad_idx=0):
         imgs.append(s[0].data[None])
         bbs, lbls = s[1].data
 
-        if not (bbs.nelement() == 0):
+        if not (bbs.nelement() == 0) or list(bbs) == [[0,0,0,0]]:
             bboxes[i,-len(lbls):] = bbs
             labels[i,-len(lbls):] = torch.tensor(lbls, device=bbs.device).long()
     return torch.cat(imgs,0), (bboxes,labels)    
 
 
-def _get_bbox_classes(xmlfile, class_mapping):
+def _get_bbox_classes(xmlfile, class_mapping, not_label_count = [0], height_width = []):
+
+
+    if not os.path.exists(xmlfile):
+        not_label_count[0] += 1
+        return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
+
     tree = ET.parse(xmlfile)
     xmlroot = tree.getroot()
     bboxes = []
@@ -52,8 +59,11 @@ def _get_bbox_classes(xmlfile, class_mapping):
                                  float(bnd_box.find('ymin').text), \
                                  float(bnd_box.find('xmax').text), \
                                  float(bnd_box.find('ymax').text)
-        bboxes.append([ymin, xmin, ymax, xmax])
         data_class_text = tag_obj.find('name').text
+        
+        if (not data_class_text.isnumeric() and not class_mapping.get(data_class_text))\
+             or (data_class_text.isnumeric() and not(class_mapping.get(data_class_text) or class_mapping.get(int(data_class_text)))):
+            continue
 
         if data_class_text.isnumeric():
             data_class_mapping = class_mapping[data_class_text] if class_mapping.get(data_class_text) else class_mapping[int(data_class_text)]
@@ -61,13 +71,17 @@ def _get_bbox_classes(xmlfile, class_mapping):
             data_class_mapping = class_mapping[data_class_text]
 
         classes.append(data_class_mapping)
-
+        bboxes.append([ymin, xmin, ymax, xmax])
+        height_width.append(((xmax - xmin)*1.25, (ymax - ymin)*1.25))
+    
+    if len(bboxes) == 0:
+        return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
     return [bboxes, classes]
 
 
-def _get_bbox_lbls(imagefile, class_mapping):
+def _get_bbox_lbls(imagefile, class_mapping, not_label_count, height_width):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
-    return _get_bbox_classes(xmlfile, class_mapping)
+    return _get_bbox_classes(xmlfile, class_mapping, not_label_count, height_width)
 
 
 def _get_lbls(imagefile, class_mapping):
@@ -147,6 +161,8 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     :returns: fastai DataBunch object
     """
 
+    height_width = []
+
     if not HAS_FASTAI:
         _raise_fastai_import_error()
 
@@ -177,13 +193,21 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         with open(json_file) as f:
             emd = json.load(f)
 
+        # Create Class Mapping from EMD if not specified by user
         if class_mapping is None:
             try:
                 class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
             except KeyError:
                 class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
 
-        color_mapping = {(i.get('Value') or i.get('ClassValue')): i['Color'] for i in emd.get('Classes', [])}
+        color_mapping = {(i.get('Value', 0) or i.get('ClassValue', 0)): i['Color'] for i in emd.get('Classes', [])}
+
+        if color_mapping.get(None):
+            del color_mapping[None]
+
+        if class_mapping.get(None):
+            del class_mapping[None]
+
     elif dataset_type == 'PASCAL_VOC_rectangles' and not has_esri_files:
         if class_mapping is None:
             class_mapping = _get_class_mapping(path / 'labels')
@@ -193,7 +217,13 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
         def get_y_func(x, ext=right):
             return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
-        
+
+        if class_mapping.get(0):
+            del class_mapping[0]
+
+        if color_mapping.get(0):
+            del color_mapping[0]
+
         src = (ArcGISSegmentationItemList.from_folder(path/'images')
                 .split_by_rand_pct(val_split_pct, seed=seed)
                 .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)) # TODO : Handel NoData case
@@ -208,15 +238,22 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                 .databunch(bs=batch_size, **databunch_kwargs)
                 .normalize(imagenet_stats))
     elif dataset_type == 'PASCAL_VOC_rectangles':
-        get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping)
+       
 
         src = (SSDObjectItemList.from_folder(path/'images')
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func))
+                .split_by_rand_pct(val_split_pct, seed=seed))
+
+        not_label_count = [0]
+        get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping, not_label_count = not_label_count, height_width = height_width)
+
+        src=src.label_from_func(get_y_func)
+        if not_label_count[0]:
+            logger=logging.getLogger()
+            logger.warning("Please check your dataset. "+ str(not_label_count[0])+" images dont have the corresponding label files." ) 
 
         if transforms is None:
             ranges = (0,1)
-            train_tfms = [crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)), rand_zoom(scale=(0.75, 1.5))]
+            train_tfms = [crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)), rand_zoom(scale=(1.0, 1.5))]
             val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
@@ -287,5 +324,6 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     data.show_batch = show_batch_func
     data.orig_path = path
     data.resize_to = resize_to
+    data.height_width = height_width
     
     return data

@@ -24,6 +24,8 @@ def aggregate_points(point_layer,
                      estimate=False,
                      future=False):
     """
+    .. image:: _static/images/agg_points_standard/aggregate_points.png
+
     The Aggregate Points task works with a layer of point features and a layer of polygon features. It first figures out which points fall within each polygon's area.
     After determining this point-in-polygon spatial relationship, statistics about all points in the polygon are calculated and assigned to the area. The most basic statistic is the count of the number of points within the polygon, but you can get other statistics as well.
     For example, if your points represented coffee shops and each point has a TOTAL_SALES attribute, you can get statistics like the sum of all TOTAL_SALES within the polygon, or the minimum or maximum TOTAL_SALES value, or the standard deviation of all sales within the polygon.

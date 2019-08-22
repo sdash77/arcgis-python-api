@@ -28,6 +28,8 @@ def connect_origins_to_destinations(origins_layer,
                                     polygon_barrier_layer=None,
                                     future=False):
     """
+    .. image:: _static/images/connect_origins_to_destinations/connect_origins_to_destinations.png
+    
     The Connect Origins to Destinations task measures the travel time or distance between pairs of points. Using this tool, you can
 
     * Calculate the total distance or time commuters travel on their home-to-work trips.

@@ -16,7 +16,7 @@ try:
     from torchvision import models
     import numpy as np
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2, kmeans, avg_iou
-    from .._data import prepare_data, _get_bbox_lbls
+    from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     from ._unet_utils import is_no_color
@@ -152,12 +152,8 @@ class SingleShotDetector(ArcGISModel):
             # find bounding boxes height and width
         
             if grids == None:
-                hw = [] 
-                for i in data.items:
-                    bbs, _ = _get_bbox_lbls(i, data.class_mapping)
-                    for bb in bbs:
-                        h, w = bb[2] - bb[0], bb[3] - bb[1]
-                        hw.append(tuple(map(float, (w*1.25, h*1.25))))
+                logger.info("Computing optimal grid size...")
+                hw = data.height_width
                 hw = np.array(hw)
                 
                 # find most suitable centroids for dataset
@@ -175,6 +171,11 @@ class SingleShotDetector(ArcGISModel):
                 # find grid size
 
                 grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
+                if grids[-1] == 0:
+                    grids[-1] = 1
+
+                grids = list(set(grids))
+                grids.sort(reverse = True)
             
             self._create_anchors(grids, zooms, ratios)
 
@@ -271,7 +272,10 @@ class SingleShotDetector(ArcGISModel):
         return torch.cat([ctr-hw/2, ctr+hw/2], dim=1)
 
     def _get_y(self, bbox, clas):
-        bbox = bbox.view(-1,4) #/sz
+        try:
+            bbox = bbox.view(-1, 4)  # /sz
+        except Exception:
+            bbox = torch.zeros(size=[0, 4])
         bb_keep = ((bbox[:,2]-bbox[:,0])>0).nonzero()[:,0]
         return bbox[bb_keep],clas[bb_keep]
 

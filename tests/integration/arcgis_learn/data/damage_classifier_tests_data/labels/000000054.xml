@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<annotation>
+    <filename>000000054.tif</filename>
+    <source>
+        <annotation>ArcGIS Pro 2.1</annotation>
+    </source>
+    <size>
+        <width>256</width>
+        <height>256</height>
+        <depth>3</depth>
+    </size>
+    <object>
+        <name>10</name>
+        <bndbox>
+            <xmin>67.90</xmin>
+            <ymin>26.93</ymin>
+            <xmax>188.10</xmax>
+            <ymax>229.07</ymax>
+        </bndbox>
+    </object>
+</annotation>
