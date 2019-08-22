@@ -16,6 +16,12 @@ try:
 except Exception as e:
     HAS_FASTAI = False
 
+try:
+    import torch.nn.Module as NnModule
+except ImportError:
+    class NnModule():
+        pass
+
 _CLASS_TEMPLATE = {
       "Value": 1,
       "Name": "1",
@@ -33,6 +39,7 @@ _EMD_TEMPLATE = {
     "Classes": []
 }
 
+def _mobilenet_split(m:NnModule): return (m[0][0][0], m[1])
 
 def accuracy(input, target, void_code=0, class_mapping=None):  
     target = target.squeeze(1) 
@@ -81,9 +88,16 @@ class UnetClassifier(ArcGISModel):
         else:
             self._backbone = backbone
 
+        backbone_cut = None
+        backbone_split = None
+
+        if((self._backbone) == models.mobilenet_v2):
+            backbone_cut = -1
+            backbone_split = _mobilenet_split
+
         acc_metric = partial(accuracy, void_code=0, class_mapping=data.class_mapping)
         self._data = data
-        self.learn = unet_learner(data, arch=self._backbone, metrics=acc_metric, wd=1e-2, bottle=True, last_cross=True)
+        self.learn = unet_learner(data, arch=self._backbone, metrics=acc_metric, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
         self.learn.model = self.learn.model.to(self._device)
 

@@ -34,6 +34,12 @@ try:
 except Exception as e:
     HAS_FASTAI = False
 
+try:
+    import torch.nn.Module as NnModule
+except ImportError:
+    class NnModule():
+        pass
+
 _EMD_TEMPLATE = {
     "Framework":"arcgis.learn.models._inferencing",
     "ModelConfiguration":"_classifier",
@@ -51,6 +57,7 @@ _CLASS_TEMPLATE = {
       "Color" : []
 }
 
+def _mobilenet_split(m:NnModule): return (m[0][0][0], m[1])
 
 def _prediction_function(predictions):
     classes = {}
@@ -105,12 +112,19 @@ class FeatureClassifier(ArcGISModel):
         else:
             self._backbone = backbone
 
+        backbone_cut = None
+        backbone_split = None
+
+        if((self._backbone) == models.mobilenet_v2):
+            backbone_cut = -1
+            backbone_split = _mobilenet_split
+
         self._emd_template = _EMD_TEMPLATE
 
         self._code = feature_classifier_prf
 
         self._data = data
-        self.learn = cnn_learner(data, self._backbone, metrics=accuracy)
+        self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
         self.learn.model = self.learn.model.to(self._device)
 
         _set_multigpu_callback(self)
