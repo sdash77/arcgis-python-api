@@ -1920,10 +1920,9 @@ class GeoAccessor(object):
     #----------------------------------------------------------------------
     def to_featureclass(self, location, overwrite=True):
         """exports a geo enabled dataframe to a feature class."""
-        from ._tools._utils import run_and_hide
-        return run_and_hide(to_featureclass, **{"geo":self,
-                                                "location":location,
-                                                "overwrite":overwrite})
+        return to_featureclass(self,
+                               location=location,
+                               overwrite=overwrite)
     #----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
         """
