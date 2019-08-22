@@ -2985,11 +2985,10 @@ class ContentManager(object):
                         del writer
                     future_parts[tp.submit(self._gis._con.post, **kwargs)] = part_num
                     future_files.append(copy.copy(temp_file))
+                concurrent.futures.wait(list(future_parts.keys()), None, concurrent.futures.ALL_COMPLETED)
                 for future in concurrent.futures.as_completed(future_parts):
                     part_num = future_parts[future]
                     try:
-                        from concurrent.futures import Future
-                        isinstance(future, Future)
                         if future.done():
                             data = future.result()
                             if 'success' in data:
@@ -3000,9 +2999,9 @@ class ContentManager(object):
                         _log.error('%r generated an exception: %s' % (url, exc))
                     else:
                         _log.debug('%r page is %s' % (url, data))
-                    for ffile in future_files:
-                        if os.path.isfile(ffile):
-                            os.remove(ffile)
+                for ffile in future_files:
+                    if os.path.isfile(ffile):
+                        os.remove(ffile)
 
         if all(messages):
             # commit the addition
