@@ -13,6 +13,7 @@ try:
     from fastai.vision.learner import create_body
     from fastai.vision.image import open_image
     from torchvision.models import resnet34
+    from torchvision.models import mobilenet_v2
     from torchvision import models
     import numpy as np
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2, kmeans, avg_iou
@@ -24,10 +25,18 @@ try:
 except Exception as e:
     HAS_FASTAI = False
 
+try:
+    import torch.nn.Module as NnModule
+except ImportError:
+    class NnModule():
+        pass
+
 
 def _raise_fastai_import_error():
     raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai=1.0.39 pytorch=1.0.0 torchvision"')
 
+
+def _mobilenet_split(m:NnModule): return (m[0][0][0], m[1])
 
 _EMD_TEMPLATE = {
     "Framework": "arcgis.learn.models._inferencing",
@@ -137,6 +146,11 @@ class SingleShotDetector(ArcGISModel):
             backbone_name = 'custom'
 
         backbone_cut = None
+        backbone_split = None
+
+        if((self._backbone) == models.mobilenet_v2):
+            backbone_cut = -1
+            backbone_split = _mobilenet_split
 
         if ssd_version == 1:
 
@@ -179,7 +193,7 @@ class SingleShotDetector(ArcGISModel):
             
             self._create_anchors(grids, zooms, ratios)
 
-            feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
+            feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
             num_features = feature_sizes[-1][-1]
             num_channels = feature_sizes[-1][1] 
 
@@ -194,7 +208,7 @@ class SingleShotDetector(ArcGISModel):
             raise Exception('SSDVersion can only be 1 or 2')
 
         self._data = data
-        self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, custom_head=ssd_head)
+        self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
         self.learn.model = self.learn.model.to(self._device)
 
         if focal_loss:

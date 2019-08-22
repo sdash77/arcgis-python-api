@@ -1608,6 +1608,8 @@ def create_image_collection(image_collection,
                             **kwargs):
                             
     """
+    .. image:: _static/images/create_image_collection/create_image_collection.png 
+
     Create a collection of images that will participate in the ortho-mapping project.
     Provides provision to use input rasters by reference 
     and to specify image collection properties through context parameter.
@@ -1636,17 +1638,19 @@ def create_image_collection(image_collection,
                                          - Shared data path (this path must be accessible by the server)
                                          - Name of a folder on the portal
     ------------------                   --------------------------------------------------------------------
-    raster_type_name                     Required, the name of the raster type to use for adding data to 
+    raster_type_name                     Required string. The name of the raster type to use for adding data to 
                                          the image collection.
+
+                                         Choice list: ['UAV/UAS', 'Aerial', 'ScannedAerial', 'Landsat 7 EMT+', 'Landsat 8', 'Sentinel-2', 'ZY3-SASMAC', 'ZY3-CRESDA']
     ------------------                   --------------------------------------------------------------------
-    raster_type_params                   Optional,  additional raster_type specific parameters.
+    raster_type_params                   Optional dict. Additional ``raster_type`` specific parameters.
         
                                          The process of add rasters to the image collection can be
                                          controlled by specifying additional raster type arguments.
 
                                          The raster type parameters argument is a dictionary.
     ------------------                   --------------------------------------------------------------------
-    out_sr                               Optional, additional parameters of the service.
+    out_sr                               Optional integer. Additional parameters of the service.
                             
                                          The following additional parameters can be specified:
                                          - Spatial reference of the image_collection; The well-known ID of 
@@ -1655,23 +1659,50 @@ def create_image_collection(image_collection,
                                          If the raster type name is set to "UAV/UAS", the spatial reference of the
                                          output image collection will be determined by the raster type parameters defined.
     ------------------                   --------------------------------------------------------------------
-    context                               Optional, The context parameter is used to provide additional input parameters
-                                            {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
-                                            
-                                            use image_collection_properties key to set value for imageCollectionType.
-                                            Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
+    context                              Optional dict. The context parameter is used to provide additional input parameters.
+    
+                                         Syntax: {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+                                        
+                                         use ``image_collection_properties`` key to set value for imageCollectionType.
+
+                                         .. note::
+
+                                            The "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
                                             Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
                                             Therefore, if the image collection is created by reference, the requester should set this 
                                             property based on the type of images in the image collection using the following keywords. 
                                             If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
-                                            If byref is set to True, the data will not be uploaded. If it is not set, the default is False
+                                         If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
     ------------------                   --------------------------------------------------------------------
     gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================                   ====================================================================
 
-    :return:
-        The imagery layer item
+    :returns: The imagery layer item
+
+    .. code-block:: python
+
+            # Usage Example: To create an image collection.
+            image_item_list = [<Item title:"YUN_0040.JPG" type:Image owner:admin>,
+                               <Item title:"YUN_0041.JPG" type:Image owner:admin>,
+                               <Item title:"YUN_0042.JPG" type:Image owner:admin>,
+                               <Item title:"YUN_0043.JPG" type:Image owner:admin>,
+                               <Item title:"YUN_0044.JPG" type:Image owner:admin>]
+                               
+            params = {"gps": [['YUN_0040.JPG', 34.0069887, -117.09279029999999],
+                             ['YUN_0041.JPG', 34.0070131, -117.09311519972222],
+                             ['YUN_0042.JPG', 34.0070381, -117.09346329972222],
+                             ['YUN_0043.JPG', 34.00706339972222, -117.09381479999999],
+                             ['YUN_0044.JPG', 34.0070879, -117.09416449999999],
+                             "cameraProperties":{"maker":"Yuneec","model":"E90","focallength":8,"columns":5472,"rows":3648,"pixelsize":0.0024},
+                             "isAltitudeFlightHeight":"false",
+                             "averagezdem": {"url": "https://rais.dev.geocloud.com/arcgis/rest/services/Hosted/WorldSRTM90m/ImageServer"}}
+
+            img_coll_result = create_image_collection(image_collection="imageCollection",
+                                                      input_rasters=image_item_list,
+                                                      raster_type_name="UAV/UAS",
+                                                      raster_type_params=params,
+                                                      out_sr=32632)
 
     """
 
@@ -1904,7 +1935,9 @@ def delete_image(image_collection,
                  gis=None,
                  **kwargs):
     """
-    delete_image allows users to remove existing images from the image collection (mosaic dataset). 
+    .. image:: _static/images/delete_image/delete_image.png 
+
+    ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset). 
     The function will only delete the raster item in the mosaic dataset and will not remove the
     source image.
 
@@ -1915,14 +1948,19 @@ def delete_image(image_collection,
                            This can be the 'itemID' of an exisiting portal item or a url
                            to an Image Service or a uri
     ------------------     --------------------------------------------------------------------
-    where                  Required string,  a SQL 'where' clause for selecting the images 
+    where                  Required string. A SQL ``where`` clause for selecting the images 
                            to be deleted from the image collection
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
-    :return:
-        The imagery layer url
+    :returns: The imagery layer url
+
+    .. code-block:: python
+
+         # Usage Example: To delete an existing image from the image collection.
+
+         del_img = delete_image(image_collection=img_coll_item, where="OBJECTID=10")
 
     """
 
