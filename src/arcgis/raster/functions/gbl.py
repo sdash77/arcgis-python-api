@@ -840,42 +840,121 @@ def flow_accumulation(input_flow_direction_raster,
 
 
 def flow_direction(input_surface_raster,
-                   force_flow= "NORMAL",
-                   flow_direction_type= "D8",
+                   force_flow="NORMAL",
+                   flow_direction_type="D8",
                    generate_out_drop_raster=False):
     """
-    Replaces cells of a raster corresponding to a mask
-    with the values of the nearest neighbors.
+    .. image:: _static/images/flow_direction/flow_direction.png 
 
-    Parameters
-    ----------
-    :param input_surface_raster: The input raster representing a continuous surface.
-    :param force_flow: NORMAL or FORCE, Specifies if edge cells will always flow outward or follow normal flow rules.
-    :param flow_direction_type: Specifies which flow direction type to use.
-                          D8 - Use the D8 method. This is the default.
-                          MFD - Use the Multi Flow Direction (MFD) method.
-                          DINF - Use the D-Infinity method.
-    :param generate_out_drop_raster: Boolean, determines whether out_drop_raster should be generated or not.
-                                      Set this parameter to True, in order to generate the out_drop_raster.
-                                      If set to true, the output will be a named tuple with name values being
-                                      output_flow_direction_service and output_drop_service.
-                                      eg,
+    The ``flow_direction`` task creates a raster of flow direction from each cell to its steepest downslope neighbor.
 
-                                      flow_direction_output =  flow_direction(input_surface_raster,
-                                                                            force_flow= "NORMAL",
-                                                                            flow_direction_type= "D8",
-                                                                            generate_out_drop_raster=True)
+    This task supports three flow modeling algorithms. Those are D8, Multi Flow Direction (MFD), and D-Infinity (DINF).
 
-                                      out_var = flow_direction_output.save()
+    **D8 flow modeling algorithm**
 
-                                      then,
+    The D8 flow method models flow direction from each cell to its steepest downslope neighbor.
 
-                                      out_var.output_flow_direction_service -> gives you the output flow direction imagery layer item
+    The output of the FlowDirection task run with the D8 flow direction type is an integer 
+    raster whose values range from 1-255. The values for each direction from the center are the following:
 
-                                      out_var.output_drop_service -> gives you the output drop raster imagery layer item
+    .. image:: _static/images/flow_direction/D8.gif
 
+    For example, if the direction of steepest drop was to the left of the current 
+    processing cell, its flow direction would be coded at 16.
 
-    :return: output raster with function applied
+    The following are additional considerations for using the D8 flow method:
+
+        * If a cell is lower than its eight neighbors, that cell is given the value 
+          of its lowest neighbor, and flow is defined toward this cell. If multiple 
+          neighbors have the lowest value, the cell is still given this value, but 
+          flow is defined with one of the two methods explained below. This is used 
+          to filter out one-cell sinks, which are considered noise.
+        * If a cell has the same change in z-value in multiple directions and that 
+          cell is part of a sink, the flow direction is referred to as undefined. In 
+          such cases, the value for that cell in the output flow direction raster will 
+          be the sum of those directions. For example, if the change in z-value is the 
+          same both to the right (flow direction = 1) and down (flow direction = 4), 
+          the flow direction for that cell is 5.
+        * If a cell has the same change in z-value in multiple directions and is not 
+          part of a sink, the flow directions is assigned with a lookup table defining 
+          the most likely direction. See Greenlee (1987).
+        * The output drop raster is calculated as the difference in z-value divided by 
+          the path length between the cell centers, expressed in percentages. For adjacent 
+          cells, this is analogous to the percent slop between cells. Across a flat area, 
+          the distance becomes the distance to the nearest cell of lower elevation. 
+          The result is a map of percent rise in the path of steepest descent from 
+          each cell.
+        * When calculating a drop raster in flat areas, the distance to diagonally 
+          adjacent cells (1.41421 * cell size) is approximated by 1.5 * cell 
+          size for improved performance.
+        * With the forceFlow parameter set to the default value False, a cell 
+          at the edge of the surface raster will flow towards the inner cell 
+          with the steepest z-value. If the drop is less than or equal to zero, 
+          the cell will flow out of the surface raster.    
+
+    **MFD flow modeling algorithm**
+
+    The MFD algorithm, described by Qin et al. (2007), partitions flow from a cell to all downslope neighbors. 
+    A flow-partition exponent is created from an adaptive approach based on local terrain conditions and is used 
+    to determine fraction of flow draining to all downslope neighbors.
+
+    When the MFD flow direction output is added to a map, it only displays the D8 flow direction. 
+    As MFD flow directions have potentially multiple values tied to each cell (each value corresponds 
+    to proportion of flow to each downslope neighbor), it is not easily visualized. However, an MFD 
+    flow direction output raster is an input recognized by the FlowAccumulation task that would utilize 
+    the MFD flow directions to proportion and accumulate flow from each cell to all downslope neighbors.
+
+    **DINF flow modeling algorithm**
+
+    The DINF flow method, described by Tarboton (1997), determines flow direction as the steepest 
+    downward slope on eight triangular facets formed in a 3x3 cell window centered on the cell of 
+    interest. The flow direction output is a floating-point raster represented as a single angle in 
+    degrees going counter-clockwise from 0 (due east) to 360 (also due east).
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    input_surface_raster                 Required. The input raster representing a continuous surface. 
+                                         This parameter can be specified as a Portal Item ID, a URL to a raster image service layer, 
+                                         a cloud raster dataset, or a shared raster dataset.
+    --------------------------------     --------------------------------------------------------------------
+    force_flow                           Optional string. Specifies if edge cells will always flow outward or follow normal flow rules.
+
+                                         Choice list: [''NORMAL', 'FORCE']
+
+                                         The default value is 'NORMAL'.
+    --------------------------------     --------------------------------------------------------------------
+    flow_direction_type                  Optional string. Specifies the flow direction type to use.
+
+                                         Choice list: ['D8', 'MFd', 'DINF']
+
+                                         * ``D8`` is for the D8 flow direction type. This is the default.
+                                         * ``MFD`` is for the Multi Flow Direction type.
+                                         * ``DINF`` is for the D-Infinity type.
+
+                                         The default value is 'D8'.
+    --------------------------------     --------------------------------------------------------------------
+    generate_out_drop_raster             Boolean, determines whether out_drop_raster should be generated or not.
+                                         Set this parameter to True, in order to generate the out_drop_raster.
+                                         If set to true, the output will be a named tuple with name values being
+                                         output_flow_direction_service and output_drop_service.
+    ================================     ====================================================================
+ 
+    :returns: output raster with function applied
+
+    .. code-block:: python
+
+            # Usage Example: To add an image to an existing image collection.
+            flow_direction_output =  flow_direction(input_surface_raster=in_raster,
+                                                    force_flow="NORMAL",
+                                                    flow_direction_type="D8",
+                                                    generate_out_drop_raster=True)
+
+            out_var = flow_direction_output.save()
+
+            out_var.output_flow_direction_service  # gives you the output flow direction imagery layer item
+
+            out_var.output_drop_service # gives you the output drop raster imagery layer item
 
     """
     layer, input_surface_raster, raster_ra = _raster_input(input_surface_raster)

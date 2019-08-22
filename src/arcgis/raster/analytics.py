@@ -1935,7 +1935,9 @@ def delete_image(image_collection,
                  gis=None,
                  **kwargs):
     """
-    delete_image allows users to remove existing images from the image collection (mosaic dataset). 
+    .. image:: _static/images/delete_image/delete_image.png 
+
+    ``delete_image`` allows users to remove existing images from the image collection (mosaic dataset). 
     The function will only delete the raster item in the mosaic dataset and will not remove the
     source image.
 
@@ -1946,14 +1948,19 @@ def delete_image(image_collection,
                            This can be the 'itemID' of an exisiting portal item or a url
                            to an Image Service or a uri
     ------------------     --------------------------------------------------------------------
-    where                  Required string,  a SQL 'where' clause for selecting the images 
+    where                  Required string. A SQL ``where`` clause for selecting the images 
                            to be deleted from the image collection
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
-    :return:
-        The imagery layer url
+    :returns: The imagery layer url
+
+    .. code-block:: python
+
+         # Usage Example: To delete an existing image from the image collection.
+
+         del_img = delete_image(image_collection=img_coll_item, where="OBJECTID=10")
 
     """
 
