@@ -524,6 +524,9 @@ def to_featureclass(geo,
     overwrite           Optional Boolean. If overwrite is true, existing
                         data will be deleted and replaced with the spatial
                         dataframe.
+    ---------------     ----------------------------------------------------
+    validate            Optional Boolean. If true, the export will check if
+                        all the geometry objects are correct upon export.
     ===============     ====================================================
 
 
