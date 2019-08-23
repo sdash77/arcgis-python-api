@@ -2087,6 +2087,8 @@ class UserManager(object):
         :returns: boolean
 
         """
+        if self._gis._portal.is_arcgisonline == False:
+            raise Exception("This method is only for ArcGIS Online.")
         time_lookup = {
             '1 Day'.upper() : 1440,
             '3 Days'.upper() : 4320,
@@ -2102,6 +2104,7 @@ class UserManager(object):
         msg = "You have been invited you to join an ArcGIS Online Organization, %s" % (self._gis.properties['name'])
         params = {
             "f" : "json",
+            "emails" : email,
             "message" : msg,
             "role" : role,
             "level" : level,
