@@ -1,8 +1,11 @@
+HAS_FASTAI = True
 try:
     from fastai.callbacks import TrackerCallback, EarlyStoppingCallback, LearnerCallback
     from torch import nn
     import torch
+    from torchvision import models
 except ImportError:
+    HAS_FASTAI = False
     class TrackerCallback():
         pass
     class LearnerCallback():
@@ -13,11 +16,13 @@ from pathlib import Path
 import os
 import tempfile
 import logging
+from .._data import _raise_fastai_import_error
 logger = logging.getLogger()
 
 #For lr computation, skip beginning and trailing values.
 losses_skipped = 5
 trailing_losses_skipped = 5
+
 
 class _MultiGPUCallback(LearnerCallback):
     """
@@ -36,6 +41,7 @@ class _MultiGPUCallback(LearnerCallback):
     def on_train_end(self, **kwargs):
         if self.multi_gpu:
             self.learn.model = self.learn.model.module
+
 
 def _set_multigpu_callback(model):
     model.learn.callback_fns.append(_MultiGPUCallback)
@@ -84,7 +90,21 @@ class SaveModelCallback(TrackerCallback):
 
 
 class ArcGISModel(object):
-    
+
+    def __init__(self, data, backbone=None, **kwargs):
+        if not HAS_FASTAI:
+            _raise_fastai_import_error()
+
+        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        if backbone is None:
+            self._backbone = models.resnet34
+        elif type(backbone) is str:
+            self._backbone = getattr(models, backbone)
+        else:
+            self._backbone = backbone
+
+        self._data = data
+
     def lr_find(self, allow_plot=True):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
@@ -204,7 +224,21 @@ class ArcGISModel(object):
         Unfreezes the earlier layers of the model for fine-tuning.
         """
         self.learn.unfreeze()
-        
+
+    def _create_emd(self, path):
+        self._emd_template = {
+            'ModelFile': path.name,
+            'ImageHeight': self._data.chip_size,
+            'ImageWidth': self._data.chip_size,
+            'ModelParameters': {'backbone': self._backbone.__name__}
+        }
+
+        resize_to = None
+        if hasattr(self._data, 'resize_to') and self._data.resize_to:
+            resize_to = self._data.resize_to
+
+        self._emd_template['resize_to'] = resize_to
+
     def _save(self, name_or_path, zip_files=True):
         temp = self.learn.path
 
@@ -290,7 +324,7 @@ class ArcGISModel(object):
         else:
             # fixing fastai bug
             self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
+            self.learn.model_dir = Path(self.learn.model_dir) /  name_or_path
             name = name_or_path
 
         try:

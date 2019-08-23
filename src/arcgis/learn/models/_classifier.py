@@ -1,5 +1,5 @@
 import arcgis as _arcgis 
-from ._arcgis_model import ArcGISModel, _set_multigpu_callback
+from ._arcgis_model import ArcGISModel
 import random
 try:
     import pandas
@@ -9,7 +9,7 @@ try:
     import os
     import warnings
     from pathlib import Path
-    from ._ssd import _raise_fastai_import_error, _EmptyData
+    from ._ssd import _EmptyData
     from functools import partial
     from ._unet_utils import is_no_color
     from ._codetemplate import feature_classifier_prf
@@ -30,34 +30,16 @@ try:
     import xml.etree.ElementTree as ElementTree
     import PIL.Image
     import PIL.ExifTags
+    from torch.nn import Module as NnModule
     HAS_FASTAI = True
 except Exception as e:
-    HAS_FASTAI = False
-
-try:
-    import torch.nn.Module as NnModule
-except ImportError:
     class NnModule():
         pass
+    HAS_FASTAI = False
 
-_EMD_TEMPLATE = {
-    "Framework":"arcgis.learn.models._inferencing",
-    "ModelConfiguration":"_classifier",
-    "ModelFile":"",
-    "InferenceFunction": "ArcGISFeatureClassifier.py",
-    "ExtractBands":[0,1,2],
-    "ImageWidth":400,
-    "ImageHeight":400,
-    "Classes" : []
-}
 
-_CLASS_TEMPLATE = {
-      "Value" : 1,
-      "Name" : "1",
-      "Color" : []
-}
+def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
 
-def _mobilenet_split(m:NnModule): return (m[0][0][0], m[1])
 
 def _prediction_function(predictions):
     classes = {}
@@ -98,33 +80,18 @@ class FeatureClassifier(ArcGISModel):
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None):
-        super().__init__()
 
-        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-        if not HAS_FASTAI:
-            _raise_fastai_import_error()
-
-        if backbone is None:
-            self._backbone = models.resnet34
-        elif type(backbone) is str:
-            self._backbone = getattr(models, backbone)
-        else:
-            self._backbone = backbone
+        super().__init__(data, backbone)
 
         backbone_cut = None
         backbone_split = None
-
-        if((self._backbone) == models.mobilenet_v2):
+        if self._backbone == models.mobilenet_v2:
             backbone_cut = -1
             backbone_split = _mobilenet_split
 
-        self._emd_template = _EMD_TEMPLATE
-
         self._code = feature_classifier_prf
-
-        self._data = data
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+
         self.learn.model = self.learn.model.to(self._device)
 
         _set_multigpu_callback(self)
@@ -144,21 +111,22 @@ class FeatureClassifier(ArcGISModel):
         return self.learn.predict(img)
 
     def _create_emd(self, path):
-        _EMD_TEMPLATE['ModelFile'] = path.name
-        _EMD_TEMPLATE['ImageHeight'] = self._data.chip_size
-        _EMD_TEMPLATE['ImageWidth'] = self._data.chip_size
-        _EMD_TEMPLATE['ModelParameters'] = {'backbone': self._backbone.__name__}
-        _EMD_TEMPLATE['Classes'] = []
-
+        super()._create_emd(path)
+        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        self._emd_template["ModelConfiguration"] = "_classifier"
+        self._emd_template["InferenceFunction"] = "ArcGISFeatureClassifier.py"
+        self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['Classes'] = []
+        class_data = {}
         for i, class_name in enumerate(self._data.classes):
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            _CLASS_TEMPLATE["Value"] = inverse_class_mapping[class_name]
-            _CLASS_TEMPLATE["Name"] = class_name
+            class_data["Value"] = inverse_class_mapping[class_name]
+            class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
-            _CLASS_TEMPLATE["Color"] = color
-            _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())
+            class_data["Color"] = color
+            self._emd_template['Classes'].append(class_data.copy())
 
-        json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
+        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
 
         return path.stem
 
@@ -177,20 +145,20 @@ class FeatureClassifier(ArcGISModel):
         chip_size = emd["ImageWidth"]
 
         try:
-            class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
-            color_mapping = {i['Value'] : i['Color'] for i in emd['Classes']}
+            class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+            color_mapping = {i['Value']: i['Color'] for i in emd['Classes']}
         except KeyError:
-            class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']}
-            color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}
+            class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
+            color_mapping = {i['ClassValue']: i['Color'] for i in emd['Classes']}
 
-
+        resize_to = emd.get('resize_to')
         if data is None:
             ranges = (0, 1)
             train_tfms = [rotate(degrees=30, p=0.5),
-                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
-                dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)),
-                # rand_zoom(scale=(0.75, 1.5))
-                ]
+                          crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                          dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)),
+                          # rand_zoom(scale=(0.75, 1.5))
+                          ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
@@ -201,9 +169,10 @@ class FeatureClassifier(ArcGISModel):
                     tempfile.TemporaryDirectory().name, sorted(list(class_mapping.values())),
                     ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
                 tempdata.chip_size = chip_size
-                return cls(tempdata, **model_params, pretrained_path=str(model_file))
-        else:
-            return cls(data, **model_params, pretrained_path=str(model_file))
+                data = tempdata
+        data.resize_to = resize_to
+
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     def plot_confusion_matrix(self):
         """

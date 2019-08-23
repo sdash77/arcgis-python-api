@@ -21,45 +21,15 @@ try:
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     from ._unet_utils import is_no_color
+    from torch.nn import Module as NnModule
     HAS_FASTAI = True
 except Exception as e:
-    HAS_FASTAI = False
-
-try:
-    import torch.nn.Module as NnModule
-except ImportError:
     class NnModule():
         pass
+    HAS_FASTAI = False
 
 
-def _raise_fastai_import_error():
-    raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai=1.0.39 pytorch=1.0.0 torchvision"')
-
-
-def _mobilenet_split(m:NnModule): return (m[0][0][0], m[1])
-
-_EMD_TEMPLATE = {
-    "Framework": "arcgis.learn.models._inferencing",
-    "InferenceFunction": "ArcGISObjectDetector.py",
-    "ModelConfiguration": "_DynamicSSD",
-    "ModelFile": "",
-    "ModelType": "ObjectDetection",
-    "ImageHeight": None,
-    "ImageWidth": None,
-    "ExtractBands": [0, 1, 2],
-    "Grids": None,
-    "Zooms": None,
-    "Ratios": None,
-    "Classes": [],
-    "SSDVersion":None
-}
-
-_CLASS_TEMPLATE = {
-        "Value": 0,
-        "Name": "Pool",
-        "Color": [0, 255, 0]
-}
-
+def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
 
 class _EmptyData():
     def __init__(self, path, c, loss_func, chip_size):
@@ -118,9 +88,7 @@ class SingleShotDetector(ArcGISModel):
     def __init__(self, data, grids=None, zooms=[1.], ratios=[[1., 1.]],
                  backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None, location_loss_factor=None, ssd_version=2):
 
-        super().__init__()
-
-        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        super().__init__(data, backbone)
 
         # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
         if location_loss_factor is not None:
@@ -128,10 +96,6 @@ class SingleShotDetector(ArcGISModel):
                 raise Exception('`location_loss_factor` should be greater than 0 and less than 1')
         self.location_loss_factor = location_loss_factor
 
-        if not HAS_FASTAI:
-            _raise_fastai_import_error()
-
-        self._emd_template = _EMD_TEMPLATE
         self._code = code
         self.ssd_version = ssd_version
 
@@ -148,7 +112,7 @@ class SingleShotDetector(ArcGISModel):
         backbone_cut = None
         backbone_split = None
 
-        if((self._backbone) == models.mobilenet_v2):
+        if self._backbone == models.mobilenet_v2:
             backbone_cut = -1
             backbone_split = _mobilenet_split
 
@@ -165,7 +129,7 @@ class SingleShotDetector(ArcGISModel):
 
             # find bounding boxes height and width
         
-            if grids == None:
+            if grids is None:
                 logger.info("Computing optimal grid size...")
                 hw = data.height_width
                 hw = np.array(hw)
@@ -197,7 +161,7 @@ class SingleShotDetector(ArcGISModel):
             num_features = feature_sizes[-1][-1]
             num_channels = feature_sizes[-1][1] 
 
-            if(grids[0] > 8 and abs(num_features - grids[0]) > 4 and backbone_name == 'res'):
+            if grids[0] > 8 and abs(num_features - grids[0]) > 4 and backbone_name == 'res':
                 num_features = feature_sizes[-2][-1]
                 num_channels = feature_sizes[-2][1]
                 backbone_cut = -3
@@ -207,8 +171,8 @@ class SingleShotDetector(ArcGISModel):
         else:
             raise Exception('SSDVersion can only be 1 or 2')
 
-        self._data = data
         self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
+
         self.learn.model = self.learn.model.to(self._device)
 
         if focal_loss:
@@ -220,6 +184,10 @@ class SingleShotDetector(ArcGISModel):
         _set_multigpu_callback(self)
         if pretrained_path is not None:
             self.load(pretrained_path)        
+
+    @classmethod
+    def from_model(cls, emd_path, data=None):
+        return cls.from_emd(data, emd_path)
 
     @classmethod
     def from_emd(cls, data, emd_path):
@@ -249,9 +217,12 @@ class SingleShotDetector(ArcGISModel):
             model_file = emd_path.parent / model_file
 
         class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+        resize_to = emd.get('resize_to')
+
         if data is None:
             data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
 
+        data.resize_to = resize_to
         return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
@@ -357,24 +328,30 @@ class SingleShotDetector(ArcGISModel):
 
     def _create_emd(self, path):
         import random
-        _EMD_TEMPLATE['ModelFile'] = path.name
-        _EMD_TEMPLATE['ImageHeight'] = self._data.chip_size
-        _EMD_TEMPLATE['ImageWidth'] = self._data.chip_size
-        _EMD_TEMPLATE['Grids'] = self.grids
-        _EMD_TEMPLATE['Zooms'] = self.zooms
-        _EMD_TEMPLATE['Ratios'] = self.ratios
-        _EMD_TEMPLATE['backbone'] = self._backbone.__name__
-        _EMD_TEMPLATE['SSDVersion'] = self.ssd_version
-        _EMD_TEMPLATE['Classes'] = []
+        super()._create_emd(path)
+
+        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        self._emd_template["ModelConfiguration"] = "_DynamicSSD"
+        self._emd_template["ModelType"] = "ObjectDetection"
+        self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['Grids'] = self.grids
+        self._emd_template['Zooms'] = self.zooms
+        self._emd_template['Ratios'] = self.ratios
+        self._emd_template['SSDVersion'] = self.ssd_version
+        self._emd_template['Classes'] = []
+
+        class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            _CLASS_TEMPLATE["Value"] = inverse_class_mapping[class_name]
-            _CLASS_TEMPLATE["Name"] = class_name
+            class_data["Value"] = inverse_class_mapping[class_name]
+            class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
-            _CLASS_TEMPLATE["Color"] = color
-            _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())
+            class_data["Color"] = color
+            self._emd_template['Classes'].append(class_data.copy())
 
-        json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
+        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
+
         return path.stem
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):

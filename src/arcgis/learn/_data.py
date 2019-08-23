@@ -42,7 +42,7 @@ def _bb_pad_collate(samples, pad_idx=0):
     return torch.cat(imgs,0), (bboxes,labels)    
 
 
-def _get_bbox_classes(xmlfile, class_mapping, not_label_count = [0], height_width = []):
+def _get_bbox_classes(xmlfile, class_mapping, not_label_count=[0], height_width=[]):
 
 
     if not os.path.exists(xmlfile):
@@ -170,6 +170,12 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         path = Path(path)
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
+    databunch_kwargs['bs'] = batch_size
+
+    kwargs_transforms = {}
+
+    if resize_to:
+        kwargs_transforms['size'] = resize_to
 
     has_esri_files = _check_esri_files(path)
     alter_class_mapping = False
@@ -224,93 +230,92 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         if color_mapping.get(0):
             del color_mapping[0]
 
-        src = (ArcGISSegmentationItemList.from_folder(path/'images')
-                .split_by_rand_pct(val_split_pct, seed=seed)
-                .label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)) # TODO : Handel NoData case
+        # TODO : Handel NoData case
+        data = ArcGISSegmentationItemList.from_folder(path/'images')\
+            .split_by_rand_pct(val_split_pct, seed=seed)\
+            .label_from_func(
+                get_y_func, classes=(['NoData'] + list(class_mapping.values())),
+                class_mapping=class_mapping,
+                color_mapping=color_mapping
+            )
 
         if transforms is None:
-            transforms = get_transforms(flip_vert=True,
-                                        max_rotate=90.,
-                                        max_zoom=3.0,
-                                        max_lighting=0.5)
-
-        data = (src.transform(transforms, size=chip_size, tfm_y=True)
-                .databunch(bs=batch_size, **databunch_kwargs)
-                .normalize(imagenet_stats))
+            transforms = get_transforms(
+                flip_vert=True,
+                max_rotate=90.,
+                max_zoom=3.0,
+                max_lighting=0.5
+            )
+            kwargs_transforms['tfm_y'] = True
+        kwargs_transforms['size'] = chip_size
     elif dataset_type == 'PASCAL_VOC_rectangles':
-       
-
-        src = (SSDObjectItemList.from_folder(path/'images')
-                .split_by_rand_pct(val_split_pct, seed=seed))
-
         not_label_count = [0]
-        get_y_func = partial(_get_bbox_lbls, class_mapping=class_mapping, not_label_count = not_label_count, height_width = height_width)
+        get_y_func = partial(
+            _get_bbox_lbls,
+            class_mapping=class_mapping,
+            not_label_count=not_label_count,
+            height_width=height_width
+        )
 
-        src=src.label_from_func(get_y_func)
+        data = SSDObjectItemList.from_folder(path/'images')\
+            .split_by_rand_pct(val_split_pct, seed=seed)\
+            .label_from_func(get_y_func)
+
         if not_label_count[0]:
-            logger=logging.getLogger()
-            logger.warning("Please check your dataset. "+ str(not_label_count[0])+" images dont have the corresponding label files." ) 
+            logger = logging.getLogger()
+            logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
 
         if transforms is None:
-            ranges = (0,1)
-            train_tfms = [crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges), dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)), rand_zoom(scale=(1.0, 1.5))]
+            ranges = (0, 1)
+            train_tfms = [
+                crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
+                dihedral_affine(),
+                brightness(change=(0.4, 0.6)),
+                contrast(scale=(0.75, 1.5)),
+                rand_zoom(scale=(1.0, 1.5))
+            ]
             val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
-        kwargs_transforms = {
-            'tfm_y': True
-        }
-        if resize_to is not None:
-            kwargs_transforms['size'] = resize_to
+        databunch_kwargs['collate_fn'] = collate_fn
+    elif dataset_type in ['Labeled_Tiles', 'Imagenet']:
+        if dataset_type == 'Labeled_Tiles':
+            get_y_func = partial(_get_lbls, class_mapping=class_mapping)
+        else:
+            def get_y_func(x):
+                return x.parent.stem
 
-        data = (src
-                .transform(transforms, **kwargs_transforms)
-                .databunch(bs=batch_size, collate_fn=collate_fn, **databunch_kwargs)
-                .normalize(imagenet_stats))
-        
-    elif dataset_type == 'Labeled_Tiles':
-        get_y_func = partial(_get_lbls, class_mapping=class_mapping)
+        data = ImageList.from_folder(path/'images')\
+            .split_by_rand_pct(val_split_pct, seed=42)\
+            .label_from_func(get_y_func)
 
-        src = (ImageList.from_folder(path/'images')
-                .split_by_rand_pct(val_split_pct, seed=42)
-                .label_from_func(get_y_func))
+        if dataset_type == 'Imagenet':
+            class_mapping = {}
+            index = 1
+            for class_name in data.classes:
+                class_mapping[index] = class_name
+                index = index + 1
 
         if transforms is None:
             ranges = (0, 1)
             train_tfms = [
                 rotate(degrees=30, p=0.5),
                 crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
-                dihedral_affine(), brightness(change=(0.4, 0.6)), contrast(scale=(0.75, 1.5)),
-            ]
-            val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
-            transforms = (train_tfms, val_tfms)
-
-        data = (src
-                .transform(transforms, size=chip_size)
-                .databunch(bs=batch_size, **databunch_kwargs)
-                .normalize(imagenet_stats))
-
-    elif dataset_type == 'Imagenet':
-        if transforms is None:
-            train_tfms = [
-                rotate(degrees=30, p=0.5),
-                flip_lr(),
+                dihedral_affine(),
                 brightness(change=(0.4, 0.6)),
                 contrast(scale=(0.75, 1.5))
             ]
-            val_tfms = []
+            val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
-        databunch_kwargs['valid_pct'] = val_split_pct
-        data = ImageDataBunch.from_folder(path, ds_tfms=transforms, size=chip_size, **databunch_kwargs).normalize(imagenet_stats)
-        class_mapping = {}
-        index = 1
-        for class_name in data.classes:
-            class_mapping[index] = class_name
-            index = index + 1
     else:
-        raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))    
+        raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
+
+    data = (data.transform(transforms, **kwargs_transforms)
+            .databunch(**databunch_kwargs)
+            .normalize(imagenet_stats))
 
     data.chip_size = data.x[0].shape[-1] if transforms is False else chip_size
+
     if alter_class_mapping:
         new_mapping = {}
         for i, class_name in enumerate(class_mapping.keys()):
@@ -319,11 +324,9 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping
-    show_batch_func = data.show_batch
-    show_batch_func = partial(show_batch_func, rows=min(int(math.sqrt(batch_size)), 5))
-    data.show_batch = show_batch_func
+    data.show_batch = partial(data.show_batch, rows=min(int(math.sqrt(batch_size)), 5))
     data.orig_path = path
-    data.resize_to = resize_to
+    data.resize_to = kwargs_transforms.get('size', None)
     data.height_width = height_width
     
     return data
