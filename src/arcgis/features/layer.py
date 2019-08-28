@@ -1021,6 +1021,7 @@ class FeatureLayer(Layer):
             df.spatial.set_geometry("SHAPE")
             return df
         elif record_count <= max_records:
+            params['resultRecordCount'] = record_count
             if as_df:
                 import pandas as pd
                 df = self._query_df(url, params)
@@ -1039,7 +1040,6 @@ class FeatureLayer(Layer):
                             df[fld] = pd.to_datetime(df[fld], infer_datetime_format=True)
                 return df
 
-            params['resultRecordCount'] = record_count
             return self._query(url, params, raw=as_raw)
 
         result = None
@@ -1091,7 +1091,7 @@ class FeatureLayer(Layer):
             if len(dfs) == 1:
                 df = dfs[0]
             else:
-                df = pd.concat(dfs)
+                df = pd.concat(dfs, sort=True)
                 df.reset_index(drop=True, inplace=True)
             if 'SHAPE' in df.columns:
                 df.spatial.set_geometry('SHAPE')
@@ -1752,6 +1752,7 @@ class FeatureLayer(Layer):
                 # half the max record count
                 max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
                 offset = int(params['resultOffset']) if 'resultOffset' in params else 0
+                # reduce this number to 125 if you still sees 500/504 error
                 if max_record < 250:
                     # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
                     raise queryException
@@ -1828,8 +1829,41 @@ class FeatureLayer(Layer):
                 attribs['SHAPE'] = Geometry(geom)
             return attribs
         #------------------------------------------------------------------
-        featureset_dict = self._con.post(url, params,
-                                         token=self._token)
+        try:
+            featureset_dict = self._con.post(url, params,
+                                             token=self._token)
+        except Exception as queryException:
+            error_list = ["Error performing query operation", "HTTP Error 504: GATEWAY_TIMEOUT"]
+            if any(ele in queryException.__str__() for ele in error_list):
+                # half the max record count
+                max_record = int(params['resultRecordCount']) if 'resultRecordCount' in params else 1000
+                offset = int(params['resultOffset']) if 'resultOffset' in params else 0
+                # reduce this number to 125 if you still sees 500/504 error
+                if max_record < 250:
+                    # when max_record is lower than 250, but still getting error 500 or 504, just exit with exception
+                    raise queryException
+                else:
+                    max_rec = int((max_record + 1) / 2)
+                    i = 0
+                    featureset_dict = None
+                    while max_rec * i < max_record:
+                        params['resultRecordCount'] = max_rec if max_rec * (i + 1) <= max_record else (
+                                    max_record - max_rec * i)
+                        params['resultOffset'] = offset + max_rec * i
+                        try:
+                            records = self._query(url, params, raw=True)
+                            if featureset_dict is not None:
+                                for feature in records['features']:
+                                    featureset_dict['features'].append(feature)
+                            else:
+                                featureset_dict = records
+                            i += 1
+                        except Exception as queryException2:
+                            raise queryException2
+
+            else:
+                raise queryException
+
         if len(featureset_dict['features']) == 0:
             return pd.DataFrame([])
         sr = None
@@ -1853,7 +1887,7 @@ class FeatureLayer(Layer):
                 if fld['type'] != "esriFieldTypeGeometry":
                     dtypes[fld['name']] = _fld_lu[fld['type']]
                     names.append(fld['name'])
-        if 'geometryType' in featureset_dict:
+        if 'SHAPE' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
 
         return df
