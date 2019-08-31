@@ -39,11 +39,10 @@ else:
         'widgetsnbextension >=3',
         'pandas >=0.23',
         'numpy',
-        'pyshp==1.2.11',
         'matplotlib',
         'keyring',
         'jupyterlab',
-        'pyshp <2',
+        'pyshp >=1.2.11,<2',
         'winkerberos;platform_system=="Windows"' ]
 
 def _post_install():

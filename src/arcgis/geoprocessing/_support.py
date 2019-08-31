@@ -28,10 +28,13 @@ def _layer_input(input_layer):
 
     url = ""
     if isinstance(input_layer, arcgis.gis.Item):
-        if 'layers' in input_layer:
-            input_param = input_layer.layers[0]._lyr_dict
+        if input_layer.type == "Image Collection":
+            input_param = {"itemId": input_layer.itemid}
         else:
-            raise TypeError("No layers in input layer Item")
+            if 'layers' in input_layer:
+                input_param = input_layer.layers[0]._lyr_dict
+            else:
+                raise TypeError("No layers in input layer Item")
 
     elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
         input_param = input_layer.layers[0]._lyr_dict

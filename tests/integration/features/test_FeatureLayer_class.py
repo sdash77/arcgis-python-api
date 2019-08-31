@@ -400,6 +400,81 @@ class Test_FeatureLayer_online(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    def test_feature_excessive_query_as_df_classes(self):
+        """
+        Purpose of this test is to obtain main objects in feature module and verify their types are correct.
+        :return:
+        """
+        try:
+            from arcgis.features import FeatureLayer
+            county_layer = FeatureLayer(
+                "https://demographics8.arcgis.com/arcgis/rest/services/USA_Demographics_and_Boundaries_2018/MapServer/14")
+            county_featureset = county_layer.query(as_df=True)
+            from pandas import core
+            self.assertIsInstance(county_featureset, core.frame.DataFrame, "FeatureLayer.query(as_df=True) does not return a DataFrame obj")
+            self.assertEqual(32196, county_featureset.shape[0], "Number of features not correct")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_feature_external_query_as_df_classes(self):
+        """
+        Purpose of this test is to obtain main objects in feature module and verify their types are correct.
+        :return:
+        """
+        try:
+            from arcgis.features import FeatureLayer
+            county_layer = FeatureLayer(
+                "https://gisdev.odf.oregon.gov/gisdev/rest/services/GeoEvent/VaisalaLightning/FeatureServer/0")
+            county_featureset = county_layer.query(as_df=True)
+            from pandas import core
+            self.assertIsInstance(county_featureset, core.frame.DataFrame, "FeatureLayer.query(as_df=True) does not return a DataFrame obj")
+            self.assertEqual(3396, county_featureset.shape[0], "Number of features not correct")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_feature_geoevent_query_as_df_classes(self):
+        """
+        Purpose of this test is to obtain main objects in feature module and verify their types are correct.
+        :return:
+        """
+        try:
+            from arcgis.features import FeatureLayer
+            county_layer = FeatureLayer(
+                "https://services8.arcgis.com/mpSDBlkEzjS62WgX/arcgis/rest/services/WorkerPosition/FeatureServer/1")
+            # county_featureset = county_layer.query()
+            # self.assertIsInstance(county_featureset, arcgis.features.FeatureSet, "FeatureLayer.query() does not return a FeatureSet obj")
+            # self.assertEqual(37784, len(county_featureset.features), "Number of features not correct")
+            county_featureset = county_layer.query(as_df=True)
+            from pandas import core
+            self.assertIsInstance(county_featureset, core.frame.DataFrame, "FeatureLayer.query(as_df=True) does not return a DataFrame obj")
+            self.assertEqual(37784, county_featureset.shape[0], "Number of features not correct")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
 #TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
