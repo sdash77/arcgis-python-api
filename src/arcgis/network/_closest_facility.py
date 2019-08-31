@@ -333,14 +333,7 @@ def find_closest_facilities(
     point_barriers=None,
     line_barriers=None,
     polygon_barriers=None,
-    restrictions="""['Avoid Unpaved Roads',
-    'Avoid Private Roads',
-    'Driving an Automobile',
-    'Through Traffic Prohibited',
-    'Roads Under Construction Prohibited',
-    'Avoid Gates',
-    'Avoid Express Lanes',
-    'Avoid Carpool Roads']""",
+    restrictions=None,
     attribute_parameter_values=None,
     route_shape="True Shape",
     route_line_simplification_tolerance=None,
@@ -360,6 +353,7 @@ def find_closest_facilities(
     gis=None,
     future=False):
     """
+
 
 
 Finds one or more facilities that are closest from an incident based on travel time or travel distance and outputs the best routes, driving directions between the incidents and the chosen facilities, and a copy of the chosen facilities. You can use the tool, for example, to find the closest hospital to an accident, the closest police cars to a crime scene, or the closest store to a customer's address., When finding closest facilities, you can specify how many to find and whether the direction of travel is toward or away from them. You can also specify the time of day to account for travel times based on live or predictive traffic conditions for that time and date. For instance, you can use the tool to search for hospitals within a 15-minute drive time of the site of an accident at a given time of day. Any hospitals that take longer than 15 minutes to reach based on the traffic conditions will not be included in the results.
@@ -970,33 +964,38 @@ Returns the following as a named tuple:
 
 See http://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/ClosestFacility_GPServer/World_ClosestFacility/FindClosestFacilities.htm for additional help.
     """
-    #kwargs = locals()
-    if incidents is None:
-        incidents = default_incidents
-
-    if facilities is None:
-        facilities = default_facilities
-
-    if point_barriers is None:
-        point_barriers = default_point_barriers
-
-    if line_barriers is None:
-        line_barriers = default_line_barriers
-
-    if polygon_barriers is None:
-        polygon_barriers = default_polygon_barriers
-
-    if attribute_parameter_values is None:
-        attribute_parameter_values = default_attributes
-
-    if route_line_simplification_tolerance is None:
-        route_line_simplification_tolerance = default_tolerance
-
     if gis is None:
         gis = arcgis.env.active_gis
-
     url = gis.properties.helperServices.asyncClosestFacility.url[:-len('/FindClosestFacilities')]
     tbx = import_toolbox(url)
+    defaults = dict(zip(tbx.find_closest_facilities.__annotations__.keys(),
+                        tbx.find_closest_facilities.__defaults__))
+    if restrictions is None:
+        restrictions = defaults['restrictions']
+    if incidents is None:
+        incidents = defaults['incidents']
+
+    if facilities is None:
+        facilities = defaults['facilities']
+
+    if point_barriers is None:
+        point_barriers = defaults['point_barriers']
+
+    if line_barriers is None:
+        line_barriers = defaults['line_barriers']
+
+    if polygon_barriers is None:
+        polygon_barriers = defaults['polygon_barriers']
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = defaults['attribute_parameter_values']
+
+    if route_line_simplification_tolerance is None:
+        route_line_simplification_tolerance = defaults['route_line_simplification_tolerance']
+
+
+
+
     job = tbx.find_closest_facilities(incidents=incidents,
                                       facilities=facilities,
                                       measurement_units=measurement_units,
