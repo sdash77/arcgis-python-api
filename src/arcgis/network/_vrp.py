@@ -492,6 +492,340 @@ default_param_values = {
 default_tolerance = {'distance': 10,
     'units': 'esriMeters'}
 
+
+def edit_vehicle_routing_problem(orders,
+                                 depots,
+                                 routes,
+                                 breaks=None,
+                                 time_units=None,
+                                 distance_units=None,
+                                 analysis_region=None,
+                                 default_date=None,
+                                 uturn_policy=None,
+                                 time_window_factor=None,
+                                 spatially_cluster_routes=True,
+                                 route_zones=None,
+                                 route_renewals=None,
+                                 order_pairs=None,
+                                 excess_transit_factor=None,
+                                 point_barriers=None,
+                                 line_barriers=None,
+                                 polygon_barriers=None,
+                                 use_hierarchy_in_analysis=True,
+                                 restrictions=None,
+                                 attribute_parameter_values=None,
+                                 populate_route_lines=True,
+                                 route_line_simplification_tolerance=None,
+                                 populate_directions=False,
+                                 directions_language=None,
+                                 directions_style_name=None,
+                                 travel_mode=None,
+                                 impedance=None,
+                                 time_zone_usage_for_time_fields=None,
+                                 save_output_layer=False,
+                                 overrides=None,
+                                 save_route_data=None,
+                                 time_impedance=None,
+                                 distance_impedance=None,
+                                 populate_stop_shapes=False,
+                                 output_format=None,
+                                 gis=None):
+    """
+    This ArcGIS Online service solves a vehicle routing problem (VRP) to find the best routes for a
+    fleet of vehicles. It is similar to `solve_vehicle_routing_problem`, but `edit_vehicle_routing_problem`
+    is designed to make a few, small edits to the results of a VRP and re-solve or solve a small VRP
+    analysis of only two routes.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    orders                                   Required FeatureSet. Specify one or more orders (up to 2,000).
+                                             These are the locations that the routes of the vehicle routing
+                                             problem (VRP) analysis should visit. An order can represent a
+                                             delivery (for example, furniture delivery), a pickup (such as an
+                                             airport shuttle bus picking up a passenger), or some type of service
+                                             or inspection (a tree trimming job or building inspection, for
+                                             instance).
+    ------------------------------------     --------------------------------------------------------------------
+    depots                                   Required FeatureSet. These represent the location where the routes
+                                             will start and end at for the routes.
+    ------------------------------------     --------------------------------------------------------------------
+    routes                                   Required FeatureSet. Specify one or more routes (up to 100). A route
+                                             specifies vehicle and driver characteristics; after solving, it also
+                                             represents the path between depots and orders.
+
+                                             A route can have start and end depot service times, a fixed or
+                                             flexible starting time, time-based operating costs, distance-based
+                                             operating costs, multiple capacities, various constraints on a
+                                             driver's workday, and so on. When specifying the routes, you can set
+                                             properties for each one by using attributes.
+    ------------------------------------     --------------------------------------------------------------------
+    breaks                                   Optional FeatureSet. These are the rest periods, or breaks, for the
+                                             routes in a given vehicle routing problem. A break is associated with
+                                             exactly one route, and it can be taken after completing an order,
+                                             while en-route to an order, or prior to servicing an order. It has a
+                                             start time and a duration, for which the driver may or may not be
+                                             paid.
+                                             There are three options for establishing when a break begins: using
+                                             a time window, a maximum travel time, or a maximum work time.
+    ------------------------------------     --------------------------------------------------------------------
+    time_units                               Optional String. The time units for all time-based field values in
+                                             the analysis.  Allowed values: `Seconds`, `Minutes`, `Hours`, or `Days`
+    ------------------------------------     --------------------------------------------------------------------
+    distance_units                           Optional String. The distance units for all distance-based field
+                                             values in the analysis. Allowed values: `Meters`,`Kilometers`,`Feet`,`Yards`,`Miles`,`NauticalMiles`
+    ------------------------------------     --------------------------------------------------------------------
+    analysis_region                          Optional String. Specify the region in which to perform the analysis.
+                                             If a value is not specified for this parameter, the tool will
+                                             automatically calculate the region name based on the location of the
+                                             input points.
+    ------------------------------------     --------------------------------------------------------------------
+    default_date                             Optional Datetime. The default date for time field values that
+                                             specify a time of day without including a date.
+    ------------------------------------     --------------------------------------------------------------------
+    uturn_policy                             Optional String. Use this parameter to restrict or permit the service
+                                             area to make U-turns at junctions.
+
+                                             The parameter can have the following values:
+
+                                             - `ALLOW_UTURNS-U` - turns are permitted everywhere. Allowing
+                                               U-turns implies that the vehicle can turn around at any junction and
+                                               double back on the same street. This is the default value.
+
+                                             - `NO_UTURNS-U` - turns are prohibited at all junctions: pseudo-junctions, intersections, and dead-ends.
+                                               Note, however, that U-turns may be permitted even when this option is chosen.
+
+                                             - `ALLOW_DEAD_ENDS_ONLY-U` - turns are prohibited at all junctions, except those that have only one connected street feature (a dead end).
+
+                                             - `ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY-U` - turns are prohibited at pseudo-junctions where exactly two adjacent streets meet, but U-turns are permitted
+                                               at intersections and dead ends. This prevents turning around in the middle of the road where one length of road happened to be digitized as two street features.
+                                               The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
+
+    ------------------------------------     --------------------------------------------------------------------
+    time_window_factor                       Optional String. Rates the importance of honoring time windows.
+                                             Allowed values: `High`, `Medium` or `Low`.
+    ------------------------------------     --------------------------------------------------------------------
+    spatially_cluster_routes                 Optional Boolean. If true, the dynamic seed points are automatically
+                                             created for all routes and the orders assigned to an individual
+                                             route are spatially clustered. This will reduce route intersections.
+                                             When using `route_zones` set this parameter to `False`.
+    ------------------------------------     --------------------------------------------------------------------
+    route_zones                              Optional FeatureSet. Delineates work territories for given routes. A
+                                             route zone is a polygon feature and is used to constrain routes to
+                                             servicing only those orders that fall within or near the specified
+                                             area.
+    ------------------------------------     --------------------------------------------------------------------
+    route_renewals                           Optional FeatureSet. Specifies the intermediate depots that routes can visit to
+                                             reload or unload the cargo they are delivering or picking up.
+    ------------------------------------     --------------------------------------------------------------------
+    order_pairs                              Optional FeatureSet. This parameter pairs pickup and delivery orders
+                                             so they are serviced by the same route.
+    ------------------------------------     --------------------------------------------------------------------
+    excess_transit_factor                    Optional String.  Rates the importance of reducing excess transit time of
+                                             order pairs. Excess transit time is the amount of time exceeding the
+                                             time required to travel directly between the paired orders. Excess
+                                             time can be caused by driver breaks or travel to intermediate orders
+                                             and depots. Allowed values: `High`, `Medium` or `Low`.
+    ------------------------------------     --------------------------------------------------------------------
+    point_barriers                           Optional FeatureSet. Specify points that either completely restrict travel or
+                                             proportionately scale the time or distance required to travel on the streets intersected
+                                             by the polygons.
+    ------------------------------------     --------------------------------------------------------------------
+    line_barriers                            Optional FeatureSet. Specify polylines that either completely restrict travel or
+                                             proportionately scale the time or distance required to travel on the streets intersected
+                                             by the polygons.
+    ------------------------------------     --------------------------------------------------------------------
+    polygon_barriers                         Optional FeatureSet. Specify polygons that either completely restrict travel or
+                                             proportionately scale the time or distance required to travel on the streets intersected
+                                             by the polygons.
+    ------------------------------------     --------------------------------------------------------------------
+    use_hierarchy_in_analysis                Optional Boolean. Specify whether hierarchy should be used when finding the best
+                                             routes. True means use hierarchy when finding routes.
+    ------------------------------------     --------------------------------------------------------------------
+    restrictions                             Optional String. Specify which restrictions should be honored by the tool when finding
+                                             the best routes. A restriction represents a driving preference or requirement.
+    ------------------------------------     --------------------------------------------------------------------
+    attribute_parameter_values               Optional Dict.  Specify additional values required by some restrictions, such as the weight
+                                             of a vehicle for Weight Restriction. You can also use the attribute parameter to specify
+                                             whether any restriction prohibits, avoids, or prefers travel on roads that use the
+                                             restriction.
+    ------------------------------------     --------------------------------------------------------------------
+    populate_route_lines                     Optional Boolean. Specify if the output route line should be generated.
+    ------------------------------------     --------------------------------------------------------------------
+    route_line_simplification_tolerance      Optional Float. Specify by how much you want to simplify the geometry of the output lines
+                                             for routes and directions.The value you provide for this parameter is ignored unless Travel
+                                             Mode is set to Custom, which is the default value.The tool also ignores this parameter if the
+                                             populate_route_lines parameter is false. Simplification maintains critical points on a route,
+                                             such as turns at intersections, to define the essential shape of the route and removes other
+                                             points.
+    ------------------------------------     --------------------------------------------------------------------
+    populate_directions                      Optional Boolean.  If True, the directions will be returned.
+    ------------------------------------     --------------------------------------------------------------------
+    directions_language                      Optional String. Determines the output language of the directions.
+    ------------------------------------     --------------------------------------------------------------------
+    directions_style_name                    Optional String. Determines the style of the directions.
+    ------------------------------------     --------------------------------------------------------------------
+    travel_mode                              Optional String. Specify the mode of transportation to model in the analysis.
+    ------------------------------------     --------------------------------------------------------------------
+    impedance                                Optional String. Specify the impedance, which is a value that represents the effort or cost
+                                             of traveling along road segments or on other parts of the transportation network.
+    ------------------------------------     --------------------------------------------------------------------
+    time_zone_usage_for_time_fields          Optional String. Specifies the time zone for the input date-time fields supported by the tool. The default is GEO_LOCAL.
+    ------------------------------------     --------------------------------------------------------------------
+    save_output_layer                        Optional Boolean. Specify if the tool should save the analysis settings as a network analysis
+                                             layer file. True means save the data and False means do not.
+    ------------------------------------     --------------------------------------------------------------------
+    overrides                                Optional Dict. Specify additional settings that can influence the behavior of the solver when
+                                             finding solutions for the network analysis problems.
+    ------------------------------------     --------------------------------------------------------------------
+    save_route_data                          Optional Boolean. Choose whether the output includes a zip file that contains a file geodatabase
+                                             holding the inputs and outputs of the analysis in a format that can be used to share route layers
+                                             with ArcGIS Online or Portal for ArcGIS. True - Save the route data as a zip file. The
+                                             file is downloaded in a temporary directory on your machine. False - Do not save the route data.
+                                             This is the default.
+
+    ------------------------------------     --------------------------------------------------------------------
+    time_impedance                           Optional String. Specify the time-based impedance, which is a value that represents the travel time
+                                             along road segments or on other parts of the transportation network. If the impedance for the travel
+                                             mode, as specified using the impedance parameter, is time-based, the value for time_impedance and
+                                             impedance parameters should be identical. Otherwise the service will return an error.
+    ------------------------------------     --------------------------------------------------------------------
+    distance_impedance                       Optional String. If the impedance for the travel mode, as specified using the impedance parameter, is
+                                             distance-based, the value for distance_impedance and impedance parameters should be identical. Otherwise
+                                             the service will return an error. Specify the distance-based impedance, which is a value that represents
+                                             the travel distance along road segments or on other parts of the transportation network.
+    ------------------------------------     --------------------------------------------------------------------
+    populate_stop_shape                      Optional Boolean. Specify if the tool should create the shapes for the output assigned and unassigned stops.
+    ------------------------------------     --------------------------------------------------------------------
+    output_format                            Optional String. Specify the format in which the output features are created. Choose from the following formats:
+
+                                                - Feature Set: The output features are returned as feature classes and tables. This is the default.
+                                                - JSON File: The output features are returned as a compressed file containing the JSON representation of the outputs.
+                                                  When this option is specified, the output is a single file (with a .zip extension) that contains one or more JSON
+                                                  files (with a .json extension) for each of the outputs created by the service.
+                                                - GeoJSON File: The output features are returned as a compressed file containing the GeoJSON representation of the
+                                                  outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more
+                                                  GeoJSON files (with a .geojson extension) for each of the outputs created by the service.
+
+
+
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. If provided this connection is used to perform the operation.
+    ====================================     ====================================================================
+    """
+    if gis is None:
+        gis = arcgis.env.active_gis
+    url = gis.properties.helperServices.syncVRP.url[:-len('/EditVehicleRoutingProblem')]
+    tbx = import_toolbox(url)
+    defaults = dict(zip(tbx.edit_vehicle_routing_problem.__annotations__.keys(),
+                        tbx.edit_vehicle_routing_problem.__defaults__))
+    if breaks is None:
+        breaks = defaults['breaks']
+    if time_units is None:
+        time_units = defaults['time_units']
+    if distance_units is None:
+        distance_units = defaults['distance_units']
+    if analysis_region is None:
+        analysis_region = defaults['analysis_region']
+    if default_date is None:
+        default_date = defaults['default_date']
+    if uturn_policy is None:
+        uturn_policy = defaults['uturn_policy']
+    if time_window_factor is None:
+        time_window_factor = defaults['time_window_factor']
+    if spatially_cluster_routes is None:
+        spatially_cluster_routes = defaults['spatially_cluster_routes']
+    if route_zones is None:
+        route_zones = defaults['route_zones']
+    if route_renewals is None:
+        route_renewals = defaults['route_renewals']
+    if order_pairs is None:
+        order_pairs = defaults['order_pairs']
+    if excess_transit_factor is None:
+        excess_transit_factor = defaults['excess_transit_factor']
+    if point_barriers is None:
+        point_barriers = defaults['point_barriers']
+    if line_barriers is None:
+        line_barriers = defaults['line_barriers']
+    if polygon_barriers is None:
+        polygon_barriers = defaults['polygon_barriers']
+    if use_hierarchy_in_analysis is None:
+        use_hierarchy_in_analysis = defaults['use_hierarchy_in_analysis']
+    if restrictions is None:
+        restrictions = defaults['restrictions']
+    if attribute_parameter_values is None:
+        attribute_parameter_values = defaults['attribute_parameter_values']
+    if populate_route_lines is None:
+        populate_route_lines = defaults['populate_route_lines']
+    if route_line_simplification_tolerance is None:
+        route_line_simplification_tolerance = defaults['route_line_simplification_tolerance']
+    if populate_directions is None:
+        populate_directions = defaults['populate_directions']
+    if directions_language is None:
+        directions_language = defaults['directions_language']
+    if directions_style_name is None:
+        directions_style_name = defaults['directions_style_name']
+    if travel_mode is None:
+        travel_mode = defaults['travel_mode']
+    if impedance is None:
+        impedance = defaults['impedance']
+    if time_zone_usage_for_time_fields is None:
+        time_zone_usage_for_time_fields = defaults['time_zone_usage_for_time_fields']
+    if save_output_layer is None:
+        save_output_layer = False
+    if overrides is None:
+        overrides = defaults['overrides']
+    if save_route_data is None:
+        save_route_data = defaults['save_route_data']
+    if time_impedance is None:
+        time_impedance = defaults['time_impedance']
+    if distance_impedance is None:
+        distance_impedance = defaults['distance_impedance']
+    if populate_stop_shapes is None:
+        populate_stop_shapes = defaults['populate_stop_shapes']
+    if output_format is None:
+        output_format = defaults['output_format']
+
+    job = tbx.edit_vehicle_routing_problem(orders=orders,
+                                 depots=depots,
+                                 routes=routes,
+                                 breaks=breaks,
+                                 time_units=time_units,
+                                 distance_units=distance_units,
+                                 analysis_region=analysis_region,
+                                 default_date=default_date,
+                                 uturn_policy=uturn_policy,
+                                 time_window_factor=time_window_factor,
+                                 spatially_cluster_routes=spatially_cluster_routes,
+                                 route_zones=route_zones,
+                                 route_renewals=route_renewals,
+                                 order_pairs=order_pairs,
+                                 excess_transit_factor=excess_transit_factor,
+                                 point_barriers=point_barriers,
+                                 line_barriers=line_barriers,
+                                 polygon_barriers=polygon_barriers,
+                                 use_hierarchy_in_analysis=use_hierarchy_in_analysis,
+                                 restrictions=restrictions,
+                                 attribute_parameter_values=attribute_parameter_values,
+                                 populate_route_lines=populate_route_lines,
+                                 route_line_simplification_tolerance=route_line_simplification_tolerance,
+                                 populate_directions=populate_directions,
+                                 directions_language=directions_language,
+                                 directions_style_name=directions_style_name,
+                                 travel_mode=travel_mode,
+                                 impedance=impedance,
+                                 time_zone_usage_for_time_fields=time_zone_usage_for_time_fields,
+                                 save_output_layer=save_output_layer,
+                                 overrides=overrides,
+                                 save_route_data=save_route_data,
+                                 time_impedance=time_impedance,
+                                 distance_impedance=distance_impedance,
+                                 populate_stop_shapes=populate_stop_shapes,
+                                 output_format=output_format,
+                                 gis=gis,
+                                 future=True)
+    return job
+
 def solve_vehicle_routing_problem(
     orders,
     depots,
