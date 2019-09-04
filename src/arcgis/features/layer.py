@@ -993,6 +993,12 @@ class FeatureLayer(Layer):
         else:
             max_records = 1000
 
+        supports_pagination = True
+        if ('advancedQueryCapabilities' not in self.properties or \
+                'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
+                not self.properties['advancedQueryCapabilities']['supportsPagination']):
+            supports_pagination = False
+
         params['returnCountOnly'] = False
         if record_count == 0 and as_df:
             import numpy as np
@@ -1017,11 +1023,12 @@ class FeatureLayer(Layer):
                 fld = dict(fld)
                 columns[fld['name']] = _fld_lu[fld['type']]
             columns['SHAPE'] = object
-            df =  pd.DataFrame([], columns=columns.keys()).astype(columns, False)
+            df = pd.DataFrame([], columns=columns.keys()).astype(columns, False)
             df.spatial.set_geometry("SHAPE")
             return df
         elif record_count <= max_records:
-            params['resultRecordCount'] = record_count
+            if supports_pagination and record_count > 0:
+                params['resultRecordCount'] = record_count
             if as_df:
                 import pandas as pd
                 df = self._query_df(url, params)
@@ -1043,9 +1050,7 @@ class FeatureLayer(Layer):
             return self._query(url, params, raw=as_raw)
 
         result = None
-        if ('advancedQueryCapabilities' not in self.properties or \
-           'supportsPagination' not in self.properties['advancedQueryCapabilities'] or \
-           not self.properties['advancedQueryCapabilities']['supportsPagination']):
+        if not supports_pagination:
             params['returnIdsOnly'] = True
             oid_info = self._query(url, params, raw=as_raw)
             params['returnIdsOnly'] = False
@@ -1055,7 +1060,10 @@ class FeatureLayer(Layer):
                 params['where'] = sql
                 records = self._query(url, params, raw=as_raw)
                 if result:
-                    result.features.extend(records.features)
+                    if 'features' in result:
+                        result['features'].append(records['features'])
+                    else:
+                        result.features.extend(records.features)
                 else:
                     result = records
         else:
@@ -1070,7 +1078,10 @@ class FeatureLayer(Layer):
                     records = self._query(url, params, raw=as_raw)
 
                     if result:
-                        result.features.extend(records.features)
+                        if 'features' in result:
+                            result['features'].append(records['features'])
+                        else:
+                            result.features.extend(records.features)
                     else:
                         result = records
 

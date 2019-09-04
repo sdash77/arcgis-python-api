@@ -546,7 +546,7 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
 def gvitm(raster, band_indexes= "1 2 3 4 5 6", astype=None):
     """
     Green Vegetation Index - Landsat TM
-    GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-1.1800*Band7
+    GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-0.1800*Band7
 
     :param raster: the input raster / imagery layer
     :param band_indexes:"NIR Red", e.g., "4 3" or [4,3]
@@ -1041,8 +1041,8 @@ def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
 
     curv_types = {
         'standard': 0,
-        'planform': 1,
-        'profile': 2
+        'profile': 1,
+        'planform': 2
     }
 
     in_curv_type = curv_types[curvature_type.lower()]

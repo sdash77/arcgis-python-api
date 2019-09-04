@@ -246,7 +246,8 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                 max_zoom=3.0,
                 max_lighting=0.5
             )
-            kwargs_transforms['tfm_y'] = True
+
+        kwargs_transforms['tfm_y'] = True
         kwargs_transforms['size'] = chip_size
     elif dataset_type == 'PASCAL_VOC_rectangles':
         not_label_count = [0]
@@ -277,6 +278,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             val_tfms = [crop(size=chip_size, p=1., row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
 
+        kwargs_transforms['tfm_y'] = True
         databunch_kwargs['collate_fn'] = collate_fn
     elif dataset_type in ['Labeled_Tiles', 'Imagenet']:
         if dataset_type == 'Labeled_Tiles':
