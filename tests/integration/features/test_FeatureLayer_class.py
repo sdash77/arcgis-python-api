@@ -463,7 +463,7 @@ class Test_FeatureLayer_online(unittest.TestCase):
             county_featureset = county_layer.query(as_df=True)
             from pandas import core
             self.assertIsInstance(county_featureset, core.frame.DataFrame, "FeatureLayer.query(as_df=True) does not return a DataFrame obj")
-            self.assertEqual(37784, county_featureset.shape[0], "Number of features not correct")
+            self.assertEqual(44538, county_featureset.shape[0], "Number of features not correct")
 
         except AssertionError as assertErrorException:
             test_skip = True
