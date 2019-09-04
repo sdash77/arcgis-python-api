@@ -15,11 +15,11 @@ default_facilities = {
                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString', 'length': 128}],
     'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
     'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
-    
-default_trim = {'distance': 100, 'units': 'esriMeters'}    
-    
-default_tolerance = {'distance': 10, 'units': 'esriMeters'}    
-    
+
+default_trim = {'distance': 100, 'units': 'esriMeters'}
+
+default_tolerance = {'distance': 10, 'units': 'esriMeters'}
+
 default_point_barriers = {
                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
@@ -28,8 +28,8 @@ default_point_barriers = {
                                           {'alias': 'AdditionalCost', 'name': 'AdditionalCost',
                                            'type': 'esriFieldTypeDouble'}], 'geometryType': 'esriGeometryPoint',
                                'displayFieldName': '', 'exceededTransferLimit': False,
-                               'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}    
-    
+                               'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+
 default_line_barriers = {
                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
@@ -37,8 +37,8 @@ default_line_barriers = {
                                                             'type': 'esriFieldTypeDouble'}],
                                'geometryType': 'esriGeometryPolyline', 'displayFieldName': '',
                                'exceededTransferLimit': False, 'spatialReference': {'latestWkid': 4326, 'wkid': 4326},
-                               'features': []}    
-    
+                               'features': []}
+
 default_polygon_barriers = {
                                'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                           {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
@@ -51,9 +51,9 @@ default_polygon_barriers = {
                                           {'alias': 'Shape_Area', 'name': 'Shape_Area', 'type': 'esriFieldTypeDouble'}],
                                'geometryType': 'esriGeometryPolygon', 'displayFieldName': '',
                                'exceededTransferLimit': False, 'spatialReference': {'latestWkid': 4326, 'wkid': 4326},
-                               'features': []}    
-    
-default_restrictions = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""    
+                               'features': []}
+
+default_restrictions = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""
 
 default_attributes = {
                                'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
@@ -290,31 +290,38 @@ default_attributes = {
                                                                                                            'AttributeName': 'Width Restriction',
                                                                                                            'ParameterValue': '0',
                                                                                                            'ParameterName': 'Vehicle Width (meters)'}}],
-                               'displayFieldName': '', 'exceededTransferLimit': False}    
-    
+                               'displayFieldName': '', 'exceededTransferLimit': False}
+
 def generate_service_areas(
     facilities,
-    break_values = """5 10 15""",
-    break_units = """Minutes""",
-    analysis_region = None,
-    travel_direction = """Away From Facility""",
-    time_of_day = None,
-    use_hierarchy = False,
-    uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
-    polygons_for_multiple_facilities = """Overlapping""",
-    polygon_overlap_type = """Rings""",
-    detailed_polygons = False,
-    polygon_trim_distance = None,
-    polygon_simplification_tolerance = None,
-    point_barriers = None,
-    line_barriers = None,
-    polygon_barriers = None,
-    restrictions = None,
-    attribute_parameter_values = None,
-    time_zone_for_time_of_day = """Geographically Local""",
-    travel_mode = """Custom""",
-    impedance = """Drive Time""",
-    gis = None):
+    break_values='5 10 15',
+    break_units='Minutes',
+    analysis_region=None,
+    travel_direction='Away From Facility',
+    time_of_day=None,
+    use_hierarchy=False,
+    uturn_at_junctions='Allowed Only at Intersections and Dead Ends',
+    polygons_for_multiple_facilities='Overlapping',
+    polygon_overlap_type='Rings',
+    detailed_polygons=False,
+    polygon_trim_distance=None,
+    polygon_simplification_tolerance=None,
+    point_barriers=None,
+    line_barriers=None,
+    polygon_barriers=None,
+    restrictions=None,
+    attribute_parameter_values=None,
+    time_zone_for_time_of_day='Geographically Local',
+    travel_mode='Custom',
+    impedance='Drive Time',
+    save_output_network_analysis_layer=False,
+    overrides=None,
+    time_impedance=None,
+    distance_impedance=None,
+    polygon_detail=None,
+    output_type=None,
+    output_format=None,
+    gis=None, future=False):
     """
 
 
@@ -834,70 +841,76 @@ Returns the following as a named tuple:
 
 See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/ServiceAreas_GPServer/World_ServiceAreas/GenerateServiceAreas.htm for additional help.
     """
-    kwargs = locals()
-
-    if facilities is None:
-        facilities = default_facilities
-
-    if polygon_trim_distance is None:
-        polygon_trim_distance = default_trim
-
-    if polygon_simplification_tolerance is None:
-        polygon_simplification_tolerance = default_tolerance
-
-    if point_barriers is None:
-        point_barriers = default_point_barriers
-
-    if line_barriers is None:
-        line_barriers = default_line_barriers
-
-    if polygon_barriers is None:
-        polygon_barriers = default_polygon_barriers
-
-    if restrictions is None:
-        restrictions = default_restrictions
-
-    if attribute_parameter_values is None:
-        attribute_parameter_values = default_attributes
-
-
-    param_db = {
-        "facilities": (FeatureSet, "Facilities"),
-        "break_values": (str, "Break_Values"),
-        "break_units": (str, "Break_Units"),
-        "analysis_region": (str, "Analysis_Region"),
-        "travel_direction": (str, "Travel_Direction"),
-        "time_of_day": (datetime, "Time_of_Day"),
-        "use_hierarchy": (bool, "Use_Hierarchy"),
-        "uturn_at_junctions": (str, "UTurn_at_Junctions"),
-        "polygons_for_multiple_facilities": (str, "Polygons_for_Multiple_Facilities"),
-        "polygon_overlap_type": (str, "Polygon_Overlap_Type"),
-        "detailed_polygons": (bool, "Detailed_Polygons"),
-        "polygon_trim_distance": (LinearUnit, "Polygon_Trim_Distance"),
-        "polygon_simplification_tolerance": (LinearUnit, "Polygon_Simplification_Tolerance"),
-        "point_barriers": (FeatureSet, "Point_Barriers"),
-        "line_barriers": (FeatureSet, "Line_Barriers"),
-        "polygon_barriers": (FeatureSet, "Polygon_Barriers"),
-        "restrictions": (str, "Restrictions"),
-        "attribute_parameter_values": (FeatureSet, "Attribute_Parameter_Values"),
-        "time_zone_for_time_of_day": (str, "Time_Zone_for_Time_of_Day"),
-        "travel_mode": (str, "Travel_Mode"),
-        "impedance": (str, "Impedance"),
-        "service_areas": (FeatureSet, "Service Areas"),
-        "solve_succeeded": (bool, "Solve Succeeded"),
-    }
-    return_values = [
-        {"name": "service_areas", "display_name": "Service Areas", "type": FeatureSet},
-        {"name": "solve_succeeded", "display_name": "Solve Succeeded", "type": bool},
-    ]
-
-
+    from arcgis.geoprocessing import import_toolbox
     if gis is None:
         gis = arcgis.env.active_gis
 
     url = gis.properties.helperServices.asyncServiceArea.url[:-len('/GenerateServiceAreas')]
 
-    return _execute_gp_tool(gis, "GenerateServiceAreas", kwargs, param_db, return_values, _use_async, url)
+    tbx = import_toolbox(url)
+    defaults = dict(zip(tbx.generate_service_areas.__annotations__.keys(),
+                        tbx.generate_service_areas.__defaults__))
+    if facilities is None:
+        facilities = defaults['facilities']
+    if polygon_trim_distance is None:
+        polygon_trim_distance = defaults['polygon_trim_distance']
+    if polygon_simplification_tolerance is None:
+        polygon_simplification_tolerance = defaults['polygon_simplification_tolerance']
+    if point_barriers is None:
+        point_barriers = defaults['point_barriers']
+    if line_barriers is None:
+        line_barriers = defaults['line_barriers']
+    if polygon_barriers is None:
+        polygon_barriers = defaults['polygon_barriers']
+    if restrictions is None:
+        restrictions = defaults['restrictions']
+    if attribute_parameter_values is None:
+        attribute_parameter_values = defaults['attribute_parameter_values']
+    if overrides is None:
+        overrides = defaults['overrides']
+    if time_impedance is None:
+        time_impedance = defaults['time_impedance']
+    if distance_impedance is None:
+        distance_impedance = defaults['distance_impedance']
+    if polygon_detail is None:
+        polygon_detail = defaults['polygon_detail']
+    if output_type is None:
+        output_type = defaults['output_type']
+    if output_format is None:
+        output_format = defaults['output_format']
+    job = tbx.generate_service_areas(facilities=facilities,
+                                     break_values=break_values,
+                                     break_units=break_units,
+                                     analysis_region=analysis_region,
+                                     travel_direction=travel_direction,
+                                     time_of_day=time_of_day,
+                                     use_hierarchy=use_hierarchy,
+                                     uturn_at_junctions=uturn_at_junctions,
+                                     polygons_for_multiple_facilities=polygons_for_multiple_facilities,
+                                     polygon_overlap_type=polygon_overlap_type,
+                                     detailed_polygons=detailed_polygons,
+                                     polygon_trim_distance=polygon_trim_distance,
+                                     polygon_simplification_tolerance=polygon_simplification_tolerance,
+                                     point_barriers=point_barriers,
+                                     line_barriers=line_barriers,
+                                     polygon_barriers=polygon_barriers,
+                                     restrictions=restrictions,
+                                     attribute_parameter_values=attribute_parameter_values,
+                                     time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                     travel_mode=travel_mode,
+                                     impedance=impedance,
+                                     save_output_network_analysis_layer=save_output_network_analysis_layer,
+                                     overrides=overrides,
+                                     time_impedance=time_impedance,
+                                     distance_impedance=distance_impedance,
+                                     polygon_detail=polygon_detail,
+                                     output_type=output_type,
+                                     output_format=output_format,
+                                     gis=gis,
+                                     future=True)
+    if future:
+        return job
+    return job.result()
 
 generate_service_areas.__annotations__ = {
     'facilities': FeatureSet,

@@ -98,6 +98,41 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
               str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
         print("Time stamp: " + self.time_stamp)
 
+    def test_solve_location_allocation_method(self):
+        """
+        Test to check if the solve_location_allocation method of network analysis module works without throwing an error.
+        :return:
+        """
+        try:
+
+            import arcgis.network as network
+            import arcgis.features as features
+            facil = {"features":[{"attributes":{"OBJECTID":1,"Name":"Facility A","FacilityType":0,"CurbApproach":0},"geometry":{"x":-58.557329417999938,"y":-34.587693706999971}},
+                                 {"attributes":{"OBJECTID":2,"Name":"Facility B","FacilityType":0,"CurbApproach":0},"geometry":{"x":-58.460247408999976,"y":-34.683348039999942}}]}
+            demand_points = {"features":[{"attributes":{"OBJECTID":1,"Name":"Household 4","GroupName":"A","Weight":2,"CurbApproach":0},"geometry":{"x":-58.664405163999959,"y":-34.614819562999969}},
+                                         {"attributes":{"OBJECTID":2,"Name":"Household 3","GroupName":"A","Weight":2,"CurbApproach":0},"geometry":{"x":-58.514499119999982,"y":-34.496322404999944}},
+                                         {"attributes":{"OBJECTID":3,"Name":"Household 2","GroupName":None,"Weight":3,"CurbApproach":0},"geometry":{"x":-58.54162497599998,"y":-34.788996107999935}},
+                                         {"attributes":{"OBJECTID":4,"Name":"Household 1","GroupName":None,"Weight":5,"CurbApproach":1},"geometry":{"x":-58.40599569799997,"y":-34.637662387999967}}]}
+
+            result = network.analysis.solve_location_allocation(facilities=facil,
+                                                             demand_points=demand_points)
+            if result.solve_succeeded:
+                print(result)
+
+            self.assertTrue(result.solve_succeeded, "Task Unsuccessful: Routes could not be found.")
+
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+
     def test_findRoutes_method(self):
         """
         Test to check if the find_routes method of network analysis module works without throwing an error.
@@ -229,7 +264,8 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
             time_now = datetime.datetime.now()
             result = network.analysis.find_closest_facilities(incidents=incidents, facilities=facilities,
                                                               cutoff=30, time_of_day=time_now,
-                                                              number_of_facilities_to_find=2)
+                                                              number_of_facilities_to_find=2,
+                                                              distance_impedance="Miles")
 
             if result.solve_succeeded:
                 print(result)

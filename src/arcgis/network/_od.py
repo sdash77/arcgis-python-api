@@ -4,13 +4,13 @@ from datetime import datetime
 from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
-from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import import_toolbox
 
-_log = _logging.getLogger(__name__)
+_log=_logging.getLogger(__name__)
 
-_use_async = True
+_use_async=True
 
-default_origins = {
+default_origins={
     'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString', 'length': 128},
                {'alias': 'Target Destination Count', 'name': 'TargetDestinationCount', 'type': 'esriFieldTypeInteger'},
@@ -19,7 +19,7 @@ default_origins = {
     'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
     'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
 
-default_destinations = {'fields': [
+default_destinations={'fields': [
                                                 {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                  'length': 128}, {'alias': 'Curb Approach', 'name': 'CurbApproach',
@@ -31,7 +31,7 @@ default_destinations = {'fields': [
                                                                                              'wkid': 4326},
                                                                         'features': []}
 
-default_point_barriers = {'fields': [
+default_point_barriers={'fields': [
                                                 {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                  'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
@@ -49,7 +49,7 @@ default_point_barriers = {'fields': [
                                                                                                'wkid': 4326},
                                                                           'features': []}
 
-default_line_barriers = {'fields': [
+default_line_barriers={'fields': [
                                                 {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                  'length': 128}, {'alias': 'SHAPE_Length', 'name': 'SHAPE_Length',
@@ -61,7 +61,7 @@ default_line_barriers = {'fields': [
                                                                                               'wkid': 4326},
                                                                          'features': []}
 
-default_polygon_barriers = {'fields': [
+default_polygon_barriers={'fields': [
                                                 {'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
                                                  'length': 128}, {'alias': 'Barrier Type', 'name': 'BarrierType',
@@ -80,9 +80,9 @@ default_polygon_barriers = {'fields': [
                                                                                                  'wkid': 4326},
                                                                             'features': []}
 
-default_restrictions = """['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""
+default_restrictions="""['Avoid Unpaved Roads', 'Avoid Private Roads', 'Driving an Automobile', 'Through Traffic Prohibited', 'Roads Under Construction Prohibited', 'Avoid Gates', 'Avoid Express Lanes', 'Avoid Carpool Roads']"""
 
-default_attributes = {'fields': [
+default_attributes={'fields': [
                                                 {'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                                 {'alias': 'AttributeName', 'name': 'AttributeName',
                                                  'type': 'esriFieldTypeString', 'length': 255},
@@ -92,28 +92,34 @@ default_attributes = {'fields': [
                                                  'type': 'esriFieldTypeString', 'length': 25}], 'features': [],
                                                                                       'displayFieldName': '',
                                                                                       'exceededTransferLimit': False}
-                                                                                      
-def generate_origin_destination_cost_matrix(
-    origins,
-    destinations,
-    travel_mode = """Custom""",
-    time_units = """Minutes""",
-    distance_units = """Kilometers""",
-    analysis_region = None,
-    number_of_destinations_to_find = None,
-    cutoff = None,
-    time_of_day = None,
-    time_zone_for_time_of_day = """Geographically Local""",
-    point_barriers = None,
-    line_barriers = None,
-    polygon_barriers = None,
-    uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
-    use_hierarchy = True,
-    restrictions = None,
-    attribute_parameter_values = None,
-    impedance = """Drive Time""",
-    origin_destination_line_shape = """None""",
-    gis = None):
+
+
+def generate_origin_destination_cost_matrix(origins,
+                                            destinations,
+                                            travel_mode='Custom',
+                                            time_units='Minutes',
+                                            distance_units='Kilometers',
+                                            analysis_region=None,
+                                            number_of_destinations_to_find=None,
+                                            cutoff=None,
+                                            time_of_day=None,
+                                            time_zone_for_time_of_day='Geographically Local',
+                                            point_barriers=None,
+                                            line_barriers=None,
+                                            polygon_barriers=None,
+                                            uturn_at_junctions='Allowed Only at Intersections and Dead Ends',
+                                            use_hierarchy=True,
+                                            restrictions=None,
+                                            attribute_parameter_values=None,
+                                            impedance='Drive Time',
+                                            origin_destination_line_shape='None',
+                                            save_output_network_analysis_layer=False,
+                                            overrides=None,
+                                            time_impedance=None,
+                                            distance_impedance=None,
+                                            output_format=None,
+                                            gis=None,
+                                            future=False):
     """
 
 
@@ -550,72 +556,63 @@ Returns the following as a named tuple:
 
 See https://logistics.arcgis.com:443/arcgis/rest/directories/arcgisoutput/World/OriginDestinationCostMatrix_GPServer/World_OriginDestinationCostMatrix/GenerateOriginDestinationCostMatrix.htm for additional help.
     """
-    kwargs = locals()
-
-    if origins is None:
-        origins = default_origins
-
-    if destinations is None:
-        destinations = default_destinations
-
-    if point_barriers is None:
-        point_barriers = default_point_barriers
-
-    if line_barriers is None:
-        line_barriers = default_line_barriers
-
-    if polygon_barriers is None:
-        polygon_barriers = default_polygon_barriers
-
-    if restrictions is None:
-        restrictions = default_restrictions
-
-    if attribute_parameter_values is None:
-        attribute_parameter_values = default_attributes
-
-    param_db = {
-        "origins": (FeatureSet, "Origins"),
-        "destinations": (FeatureSet, "Destinations"),
-        "travel_mode": (str, "Travel_Mode"),
-        "time_units": (str, "Time_Units"),
-        "distance_units": (str, "Distance_Units"),
-        "analysis_region": (str, "Analysis_Region"),
-        "number_of_destinations_to_find": (int, "Number_of_Destinations_to_Find"),
-        "cutoff": (float, "Cutoff"),
-        "time_of_day": (datetime, "Time_of_Day"),
-        "time_zone_for_time_of_day": (str, "Time_Zone_for_Time_of_Day"),
-        "point_barriers": (FeatureSet, "Point_Barriers"),
-        "line_barriers": (FeatureSet, "Line_Barriers"),
-        "polygon_barriers": (FeatureSet, "Polygon_Barriers"),
-        "uturn_at_junctions": (str, "UTurn_at_Junctions"),
-        "use_hierarchy": (bool, "Use_Hierarchy"),
-        "restrictions": (str, "Restrictions"),
-        "attribute_parameter_values": (FeatureSet, "Attribute_Parameter_Values"),
-        "impedance": (str, "Impedance"),
-        "origin_destination_line_shape": (str, "Origin_Destination_Line_Shape"),
-        "solve_succeeded": (bool, "Solve Succeeded"),
-        "output_origin_destination_lines": (FeatureSet, "Output Origin Destination Lines"),
-        "output_origins": (FeatureSet, "Output Origins"),
-        "output_destinations": (FeatureSet, "Output Destinations"),
-    }
-    return_values = [
-        {"name": "solve_succeeded", "display_name": "Solve Succeeded", "type": bool},
-        {"name": "output_origin_destination_lines", "display_name": "Output Origin Destination Lines",
-         "type": FeatureSet},
-        {"name": "output_origins", "display_name": "Output Origins", "type": FeatureSet},
-        {"name": "output_destinations", "display_name": "Output Destinations", "type": FeatureSet},
-    ]
-
 
     if gis is None:
         gis = arcgis.env.active_gis
-
     url = gis.properties.helperServices.asyncODCostMatrix.url
+    tbx = import_toolbox(url)
+    defaults = dict(zip(tbx.generate_origin_destination_cost_matrix.__annotations__.keys(),
+                        tbx.generate_origin_destination_cost_matrix.__defaults__))
+    if origins is None:
+        origins = defaults['origins']
+    if destinations is None:
+        destinations = defaults['destinations']
+    if point_barriers is None:
+        point_barriers = defaults['point_barriers']
+    if line_barriers is None:
+        line_barriers = defaults['line_barriers']
+    if polygon_barriers is None:
+        polygon_barriers = defaults['polygon_barriers']
+    if restrictions is None:
+        restrictions = defaults['restrictions']
+    if attribute_parameter_values is None:
+        attribute_parameter_values = defaults['attribute_parameter_values']
+    if overrides is None:
+        overrides = defaults['overrides']
+    if time_impedance is None:
+        time_impedance = defaults['time_impedance']
+    if distance_impedance is None:
+        distance_impedance = defaults['distance_impedance']
+    if output_format is None:
+        output_format = defaults['output_format']
+    job = tbx.generate_origin_destination_cost_matrix(origins=origins,
+                                            destinations=destinations,
+                                            travel_mode=travel_mode,
+                                            distance_units=distance_units,
+                                            analysis_region=analysis_region,
+                                            number_of_destinations_to_find=number_of_destinations_to_find,
+                                            cutoff=cutoff,
+                                            time_of_day=time_of_day,
+                                            time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                            point_barriers=point_barriers,
+                                            line_barriers=line_barriers,
+                                            polygon_barriers=polygon_barriers,
+                                            uturn_at_junctions=uturn_at_junctions,
+                                            use_hierarchy=use_hierarchy,
+                                            restrictions=restrictions,
+                                            attribute_parameter_values=attribute_parameter_values,
+                                            impedance=impedance,
+                                            origin_destination_line_shape=origin_destination_line_shape,
+                                            save_output_network_analysis_layer=save_output_network_analysis_layer,
+                                            overrides=overrides,
+                                            time_impedance=time_impedance,
+                                            distance_impedance=distance_impedance,
+                                            output_format=output_format, gis=gis, future=True)
+    if future:
+        return job
+    return job.result()
 
-    return _execute_gp_tool(gis, "GenerateOriginDestinationCostMatrix", kwargs, param_db, return_values, _use_async,
-                            url)
-
-generate_origin_destination_cost_matrix.__annotations__ = {
+generate_origin_destination_cost_matrix.__annotations__={
     'origins': FeatureSet,
     'destinations': FeatureSet,
     'travel_mode': str,
@@ -635,4 +632,4 @@ generate_origin_destination_cost_matrix.__annotations__ = {
     'attribute_parameter_values': FeatureSet,
     'impedance': str,
     'origin_destination_line_shape': str,
-    'return': tuple}                            
+    'return': tuple}

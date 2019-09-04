@@ -6,6 +6,7 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
+from arcgis.geoprocessing import import_toolbox
 
 _log = _logging.getLogger(__name__)
 
@@ -495,36 +496,41 @@ def solve_vehicle_routing_problem(
     orders,
     depots,
     routes,
-    breaks = None,
-    time_units = """Minutes""",
-    distance_units = """Miles""",
-    analysis_region = None,
-    default_date = None,
-    uturn_policy = """ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY""",
-    time_window_factor = """Medium""",
-    spatially_cluster_routes = True,
-    route_zones = None,
-    route_renewals = None,
-    order_pairs = None,
-    excess_transit_factor = """Medium""",
-    point_barriers = None,
-    line_barriers = None,
-    polygon_barriers = None,
-    use_hierarchy_in_analysis = True,
-    restrictions = None,
-    attribute_parameter_values = None,
-    populate_route_lines = True,
-    route_line_simplification_tolerance = None,
-    populate_directions = False,
-    directions_language = """en""",
-    directions_style_name = """NA Desktop""",
-    travel_mode = """Custom""",
-    impedance = """Drive Time""",
-    gis = None,
-    time_zone_usage_for_time_fields="""GEO_LOCAL""",
+    breaks=None,
+    time_units='Minutes',
+    distance_units='Miles',
+    analysis_region=None,
+    default_date=None,
+    uturn_policy='ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY',
+    time_window_factor='Medium',
+    spatially_cluster_routes=True,
+    route_zones=None,
+    route_renewals=None,
+    order_pairs=None,
+    excess_transit_factor='Medium',
+    point_barriers=None,
+    line_barriers=None,
+    polygon_barriers=None,
+    use_hierarchy_in_analysis=True,
+    restrictions=None,
+    attribute_parameter_values=None,
+    populate_route_lines=True,
+    route_line_simplification_tolerance=None,
+    populate_directions=False,
+    directions_language='en',
+    directions_style_name='NA Desktop',
+    travel_mode='Custom',
+    impedance='Drive Time',
+    gis=None,
+    time_zone_usage_for_time_fields='GEO_LOCAL',
     save_output_layer=False,
     overrides=None,
-    save_route_data=False):
+    save_route_data=False,
+    time_impedance=None,
+    distance_impedance=None,
+    populate_stop_shapes=False,
+    output_format=None,
+    future=False):
     """
 
 
@@ -2007,102 +2013,93 @@ Parameters:
 
     See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/VehicleRoutingProblem_GPServer/World_VehicleRoutingProblem/SolveVehicleRoutingProblem.htm for additional help.
     """
-    kwargs = locals()
-
+    if gis is None:
+        gis = arcgis.env.active_gis
+    url = gis.properties.helperServices.asyncVRP.url[:-len('/SolveVehicleRoutingProblem')]
+    tbx = import_toolbox(url)
+    defaults = dict(zip(tbx.solve_vehicle_routing_problem.__annotations__.keys(),
+                        tbx.solve_vehicle_routing_problem.__defaults__))
+    if time_impedance is None:
+        time_impedance = defaults['time_impedance']
+    if distance_impedance is None:
+        distance_impedance = defaults['distance_impedance']
+    if output_format is None:
+        output_format = defaults['output_format']
     if orders is None:
-        orders = default_orders
+        orders = defaults['orders']
     if depots is None:
-        depots = default_depots
+        depots = defaults['depots']
     if routes is None:
-        routes = default_routes
+        routes = defaults['routes']
     if breaks is None:
-        breaks = default_breaks
+        breaks = defaults['breaks']
     if route_zones is None:
-        route_zones = default_route_zones
+        route_zones = defaults['route_zones']
     if route_renewals is None:
-        route_renewals = default_route_renewals
+        route_renewals = defaults['route_renewals']
     if order_pairs is None:
-        order_pairs = default_order_pairs
+        order_pairs = defaults['order_pairs']
 
     if point_barriers is None:
-        point_barriers = default_point_barriers
+        point_barriers = defaults['point_barriers']
 
     if line_barriers is None:
-        line_barriers = default_line_barriers
+        line_barriers = defaults['line_barriers']
 
     if polygon_barriers is None:
-        polygon_barriers = default_polygon_barriers
+        polygon_barriers = defaults['polygon_barriers']
 
     if restrictions is None:
-        restrictions = default_restrictions
+        restrictions = defaults['restrictions']
 
     if attribute_parameter_values is None:
-        attribute_parameter_values = default_param_values
+        attribute_parameter_values = defaults['attribute_parameter_values']
 
     if route_line_simplification_tolerance is None:
-        route_line_simplification_tolerance = default_tolerance
+        route_line_simplification_tolerance = defaults['route_line_simplification_tolerance']
 
     if isinstance(overrides, dict):
         overrides = json.dumps(overrides)
 
-    param_db = {
-        "orders": (FeatureSet, "orders"),
-        "depots": (FeatureSet, "depots"),
-        "routes": (FeatureSet, "routes"),
-        "breaks": (FeatureSet, "breaks"),
-        "time_units": (str, "time_units"),
-        "distance_units": (str, "distance_units"),
-        "analysis_region": (str, "analysis_region"),
-        "default_date": (datetime, "default_date"),
-        "uturn_policy": (str, "uturn_policy"),
-        "time_window_factor": (str, "time_window_factor"),
-        "spatially_cluster_routes": (bool, "spatially_cluster_routes"),
-        "route_zones": (FeatureSet, "route_zones"),
-        "route_renewals": (FeatureSet, "route_renewals"),
-        "order_pairs": (FeatureSet, "order_pairs"),
-        "excess_transit_factor": (str, "excess_transit_factor"),
-        "point_barriers": (FeatureSet, "point_barriers"),
-        "line_barriers": (FeatureSet, "line_barriers"),
-        "polygon_barriers": (FeatureSet, "polygon_barriers"),
-        "use_hierarchy_in_analysis": (bool, "use_hierarchy_in_analysis"),
-        "restrictions": (str, "restrictions"),
-        "attribute_parameter_values": (FeatureSet, "attribute_parameter_values"),
-        "populate_route_lines": (bool, "populate_route_lines"),
-        "route_line_simplification_tolerance": (LinearUnit, "route_line_simplification_tolerance"),
-        "populate_directions": (bool, "populate_directions"),
-        "directions_language": (str, "directions_language"),
-        "directions_style_name": (str, "directions_style_name"),
-        "travel_mode": (str, "travel_mode"),
-        "impedance": (str, "impedance"),
-        "time_zone_usage_for_time_fields": (str, "time_zone_usage_for_time_fields"),
-        "save_output_layer": (bool, "save_output_layer"),
-        "overrides": (str, "overrides"),
-        "save_route_data": (str, "save_route_data"),
-        "out_unassigned_stops": (FeatureSet, "Output Unassigned Stops"),
-        "out_stops": (FeatureSet, "Output Stops"),
-        "out_routes": (FeatureSet, "Output Routes"),
-        "out_directions": (FeatureSet, "Output Directions"),
-        "solve_succeeded": (bool, "Solve Succeeded"),
-        "out_network_analysis_layer": (DataFile, "Output Network Analysis Layer"),
-        "out_route_data": (DataFile, "Output Route Data"),
-    }
+    job = tbx.solve_vehicle_routing_problem(orders=orders,
+                                            depots=depots,
+                                            routes=routes,
+                                            breaks=breaks,
+                                            time_units=time_units,
+                                            distance_units=distance_units,
+                                            analysis_region=analysis_region,
+                                            default_date=default_date,
+                                            uturn_policy=uturn_policy,
+                                            time_window_factor=time_window_factor,
+                                            spatially_cluster_routes=spatially_cluster_routes,
+                                            route_zones=route_zones,
+                                            route_renewals=route_renewals, order_pairs=order_pairs,
+                                            excess_transit_factor=excess_transit_factor,
+                                            point_barriers=point_barriers,
+                                            line_barriers=line_barriers,
+                                            polygon_barriers=polygon_barriers,
+                                            use_hierarchy_in_analysis=use_hierarchy_in_analysis,
+                                            restrictions=restrictions,
+                                            attribute_parameter_values=attribute_parameter_values,
+                                            populate_route_lines=populate_route_lines,
+                                            route_line_simplification_tolerance=route_line_simplification_tolerance,
+                                            populate_directions=populate_directions,
+                                            directions_language=directions_language,
+                                            directions_style_name=directions_style_name,
+                                            travel_mode=travel_mode,
+                                            impedance=impedance,
+                                            time_zone_usage_for_time_fields=time_zone_usage_for_time_fields,
+                                            save_output_layer=save_output_layer,
+                                            overrides=overrides,
+                                            save_route_data=save_route_data,
+                                            time_impedance=time_impedance,
+                                            distance_impedance=distance_impedance,
+                                            populate_stop_shapes=populate_stop_shapes,
+                                            output_format=output_format, gis=gis, future=True)
 
-    return_values = [
-        {"name": "out_unassigned_stops", "display_name": "Output Unassigned Stops", "type": FeatureSet},
-        {"name": "out_stops", "display_name": "Output Stops", "type": FeatureSet},
-        {"name": "out_routes", "display_name": "Output Routes", "type": FeatureSet},
-        {"name": "out_directions", "display_name": "Output Directions", "type": FeatureSet},
-        {"name": "solve_succeeded", "display_name": "Solve Succeeded", "type": bool},
-        {"name": "out_network_analysis_layer", "display_name": "Output Network Analysis Layer", "type": DataFile},
-        {"name": "out_route_data", "display_name": "Output Route Data", "type": DataFile},
-    ]
-
-    if gis is None:
-        gis = arcgis.env.active_gis
-
-    url = gis.properties.helperServices.asyncVRP.url[:-len('/SolveVehicleRoutingProblem')]
-
-    return _execute_gp_tool(gis, "SolveVehicleRoutingProblem", kwargs, param_db, return_values, _use_async, url)
+    if future:
+        return job
+    return job.result()
 
 solve_vehicle_routing_problem.__annotations__ = {
     'orders': FeatureSet,
