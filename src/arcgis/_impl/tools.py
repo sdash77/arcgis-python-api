@@ -3418,6 +3418,356 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         return gpjob.result()
+###########################################################################
+class _OrhtoMappingTools():
+    """Exposes the Orthmapping Geoprocessing tools"""
+    _gptbx = None
+    _url = None
+    _gis = None
+    _properties = None
+    _return_item = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis, verbose=False):
+        """initializer"""
+        if gis is None:
+            gis = arcgis.env.active_gis
+        if url is None:
+            url = gis.properties.helperServices['orthoMapping']['url']
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+        self._verbose = verbose
+
+    #----------------------------------------------------------------------
+    def _refresh(self):
+        params = {"f": "json"}
+        try:
+            dictdata = self._con.post(self._url, params)
+        except:
+            dictdata = self._con.get(self._url, params)
+        self._properties = PropertyMap(dictdata)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the services properties"""
+        if self._properties is None:
+            self._refresh()
+        return self._properties
+    #----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx._is_ra = True
+        return self._gptbx
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def invoke(self, method, **kwargs):
+        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
+        url = self._url + "/" + method
+        params = { "f" : "json"}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+                del k,v
+        return self._con.post(path=url, postdata=params, token=self._con.token)
+    #----------------------------------------------------------------------
+    @property
+    def _tools(self):
+        return self.properties.tasks
+    #----------------------------------------------------------------------
+    def _set_image_collection_param(self, image_collection):
+        if isinstance(image_collection, str):
+            #doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
+            #if doesnotexist:
+                #raise RuntimeError("The input image collection does not exist")
+            if 'http:' in image_collection or 'https:' in image_collection:
+                return  json.dumps({ 'url' : image_collection })
+            else:
+                return  json.dumps({ 'uri' : image_collection })
+        elif isinstance(image_collection, Item):
+            return json.dumps({ "itemId" : image_collection.itemid })
+        else:
+            raise TypeError("image_collection should be a string (url or uri) or Item")
+
+        return image_collection
+    #----------------------------------------------------------------------
+    def alter_processing_states(self,
+                                image_collection,
+                                new_states=None,
+                                gis=None,
+                                future=False):
+        """
+        The `alter_processing_states` operation is a service tool that sets the processing states of
+        a mosaic dataset. The states are stored as the Ortho Mapping key property. The state's
+        content is a JSON dictionary that includes several properties that can be set based on the
+        processes run on the image collection.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        new_states                                                                  Required Dict. The new states that are set on the image collection. Supported properties are adjustment, dem, gcp, seamlines, and colorcorrection.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+        """
+        image_collection = self._set_image_collection_param(image_collection=image_collection)
+        job = self._tbx.alter_processing_states(image_collection=image_collection,
+                                          new_states=new_states,
+                                          gis=gis,
+                                          future=True)
+        if future:
+            return job
+        return job.result()
+    def compute_color_correction(self,
+                                 image_collection,
+                                 color_correction_method=None,
+                                 dodging_surface=None,
+                                 target_image=None,
+                                 context=None,
+                                 gis=None,
+                                 future=False):
+        """
+
+        The `compute_color_correction` operation is a service tool that computes color corrections
+        for the mosaic dataset, usually after the mosaic has been block adjusted. Images that are
+        used for generating orthoimage mosaics typically have color correction computed.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        color_correction_method                                                     Optional String. The method used to compute color correction. The following are the color correction options:
+
+                                                                                      - Dodging: Changes each pixel's value toward a target color. With this option, you must also choose the type of target color surface, which affects the target color. Dodging tends to give the best result in most cases.
+                                                                                      - Histogram: Changes each pixel's value according to its relationship with a target histogram. The target histogram can be derived from all the rasters, or you can specify a single target raster. This option works well when all the rasters have a similar histogram.
+                                                                                      - Standard_Deviation: Changes each pixel's value according to its relationship with the histogram of the target raster, within one standard deviation. The standard deviation can be calculated from all the rasters in the mosaic dataset, or you can specify a target raster. This option works best when all the rasters have normal distributions.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        dodging_surface                                                             Optional String. When Dodging is used, each pixel needs a target color, which is determined by the surface type. The following are the available options:
+
+                                                                                      - Single_Color: All the pixels are altered toward a single color point, the average of all pixels. Use this option when there are a small number of raster datasets and a few types of ground objects. If there are too many raster datasets or too many types of ground features, the output color may become blurred.
+                                                                                      - Color_Grid: The pixels are altered toward multiple target colors, which are distributed across the mosaic dataset. Use this option when you have a large number of raster datasets, or areas with a large number of diverse ground objects.
+                                                                                      - First_Order: All pixels are altered toward many points obtained from the two-dimensional polynomial slanted plane. This option tends to create a smooth color change and uses less storage in the auxiliary table, but it may take longer to process compared to the Color_Grid surface.
+                                                                                      - Second_Order: All input pixels are altered toward a set of multiple points obtained from the two-dimensional polynomial parabolic surface. This option tends to create smoother color changes and uses less storage in the auxiliary table, but it may take longer to process compared to the Color_Grid surface.
+                                                                                      - Third_Order: All input pixels are altered toward multiple points obtained from the cubic surface. This option tends to create smoother color changes and uses less storage in the auxiliary table, but it may take longer to process compared to the Color_Grid surface.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        target_image                                                                Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Optional Dict. Contains additional settings that allow you to customize the statistics computation settings.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        from arcgis.raster._util import _set_context
+        if context is None:
+            context = {}
+        _set_context(params=context)
+        tool = self._tbx.compute_color_correction
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+        if color_correction_method is None:
+            color_correction_method = defaults['color_correction_method']
+        if dodging_surface is None:
+            dodging_surface = defaults['dodging_surface']
+        if target_image:
+            target_image = self._set_image_collection_param(image_collection=target_image)
+        job = tool(image_collection=image_collection,
+                   color_correction_method=color_correction_method,
+                   dodging_surface=dodging_surface,
+                   target_image=target_image,
+                   context=context,
+                   gis=gis, future=True)
+        if future:
+            return job
+        return job.result()
+    #----------------------------------------------------------------------
+    def compute_control_points(self, image_collection,
+                               reference_image=None,
+                               image_location_accuracy=None,
+                               context=None, gis=None, future=False):
+        """
+        The `compute_control_points` operation is a service tool that's used to compute matching control points between images in an image collection, and for matching control points between the image collection's images and the reference image.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        reference_image                                                             Optional String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_location_accuracy                                                     Optional String. Allows you to specify the location accuracy of your image. This option allows you to specify the GPS location accuracy level of the source image. It determines how far the tool will search for neighboring matching images for calculating tie points and block adjustments. The following are the available options:
+
+                                                                                     - High: GPS accuracy of 0 to 10 meters, and the tool uses a maximum of 4 by 3 images.
+                                                                                     - Medium: GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images.
+                                                                                     - Low: GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Optional Dict. Contains additional environment settings (pointSimilarity, pointDensity, pointDistribution) that affect the generation of output control points.
+
+                                                                                      - pointSimilarity: Sets LOW, MEDIUM, or HIGH tolerance for computing control points with varying levels of potential error. LOW tolerance will produce the most control point, but may have a higher level of error. HIGH tolerance will produce the least number of control point, but each matching pair will have a lower level of error. MEDIUM tolerance will set the similarity tolerance to medium.
+                                                                                      - pointDensity: Sets the number of tie points (LOW, MEDIUM, or HIGH), to be created. LOW point density will create the fewest number of tie points. MEDIUM point density will create a moderate number of tie points. HIGH point density will create the highest number of tie points.
+                                                                                      - pointDistribution: Randomly generates points that are better for overlapping areas with irregular shapes. RANDOM will generate points that are better for overlapping areas with irregular shapes. REGULAR will generate points based on a fixed pattern and uses the point density to determine how frequently to create points.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        from arcgis.raster._util import _set_context
+        if context is None:
+            context = {}
+        _set_context(params=context)
+        tool = self._tbx.compute_control_points
+        defaults = dict(zip(tool.__annotations__.keys(),
+                                tool.__defaults__))
+        if image_location_accuracy  is None:
+            image_location_accuracy  = defaults['image_location_accuracy']
+        if image_collection:
+            image_collection = self._set_image_collection_param(image_collection=image_collection)
+        if target_image:
+            target_image = self._set_image_collection_param(image_collection=target_image)
+        job = tool(image_collection=image_collection,
+                   reference_image=reference_image,
+                   image_location_accuracy=image_location_accuracy,
+                   context=context,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
+    #----------------------------------------------------------------------
+    def compute_seamlines(self,
+                          image_collection,
+                          seamlines_method,
+                          context=None,
+                          gis=None,
+                          future=False):
+        """
+
+        The `compute_seamlines` operation can be used to compute seamlines between overlapping
+        images comprising an image collection, usually after the image collection is block adjusted.
+        Seamlines-used to generate the seamless, mosaicked dispaly of overlapped images in a image
+        collection-are only computed for candidates that will eventually be used for generating the
+        resulting mosaicked orthoimage.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        seamlines_method                                                            Required String. The method for generating the image collection's seamlines. The supported methods are:
+
+                                                                                      - VORONOI - Generates seamlines using the area Voronoi diagram.
+                                                                                      - DISPARITY - Generates seamlines based on the disparity images of stereo pairs. This method can avoid seamlines cutting through buildings.
+                                                                                      - GEOMETRY - Generates seamlines for overlapping areas based on the intersection of footprints. Areas with no overlapping imagery will merge the footprints. This is the default.
+                                                                                      - RADIOMETRY - Generates seamlines based on the spectral patterns of features within the imagery.
+                                                                                      - EDGE_DETECTION - Generates seamlines over intersection areas based on the edges of features in the area.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Optional Dict. Contains additional settings that allow you to customize the generation of seamlines. These additional settings include:
+
+                                                                                      - minRegionSize - Any seamline polygons smaller than this specified threshold will be removed in the seamline result.
+                                                                                      - pixelSize - Generates seamlines for raster datasets that fall within the specified spatial resolution size.
+                                                                                      - blendType - Determine how to blend one image into another (Both, Inside, or Outside) over the seamlines. Inside blends pixels inside the seamline, while Outside blends outside the seamline. Both will blend pixels on either side of the seamline.
+                                                                                      - blendWidth - Specifies how many pixels will be blended relative to the seamline. Blending (feathering) occurs along a seamline between pixels of overlapping images.
+                                                                                      - blendUnit - Specifies the unit of measurement for blendWidth. Pixels measures using the number of pixels, and Ground measures using the same units as the image collection.
+                                                                                      - requestSizeType - Sets the units for requestSize. Pixels modifies requestSize based on the pixel size. This resamples the closest image based on the raster pixel size. Pixel scaling factor modifiers requestSize by specifying a scaling factor. This operation resamples the closest image by multiplying the raster pixel size with the pixel size factor.
+                                                                                      - requestSize - Specifies the number of columns and rows for resampling. Though the maximum value is 5,000, this value can increase or decreased based on the complexity of your raster data. A greater image resolution provides more detail in the raster dataset but increases the processing time.
+                                                                                      - minThinnessRatio - Defines how thin a polygon can be before its considered a sliver. This is based on a scale from 0 to 1.0, where a value of 0.0 represents a polygon that's almost a straight line, and a value of 1.0 represents a polygon that's a circle.
+                                                                                      - maxSliverSize - Defines how large a Sliver can be before its considered a polygon. This uses the same scale as minThinnessRatio.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        from arcgis.raster._util import _set_context
+        if context is None:
+            context = {}
+        _set_context(params=context)
+        tool = self._tbx.compute_seamlines
+        defaults = dict(zip(tool.__annotations__.keys(),
+                                tool.__defaults__))
+
+        if image_collection:
+            image_collection = self._set_image_collection_param(
+                image_collection=image_collection)
+        job = tool(image_collection=image_collection,
+                   seamlines_method=seamlines_method,
+                   context=context,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
+    #----------------------------------------------------------------------
+    def compute_sensor_model(self, image_collection, mode='Quick', location_accuracy='High', context=None, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/compute-sensor-model.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def edit_control_points(self, image_collection, input_control_points=None, context=None, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/edit-control-points.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def generate_dem(self, image_collection, output_dem=None, cell_size=None, surface_type='DTM', matching_method='SGM', context=None, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/generate-dem.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def generate_orthomosaic(self, image_collection, output_ortho_image=None, regen_seamlines=True, recompute_color_correction=True, context=None, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/generate-orthomosaic.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def generate_report(self, image_collection, report_format='PDF', gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/generate-report.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def get_processing_states(self, image_collection, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/get-processing-states.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def match_control_points(self, image_collection, input_control_points=None, similarity='High', context=None, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/match-control-points.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def query_camera_info(self, query, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/query-camera-info.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def query_control_points(self, image_collection, where=None, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/query-control-points.htm"""
+        pass
+    #----------------------------------------------------------------------
+    def reset_image_collection(self, image_collection, gis=None, future=False):
+        """https://developers.arcgis.com/rest/services-reference/reset-image-collection.htm"""
+        pass
+
+
 
 ###########################################################################
 class _RasterAnalysisTools(_AsyncService):
