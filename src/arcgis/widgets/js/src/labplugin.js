@@ -62,7 +62,7 @@ module.exports = {
                 autoPlaceInMainArea(app, ipyExtWinCon);
             }
             else{
-                app.shell.addToMainArea(ipyExtWinCon, {mode: args.tab_mode});
+                app.shell.add(ipyExtWinCon, "main", {mode: args.tab_mode});
             }
             // Activate the widget
             app.shell.activateById(ipyExtWinCon.id);
@@ -98,15 +98,15 @@ module.exports = {
                 console.log("Attempting to autoplace widget among " + numActiveWindows + 
                     " other active widgets.");
                 if(numActiveWindows <= 1){
-                    app.shell.addToMainArea(ipyExtWinCon, {mode: "split-right"});
+                    app.shell.add(ipyExtWinCon, "main", {mode: "split-right"});
                } else {
-                    app.shell.addToMainArea(ipyExtWinCon, {mode: "tab-after"});
+                    app.shell.add(ipyExtWinCon, "main", {mode: "tab-after"});
                 }
             } catch(err) {
                 console.log("Unhandled error while 'auto' mode of placing tabs" + 
                     ". Just adding this widget in 'tab-after' mode");
                 console.log(err);
-                app.shell.addToMainArea(ipyExtWinCon, {mode: "tab-after"});
+                app.shell.add(ipyExtWinCon, "main", {mode: "tab-after"});
             }
         };
         var getAllPhosphorWidgets = function(){
