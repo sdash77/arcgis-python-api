@@ -23,6 +23,13 @@ from arcgis import __version__ as py_api_version
 import arcgis.mapping
 import arcgis
 
+from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
+from arcgis.raster import ImageryLayer
+from arcgis.gis import Layer
+from arcgis.gis import Item
+from arcgis._impl.common._mixins import PropertyMap
+from arcgis.mapping import MapImageLayer, VectorTileLayer
+
 log = logging.getLogger(__name__)
 
 DEFAULT_ELEMENT_HEIGHT = "400px"
@@ -48,6 +55,127 @@ def _make_jsonable_dict(obj):
         return flag
     dict_ = json.loads(json.dumps(obj, default=default_func))
     return { k:v for k, v in dict_.items() if v != flag }
+
+def _flatten_list(*unpacked_list):
+    return_list = []
+    for x in unpacked_list:
+        if isinstance(x, (list, tuple)):
+            return_list.extend(_flatten_list(*x))
+        else: return_list.append(x)
+    return return_list
+
+def _get_extent(item):
+    from pandas import DataFrame
+
+    if isinstance(item, Item):
+        return list(map(_get_extent, item.layers))
+    elif isinstance(item, list):
+        return list(map(_get_extent, item))
+    elif isinstance(item, DataFrame):
+        return _get_extent_of_dataframe(item)
+    elif isinstance(item, FeatureSet):
+        return _get_extent(item.sdf)
+    elif isinstance(item, FeatureCollection):
+        return dict(item.properties.layerDefinition.extent)
+    elif isinstance(item, Layer):
+        if isinstance(item, FeatureLayer):
+            return dict(item.properties.extent)
+        else:
+            return dict(item.extent)
+    else:
+        raise Exception('could not infer layer type')
+
+def _get_extent_of_layers(list_of_layers):
+    extents = []
+    for layer in list_of_layers:
+        extents.append(layer.properties['extent'])
+    if len(extents) == 1:
+        return extents[0]
+    return _get_master_extent(extents)
+
+def _get_extent_of_dataframe(sdf):
+    if hasattr(sdf, 'spatial'):
+        sdf_ext = sdf.spatial.full_extent
+        return {
+            'spatialReference': sdf.spatial.sr,
+            'xmin': sdf_ext[0],
+            'ymin': sdf_ext[1],
+            'xmax': sdf_ext[2],
+            'ymax': sdf_ext[3]
+        }
+    else:
+        raise Exception('Could not add get extent of DataFrame it is not a spatially enabled DataFrame')
+
+def _get_master_extent(list_of_extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
+    # Check if any extent is different from one another
+    varying_spatial_reference = False
+    for extent in list_of_extents:
+        if not target_sr == extent['spatialReference']:
+            varying_spatial_reference = True
+    if varying_spatial_reference:
+        list_of_extents = _reproject_extent(list_of_extents, target_sr)
+
+    # Calculate master_extent
+    master_extent = list_of_extents[0]
+    for extent in list_of_extents:
+        master_extent['xmin'] = min(master_extent['xmin'], extent['xmin'])
+        master_extent['ymin'] = min(master_extent['ymin'], extent['ymin'])
+        master_extent['xmax'] = max(master_extent['xmax'], extent['xmax'])
+        master_extent['ymax'] = max(master_extent['ymax'], extent['ymax'])
+    return master_extent
+
+def _reproject_extent(extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
+    """Reproject Extent
+
+    ==================     ====================================================================
+    **Argument**              **Description**
+    ------------------     --------------------------------------------------------------------
+    extents                   extent or list of extents you want to project.
+    ------------------     --------------------------------------------------------------------
+    target_sr                 The target Spatial Reference you want to get your extent in.
+                              default is {'wkid': 102100, 'latestWkid': 3857}
+    ==================     ====================================================================
+
+    """
+    if not type(extents) == list:
+        extents = [extents]
+
+    geometry_batches = {}
+    for i, extent in enumerate(extents):
+        if not extent['spatialReference']['wkid'] in geometry_batches:
+            geometry_batches[extent['spatialReference']['wkid']] = {}
+            geometry_batches[extent['spatialReference']['wkid']]['spatialReference'] = extent['spatialReference']
+            geometry_batches[extent['spatialReference']['wkid']]['extents'] = []
+            geometry_batches[extent['spatialReference']['wkid']]['indexes'] = []
+        geometry_batches[extent['spatialReference']['wkid']]['extents'].extend(
+            [
+                {
+                    'x': extent['xmin'], 
+                    'y': extent['ymin']
+                },
+                {
+                    'x': extent['xmax'], 
+                    'y': extent['ymax']
+                }
+            ]
+        )
+        geometry_batches[extent['spatialReference']['wkid']]['indexes'].append(i)
+
+    for wkid in geometry_batches: # Reproject now
+        geometries = arcgis.geometry.project(geometry_batches[wkid]['extents'], in_sr=geometry_batches[wkid]['spatialReference'], out_sr=target_sr)
+        for i in range(0, len(geometries), 2):
+            extents[geometry_batches[wkid]['indexes'][int(i/2)]] = {
+                "xmin": geometries[i]['x'],
+                "ymin": geometries[i]['y'],
+                "xmax": geometries[i+1]['x'],
+                "ymax": geometries[i+1]['y'],
+                "spatialReference": target_sr
+            }
+    
+    if len(extents) == 1:
+        return extents[0]
+    return extents
+
 
 @widgets.register
 class MapView(widgets.DOMWidget):
@@ -735,6 +863,7 @@ class MapView(widgets.DOMWidget):
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping import MapImageLayer, VectorTileLayer
+        from pandas import DataFrame
 
         if isinstance(item, Item):
             for layer in item.layers:
@@ -758,6 +887,11 @@ class MapView(widgets.DOMWidget):
                 _lyr["options"] = options
             _lyr["_hashFromPython"] = self._get_hash(item)
             self._add_notype_layer(item, _lyr)
+        elif isinstance(item, DataFrame):
+            if hasattr(item, 'spatial'):
+                self.add_layer(item.spatial.to_featureset())
+            else:
+                raise Exception('Could not add DataFrame to map it is not a spatially enabled DataFrame')
         elif isinstance(item, FeatureSet):
             fc = FeatureCollection.from_featureset(item)
             self._add_layer_to_widget(fc, options)
@@ -1554,6 +1688,47 @@ class MapView(widgets.DOMWidget):
             self._click_handlers(self, content.get('message', None))
         if content.get('event', '') == 'draw-end':
             self._draw_end_handlers(self, content.get('message', None))
+
+    def set_extent(self, target_extent, options={}):
+        """Snaps the map to the extent provided.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        extent                 The extent at which you want to snap your map to.
+                               The extent can by of any Spatial Reference.                               
+        ------------------     --------------------------------------------------------------------
+        options                Optional set of arguments.
+                               
+        ==================     ====================================================================
+        """
+        if not self.extent['spatialReference'] == target_extent['spatialReference']:
+            self.extent = _reproject_extent(target_extent, self.extent['spatialReference'])
+        else:
+            self.extent =  target_extent
+
+    def zoom_to_layer(self, item, options={}): 
+        """Snaps the map to the extent of provided item or items.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   The item at which you want to zoom your map to.
+                               This can be a single or a list of Items, layers, DataFrame, FeatureSet,
+                               FeatureCollection.                               
+        ------------------     --------------------------------------------------------------------
+        options                Optional set of arguments.
+                               
+        ==================     ====================================================================
+        """
+        target_extent = _get_extent(item)
+        if isinstance(target_extent, list):
+            target_extent = _flatten_list(target_extent)
+            if len(target_extent) > 1:
+                target_extent = _get_master_extent(target_extent, self.extent['spatialReference'])
+            else:
+                target_extent = target_extent[0]
+        self.set_extent(target_extent, options=options)
 
     # Start section of no longer supported areas
     def _raise_time_extent_exception(self):

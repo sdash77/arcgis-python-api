@@ -3933,7 +3933,7 @@ class ContentManager(object):
                 owner_name = owner
             return self._portal.delete_folder(owner_name, folder)
 
-    def import_data(self, df, address_fields=None, **kwargs):
+    def import_data(self, df, address_fields=None, folder=None, **kwargs):
         """
         Imports a Pandas data frame (that has an address column), or an arcgis
         spatial dataframe into the GIS.
@@ -3950,6 +3950,8 @@ class ContentManager(object):
         df                Required string. Pandas dataframe or arcgis.SpatialDataFrame
         ----------------  --------------------------------------------------------------------------
         address_fields    Optional dictionary. Dictionary containing mapping of df columns to address fields, eg: { "CountryCode" : "Country"} or { "Address" : "Address" }.
+        ----------------  --------------------------------------------------------------------------
+        folder            Optional string. Name of the folder where imported data would be stored.
         ----------------  --------------------------------------------------------------------------
         title             Optional string. Title of the item. This is used for spatial dataframe objects.
         ----------------  --------------------------------------------------------------------------
@@ -4101,7 +4103,8 @@ class ContentManager(object):
                         "title" : title,
                         "type" : "File Geodatabase",
                         "tags" : tags},
-                    data=zip_fgdb)
+                    data=zip_fgdb,
+                    folder=folder)
                 shutil.rmtree(temp_dir,
                               ignore_errors=True)
                 publish_parameters =  {"hasStaticData":True, "name": os.path.splitext(item['name'])[0],
@@ -4127,7 +4130,8 @@ class ContentManager(object):
                     item_properties={
                         "title":title,
                         "tags":tags},
-                    data=zip_shp)
+                    data=zip_shp,
+                    folder=folder)
                 shutil.rmtree(temp_dir,
                               ignore_errors=True)
                 publish_parameters =  {"hasStaticData":True, "name": os.path.splitext(item['name'])[0],

@@ -1954,7 +1954,8 @@ class GeoAccessor(object):
     def to_featurelayer(self,
                         title,
                         gis=None,
-                        tags=None):
+                        tags=None,
+                        folder=None):
         """
         publishes a spatial dataframe to a new feature layer
 
@@ -1967,6 +1968,9 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         tags                            Optional list of strings. A comma seperated list of descriptive
                                         words for the service.
+        ---------------------------     --------------------------------------------------------------------
+        folder                          Optional string. Name of the folder where the featurelayer item 
+                                        and imported data would be stored.
         ===========================     ====================================================================
 
         :returns: FeatureLayer
@@ -1978,7 +1982,7 @@ class GeoAccessor(object):
             if gis is None:
                 raise ValueError("GIS object must be provided")
         content = gis.content
-        return content.import_data(self._data, title=title, tags=tags)
+        return content.import_data(self._data, folder=folder, title=title, tags=tags)
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(df, address_column="address", geocoder=None, sr=None):
