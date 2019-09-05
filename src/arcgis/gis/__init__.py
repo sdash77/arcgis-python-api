@@ -534,12 +534,16 @@ class GIS(object):
             # Open that auth file,
             with open(nb_auth_file_path) as nb_auth_file:
                 required_json_keys = set(["privatePortalUrl",
-                                          "publicPortalUrl", "token", "referer"])
+                                          "publicPortalUrl", "referer"])
                 json_data = json.load(nb_auth_file)
                 assert required_json_keys.issubset(json_data)
                 self._url = json_data["privatePortalUrl"]
                 self._public_portal_url = json_data["publicPortalUrl"]
-                self._utoken = json_data["token"]
+                if "token" in json_data:
+                    self._utoken = json_data["token"]
+                if "encryptedToken" in json_data:
+                    from arcgis.gis._impl._decrypt_nbauth import get_token
+                    self._utoken = get_token(nb_auth_file_path)
                 self._referer = json_data["referer"]
 
         # Catch errors and re-throw in with more human readable messages
