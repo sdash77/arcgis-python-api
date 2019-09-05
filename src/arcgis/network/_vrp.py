@@ -712,6 +712,9 @@ def edit_vehicle_routing_problem(orders,
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. If provided this connection is used to perform the operation.
     ====================================     ====================================================================
+
+    :returns: Named Tuple
+
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -786,7 +789,7 @@ def edit_vehicle_routing_problem(orders,
     if output_format is None:
         output_format = defaults['output_format']
 
-    job = tbx.edit_vehicle_routing_problem(orders=orders,
+    result = tbx.edit_vehicle_routing_problem(orders=orders,
                                  depots=depots,
                                  routes=routes,
                                  breaks=breaks,
@@ -824,7 +827,7 @@ def edit_vehicle_routing_problem(orders,
                                  output_format=output_format,
                                  gis=gis,
                                  future=True)
-    return job
+    return result
 
 def solve_vehicle_routing_problem(
     orders,
