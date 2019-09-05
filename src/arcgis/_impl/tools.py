@@ -3482,6 +3482,32 @@ class _OrhtoMappingTools():
     def _tools(self):
         return self.properties.tasks
     #----------------------------------------------------------------------
+    def _create_output_image_service(self, output_name, task):
+        ok = self._gis.content.is_service_name_available(output_name, "Image Service")
+        if not ok:
+            raise RuntimeError("An Image Service by this name already exists: " + output_name)
+
+        createParameters = {
+            "name": output_name,
+            "description": "",
+            "capabilities": "Image",
+                "properties": {
+                    "path": "@",
+                    "description": "",
+                    "copyright": ""
+                }
+        }
+
+        output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="imageService")
+        description = "Image Service generated from running the " + task + " tool."
+        item_properties = {
+            "description" : description,
+            "tags" : "Analysis Result, " + task,
+            "snippet": "Analysis Image Service generated from " + task
+        }
+        output_service.update(item_properties)
+        return output_service
+    #----------------------------------------------------------------------
     def _set_image_collection_param(self, image_collection):
         if isinstance(image_collection, str):
             #doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
@@ -3523,12 +3549,13 @@ class _OrhtoMappingTools():
         """
         image_collection = self._set_image_collection_param(image_collection=image_collection)
         job = self._tbx.alter_processing_states(image_collection=image_collection,
-                                          new_states=new_states,
-                                          gis=gis,
-                                          future=True)
+                                                new_states=new_states,
+                                                gis=gis,
+                                                future=True)
         if future:
             return job
         return job.result()
+    #----------------------------------------------------------------------
     def compute_color_correction(self,
                                  image_collection,
                                  color_correction_method=None,
@@ -3728,47 +3755,488 @@ class _OrhtoMappingTools():
         return job.result()
     #----------------------------------------------------------------------
     def compute_sensor_model(self, image_collection, mode='Quick', location_accuracy='High', context=None, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/compute-sensor-model.htm"""
-        pass
+        """
+        The `compute_sensor_model` operation is a service that computes the bundle block adjustment for the image collection and applies the frame transformation to the images. It also generates the control point, solution, solution points, and flight path tables, though these tables are not published as portal items.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        mode                                                                        Optional String. The bundle block adjustment mode keyword. It is used when the image collection type is UAV/UAS or UNKNOWN at the same time that the block adjustment status is Raw or Quick. The following modes are supported:
+
+                                                                                      - Quick: Computes tie points and adjustments at one-eighth of the source imagery resolution.
+                                                                                      - Full: Adjusts the images using the Quick mode solution at the full resolution of the source imagery.
+                                                                                      - Refine: Computes tie points and adjustments of the source imagery at full resolution.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        location_accuracy                                                           Optional String. This parameter allows you to specify the GPS location accuracy level of the source image. The following options determine how far the tool will search for neighboring matching images for calculating tie points and block adjustments:
+
+                                                                                      - High: GPS accuracy is 0 to 10 meters, and the tool uses a maximum of 4 by 3 images.
+                                                                                      - Medium: GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 4 by 6 images.
+                                                                                      - Low: GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Optional Dict. Used to configure additional client settings for block adjustments.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        from arcgis.raster._util import _set_context
+        if context is None:
+            context = {}
+        _set_context(params=context)
+        tool = self._tbx.compute_sensor_model
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+
+        if image_collection:
+            image_collection = self._set_image_collection_param(
+                    image_collection=image_collection)
+        job = tool(image_collection=image_collection,
+                   mode=mode,
+                   location_accuracy=location_accuracy,
+                   context=context,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
-    def edit_control_points(self, image_collection, input_control_points=None, context=None, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/edit-control-points.htm"""
-        pass
+    def edit_control_points(self, image_collection,
+                            input_control_points,
+                            context=None, gis=None,
+                            future=False):
+        """
+
+        The `edit_control_points` is a service tool that is used to append additional
+        ground control points set to the image collection's control points. A complete
+        ground control point (GCP) set should have one GCP and more than three tie
+        points. `edit_control_points` can also be used to edit tie point sets. The input
+        control points' JSON will always replace the points in the tie points table if
+        the point Id already exists.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_control_points                                                        Required List. The existing GCP sets written as a JSON object. The control point sets
+                                                                                    provided in this tool will replace the control points in the existing control points
+                                                                                    table if they already exist.
+
+                                                                                    Syntax: The schema of the control points' JSON object follows the schema of the
+                                                                                    mosaic dataset control point table. The control points must contain one geometry
+                                                                                    and one attribute set. Two types of control points are allowed, determined by the
+                                                                                    type attribute: tie points or ground control points.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Optional Dict. Used to configure additional client settings for block adjustments.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        from arcgis.raster._util import _set_context
+        if context is None:
+            context = {}
+        _set_context(params=context)
+        tool = self._tbx.edit_control_points
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+
+        if image_collection:
+            image_collection = self._set_image_collection_param(
+                    image_collection=image_collection)
+        job = tool(image_collection=image_collection,
+                   input_control_points=input_control_points,
+                   context=context,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
-    def generate_dem(self, image_collection, output_dem=None, cell_size=None, surface_type='DTM', matching_method='SGM', context=None, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/generate-dem.htm"""
-        pass
+    def generate_dem(self, image_collection,
+                     cell_size, output_name=None,
+                     surface_type=None, matching_method='SGM',
+                     context=None, gis=None, future=False):
+        """
+
+        The `generate_dem` operation is a service tool that allows you to generate
+        DEM products from a previously adjusted image collection. It creates point
+        clouds using adjusted image collections and interpolates the point clouds
+        to create DEM surface products using the designated method.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        cell_size                                                                   Optional Integer. The cell size of the output digital elevation model image.
+                                                                                    This is a single numeric input. The cell size unit will be the unit used by
+                                                                                    the image collection's spatial reference. Only square cell sizes are supported.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_name                                                                 Optional String. The service name of the resulting DEM.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        surface_type                                                                Optional String. The output surface type of the digital elevation model.
+                                                                                    The following are the available choices:
+
+                                                                                      - `DTM` - Digital Terrain Model : The elevation is bare earth only and does not include structures above the surface.
+                                                                                      - `DSM` - Digital Surface Model : The elevation includes bare earth and features above the surface - for example, buildings, vegetation, bridges, and utility towers.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        matching_method                                                             Optional String. The method used to generate 3D points.
+
+                                                                                    The following are the available options:
+
+                                                                                      - `ETM`: A feature-based stereo matching method that uses the Harris operator to detect feature points. It's recommended for DTM generation.
+                                                                                      - `SGM`: Produces more points and detail than the ETM method. It's suitable for generating a DSM for urban areas. This is more computationally intensive than the ETM method.
+                                                                                      - `MVM`: Based on the SGM matching method followed by a fusion step in which the redundant depth estimations across single stereo model are merged. It produces dense 3D points and is computationally efficient.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Optional Dict. Used to configure additional client settings for block adjustments.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        task = "GenerateDEM"
+        output_dem = None
+        from arcgis.raster._util import _set_context, _id_generator
+        if context is None:
+            context = {}
+        _set_context(params=context)
+        tool = self._tbx.generate_dem
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+
+        if image_collection:
+            image_collection = self._set_image_collection_param(image_collection=image_collection)
+
+        if surface_type is None:
+            surface_type = defaults['surface_type']
+        if matching_method is None:
+            matching_method = defaults['matching_method']
+        if output_name:
+            output_name = output_name.replace(" ", "_")
+        else:
+            output_name = "Generate_DEM_" + _id_generator()
+
+        output_service = self._create_output_image_service(output_name, task)
+        output_dem = { 'itemId' : output_service.itemid }
+
+        job = tool(image_collection=image_collection,
+                   cell_size=cell_size,
+                   output_dem=output_dem,
+                   surface_type=surface_type,
+                   matching_method=matching_method,
+                   context=context,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
-    def generate_orthomosaic(self, image_collection, output_ortho_image=None, regen_seamlines=True, recompute_color_correction=True, context=None, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/generate-orthomosaic.htm"""
-        pass
+    def generate_orthomosaic(self,
+                             image_collection,
+                             output_name=None,
+                             regen_seamlines=None,
+                             recompute_color_correction=None,
+                             context=None,
+                             gis=None,
+                             future=False):
+        """
+        The `generate_orthomosaic` is a service tool that's used to generate a single orthorectified, mosaicked image from an image collection after the block adjustment.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        output_name                                                                 Optional String. The name of the service to create.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        regen_seamlines                                                             Optional Boolean. Specifies whether seamlines are applied before the
+                                                                                    orthomosaic image generation. The seamlines are regenerated if this flag is
+                                                                                    turned on. You can set the seamline options through the context parameter.
+                                                                                    If the seamline generation options are not set, the default is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        recompute_color_correction                                                  Optional Boolean. Specifies whether color correction settings are applied
+                                                                                    to the output orthoimage. Color correction is recomputed if this option is
+                                                                                    turned on. You can configure the compute color correction settings through
+                                                                                    the context parameter. If there is no color collection setting, the default
+                                                                                    is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Optional Dict. Used to configure additional client settings for block adjustments.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        from arcgis.raster._util import _set_context, _id_generator
+        task = "GenerateOrthoMosaic"
+
+
+        if context is None:
+            context = {}
+        _set_context(params=context)
+        tool = self._tbx.generate_orthomosaic
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+
+        if regen_seamlines is None:
+            regen_seamlines = defaults['regen_seamlines']
+        if recompute_color_correction is None:
+            recompute_color_correction = defaults['recompute_color_correction']
+
+        if image_collection:
+            image_collection = self._set_image_collection_param(image_collection=image_collection)
+
+        if output_name:
+            output_name = output_name.replace(" ", "_")
+        else:
+            output_name = task + _id_generator()
+
+        output_service = self._create_output_image_service(output_name, task)
+        output_ortho_image = { 'itemId' : output_service.itemid }
+
+        job = tool(image_collection=image_collection,
+                   output_ortho_image=output_ortho_image,
+                   regen_seamlines=regen_seamlines,
+                   recompute_color_correction=recompute_color_correction,
+                   context=context,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
-    def generate_report(self, image_collection, report_format='PDF', gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/generate-report.htm"""
-        pass
+    def generate_report(self, image_collection, report_format=None, gis=None, future=False):
+        """
+
+        The `generate_report` is a tool that generates an Ortho Mapping report with an image
+        collection that has been block adjusted. The report contains information about the
+        quality of the adjusted images, the distribution of the control points, and more. The
+        output of this service tool is a downloadable file.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        report_format                                                               Optional String. The response format.  This can be `HTML` or `PDF`.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+
+        tool = self._tbx.generate_report
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+
+        if image_collection:
+            image_collection = self._set_image_collection_param(image_collection=image_collection)
+        if report_format is None:
+            report_format = defaults['report_format']
+
+        job = tool(image_collection=image_collection,
+                   report_format=report_format,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
     def get_processing_states(self, image_collection, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/get-processing-states.htm"""
-        pass
+        """
+        The `get_processing_states` obtains the processing states of the image
+        collection (mosaic dataset) in JSON.
+
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+
+        """
+        tool = self._tbx.get_processing_states
+        if image_collection:
+            image_collection = self._set_image_collection_param(image_collection=image_collection)
+        job = tool(image_collection=image_collection,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
-    def match_control_points(self, image_collection, input_control_points=None, similarity='High', context=None, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/match-control-points.htm"""
-        pass
+    def match_control_points(self,
+                             image_collection,
+                             input_control_points,
+                             similarity=None,
+                             context=None,
+                             gis=None,
+                             future=False):
+        """
+        The `match_control_points` is a tool that takes a collection of ground control points in JSON as input, and at least on of the ground control points has matching tie points. The service will compute the remaining matching tie points.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_control_points                                                        Require List. The ground control points (GCP) sets written as a JSON object. The similarity tolerance for finding control points will be low.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        similarity                                                                  Optional String. Sets the similarity tolerance level for your matching control point. Low tolerance will produce the most control points, but some may have a higher level of error. Medium tolerance will produce a medium amount of control points. High tolerance will produce the least number of control points, but each matching pair will have a lower level of error. High tolerance is the default value.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        context                                                                     Optional Dict. Used to configure additional client settings for block adjustments.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+
+
+        """
+        from arcgis.raster._util import _set_context
+        tool = self._tbx.match_control_points
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+        if image_collection:
+            image_collection = self._set_image_collection_param(image_collection=image_collection)
+        if similarity is None:
+            similarity = defaults['similarity']
+
+        if context is None:
+            context = {}
+        _set_context(params=context)
+
+        job = tool(image_collection=image_collection,
+                   input_control_points=input_control_points,
+                   similarity=similarity,
+                   context=context,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
     def query_camera_info(self, query, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/query-camera-info.htm"""
-        pass
+        """
+        The `query_camera_info` queries specific records or the entire digital camera database.
+        The digital camera database contains the specifications of digital camera sensors
+        that are used to capture drone images.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        query                                                                       Required String. This is a SQL query statement that can be used to filter a portion of the digital camera database.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        job = self._tbx.query_camera_info(query=query,
+                                          gis=gis,
+                                          future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
-    def query_control_points(self, image_collection, where=None, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/query-control-points.htm"""
-        pass
+    def query_control_points(self, image_collection, where, gis=None, future=False):
+        """
+        The `query_control_points` allows users to use a SQL query to query certain control
+        points from the image collection's control point table.
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        where                                                                       Required String. This is a SQL query statement that can be used to filter a portion of the digital camera database.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns: Named Tuple
+
+        """
+        image_collection = self._set_image_collection_param(image_collection=image_collection)
+        job = self._tbx.query_control_points(image_collection=image_collection,
+                                             where=where,
+                                             gis=gis,
+                                             future=True)
+        if future:
+            return job
+        return job.result()
     #----------------------------------------------------------------------
     def reset_image_collection(self, image_collection, gis=None, future=False):
-        """https://developers.arcgis.com/rest/services-reference/reset-image-collection.htm"""
-        pass
+        """
+        The `reset_image_collection` resets the image collection to its original state.
+        Resetting the image collection includes removing the block adjustment that's
+        computed for the images, rebuilding the footprints, and removing seamlines and
+        mosaic candidates. The image collection can be adjusted during the Ortho Mapping
+        workflow. If you're not satisfied with the result, you can clear any existing
+        adjustment settings and return the images to an unadjusted state.
 
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
 
+        :returns: Named Tuple
 
+        """
+        image_collection = self._set_image_collection_param(image_collection=image_collection)
+        job = self._tbx.reset_image_collection(image_collection=image_collection,
+                                             where=where,
+                                             gis=gis,
+                                             future=True)
+        if future:
+            return job
+        return job.result()
 ###########################################################################
 class _RasterAnalysisTools(_AsyncService):
     "Exposes the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
