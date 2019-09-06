@@ -3419,7 +3419,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 ###########################################################################
-class _OrhtoMappingTools():
+class _OrthoMappingTools():
     """Exposes the Orthmapping Geoprocessing tools"""
     _gptbx = None
     _url = None
@@ -3552,6 +3552,7 @@ class _OrhtoMappingTools():
                                                 new_states=new_states,
                                                 gis=gis,
                                                 future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -3614,6 +3615,8 @@ class _OrhtoMappingTools():
             color_correction_method = defaults['color_correction_method']
         if dodging_surface is None:
             dodging_surface = defaults['dodging_surface']
+        if image_collection:
+            image_collection = self._set_image_collection_param(image_collection=image_collection)
         if target_image:
             target_image = self._set_image_collection_param(image_collection=target_image)
         job = tool(image_collection=image_collection,
@@ -3622,6 +3625,7 @@ class _OrhtoMappingTools():
                    target_image=target_image,
                    context=context,
                    gis=gis, future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -3673,14 +3677,23 @@ class _OrhtoMappingTools():
             image_location_accuracy  = defaults['image_location_accuracy']
         if image_collection:
             image_collection = self._set_image_collection_param(image_collection=image_collection)
-        if target_image:
-            target_image = self._set_image_collection_param(image_collection=target_image)
+        if reference_image is not None:
+            if isinstance(reference_image, str):
+                if 'http:' in reference_image or 'https' in reference_image:
+                    reference_image = { 'url' : reference_image }
+                else:
+                    reference_image = { 'uri' : reference_image }
+            elif isinstance(reference_image, Item):
+                reference_image = { "itemId" : reference_image.itemid }
+            else:
+                raise TypeError("reference_image should be a string (url or uri) or Item")
         job = tool(image_collection=image_collection,
                    reference_image=reference_image,
                    image_location_accuracy=image_location_accuracy,
                    context=context,
                    gis=gis,
                    future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -3731,7 +3744,7 @@ class _OrhtoMappingTools():
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :returns: Dictionary
 
         """
         from arcgis.raster._util import _set_context
@@ -3750,6 +3763,7 @@ class _OrhtoMappingTools():
                    context=context,
                    gis=gis,
                    future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -3803,6 +3817,7 @@ class _OrhtoMappingTools():
                    context=context,
                    gis=gis,
                    future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -3861,6 +3876,7 @@ class _OrhtoMappingTools():
                    context=context,
                    gis=gis,
                    future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -3946,6 +3962,7 @@ class _OrhtoMappingTools():
                    context=context,
                    gis=gis,
                    future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -4023,6 +4040,7 @@ class _OrhtoMappingTools():
                    context=context,
                    gis=gis,
                    future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -4094,13 +4112,14 @@ class _OrhtoMappingTools():
         job = tool(image_collection=image_collection,
                    gis=gis,
                    future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
     #----------------------------------------------------------------------
     def match_control_points(self,
                              image_collection,
-                             input_control_points,
+                             control_points,
                              similarity=None,
                              context=None,
                              gis=None,
@@ -4113,7 +4132,7 @@ class _OrhtoMappingTools():
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        input_control_points                                                        Require List. The ground control points (GCP) sets written as a JSON object. The similarity tolerance for finding control points will be low.
+        control_points                                                              Require List. The ground control points (GCP) sets written as a JSON object. The similarity tolerance for finding control points will be low.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         similarity                                                                  Optional String. Sets the similarity tolerance level for your matching control point. Low tolerance will produce the most control points, but some may have a higher level of error. Medium tolerance will produce a medium amount of control points. High tolerance will produce the least number of control points, but each matching pair will have a lower level of error. High tolerance is the default value.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -4143,16 +4162,17 @@ class _OrhtoMappingTools():
         _set_context(params=context)
 
         job = tool(image_collection=image_collection,
-                   input_control_points=input_control_points,
+                   input_control_points=control_points,
                    similarity=similarity,
                    context=context,
                    gis=gis,
                    future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
     #----------------------------------------------------------------------
-    def query_camera_info(self, query, gis=None, future=False):
+    def query_camera_info(self, query=None, gis=None, future=False):
         """
         The `query_camera_info` queries specific records or the entire digital camera database.
         The digital camera database contains the specifications of digital camera sensors
@@ -4161,19 +4181,20 @@ class _OrhtoMappingTools():
         =========================================================================   ===========================================================================
         **Argument**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-        query                                                                       Required String. This is a SQL query statement that can be used to filter a portion of the digital camera database.
+        query                                                                       Optional String. This is a SQL query statement that can be used to filter a portion of the digital camera database.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         =========================================================================   ===========================================================================
 
-        :returns: Named Tuple
+        :returns: GPJob or Pandas' DataFrame
 
         """
         job = self._tbx.query_camera_info(query=query,
                                           gis=gis,
                                           future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -4203,6 +4224,7 @@ class _OrhtoMappingTools():
                                              where=where,
                                              gis=gis,
                                              future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -4231,9 +4253,9 @@ class _OrhtoMappingTools():
         """
         image_collection = self._set_image_collection_param(image_collection=image_collection)
         job = self._tbx.reset_image_collection(image_collection=image_collection,
-                                             where=where,
                                              gis=gis,
                                              future=True)
+        job._is_ortho = True
         if future:
             return job
         return job.result()
@@ -7892,6 +7914,8 @@ class _Tools(object):
         self._analysis = None
         self._raster_analysis = None
         self._geoanalytics = None
+        self._orthomapping = None
+
     def _validate_url(self, url):
         res = self._gis._private_service_url(url)
         if "privateServiceUrl" in res:
@@ -7996,5 +8020,26 @@ class _Tools(object):
 
             self._analysis = _FeatureAnalysisTools(svcurl, self._gis)
             return self._analysis
+        except KeyError:
+            return None
+    @property
+    def orthomapping(self):
+        """the portal's Ortho-Mapping tools, if available and configured"""
+        if self._analysis is not None:
+            return self._analysis
+        try:
+            try:
+                svcurl = self._gis.properties.helperServices['orthoMapping']['url']
+                if self._gis._is_hosted_nb_home:
+                    svcurl = self._validate_url(svcurl)
+            except:
+                if self._gis._con.token is None:
+                    print("You need to be signed in to use Ortho Mapping Tools.")
+                else:
+                    print("This GIS does not support Ortho Mapping Tools.")
+                return None
+
+            self._orthomapping = _OrthoMappingTools(svcurl, self._gis)
+            return self._orthomapping
         except KeyError:
             return None

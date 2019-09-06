@@ -2,6 +2,8 @@ import os
 from concurrent.futures import Future
 import logging
 _log = logging.getLogger(__name__)
+from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
+
 class GPJob(object):
     """
     Represents a Single Geoprocessing Job.  The `GPJob` class allows for the asynchronous operation
@@ -37,6 +39,7 @@ class GPJob(object):
     _task_name = None
     _is_fa = False
     _is_ra = False
+    _is_ortho = False
     #----------------------------------------------------------------------
     def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
@@ -163,8 +166,62 @@ class GPJob(object):
             return self._process_fa(self._future.result())
         elif self._is_ra:
             return self._process_fa(self._future.result())
+        elif self._is_ortho:
+            return self._process_ortho(self._future.result())
         return self._future.result()
+    def _process_ortho(self, result):
+        """handles the ortho imagery response"""
+        import arcgis
 
+        if hasattr(result, '_fields'):
+            r = {}
+            iids = []
+            for key in result._fields:
+                value = getattr(result, key)
+                if isinstance(value, dict) and 'featureSet' in value:
+                    r[key] = arcgis.features.FeatureCollection(value)
+                elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("imageserver"):
+                    return arcgis.raster.ImageryLayer(url=value['url'], gis=self._gis)
+                elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("featureserver"):
+                    return arcgis.features.FeatureLayerCollection(url=value['url'], gis=self._gis)
+                elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
+                    if not value['itemId'] in iids:
+                        r[key] = arcgis.gis.Item(self._gis, value['itemId'])
+                        iids.append(value['itemId'])
+                elif len(str(value)) > 0 and value:
+                    r[key] = value
+            if len(r) == 1:
+                return r[list(r.keys())[0]]
+
+            return r
+        else:
+            value = result
+            if isinstance(value, (DataFile, RasterData, LinearUnit)):
+                return value
+            elif isinstance(value, str) and value.lower().find('imageserver') >-1:
+                return arcgis.raster.ImageryLayer(url=value, gis=self._gis)
+            elif isinstance(value, (dict, tuple, list)) == False:
+                return value
+            elif 'itemId' in value and \
+               len(value['itemId']) > 0:
+                itemid = value['itemId']
+                return arcgis.gis.Item(gis=self._gis, itemid=itemid)
+            elif isinstance(value, dict) and "items" in value:
+                itemid = list(value['items'].keys())[0]
+                return arcgis.gis.Item(gis=self._gis, itemid=itemid)
+            elif self.task == 'QueryCameraInfo':
+                import pandas as pd
+                columns = value['schema']
+                data = value['content']
+                return pd.DataFrame(data, columns=columns)
+            elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("imageserver"):
+                return arcgis.raster.ImageryLayer(url=value['url'], gis=self._gis)
+            elif isinstance(value, dict) and 'url' in value and value['url'].lower().find("featureserver"):
+                return arcgis.features.FeatureLayerCollection(url=value['url'], gis=self._gis)
+            elif isinstance(value, dict) and 'featureSet' in value:
+                return arcgis.features.FeatureCollection(value)
+            return value
+        return result
     def _process_fa(self, result):
         import arcgis
         if hasattr(result, '_fields'):
