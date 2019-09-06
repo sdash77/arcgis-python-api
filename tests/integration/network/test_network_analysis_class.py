@@ -412,7 +412,87 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    def test_edit_vehicle_routing_problem_service(self):
+        """
+        Test to check if the edit vehicle routing problem of network analysis module works without throwing an error.
+        :return:
+        """
+        try:
 
+            import arcgis.network as network
+            import arcgis.features as features
+
+            orders = features.FeatureSet.from_dict({
+                "features": [{"attributes": {"DeliveryQuantities": "2000 100",
+                                             "Name": "Order 1"},
+                              "geometry": {"x": -117.5254, "y": 34.111}},
+                             {"attributes": {"DeliveryQuantities": "1500 75",
+                                             "Name": "Order 2"},
+                              "geometry": {"x": -117.51, "y": 34.111}}],
+                "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                "geometryType": "esriGeometryPoint",
+                "fields": [
+                    {"name": "DeliveryQuantities", "type": "esriFieldTypeString", "alias": "DeliveryQuantities",
+                     "length": "50"},
+                    {"name": "Name", "type": "esriFieldTypeString", "alias": "Name", "length": "50"}
+                ]
+            })
+
+            depots = features.FeatureSet.from_dict({
+                "features": [{"attributes": {"Name": "Depot1"},
+                              "geometry": {"x": -117.52, "y": 34.117}},
+                             {"attributes": {"Name": "Depot2"},
+                              "geometry": {"x": -117.53, "y": 34.131}}],
+                "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                "geometryType": "esriGeometryPoint",
+                "fields": [
+                    {"name": "Name", "type": "esriFieldTypeString", "alias": "Name", "length": "50"}
+                ]
+            })
+
+            routes = features.FeatureSet.from_dict({
+                "features": [{"attributes": {"Capacities": "40000 2000",
+                                             "EndDepotName": "Depot1",
+                                             "Name": "Truck1",
+                                             "SpecialtyNames": "BucketTruck",
+                                             "StartDepotName": "Depot1"}},
+                             {"attributes": {"Capacities": "30000 2500",
+                                             "EndDepotName": "Depot2",
+                                             "Name": "Truck2",
+                                             "SpecialtyNames": None,
+                                             "StartDepotName": "Depot2"}}],
+                "fields": [
+                    {"name": "Name", "type": "esriFieldTypeString", "alias": "Name", "length": "50"},
+                    {"name": "Capacities", "type": "esriFieldTypeString", "alias": "Capacities", "length": "50"},
+                    {"name": "EndDepotName", "type": "esriFieldTypeString", "alias": "EndDepotName",
+                     "length": "50"},
+                    {"name": "StartDepotName", "type": "esriFieldTypeString", "alias": "StartDepotName",
+                     "length": "50"},
+                    {"name": "SpecialtyNames", "type": "esriFieldTypeString", "alias": "SpecialtyNames",
+                     "length": "50"}
+                ]
+            })
+
+            result = network.analysis.edit_vehicle_routing_problem(orders=orders, depots=depots,
+                                                                    default_date=datetime.datetime.now().date(),
+                                                                    routes=routes, populate_route_lines=True,
+                                                                    populate_directions=True,
+                                                                    directions_language="es")
+
+            if result.solve_succeeded:
+                print(result)
+
+            self.assertTrue(result.solve_succeeded, "Task Unsuccessful: Vehicle Routing Problem could not be solved.")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
     def test_VehicleRoutingProblem_service(self):
         """
         Test to check if the vehicle routing problem of network analysis module works without throwing an error.
