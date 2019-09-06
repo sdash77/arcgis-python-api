@@ -18,10 +18,9 @@ nbconvert_notebook_tests_to_run:
             - "{arcgis_python_api_dir}/tests/notebook/**/*ipynb_checkpoint*/**/*"
         cell_timeout_sec:
             300
-        setup_script: "{arcgis_python_api_dir}/misc/setup.py"
-        teardown_script: "{arcgis_python_api_dir}/misc/teardown.py"
     paths:
-        - "{geosaurus_dir}/tests/notebook/nbconvert/**/*.ipynb"
+        - "{geosaurus_dir}/tests/notebooks/nbconvert/aggregate_points_test.ipynb"
+        - "{geosaurus_dir}/tests/notebooks/nbconvert/restaurant_dsx_subset.ipynb"
 selenium_notebook_tests_to_run:
     config:
         blacklist:
@@ -32,7 +31,7 @@ selenium_notebook_tests_to_run:
             "dayofweek"
     paths:
         - "{geosaurus_dir}/tests/widget/integration/automated/**/*.ipynb"
-        - "{geosaurus_dir}/tests/notebook/selenium/**/*.ipynb"
+        - "{geosaurus_dir}/tests/notebooks/selenium/**/*.ipynb"
 widget_unit_tests_to_run:
     config: {}
     paths:
