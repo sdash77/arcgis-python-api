@@ -1,4 +1,5 @@
 import os
+import datetime
 from concurrent.futures import Future
 import logging
 _log = logging.getLogger(__name__)
@@ -40,6 +41,8 @@ class GPJob(object):
     _is_fa = False
     _is_ra = False
     _is_ortho = False
+    _start_time = None
+    _end_time = None
     #----------------------------------------------------------------------
     def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
@@ -47,12 +50,28 @@ class GPJob(object):
         """
         assert isinstance(future, Future)
         self._future = future
+        self._start_time = datetime.datetime.now()
         if notify:
             self._future.add_done_callback(self._notify)
+        self._future.add_done_callback(self._set_end_time)
         self._gptool = gptool
         self._jobid = jobid
         self._url = task_url
         self._gis = gis
+    #----------------------------------------------------------------------
+    @property
+    def ellapse_time(self):
+        """
+        Returns the Ellapse Time for the Job
+        """
+        if self._end_time:
+            return self._end_time - self._start_time
+        else:
+            return datetime.datetime.now() - self._start_time
+    #----------------------------------------------------------------------
+    def _set_end_time(self, future):
+        """sets the finish time"""
+        self._end_time = datetime.datetime.now()
     #----------------------------------------------------------------------
     def _notify(self, future):
         """prints finished method"""
