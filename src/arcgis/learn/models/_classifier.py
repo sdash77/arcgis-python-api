@@ -24,7 +24,6 @@ try:
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch.nn.functional as functional
     from .._data import _check_esri_files
-    import tempfile
     import glob
     import time
     import xml.etree.ElementTree as ElementTree
@@ -110,6 +109,23 @@ class FeatureClassifier(ArcGISModel):
         img = open_image(img_path)
         return self.learn.predict(img)
 
+    def _html_metrics(self):
+        from matplotlib import pyplot as plt
+        import base64
+        c_matrix_png = self.plot_confusion_matrix()
+        c_matrix_dir = tempfile.NamedTemporaryFile().name + '.png'
+        plt.savefig(c_matrix_dir)
+        plt.close()
+        encoded_cmatrix_img = base64.b64encode(open(c_matrix_dir, 'rb').read()).decode('utf-8')
+        encoded_cmatrix_img = "data:image/png;base64,{0}".format(encoded_cmatrix_img)
+        html_model = f"""
+        <p><b>Feature Classifier</b></p>
+        """
+        html_string = f""" <p><b>Confusion Matrix</p></b>
+        <img src="{encoded_cmatrix_img}" alt="Confusion Matrix" width="500" height="333">
+        """
+        return html_model, html_string
+    
     def _create_emd(self, path):
         super()._create_emd(path)
         self._emd_template["Framework"] = "arcgis.learn.models._inferencing"

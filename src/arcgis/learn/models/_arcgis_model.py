@@ -49,14 +49,15 @@ def _set_multigpu_callback(model):
 
 def _create_zip(zipname, path):
     import shutil
-
-    if os.path.exists(os.path.join(path, zipname) + '.zip'):
-        os.remove(os.path.join(path, zipname) + '.zip')
+    if os.path.exists(os.path.join(path, zipname) + '.dlpk'):
+        os.remove(os.path.join(path, zipname) + '.dlpk')
         
     temp_dir = tempfile.TemporaryDirectory().name    
     zip_file = shutil.make_archive(os.path.join(temp_dir, zipname), 'zip', path)
-    
-    shutil.move(zip_file, path)
+    dlpk_base = os.path.splitext(zip_file)[0]
+    os.rename(zip_file, dlpk_base + '.dlpk')
+    dlpk_file = dlpk_base+'.dlpk'
+    shutil.move(dlpk_file, path)
 
 
 class SaveModelCallback(TrackerCallback):
@@ -167,6 +168,9 @@ class ArcGISModel(object):
     def _get_model_metrics(self, **kwargs):
         raise NotImplementedError
 
+    def _html_metrics(self):
+        raise NotImplementedError
+
     def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
         """
         Train the model for the specified number of epocs and using the
@@ -239,6 +243,39 @@ class ArcGISModel(object):
 
         self._emd_template['resize_to'] = resize_to
 
+    def _create_html(self, path_model):
+        import matplotlib.pyplot as plt
+        import base64
+        plot_losses_png = self.learn.recorder.plot_losses()
+        plot_losses_dir = tempfile.NamedTemporaryFile().name + '.png'
+        plt.savefig(plot_losses_dir)
+        plt.close()
+        show_results_png = self.show_results()
+        show_results_dir = tempfile.NamedTemporaryFile().name + '.png'
+        plt.savefig(show_results_dir)
+        plt.close()
+        encoded_losses_img = base64.b64encode(open(plot_losses_dir, 'rb').read()).decode('utf-8')
+        encoded_losses_img = "data:image/png;base64,{0}".format(encoded_losses_img)
+        encoded_sresults_img = base64.b64encode(open(show_results_dir, 'rb').read()).decode('utf-8')
+        encoded_sresults_img = "data:image/png;base64,{0}".format(encoded_sresults_img)
+        html_file_path = os.path.join(path_model.parent,'model_metrics.html')
+        model_type, model_analysis = self._html_metrics() 
+        fil = open(html_file_path,'w')
+        HTML_TEMPLATE = f"""        
+                <p><b> {model_type} </b></p>
+                <p><b>Backbone:</b> {self._backbone.__name__}</p>
+                <p><b>Learning Rate:</b> {self._learning_rate}</p>
+                <p><b>Training and Validation loss</b></p>
+                <img src="{encoded_losses_img}" alt="training and validation losses">
+                <p><b>Analysis of the model</b></p>
+                {model_analysis}
+                <p><b>Sample Results</b></p>
+                <img src="{encoded_sresults_img}" alt="Sample Results">
+        """
+        fil.write(HTML_TEMPLATE)
+        fil.close()
+        return HTML_TEMPLATE
+
     def _save(self, name_or_path, zip_files=True):
         temp = self.learn.path
 
@@ -266,8 +303,8 @@ class ArcGISModel(object):
         finally:
             self.learn.path = temp
             self.learn.model_dir = 'models'
-
         zip_name = self._create_emd(saved_path)
+        html_string = self._create_html(saved_path)
         with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
             f.write(self._code)
         if zip_files:

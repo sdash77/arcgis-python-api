@@ -326,6 +326,19 @@ class SingleShotDetector(ArcGISModel):
     def _normalize_bbox(self, bbox):
         return (bbox+1.)/2.
 
+    def _html_metrics(self):
+        import pandas as pd
+        html_model = f"""
+        <p><b>Single Shot Detector</b></p>
+        """
+        ap_score = self.average_precision_score()
+        ap_df = pd.DataFrame(list(ap_score.items()), columns=['Class', 'Score'])
+        html_string = f""" 
+        <p><b>Mean average precision score: </b></p>
+        {ap_df.to_html()} 
+        """
+        return html_model, html_string
+        
     def _create_emd(self, path):
         import random
         super()._create_emd(path)
