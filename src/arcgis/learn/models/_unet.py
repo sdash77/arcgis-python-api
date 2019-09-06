@@ -108,6 +108,15 @@ class UnetClassifier(ArcGISModel):
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
+    def _html_metrics(self):
+        html_model = f"""
+        <p><b>Unet Classifier</b></p>
+        """
+        html_string = f"""
+        <p><b>Model Metrics:</b> {format(self._get_model_metrics(), 'e')}</p> 
+        """
+        return html_model, html_string
+    
     def _create_emd(self, path):
         import random
         super()._create_emd(path)

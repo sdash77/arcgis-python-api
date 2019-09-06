@@ -317,7 +317,7 @@ def compute_class_AP(ssd, dl, n_classes, iou_thresh=0.5, detect_thresh=0.35, num
     tps, clas, p_scores = [], [], []
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
     with torch.no_grad():
-        for input,target in progress_bar(dl):
+        for input,target in progress_bar(dl, display=False):
             output = ssd.learn.pred_batch(batch=(input, target))#, reconstruct=True)
 
             for i in range(target[0].size(0)):
