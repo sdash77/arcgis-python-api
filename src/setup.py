@@ -201,7 +201,6 @@ kwargs = {
             'arcgis/widgets/js/dist/extension.js',
             'arcgis/widgets/js/dist/arcgis-map-ipywidget.js',
             'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map',
-            'arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so'
             ]
         )
     ],
