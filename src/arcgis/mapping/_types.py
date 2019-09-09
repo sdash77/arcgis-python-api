@@ -16,7 +16,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
-from arcgis.widgets import MapView
+
 
 from uuid import uuid4 #unique ids for layers in web map
 import datetime
@@ -177,6 +177,7 @@ class WebMap(collections.OrderedDict):
     # def _repr_html_(self):
     def _ipython_display_(self, **kwargs):
         # return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
+        from arcgis.widgets import MapView
         mapwidget = MapView(gis=self._gis, item=self.item)
         mapwidget.mode = "2D"
         mapwidget.hide_mode_switch = True
@@ -1697,6 +1698,7 @@ class WebScene(collections.OrderedDict):
         collections.OrderedDict.__init__(self, webscenedict)
 
     def _ipython_display_(self, **kwargs):
+        from arcgis.widgets import MapView
         mapwidget = MapView(gis=self._gis, item=self.item)
         mapwidget.mode = "3D"
         mapwidget.hide_mode_switch = True
@@ -2091,9 +2093,9 @@ class MapImageLayer(Layer):
     def _str_replace(self, mystring, rd):
         """Replaces a value based on a key/value pair where the
         key is the text to replace and the value is the new value.
-    
+
         The find/replace is case insensitive.
-    
+
         """
         import re
         patternDict = {}
@@ -2104,7 +2106,7 @@ class MapImageLayer(Layer):
         for key in patternDict:
             regex_obj = patternDict[key]
             mystring = regex_obj.sub(key, mystring)
-        return mystring    
+        return mystring
 
     @property
     def manager(self):
