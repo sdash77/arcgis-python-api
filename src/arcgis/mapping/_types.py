@@ -2091,9 +2091,9 @@ class MapImageLayer(Layer):
     def _str_replace(self, mystring, rd):
         """Replaces a value based on a key/value pair where the
         key is the text to replace and the value is the new value.
-    
+
         The find/replace is case insensitive.
-    
+
         """
         import re
         patternDict = {}
@@ -2104,7 +2104,7 @@ class MapImageLayer(Layer):
         for key in patternDict:
             regex_obj = patternDict[key]
             mystring = regex_obj.sub(key, mystring)
-        return mystring    
+        return mystring
 
     @property
     def manager(self):

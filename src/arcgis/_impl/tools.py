@@ -3419,6 +3419,250 @@ class _FeatureAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 ###########################################################################
+class _HydrologyTool():
+    """Exposes the Orthmapping Geoprocessing tools"""
+    _gptbx = None
+    _url = None
+    _gis = None
+    _properties = None
+    _return_item = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis, verbose=False):
+        """initializer"""
+        if gis is None:
+            gis = arcgis.env.active_gis
+        if url is None:
+            url = gis.properties.helperServices['hydrology']['url']
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+        self._verbose = verbose
+
+    #----------------------------------------------------------------------
+    def _refresh(self):
+        params = {"f": "json"}
+        try:
+            dictdata = self._con.post(self._url, params)
+        except:
+            dictdata = self._con.get(self._url, params)
+        self._properties = PropertyMap(dictdata)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the services properties"""
+        if self._properties is None:
+            self._refresh()
+        return self._properties
+    #----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx._is_ra = True
+        return self._gptbx
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def invoke(self, method, **kwargs):
+        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
+        url = self._url + "/" + method
+        params = { "f" : "json"}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+                del k,v
+        return self._con.post(path=url, postdata=params, token=self._con.token)
+    #----------------------------------------------------------------------
+    @property
+    def _tools(self):
+        return self.properties.tasks
+    #----------------------------------------------------------------------
+    def _evaluate_spatial_input(self, input_points):
+        """
+        Helper function to determine if the input is either a FeatureSet or Spatially Enabled DataFrame, and
+        output to FeatureSet for subsequent processing.
+        :param input_points: FeatureSet or Spatially Enabled DataFrame
+        :return: FeatureSet
+        """
+        from arcgis.features import FeatureSet
+        from arcgis.features.geo._accessor import _is_geoenabled
+        from pandas import DataFrame
+
+        if isinstance(input_points, FeatureSet):
+            return input_points
+
+        elif isinstance(input_points, DataFrame) and _is_geoenabled(input_points):
+            return input_points.spatial.to_featureset()
+
+        elif isinstance(input_points, DataFrame) and not _is_geoenabled(input_points):
+            raise Exception(('input_points is a DataFrame, but does not appear to be spatially enabled. '
+                             'Using the <df>.spatial.set_geometry(col, sr=None) may help. (https://esri.github.io/arcgis-p'
+                             'ython-api/apidoc/html/arcgis.features.toc.html#arcgis.features.GeoAccessor.set_geometry)'))
+
+        else:
+            raise Exception('input_points must be either a FeatureSet or Spatially Enabled DataFrame instead of {}'.format(type(input_points)))
+
+    #----------------------------------------------------------------------
+    def trace_downstream(self,
+                         input_points,
+                         point_id_field=None,
+                         data_source_resolution=None,
+                         generalize=False,
+                         gis=None,
+                         future=False):
+        """
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_points                                                                Required FeatureSet. The point features used for calculating watersheds. These are referred to as pour points, because it is the location at which water pours out of the watershed.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        point_id_field                                                              Optional String. The field used to identify to the input points.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        data_source_resolution                                                      Optional String. Keyword indicating the source data that will be used in the analysis.
+
+                                                                                    The keyword is an approximation of the spatial resolution of the digital
+                                                                                    elevation model used to build the foundation hydrologic database. Since many
+                                                                                    elevation sources are distributed with units of arc seconds, we provide an
+                                                                                    approximation in meters for easier understanding.
+
+                                                                                    Values : The values for this parameter are:
+
+                                                                                      - `None` : The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data. This is the default.
+                                                                                      - `Finest` : Finest resolution available at each location from all possible data sources.
+                                                                                      - `10m` : The hydrologic source was built from 1/3 arc second - approximately 10 meter resolution, elevation data.
+                                                                                      - `30m` : The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
+                                                                                      - `90m` : The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        generalize                                                                  Optional Boolean. Determines if the output watersheds will be smoothed into
+                                                                                    simpler shapes or conform to the cell edges of the original DEM.
+
+                                                                                      - `True` : The polygons will be smoothed into simpler shapes. This is the default.
+                                                                                      - `False` : The edge of the polygons will conform to the edges of the original DEM.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns:
+
+
+        """
+        tool = self._tbx.trace_downstream
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+        if point_id_field is None:
+            point_id_field = defaults['point_id_field']
+        if data_source_resolution is None:
+            data_source_resolution = defaults['data_source_resolution']
+        if generalize is None:
+            generalize = defaults['generalize']
+        input_points = self._evaluate_spatial_input(input_points=input_points)
+        job = tool(input_points=input_points,
+                   point_id_field=point_id_field,
+                   data_source_resolution=data_source_resolution,
+                   generalize=generalize,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
+    #----------------------------------------------------------------------
+    def watershed(self,
+                  input_points,
+                  point_id_field=None,
+                  snap_distance=None,
+                  snap_distance_units=None,
+                  data_source_resolution=None,
+                  generalize=False,
+                  return_snapped_points=True,
+                  gis=None,
+                  future=False):
+        """
+        The 'watershed' task is used to identify catchment areas based on a particular
+        location you provide and ArcGIS Online Elevation data.
+
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_points                                                                Required FeatureSet. The point features used for calculating watersheds. These are referred to as pour points, because it is the location at which water pours out of the watershed.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        point_id_field                                                              Optional String. The field used to identify to the input points.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        snap_distance                                                               Optional Double. The maximum distance to move the location of an input point.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        snap_distance_units                                                         Optional String. The linear units specified for the snap distance. The
+                                                                                    values for this parameter are: Meters, Kilometers, Feet, Yards, or Miles
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        data_source_resolution                                                      Optional String. Keyword indicating the source data that will be used in the analysis.
+
+                                                                                    The keyword is an approximation of the spatial resolution of the digital
+                                                                                    elevation model used to build the foundation hydrologic database. Since many
+                                                                                    elevation sources are distributed with units of arc seconds, we provide an
+                                                                                    approximation in meters for easier understanding.
+
+                                                                                    Values : The values for this parameter are:
+
+                                                                                      - `None` : The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data. This is the default.
+                                                                                      - `Finest` : Finest resolution available at each location from all possible data sources.
+                                                                                      - `10m` : The hydrologic source was built from 1/3 arc second - approximately 10 meter resolution, elevation data.
+                                                                                      - `30m` : The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
+                                                                                      - `90m` : The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        generalize                                                                  Optional Boolean. Determines if the output watersheds will be smoothed into
+                                                                                    simpler shapes or conform to the cell edges of the original DEM.
+
+                                                                                      - `True` : The polygons will be smoothed into simpler shapes. This is the default.
+                                                                                      - `False` : The edge of the polygons will conform to the edges of the original DEM.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        return_snapped_points                                                       Optional Boolean. Determines if a point feature at the watershed's pour
+                                                                                    point will be returned. If snapping is enabled, this might not be the same
+                                                                                    as the input point.
+
+                                                                                      - `True` : A point feature will be returned. This is the default.
+                                                                                      - `False` : No point features will be returned.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns:
+
+        """
+        tool = self._tbx.watershed
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+        if data_source_resolution is None:
+            data_source_resolution = defaults['data_source_resolution']
+        if snap_distance_units is None:
+            snap_distance_units = defaults['snap_distance_units']
+        input_points = self._evaluate_spatial_input(input_points=input_points)
+        job = tool(input_points=input_points,
+                   point_id_field=point_id_field,
+                   snap_distance=snap_distance,
+                   snap_distance_units=snap_distance_units,
+                   data_source_resolution=data_source_resolution,
+                   generalize=generalize,
+                   return_snapped_points=return_snapped_points,
+                   gis=self._gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
+###########################################################################
 class _OrthoMappingTools():
     """Exposes the Orthmapping Geoprocessing tools"""
     _gptbx = None
