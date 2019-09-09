@@ -16,7 +16,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler
 from arcgis.geometry import SpatialReference, Polygon
 from arcgis.gis import Layer, _GISResource, Item
-
+from arcgis.widgets import MapView
 
 from uuid import uuid4 #unique ids for layers in web map
 import datetime
@@ -177,7 +177,6 @@ class WebMap(collections.OrderedDict):
     # def _repr_html_(self):
     def _ipython_display_(self, **kwargs):
         # return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
-        from arcgis.widgets import MapView
         mapwidget = MapView(gis=self._gis, item=self.item)
         mapwidget.mode = "2D"
         mapwidget.hide_mode_switch = True
@@ -1698,7 +1697,6 @@ class WebScene(collections.OrderedDict):
         collections.OrderedDict.__init__(self, webscenedict)
 
     def _ipython_display_(self, **kwargs):
-        from arcgis.widgets import MapView
         mapwidget = MapView(gis=self._gis, item=self.item)
         mapwidget.mode = "3D"
         mapwidget.hide_mode_switch = True
