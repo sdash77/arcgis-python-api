@@ -23,13 +23,6 @@ from arcgis import __version__ as py_api_version
 import arcgis.mapping
 import arcgis
 
-from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-from arcgis.raster import ImageryLayer
-from arcgis.gis import Layer
-from arcgis.gis import Item
-from arcgis._impl.common._mixins import PropertyMap
-from arcgis.mapping import MapImageLayer, VectorTileLayer
-
 log = logging.getLogger(__name__)
 
 DEFAULT_ELEMENT_HEIGHT = "400px"
@@ -65,6 +58,12 @@ def _flatten_list(*unpacked_list):
     return return_list
 
 def _get_extent(item):
+    from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
+    from arcgis.raster import ImageryLayer
+    from arcgis.gis import Layer
+    from arcgis.gis import Item
+    from arcgis._impl.common._mixins import PropertyMap
+    from arcgis.mapping import MapImageLayer, VectorTileLayer
     from pandas import DataFrame
 
     if isinstance(item, Item):
@@ -78,10 +77,17 @@ def _get_extent(item):
     elif isinstance(item, FeatureCollection):
         return dict(item.properties.layerDefinition.extent)
     elif isinstance(item, Layer):
-        if isinstance(item, FeatureLayer):
+        try:
             return dict(item.properties.extent)
-        else:
-            return dict(item.extent)
+        except:
+            ext = item.extent
+            return {
+                'spatialReference': {'wkid': 4326, 'latestWkid': 4326},
+                'xmin': ext[0][1],
+                'ymin': ext[0][0],
+                'xmax': ext[1][1],
+                'ymax': ext[1][0]
+            }
     else:
         raise Exception('could not infer layer type')
 
