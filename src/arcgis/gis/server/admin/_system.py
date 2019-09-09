@@ -519,7 +519,7 @@ class PlatformServiceManager(BaseServer):
     ------------------     --------------------------------------------------------------------
     url                    Required string. The service URL.
     ------------------     --------------------------------------------------------------------
-    connection             Required ServerConnection. The connection object.
+    connection             Required Connection. The connection object.
     ------------------     --------------------------------------------------------------------
     initialize             Optional string. Denotes whether to load the service properties at
                            creation (True). Default is False.
@@ -544,7 +544,7 @@ class PlatformServiceManager(BaseServer):
         ------------------     --------------------------------------------------------------------
         url                    Required string. The service URL.
         ------------------     --------------------------------------------------------------------
-        connection             Required ServerConnection. The connection object.
+        connection             Required Connection. The connection object.
         ------------------     --------------------------------------------------------------------
         initialize             Optional string. Denotes whether to load the service properties at
                                creation (True). Default is False.

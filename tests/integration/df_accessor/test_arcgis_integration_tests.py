@@ -22,6 +22,8 @@ import pandas.util.testing as tm
 USERNAME = None
 PASSWORD = None
 
+profiles = ['your_enterprise_profile', 'your_online_profile']
+
 _fs_dict = {
  "objectIdFieldName": "objectid",
  "globalIdFieldName": "globalid",
@@ -154,13 +156,14 @@ def test_content_import_data():
     tests the content.import_data works with the spatially enabled dataframe.
     """
     df = from_featureclass(filename=r"./world30.shp")
-    gis = GIS(username=USERNAME, password=PASSWORD)
-    item = gis.content.import_data(df)
-    assert item.type == 'Feature Service'
-    assert len(item.layers) > 0
-    fgdb = item.related_items('Service2Data', direction='forward')[0]
-    item.delete()
-    fgdb.delete()
+    for profile in profiles:
+        gis = GIS(profile=profile, verify_cert=False)
+        item = gis.content.import_data(df)
+        assert item.type == 'Feature Service'
+        assert len(item.layers) > 0
+        fgdb = item.related_items('Service2Data', direction='forward')[0]
+        item.delete()
+        fgdb.delete()
 # ---------------------------------------------------------------------
 def test_enrichment():
     """tests the enrich method"""
@@ -168,11 +171,12 @@ def test_enrichment():
     from arcgis.geoenrichment import enrich
     fs = FeatureSet.from_dict(_fs_dict)
     df = fs.sdf
-    gis = GIS(username=USERNAME, password=PASSWORD)
-    res = enrich(study_areas=df, data_collections=['Age'])
-    assert hasattr(df, 'spatial')
-    assert hasattr(df.SHAPE, 'geom')
-    assert df.spatial._name == 'SHAPE'
+    for profile in profiles:
+        gis = GIS(profile=profile, verify_cert=False)
+        res = enrich(study_areas=df, data_collections=['Age'])
+        assert hasattr(df, 'spatial')
+        assert hasattr(df.SHAPE, 'geom')
+        assert df.spatial._name == 'SHAPE'
 # -------------------------------------------------------------------------
 def test_featureset_df():
     """tests the featurelayer.query method"""
@@ -199,15 +203,14 @@ def test_gp():
 
 if __name__ == "__main__":
     print("Begin Integration Testing with Python API")
-    if USERNAME and PASSWORD:
-        print("################################################################")
-        print("   Testing content.import_data")
-        test_content_import_data()
-        print("   Testing content.import_data finished")
-        print("################################################################")
-        print("   Testing GeoEnrichment")
-        test_enrichment()
-        print("   Testing GeoEnrichment finished")
+    print("################################################################")
+    print("   Testing content.import_data")
+    test_content_import_data()
+    print("   Testing content.import_data finished")
+    print("################################################################")
+    print("   Testing GeoEnrichment")
+    test_enrichment()
+    print("   Testing GeoEnrichment finished")
     print("################################################################")
     print("   Testing FeatureSet.sdf")
     test_featureset_df()
