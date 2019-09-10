@@ -22,6 +22,8 @@ dependencies:
 - requests-toolbelt
 - requests_ntlm
 - requests-oauthlib
+- requests-negotiate-sspi    [win]
+- winkerberos      [win]
 - jupyterlab
 - pytest
 - matplotlib
