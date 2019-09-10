@@ -1,2 +1,2 @@
 from ._base import BaseServer
-from ._connection import ServerConnection
+from arcgis.gis._impl._con import Connection

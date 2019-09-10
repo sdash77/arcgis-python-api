@@ -1,5 +1,8 @@
 name: geosaurus_dev_env
 channels:
+- anaconda
+- conda-forge
+- dhirschfeld
 - defaults
 - fastai
 - pytorch
@@ -15,6 +18,10 @@ dependencies:
 - nbconvert
 - beautifulsoup4
 - requests
+- requests-kerberos==0.11.0
+- requests-toolbelt
+- requests_ntlm
+- requests-oauthlib
 - jupyterlab
 - pytest
 - matplotlib
@@ -35,3 +42,4 @@ dependencies:
   - sphinx-rtd-theme
   - pytest-blockage
   - junit2html
+  - requests-negotiate-sspi

@@ -105,7 +105,7 @@ class AttachmentManager(object):
         import copy
         columns = [col.upper() for col in ['ParentObjectid', 'ParentGlobalId', 'Id',
                                            'Name', 'GlobalId', 'ContentType',
-                                           'Size','KeyWords', 'URL', 'IMAGE_PREVIEW']]
+                                           'Size', 'KeyWords', 'URL', 'IMAGE_PREVIEW']]
         result_offset = 0
         if keywords is None:
             keywords = []
@@ -169,7 +169,7 @@ class AttachmentManager(object):
                 if attachment_types is not None and \
                    len(attachment_types) > 0: # performs contenttype search
                     if isinstance(attachment_types, str):
-                        attachment_types= attachment_types.split(',')
+                        attachment_types = attachment_types.split(',')
                     rows = [row for row in rows \
                             if os.path.splitext(row['NAME'])[1][1:] in attachment_types or \
                             row['CONTENTTYPE'] in attachment_types]
@@ -185,7 +185,7 @@ class AttachmentManager(object):
                 'size' : None,
             }
             iterparams = copy.copy(params)
-            for k,v in iterparams.items():
+            for k, v in iterparams.items():
                 if k in ['objectIds', 'globalIds',
                          'attachmentTypes'] and \
                    v == "":
@@ -194,7 +194,7 @@ class AttachmentManager(object):
                      v is None:
                     del params[k]
 
-            results = self._layer._con.post(url,params)
+            results = self._layer._con.post(url, params)
             rows = []
             if 'attachmentGroups' not in results:
                 return []

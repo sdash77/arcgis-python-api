@@ -1,51 +1,12 @@
-""" The portalpy module for working with the ArcGIS Online and Portal APIs."""
-from __future__ import absolute_import
-import io
+"""
+urllib parsing helpers to help figure out of the URL returns a file.
+"""
 import os
 import re
-import ssl
-import sys
-import json
-import uuid
-import zlib
-import shutil
-import logging
-import tempfile
-import mimetypes
 import unicodedata
-try:
-    #PY2
-    from cStringIO import StringIO
-except ImportError:
-    #PY3
-    from io import StringIO
-from io import BytesIO
-from collections import OrderedDict
-
-import six
-from six.moves.urllib_parse import urlparse, urlunparse, parse_qsl
-from six.moves.urllib_parse import quote, unquote, urlunsplit
-from six.moves.urllib_parse import urlencode, urlsplit
-from six.moves.urllib.error import HTTPError
-from six.moves.urllib import request
-from six.moves import http_cookiejar as cookiejar
-from six.moves import http_client
-from .common._utils import Error
-__version__ = '1.6.0'
-_log = logging.getLogger(__name__)
-
-DEFAULT_TOKEN = uuid.uuid4()
-########################################################################
-def jsonize_dict(val):
-    if isinstance(val, (dict, list)):
-        return json.dumps(val)
-    else:
-        return val
-class _StrictURLopener(request.FancyURLopener):
-    def http_error_default(self, url, fp, errcode, errmsg, headers):
-        if errcode != 200:
-            raise HTTPError(url, errcode, errmsg, headers, fp)
-
+from urllib.parse import urlparse, urlsplit, urljoin
+from urllib.parse import urlunsplit, unquote, quote
+#--------------------------------------------------------------------------
 def _normalize_url(url, charset='utf-8'):
     """ Normalizes a URL. Based on http://code.google.com/p/url-normalize."""
     def _clean(string):
@@ -140,17 +101,17 @@ def _normalize_url(url, charset='utf-8'):
     if url.endswith("#") and query == "" and fragment == "":
         path += "#"
     return urlunsplit((scheme, auth, path, query, fragment))
-
+#--------------------------------------------------------------------------
 def _parse_hostname(url, include_port=False):
     """ Parses the hostname out of a URL."""
-    if url:
-        parsed_url = urlparse((url))
-        return parsed_url.netloc if include_port else parsed_url.hostname
-
+    parsed_url = urlparse((url))
+    return parsed_url.netloc if include_port else parsed_url.hostname
+#--------------------------------------------------------------------------
 def _is_http_url(url):
     if url:
         return urlparse(url).scheme in ['http', 'https']
-
+    return False
+#--------------------------------------------------------------------------
 def _unpack(obj_or_seq, key=None, flatten=False):
     """ Turns a list of single item dicts in a list of the dict's values."""
 
@@ -165,7 +126,7 @@ def _unpack(obj_or_seq, key=None, flatten=False):
         new_list.extend(value)
 
     return new_list
-
+#--------------------------------------------------------------------------
 def _unpack_obj(obj, key=None, flatten=False):
     try:
         if key:
@@ -180,13 +141,50 @@ def _unpack_obj(obj, key=None, flatten=False):
         value = [item for sublist in value for item in sublist]
 
     return value
-
+#--------------------------------------------------------------------------
 def _remove_non_ascii(s):
     return ''.join(i for i in s if ord(i) < 128)
-
+#--------------------------------------------------------------------------
 def _tostr(obj):
     if not obj:
         return ''
     if isinstance(obj, list):
         return ', '.join(map(_tostr, obj))
     return str(obj)
+#--------------------------------------------------------------------------
+def _filename_from_url(url):
+    """:return: detected filename or None"""
+    fname = os.path.basename(urlparse(url).path)
+    if len(fname.strip(" \n\t.")) == 0 or \
+       len(fname.strip(" \n\t.").split('.')) == 1:
+        return None
+    return fname
+#--------------------------------------------------------------------------
+def _filename_from_headers(headers):
+    """Detect filename from Content-Disposition headers if present.
+    http://greenbytes.de/tech/tc2231/
+
+    :param: headers as dict, list or string
+    :return: filename from content-disposition header or None
+    """
+    if type(headers) == str:
+        headers = headers.splitlines()
+    if type(headers) == list:
+        headers = dict([x.split(':', 1) for x in headers])
+    cdisp = headers.get("Content-Disposition")
+    if not cdisp:
+        return None
+    cdtype = cdisp.split(';')
+    if len(cdtype) == 1:
+        return None
+    if cdtype[0].strip().lower() not in ('inline', 'attachment'):
+        return None
+    # several filename params is illegal, but just in case
+    fnames = [x for x in cdtype[1:] if x.strip().startswith('filename=')]
+    if len(fnames) > 1:
+        return None
+    name = fnames[0].split('=')[1].strip(' \t"')
+    name = os.path.basename(name)
+    if not name:
+        return None
+    return name

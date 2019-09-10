@@ -267,7 +267,7 @@ class ReportManager(BaseServer):
         if since.lower() == "custom":
             params['to'] = to_value
             params['from'] = from_value
-        p = {"f" : "json",'usagereport' : params}
+        p = {"f" : "json", 'usagereport' : json.dumps(params)}
         res = self._con.post(path=url,
                              postdata=p)
         #  Refresh the metrics object
@@ -350,9 +350,9 @@ class ReportManager(BaseServer):
 
             }
         res = self.create(reportname=reportname,
-                                       queries=queries,
-                                       since=since,
-                                       metadata=metadata)
+                          queries=queries,
+                          since=since,
+                          metadata=metadata)
         if isinstance(res, Report):
             data = res.query()
             res.delete()

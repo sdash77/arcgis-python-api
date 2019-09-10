@@ -140,7 +140,7 @@ class DataStoreManager(BaseServer):
             config = {}
         params = {
             "f" : "json",
-            "datastoreConfig" : config
+            "datastoreConfig" : json.dumps(config)
         }
         url = self._url + "/config/update"
         return self._con.post(path=url, postdata=params)
@@ -347,7 +347,7 @@ class DataStoreManager(BaseServer):
 
         """
         if str(sde).lower().endswith('.sde'):
-            from arcgis.gis.server._common import ServerConnection
+            from arcgis.gis._impl._con import Connection
             from arcgis.gis.server.catalog import ServicesDirectory
             from arcgis.gis.server import Uploads
 
@@ -357,7 +357,7 @@ class DataStoreManager(BaseServer):
             if self._con.portal_connection:
                 d = ServicesDirectory(url=self._con.baseurl,
                                       portal_connection=self._con.portal_connection)
-            elif isinstance(self._con, ServerConnection):
+            elif isinstance(self._con, Connection):
                 d = ServicesDirectory(url=self._con.baseurl)
                 d._con = self._con
 
@@ -639,7 +639,7 @@ class DataStoreManager(BaseServer):
             A response
         """
         params = {
-            "item" : item,
+            "item" : json.dumps(item),
             "f" : "json"
         }
         url = self._url + "/registerItem"
@@ -876,7 +876,7 @@ class Datastore(BaseServer):
         """
         Sets the manifest resource for a big data file share.
         """
-        manifest_upload_url =  self._url + '/manifest/update'
+        manifest_upload_url = self._url + '/manifest/update'
         if manifest_upload_url.find('/bigDataFileShares') != -1:
             with _tempinput(json.dumps(value)) as tempfilename:
                 # Build the files list (tuples)
@@ -887,7 +887,7 @@ class Datastore(BaseServer):
                     'f' : 'pjson'
                 }
 
-                resp = self._.con.post(manifest_upload_url, postdata, files, verify_cert=False)
+                resp = self._con.post(manifest_upload_url, postdata, files, verify_cert=False)
                 if resp['status'] == 'success':
                     return True
                 else:

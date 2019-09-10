@@ -18,7 +18,6 @@ from arcgis.mapping import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
 from arcgis.mapping._types import SceneLayer
-from .._common import ServerConnection
 from ._geodataservice import GeoData
 from ._layerfactory import Service
 from ..admin._services import Service as AdminService
