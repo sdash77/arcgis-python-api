@@ -227,7 +227,7 @@ class Connection(object):
             self._session.auth = GuessAuth(None, None)
         else:
             try:
-                from requests_negotiate_sspi import HttpNegotiateAuth
+                from arcgis.gis._impl.requests_negotiate_sspi import HttpNegotiateAuth
                 HAS_KERBEROS = True
             except:
                 HAS_KERBEROS = False

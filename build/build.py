@@ -13,14 +13,15 @@ import shutil
 import platform
 import subprocess
 import tempfile
+import yaml
 from uuid import uuid4
 import logging
 log = logging.getLogger(__name__)
 
 import yaml
 
-BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version} "\
-                 "--output-folder {output_dir}"
+BASE_BUILD_CMD = "cd {build_dir} && conda build {additional_channels} "\
+                 "arcgis --py {python_version} --output-folder {output_dir}"
 BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
                    "-o {output_dir}" 
 BASE_INDEX_CMD = "cd {output_dir} && conda index {os_build_target}"
@@ -288,8 +289,15 @@ def _check_edge_cases(os_build_targets,
             raise RuntimeError("{} not supported py. Supported pys = "\
                                "{}".format(python_version, SUPPORTED_PYS))
 
+def _get_add_channels():
+    with open(META_YAML_FILE_PATH, "r") as f:
+        meta = yaml.safe_load(f)
+        return meta["channels"]
+
 def _run_conda_build_command(python_version, output_dir):
+    add_channels = " ".join(f"-c {x}" for x in _get_add_channels())
     _run_shell_cmd(BASE_BUILD_CMD.format(build_dir = BUILD_DIR,
+                                         additional_channels = add_channels,
                                          python_version = python_version,
                                          output_dir = output_dir))
 
