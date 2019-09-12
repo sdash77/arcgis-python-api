@@ -1,7 +1,7 @@
 """
 Entry point to working with licensing on Portal or ArcGIS Online
 """
-from arcgis.gis._impl._con import Connection
+from ..._impl.connection import _ArcGISConnection
 from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS
 from ._base import BasePortalAdmin
@@ -35,14 +35,14 @@ class LicenseManager(BasePortalAdmin):
         """class initializer"""
         super(LicenseManager, self).__init__(url=url, gis=gis)
         self._url = url
-        if isinstance(gis, Connection):
+        if isinstance(gis, _ArcGISConnection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                "connection must be of type GIS or Connection")
+                "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(connection=self._con)
     #----------------------------------------------------------------------

@@ -30,11 +30,11 @@ def test_chunks():
     assert count == 2
     assert all(sizes)
 #--------------------------------------------------------------------------
-def _test_from_layer():
+def test_from_layer():
     """tests the from_layer method"""
     item_id = "01c4d9bf9c7a4ad79ec7bd7afa0c2316"
     where = """CNTRY_NAME = 'San Marino'"""
-    gis = GIS(profile="your_online_profile", verify_cert=False)
+    gis = GIS(profile="agol_uc_demo", verify_cert=False)
     lyr = gis.content.get('cede923d030e43819b36327b95cce9e5').layers[0]
     df = from_layer(lyr, where)
     #print(df)
@@ -45,10 +45,10 @@ def _test_from_layer():
     assert df.spatial.area > 0
     assert df.SHAPE.geom.centroid.name == 'centroid'
 #--------------------------------------------------------------------------
-def _test_to_layer():
+def test_to_layer():
     """ tests the to_layer operation"""
     from arcgis.features import FeatureLayer
-    gis = GIS(profile="your_online_profile", verify_cert=False)
+    gis = GIS(profile="agol_uc_demo", verify_cert=False)
     lyr = gis.content.get('cede923d030e43819b36327b95cce9e5').layers[0]
     where = """CNTRY_NAME = 'San Marino'"""
     df = from_layer(lyr, where)
@@ -60,3 +60,8 @@ def _test_to_layer():
     layer = to_layer(df, layer=lyr, update_existing=True)
     assert layer.query(where).sdf['FIPS_CNTRY'][0] == 'SM'
 #--------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    test_chunks()
+    test_from_layer()
+    test_to_layer()

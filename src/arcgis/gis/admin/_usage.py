@@ -3,7 +3,7 @@ Provides functions to gather usage statistics for Portal/ArcGIS Online
 """
 import os
 import datetime
-from arcgis.gis._impl._con import Connection
+from ..._impl.connection import _ArcGISConnection
 from ..._impl.common._mixins import PropertyMap
 from ..._impl.common._utils import local_time_to_online, timestamp_to_datetime
 from ...gis import GIS

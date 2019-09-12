@@ -8,13 +8,13 @@ import imghdr
 import logging
 import os
 import tempfile
-from .connection import _normalize_url
+from .connection import _ArcGISConnection, _normalize_url
 from .connection import _is_http_url
 from .connection import _parse_hostname, _unpack
 from .common._utils import _to_utf8
 from six.moves.urllib import request
 from six.moves.urllib_parse import urlparse
-from arcgis.gis._impl._con import Connection
+
 __version__ = '1.0'
 
 _log = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ class Portal(object):
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
-                 tokenurl=None, verify_cert=True, client_id=None, custom_auth=None):
+                 tokenurl=None, verify_cert=True, client_id=None):
         """ The Portal constructor. Requires URL and optionally username/password."""
         url = url.strip()            # be permissive in accepting home app urls
         homepos = url.find('/home')
@@ -135,34 +135,32 @@ class Portal(object):
         if not connection:
             _log.debug('Connecting to portal: ' + self.hostname)
             if self._is_arcpy:
-                self.con = Connection(baseurl="pro",
-                                      tokenurl=tokenurl,
-                                      username=username,
-                                      password=password,
-                                      key_file=key_file,
-                                      cert_file=cert_file,
-                                      expiration=expiration,
-                                      all_ssl=True,
-                                      referer=referer,
-                                      proxy_host=proxy_host,
-                                      proxy_port=proxy_port,
-                                      verify_cert=verify_cert,
-                                      custom_auth=custom_auth)
+                self.con = _ArcGISConnection(baseurl="pro",
+                                             tokenurl=tokenurl,
+                                             username=username,
+                                             password=password,
+                                             key_file=key_file,
+                                             cert_file=cert_file,
+                                             expiration=expiration,
+                                             all_ssl=True,
+                                             referer=referer,
+                                             proxy_host=proxy_host,
+                                             proxy_port=proxy_port,
+                                             verify_cert=verify_cert)
             else:
-                self.con = Connection(baseurl=self.resturl,
-                                      tokenurl=tokenurl,
-                                      username=username,
-                                      password=password,
-                                      key_file=key_file,
-                                      cert_file=cert_file,
-                                      expiration=expiration,
-                                      all_ssl=True,
-                                      referer=referer,
-                                      proxy_host=proxy_host,
-                                      proxy_port=proxy_port,
-                                      verify_cert=verify_cert,
-                                      client_id=client_id,
-                                      custom_auth=custom_auth)
+                self.con = _ArcGISConnection(baseurl=self.resturl,
+                                             tokenurl=tokenurl,
+                                             username=username,
+                                             password=password,
+                                             key_file=key_file,
+                                             cert_file=cert_file,
+                                             expiration=expiration,
+                                             all_ssl=True,
+                                             referer=referer,
+                                             proxy_host=proxy_host,
+                                             proxy_port=proxy_port,
+                                             verify_cert=verify_cert,
+                                             client_id=client_id)
         #self.get_version(True)
         self.get_properties(True)
 

@@ -3,7 +3,7 @@ Represents messages left by users on a given Item in the GIS
 """
 from __future__ import absolute_import
 import json
-from arcgis.gis._impl._con import Connection
+from .connection import _ArcGISConnection
 from ..gis import GIS, Item
 ########################################################################
 class Comment(dict):
@@ -32,14 +32,14 @@ class Comment(dict):
         self._url = url
         self._gis = item._gis
         self._portal = self._gis._portal
-        if isinstance(item._gis, Connection):
+        if isinstance(item._gis, _ArcGISConnection):
             self._con = item._gis
         elif isinstance(item._gis, GIS):
             self._gis = item._gis
             self._con = item._gis._con
         else:
             raise ValueError(
-                "connection must be of type GIS or Connection")
+                "connection must be of type GIS or _ArcGISConnection")
         if data and \
            isinstance(data, dict):
             for k,v in data.items():

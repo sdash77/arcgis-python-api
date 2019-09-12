@@ -23,7 +23,7 @@ import logging
 
 from urllib.error import  HTTPError
 
-from .._impl import portalpy# .._impl.portalpy as portalpy
+import arcgis._impl.portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
@@ -307,8 +307,7 @@ class GIS(object):
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id,
-                                           referer=self._referer,
-                                           custom_auth=kwargs.pop("custom_auth", None))
+                                           referer=self._referer)
 
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
@@ -326,7 +325,7 @@ class GIS(object):
             if url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in and \
                self._portal.con._auth.lower() == 'oauth':
-                from urllib.parse import urlparse
+                from six.moves.urllib_parse import urlparse
                 props = self._portal.get_properties(force=False)
                 url = "%s://%s.%s" % (urlparse(self._url).scheme,
                                       props['urlKey'],
@@ -9736,7 +9735,8 @@ class _GISResource(object):
     """
     def __init__(self, url, gis=None):
 
-        from arcgis.gis._impl._con import Connection
+        from .server._common import ServerConnection
+        from .._impl.connection import _ArcGISConnection
         self._hydrated = False
         self.url = url
         self._url = url
@@ -9745,9 +9745,12 @@ class _GISResource(object):
             gis = GIS(set_active=False)
             self._gis = gis
             self._con = gis._con
+        #elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
+            #self._gis = GIS(set_active=False)
+            #self._con = gis
         else:
             self._gis = gis
-            if isinstance(gis, Connection):
+            if isinstance(gis, (ServerConnection, _ArcGISConnection)):
                 self._con = gis
             else:
                 self._con = gis._con
@@ -9803,7 +9806,10 @@ class _GISResource(object):
                 if self._con._token is None:
                     self._lazy_token = None
                 else:
-                    self._lazy_token = self._con.token
+                    if isinstance(self._con, arcgis._impl._ArcGISConnection):
+                        self._lazy_token = self._con.generate_portal_server_token(self._url)
+                    else:
+                        self._lazy_token = self._con.token
 
                 self._refresh()
 

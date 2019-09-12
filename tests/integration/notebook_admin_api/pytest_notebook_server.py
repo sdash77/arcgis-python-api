@@ -18,31 +18,6 @@ from arcgis.gis.nb._security import SecurityManager #
 from arcgis.gis.nb._system import SystemManager, WebAdaptor, WebAdaptorManager
 from arcgis.gis.nb._system import Container, DirectoryManager
 
-CREATED = False
-
-import configparser
-import os
-from pathlib import Path
-
-current_file_path = Path(os.path.realpath(__file__))
-
-#@pytest.fixture
-def portal_config():
-    _config_reader = configparser.ConfigParser()
-    _unittest_path = current_file_path.parent.parent
-    root_init_file = _unittest_path.joinpath("unittest.ini").__str__()
-    _config_reader.read(root_init_file, 'UTF-8')
-    portal_list_file = _unittest_path.joinpath(_config_reader['portal_list']['inifile']).__str__()
-    parser = configparser.SafeConfigParser()
-    parser.read(portal_list_file)
-    GIS(url=parser.get("datascienceqa", "url"),
-        username=parser.get("datascienceqa", "admin_user"),
-        password=parser.get("datascienceqa", "admin_password"),
-        profile='notebookdev',
-        verify_cert=False)
-
-
-
 profiles = [
     'notebookdev'
 ]
@@ -51,11 +26,6 @@ profiles = [
 class TestNBLogManager(unittest.TestCase):
     """tests the log functionality of the notebook server"""
     _server = None
-    def setUp(self):
-        if CREATED == False:
-            portal_config()
-            CREATED = True
-
     @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [server for server in gis.admin.servers.list() \
@@ -111,10 +81,6 @@ class TestNBLogManager(unittest.TestCase):
 ###########################################################################
 class TestNotebookServer(unittest.TestCase):
     """tests the base level to the notebook server"""
-    def setUp(self):
-        if CREATED == False:
-            portal_config()
-            CREATED = True
     @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [server for server in gis.admin.servers.list() \
@@ -149,10 +115,6 @@ class TestNBSecurityModule(unittest.TestCase):
     """
     Tests the Security Module for the ArcGIS Notebook Server
     """
-    def setUp(self):
-        if CREATED == False:
-            portal_config()
-            CREATED = True
     @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [server for server in gis.admin.servers.list() \
@@ -187,10 +149,6 @@ class TestNBSecurityModule(unittest.TestCase):
 ###########################################################################
 class TestNBMachineManager(unittest.TestCase):
     """tests the MachineManager methods"""
-    def setUp(self):
-        if CREATED == False:
-            portal_config()
-            CREATED = True
     @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [server for server in gis.admin.servers.list() \
@@ -299,10 +257,7 @@ class TestNBMachineManager(unittest.TestCase):
                                           organization='orgtest', city='city', state='state', country="US"))########################################################################
 class TestNBNotebookManager(unittest.TestCase):
     """Tests the Notebook Manager Class"""
-    def setUp(self):
-        if CREATED == False:
-            portal_config()
-            CREATED = True
+
     @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [server for server in gis.admin.servers.list() \
@@ -342,10 +297,6 @@ class TestNBNotebookManager(unittest.TestCase):
 ########################################################################
 class TestSystemManager(unittest.TestCase):
     """Tests the SystemManager Class"""
-    def setUp(self):
-        if CREATED == False:
-            portal_config()
-            CREATED = True
     @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [server for server in gis.admin.servers.list() \
@@ -390,10 +341,6 @@ class TestSystemManager(unittest.TestCase):
 ########################################################################
 class TestWebAdaptorManager(unittest.TestCase):
     """Tests the WebAdaptor, WebAdaptorManager Classes"""
-    def setUp(self):
-        if CREATED == False:
-            portal_config()
-            CREATED = True
     @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [server for server in gis.admin.servers.list() \
@@ -424,10 +371,6 @@ class TestWebAdaptorManager(unittest.TestCase):
 ########################################################################
 class TestDirectoryManager(unittest.TestCase):
     """Tests the DirectoryManager Classes"""
-    def setUp(self):
-        if CREATED == False:
-            portal_config()
-            CREATED = True
     @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [server for server in gis.admin.servers.list() \

@@ -33,7 +33,7 @@ def _estimate_credits(task, parameters, gis=None):
     elif gis is None and \
          _arcgis.env.active_gis is None:
         raise Exception("A GIS must be provided and/or set as active.")
-    if gis.version >= [6, 4] and \
+    if gis.version >= [6,4] and \
        gis._portal.is_arcgisonline:
         url = gis.properties['helperServices']['creditEstimation']['url']
         gptask = "EstimateCredits"

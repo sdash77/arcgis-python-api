@@ -1,9 +1,7 @@
 from unittest.mock import MagicMock
 
-class MockConnection(MagicMock):
+class MockArcGISConnection(MagicMock):
     post = MagicMock()
     get = MagicMock()
-    put = MagicMock()
-    delete = MagicMock()
     token = MagicMock()
     pass

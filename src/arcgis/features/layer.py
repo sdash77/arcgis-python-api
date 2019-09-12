@@ -1790,9 +1790,9 @@ class FeatureLayer(Layer):
 
         if 'error' in result:
             raise ValueError(result)
-        if  params['returnCountOnly'] == 'true' or params['returnCountOnly'] == True:
+        if params['returnCountOnly']:
             return result['count']
-        elif params['returnIdsOnly'] == 'true' or params['returnIdsOnly'] == True:
+        elif params['returnIdsOnly']:
             return result
         elif 'extent' in result:
             return result
