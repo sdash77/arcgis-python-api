@@ -385,9 +385,9 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             try:
                 job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
             except:
-                job_info = gptool._con.post(submit_url, gp_params, token=gptool._token, token_as_header=False)
+                job_info = gptool._con.post(submit_url, gp_params)
         else:
-            job_info = gptool._con.post(submit_url, gp_params, token_as_header=False)
+            job_info = gptool._con.post(submit_url, gp_params)
         job_id = job_info['jobId']
         if future:
             executor =  concurrent.futures.ThreadPoolExecutor(1)
