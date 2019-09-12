@@ -209,11 +209,11 @@ class VersionManager(object):
 
 
         """
-        for v in self.all:
+        for v in self.versions:
             if version.lower() == v.properties['versionName'].lower():
                 v.mode = mode
                 return v
-        return None
+        return
 ########################################################################
 class Version(object):
     """
@@ -603,7 +603,7 @@ class Version(object):
                 params['description'] = description
             if permission:
                 params['accessPermission'] = permission
-            res = self._con.post(url, params)
+            res  = self._con.post(url, params)
             self._properties = None
             return res['success']
         return False

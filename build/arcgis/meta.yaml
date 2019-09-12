@@ -7,10 +7,6 @@ build:
 package:
   name: arcgis
   version: 1.6.2
-channels:
-- defaults
-- anaconda
-- conda-forge
 requirements:
   build:
   - python
@@ -21,16 +17,11 @@ requirements:
   - widgetsnbextension >=3
   - pandas >=0.23
   - numpy
+  - pyshp
   - matplotlib
   - keyring
   - pytest
   - pyshp <2
-  - beautifulsoup4
-  - requests
-  - requests-kerberos >=0.11.0
-  - requests-toolbelt
-  - requests_ntlm
-  - requests-oauthlib
   - winkerberos      [win]
   run:
   - python
@@ -40,15 +31,10 @@ requirements:
   - widgetsnbextension >=3
   - pandas >=0.23
   - numpy
+  - pyshp
   - matplotlib
   - keyring
   - pyshp <2
-  - beautifulsoup4
-  - requests
-  - requests-kerberos >=0.11.0
-  - requests-toolbelt
-  - requests_ntlm
-  - requests-oauthlib
   - winkerberos      [win]
 source:
   path: ../../src

@@ -250,8 +250,8 @@ class _GISService(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                if isinstance(self._con, arcgis.gis._impl._con._connection.Connection):
-                    self._token = self._con.token
+                if isinstance(self._con, arcgis._impl._ArcGISConnection):
+                    self._token = self._con.generate_portal_server_token(url)
                 else:
                     self._token = self._con.token
                 self._refresh()

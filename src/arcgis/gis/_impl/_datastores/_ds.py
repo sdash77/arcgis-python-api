@@ -1,6 +1,6 @@
 import time as _time
 from arcgis.gis import GIS
-from arcgis.gis._impl._con import Connection
+from arcgis._impl import _ArcGISConnection
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
 ###########################################################################

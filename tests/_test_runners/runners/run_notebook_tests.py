@@ -38,7 +38,7 @@ def run_notebook_tests(config, paths, output_dir,
 
     # Run the actual tests, run setup/teardown if applicable
     if 'setup_script' in config:
-        run_shell_command(f"{sys.executable} {config['setup_script']}")
+        run_shell_command(f"python {config['setup_script']}")
 
     with _empty_temp_folder() as empty_temp_dir:
         runner = XMLTestRunner(empty_temp_dir)
@@ -47,7 +47,7 @@ def run_notebook_tests(config, paths, output_dir,
             os.rename(temp_xml_path, output_xml_path)
 
     if 'teardown_script' in config:
-        run_shell_command(f"{sys.executable} {config['teardown_script']}")
+        run_shell_command(f"python {config['teardown_script']}")
 
     # Write an index file for easier viewing, return outputted xml file
     _write_index_html_file_for_outputted_notebooks(
