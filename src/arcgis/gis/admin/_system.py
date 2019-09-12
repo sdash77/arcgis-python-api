@@ -1,7 +1,7 @@
 """
 Modifies a local portal's system settings.
 """
-from arcgis.gis._impl._con import Connection
+from ..._impl.connection import _ArcGISConnection
 from .. import GIS
 from ._base import BasePortalAdmin
 from ..._impl.common._mixins import PropertyMap
@@ -24,14 +24,14 @@ class System(BasePortalAdmin):
                                      gis=gis,
                                      **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, Connection):
+        if isinstance(gis, _ArcGISConnection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                    "connection must be of type GIS or Connection")
+                    "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
@@ -403,14 +403,14 @@ class WebAdaptors(BasePortalAdmin):
                                         gis=gis,
                                         **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, Connection):
+        if isinstance(gis, _ArcGISConnection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                    "connection must be of type GIS or Connection")
+                    "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
@@ -522,14 +522,14 @@ class WebAdaptor(BasePortalAdmin):
                                         gis=gis,
                                         **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, Connection):
+        if isinstance(gis, _ArcGISConnection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                    "connection must be of type GIS or Connection")
+                    "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
@@ -568,14 +568,14 @@ class Directory(BasePortalAdmin):
                                         gis=gis,
                                         **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, Connection):
+        if isinstance(gis, _ArcGISConnection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                    "connection must be of type GIS or Connection")
+                    "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
@@ -642,14 +642,14 @@ class PortalLicense(BasePortalAdmin):
                                      gis=gis,
                                      **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, Connection):
+        if isinstance(gis, _ArcGISConnection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                    "connection must be of type GIS or Connection")
+                    "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------
@@ -852,14 +852,14 @@ class Licenses(BasePortalAdmin):
                                      gis=gis,
                                      **kwargs)
         initialize = kwargs.pop("initialize", False)
-        if isinstance(gis, Connection):
+        if isinstance(gis, _ArcGISConnection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                    "connection must be of type GIS or Connection")
+                    "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(self._gis)
     #----------------------------------------------------------------------

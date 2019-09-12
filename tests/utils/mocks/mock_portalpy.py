@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
-from utils.mocks.mock_arcgisconnection import MockConnection
+from utils.mocks.mock_arcgisconnection import MockArcGISConnection
 
 class MockPortalPy(MagicMock):
-    con = MockConnection()
+    con = MockArcGISConnection()
     pass

@@ -37,7 +37,7 @@ class UtilityNetworkManager(object):
             gis = env.active_gis
         self._gis = gis
         self._con = gis._portal.con
-        self._url = url
+        self._url =  url
         self._version = version
         self._version_guid = version._guid
         self._version_name = version.properties.versionName
