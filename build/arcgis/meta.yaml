@@ -11,6 +11,7 @@ channels:
 - defaults
 - anaconda
 - conda-forge
+- dhirschfeld
 requirements:
   build:
   - python
@@ -27,10 +28,11 @@ requirements:
   - pyshp <2
   - beautifulsoup4
   - requests
-  - requests-kerberos >=0.11.0
+  - requests-kerberos==0.11.0
   - requests-toolbelt
   - requests_ntlm
   - requests-oauthlib
+  - requests-negotiate-sspi    [win]
   - winkerberos      [win]
   run:
   - python
@@ -45,10 +47,11 @@ requirements:
   - pyshp <2
   - beautifulsoup4
   - requests
-  - requests-kerberos >=0.11.0
+  - requests-kerberos==0.11.0
   - requests-toolbelt
   - requests_ntlm
   - requests-oauthlib
+  - requests-negotiate-sspi    [win]
   - winkerberos      [win]
 source:
   path: ../../src
