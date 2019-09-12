@@ -19,8 +19,24 @@ from glob import glob
 from subprocess import check_output, CalledProcessError, STDOUT
 import atexit
 import logging
+import site
 log = logging.getLogger()
 here = path.abspath(path.dirname(__file__))
+
+def _get_rel_site_packages_dir():
+    for sitepackages in site.getsitepackages():
+        try:
+            res = "lib" + sitepackages.split("lib")[1] + "/arcgis/gis/_impl"
+            if res:
+                return res
+        except Exception:
+            pass
+        try:
+            res = "Lib" + sitepackages.split("Lib")[1] + "/arcgis/gis/_impl"
+            if res:
+                return res
+        except Exception:
+            pass
 
 # Conda uses this setup file, but we want to suppress some functionality
 if "--conda-install-mode" in sys.argv:
@@ -201,8 +217,9 @@ kwargs = {
             'arcgis/widgets/js/dist/extension.js',
             'arcgis/widgets/js/dist/arcgis-map-ipywidget.js',
             'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map',
-            ]
-        )
+        ]), (_get_rel_site_packages_dir() + "arcgis/gis/_impl", [
+            "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so"
+        ])
     ],
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
