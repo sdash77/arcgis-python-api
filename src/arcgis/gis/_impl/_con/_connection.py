@@ -287,7 +287,7 @@ class Connection(object):
         ===========================   =====================================================
         """
         url = path
-        token_as_header = kwargs.pop('token_as_header', True)
+        token_as_header = kwargs.pop('token_as_header', False)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
         if url.find('://') == -1:
             if url.startswith('/') == False:
@@ -486,7 +486,7 @@ class Connection(object):
 
         """
         url = path
-        token_as_header = kwargs.pop('token_as_header', True)
+        token_as_header = kwargs.pop('token_as_header', False)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
         if self._auth == "IWA":
             self._session = None

@@ -382,9 +382,12 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
         task_url = "{}/{}".format(url, task_name)
         submit_url = "{}/submitJob".format(task_url)
         if add_token and submit_url.lower().find("arcgis.com") == -1:
-            job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+            try:
+                job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+            except:
+                job_info = gptool._con.post(submit_url, gp_params, token=gptool._token, token_as_header=False)
         else:
-            job_info = gptool._con.post(submit_url, gp_params)
+            job_info = gptool._con.post(submit_url, gp_params, token_as_header=False)
         job_id = job_info['jobId']
         if future:
             executor =  concurrent.futures.ThreadPoolExecutor(1)

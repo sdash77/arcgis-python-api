@@ -152,7 +152,10 @@ def _generate_fn(task, tbx):
 
 
     taskurl = tbx.url + "/" + task
-    taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+    try:
+        taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+    except:
+        taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token, token_as_header=False)
 
     # execution_type = taskprops['executionType']
     #
@@ -454,7 +457,10 @@ class _AsyncResource(_GISResource):
 
     def _refresh(self):
         params = {"f": "json"}
-        dictdata = self._con.get(path=self.url, params=params, token=self._con.token) # token=self._token)
+        try:
+            dictdata = self._con.get(path=self.url, params=params, token=self._con.token) # token=self._token)
+        except:
+            dictdata = self._con.get(path=self.url, params=params, token=self._con.token, token_as_header=False) # token=self._token)
         self.properties = PropertyMap(dictdata)
 
     def _analysis_job(self, task, params):

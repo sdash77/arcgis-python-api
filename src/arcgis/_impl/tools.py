@@ -1602,7 +1602,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
 
         input_layer = self._feature_input(input_layer)
-        output_name = {"serviceProperties": {"name": output_name }}
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
         if estimate:
             task ="DissolveBoundaries"
 
