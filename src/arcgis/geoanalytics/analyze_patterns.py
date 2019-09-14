@@ -330,7 +330,8 @@ def glr(input_layer,
         output_name=None,
         gis=None,
         context=None,
-        future=False):
+        future=False,
+        return_tuple=False):
     """
     .. image:: _static/images/glr/glr.png 
 
@@ -432,9 +433,13 @@ def glr(input_layer,
                                  results. The GPJob can be queried on the status of the execution.
 
                                  The default value is 'False'. 
+    --------------------------   ---------------------------------------------------------------      
+    return_tuple                 Optional boolean. If 'True', a named tuple with multiple output keys is returned.
+                                 
+                                 The default value is 'False'. 
     ==========================   ===============================================================
 
-    :returns: named tuple with the following keys:
+    :returns: a named tuple with the following keys if ``return_tuple`` is set to 'True':
 
       "output" : featureLayer
 
@@ -444,6 +449,7 @@ def glr(input_layer,
 
       "process_info" : list
 
+    else returns a feature layer of the results.
     .. code-block:: python
 
             # Usage Example: To train a model for predicting 911 calls.
@@ -516,6 +522,7 @@ def glr(input_layer,
         "dep_mapping" : (list, "dependentMapping"),
         "output_name" : (str, "outputName"),
         "context": (str, "context"),
+        "return_tuple": (bool, "returnTuple"),
         "output": (_FeatureSet, "output"),
         "output_predicted": (_FeatureSet, "outputPredicted"),
         "coefficient_table" : (_Table, "coefficientTable"),
@@ -533,7 +540,11 @@ def glr(input_layer,
             gpjob = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, "GeneralizedLinearRegression", params, param_db, return_values, _use_async, url, True, future=future)
-        return res
+
+        if return_tuple:
+            return res
+        else:
+            return output_service   
     except:
         output_service.delete()
         raise
