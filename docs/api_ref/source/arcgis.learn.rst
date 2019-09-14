@@ -51,3 +51,10 @@ FeatureClassifier
     :members:
     :inherited-members:
     :undoc-members:
+
+PSPNetClassifier
+------------------
+.. autoclass:: arcgis.learn.PSPNetClassifier
+    :members:
+    :inherited-members:
+    :undoc-members:

@@ -68,7 +68,7 @@ class UnetClassifier(ArcGISModel):
 
         self.learn.model = self.learn.model.to(self._device)
 
-        _set_multigpu_callback(self)
+        # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
         if pretrained_path is not None:
             self.load(pretrained_path)
 
