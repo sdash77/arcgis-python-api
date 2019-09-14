@@ -231,7 +231,7 @@ class FeatureClassifier(ArcGISModel):
         return message
 
     @staticmethod
-    def convert_to_degrees(value, reference):
+    def _convert_to_degrees(value, reference):
         d0 = value[0][0]
         d1 = value[0][1]
         d = float(d0) / float(d1)
@@ -301,8 +301,8 @@ class FeatureClassifier(ArcGISModel):
             images_data.append(
                 {
                     'image_path': file,
-                    'y': FeatureClassifier.convert_to_degrees(exif['GPSInfo'][2], exif['GPSInfo'][1]),
-                    'x': FeatureClassifier.convert_to_degrees(exif['GPSInfo'][4], exif['GPSInfo'][3])
+                    'y': FeatureClassifier._convert_to_degrees(exif['GPSInfo'][2], exif['GPSInfo'][1]),
+                    'x': FeatureClassifier._convert_to_degrees(exif['GPSInfo'][4], exif['GPSInfo'][3])
                 }
             )
         

@@ -110,7 +110,7 @@ def _get_extent_of_dataframe(sdf):
             'ymax': sdf_ext[3]
         }
     else:
-        raise Exception('Could not add get extent of DataFrame it is not a spatially enabled DataFrame')
+        raise Exception('Could not add get extent of DataFrame it is not a spatially enabled DataFrame.')
 
 def _get_master_extent(list_of_extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
     # Check if any extent is different from one another
@@ -316,6 +316,9 @@ class MapView(widgets.DOMWidget):
     def extent(self, value):
         try:
             if isinstance(value, dict):
+                if 'spatialReference' in value and 'spatialReference' in self._extent:
+                    if not self._extent['spatialReference'] == value['spatialReference']:
+                        value = _reproject_extent(value, self._extent['spatialReference'])
                 self._extent = value
             elif _is_iterable(value) and isinstance(value, tuple):
                 self._extent = {
@@ -1695,24 +1698,6 @@ class MapView(widgets.DOMWidget):
         if content.get('event', '') == 'draw-end':
             self._draw_end_handlers(self, content.get('message', None))
 
-    def set_extent(self, target_extent, options={}):
-        """Snaps the map to the extent provided.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        extent                 The extent at which you want to snap your map to.
-                               The extent can by of any Spatial Reference.                               
-        ------------------     --------------------------------------------------------------------
-        options                Optional set of arguments.
-                               
-        ==================     ====================================================================
-        """
-        if not self.extent['spatialReference'] == target_extent['spatialReference']:
-            self.extent = _reproject_extent(target_extent, self.extent['spatialReference'])
-        else:
-            self.extent =  target_extent
-
     def zoom_to_layer(self, item, options={}): 
         """Snaps the map to the extent of provided item or items.
 
@@ -1734,7 +1719,7 @@ class MapView(widgets.DOMWidget):
                 target_extent = _get_master_extent(target_extent, self.extent['spatialReference'])
             else:
                 target_extent = target_extent[0]
-        self.set_extent(target_extent, options=options)
+        self.extent = target_extent
 
     # Start section of no longer supported areas
     def _raise_time_extent_exception(self):
