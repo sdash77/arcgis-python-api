@@ -126,7 +126,7 @@ class ChildImageClassifier:
         if model_as_file and not os.path.isabs(model_path):
             model_path = os.path.abspath(os.path.join(os.path.dirname(model), model_path))
 
-        self.psp = PSPNetClassifier.from_emd(data=None, emd_path=model)
+        self.psp = PSPNetClassifier.from_model(data=None, emd_path=model)
         self.model = self.psp.learn.model.to(self.device)
         self.model.eval()
 

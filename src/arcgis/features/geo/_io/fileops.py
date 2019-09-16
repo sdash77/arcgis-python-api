@@ -439,6 +439,7 @@ def from_featureclass(filename, **kwargs):
             del geom
         sdf = pd.DataFrame(records)
         sdf.spatial.set_geometry('SHAPE')
+        sdf['OBJECTID'] = range(sdf.shape[0])
         sdf.reset_index(inplace=True)
         return sdf
     elif HASARCPY == False and \

@@ -8190,7 +8190,10 @@ class Item(dict):
                 "4" : [sd + timedelta(days=181), end_date + timedelta(days=1)]
             }
             params['period'] = '1d'
-            url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+            if self._gis._portal.is_logged_in:
+                url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+            else:
+                url = "%s/portals/%s/usage" % (self._portal.resturl, "self")
             results = []
             for k,v in ranges.items():
                 sd = int(v[0].timestamp() * 1000)
@@ -8272,8 +8275,11 @@ class Item(dict):
                 return results
         else:
             raise ValueError("Invalid date range.")
+        if self._gis._portal.is_logged_in:
+            url = "%sportals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+        else:
+            url = "%sportals/%s/usage" % (self._portal.resturl, "self")
 
-        url = "%sportals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
         try:
             res = self._portal.con.post(url, params)
             if as_df:
@@ -8535,6 +8541,8 @@ class Item(dict):
         if file_type is None:
             if self['type'] == "GeoPackage":
                 fileType = "gpkg"
+            elif self['type'] == 'Compact Tile Package':
+                fileType = 'compactTilePackage'
             elif self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'
             elif self['type'] == 'Microsoft Excel':
@@ -8730,7 +8738,7 @@ class Item(dict):
 
         if buildInitialCache and \
            self._gis._portal.is_arcgisonline and \
-           fileType.lower() == 'tilepackage':
+           fileType.lower() in  ['tilepackage', 'compacttilepackage']:
             from ..mapping._types import MapImageLayer
             from ..raster._layer import ImageryLayer
             if len(ret) > 0 and \
