@@ -36,6 +36,7 @@ SingleShotDetector
 ------------------
 .. autoclass:: arcgis.learn.SingleShotDetector
     :members:
+    :inherited-members:
     :undoc-members:
 
 UnetClassifier
@@ -50,6 +51,12 @@ FeatureClassifier
 .. autoclass:: arcgis.learn.FeatureClassifier
     :members:
     :inherited-members:
+    :undoc-members:
+
+EntityRecognizer
+------------------
+.. autoclass:: arcgis.learn.EntityRecognizer
+    :members:
     :undoc-members:
 
 PSPNetClassifier

@@ -259,6 +259,9 @@ class ArcGISObjectDetector:
 feature_classifier_prf = """
 print('not implemented')
 """
+entity_recognizer_placeholder= """
+print('not implemented')
+"""
 
 image_classifier_prf = """
 

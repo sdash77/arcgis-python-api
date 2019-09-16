@@ -5,6 +5,7 @@
 
 import unittest
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 HAS_DEPS = True
 try:
     import fastai
