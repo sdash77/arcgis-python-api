@@ -89,9 +89,9 @@ class PSPNetClassifier(ArcGISModel):
             self.load(pretrained_path)
         
         self.freeze()
-        
+
     @classmethod
-    def from_emd(cls, data, emd_path):
+    def from_model(cls, emd_path, data=None):
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
@@ -193,4 +193,20 @@ class PSPNetClassifier(ArcGISModel):
         """
         if rows > self._data.batch_size:
             rows = self._data.batch_size
-        self.learn.show_results(rows=rows, **kwargs)         
+        self.learn.show_results(rows=rows, **kwargs)   
+
+    def _html_metrics(self):
+        html_model = f"""
+        <p><b>PSPNet Classifier</b></p>
+        """
+        html_string = f"""
+        <p><b>Model Metrics:</b> {format(self._get_model_metrics(), 'e')}</p> 
+        """
+        return html_model, html_string         
+
+    def _get_model_metrics(self, **kwargs):
+        checkpoint = kwargs.get('checkpoint', True)
+        model_accuracy = self.learn.recorder.metrics[-1][0]
+        if checkpoint:
+            model_accuracy = np.min(self.learn.recorder.metrics)             
+        return float(model_accuracy)
