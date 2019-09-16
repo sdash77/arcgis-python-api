@@ -2064,18 +2064,17 @@ class MapImageLayer(Layer):
     def _populate_layers(self):
         layers = []
         tables = []
-
-        for lyr in self.properties.layers:
-            if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
-                lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
-            else:
-                lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
-            layers.append(lyr)
-
-        for lyr in self.properties.tables:
-            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, self)
-            tables.append(lyr)
-
+        if self.properties.layers:
+            for lyr in self.properties.layers:
+                if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
+                    lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
+                else:
+                    lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
+                layers.append(lyr)
+        if self.properties.tables:
+            for lyr in self.properties.tables:
+                lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, self)
+                tables.append(lyr)
         # fsurl = self.url + '/layers'
         # params = { "f" : "json" }
         # allayers = self._con.post(fsurl, params, token=self._token)

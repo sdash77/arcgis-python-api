@@ -8541,6 +8541,8 @@ class Item(dict):
         if file_type is None:
             if self['type'] == "GeoPackage":
                 fileType = "gpkg"
+            elif self['type'] == 'Compact Tile Package':
+                fileType = 'compactTilePackage'
             elif self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'
             elif self['type'] == 'Microsoft Excel':
@@ -8736,7 +8738,7 @@ class Item(dict):
 
         if buildInitialCache and \
            self._gis._portal.is_arcgisonline and \
-           fileType.lower() == 'tilepackage':
+           fileType.lower() in  ['tilepackage', 'compacttilepackage']:
             from ..mapping._types import MapImageLayer
             from ..raster._layer import ImageryLayer
             if len(ret) > 0 and \
