@@ -429,7 +429,8 @@ def find_similar_locations(
                            output_name=None,
                            gis=None,
                            context=None,
-                           future=False):
+                           future=False,
+                           return_tuple=False):
     """
     .. image:: _static/images/find_similar_locations/find_similar_locations.png 
 
@@ -523,16 +524,22 @@ def find_similar_locations(
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------      
-    future                       Optional, If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
 
                                  The default value is 'False'.
+    --------------------------   ---------------------------------------------------------------      
+    return_tuple                 Optional boolean. If 'True', a named tuple with multiple output keys is returned.
+                                 
+                                 The default value is 'False'. 
     ==========================   ===============================================================
 
-    :returns: named tuple with the following keys:
+    :returns: named tuple with the following keys if ``return_tuple`` is set to 'True':
 
-      "output" : featureLayer
+      "output" : feature layer
 
       "process_info" : list
+
+    else returns a feature layer of the results.
 
     .. code-block:: python
 
@@ -583,6 +590,7 @@ def find_similar_locations(
         "append_fields": (str, "appendFields"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
+        "return_tuple": (bool, "returnTuple"),        
         "output": (_FeatureSet, "Output Features"),
         "process_info": (list, "processInfo")
     }
@@ -595,10 +603,14 @@ def find_similar_locations(
             gpjob = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, "FindSimilarLocations", params, param_db, return_values, _use_async, url, True, future=future)
-        return res
+        
+        if return_tuple:
+            return res
+        else:
+            return output_service   
     except:
         output_service.delete()
-        raise
+        raise 
 
 find_similar_locations.__annotations__ = {
     'most_or_least_similar': str,

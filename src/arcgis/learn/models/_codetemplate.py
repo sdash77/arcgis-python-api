@@ -211,6 +211,8 @@ class ArcGISObjectDetector:
         n_cols = int(math.sqrt(self.child_object_detector.batch_size))
         padding = self.child_object_detector.padding
         keep_polygon = []
+        keep_scores = []
+        keep_classes = []
 
         for idx, polygon in enumerate(polygon_list):
             centroid = polygon.mean(0)
@@ -222,12 +224,13 @@ class ArcGISObjectDetector:
                 keep_polygon.append(polygon)
                 if not in_center:
                     scores[idx] = (self.child_object_detector.thres * 100) + scores[idx] * 0.01
+                keep_scores.append(scores[idx])
+                keep_classes.append(classes[idx])
 
         polygon_list =  keep_polygon
-        scores = scores.tolist()
-        classes = classes.tolist()
+        scores = keep_scores
+        classes = keep_classes
         features['features'] = []
-
         for i in range(len(polygon_list)):
             rings = [[]]
             for j in range(polygon_list[i].shape[0]):
@@ -248,12 +251,15 @@ class ArcGISObjectDetector:
                     'rings': rings
                 }
             })   
-
+            
         return {'output_vectors': json.dumps(features)}
 
 """
 
 feature_classifier_prf = """
+print('not implemented')
+"""
+entity_recognizer_placeholder= """
 print('not implemented')
 """
 

@@ -15,10 +15,10 @@ try:
     import torch
     from .models._ssd_utils import SSDObjectItemList
     from .models._unet_utils import ArcGISSegmentationItemList
+    from .models._ner_utils import ner_prepare_data
     HAS_FASTAI = True
 except:
     HAS_FASTAI = False
-
 
 def _raise_fastai_import_error():
     raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai pytorch torchvision"')
@@ -111,12 +111,17 @@ def _get_class_mapping(path):
     return class_mapping
 
 
-def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None, resize_to=None):
+def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None, resize_to=None,address_tag='Address'):
     """
-    Prepares a Fast.ai DataBunch from the exported Pascal VOC image chips
-    exported by Export Training Data tool in ArcGIS Pro or Image Server.
-    This DataBunch consists of training and validation DataLoaders with the
-    specified transformations, chip size, batch size, split percentage.
+    Prepares a data object from training sample exported by the 
+    Export Training Data tool in ArcGIS Pro or Image Server, or training 
+    samples in the supported dataset formats. This data object consists of 
+    training and validation data sets with the specified transformations, 
+    chip size, batch size, split percentage, etc. 
+    -For object detection, use Pascal_VOC_rectangles format.
+    -For feature categorization use Labelled Tiles or ImageNet format.
+    -For pixel classification, use Classified Tiles format.
+    -For entity extraction from text, use BIO, LBIOU or ner_json formats. 
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -155,10 +160,15 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
                             'RCNN_Masks' and 'Classified_Tiles'                    
     ---------------------   -------------------------------------------
-    resize_to            Optional integer. Resize the image to given size.
+    resize_to               Optional integer. Resize the image to given size.
+    ---------------------   -------------------------------------------
+    address_tag             Optional string. This parameter is used while 
+                            preparing data for text extraction from documents 
+                            with geo information. This needs to be set as the 
+                            address label in your training data.
     =====================   ===========================================
 
-    :returns: fastai DataBunch object
+    :returns: data object
     """
 
     height_width = []
@@ -309,6 +319,10 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
+    elif dataset_type in ['ner_json','BIO','LBIOU']:
+        return ner_prepare_data(dataset_type=dataset_type, path=path, address_tag=address_tag, val_split_pct=val_split_pct)
+
+    
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
 

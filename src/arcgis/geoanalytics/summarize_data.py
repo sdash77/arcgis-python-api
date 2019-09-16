@@ -500,7 +500,8 @@ def describe_dataset(input_layer,
                      output_name=None,
                      gis=None,
                      context=None,
-                     future=False):
+                     future=False,
+                     return_tuple=False):
     """
     .. image:: _static/images/describe_dataset/describe_dataset.png 
 
@@ -538,7 +539,7 @@ def describe_dataset(input_layer,
                       will have the same schema, geometry, and time type as the input
                       layer.
     ----------------  ---------------------------------------------------------------
-    output_name       Optional string. The task will create a feature service of the results. 
+    output_name       Optional string. The task will create a feature layer of the results. 
                       You define the name of the service.
     ----------------  ---------------------------------------------------------------
     gis               Optional GIS. The GIS object where the analysis will take place.
@@ -554,18 +555,20 @@ def describe_dataset(input_layer,
                       results. The GPJob can be queried on the status of the execution.
     ================  ===============================================================
 
-    :returns: named tuple with the following keys:
+    :returns: a named tuple with the following keys if ``return_tuple`` is set to 'True':
 
       "output_json" : dict
 
       "output" : Table	
 
-      "extent_layer" : featureLayer 
+      "extent_layer" : feature layer 
 
-      "sample_layer" : featureLayer       
+      "sample_layer" : feature layer       
 
       "process_info" : list
 
+    else returns a feature layer of the results.
+    
     .. code-block:: python
 
             # Usage Example: To get an overview of your big data item
@@ -609,6 +612,7 @@ def describe_dataset(input_layer,
         "sample_size" : (int, "sampleSize"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
+        "return_tuple": (bool, "returnTuple"),
         "output_json": (dict, "outputJSON"),
         "output": (_Table, "output"),
         "extent_layer": (_FeatureSet, "extentLayer"),
@@ -629,10 +633,14 @@ def describe_dataset(input_layer,
             gpjob = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
             return GAJob(gpjob=gpjob, return_service=output_service)
         res = _execute_gp_tool(gis, tool_name, params, param_db, return_values, _use_async, url, True, future=future)
-        return res
+        
+        if return_tuple:
+            return res
+        else:
+            return output_service        
     except:
         output_service.delete()
-        raise
+        raise 
     return
 
 

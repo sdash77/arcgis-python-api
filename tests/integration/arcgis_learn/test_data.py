@@ -5,6 +5,7 @@
 
 import unittest
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 HAS_DEPS = True
 try:
     import fastai
@@ -19,7 +20,7 @@ if not HAS_DEPS:
     module_skip = True
 else:
     from arcgis.learn._data import prepare_data
-    from arcgis.learn import SingleShotDetector, UnetClassifier, FeatureClassifier
+    from arcgis.learn import SingleShotDetector, UnetClassifier, FeatureClassifier, PSPNetClassifier
 
 #TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Prepare Data tests")
@@ -78,6 +79,7 @@ class Test_Data(unittest.TestCase):
         self.assertDictEqual(self.ssd_data_class_mapping, data_bunch.class_mapping)
         ssd = SingleShotDetector(data_bunch)
         ssd.fit(1)
+        ssd.show_results()
         ssd.save('test_e1')
         ssd.load('test_e1')
 
@@ -101,6 +103,7 @@ class Test_Data(unittest.TestCase):
         self.assertDictEqual(self.unet_class_mapping, data_bunch.class_mapping)
         unet = UnetClassifier(data_bunch)
         unet.fit(1)
+        unet.show_results()
         unet.save('test_e1')
         unet.load('test_e1')
 
@@ -111,6 +114,7 @@ class Test_Data(unittest.TestCase):
         self.assertDictEqual(self.feature_class_mapping, data_bunch.class_mapping)
         feature_classifier = FeatureClassifier(data_bunch)
         feature_classifier.fit(1)
+        feature_classifier.show_results()
         feature_classifier.save('test_e1')
         feature_classifier.load('test_e1')
 
@@ -125,6 +129,31 @@ class Test_Data(unittest.TestCase):
         self.assertEqual(data_bunch.batch_size, 2)
         self.assertEqual(data_bunch.chip_size, 300)
 
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    def test_psp_data(self):
+        data_bunch = prepare_data(self.unet_data, chip_size=300, batch_size=2)
+        self.assertEqual(data_bunch.batch_size, 2)
+        self.assertEqual(data_bunch.chip_size, 300)
+        self.assertDictEqual(self.unet_class_mapping, data_bunch.class_mapping)
+        psp = PSPNetClassifier(data_bunch, backbone='resnet34')
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, backbone='vgg16')
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, backbone='densenet121')
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch)
+        psp.fit(1)
+        psp = PSPNetClassifier(data_bunch, backbone='resnet34', use_unet=True)
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, backbone='vgg16', use_unet=True)
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, backbone='densenet121', use_unet=True)
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, use_unet=True)
+        psp.fit(1)
+        psp.show_results()
+        psp.save('test_e1')
+        psp.load('test_e1')
 
 #TestModule
 def tearDownModule():
