@@ -1137,11 +1137,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        "routeLayers"
+        #"routeLayers"
         ret = gpjob.result()
-        if output_name is not None and \
-           "routeLayers" in ret:
-            return ret["routeLayers"]
         return ret
     #----------------------------------------------------------------------
     def create_buffers(self,
