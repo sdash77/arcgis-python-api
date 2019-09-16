@@ -266,9 +266,11 @@ class GPJob(object):
                len(value['itemId']) > 0:
                 itemid = value['itemId']
                 return arcgis.gis.Item(gis=self._gis, itemid=itemid)
-            elif isinstance(value, dict) and "items" in value:
+            elif isinstance(value, dict) and "items" in value and len(set(value['items'].keys())) == 1:
                 itemid = list(value['items'].keys())[0]
                 return arcgis.gis.Item(gis=self._gis, itemid=itemid)
+            elif isinstance(value, dict) and "items" in value and len(set(value['items'].keys())) > 1:
+                return [arcgis.gis.Item(gis=self._gis, itemid=itemid) for itemid in result['items']]
             elif isinstance(value, dict) and 'featureSet' in value:
                 return arcgis.features.FeatureCollection(value)
             return value
