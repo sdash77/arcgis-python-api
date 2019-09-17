@@ -157,6 +157,7 @@ def detect_objects(input_raster,
                    context=None,
                    *,
                    gis=None,
+                   future=False,
                    **kwargs):
 
     """
@@ -221,9 +222,22 @@ def detect_objects(input_raster,
     """
 
 
-    task = "DetectObjectsUsingDeepLearning"
+    #task = "DetectObjectsUsingDeepLearning"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.detect_objects_using_deep_learning(input_raster=input_raster,
+                                                                        model=model,
+                                                                        output_objects=output_name,
+                                                                        model_arguments=model_arguments,
+                                                                        run_nms=run_nms,
+                                                                        confidence_score_field=confidence_score_field,
+                                                                        class_value_field=class_value_field,
+                                                                        max_overlap_ratio=max_overlap_ratio,
+                                                                        context=context,
+                                                                        future=future,
+                                                                        **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -305,7 +319,7 @@ def detect_objects(input_raster,
     }
     output_service.update(item_properties)
     return output_service
-
+    """
 
 def classify_pixels(input_raster,
                     model,
@@ -314,6 +328,7 @@ def classify_pixels(input_raster,
                     context=None,
                     *,
                     gis=None,
+                    future=False,
                     **kwargs):
 
     """
@@ -368,9 +383,19 @@ def classify_pixels(input_raster,
     """
 
 
-    task = "ClassifyPixelsUsingDeepLearning"
+    #task = "ClassifyPixelsUsingDeepLearning"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.classify_pixels_using_deep_learning(input_raster=input_raster,
+                                                                        model=model,
+                                                                        model_arguments=model_arguments,
+                                                                        output_classified_raster=output_name,
+                                                                        context=context,
+                                                                        future=future,
+                                                                        **kwargs)
+
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -408,7 +433,7 @@ def classify_pixels(input_raster,
     }
     output_service.update(item_properties)
     return output_service
-
+    """
 
 def export_training_data(input_raster,
                          input_class_data=None,
@@ -424,6 +449,7 @@ def export_training_data(input_raster,
                          rotation_angle=0,
                          *,
                          gis=None,
+                         future=False,
                          **kwargs):
 
     """
@@ -550,9 +576,25 @@ def export_training_data(input_raster,
 
     """
 
-    task = "ExportTrainingDataforDeepLearning"
+    #task = "ExportTrainingDataforDeepLearning"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.export_training_data_for_deep_learning(input_raster=input_raster,
+                                                                            input_class_data=input_class_data,
+                                                                            chip_format=chip_format,
+                                                                            tile_size=tile_size,
+                                                                            stride_size=stride_size,
+                                                                            metadata_format=metadata_format,
+                                                                            class_value_field=classvalue_field,
+                                                                            buffer_radius=buffer_radius,
+                                                                            output_location=output_location,
+                                                                            input_mask_polygons=input_mask_polygons,
+                                                                            rotation_angle=rotation_angle,
+                                                                            context=context,
+                                                                            future=future,
+                                                                            **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -618,9 +660,12 @@ def export_training_data(input_raster,
     }
     return job_values["outLocation"]["uri"]
 
+    """
+
 
 def list_models(*,
                 gis=None,
+                future=False,
                 **kwargs):
     """
     Function is used to list all the installed deep learning models.
@@ -638,9 +683,12 @@ def list_models(*,
 
 
 
-    task = "ListDeepLearningModels"
+    #task = "ListDeepLearningModels"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.list_deep_learning_models(future=future,
+                                                               **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
     params = {}
@@ -665,7 +713,7 @@ def list_models(*,
                     item = gis.content.get(element["id"])
                     output_model_list.append(Model(item))
     return output_model_list
-
+    """
 
 class Model:
     def __init__(self, model = None):
@@ -749,6 +797,7 @@ class Model:
     def install(self,
                 *,
                 gis=None,
+                future=False,
                 **kwargs):
 
         """
@@ -769,9 +818,17 @@ class Model:
         if self._model_package is False:
             raise RuntimeError("model object should be created from a portal item or a portal url")
 
-        task = "InstallDeepLearningModel"
+        if self._model is None:
+            raise RuntimeError("For install/uninstall model object should be created from a portal item or portal url")
+
+        #task = "InstallDeepLearningModel"
 
         gis = _arcgis.env.active_gis if gis is None else gis
+        return gis._tools.rasteranalysis.install_deep_learning_model(model_package=self._model,
+                                                                     future=future,
+                                                                     **kwargs)
+
+        """
         url = gis.properties.helperServices.rasterAnalytics.url
         gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -796,11 +853,13 @@ class Model:
         }
 
         return job_values["installSucceed"]
+        """
 
 
     def query_info(self,
                    *,
                    gis=None,
+                   future=False,
                    **kwargs):
         """
         Function is used to extract the deep learning model specific settings from the model package item or model definition file.
@@ -816,9 +875,17 @@ class Model:
         """
 
 
-        task = "QueryDeepLearningModelInfo"
+        #task = "QueryDeepLearningModelInfo"
 
         gis = _arcgis.env.active_gis if gis is None else gis
+        if self._model is None:
+            raise RuntimeError('model cannot be None')
+
+        return gis._tools.rasteranalysis.query_deep_learning_model_info(model=self._model,
+                                                                        future=future,
+                                                                        **kwargs)
+
+        """
         url = gis.properties.helperServices.rasterAnalytics.url
         gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -842,16 +909,18 @@ class Model:
             }
         }
         output = job_values["outModelInfo"]
+        print(output)
         try:
             dict_output =  _json.loads(output["modelInfo"])
             return dict_output
         except:
             return output
-
+        """
 
     def uninstall(self,
                   *,
                   gis=None,
+                  future=False,
                   **kwargs):
 
         """
@@ -871,9 +940,18 @@ class Model:
         if self._model_package is False:
             raise RuntimeError("For install/uninstall model object should be created from a portal item or a portal url")
 
-        task = "UninstallDeepLearningModel"
+        #task = "UninstallDeepLearningModel"
 
         gis = _arcgis.env.active_gis if gis is None else gis
+
+        if self._model is None:
+            raise RuntimeError('model_package cannot be None')
+
+        return gis._tools.rasteranalysis.uninstall_deep_learning_model(model_item_id=self._model,
+                                                                       future=future,
+                                                                       **kwargs)
+
+        """
         url = gis.properties.helperServices.rasterAnalytics.url
         gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -898,4 +976,4 @@ class Model:
         }
 
         return job_values["uninstallSucceed"]
-
+        """

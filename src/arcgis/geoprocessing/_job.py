@@ -2,6 +2,7 @@ import os
 import datetime
 from concurrent.futures import Future
 import logging
+import json
 _log = logging.getLogger(__name__)
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 
@@ -43,6 +44,7 @@ class GPJob(object):
     _is_ortho = False
     _start_time = None
     _end_time = None
+    _item_properties = None
     #----------------------------------------------------------------------
     def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
@@ -184,10 +186,11 @@ class GPJob(object):
         if self._is_fa:
             return self._process_fa(self._future.result())
         elif self._is_ra:
-            return self._process_fa(self._future.result())
+            return self._process_ra(self._future.result())
         elif self._is_ortho:
             return self._process_ortho(self._future.result())
         return self._future.result()
+
     def _process_ortho(self, result):
         """handles the ortho imagery response"""
         import arcgis
@@ -241,6 +244,149 @@ class GPJob(object):
                 return arcgis.features.FeatureCollection(value)
             return value
         return result
+
+    def _process_ra(self, result):
+        import arcgis
+        if isinstance(result, arcgis.features.FeatureLayer):
+            if self._item_properties:
+                _item_properties = {
+                    "properties": {
+                        "jobUrl": self._url + '/jobs/' + self._jobid,
+                        "jobType": "GPServer",
+                        "jobId": self._jobid,
+                        "jobStatus": "completed"
+                    }
+                }
+                self._return_item.update(item_properties=_item_properties)
+            return self._return_item
+        if hasattr(result, '_fields'):
+            r = {}
+            iids = []
+            for key in result._fields:
+                value = getattr(result, key)
+                if isinstance(value, dict) and 'featureSet' in value:
+                    r[key] = arcgis.features.FeatureCollection(value)
+                elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
+                    if not value['itemId'] in iids:
+                        r[key] = arcgis.gis.Item(self._gis, value['itemId'])
+                        if self._item_properties:
+                            _item_properties = {
+                                "properties": {
+                                    "jobUrl": self._url + '/jobs/' + self._jobid,
+                                    "jobType": "GPServer",
+                                    "jobId": self._jobid,
+                                    "jobStatus": "completed"
+                                }
+                            }
+                            r[key].update(item_properties=_item_properties)
+                        iids.append(value['itemId'])
+                elif len(str(value)) > 0 and value:
+                    r[key] = value
+            if len(r) == 1:
+                return r[list(r.keys())[0]]
+            if (self.task == "CalculateDistance" or 
+                self.task == "DetermineOptimumTravelCostNetwork" or
+                self.task == "FlowDirection" or
+                self.task == "CalculateTravelCost"):
+
+                for key, value in r.items():
+                    r[key[0:key.rindex('_')+1]+'service'] = r.pop(key)
+
+            if(self.task == 'InterpolatePoints'):
+                if "process_info" in  r.keys():
+                    process_info = r['process_info']
+                    html_final="<b>The following table contains cross validation statistics:</b><br></br><table style='width: 250px;margin-left: 2.5em;'><tbody>"
+                    for row in process_info:
+                        temp_dict=json.loads(row)
+                        if isinstance(temp_dict["message"],list):
+                            html_final+="<tr><td>"+temp_dict["message"][0]+"</td><td style='float:right'>"+temp_dict["params"][temp_dict["message"][1].split("${")[1].split("}")[0]]+"</td></tr>"
+        
+                    html_final+="</tbody></table><br></br>"
+                    from IPython.display import HTML
+                    process_info_html = HTML(html_final)
+                    r['process_info'] = process_info_html
+                    r['output_raster'].update(item_properties={"description":html_final})
+
+            return_value_names = []
+            for key, value in r.items():
+                return_value_names.append(key)
+            num_returns = len(r)
+            if num_returns == 1:
+                return r[return_value_names[0]]
+ 
+            else:
+                ret_names = []
+                for return_value in return_value_names:
+                    ret_names.append(return_value)
+                import collections
+                NamedTuple = collections.namedtuple('FunctionOutput', ret_names)
+                function_output = NamedTuple(**r)
+                return function_output
+
+        elif isinstance(result, arcgis.raster.ImageryLayer):
+            return result
+        else:
+            value = result
+            if isinstance(value, dict) and 'itemId' in value and \
+               len(value['itemId']) > 0:
+                itemid = value['itemId']
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + '/jobs/' + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed"
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
+                return item
+            elif isinstance(value, dict) and 'url' in value:
+                return value["url"]
+            elif isinstance(value, dict) and 'contentList' in value:
+                if value is "":
+                    return None
+                elif isinstance(value["contentList"], str):
+                    return json.loads(value["contentList"])
+                return value['contentList']
+            elif isinstance(value, dict) and 'modelInfo' in value:
+                try:
+                    dict_output =  json.loads(value["modelInfo"])
+                    return dict_output
+                except:
+                    return value
+            elif isinstance(value, dict) and 'result' in value:
+                return value["result"]
+            elif isinstance(value, dict) and "items" in value:
+                itemid = list(value['items'].keys())[0]
+                item = arcgis.gis.Item(gis=self._gis, itemid=itemid)
+                if self._item_properties:
+                    _item_properties = {
+                        "properties": {
+                            "jobUrl": self._url + '/jobs/' + self._jobid,
+                            "jobType": "GPServer",
+                            "jobId": self._jobid,
+                            "jobStatus": "completed"
+                        }
+                    }
+                    item.update(item_properties=_item_properties)
+                return item
+            elif isinstance(value, dict) and 'featureSet' in value:
+                return arcgis.features.FeatureCollection(value)
+            elif isinstance(value, list) and value is not None:
+                output_model_list = []
+                from arcgis.learn import Model
+                for element in value:
+                    if isinstance(element,dict):
+                        if "id" in element.keys():
+                            item = arcgis.gis.Item(gis=self._gis, itemid=element["id"])
+                            output_model_list.append(Model(item))
+                return output_model_list
+
+        return result
+
+
     def _process_fa(self, result):
         import arcgis
         if hasattr(result, '_fields'):
