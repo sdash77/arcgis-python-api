@@ -744,7 +744,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         ret = gpjob.result()
-        if 'aggregatedLayer' in ret and output_name:
+        if isinstance(ret, FeatureCollection):
+            return ret
+        elif 'aggregatedLayer' in ret and output_name:
             return ret['aggregatedLayer']
         return ret
     #----------------------------------------------------------------------
