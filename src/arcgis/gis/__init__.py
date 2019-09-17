@@ -6079,7 +6079,12 @@ class User(dict):
             return all(status)
         return res
     #----------------------------------------------------------------------
-    def reset(self, password, new_password=None, new_security_question=None, new_security_answer=None):
+    def reset(self,
+              password=None,
+              new_password=None,
+              new_security_question=None,
+              new_security_answer=None,
+              reset_by_email=False):
         """ Resets a user's password, security question, and/or security answer.
 
         .. note::
@@ -6089,6 +6094,10 @@ class User(dict):
 
             If a new security question is specified, a new security answer should
             be provided.
+
+        .. note::
+            To reset the password by email, set `reset_by_email` to True and `password`
+            to `None`.
 
         =====================  =========================================================
         **Argument**           **Description**
@@ -6100,14 +6109,32 @@ class User(dict):
         new_security_question  Optional string. The new security question if desired.
         ---------------------  ---------------------------------------------------------
         new_security_answer    Optional string. The new security question answer if desired.
+        ---------------------  ---------------------------------------------------------
+        reset_by_email         Optional Boolean.  If True, the `user` will be reset by email. The default is False.
         =====================  =========================================================
 
         :return:
             A boolean indicating success (True) or failure (False).
 
         """
-        return self._portal.reset_user(self._user_id, password, new_password,
-                                       new_security_question, new_security_answer)
+        postdata = {'f' : 'json'}
+        if password:
+            postdata['password'] = password
+        if new_password:
+            postdata['newPassword'] = new_password
+        if new_security_question:
+            postdata['newSecurityQuestionIdx'] = new_security_question
+        if new_security_answer:
+            postdata['newSecurityAnswer'] = new_security_answer
+        if reset_by_email:
+            postdata["email"] = reset_by_email
+        url = self._gis._portal.resturl + 'community/users/' + self.username + '/reset'
+        resp = self._gis._con.post(url,
+                                   postdata,
+                                   ssl=True)
+        if resp:
+            return resp.get('success')
+        return False
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
                thumbnail=None, fullname=None, email=None, culture=None, region=None,
