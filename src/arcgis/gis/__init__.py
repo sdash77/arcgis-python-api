@@ -2122,6 +2122,23 @@ class UserManager(object):
             return res['success']
         return False
 
+    @property
+    def invitations(self):
+        """
+        Provides access to invitations sent to users using the `invite` method
+
+        **Note** : this is only supported by ArcGIS Online
+
+        :returns: InvitationManager
+
+        """
+
+        if self._gis._portal.is_arcgisonline == False:
+            raise Exception("This property is only for ArcGIS Online.")
+        from ._impl._invitations import InvitationManager
+        url = self._portal.resturl + "portals/self/invitations"
+        return InvitationManager(url, gis=self._gis)
+
     def signup(self, username, password, fullname, email):
         """
         Signs up a user to an instance of Portal for ArcGIS.
