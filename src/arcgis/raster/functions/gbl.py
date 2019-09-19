@@ -2459,7 +2459,10 @@ def calculate_distance(in_source_data,
                        output_cell_size=None,
                        allocation_field=None,
                        generate_out_allocation_raster=False,
-                       generate_out_direction_raster=False):
+                       generate_out_direction_raster=False,
+                       generate_out_back_direction_raster=False,
+                       in_barrier_data=None,
+                       distance_method='PLANAR'):
     """
     Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
 
@@ -2537,6 +2540,9 @@ def calculate_distance(in_source_data,
         input_source_data = raster_ra1
         layer1=raster_ra1
 
+    if in_barrier_data is not None:
+        layer2, in_barrier_data, raster_ra2 = _raster_input(in_barrier_data)
+
     template_dict = {
         "rasterFunction" : "GPAdapter",
         "rasterFunctionArguments" : {
@@ -2556,11 +2562,17 @@ def calculate_distance(in_source_data,
     if allocation_field is not None:
         template_dict["rasterFunctionArguments"]["allocation_field"] = allocation_field
 
+    if distance_method is not None:
+        template_dict["rasterFunctionArguments"]["distance_method"] = distance_method
+
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra['rasterFunctionArguments']["in_source_data"] = raster_ra1
 
+    if in_barrier_data is not None:
+        function_chain_ra['rasterFunctionArguments']["in_barrier_data"] = raster_ra2
+
     if isinstance(in_source_data, ImageryLayer):
-        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, use_ra=True)
+        return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, out_back_direction_raster=generate_out_back_direction_raster, use_ra=True)
     else:
         return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, use_ra=True)
 

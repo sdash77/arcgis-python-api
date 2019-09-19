@@ -111,7 +111,7 @@ def _create_output_feature_service(gis, output_name, output_service_name='Analys
     return output_service
 
 
-def _flow_direction_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
+def _flow_direction_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None,future=False, **kwargs):
     input_surface_raster = forceFlow = flowDirectionType = output_flow_direction_raster = output_drop_name = None
 
     input_surface_raster = raster_function['rasterFunctionArguments']['in_surface_raster']
@@ -122,9 +122,9 @@ def _flow_direction_analytics_converter(raster_function,output_name=None, other_
     output_flow_direction_raster = output_name
     if "out_drop_raster" in other_outputs.keys():
         output_drop_name = "out_drop_raster" + '_' + _id_generator()
-    return _flow_direction(input_surface_raster, forceFlow, flowDirectionType, output_flow_direction_raster, output_drop_name, gis=gis, **kwargs)
+    return _flow_direction(input_surface_raster, forceFlow, flowDirectionType, output_flow_direction_raster, output_drop_name, gis=gis,future=future,  **kwargs)
 
-def _calculate_travel_cost_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
+def _calculate_travel_cost_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None,future=False, **kwargs):
     input_source = None
     input_cost_raster=None
     input_surface_raster=None
@@ -186,16 +186,19 @@ def _calculate_travel_cost_analytics_converter(raster_function,output_name=None,
                                   input_vertical_raster, vertical_factor, source_cost_multiplier,
                                   source_start_cost, source_resistance_rate, source_capacity,
                                   source_direction, allocation_field, output_distance_name,
-                                  output_backlink_name, output_allocation_name, gis=gis,  **kwargs)
+                                  output_backlink_name, output_allocation_name, gis=gis, future=future, **kwargs)
 
-def _calculate_distance_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
+def _calculate_distance_analytics_converter(raster_function,output_name=None, other_outputs=None,gis=None,future=False, **kwargs):
     input_source = None
     maximum_distance=None
     output_cell_size=None
     allocation_field=None
+    distance_method=None
     output_allocation_name=None
     output_direction_name=None
     output_distance_name=None
+    output_back_direction_name=None
+    in_barrier_data=None
 
     if raster_function['rasterFunctionArguments']['in_source_data'] is not None:
         input_source = raster_function['rasterFunctionArguments']['in_source_data']
@@ -205,6 +208,11 @@ def _calculate_distance_analytics_converter(raster_function,output_name=None, ot
         allocation_field = raster_function['rasterFunctionArguments']['allocation_field']
     if 'output_cell_size' in raster_function['rasterFunctionArguments'].keys():
         output_cell_size = raster_function['rasterFunctionArguments']['output_cell_size']
+    if 'distance_method' in raster_function['rasterFunctionArguments'].keys():
+        distance_method = raster_function['rasterFunctionArguments']['distance_method']
+    if 'in_barrier_data' in raster_function['rasterFunctionArguments'].keys():
+        in_barrier_data = raster_function['rasterFunctionArguments']['in_barrier_data']
+
     output_distance_name = output_name
 
     if "out_direction_raster" in other_outputs.keys():
@@ -215,6 +223,11 @@ def _calculate_distance_analytics_converter(raster_function,output_name=None, ot
         if other_outputs["out_allocation_raster"] is True:
             output_allocation_name = "out_allocation" + '_' + _id_generator()
 
+    if "out_back_direction_raster" in other_outputs.keys():
+        if other_outputs["out_back_direction_raster"] is True:
+            output_back_direction_name = "out_back_direction" + '_' + _id_generator()
+
+
     return _calculate_distance(input_source, 
                                maximum_distance, 
                                output_cell_size, 
@@ -222,7 +235,11 @@ def _calculate_distance_analytics_converter(raster_function,output_name=None, ot
                                output_distance_name,
                                output_direction_name, 
                                output_allocation_name, 
-                               gis=gis,  
+                               in_barrier_data,
+                               output_back_direction_name,
+                               distance_method,
+                               gis=gis, 
+                               future=future, 
                                **kwargs)
 
 
@@ -284,13 +301,13 @@ def _set_output_raster(output_name, task, gis, output_properties=None):
     output_raster = _json.dumps(output_raster)
     return output_raster, output_service
 
-def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None, **kwargs):
+def _save_ra(raster_function,output_name=None, other_outputs=None,gis=None, future=False, **kwargs):
     if raster_function['rasterFunctionArguments']['toolName'] is "FlowDirection_sa":
-        return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
+        return _flow_direction_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, future=future, **kwargs)
     if raster_function['rasterFunctionArguments']['toolName'] is "CalculateTravelCost_sa":
-        return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
+        return _calculate_travel_cost_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
     if raster_function['rasterFunctionArguments']['toolName'] is "CalculateDistance_sa":
-        return _calculate_distance_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis, **kwargs)
+        return _calculate_distance_analytics_converter(raster_function, output_name=output_name, other_outputs = other_outputs, gis =gis,future=future, **kwargs)
 
 def _build_param_dictionary(gis, params, input_rasters, raster_type_name, raster_type_params = None, image_collection_properties = None, use_input_rasters_by_ref = False):
     
@@ -492,8 +509,12 @@ def generate_raster(raster_function,
                     function_arguments=None,
                     output_raster_properties=None,
                     output_name=None,
+                    process_as_multidimensional=None,
+                    build_transpose=None,
+                    context=None,
                     *,
                     gis=None,
+                    future=False,
                     **kwargs):
     """
 
@@ -514,7 +535,16 @@ def generate_raster(raster_function,
 
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    process_as_multidimensional : Optional bool, Process as multidimensional if set to True, if the input is multidimensional raster.
+
+    build_transpose: Optional bool, if set to true, transforms the output multidimensional raster. Valid only if process_as_multidimensional is set to True
+
+    context: Context contains additional settings that affect task execution.
+
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
 
     Returns
@@ -522,9 +552,25 @@ def generate_raster(raster_function,
     output_raster : Image layer item
     """
 
-    task = "GenerateRaster"
+    #task = "GenerateRaster"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if context is None:
+        context={}
+    if process_as_multidimensional is not None:
+        context.update({"processAsMultidimensional":process_as_multidimensional})
+    if build_transpose is not None:
+        context.update({"buildTranspose":build_transpose})
+
+    return gis._tools.rasteranalysis.generate_raster(raster_function=raster_function,
+                                                     function_arguments=function_arguments,
+                                                     output_raster_properties=output_raster_properties,
+                                                     output_name = output_name,
+                                                     context=context,
+                                                     future=future,
+                                                     **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -561,14 +607,16 @@ def generate_raster(raster_function,
     }
     output_service.update(item_properties)
     return output_service
-
+    """
 
 def convert_feature_to_raster(input_feature,
                               output_cell_size,
                               value_field=None,
                               output_name=None,
+                              context=None,
                               *,
                               gis=None,
+                              future=False,
                               **kwargs):
     """
     Creates a new raster dataset from an existing feature dataset.
@@ -593,16 +641,30 @@ def convert_feature_to_raster(input_feature,
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    context: Context contains additional settings that affect task execution.
+
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "ConvertFeatureToRaster"
+    #task = "ConvertFeatureToRaster"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.convert_feature_to_raster(input_feature=input_feature,
+                                                              output_cell_size=output_cell_size,
+                                                              output_name=output_name,
+                                                              value_field=value_field,
+                                                              context=context,
+                                                              future=future,
+                                                              **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -635,6 +697,7 @@ def convert_feature_to_raster(input_feature,
     }
     output_service.update(item_properties)
     return output_service
+    """
 
 
 def copy_raster(input_raster,
@@ -642,8 +705,12 @@ def copy_raster(input_raster,
                 resampling_method="NEAREST",
                 clip_setting=None,
                 output_name=None,
+                process_as_multidimensional=None,
+                build_transpose=None,
+                context=None,
                 *,
                 gis=None,
+                future=False,
                 **kwargs):
     """
 
@@ -663,17 +730,43 @@ def copy_raster(input_raster,
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    process_as_multidimensional : Optional bool, Process as multidimensional if set to True, if the input is multidimensional raster.
 
+    build_transpose: Optional bool, if set to true, transforms the output multidimensional raster. Valid only if process_as_multidimensional is set to True
+
+    context: Context contains additional settings that affect task execution.
+
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "CopyRaster"
+    #task = "CopyRaster"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if context is None:
+        context={}
+    if process_as_multidimensional is not None:
+        context.update({"processAsMultidimensional":process_as_multidimensional})
+    if build_transpose is not None:
+        context.update({"buildTranspose":build_transpose})
+
+    return gis._tools.rasteranalysis.copy_raster(input_raster=input_raster,
+                                                 output_cellsize=output_cellsize,
+                                                 resampling_method=resampling_method,
+                                                 clip_setting=clip_setting,
+                                                 output_name=output_name,
+                                                 context=context,
+                                                 future=future,
+                                                 **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -709,7 +802,7 @@ def copy_raster(input_raster,
     }
     output_service.update(item_properties)
     return output_service
-
+    """
 
 def summarize_raster_within(input_zone_layer,
                             input_raster_layer_to_summarize,
@@ -717,8 +810,10 @@ def summarize_raster_within(input_zone_layer,
                             statistic_type="Mean",
                             ignore_missing_values=True,
                             output_name=None,
+                            context=None,
                             *,
                             gis=None,
+                            future=False,
                             **kwargs):
     """
 
@@ -758,17 +853,32 @@ def summarize_raster_within(input_zone_layer,
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    context: Context contains additional settings that affect task execution.
 
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "SummarizeRasterWithin"
+    #task = "SummarizeRasterWithin"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.summarize_raster_within(input_zone_layer=input_zone_layer,
+                                                             input_raster_layer_to_summarize=input_raster_layer_to_summarize,
+                                                             zone_field=zone_field,
+                                                             output_name=output_name,
+                                                             statistic_type=statistic_type,
+                                                             ignore_missing_values=ignore_missing_values,
+                                                             context=context,
+                                                             future=future,
+                                                             **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -805,6 +915,7 @@ def summarize_raster_within(input_zone_layer,
     }
     output_service.update(item_properties)
     return output_service
+    """
 
 
 def convert_raster_to_feature(input_raster,
@@ -812,8 +923,10 @@ def convert_raster_to_feature(input_raster,
                               output_type="Polygon",
                               simplify=True,
                               output_name=None,
+                              context=None,
                               *,
                               gis=None,
+                              future=False,
                               **kwargs):
     """
     This service tool converts imagery data to feature class vector data.
@@ -841,8 +954,12 @@ def convert_raster_to_feature(input_raster,
         to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    context: Context contains additional settings that affect task execution.
 
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
@@ -852,6 +969,17 @@ def convert_raster_to_feature(input_raster,
     task = "ConvertRasterToFeature"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    return gis._tools.rasteranalysis.convert_raster_to_feature(input_raster=input_raster,
+                                                               field=field,
+                                                               output_type=output_type,
+                                                               output_name = output_name,
+                                                               simplify_lines_or_polygons=simplify,
+                                                               context=context,
+                                                               future=future,
+                                                               **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -914,15 +1042,17 @@ def convert_raster_to_feature(input_raster,
     }
     output_service.update(item_properties)
     return output_service
-
+    """
 def calculate_density(input_point_or_line_features,
                       count_field=None,
                       search_distance=None,
                       output_area_units=None,
                       output_cell_size=None,
                       output_name=None,
+                      context=None,
                       *,
                       gis=None,
+                      future=False,
                       **kwargs):
     """
     Density analysis takes known quantities of some phenomenon and creates a density map by spreading
@@ -990,17 +1120,33 @@ def calculate_density(input_point_or_line_features,
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    context: Context contains additional settings that affect task execution.
 
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "CalculateDensity"
+    #task = "CalculateDensity"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.calculate_density(input_point_or_line_features=input_point_or_line_features,
+                                                        output_name=output_name,
+                                                        count_field=count_field,
+                                                        search_distance = search_distance,
+                                                        output_area_units=output_area_units,
+                                                        output_cell_size=output_cell_size,
+                                                        context=context,
+                                                        future=future,
+                                                        **kwargs)
+
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -1038,7 +1184,7 @@ def calculate_density(input_point_or_line_features,
     }
     output_service.update(item_properties)
     return output_service
-
+    """
 
 def create_viewshed(input_elevation_surface,
                     input_observer_features,
@@ -1056,8 +1202,10 @@ def create_viewshed(input_elevation_surface,
                     target_height_field=None,
                     above_ground_level_output_name=None,
                     output_name=None,
+                    context=None,
                     *,
                     gis=None,
+                    future=False,
                     **kwargs):
     """
     Compute visibility for an input elevation raster using geodesic method.
@@ -1099,7 +1247,12 @@ def create_viewshed(input_elevation_surface,
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    context: Context contains additional settings that affect task execution.
+
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
 
     Returns
@@ -1109,9 +1262,29 @@ def create_viewshed(input_elevation_surface,
        "output_above_ground_level_raster" : layer
     """
 
-    task = "CreateViewshed"
+    #task = "CreateViewshed"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.create_viewshed(input_elevation_surface=input_elevation_surface,
+                                                     input_observer_features=input_observer_features,
+                                                     output_name=output_name,
+                                                     optimize_for=optimize_for,
+                                                     maximum_viewing_distance=maximum_viewing_distance,
+                                                     maximum_viewing_distance_field=maximum_viewing_distance_field,
+                                                     minimum_viewing_distance=minimum_viewing_distance,
+                                                     minimum_viewing_distance_field=minimum_viewing_distance_field,
+                                                     viewing_distance_is3D=viewing_distance_is_3d,
+                                                     observers_elevation=observers_elevation,
+                                                     observers_elevation_field=observers_elevation_field,
+                                                     observers_height=observers_height,
+                                                     observers_height_field=observers_height_field,
+                                                     target_height=target_height,
+                                                     target_height_field=target_height_field,
+                                                     above_ground_level_output_name=above_ground_level_output_name,
+                                                     context=context,
+                                                     future=future,
+                                                     **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
     return_value_names = ["output_raster"]
@@ -1179,7 +1352,7 @@ def create_viewshed(input_elevation_surface,
     num_returns = len(outputs)
 
     return _return_output(num_returns,outputs,return_value_names)
-
+    """
 
 def interpolate_points(input_point_features,
                        interpolate_field,
@@ -1190,8 +1363,10 @@ def interpolate_points(input_point_features,
                        output_cell_size=None,
                        output_prediction_error=False,
                        output_name=None,
+                       context=None,
                        *,
                        gis=None,
+                       future=False,
                        **kwargs):
     """
     This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
@@ -1257,7 +1432,12 @@ def interpolate_points(input_point_features,
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    context: Context contains additional settings that affect task execution.
+
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
 
     Returns
@@ -1272,9 +1452,22 @@ def interpolate_points(input_point_features,
     
     """
 
-    task = "InterpolatePoints"
+    #task = "InterpolatePoints"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.interpolate_points(input_point_features=input_point_features,
+                                                       interpolate_field=interpolate_field, 
+                                                       output_name=output_name,
+                                                       optimize_for=optimize_for, 
+                                                       transform_data=transform_data,
+                                                       size_of_local_models=size_of_local_models, 
+                                                       number_of_neighbors=number_of_neighbors,
+                                                       output_cell_size=output_cell_size, 
+                                                       output_prediction_error=output_prediction_error,
+                                                       context=context,
+                                                       future=future, 
+                                                       **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
     return_value_names = ["output_raster"]
@@ -1354,14 +1547,16 @@ def interpolate_points(input_point_features,
     output_service.update(item_properties)
 
     return _return_output(num_returns, outputs, return_value_names)
-
+    """
 
 def classify(input_raster,
              input_classifier_definition,
              additional_input_raster=None,
              output_name=None,
+             context=None,
              *,
              gis=None,
+             future=False,
              **kwargs):
     """
 
@@ -1379,7 +1574,12 @@ def classify(input_raster,
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    context: Context contains additional settings that affect task execution.
+
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
 
     Returns
@@ -1387,9 +1587,17 @@ def classify(input_raster,
     output_raster : Image layer item 
     """
 
-    task = "Classify"
+    #task = "Classify"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.classify(input_raster=input_raster,
+                                              input_classifier_definition=input_classifier_definition,
+                                              output_name=output_name,
+                                              additional_input_raster=additional_input_raster,
+                                              context=context,
+                                              future=future,
+                                              **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -1422,11 +1630,12 @@ def classify(input_raster,
     }
     output_service.update(item_properties)
     return output_service
+    """
 
 
 def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segment_size_in_pixels=20,
-            band_indexes=[0,1,2], remove_tiling_artifacts=False, output_name=None,
-            *, gis=None, **kwargs):
+            band_indexes=[0,1,2], remove_tiling_artifacts=False, output_name=None, context=None,
+            *, gis=None, future=False, **kwargs):
 
     """
     Groups together adjacent pixels having similar spectral and spatial characteristics into
@@ -1472,6 +1681,8 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
                                          If False, the tool will not run to remove tiling artifacts after
                                          segmentation. The result may seem blocky at some tiling boundaries.
     --------------------------------     --------------------------------------------------------------------
+    context                              Context contains additional settings that affect task execution.
+    --------------------------------     --------------------------------------------------------------------
     output_name                          Optional String. If specified, an Imagery Layer of given name is
                                          created. Else, an Image Service is created by the method and used
                                          as the output raster. You can pass in an existing Image Service Item
@@ -1480,17 +1691,32 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
                                          method to be used as the output for the tool. A RuntimeError is raised
                                          if a service by that name already exists
     --------------------------------     --------------------------------------------------------------------
-    gis                                  Optional GIS object. If not speficied, the currently active connection
+    gis                                  Keyword only parameter. Optional GIS object. If not speficied, the currently active connection
                                          is used.
+    --------------------------------     --------------------------------------------------------------------
+    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                         results will be returned asynchronously.
     ================================     ====================================================================
 
     :return:
        output_raster : Imagery Layer item
     """
 
-    task = "Segment"
+    #task = "Segment"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.segment(input_raster=input_raster,
+                                            output_name=output_name, 
+                                            spectral_detail=spectral_detail,
+                                            spatial_detail=spatial_detail, 
+                                            minimum_segment_size_in_pixels=minimum_segment_size_in_pixels,
+                                            band_indexes=band_indexes,
+                                            remove_tiling_artifacts=remove_tiling_artifacts,
+                                            context=context,
+                                            future=future, 
+                                            **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -1539,7 +1765,7 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
     }
     output_service.update(item_properties)
     return output_service
-
+    """
 
 def train_classifier(input_raster,
                      input_training_sample_json,
@@ -1548,6 +1774,7 @@ def train_classifier(input_raster,
                      segment_attributes="COLOR;MEAN",
                      *,
                      gis=None,
+                     future=False,
                      **kwargs):
     """
 
@@ -1564,16 +1791,27 @@ def train_classifier(input_raster,
 
     segment_attributes : Required string
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_classifier_definition
     """
 
-    task = "TrainClassifier"
+    #task = "TrainClassifier"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.train_classifier(input_raster=input_raster,
+                                                     input_training_sample_json=input_training_sample_json,
+                                                     classifier_parameters=classifier_parameters,
+                                                     segmented_raster=segmented_raster,
+                                                     segment_attributes=segment_attributes,
+                                                     future=future,
+                                                     **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -1592,6 +1830,7 @@ def train_classifier(input_raster,
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
     # print(job_values)
     return job_values['outputClassifierDefinition']
+    """
 
 
 ###################################################################################################
@@ -1605,6 +1844,7 @@ def create_image_collection(image_collection,
                             context = None,
                             *,
                             gis=None,
+                            future=False,
                             **kwargs):
                             
     """
@@ -1675,7 +1915,10 @@ def create_image_collection(image_collection,
 
                                          If ``byref`` is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
     ------------------                   --------------------------------------------------------------------
-    gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------                   --------------------------------------------------------------------
+    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                         results will be returned asynchronously.
     ==================                   ====================================================================
 
     :returns: The imagery layer item
@@ -1707,7 +1950,16 @@ def create_image_collection(image_collection,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
-    url = gis.properties.helperServices.rasterAnalytics.url
+    #url = gis.properties.helperServices.rasterAnalytics.url
+    return gis._tools.rasteranalysis.create_image_collection(image_collection=image_collection,
+                                                            input_rasters=input_rasters,
+                                                            raster_type_name=raster_type_name,
+                                                            raster_type_params = raster_type_params,
+                                                            out_sr = out_sr,
+                                                            context=context,
+                                                            future=future,
+                                                            **kwargs)
+    """
     gptool = _arcgis.gis._GISResource(url, gis)
     folder = None
     folderId = None
@@ -1799,7 +2051,7 @@ def create_image_collection(image_collection,
     output_service= gis.content.get(job_values["result"]["itemId"])
 
     return  output_service
-
+    """
 
 ###################################################################################################
 ## Add image
@@ -1811,6 +2063,7 @@ def add_image(image_collection,
               context = None,
               *,
               gis=None,
+              future=False,
               **kwargs):
     """
     .. image:: _static/images/add_image/add_image.png 
@@ -1869,7 +2122,10 @@ def add_image(image_collection,
  
                                          If byref is set to 'True', the data will not be uploaded. If it is not set, the default is 'False'
     ------------------                   --------------------------------------------------------------------
-    gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                  Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------                   --------------------------------------------------------------------
+    future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                         results will be returned asynchronously.
     ==================                   ====================================================================
 
     :returns: The imagery layer item
@@ -1889,6 +2145,14 @@ def add_image(image_collection,
 
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.add_image(image_collection=image_collection,
+                                              input_rasters=input_rasters,
+                                              raster_type_name=raster_type_name, 
+                                              raster_type_params=raster_type_params, 
+                                              context=context,
+                                              future=future,
+                                              **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -1925,7 +2189,7 @@ def add_image(image_collection,
         }
 
     return job_values["result"]["url"]
-
+    """
 ###################################################################################################
 ## Delete image
 ###################################################################################################
@@ -1933,6 +2197,7 @@ def delete_image(image_collection,
                  where, 
                  *,
                  gis=None,
+                 future=False,
                  **kwargs):
     """
     .. image:: _static/images/delete_image/delete_image.png 
@@ -1951,7 +2216,10 @@ def delete_image(image_collection,
     where                  Required string. A SQL ``where`` clause for selecting the images 
                            to be deleted from the image collection
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------     --------------------------------------------------------------------
+    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                           results will be returned asynchronously.
     ==================     ====================================================================
 
     :returns: The imagery layer url
@@ -1965,6 +2233,11 @@ def delete_image(image_collection,
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.delete_image(image_collection=image_collection,
+                                                 where=where,
+                                                 future=future,
+                                                 **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -1990,7 +2263,7 @@ def delete_image(image_collection,
         }
 
     return job_values["result"]["url"]
-
+    """
 
 ###################################################################################################
 ## Delete image collection
@@ -1998,6 +2271,7 @@ def delete_image(image_collection,
 def delete_image_collection(image_collection,
                             *,
                             gis=None,
+                            future=False,
                             **kwargs):
     '''
     .. image:: _static/images/delete_image_collection/delete_image_collection.png 
@@ -2015,7 +2289,10 @@ def delete_image_collection(image_collection,
                             
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------     --------------------------------------------------------------------
+    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                           results will be returned asynchronously.
     ==================     ====================================================================
 
     :returns: Boolean value indicating whether the deletion was successful or not.
@@ -2029,6 +2306,10 @@ def delete_image_collection(image_collection,
     '''
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.delete_image_collection(image_collection=image_collection, 
+                                                             future=future, 
+                                                             **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -2053,7 +2334,7 @@ def delete_image_collection(image_collection,
 
 
     return job_values["result"]
-
+    """
 
 def _flow_direction(input_surface_raster,
                    force_flow= False,
@@ -2062,6 +2343,7 @@ def _flow_direction(input_surface_raster,
                    output_drop_name=None,
                    *,
                    gis=None,
+                   future=False,
                    **kwargs):
     """
     Replaces cells of a raster corresponding to a mask 
@@ -2074,29 +2356,41 @@ def _flow_direction(input_surface_raster,
     force_flow  : Boolean, Specifies if edge cells will always flow outward or follow normal flow rules.
 
     flow_direction_type : Specifies which flow direction type to use.
-						  D8 - Use the D8 method. This is the default.
-						  MFD - Use the Multi Flow Direction (MFD) method.
-						  DINF - Use the D-Infinity method.
+                          D8 - Use the D8 method. This is the default.
+                          MFD - Use the Multi Flow Direction (MFD) method.
+                          DINF - Use the D-Infinity method.
 
     output_drop_name : An optional output drop raster . 
-					   The drop raster returns the ratio of the maximum change in elevation from each cell 
-					   along the direction of flow to the path length between centers of cells, expressed in percentages.
+                       The drop raster returns the ratio of the maximum change in elevation from each cell 
+                       along the direction of flow to the path length between centers of cells, expressed in percentages.
 
     output_flow_direction_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
         You can pass in an existing Image Service Item from your GIS to use that instead.
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "FlowDirection"
+    #task = "FlowDirection"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.flow_direction(input_surface_raster=input_surface_raster,
+                                                   output_flow_direction_name=output_flow_direction_name,
+                                                   force_flow=force_flow,
+                                                   flow_direction_type=flow_direction_type,
+                                                   output_drop_name=output_drop_name,
+                                                   future=future,
+                                                   **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
     return_value_names = ["output_flow_direction_service"]
@@ -2150,7 +2444,7 @@ def _flow_direction(input_surface_raster,
     num_returns = len(outputs)
 
     return _return_output(num_returns,outputs,return_value_names)
-
+    """
 
 def _calculate_travel_cost(input_source,
                           input_cost_raster=None,
@@ -2171,42 +2465,43 @@ def _calculate_travel_cost(input_source,
                           output_allocation_name=None,
                           *,
                           gis=None,
+                          future=False,
                           **kwargs):
     """
 
     Parameters
     ----------
     input_source : The layer that defines the sources to calculate the distance too. The layer 
-				   can be raster or feature.
+                   can be raster or feature.
 
     input_cost_raster  : A raster defining the impedance or cost to move planimetrically through each cell.
 
     input_surface_raster : A raster defining the elevation values at each cell location.
 
     maximum_distance : The maximum distance to calculate out to. If no distance is provided, a default will 
-	                   be calculated that is based on the locations of the input sources.
+                       be calculated that is based on the locations of the input sources.
 
     input_horizonal_raster : A raster defining the horizontal direction at each cell.
 
     horizontal_factor : The Horizontal Factor defines the relationship between the horizontal cost 
-						factor and the horizontal relative moving angle.
+                        factor and the horizontal relative moving angle.
 
     input_vertical_raster : A raster defining the vertical (z) value for each cell.
 
     vertical_factor : The Vertical Factor defines the relationship between the vertical cost factor and 
-					  the vertical relative moving angle (VRMA).
+                      the vertical relative moving angle (VRMA).
 
     source_cost_multiplier : Multiplier to apply to the cost values.
 
     source_start_cost : The starting cost from which to begin the cost calculations.
 
     source_resistance_rate : This parameter simulates the increase in the effort to overcome costs 
-							as the accumulative cost increases.
+                            as the accumulative cost increases.
 
     source_capacity : Defines the cost capacity for the traveler for a source.
 
     source_direction : Defines the direction of the traveler when applying horizontal and vertical factors, 
-					   the source resistance rate, and the source starting cost.
+                       the source resistance rate, and the source starting cost.
 
     allocation_field : A field on theinputSourceRasterOrFeatures layer that holds the values that define each source.
 
@@ -2219,16 +2514,40 @@ def _calculate_travel_cost(input_source,
         Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
         A RuntimeError is raised if a service by that name already exists
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "CalculateTravelCost"
+    #task = "CalculateTravelCost"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.calculate_travel_cost(input_source_raster_or_features=input_source,
+                                                           output_name=output_distance_name,
+                                                           input_cost_raster=input_cost_raster,
+                                                           input_surface_raster=input_surface_raster,
+                                                           maximum_distance=maximum_distance,
+                                                           input_horizontal_raster=input_horizonal_raster,
+                                                           horizontal_factor=horizontal_factor,
+                                                           input_vertical_raster=input_vertical_raster,
+                                                           vertical_factor=vertical_factor,
+                                                           source_cost_multiplier=source_cost_multiplier,
+                                                           source_start_cost=source_start_cost,
+                                                           source_resistance_rate=source_resistance_rate,
+                                                           source_capacity=source_capacity,
+                                                           source_travel_direction=source_direction,
+                                                           output_backlink_name=output_backlink_name,
+                                                           output_allocation_name=output_allocation_name,
+                                                           allocation_field=allocation_field,
+                                                           future=future,
+                                                           **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
     return_value_names = ["output_distance_service"]
@@ -2333,7 +2652,7 @@ def _calculate_travel_cost(input_source,
     num_returns = len(outputs)
 
     return _return_output(num_returns, outputs, return_value_names)
-
+    """
 
 def optimum_travel_cost_network(input_regions_raster,
                                 input_cost_raster,
@@ -2342,6 +2661,7 @@ def optimum_travel_cost_network(input_regions_raster,
                                 context=None,
                                 *,
                                 gis=None,
+                                future=False,
                                 **kwargs):
 
     """
@@ -2350,7 +2670,7 @@ def optimum_travel_cost_network(input_regions_raster,
     Parameters
     ----------
     input_regions_raster : The layer that defines the regions to find the optimum travel cost netork for. 
-						   The layer can be raster or feature.
+                           The layer can be raster or feature.
 
     input_cost_raster  : A raster defining the impedance or cost to move planimetrically through each cell.
 
@@ -2361,18 +2681,29 @@ def optimum_travel_cost_network(input_regions_raster,
 
     output_neighbor_network_name : Optional. This is the name of the output neighbour network feature layer that will be created.
 
-	context: Context contains additional settings that affect task execution.
+    context: Context contains additional settings that affect task execution.
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "DetermineOptimumTravelCostNetwork"
+    #task = "DetermineOptimumTravelCostNetwork"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.determine_optimum_travel_cost_network(input_regions_raster_or_features=input_regions_raster,
+                                                                           input_cost_raster=input_cost_raster,
+                                                                           output_optimum_network_name=output_optimum_network_name,
+                                                                           output_neighbor_network_name=output_neighbor_network_name,
+                                                                           context=context,
+                                                                           future=future,
+                                                                           **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -2464,16 +2795,16 @@ def optimum_travel_cost_network(input_regions_raster,
     num_returns = len(outputs)
 
     return _return_output(num_returns, outputs, return_value_names)
+    """
 
-
-def list_datastore_content(datastore, filter=None, *, gis=None, **kwargs):
+def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **kwargs):
     """
     List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    datastore              Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed. 
+    datastore              Required string or list. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed. 
                            It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
                            "/rasterStores/rasterstore"
                            or it can be a Datastore object containing a fileshare, rasterstore  or a cloudstore path.
@@ -2482,19 +2813,35 @@ def list_datastore_content(datastore, filter=None, *, gis=None, **kwargs):
                            ds_items =ds.search()
                            ds_items[1]
                            ds_items[1] may be specified as input for datastore 
+
+                           It can also be a list of datastore paths or list of datastore object containing a fileshare,
+                           rasterstore or cloudstore path. 
+
+                           In order to list the datastore items, one can specify just the name of the datastore
+                           eg: fileShares
+                           or
+                           eg: cloudStore,rasterStore
     ------------------     --------------------------------------------------------------------
     filter                 Optional. To filter out the raster contents to be displayed
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Keyword only parameter. Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------     --------------------------------------------------------------------
+    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                           results will be returned asynchronously.
     ==================     ====================================================================
 
     :return:
         List of contents in the datastore
     """
 
-    task = "ListDatastoreContent"
+    #task = "ListDatastoreContent"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.list_datastore_content(data_store_name=datastore,
+                                                            filter=filter,
+                                                            future=future,
+                                                            **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -2515,6 +2862,7 @@ def list_datastore_content(datastore, filter=None, *, gis=None, **kwargs):
     if job_values["contentList"] is "":
         return None
     return _json.loads(job_values["contentList"]["contentList"])
+    """
 
 def build_footprints(image_collection,
                      computation_method="RADIOMETRY",
@@ -2522,6 +2870,7 @@ def build_footprints(image_collection,
                      context=None,
                      *,
                      gis=None,
+                     future=False,
                      **kwargs):
     """
 
@@ -2544,16 +2893,27 @@ def build_footprints(image_collection,
               skipDerivedImages, updateBoundary, requestSize, minRegionSize, simplification,
               edgeTorelance, maxSliverSize, minThinnessRatio
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "BuildFootprints"
+    #task = "BuildFootprints"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.build_footprints(image_collection=image_collection,
+                                                     computation_method=computation_method,
+                                                     value_range=value_range,
+                                                     context=context,
+                                                     future=future,
+                                                     **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -2578,13 +2938,14 @@ def build_footprints(image_collection,
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
 
     return job_values["outCollection"]["url"]
-
+    """
 
 def build_overview(image_collection,
                    cell_size=None,
                    context=None,
                     *,
                     gis=None,
+                    future=False,
                     **kwargs):
     """
 
@@ -2596,18 +2957,27 @@ def build_overview(image_collection,
 
     cell_size : optional float or int, to set the cell size for overview.
 
-    context : optional dictionary
+    context: Context contains additional settings that affect task execution.
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "BuildOverview"
+    #task = "BuildOverview"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.build_overview(image_collection=image_collection,
+                                                   cell_size=cell_size,
+                                                   context=context,
+                                                   future=future,
+                                                   **kwargs)
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -2626,6 +2996,7 @@ def build_overview(image_collection,
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
 
     return job_values["outCollection"]["url"]
+    """
 
 
 def calculate_statistics(image_collection,
@@ -2633,6 +3004,7 @@ def calculate_statistics(image_collection,
                          context=None,
                           *,
                           gis=None,
+                          future=False,
                           **kwargs):
     """
     Calculates statistics for an image collection
@@ -2650,16 +3022,26 @@ def calculate_statistics(image_collection,
     context : optional dictionary. Can be used to specify parameters for calculating statistics. Keys can be 
              ignoreValues, skipExisting, areaOfInterest
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis: Keyword only parameter. Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    future: Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+            results will be returned asynchronously.
 
     Returns
     -------
     output_raster : Image layer item 
     """
 
-    task = "CalculateStatistics"
+    #task = "CalculateStatistics"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.calculate_statistics(image_collection=image_collection,
+                                                          skip_factors=skip_factors,
+                                                          context=context,
+                                                          future=future,
+                                                          **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -2678,6 +3060,7 @@ def calculate_statistics(image_collection,
     job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
 
     return job_values["outCollection"]["url"]
+    """
 
 
 def determine_travel_costpath_as_polyline(input_source_data,
@@ -2685,8 +3068,11 @@ def determine_travel_costpath_as_polyline(input_source_data,
                                           input_destination_data,
                                           path_type='BEST_SINGLE',
                                           output_polyline_name=None,
+                                          destination_field=None,
+                                          context=None,
                                           *,
                                           gis=None,
+                                          future=False,
                                           **kwargs):
 
     '''
@@ -2743,7 +3129,15 @@ def determine_travel_costpath_as_polyline(input_source_data,
                                              Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
+    destination_field                         The field used to obtain values for the destination locations.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. 
+                                             If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
     ====================================     ====================================================================
 
     :return:
@@ -2751,9 +3145,20 @@ def determine_travel_costpath_as_polyline(input_source_data,
 
     '''
 
-    task = "DetermineTravelCostPathAsPolyline"
+    #task = "DetermineTravelCostPathAsPolyline"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.determine_travel_costpath_as_polyline(input_source_raster_or_features=input_source_data, 
+                                                                           input_cost_raster=input_cost_raster,
+                                                                           input_destination_raster_or_features=input_destination_data, 
+                                                                           output_polyline_name=output_polyline_name,
+                                                                           path_type=path_type, 
+                                                                           destination_field=destination_field,
+                                                                           context=context,
+                                                                           future=future, 
+                                                                           **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -2834,7 +3239,7 @@ def determine_travel_costpath_as_polyline(input_source_data,
     output_polyline_service.update(item_properties)
 
     return output_polyline_service
-
+    """
 
 def _calculate_distance(input_source_data,
                         maximum_distance=None,
@@ -2843,9 +3248,12 @@ def _calculate_distance(input_source_data,
                         output_distance_name=None,
                         output_direction_name=None,
                         output_allocation_name=None,
-                        context=None,
+                        input_barrier_data=None,
+                        output_back_direction_name=None,
+                        distance_method='PLANAR',
                         *,
                         gis=None,
+                        future=False,
                         **kwargs):
 
     '''
@@ -2913,7 +3321,10 @@ def _calculate_distance(input_source_data,
     ------------------------------------     --------------------------------------------------------------------
     context                                  Context contains additional settings that affect task execution.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
     ====================================     ====================================================================
 
     :return:
@@ -2921,9 +3332,23 @@ def _calculate_distance(input_source_data,
 
     '''
 
-    task = "CalculateDistance"
+    #task = "CalculateDistance"
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.calculate_distance(input_source_raster_or_features=input_source_data, #
+                                                        output_distance_name=output_distance_name,
+                                                        maximum_distance=maximum_distance,
+                                                        output_cell_size=output_cell_size,
+                                                        output_direction_name=output_direction_name,
+                                                        output_allocation_name=output_allocation_name,
+                                                        allocation_field=allocation_field,
+                                                        distance_method=distance_method,
+                                                        input_barrier_raster_or_features=input_barrier_data,
+                                                        output_back_direction_name=output_back_direction_name,
+                                                        future=future,
+                                                        **kwargs)
+
+    """
     url = gis.properties.helperServices.rasterAnalytics.url
     gptool = _arcgis.gis._GISResource(url, gis)
 
@@ -2984,3 +3409,1173 @@ def _calculate_distance(input_source_data,
     num_returns = len(outputs)
 
     return _return_output(num_returns, outputs, return_value_names)
+    """
+
+
+def generate_multidimensional_anomaly(input_multidimensional_raster,
+                                      variables=None,
+                                      method='DIFFERENCE_FROM_MEAN',
+                                      calculation_interval=None,
+                                      ignore_missing_values=True,
+                                      output_name=None,
+                                      context=None,
+                                      *,
+                                      gis=None,
+                                      future=False,
+                                      **kwargs):
+    """
+    Computes the anomaly for each slice in a multidimensional raster to generate a multidimensional dataset.
+    An anomaly is the deviation of an observation from its standard or mean value.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            The input imagery layer object.
+    ------------------------------------     --------------------------------------------------------------------
+    variables                                Optional List. The variable or variables for which anomalies will
+                                             be calculated. If no variable is specified, all variables with a time
+                                             dimension will be analyzed.
+    ------------------------------------     --------------------------------------------------------------------
+    method                                   Optional String. Specifies the method that will be used to calculate
+                                             the anomaly.
+
+                                             - DIFFERENCE_FROM_MEAN : The difference between a pixel value and the mean 
+                                               of that pixel's values across slices defined by the 
+                                               interval will be calculated. This is the default.
+
+                                             - PERCENT_DIFFERENCE_FROM_MEAN : The percent difference between a pixel value 
+                                               and the mean of that pixel's values across 
+                                               slices defined by the interval will be calculated.
+
+                                             - PERCENT_OF_MEAN : The percent of the mean will be calculated.
+
+                                             - Z_SCORE : The z-score for each pixel will be calculated. 
+                                               A z-score of 0 indicates the pixel's value is identical to the mean. 
+                                               A z-score of 1 indicates the pixel's value is 1 standard deviation from the mean. 
+                                               If a z-score is 2, the pixel's value is 2 standard deviations from the mean, and so on.
+
+                                             - DIFFERENCE_FROM_MEDIAN : The difference between a pixel value and the median of that 
+                                               pixel's values across slices defined by the interval will be calculated
+
+                                             - PERCENT_DIFFERENCE_FROM_MEDIAN : The percent difference between a pixel value and the 
+                                               median of that pixel's values across slices defined by the interval will be calculated.
+
+                                             - PERCENT_OF_MEDIAN : The percent of the median will be calculated.
+    ------------------------------------     --------------------------------------------------------------------
+    calculation_interval                     Optional String. Specifies the temporal interval that will be
+                                             used to calculate the mean.
+
+                                             - ALL : Calculates the mean across all slices for each pixel.
+
+                                             - YEARLY : Calculates the yearly mean for each pixel.
+
+                                             - RECURRING_MONTHLY : Calculates the monthly mean for each pixel.
+
+                                             - RECURRING_WEEKLY : Calculates the weekly mean for each pixel.
+
+                                             - RECURRING_DAILY : Calculates the daily mean for each pixel.
+
+                                             - HOURLY : Calculates the hourly mean for each pixel.
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_missing_values                    Optional Boolean. Specifies whether NoData values are ignored in
+                                             the analysis.
+
+                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. This is the default.
+
+                                             - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+        # Usage Example 1: This example aggregates temperature data into yearly data with the average temperature values.
+        
+        multidimensional_input = gis.content.search("mdim")[0].layers[0]
+        generate_anomaly = generate_multidimensional_anomaly(input_multidimensional_raster=multidimensional_input, 
+                                                             variables=["cceiling", "ccover", "gust", "temperature"], 
+                                                             method="DIFFERENCE_FROM_MEAN", 
+                                                             temporal_interval="WEEKLY", 
+                                                             output_name="TempAnomaly", 
+                                                             ignore_missing_values=True, 
+                                                             gis=gis)
+
+    Returns
+    -------
+    output_raster : Imagery layer item
+    """
+
+    #task = "GenerateMultidimensionalAnomaly"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster, 
+                                                                       output_name=output_name, 
+                                                                       variables=variables, 
+                                                                       method=method, 
+                                                                       calculation_interval=calculation_interval, 
+                                                                       ignore_missing_values=ignore_missing_values, 
+                                                                       context=context,
+                                                                       future=future,
+                                                                       **kwargs)
+    """
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    params["inputMultidimensionalRaster"] = _layer_input(input_multidimensional_raster)
+
+    if variables is not None:
+        params["variables"] = variables
+    if method is not None:
+        method_allowed_values = ['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN']
+        if [element.lower() for element in method_allowed_values].count(method.lower()) <= 0 :
+            raise RuntimeError('method can only be one of the following: '+str(method_allowed_values))
+        for element in method_allowed_values:
+            if method.upper() == element:
+                params["method"] = element
+    if temporal_interval is not None:
+        interval_keyword_allowed_values = ['ALL', 'HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']
+        if [element.lower() for element in interval_keyword_allowed_values].count(temporal_interval.lower()) <= 0 :
+            raise RuntimeError('temporal_interval can only be one of the following: '+str(interval_keyword_allowed_values))
+        for element in interval_keyword_allowed_values:
+            if temporal_interval.upper() == element:
+                params["temporalInterval"] = element
+
+    if ignore_missing_values is not None:
+        params["ignoreMissingValues"] = ignore_missing_values
+
+    _set_context(params)
+
+    output_service = None
+
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
+
+    params["outputName"] = output_raster
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_service.update(item_properties)
+    return output_service
+    """
+
+def build_multidimensional_transpose(input_multidimensional_raster,
+                                     context=None,
+                                     *,
+                                     gis=None,
+                                     future=False,
+                                     **kwargs):
+    """
+    Transposes a multidimensional raster dataset, which chunks the multidimensional data along each dimension
+    to optimize performance when accessing pixel values across all slices.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+        # Usage Example 1: Build the transpose for a sea surface temperature CRF dataset.
+        
+        multidimensional_input = gis.content.search("SST_1992_2018")[0].layers[0]
+        build_mdim_anomaly_op = build_multidimensional_transpose(input_multidimensional_raster=multidimensional_input, gis=gis)
+
+    Returns
+    -------
+    output_raster : Image layer item 
+    """
+
+    #task = "BuildMultidimensionalTranspose"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
+                                                                      context=context,
+                                                                      future=future,
+                                                                      **kwargs)
+    """
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    params["inputMultidimensionalRaster"] = _layer_input(input_multidimensional_raster)
+
+    _set_context(params)
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+
+    return job_values['outputMultidimensionalRaster']['url']
+    """
+
+def aggregate_multidimensional_raster(input_multidimensional_raster,
+                                      dimension=None,
+                                      variables=None,
+                                      aggregation_method='MEAN',
+                                      aggregation_definition='ALL',
+                                      interval_keyword=None,
+                                      interval_value=None,
+                                      interval_unit=None,
+                                      interval_ranges=None,
+                                      aggregation_function=None,
+                                      ignore_nodata=True,
+                                      output_name=None,
+                                      context=None,
+                                      *,
+                                      gis=None,
+                                      future=False,
+                                      **kwargs):
+    """
+    Generates a multidimensional image service by aggregating existing multidimensional raster variables along a dimension..
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Required String. The aggregation dimension. This is the dimension
+                                             along which the variables will be aggregated.
+    ------------------------------------     --------------------------------------------------------------------
+    variables                                Optional List. The variable or variables that will be aggregated
+                                             along the given dimension. If no variable is specified, all variables
+                                             with the selected dimension will be aggregated.
+
+                                             For example, to aggregate your daily temperature data into monthly
+                                             average values, specify temperature as the variable to be aggregated.
+                                             If you do not specify any variables and you have both daily temperature
+                                             and daily precipitation variables, both variables will be aggregated
+                                             into monthly averages and the output multidimensional raster will include
+                                             both variables.
+    ------------------------------------     --------------------------------------------------------------------
+    aggregation_method                       Optional String. Specifies the mathematical method that will be used
+                                             to combine the aggregated slices in an interval.
+
+                                             - MEAN : Calculates the mean of a pixel's values across all slices in the interval. This is the default.
+
+                                             - MAXIMUM : Calculates the maximum value of a pixel across all slices in the interval.
+
+                                             - MAJORITY : Calculates the value that occurred most frequently for a pixel across all slices in the interval.
+
+                                             - MINIMUM : Calculates the minimum value of a pixel across all slices in the interval.
+
+                                             - MINORITY : Calculates the value that occurred least frequently for a pixel across all slices in the interval.
+
+                                             - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
+
+                                             - RANGE : Calculates the range of values for a pixel across all slices in the interval.
+
+                                             - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
+
+                                             - SUM : Calculates the sum of a pixel's values across all slices in the interval.
+
+                                             - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
+
+                                             - CUSTOM : Calculates the value of a pixel based on a custom raster function.
+                                               When the aggregation_method is set to CUSTOM, the aggregation_function parameter 
+                                               becomes available.
+    ------------------------------------     --------------------------------------------------------------------
+    aggregation_definition                   Optional String. Specifies the dimension interval for which the data
+                                             will be aggregated.
+
+                                             - ALL : The data values will be aggregated across all slices. This is the default.
+
+                                             - INTERVAL_KEYWORD : The variable data will be aggregated using a commonly known interval.
+
+                                             - INTERVAL_VALUE : The variable data will be aggregated using a user-specified interval and unit.
+
+                                             - INTERVAL_RANGES : The variable data will be aggregated between specified pairs of values or dates.
+    ------------------------------------     --------------------------------------------------------------------
+    interval_keyword                         Optional String. Specifies the keyword interval that will be used
+                                             when aggregating along the dimension. This parameter is required
+                                             when the aggregation_def parameter is set to INTERVAL_KEYWORD, and
+                                             the aggregation must be across time.
+
+                                             - HOURLY : The data values will be aggregated into hourly time steps, 
+                                               and the result will include every hour in the time series.
+
+                                             - DAILY : The data values will be aggregated into daily time steps, 
+                                               and the result will include every day in the time series.
+
+                                             - WEEKLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include every week in the time series.
+
+                                             - MONTHLY : The data values will be aggregated into monthly time steps, 
+                                               and the result will include every month in the time series.
+
+                                             - QUARTERLY : The data values will be aggregated into quarterly time steps, 
+                                               and the result will include every quarter in the time series.
+
+                                             - YEARLY : The data values will be aggregated into yearly time steps, 
+                                               and the result will include every year in the time series.
+
+                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps, 
+                                               and the result includes each one aggregated value per day. 
+                                               The output will include, at most, 366 daily time slices
+
+                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per week. 
+                                               The output will include, at most, 53 weekly time slices.
+
+                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per month. 
+                                               The output will include, at most, 12 monthly time slices.
+
+                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, 
+                                               and the result will include one aggregated value per quarter. 
+                                               The output will include, at most, 4 quarterly time slices.
+    ------------------------------------     --------------------------------------------------------------------
+    interval_value                           Optional String. The size of the interval that will be used for the
+                                             aggregation. This parameter is required when the aggregation_def
+                                             parameter is set to INTERVAL_VALUE.
+
+                                             For example, to aggregate 30 years of monthly temperature data into
+                                             5-year increments, enter 5 as the interval_value, and specify
+                                             interval_unit as YEARS.
+    ------------------------------------     --------------------------------------------------------------------
+    interval_unit                            Optional Integer. The unit that will be used for the interval value.
+                                             This parameter is required when the dimension parameter is set to a
+                                             time field and the aggregation_def parameter is set to INTERVAL_VALUE.
+
+                                             If you are aggregating over anything other than time, this option
+                                             will not be available and the unit for the interval value will match
+                                             the variable unit of the input multidimensional raster data.
+
+                                             - HOURS : The data values will be aggregated into hourly time slices at the interval provided.
+                                             - DAYS : The data values will be aggregated into daily time slices at the interval provided.
+                                             - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
+                                             - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
+                                             - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
+    ------------------------------------     --------------------------------------------------------------------
+    interval_ranges                          Optional String. Interval ranges specified in a value table will
+                                             be used to aggregate groups of values. The value table consists of
+                                             pairs of minimum and maximum range values, with data type string.
+
+                                             This parameter is required when the aggregation_def parameter is
+                                             set to INTERVAL_RANGE.
+    ------------------------------------     --------------------------------------------------------------------
+    aggregation_function                     Optional String(fileshare path) or JSON. A custom raster function
+                                             that will be used to compute the pixel values of the aggregated
+                                             rasters. The input is a raster function JSON object or an .rft.xml
+                                             file created from a function chain or a custom Python raster function.
+
+                                             This parameter is required when the aggregation_method parameter
+                                             is set to CUSTOM.
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in
+                                             the analysis.
+
+                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. 
+                                               This is the default.
+
+                                             - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+        # Usage Example 1: This example aggregates temperature data into yearly data with the average temperature values.
+        
+        multidimensional_input = gis.content.search("mdim")[0].layers[0]
+        aggMultidim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input, variables="temperature", dimension="StdTime", aggregation_method="MEAN", aggregation_definition="INTERVAL_KEYWORD", interval_keyword="YEARLY", interval_value=None, output_name="YearlyTemp", ignore_nodata=True, gis=gis)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example aggregates temperature data into hourly data with the average temperature values for multiple variables.
+
+        multidimensional_input = gis.content.search("mdim")[0].layers[0]
+        aggMultidim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input, variables="cceiling;ccover;gust;temperature", dimension="StdTime", aggregation_method="MEAN", aggregation_definition="INTERVAL_VALUE", interval_value=3, interval_unit="HOURS", output_name="YearlyTemp", ignore_nodata=True, gis=gis)
+        
+    .. code-block:: python
+        
+        # Usage Example 3: This example aggregates temperature data into hourly data using a custom aggregation method(given using the fileshare path) for multiple variables.
+
+        multidimensional_input = gis.content.search("mdim")[0].layers[0]
+        aggMultidim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input, variables="cceiling;ccover;gust;temperature", dimension="StdTime", aggregation_method="CUSTOM", aggregation_definition="INTERVAL_RANGES", interval_ranges="40923.125 40923.25;40923.5 40923.625", aggregation_function="/fileShares/temp/Mdim.rft.json", output_name="YearlyTemp", ignore_nodata=True, gis=gis)
+
+    Returns
+    -------
+    output_raster : Imagery layer item 
+    """
+
+    #task = "AggregateMultidimensionalRaster"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.aggregate_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster, 
+                                                                       output_name=output_name, 
+                                                                       dimension=dimension, 
+                                                                       aggregation_method=aggregation_method, 
+                                                                       variables=variables, 
+                                                                       aggregation_definition=aggregation_definition, 
+                                                                       interval_keyword=interval_keyword, 
+                                                                       interval_value=interval_value, 
+                                                                       interval_unit=interval_unit, 
+                                                                       interval_ranges=interval_ranges, 
+                                                                       aggregation_function=aggregation_function, 
+                                                                       ignore_nodata=ignore_nodata, 
+                                                                       context=context,
+                                                                       future=future,
+                                                                       **kwargs)
+
+    """
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    params["inputMultidimensionalRaster"] = _layer_input(input_multidimensional_raster)
+
+    if variables is not None:
+        params["variables"] = variables
+    if dimension is not None:
+        params["dimension"] = dimension
+    if aggregation_method is not None:
+        aggregation_method_allowed_values = ['MEAN', 'MAXIMUM', 'MAJORITY', 'MINIMUM', 'MINORITY', 
+                                             'MEDIAN', 'RANGE', 'STD', 'SUM', 'VARIETY', 'CUSTOM']
+        if [element.lower() for element in aggregation_method_allowed_values].count(aggregation_method.lower()) <= 0 :
+            raise RuntimeError('aggregation_method can only be one of the following: '+str(aggregation_method_allowed_values))
+        for element in aggregation_method_allowed_values:
+            if aggregation_method.upper() == element:
+                params["aggregationMethod"] = element
+
+    if aggregation_definition is not None:
+        aggregation_def_allowed_values = ['ALL', 'INTERVAL_KEYWORD', 'INTERVAL_VALUE', 'INTERVAL_RANGES']
+
+        if [element.lower() for element in aggregation_def_allowed_values].count(aggregation_definition.lower()) <= 0 :
+            raise RuntimeError('aggregation_definition can only be one of the following: '+str(aggregation_def_allowed_values))
+        for element in aggregation_def_allowed_values:
+            if aggregation_definition.upper() == element:
+                params["aggregationDefinition"] = element
+
+    if interval_keyword is not None:
+        interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY']
+        if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
+            raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
+        for element in interval_keyword_allowed_values:
+            if interval_keyword.upper() == element:
+                params["intervalKeyword"] = element
+
+    if interval_value is not None:
+        params["intervalValue"] = interval_value
+    if interval_unit is not None:
+        params["intervalUnit"] = interval_unit
+    if interval_ranges is not None:
+        params["intervalRanges"] = interval_ranges
+    if aggregation_function is not None:
+        params["aggregationFunction"] = aggregation_function
+    if ignore_nodata is not None:
+        params["ignoreNodata"] = ignore_nodata
+
+    _set_context(params)
+
+    output_service = None
+
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
+
+    params["outputName"] = output_raster
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_service.update(item_properties)
+    return output_service
+    """
+
+def generate_trend_raster(input_multidimensional_raster,
+                          dimension=None,
+                          variables=None,
+                          trend_line_type='LINEAR',
+                          frequency=None,
+                          ignore_nodata=True,
+                          output_name=None,
+                          context=None,
+                          *,
+                          gis=None,
+                          future=False,
+                          **kwargs):
+    """
+    Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Required String. The aggregation dimension. This is the dimension
+                                             along which the variables will be aggregated.
+    ------------------------------------     --------------------------------------------------------------------
+    variables                                Optional List. The variable or variables for which anomalies will
+                                             be calculated. If no variable is specified, all variables with a time
+                                             dimension will be analyzed.
+    ------------------------------------     --------------------------------------------------------------------
+    trend_line_type                          Optional String. Specifies the type of line to be used to fit to the 
+                                             pixel values along a dimension.
+
+                                             - LINEAR : Fits the pixel values for a variable along a linear trend line. This is the default.
+
+                                             - POLYNOMIAL : Fits the pixel values for a variable along a second order polynomial trend line.
+
+                                             - HARMONIC : Fits the pixel values for a variable along a harmonic trend line.
+    ------------------------------------     --------------------------------------------------------------------
+    frequency                                Optional long. 
+
+                                             If the line_type parameter is set to HARMONIC, the default value is 1 ,or one harmonic cycle per year.
+
+                                             If the line_type parameter is set to POLYNOMIAL, the default value is 2, or second order polynomial.
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in
+                                             the analysis.
+
+                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. 
+                                               This is the default.
+
+                                             - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+
+    Returns
+    -------
+    output_raster : Imagery layer item
+    """
+
+    #task = "GenerateTrendRaster"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster, 
+                                                          output_name=output_name, 
+                                                          dimension=dimension, 
+                                                          variables=variables, 
+                                                          trend_line_type=trend_line_type,
+                                                          frequency=frequency, 
+                                                          ignore_nodata=ignore_nodata,
+                                                          context=context,
+                                                          future=future,
+                                                          **kwargs)
+
+    """
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    params["inputMultidimensionalRaster"] = _layer_input(input_multidimensional_raster)
+
+    if variables is not None:
+        params["variables"] = variables
+    if dimension is not None:
+        params["dimension"] = dimension
+
+    if trend_line_type is not None:
+        trend_line_type_allowed_values = ['LINEAR', 'HARMONIC', 'POLYNOMIAL']
+        if [element.lower() for element in trend_line_type_allowed_values].count(trend_line_type.lower()) <= 0 :
+            raise RuntimeError('trend_line_type can only be one of the following: '+str(trend_line_type_allowed_values))
+        for element in trend_line_type_allowed_values:
+            if trend_line_type.upper() == element:
+                params["trendLineType"] = element
+
+
+    if frequency is not None:
+        params["frequency"] = frequency
+
+    if ignore_nodata is not None:
+        params["ignoreNodata"] = ignore_nodata
+
+    _set_context(params)
+
+    output_service = None
+
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
+
+    params["outputName"] = output_raster
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_service.update(item_properties)
+    return output_service
+    """
+
+def predict_using_trend_raster(input_multidimensional_raster,
+                               variables=None,
+                               dimension_definition='BY_VALUE',
+                               dimension_values=None,
+                               start=None,
+                               end=None,
+                               interval_value=1,
+                               interval_unit=None,
+                               output_name=None,
+                               context=None,
+                               *,
+                               gis=None,
+                               future=False,
+                               **kwargs):
+    """
+    Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    variables                                Optional List. The variable or variables for which anomalies will
+                                             be calculated. If no variable is specified, all variables with a time
+                                             dimension will be analyzed.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_definition                     Required String. Specifies the method used to provide prediction dimension values.
+
+                                             - BY_VALUE : The prediction will be calculated for a single dimension value or 
+                                               a list of dimension values defined by the Values parameter (dimension_values in Python). 
+                                               This is the default.For example, you want to predict yearly precipitation for the years 
+                                               2050, 2100, and 2150. This is the default. 
+
+                                             - BY_INTERVAL - The prediction will be calculated for an interval of the dimension defined 
+                                               by a start and an end value.For example, you want to predict yearly precipitation for 
+                                               every year between 2050 and 2150.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_values                         Optional String. The dimension value or values to be used in the prediction. 
+                                             
+                                             The format of the dimension_values must match the format of the dimension values 
+                                             in the input multidimensional raster, and multiple values are separated with a semicolon. 
+                                             This parameter is required when dimension_def parameter is set to BY_VALUE.
+    ------------------------------------     --------------------------------------------------------------------
+    start                                    Optional String.The start date, height, or depth of the dimension interval to be used 
+                                             in the prediction.
+    ------------------------------------     --------------------------------------------------------------------
+    end                                      Optional String. The end date, height, or depth of the dimension interval to be used in the prediction.
+    ------------------------------------     --------------------------------------------------------------------
+    interval_value                           Optional Float. The number of steps between two dimension values to be included in the prediction. The default value is 1
+                                                
+                                             For example, to predict temperature values every five years, use a value of 5.
+    ------------------------------------     --------------------------------------------------------------------
+    interval_unit                            Optional String. Specifies the unit that will be used for the value interval. 
+                                             This parameter only applies when the dimension of analysis is a time dimension.
+
+                                             - HOURS - The prediction will be calculated for each hour in the range of time described by the start, end, and interval_value parameters.
+
+                                             - DAYS - The prediction will be calculated for each day in the range of time described by the start, end, and interval_value parameters.
+
+                                             - WEEKS - The prediction will be calculated for each week in the range of time described by the start, end, and interval_value parameters.
+
+                                             - MONTHS - The prediction will be calculated for each month in the range of time described by the start, end, and interval_value parameters.
+
+                                             - YEARS - The prediction will be calculated for each year in the range of time described by the start, end, and interval_value parameters.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+
+    Returns
+    -------
+    output_raster : Imagery layer item
+    """
+
+    #task = "PredictUsingTrendRaster"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.predict_using_trend_raster(input_multidimensional_raster=input_multidimensional_raster, 
+                                                 output_name=output_name, 
+                                                 variables=variables, 
+                                                 dimension_definition=dimension_definition,
+                                                 dimension_values=dimension_values, 
+                                                 start=start, 
+                                                 end=end, 
+                                                 interval_value=interval_value, 
+                                                 interval_unit=interval_unit, 
+                                                 context=context,
+                                                 future=future,
+                                                 **kwargs)
+
+    """
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    params["inputMultidimensionalRaster"] = _layer_input(input_multidimensional_raster)
+
+    if variables is not None:
+        params["variables"] = variables
+
+    if dimension_definition is not None:
+        dimension_definition_allowed_values = ['BY_VALUES', 'BY_INTERVAL']
+        if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
+            raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+        for element in dimension_definition_allowed_values:
+            if dimension_definition.upper() == element:
+                params["dimensionDefinition"] = element
+
+
+    if dimension_values is not None:
+        params["dimensionValues"] = dimension_values
+
+    if from_value is not None:
+        params["from"] = from_value
+
+    if to_value is not None:
+        params["to"] = to_value
+
+
+    if interval_value is not None:
+        params["intervalValue"] = interval_value
+
+    if interval_unit is not None:
+        interval_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
+        if [element.lower() for element in interval_unit_allowed_values].count(interval_unit.lower()) <= 0 :
+            raise RuntimeError('interval_unit can only be one of the following: '+str(interval_unit_allowed_values))
+        for element in interval_unit_allowed_values:
+            if interval_unit.upper() == element:
+                params["intervalUnit"] = element
+
+    _set_context(params)
+
+    output_service = None
+
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
+
+    params["outputName"] = output_raster
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_service.update(item_properties)
+    return output_service
+    """
+
+def find_argument_statistics(input_raster,
+                             dimension=None,
+                             variables=None,
+                             statistics_type='ARGUMENT_MIN',
+                             min_value=None,
+                             max_value=None,
+                             multiple_occurrence_value=True,
+                             ignore_nodata=True,
+                             output_name=None,
+                             context=None,
+                             *,
+                             gis=None,
+                             future=False,
+                             **kwargs):
+    """
+    Extracts the dimension value at which a given statistic is attained for each pixel in a multidimensional raster.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Required String. The aggregation dimension. This is the dimension
+                                             along which the variables will be aggregated.
+    ------------------------------------     --------------------------------------------------------------------
+    variables                                Optional List. The variable or variables for which anomalies will
+                                             be calculated. If no variable is specified, all variables with a time
+                                             dimension will be analyzed.
+    ------------------------------------     --------------------------------------------------------------------
+    statistics_type                          Optional String. Specifies the statistic to extract from the variable or variables along the given dimension.
+                                             
+                                             - ARGUMENT_MIN : The dimension value at which the minimum variable value is reached will be extracted. This is the default.
+
+                                             - ARGUMENT_MAX : The dimension value at which the maximum variable value is reached will be extracted.
+
+                                             - ARGUMENT_MEDIAN : The dimension value at which the median variable value is reached will be extracted.
+
+                                             - DURATION : The longest dimension duration for which the variable values fall between the minimum and maximum values.
+    ------------------------------------     --------------------------------------------------------------------
+    min_value                                Optional Float. The minimum variable value to be used to extract the duration.
+
+                                             This parameter is required when the statistics_type parameter is set to DURATION.
+    ------------------------------------     --------------------------------------------------------------------
+    max_value                                Optional Float. The maximum variable value to be used to extract the duration.
+    ------------------------------------     --------------------------------------------------------------------
+    multiple_occurrence_value                Optional Long.. Specifies the pixel value to use to indicate that a given argument 
+                                             statistic was reached more than once in the input raster dataset. If not specified,
+                                             the pixel value will be the value of the dimension the first time the argument 
+                                             statistic was reached.
+    ------------------------------------     --------------------------------------------------------------------
+    ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in
+                                             the analysis.
+
+                                             - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. 
+                                               This is the default.
+
+                                             - False : The analysis will result in NoData if there are any NoData values for the pixel along the given dimension.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+
+    Returns
+    -------
+    output_raster : Imagery layer item
+    """
+    #task = "FindArgumentStatistics"
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.find_argument_statistics(input_raster=input_raster, 
+                                               output_name=output_name, 
+                                               dimension=dimension, 
+                                               variables=variables, 
+                                               statistics_type=statistics_type, 
+                                               min_value=min_value, 
+                                               max_value=max_value, 
+                                               multiple_occurrence_value=multiple_occurrence_value, 
+                                               ignore_nodata=ignore_nodata, 
+                                               context=context,
+                                               future=future,
+                                               **kwargs)
+
+    """
+    url = gis.properties.helperServices.rasterAnalytics.url
+    gptool = _arcgis.gis._GISResource(url, gis)
+
+    params = {}
+
+    params["inputMultidimensionalRaster"] = _layer_input(input_multidimensional_raster)
+
+    if variables is not None:
+        params["variables"] = variables
+
+    if statistics_type is not None:
+        statistics_type_allowed_values = ['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
+        if [element.lower() for element in statistics_type_allowed_values].count(statistics_type.lower()) <= 0 :
+            raise RuntimeError('statistics_type can only be one of the following: '+str(statistics_type_allowed_values))
+        for element in statistics_type_allowed_values:
+            if statistics_type.upper() == element:
+                params["statisticsType"] = element
+
+
+    if dimension is not None:
+        params["dimension"] = dimension
+
+    if min_value is not None:
+        params["minValue"] = min_value
+
+    if max_value is not None:
+        params["maxValue"] = max_value
+
+    if ignore_nodata is not None:
+        params["tieAsNodata"] = ignore_nodata
+
+    if ignore_nodata is not None:
+        params["ignoreNodata"] = ignore_nodata
+
+    _set_context(params)
+
+    output_service = None
+
+    output_raster, output_service = _set_output_raster(output_name, task, gis, kwargs)
+
+    params["outputName"] = output_raster
+
+    task_url, job_info, job_id = _analysis_job(gptool, task, params)
+
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    job_values = _analysis_job_results(gptool, task_url, job_info, job_id)
+    item_properties = {
+        "properties": {
+            "jobUrl": task_url + '/jobs/' + job_info['jobId'],
+            "jobType": "GPServer",
+            "jobId": job_info['jobId'],
+            "jobStatus": "completed"
+        }
+    }
+    output_service.update(item_properties)
+    return output_service
+    """
+
+def linear_spectral_unmixing(input_raster,
+                             input_spectral_profile=None,
+                             value_option=[],
+                             output_name=None,
+                             context=None,
+                             *,
+                             gis=None,
+                             future=False,
+                             **kwargs):
+    """
+    Performs subpixel classification and calculates the fractional abundance of endmembers for individual pixels.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    input_spectral_profile                   Optional dict. The class spectral profile information.
+    ------------------------------------     --------------------------------------------------------------------
+    value_option                             Optional String. Specifies the options to define the output pixel values. 
+
+                                             - SUM_TO_ONE : Class values for each pixel are provided in decimal format with the sum 
+                                               of all classes equal to 1. For example, Class1 = 0.16; Class2 = 0.24; Class3 = 0.60.
+
+                                             - NON_NEGATIVE : There will be no negative output values.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+
+    Returns
+    -------
+    output_raster : Imagery layer item
+    """
+
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.linear_spectral_unmixing(input_raster=input_raster, 
+                                               output_name=output_name, 
+                                               input_spectral_profile=input_spectral_profile, 
+                                               value_option=value_option, 
+                                               context=context,
+                                               future=future,
+                                               **kwargs)
+
+
+def costpath_as_polyline(input_destination_data,
+                         input_cost_distance_raster,
+                         input_cost_backlink_raster,
+                         path_type='BEST_SINGLE',
+                         destination_field=None,
+                         output_polyline_name=None,
+                         context=None,
+                         *,
+                         gis=None,
+                         future=False,
+                         **kwargs):
+
+    '''
+    Calculates the least cost polyline path between sources and known destinations.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_destination_data                   A raster or feature layer that identifies those cells from which the 
+                                             least-cost path is determined to the least costly source.
+                                             If the input is a raster, the input consists of cells that have valid 
+                                             values (zero is a valid value), and the remaining cells must be 
+                                             assigned NoData.
+    ------------------------------------     --------------------------------------------------------------------
+    input_cost_distance_raster               The cost distance raster to be used to determine the least-cost path 
+                                             from the sources to the destinations.
+                                             The cost distance raster is usually created with the Cost Distance, 
+                                             Cost Allocation or Cost Back Link functions. The cost distance raster stores, 
+                                             for each cell, the minimum accumulative cost distance over a cost surface 
+                                             from each cell to a set of source cells.
+    ------------------------------------     --------------------------------------------------------------------
+    input_cost_backlink_raster               The name of a cost back link raster used to determine the path to return 
+                                             to a source via the least-cost path.
+                                             For each cell in the back link raster, a value identifies the neighbor 
+                                             that is the next cell on the least accumulative cost path from the cell 
+                                             to a single source cell or set of source cells.
+    ------------------------------------     --------------------------------------------------------------------
+    path_type                                A keyword defining the manner in which the values and zones on the 
+                                             input destination data will be interpreted in the cost path calculations.
+                                             A string describing the path type, which can either be BEST_SINGLE, 
+                                             EACH_CELL, or EACH_ZONE.
+
+                                             BEST_SINGLE: For all cells on the input destination data, the 
+                                             least-cost path is derived from the cell with the minimum of 
+                                             the least-cost paths to source cells. This is the default.
+
+                                             EACH_CELL: For each cell with valid values on the input 
+                                             destination data, at least-cost path is determined and saved 
+                                             on the output raster. With this option, each cell of the input 
+                                             destination data is treated separately, and a least-cost path 
+                                             is determined for each from cell.
+
+                                             EACH_ZONE: For each zone on the input destination data, 
+                                             a least-cost path is determined and saved on the output raster. 
+                                             With this option, the least-cost path for each zone begins at 
+                                             the cell with the lowest cost distance weighting in the zone.
+    ------------------------------------     --------------------------------------------------------------------
+    destination_field                        Optional. If not provided, a feature layer is created by the method 
+                                             and used as the output.
+                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             that instead.
+                                             Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    output_polyline_name                     Optional. If not provided, a feature layer is created by the method 
+                                             and used as the output.
+                                             You can pass in an existing feature layer Item from your GIS to use 
+                                             that instead.
+                                             Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return:
+        output_raster : Imagery layer item
+    '''
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.cost_path_as_polyline(input_destination_raster_or_features=input_destination_data, 
+                                            input_cost_distance_raster=input_cost_distance_raster, 
+                                            input_cost_backlink_raster=input_cost_backlink_raster, 
+                                            output_polyline_name=output_polyline_name, 
+                                            path_type=path_type, 
+                                            destination_field=destination_field, 
+                                            context=context,
+                                            future=future,
+                                            **kwargs)

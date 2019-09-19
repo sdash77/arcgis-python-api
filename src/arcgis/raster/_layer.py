@@ -2973,35 +2973,46 @@ class ImageryLayer(Layer):
         return self._mosaic_operation('sum')
 
 
-    def save(self, output_name=None, for_viz=False,*, gis=None, **kwargs):
+    def save(self, output_name=None, for_viz=False, process_as_multidimensional=None,
+            build_transpose=None, *, gis=None, future=False, **kwargs):
         """
         Persists this imagery layer to the GIS as an Imagery Layer item. If for_viz is True, a new Item is created that
         uses the applied raster functions for visualization at display resolution using on-the-fly image processing.
         If for_viz is False, distributed raster analysis is used for generating a new raster information product by
         applying raster functions at source resolution across the extent of the output imagery layer.
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        output_name           optional string. If not provided, an Imagery Layer item is created
-                              by the method and used as the output.
-                              You can pass in the name of the output Imagery Layer that should be
-                              created by this method to be used as the output for the tool.
-                              Alternatively, if for_viz is False, you can pass in an existing
-                              Image Layer Item from your GIS to use that instead.
-                              A RuntimeError is raised if a layer by that name already exists
-        -----------------     --------------------------------------------------------------------
-        for_viz               optional boolean. If True, a new Item is created that uses the
-                              applied raster functions for visualization at display resolution
-                              using on-the-fly image processing.
-                              If for_viz is False, distributed raster analysis is used for
-                              generating a new raster information product for use in analysis and
-                              visualization by applying raster functions at source resolution
-                              across the extent of the output imagery layer.
-        -----------------     --------------------------------------------------------------------
-        gis                   optional arcgis.gis.GIS object. The GIS to be used for saving the
-                              output
-        =================     ====================================================================
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              optional string. If not provided, an Imagery Layer item is created
+                                                 by the method and used as the output.
+                                                 You can pass in the name of the output Imagery Layer that should be
+                                                 created by this method to be used as the output for the tool.
+                                                 Alternatively, if for_viz is False, you can pass in an existing
+                                                 Image Layer Item from your GIS to use that instead.
+                                                 A RuntimeError is raised if a layer by that name already exists
+        ------------------------------------     --------------------------------------------------------------------
+        for_viz                                  optional boolean. If True, a new Item is created that uses the
+                                                 applied raster functions for visualization at display resolution
+                                                 using on-the-fly image processing.
+                                                 If for_viz is False, distributed raster analysis is used for
+                                                 generating a new raster information product for use in analysis and
+                                                 visualization by applying raster functions at source resolution
+                                                 across the extent of the output imagery layer.
+        ------------------------------------     --------------------------------------------------------------------
+        process_as_multidimensional              Optional bool.  If the input is multidimensional raster, the output 
+                                                 will be processed as multidimensional if set to True
+        ------------------------------------     --------------------------------------------------------------------
+        build_transpose                          Optional bool, if set to true, transforms the output 
+                                                 multidimensional raster. Valid only if process_as_multidimensional 
+                                                 is set to True
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      optional arcgis.gis.GIS object. The GIS to be used for saving the
+                                                 output. Keyword only parameter. 
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Optional boolean. If True, the result will be a GPJob object and 
+                                                 results will be returned asynchronously. Keyword only parameter. 
+        ====================================     ====================================================================
 
         :return: output_raster - Image layer item
         """
@@ -3051,9 +3062,9 @@ class ImageryLayer(Layer):
                     layer_extent_set = True
                 try:
                     if (self._uses_gbl_function) and (("use_ra" in self._other_outputs.keys()) and self._other_outputs["use_ra"]==True):
-                        gr_output = _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g, **kwargs)
+                        gr_output = _save_ra(self._fnra,output_name=output_name, other_outputs=self._other_outputs, gis=g,future=future,  **kwargs)
                     else:
-                        gr_output = generate_raster(self._fnra, output_name=output_name, gis=g, **kwargs)
+                        gr_output = generate_raster(self._fnra, output_name=output_name, process_as_multidimensional=process_as_multidimensional, build_transpose=build_transpose, gis=g, future=future, **kwargs)
                 except Exception:
                     if layer_extent_set:
                         _arcgis.env.analysis_extent = None
@@ -3075,6 +3086,7 @@ class ImageryLayer(Layer):
                     output_name=None,
                     *,
                     gis=None,
+                    future=False, 
                     **kwargs):
         """
         Converts this raster to a persisted feature layer of the specified type using Raster Analytics.
@@ -3097,6 +3109,9 @@ class ImageryLayer(Layer):
         -----------------     --------------------------------------------------------------------
         gis                   optional arcgis.gis.GIS object. The GIS to be used for saving the
                               output. The GIS must have Raster Analytics capability.
+        -----------------     --------------------------------------------------------------------
+        future                Optional boolean. If True, the result will be a GPJob object and 
+                              results will be returned asynchronously. Keyword only parameter. 
         =================     ====================================================================
 
         :return:  converted feature layer item
@@ -3111,10 +3126,10 @@ class ImageryLayer(Layer):
         if "serviceToken" in self._lyr_dict:
             url = url+"?token="+ self._lyr_dict["serviceToken"]
         if self._fnra is None:
-            return convert_raster_to_feature(url, field, output_type, simplify, output_name, gis=g, **kwargs)
+            return convert_raster_to_feature(url, field, output_type, simplify, output_name, gis=g,future=future, **kwargs)
         fnarg_ra = self._fnra['rasterFunctionArguments']
         fnarg = self._fn
-        return convert_raster_to_feature({"url":url,"renderingRule":self._fn}, field, output_type, simplify, output_name, gis=g, **kwargs)
+        return convert_raster_to_feature({"url":url,"renderingRule":self._fn}, field, output_type, simplify, output_name, gis=g,future=future,  **kwargs)
 
 
     def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):

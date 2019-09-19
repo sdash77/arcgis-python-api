@@ -1176,7 +1176,7 @@ class Service(BaseServer):
 
         u_url = self._url[:self._url.rfind('/')] + "/renameService"
 
-        res = self._service._con.post(path=u_url, postdata=params)
+        res = self._con.post(path=u_url, postdata=params)
         if 'status' in res:
             return res['status'] == 'success'
         return res

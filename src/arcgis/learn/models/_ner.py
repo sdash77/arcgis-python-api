@@ -42,15 +42,15 @@ class EntityRecognizer(ArcGISModel):
         self._emd_template = {}
         self.model = None
         self.model_dir=Path('Models')
+        self.address_tag = 'Address'  #Defines the default addres field
+        self.entities = None #Stores all the entity names from the training data into a list
+        self.has_address = True #Flag to identify if the training data has any address  
+        self.trained = False #Flag to check if model has been trained      
         if data:
             self.path = data.path
             self.data = data
             self.train_ds = data.train_ds
             self.val_ds = data.val_ds
-            self.address_tag = 'Address'  #Defines the default addres field
-            self.trained = False #Flag to check if model has been trained
-            self.entities = None #Stores all the entity names from the training data into a list
-            self.has_address = True #Flag to identify if the training data has any address        
         else:
             self.train_ds = None
             self.val_ds = None
@@ -94,7 +94,7 @@ class EntityRecognizer(ArcGISModel):
             return logging.warning('Cannot fit the model on empty data.')
         TRAIN_DATA = self.train_ds.data
         VAL_DATA = self.val_ds.data
-        nlp = spacy.blank('en')  # create blank Language class
+        nlp = spacy.blank('en') # create blank Language class
         
         
         if 'ner' not in nlp.pipe_names: # create the built-in pipeline components and add them to the pipeline
@@ -222,6 +222,8 @@ class EntityRecognizer(ArcGISModel):
         emd_path = Path(emd_path)
         ner = cls(data=data)
         ner.load(emd_path)
+        ner.trained = True
+        ner.entities = list({item[2:] for item in ner.model.entity.move_names if item !='O'})
         return ner
 
 
