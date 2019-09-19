@@ -2081,7 +2081,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         result = gpjob.result()
-        if 'hot_spots_result_layer' in result:
+        if 'hot_spots_result_layer' in result and output_name:
             return result['hot_spots_result_layer']
         return result
     #----------------------------------------------------------------------

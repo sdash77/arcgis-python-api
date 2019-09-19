@@ -256,6 +256,8 @@ class GPJob(object):
                         iids.append(value['itemId'])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
+                else:
+                    r[key] = value
             if len(r) == 1:
                 return r[list(r.keys())[0]]
 
