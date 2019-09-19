@@ -8209,7 +8209,10 @@ class Item(dict):
         from datetime import timedelta
         if self.type == 'Feature Service':
             params['stype'] = 'features'
-            params['name'] = os.path.basename(os.path.dirname(self.layers[0].container._url))
+            if not self.layers[0].container:
+                params['name'] = os.path.basename(os.path.abspath(os.path.join(self.layers[0]._url, ".." + os.sep + "..")))
+            else:
+                params['name'] = os.path.basename(os.path.dirname(self.layers[0].container._url))
         if date_range.lower() in ['24h', '1d']:
             params['period'] = '1h'
             params['startTime'] = int((end_date - timedelta(days=1)).timestamp() * 1000)
