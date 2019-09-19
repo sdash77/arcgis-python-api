@@ -5537,7 +5537,7 @@ class Group(dict):
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
-               thumbnail=None, max_file_size=None, users_update_items=False):
+               thumbnail=None, max_file_size=None, users_update_items=False, clear_empty_fields=False):
         """
         Updates this group with only values supplied for particular arguments.
 
@@ -5579,6 +5579,9 @@ class Group(dict):
                             item's description, tags, metadata, as well as content.
                             This option can't be disabled once the group has
                             been created. Default is False.
+        ------------------  ---------------------------------------------------------
+        clear_empty_fields  Optional Boolean. If True, the user can set values to
+                            empty string, else, None values will be ignored.
         ==================  =========================================================
 
 
@@ -5597,7 +5600,8 @@ class Group(dict):
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
                                          sort_order, is_view_only, thumbnail,
-                                         max_file_size, users_update_items)
+                                         max_file_size, users_update_items,
+                                         clear_empty_fields=clear_empty_fields)
         if resp:
             self._hydrate()
         return resp

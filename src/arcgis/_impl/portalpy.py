@@ -1988,7 +1988,8 @@ class Portal(object):
     def update_group(self, group_id, title=None, tags=None, description=None,
                      snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
-                     thumbnail=None, max_file_size=None, users_update_items=None):
+                     thumbnail=None, max_file_size=None, users_update_items=None,
+                     clear_empty_fields=False):
         """ Updates a group.
 
         .. note::
@@ -2066,8 +2067,10 @@ class Portal(object):
             properties['capabilities'] = ""
         else:
             properties['capabilities'] = "updateitemcontrol"
+        properties['clearEmptyFields'] = clear_empty_fields
         postdata.update(properties)
-
+        if True:
+            postdata['clearEmptyFields'] = True
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
