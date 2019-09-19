@@ -4398,8 +4398,11 @@ class ContentManager(object):
             del i
         return results
     #----------------------------------------------------------------------
-
-    def replace_service(self, replace_item, new_item, replaced_service_name=None):
+    def replace_service(self,
+                        replace_item,
+                        new_item,
+                        replaced_service_name=None,
+                        replace_metadata=False):
         """
         The replace_service operation allows you to replace your production vector tile layers with staging ones. This
         operation allows you to perform quality control on a staging tile layer and to then replace the production tile
@@ -4438,13 +4441,18 @@ class ContentManager(object):
         new_item                Required Item or Item's Id as string. The replacement service.
         ----------------------  ----------------------------------------------------------------------
         replaced_service_name   Optional string. The name of the replacement service.
+        ----------------------  ----------------------------------------------------------------------
+        replace_metadata        Optional Boolean. When set to `True`, the item info {"thumbnail", "tag",
+                                "description", "summary"} of the current service is updated to that of
+                                the replacement service. The Credits, Terms of use, and Created from
+                                details will not be replaced. This option is set to `False` by default.
+
         ======================  ======================================================================
 
         :returns: boolean
         """
         user = self._gis.users.me
         if 'id' in user:
-            #user = user.id
             user = user.username
         else:
             user = user.username
@@ -4456,9 +4464,15 @@ class ContentManager(object):
         if isinstance(new_item, Item):
             new_item = new_item.itemid
 
+        create_new_item = False
+        if replaced_service_name:
+            create_new_item = True
+
         params = {
             'toReplaceItemId': replace_item,
             'replacementItemId': new_item,
+            'replaceMetadata' : replace_metadata,
+            'createNewItem': create_new_item,
             'f': 'json'
         }
         if replaced_service_name is not None:
