@@ -38,7 +38,9 @@ class Test_Data(unittest.TestCase):
         data_folder = os.path.join(os.path.dirname(__file__), 'data')
         cls.unet_data = os.path.join(data_folder, 'unet_naip_residential_tests_data')
         cls.ssd_data = os.path.join(data_folder, 'palm_tree_tests_data')
+        cls.ssd_img = os.path.join(cls.ssd_data, 'images/000000005.jpg')
         cls.ssd_pascal_voc_data = os.path.join(data_folder, 'trees_tests_data')
+        cls.ssd_pascal_voc_img = os.path.join(cls.ssd_pascal_voc_data,'images/000000005.tif')
         cls.feature_data = os.path.join(data_folder, 'damage_classifier_tests_data')
         cls.imagenet_data = ''
         #TODO - define data dictionary.
@@ -129,6 +131,41 @@ class Test_Data(unittest.TestCase):
         self.assertEqual(data_bunch.batch_size, 2)
         self.assertEqual(data_bunch.chip_size, 300)
 
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    def test_retinanet_data_esri_format(self):
+        data_bunch = prepare_data(self.ssd_data, chip_size=300, batch_size=4)
+        self.assertEqual(data_bunch.batch_size, 4)
+        self.assertEqual(data_bunch.chip_size, 300)
+        self.assertDictEqual(self.ssd_data_class_mapping, data_bunch.class_mapping)
+        rn = RetinaNet(data_bunch)
+        rn.fit(1)
+        rn.save('test_e1')
+        rn.load('test_e1')
+        rn.show_results()
+        rn.average_precision_score()
+        rn.predict(cls.ssd_img)
+
+
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    def test_retinanet_data_pascal_voc_format(self):
+        try:
+            prepare_data(self.ssd_pascal_voc_data, chip_size=200, batch_size=4)
+            self.assertTrue(False)
+        except Exception:
+            pass
+
+        data_bunch = prepare_data(self.ssd_pascal_voc_data, chip_size=200, batch_size=4, class_mapping=self.ssd_pascal_voc_data_class_mapping, dataset_type='PASCAL_VOC_rectangles')
+        self.assertEqual(data_bunch.batch_size, 4)
+        self.assertEqual(data_bunch.chip_size, 200)
+        self.assertDictEqual(data_bunch.class_mapping, self.ssd_pascal_voc_data_class_mapping)
+        rn = RetinaNet(data_bunch)
+        rn.fit(1)
+        rn.save('test_e1')
+        rn.load('test_e1')
+        rn.show_results()
+        rn.average_precision_score()
+        rn.predict(cls.ssd_pascal_voc_img)
+    
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_psp_data(self):
         data_bunch = prepare_data(self.unet_data, chip_size=300, batch_size=2)

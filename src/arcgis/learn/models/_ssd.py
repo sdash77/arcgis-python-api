@@ -8,6 +8,7 @@ logger = logging.getLogger()
 
 try:
     import torch
+    import numpy as np
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
@@ -15,7 +16,6 @@ try:
     from torchvision.models import resnet34
     from torchvision.models import mobilenet_v2
     from torchvision import models
-    import numpy as np
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
@@ -386,7 +386,7 @@ class SingleShotDetector(ArcGISModel):
         if visualize:
             image.show(y=bbox)
 
-        return None if bbox is None else bbox.data
+        return None if bbox is None else bbox.data, bbox.scores
 
     def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False):
         """
