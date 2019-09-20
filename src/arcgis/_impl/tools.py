@@ -1335,6 +1335,15 @@ class _FeatureAnalysisTools(BaseAnalytics):
         ret = gpjob.result()
         if output_name is not None and 'resultLayer' in ret:
             return ret['resultLayer']
+        elif isinstance(ret, FeatureCollection):
+            return ret
+        elif isinstance(ret, Item):
+            return ret
+        else:
+            res = {}
+            for fld in ret._fields:
+                res[fld] = getattr(ret, fld)
+            return res
         return ret
     #----------------------------------------------------------------------
     def create_viewshed(self,
@@ -4780,8 +4789,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                     if 'http:' in item or 'https:' in item:
                         url_list.append(item)
                     else:
-                        uri_list.append(item)        
-        
+                        uri_list.append(item)
+
             if len(item_id_list) > 0:
                 input_rasters_dict = {"itemIds" : item_id_list }
                 input_raster_specified = True
@@ -4876,8 +4885,8 @@ class _RasterAnalysisTools(BaseAnalytics):
     def add_image(self,
                   image_collection,
                   input_rasters,
-                  raster_type_name=None, 
-                  raster_type_params=None, 
+                  raster_type_name=None,
+                  raster_type_params=None,
                   context=None,
                   future=False,
                   **kwargs):
@@ -4906,11 +4915,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                                              The image collection must be an existing image collection.
                                              This is the output image collection (mosaic dataset) item or url or uri
         ------------------                   --------------------------------------------------------------------
-        raster_type_name                     Required, the name of the raster type to use for adding data to 
+        raster_type_name                     Required, the name of the raster type to use for adding data to
                                              the image collection.
         ------------------                   --------------------------------------------------------------------
         raster_type_params                   Optional,  additional raster_type specific parameters.
-        
+
                                              The process of add rasters to the image collection can be
                                              controlled by specifying additional raster type arguments.
 
@@ -5220,7 +5229,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         if output_back_direction_name is not None:
             output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_name, task=task,  output_properties=kwargs)
 
-        gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features, 
+        gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features,
                                              output_distance_name=output_distance_raster,
                                              maximum_distance=maximum_distance,
                                              output_cell_size=output_cell_size,
@@ -5230,7 +5239,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                              distance_method=distance_method,
                                              input_barrier_raster_or_features=input_barrier_raster_or_features,
                                              output_back_direction_name=output_back_direction_raster,
-                                             context=context, 
+                                             context=context,
                                              gis=self._gis,
                                              future=True)
         gpjob._is_ra = True
@@ -5313,7 +5322,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         _set_raster_context(context_param, context)
         if "context" in context_param.keys():
             context = context_param['context']
-            
+
         output_distance_raster, output_distance_service = self._set_output_raster(output_name=output_distance_name, task=task, output_properties=kwargs)
 
 
@@ -5386,7 +5395,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         Returns
         -------
-        output_raster : Image layer item 
+        output_raster : Image layer item
         """
 
         task = "Classify"
@@ -5417,7 +5426,7 @@ class _RasterAnalysisTools(BaseAnalytics):
     #----------------------------------------------------------------------
     #TODO: Format Inputs/ Outputs
     def classify_pixels_using_deep_learning(self,
-                                            input_raster,                                            
+                                            input_raster,
                                             model,
                                             model_arguments=None,
                                             output_classified_raster=None,
@@ -5452,7 +5461,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                - outSR - (Output Spatial Reference) Saves the result in the specified spatial reference
 
-                               - snapRaster - Function will adjust the extent of output rasters so that they 
+                               - snapRaster - Function will adjust the extent of output rasters so that they
                                  match the cell alignment of the specified snap raster.
 
                                - cellSize - Set the output raster cell size, or resolution
@@ -5465,7 +5474,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                Eg: {"outSR" : {spatial reference}}
 
-                               Setting context parameter will override the values set using arcgis.env 
+                               Setting context parameter will override the values set using arcgis.env
                                variable for this particular function.
         ------------------     --------------------------------------------------------------------
         gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -5595,7 +5604,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_type : Optional string
             One of the following: ['Point', 'Line', 'Polygon']
 
-        simplify : Optional bool, This option that specifies how the features should be smoothed. It is 
+        simplify : Optional bool, This option that specifies how the features should be smoothed. It is
                    only available for line and polygon output.
                    True, then the features will be smoothed out. This is the default.
                    if False, then The features will follow exactly the cell boundaries of the raster dataset.
@@ -5611,7 +5620,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         Returns
         -------
-        output_features : Image layer item 
+        output_features : Image layer item
         """
         task = "ConvertRasterToFeature"
         gis = self._gis
@@ -5682,16 +5691,16 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         """
         Create a collection of images that will participate in the ortho-mapping project.
-        Provides provision to use input rasters by reference 
+        Provides provision to use input rasters by reference
         and to specify image collection properties through context parameter.
 
         ==================                   ====================================================================
         **Argument**                         **Description**
         ------------------                   --------------------------------------------------------------------
         image_collection                     Required, the name of the image collection to create.
-                  
-                                             The image collection can be an existing image service, in 
-                                             which the function will create a mosaic dataset and the existing 
+
+                                             The image collection can be an existing image service, in
+                                             which the function will create a mosaic dataset and the existing
                                              hosted image service will then point to the new mosaic dataset.
 
                                              If the image collection does not exist, a new multi-tenant
@@ -5709,33 +5718,33 @@ class _RasterAnalysisTools(BaseAnalytics):
                                              - Shared data path (this path must be accessible by the server)
                                              - Name of a folder on the portal
         ------------------                   --------------------------------------------------------------------
-        raster_type_name                     Required, the name of the raster type to use for adding data to 
+        raster_type_name                     Required, the name of the raster type to use for adding data to
                                              the image collection.
         ------------------                   --------------------------------------------------------------------
         raster_type_params                   Optional,  additional raster_type specific parameters.
-        
+
                                              The process of add rasters to the image collection can be
                                              controlled by specifying additional raster type arguments.
 
                                              The raster type parameters argument is a dictionary.
         ------------------                   --------------------------------------------------------------------
         out_sr                               Optional, additional parameters of the service.
-                            
+
                                              The following additional parameters can be specified:
-                                             - Spatial reference of the image_collection; The well-known ID of 
-                                             the spatial reference or a spatial reference dictionary object for the 
+                                             - Spatial reference of the image_collection; The well-known ID of
+                                             the spatial reference or a spatial reference dictionary object for the
                                              input geometries.
                                              If the raster type name is set to "UAV/UAS", the spatial reference of the
                                              output image collection will be determined by the raster type parameters defined.
         ------------------                   --------------------------------------------------------------------
         context                               Optional, The context parameter is used to provide additional input parameters
                                                 {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
-                                            
+
                                                 use image_collection_properties key to set value for imageCollectionType.
-                                                Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service. 
-                                                Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment. 
-                                                Therefore, if the image collection is created by reference, the requester should set this 
-                                                property based on the type of images in the image collection using the following keywords. 
+                                                Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service.
+                                                Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment.
+                                                Therefore, if the image collection is created by reference, the requester should set this
+                                                property based on the type of images in the image collection using the following keywords.
                                                 If the imageCollectionType is not set, it defaults to "UAV/UAS"
 
                                                 If byref is set to True, the data will not be uploaded. If it is not set, the default is False
@@ -5781,7 +5790,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if image_collection_result is not None:
                     image_collection = json.dumps({"itemId": image_collection_result.itemid})
                 else:
-                    doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service") 
+                    doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
                     if doesnotexist:
                         if kwargs is not None:
                             if "folder" in kwargs:
@@ -5951,7 +5960,7 @@ class _RasterAnalysisTools(BaseAnalytics):
     def delete_image_collection(self, image_collection, future=False, **kwargs):
         '''
         Delete the image collection. This service tool will delete the image collection
-        image service, that is, the portal-hosted image layer item. It will not delete 
+        image service, that is, the portal-hosted image layer item. It will not delete
         the source images that the image collection references.
 
         ==================     ====================================================================
@@ -5960,7 +5969,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         image_collection       Required, the input image collection to delete.
 
                                The image_collection can be a portal Item or an image service URL or a URI.
-                            
+
                                The image_collection must exist.
         ------------------     --------------------------------------------------------------------
         gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -5996,10 +6005,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. raster layer that contains objects that needs to be detected.
         ------------------------------------     --------------------------------------------------------------------
-        model                                    Required model object. 
+        model                                    Required model object.
         ------------------------------------     --------------------------------------------------------------------
         model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                                             
+
                                                  eg: {"name1":"value1", "name2": "value2"}
         ------------------------------------     --------------------------------------------------------------------
         output_objects                           Optional. If not provided, a Feature layer is created by the method and used as the output .
@@ -6013,14 +6022,14 @@ class _RasterAnalysisTools(BaseAnalytics):
         confidence_score_field                   Optional string. The field in the feature class that contains the confidence scores as output by the object detection method.
                                                  This parameter is required when you set the run_nms to True
         ------------------------------------     --------------------------------------------------------------------
-        class_value_field                        Optional string. The class value field in the input feature class. 
-                                                 If not specified, the function will use the standard class value fields 
-                                                 Classvalue and Value. If these fields do not exist, all features will 
+        class_value_field                        Optional string. The class value field in the input feature class.
+                                                 If not specified, the function will use the standard class value fields
+                                                 Classvalue and Value. If these fields do not exist, all features will
                                                  be treated as the same object class.
                                                  Set only if run_nms  is set to True
         ------------------------------------     --------------------------------------------------------------------
-        max_overlap_ratio                        Optional integer. The maximum overlap ratio for two overlapping features. 
-                                                 Defined as the ratio of intersection area over union area. 
+        max_overlap_ratio                        Optional integer. The maximum overlap ratio for two overlapping features.
+                                                 Defined as the ratio of intersection area over union area.
                                                  Set only if run_nms  is set to True
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Context contains additional settings that affect task execution.
@@ -6036,7 +6045,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                                  Eg: {"processorType" : "CPU"}
 
-                                                 Setting context parameter will override the values set using arcgis.env 
+                                                 Setting context parameter will override the values set using arcgis.env
                                                  variable for this particular function.
         ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
@@ -6140,7 +6149,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         Parameters
         ----------
-        input_regions_raster : The layer that defines the regions to find the optimum travel cost netork for. 
+        input_regions_raster : The layer that defines the regions to find the optimum travel cost netork for.
                                The layer can be raster or feature.
 
         input_cost_raster  : A raster defining the impedance or cost to move planimetrically through each cell.
@@ -6158,7 +6167,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         Returns
         -------
-        output_raster : Image layer item 
+        output_raster : Image layer item
         """
         task = "DetermineOptimumTravelCostNetwork"
         gis =  self._gis
@@ -6276,49 +6285,49 @@ class _RasterAnalysisTools(BaseAnalytics):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        input_source_raster_or_features                        The layer that identifies the cells to determine the least 
-                                                 costly path from. This parameter can have either a raster input or 
+        input_source_raster_or_features                        The layer that identifies the cells to determine the least
+                                                 costly path from. This parameter can have either a raster input or
                                                  a feature input.
         ------------------------------------     --------------------------------------------------------------------
         input_cost_raster                        A raster defining the impedance or cost to move planimetrically through
                                                  each cell.
-    
-                                                 The value at each cell location represents the cost-per-unit distance for 
-                                                 moving through the cell. Each cell location value is multiplied by the 
-                                                 cell resolution while also compensating for diagonal movement to 
-                                                 obtain the total cost of passing through the cell. 
-    
-                                                 The values of the cost raster can be an integer or a floating point, but they 
+
+                                                 The value at each cell location represents the cost-per-unit distance for
+                                                 moving through the cell. Each cell location value is multiplied by the
+                                                 cell resolution while also compensating for diagonal movement to
+                                                 obtain the total cost of passing through the cell.
+
+                                                 The values of the cost raster can be an integer or a floating point, but they
                                                  cannot be negative or zero as you cannot have a negative or zero cost.
         ------------------------------------     --------------------------------------------------------------------
-        input_destination_raster_or_features     The layer that defines the destinations used to calculate the distance. 
+        input_destination_raster_or_features     The layer that defines the destinations used to calculate the distance.
                                                  This parameter can have either a raster input or a feature input.
         ------------------------------------     --------------------------------------------------------------------
-        path_type                                A keyword defining the manner in which the values and zones on the 
+        path_type                                A keyword defining the manner in which the values and zones on the
                                                  input destination data will be interpreted in the cost path calculations.
 
-                                                 A string describing the path type, which can either be BEST_SINGLE, 
+                                                 A string describing the path type, which can either be BEST_SINGLE,
                                                  EACH_CELL, or EACH_ZONE.
 
-                                                 BEST_SINGLE: For all cells on the input destination data, the 
-                                                 least-cost path is derived from the cell with the minimum of 
+                                                 BEST_SINGLE: For all cells on the input destination data, the
+                                                 least-cost path is derived from the cell with the minimum of
                                                  the least-cost paths to source cells. This is the default.
 
-                                                 EACH_CELL: For each cell with valid values on the input 
-                                                 destination data, at least-cost path is determined and saved 
-                                                 on the output raster. With this option, each cell of the input 
-                                                 destination data is treated separately, and a least-cost path 
+                                                 EACH_CELL: For each cell with valid values on the input
+                                                 destination data, at least-cost path is determined and saved
+                                                 on the output raster. With this option, each cell of the input
+                                                 destination data is treated separately, and a least-cost path
                                                  is determined for each from cell.
 
-                                                 EACH_ZONE: For each zone on the input destination data, 
-                                                 a least-cost path is determined and saved on the output raster. 
-                                                 With this option, the least-cost path for each zone begins at 
+                                                 EACH_ZONE: For each zone on the input destination data,
+                                                 a least-cost path is determined and saved on the output raster.
+                                                 With this option, the least-cost path for each zone begins at
                                                  the cell with the lowest cost distance weighting in the zone.
         ------------------------------------     --------------------------------------------------------------------
-        output_polyline_name                     Optional. If not provided, a feature layer is created by the method 
+        output_polyline_name                     Optional. If not provided, a feature layer is created by the method
                                                  and used as the output.
 
-                                                 You can pass in an existing feature layer Item from your GIS to use 
+                                                 You can pass in an existing feature layer Item from your GIS to use
                                                  that instead.
 
                                                  Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
@@ -6441,7 +6450,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                                     Example: {"x": 256, "y": 256}
         ------------------------------------     --------------------------------------------------------------------
-        stride_size                              Optional dictionary. The distance to move in the X and Y when creating 
+        stride_size                              Optional dictionary. The distance to move in the X and Y when creating
                                                  the next image chip.
                                                  When stride is equal to the tile size, there will be no overlap.
                                                  When stride is equal to half of the tile size, there will be 50% overlap.
@@ -6493,14 +6502,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                     ``/rasterStores/rasterstorename/rooftoptrainingsamples``
                                                     ``/cloudStores/cloudstorename/rooftoptrainingsamples``
 
-                                                   File share path - 
+                                                   File share path -
                                                     ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Context contains additional settings that affect task execution.
                                                     Dictionary can contain value for following keys:
 
                                                     - exportAllTiles - Choose if the image chips with overlapped labeled data will be exported.
-                                                        True - Export all the image chips, including those that do not overlap labeled data. 
+                                                        True - Export all the image chips, including those that do not overlap labeled data.
                                                         False - Export only the image chips that overlap the labelled data. This is the default.
 
                                                     - startIndex - Allows you to set the start index for the sequence of image chips.
@@ -6510,21 +6519,21 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                                     - extent - Sets the processing extent used by the function
 
-                                                    Setting context parameter will override the values set using arcgis.env 
+                                                    Setting context parameter will override the values set using arcgis.env
                                                     variable for this particular function.(cellSize, extent)
 
                                                     eg: {"exportAllTiles" : False, "startIndex": 0 }
         ------------------------------------     --------------------------------------------------------------------
-        input_mask_polygons                       Optional feature layer. The feature layer that delineates the area where 
+        input_mask_polygons                       Optional feature layer. The feature layer that delineates the area where
                                                    image chips will be created.
                                                    Only image chips that fall completely within the polygons will be created.
         ------------------------------------     --------------------------------------------------------------------
-        rotation_angle                           Optional float. The rotation angle that will be used to generate additional 
+        rotation_angle                           Optional float. The rotation angle that will be used to generate additional
                                                    image chips.
 
-                                                   An image chip will be generated with a rotation angle of 0, which 
-                                                   means no rotation. It will then be rotated at the specified angle to 
-                                                   create an additional image chip. The same training samples will be 
+                                                   An image chip will be generated with a rotation angle of 0, which
+                                                   means no rotation. It will then be rotated at the specified angle to
+                                                   create an additional image chip. The same training samples will be
                                                    captured at multiple angles in multiple image chips for data augmentation.
                                                    The default rotation angle is 0.
         ------------------------------------     --------------------------------------------------------------------
@@ -6630,7 +6639,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                        future=False,
                        **kwargs):
         """
-        Replaces cells of a raster corresponding to a mask 
+        Replaces cells of a raster corresponding to a mask
         with the values of the nearest neighbors.
 
         Parameters
@@ -6644,8 +6653,8 @@ class _RasterAnalysisTools(BaseAnalytics):
 						      MFD - Use the Multi Flow Direction (MFD) method.
 						      DINF - Use the D-Infinity method.
 
-        output_drop_name : An optional output drop raster . 
-					       The drop raster returns the ratio of the maximum change in elevation from each cell 
+        output_drop_name : An optional output drop raster .
+					       The drop raster returns the ratio of the maximum change in elevation from each cell
 					       along the direction of flow to the path length between centers of cells, expressed in percentages.
 
         output_flow_direction_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
@@ -6657,7 +6666,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         Returns
         -------
-        output_raster : Image layer item 
+        output_raster : Image layer item
         """
         task = "FlowDirection"
 
@@ -6679,7 +6688,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     force_flow = True
 
         flow_direction_type_AllowedValues= {"D8", "MFD", "DINF"}
-    
+
         if not flow_direction_type in flow_direction_type_AllowedValues:
                 raise RuntimeError('flow_direction_type can only be one of the following: '.join(flow_direction_type_AllowedValues))
 
@@ -6970,7 +6979,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def list_datastore_content(self, data_store_name=None,
-                               filter=None, 
+                               filter=None,
                                future=False,
                                **kwargs):
         """
@@ -6979,7 +6988,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        datastore              Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed. 
+        datastore              Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed.
                                It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
                                "/rasterStores/rasterstore"
                                or it can be a Datastore object containing a fileshare, rasterstore  or a cloudstore path.
@@ -6987,7 +6996,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                ds=analytics.get_datastores()
                                ds_items =ds.search()
                                ds_items[1]
-                               ds_items[1] may be specified as input for datastore 
+                               ds_items[1] may be specified as input for datastore
         ------------------     --------------------------------------------------------------------
         filter                 Optional. To filter out the raster contents to be displayed
         ------------------     --------------------------------------------------------------------
@@ -7497,52 +7506,52 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def aggregate_multidimensional_raster(self,
-                                        input_multidimensional_raster=None, 
-                                        output_name=None, 
-                                        dimension=None, 
-                                        aggregation_method='MEAN', 
-                                        variables=None, 
-                                        aggregation_definition='ALL', 
-                                        interval_keyword=None, 
-                                        interval_value=None, 
-                                        interval_unit=None, 
-                                        interval_ranges=None, 
-                                        aggregation_function=None, 
-                                        ignore_nodata=True, 
+                                        input_multidimensional_raster=None,
+                                        output_name=None,
+                                        dimension=None,
+                                        aggregation_method='MEAN',
+                                        variables=None,
+                                        aggregation_definition='ALL',
+                                        interval_keyword=None,
+                                        interval_value=None,
+                                        interval_unit=None,
+                                        interval_ranges=None,
+                                        aggregation_function=None,
+                                        ignore_nodata=True,
                                         context=None,
                                         future=False,
                                         **kwargs):
         """
-        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.  
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-        output_name: outputName (str). Required parameter.  
+        output_name: outputName (str). Required parameter.
 
-        dimension: dimension (str). Required parameter.  
+        dimension: dimension (str). Required parameter.
 
-        aggregation_method: aggregationMethod (str). Optional parameter.  
+        aggregation_method: aggregationMethod (str). Optional parameter.
           Choice list:['MEAN', 'MAXIMUM', 'MAJORITY', 'MINIMUM', 'MINORITY', 'MEDIAN', 'RANGE', 'STD', 'SUM', 'VARIETY', 'CUSTOM']
 
-        variables: variables (str). Optional parameter.  
+        variables: variables (str). Optional parameter.
 
-        aggregation_definition: aggregationDefinition (str). Optional parameter.  
+        aggregation_definition: aggregationDefinition (str). Optional parameter.
           Choice list:['INTERVAL_KEYWORD', 'INTERVAL_VALUE', 'INTERVAL_RANGES', 'ALL']
 
-        interval_keyword: intervalKeyword (str). Optional parameter.  
+        interval_keyword: intervalKeyword (str). Optional parameter.
           Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
                        'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
 
-        interval_value: intervalValue (str). Optional parameter.  
+        interval_value: intervalValue (str). Optional parameter.
 
-        interval_unit: intervalUnit (str). Optional parameter.  
+        interval_unit: intervalUnit (str). Optional parameter.
 
-        interval_ranges: intervalRanges (str). Optional parameter.  
+        interval_ranges: intervalRanges (str). Optional parameter.
 
-        aggregation_function: aggregationFunction (str). Optional parameter.  
+        aggregation_function: aggregationFunction (str). Optional parameter.
 
-        ignore_nodata: ignoreNodata (bool). Optional parameter.  
+        ignore_nodata: ignoreNodata (bool). Optional parameter.
 
-        context: context (str). Optional parameter.  
-        
+        context: context (str). Optional parameter.
+
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
@@ -7593,17 +7602,17 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.aggregate_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster, 
-                                                            output_name=output_raster, 
-                                                            dimension=dimension, 
-                                                            aggregation_method=aggregation_method_val, 
-                                                            variables=variables, 
-                                                            aggregation_definition=aggregation_definition_val, 
-                                                            interval_keyword=interval_keyword_val, 
-                                                            interval_value=interval_value, 
-                                                            interval_unit=interval_unit, 
-                                                            interval_ranges=interval_ranges, 
-                                                            aggregation_function=aggregation_function, 
+        gpjob = self._tbx.aggregate_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                            output_name=output_raster,
+                                                            dimension=dimension,
+                                                            aggregation_method=aggregation_method_val,
+                                                            variables=variables,
+                                                            aggregation_definition=aggregation_definition_val,
+                                                            interval_keyword=interval_keyword_val,
+                                                            interval_value=interval_value,
+                                                            interval_unit=interval_unit,
+                                                            interval_ranges=interval_ranges,
+                                                            aggregation_function=aggregation_function,
                                                             ignore_nodata=ignore_nodata,
                                                             context=context,
                                                             gis=self._gis,
@@ -7615,32 +7624,32 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def generate_multidimensional_anomaly(self,
-                                          input_multidimensional_raster=None, 
-                                          output_name=None, 
-                                          variables=None, 
-                                          method=None, 
-                                          calculation_interval=None, 
-                                          ignore_missing_values=True, 
-                                          context=None, 
+                                          input_multidimensional_raster=None,
+                                          output_name=None,
+                                          variables=None,
+                                          method=None,
+                                          calculation_interval=None,
+                                          ignore_missing_values=True,
+                                          context=None,
                                           future=False,
                                           **kwargs):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.  
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.  
+       output_name: outputName (str). Required parameter.
 
-       variables: variables (str). Optional parameter.  
+       variables: variables (str). Optional parameter.
 
-       method: method (str). Optional parameter.  
+       method: method (str). Optional parameter.
           Choice list:['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN', 'Z_SCORE', 'DIFFERENCE_FROM_MEDIAN', 'PERCENT_DIFFERENCE_FROM_MEDIAN', 'PERCENT_OF_MEDIAN']
 
-       temporal_interval: temporalInterval (str). Optional parameter.  
+       temporal_interval: temporalInterval (str). Optional parameter.
           Choice list: ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
 
-       ignore_missing_values: ignoreMissingValues (bool). Optional parameter.  
+       ignore_missing_values: ignoreMissingValues (bool). Optional parameter.
 
-        context: context (str). Optional parameter.  
-        
+        context: context (str). Optional parameter.
+
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
@@ -7681,11 +7690,11 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster, 
-                                                            output_name=output_raster, 
-                                                            variables=variables, 
-                                                            method=method_val, 
-                                                            calculation_interval=calculation_interval_val, 
+        gpjob = self._tbx.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster,
+                                                            output_name=output_raster,
+                                                            variables=variables,
+                                                            method=method_val,
+                                                            calculation_interval=calculation_interval_val,
                                                             ignore_missing_values=ignore_missing_values,
                                                             context=context,
                                                             gis=self._gis,
@@ -7697,15 +7706,15 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def build_multidimensional_transpose(self,
-                                          input_multidimensional_raster=None, 
-                                          context=None, 
+                                          input_multidimensional_raster=None,
+                                          context=None,
                                           future=False,
                                           **kwargs):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.  
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-        context: context (str). Optional parameter.  
-        
+        context: context (str). Optional parameter.
+
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
@@ -7725,7 +7734,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
 
 
-        gpjob = self._tbx.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster, 
+        gpjob = self._tbx.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
                                                            context=context,
                                                            gis=self._gis,
                                                            future=True)
@@ -7735,34 +7744,34 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def generate_trend_raster(self,
-                              input_multidimensional_raster=None, 
-                              output_name=None, 
-                              dimension=None, 
-                              variables=None, 
+                              input_multidimensional_raster=None,
+                              output_name=None,
+                              dimension=None,
+                              variables=None,
                               trend_line_type='LINEAR',
-                              frequency=None, 
-                              ignore_nodata=True, 
-                              context=None, 
+                              frequency=None,
+                              ignore_nodata=True,
+                              context=None,
                               future=False,
                               **kwargs):
         """
-        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.  
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-        output_name: outputName (str). Required parameter.  
+        output_name: outputName (str). Required parameter.
 
-        dimension: dimension (str). Required parameter.  
+        dimension: dimension (str). Required parameter.
 
-        variables: variables (str). Optional parameter.  
+        variables: variables (str). Optional parameter.
 
-        trend_line_type: trendLineType (str). Optional parameter.  
+        trend_line_type: trendLineType (str). Optional parameter.
             Choice list:['LINEAR', 'HARMONIC', 'POLYNOMIAL']
 
-        frequency: frequency (int). Optional parameter.  
+        frequency: frequency (int). Optional parameter.
 
-        ignore_nodata: ignoreNodata (bool). Optional parameter. 
+        ignore_nodata: ignoreNodata (bool). Optional parameter.
 
-        context: context (str). Optional parameter.  
-        
+        context: context (str). Optional parameter.
+
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
@@ -7793,13 +7802,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster, 
-                                                output_name=output_raster, 
-                                                dimension=dimension, 
-                                                variables=variables, 
+        gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                output_name=output_raster,
+                                                dimension=dimension,
+                                                variables=variables,
                                                 trend_line_type=trend_line_type_val,
-                                                frequency=frequency, 
-                                                ignore_nodata=ignore_nodata, 
+                                                frequency=frequency,
+                                                ignore_nodata=ignore_nodata,
                                                 context=context,
                                                 gis=self._gis,
                                                 future=True)
@@ -7810,41 +7819,41 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def predict_using_trend_raster(self,
-                                   input_multidimensional_raster=None, 
-                                   output_name=None, 
-                                   variables=None, 
+                                   input_multidimensional_raster=None,
+                                   output_name=None,
+                                   variables=None,
                                    dimension_definition='BY_VALUE',
-                                   dimension_values=None, 
-                                   start=None, 
-                                   end=None, 
-                                   interval_value=1, 
-                                   interval_unit=None, 
-                                   context=None, 
+                                   dimension_values=None,
+                                   start=None,
+                                   end=None,
+                                   interval_value=1,
+                                   interval_unit=None,
+                                   context=None,
                                    future=False,
                                    **kwargs):
         """
-       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.  
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.  
+       output_name: outputName (str). Required parameter.
 
-       variables: variables (str). Optional parameter.  
+       variables: variables (str). Optional parameter.
 
-       dimension_definition: dimensionDefinition (str). Optional parameter.  
+       dimension_definition: dimensionDefinition (str). Optional parameter.
           Choice list:['BY_VALUE', 'BY_INTERVAL']
 
-       dimension_values: dimensionValues (str). Optional parameter.  
+       dimension_values: dimensionValues (str). Optional parameter.
 
-       start: start (str). Optional parameter.  
+       start: start (str). Optional parameter.
 
-       end: end (str). Optional parameter.  
+       end: end (str). Optional parameter.
 
-       interval_value: intervalValue (float). Optional parameter.  
+       interval_value: intervalValue (float). Optional parameter.
 
-       interval_unit: intervalUnit (str). Optional parameter.  
+       interval_unit: intervalUnit (str). Optional parameter.
           Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
 
-        context: context (str). Optional parameter.  
-        
+        context: context (str). Optional parameter.
+
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
@@ -7886,15 +7895,15 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.predict_using_trend_raster(input_multidimensional_raster=input_multidimensional_raster, 
-                                                     output_name=output_raster, 
-                                                     variables=variables, 
+        gpjob = self._tbx.predict_using_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                     output_name=output_raster,
+                                                     variables=variables,
                                                      dimension_definition=dimension_definition_val,
-                                                     dimension_values=dimension_values, 
-                                                     start=start, 
-                                                     end=end, 
-                                                     interval_value=interval_value, 
-                                                     interval_unit=interval_unit_val, 
+                                                     dimension_values=dimension_values,
+                                                     start=start,
+                                                     end=end,
+                                                     interval_value=interval_value,
+                                                     interval_unit=interval_unit_val,
                                                      context=context,
                                                      gis=self._gis,
                                                      future=True)
@@ -7905,40 +7914,40 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def find_argument_statistics(self,
-                                 input_raster=None, 
-                                 output_name=None, 
-                                 dimension=None, 
-                                 variables=None, 
-                                 statistics_type='ARGUMENT_MIN', 
-                                 min_value=None, 
-                                 max_value=None, 
-                                 multiple_occurrence_value=None, 
-                                 ignore_nodata=True, 
+                                 input_raster=None,
+                                 output_name=None,
+                                 dimension=None,
+                                 variables=None,
+                                 statistics_type='ARGUMENT_MIN',
+                                 min_value=None,
+                                 max_value=None,
+                                 multiple_occurrence_value=None,
+                                 ignore_nodata=True,
                                  context=None,
                                  future=False,
                                  **kwargs):
         """
-       input_raster: inputRaster (str). Required parameter.  
+       input_raster: inputRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.  
+       output_name: outputName (str). Required parameter.
 
-       dimension: dimension (str). Optional parameter.  
+       dimension: dimension (str). Optional parameter.
 
-       variables: variables (str). Optional parameter.  
+       variables: variables (str). Optional parameter.
 
-       statistics_type: statisticsType (str). Optional parameter.  
+       statistics_type: statisticsType (str). Optional parameter.
           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
 
-       min_value: minValue (float). Optional parameter.  
+       min_value: minValue (float). Optional parameter.
 
-       max_value: maxValue (float). Optional parameter.  
+       max_value: maxValue (float). Optional parameter.
 
-       multiple_occurrence_value: multipleOccurrenceValue (int). Optional parameter.  .  
+       multiple_occurrence_value: multipleOccurrenceValue (int). Optional parameter.  .
 
-       ignore_nodata: ignoreNodata (bool). Optional parameter.  
+       ignore_nodata: ignoreNodata (bool). Optional parameter.
 
-        context: context (str). Optional parameter.  
-        
+        context: context (str). Optional parameter.
+
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
@@ -7969,15 +7978,15 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.find_argument_statistics(input_raster=input_raster, 
-                                                   output_name=output_raster, 
-                                                   dimension=dimension, 
-                                                   variables=variables, 
-                                                   statistics_type=statistics_type_val, 
-                                                   min_value=min_value, 
-                                                   max_value=max_value, 
-                                                   multiple_occurrence_value=multiple_occurrence_value, 
-                                                   ignore_nodata=ignore_nodata, 
+        gpjob = self._tbx.find_argument_statistics(input_raster=input_raster,
+                                                   output_name=output_raster,
+                                                   dimension=dimension,
+                                                   variables=variables,
+                                                   statistics_type=statistics_type_val,
+                                                   min_value=min_value,
+                                                   max_value=max_value,
+                                                   multiple_occurrence_value=multiple_occurrence_value,
+                                                   ignore_nodata=ignore_nodata,
                                                    context=context,
                                                    gis=self._gis,
                                                    future=True)
@@ -7988,25 +7997,25 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def linear_spectral_unmixing(self,
-                                 input_raster=None, 
-                                 output_name=None, 
-                                 input_spectral_profile=None, 
-                                 value_option=[], 
+                                 input_raster=None,
+                                 output_name=None,
+                                 input_spectral_profile=None,
+                                 value_option=[],
                                  context=None,
                                  future=False,
                                   **kwargs):
         """
-       input_raster: inputRaster (str). Required parameter.  
+       input_raster: inputRaster (str). Required parameter.
 
-       output_name: outputName (str). Required parameter.  
+       output_name: outputName (str). Required parameter.
 
-       input_spectral_profile: inputSpectralProfile (str). Optional parameter.  
+       input_spectral_profile: inputSpectralProfile (str). Optional parameter.
 
-       value_option: valueOption (str). Optional parameter.  
+       value_option: valueOption (str). Optional parameter.
           Choice list:['SUM_TO_ONE', 'NON_NEGATIVE']
 
-        context: context (str). Optional parameter.  
-        
+        context: context (str). Optional parameter.
+
         gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
 
@@ -8038,9 +8047,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             if isinstance(input_spectral_profile, str):
                 input_spectral_profile = {"uri":input_spectral_profile}
 
-        gpjob = self._tbx.linear_spectral_unmixing(input_raster=input_raster, 
-                                                   output_name=output_raster, 
-                                                   input_spectral_profile=input_spectral_profile, 
+        gpjob = self._tbx.linear_spectral_unmixing(input_raster=input_raster,
+                                                   output_name=output_raster,
+                                                   input_spectral_profile=input_spectral_profile,
                                                    value_option=return_list,
                                                    context=context,
                                                    gis=self._gis,
@@ -8052,11 +8061,11 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
     def cost_path_as_polyline(self,
-                              input_destination_raster_or_features=None, 
-                              input_cost_distance_raster=None, 
-                              input_cost_backlink_raster=None, 
-                              output_polyline_name=None, 
-                              path_type=None, 
+                              input_destination_raster_or_features=None,
+                              input_cost_distance_raster=None,
+                              input_cost_backlink_raster=None,
+                              output_polyline_name=None,
+                              path_type=None,
                               destination_field=None,
                               context=None,
                               future=False,
@@ -8065,17 +8074,17 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         Parameters
 
-       input_destination_raster_or_features: inputDestinationRasterOrFeatures (str). Required parameter.  
+       input_destination_raster_or_features: inputDestinationRasterOrFeatures (str). Required parameter.
 
-       input_cost_distance_raster: inputCostDistanceRaster (str). Required parameter.  
+       input_cost_distance_raster: inputCostDistanceRaster (str). Required parameter.
 
-       input_cost_backlink_raster: inputCostBacklinkRaster (str). Required parameter.  
+       input_cost_backlink_raster: inputCostBacklinkRaster (str). Required parameter.
 
-       output_polyline_name: outputPolylineName (str). Required parameter.  
+       output_polyline_name: outputPolylineName (str). Required parameter.
 
-       path_type: pathType (str). Optional parameter.  
+       path_type: pathType (str). Optional parameter.
 
-       destination_field: destinationField (str). Optional parameter.  
+       destination_field: destinationField (str). Optional parameter.
 
         context: Context contains additional settings that affect task execution.
 
@@ -8083,7 +8092,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         Returns
         -------
-        output_raster : Image layer item 
+        output_raster : Image layer item
         """
         task = "CostPathAsPolyline"
         gis =  self._gis
@@ -8150,14 +8159,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                                            "itemProperties": {"itemId": output_polyline_service.itemid}})
 
 
-        gpjob = self._tbx.cost_path_as_polyline(input_destination_raster_or_features=input_destination_raster_or_features, 
-                                                input_cost_distance_raster=input_cost_distance_raster, 
-                                                input_cost_backlink_raster=input_cost_backlink_raster, 
-                                                output_polyline_name=output_polyline_name, 
-                                                path_type=path_type_val, 
+        gpjob = self._tbx.cost_path_as_polyline(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                input_cost_distance_raster=input_cost_distance_raster,
+                                                input_cost_backlink_raster=input_cost_backlink_raster,
+                                                output_polyline_name=output_polyline_name,
+                                                path_type=path_type_val,
                                                 destination_field=destination_field,
-                                                context=context, 
-                                                gis=self._gis, 
+                                                context=context,
+                                                gis=self._gis,
                                                 future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
