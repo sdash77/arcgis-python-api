@@ -53,6 +53,13 @@ FeatureClassifier
     :inherited-members:
     :undoc-members:
 
+RetinaNet
+------------------
+.. autoclass:: arcgis.learn.RetinaNet
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 EntityRecognizer
 ------------------
 .. autoclass:: arcgis.learn.EntityRecognizer
