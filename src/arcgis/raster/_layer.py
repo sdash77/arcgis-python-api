@@ -34,11 +34,11 @@ def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
 
     return fnarg_ra
 ###########################################################################
-class ImageryLayerCacheManager(_GISResource): 
-    """ 
+class ImageryLayerCacheManager(_GISResource):
+    """
     Allows for administration of ArcGIS Online hosted image layers.
     """
-    
+
     def __init__(self, url, gis=None, img_lyr=None):
         super(ImageryLayerCacheManager, self).__init__(url, gis)
         self._img_lyr = img_lyr
@@ -83,7 +83,7 @@ class ImageryLayerCacheManager(_GISResource):
         params = {
             "f": "json"
         }
-        res = self._con.post(url, params)        
+        res = self._con.post(url, params)
         if "jobs" in res:
             return res['jobs']
         return res
@@ -91,27 +91,27 @@ class ImageryLayerCacheManager(_GISResource):
     def job_status(self, job_id):
         """
         Gets the Current Job Status
-        
+
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
         job_id                required String. The unique identifier of the job in question.
         =================     ====================================================================
 
-        
+
         :returns: dict
         """
         url = self._url + "/jobs/%s/status" % job_id
         params = {
             "f": "json"
         }
-        res = self._con.get(url, params)        
+        res = self._con.get(url, params)
         return res
     # ----------------------------------------------------------------------
     def job_statistics(self, job_id):
         """
         Returns the job statistics for the given job_id
-        
+
         =================     ====================================================================
         **Arguments**         **Description**
         -----------------     --------------------------------------------------------------------
@@ -133,7 +133,7 @@ class ImageryLayerCacheManager(_GISResource):
                      merge=False, replace=False):
         """
         Imports cache from a new ImageLayer Tile Package.
-        
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -199,11 +199,11 @@ class ImageryLayerCacheManager(_GISResource):
                             example: "-100,-50,200,500" or
                             {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
         ---------------     ----------------------------------------------------
-        merge               Optional Boolean. Default is `False`. When true the updated 
+        merge               Optional Boolean. Default is `False`. When true the updated
                             cache is merged with the existing cache.
         ---------------     ----------------------------------------------------
         replace             Optional Boolean.  The default is False.  The updated
-                            tiles will remove the existing tiles. 
+                            tiles will remove the existing tiles.
         ===============     ====================================================
 
         :returns:
@@ -333,7 +333,7 @@ class ImageryLayerCacheManager(_GISResource):
             params['extent'] = extent
         url = self._url + "/deleteTiles"
         return self._con.post(url, params)
-###########################################################################  
+###########################################################################
 class ImageryLayer(Layer):
     _ilm = None
     def __init__(self, url, gis=None):
@@ -396,15 +396,15 @@ class ImageryLayer(Layer):
     def cache_manager(self):
         """
         Provides access to the tools to update, add, and remove cache on the ImageLayer
-        
+
         :returns: ImageryLayerCacheManager or None
         """
         def _str_replace(mystring, rd):
             """Replaces a value based on a key/value pair where the
             key is the text to replace and the value is the new value.
-        
+
             The find/replace is case insensitive.
-        
+
             """
             import re
             patternDict = {}
@@ -416,14 +416,14 @@ class ImageryLayer(Layer):
                 regex_obj = patternDict[key]
                 mystring = regex_obj.sub(key, mystring)
             return mystring
-        
+
         if self._ilm is None:
             if self._gis._portal.is_arcgisonline:
                 rd = {'/rest/services/': '/rest/admin/services/'}
                 adminurl = _str_replace(mystring=self.url, rd=rd)
                 self._ilm = ImageryLayerCacheManager(url=adminurl, gis=self._gis, img_lyr=self)
         return self._ilm
-    
+
     @property
     def tiles(self):
         """
@@ -1483,8 +1483,8 @@ class ImageryLayer(Layer):
               result_offset=None,
               result_record_count=None,
               max_allowable_offset=None,
-              true_curves=False
-              ):
+              true_curves=False,
+              as_df=False):
         """ queries an imagery layer by applying the filter specified by the user. The result of this operation is
          either a set of features or an array of raster IDs (if return_ids_only is set to True),
          count (if return_count_only is set to True), or a set of field statistics (if out_statistics is used).
@@ -1590,7 +1590,12 @@ class ImageryLayer(Layer):
                   return_geometry is True, else a dictionary containing the expected return
                   type.
          """
-
+        def _feat_to_row(feature):
+            from arcgis.geometry import Geometry
+            attribute = {}
+            attribute.update(feature['attributes'])
+            attribute['SHAPE'] = Geometry(feature['geometry'])
+            return attribute
         if self._datastore_raster:
             raise RuntimeError("This operation cannot be performed on a datastore raster")
 
@@ -1664,6 +1669,9 @@ class ImageryLayer(Layer):
         url = self._url + "/query"
         if return_all_records and \
            return_count_only == False:
+            oids = self.query(where=where, out_fields=out_fields,
+                              time_filter=time_filter, geometry_filter=geometry_filter,
+                              return_geometry=False, return_ids_only=True)
             count = self.query(where=where, geometry_filter=geometry_filter,
                                time_filter=time_filter, return_count_only=True)
             if count > self.properties.maxRecordCount:
@@ -1672,26 +1680,27 @@ class ImageryLayer(Layer):
                     n += 1
                 records = None
                 for i in range(n):
+                    oid_sub = [str(o) for o in oids['objectIds'][1000 * i :1000 * (i +1)]]
+                    oid_joined = ",".join(oid_sub)
+                    sql = "{name} in ({oids})".format(
+                        name=oids['objectIdFieldName'],
+                        oids=oid_joined)
+                    params['where'] = sql
                     if records is None:
-                        params['resultOffset'] = i * self.properties.maxRecordCount
-                        params['resultRecordCount'] = self.properties.maxRecordCount
                         records = self._con.post(path=url,
                                                  postdata=params,
                                                 token=self._token)
 
                     else:
-                        params['resultOffset'] = i * self.properties.maxRecordCount
-                        params['resultRecordCount'] = self.properties.maxRecordCount
                         res = self._con.post(path=url,
                                              postdata=params,
                                              token=self._token)
-                        records['features'] += res['features']
+                        records['features'].extend(res['features'])
                 result = records
             else:
                 result = self._con.post(path=url, postdata=params, token=self._token)
         else:
             result = self._con.post(path=url, postdata=params, token=self._token)
-
         if 'error' in result:
             raise ValueError(result)
 
@@ -1700,7 +1709,16 @@ class ImageryLayer(Layer):
         elif return_ids_only:
             return result
         elif return_geometry:
-            return FeatureSet.from_dict(result)
+            if as_df:
+                if 'features' in result:
+                    import pandas as pd
+                    rows = [_feat_to_row(feat) for feat in result['features']]
+                    df = pd.DataFrame(rows)
+                    df.spatial.name
+                    return df
+                return result
+            else:
+                return FeatureSet.from_dict(result)
         else:
             return result
     #----------------------------------------------------------------------
@@ -2811,7 +2829,7 @@ class ImageryLayer(Layer):
         Performs volumetric calculation on an elevation service. Results are always in square meters (area) and cubic
         meters (volume). If a service does not have vertical spatial reference and z unit is not in meters, user
         needs to apply a conversion factor when interpreting results.
-        
+
         **Available in 10.7+ only**
 
         =================     ====================================================================
@@ -3000,18 +3018,18 @@ class ImageryLayer(Layer):
                                                  visualization by applying raster functions at source resolution
                                                  across the extent of the output imagery layer.
         ------------------------------------     --------------------------------------------------------------------
-        process_as_multidimensional              Optional bool.  If the input is multidimensional raster, the output 
+        process_as_multidimensional              Optional bool.  If the input is multidimensional raster, the output
                                                  will be processed as multidimensional if set to True
         ------------------------------------     --------------------------------------------------------------------
-        build_transpose                          Optional bool, if set to true, transforms the output 
-                                                 multidimensional raster. Valid only if process_as_multidimensional 
+        build_transpose                          Optional bool, if set to true, transforms the output
+                                                 multidimensional raster. Valid only if process_as_multidimensional
                                                  is set to True
         ------------------------------------     --------------------------------------------------------------------
         gis                                      optional arcgis.gis.GIS object. The GIS to be used for saving the
-                                                 output. Keyword only parameter. 
+                                                 output. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Optional boolean. If True, the result will be a GPJob object and 
-                                                 results will be returned asynchronously. Keyword only parameter. 
+        future                                   Optional boolean. If True, the result will be a GPJob object and
+                                                 results will be returned asynchronously. Keyword only parameter.
         ====================================     ====================================================================
 
         :return: output_raster - Image layer item
@@ -3086,7 +3104,7 @@ class ImageryLayer(Layer):
                     output_name=None,
                     *,
                     gis=None,
-                    future=False, 
+                    future=False,
                     **kwargs):
         """
         Converts this raster to a persisted feature layer of the specified type using Raster Analytics.
@@ -3110,8 +3128,8 @@ class ImageryLayer(Layer):
         gis                   optional arcgis.gis.GIS object. The GIS to be used for saving the
                               output. The GIS must have Raster Analytics capability.
         -----------------     --------------------------------------------------------------------
-        future                Optional boolean. If True, the result will be a GPJob object and 
-                              results will be returned asynchronously. Keyword only parameter. 
+        future                Optional boolean. If True, the result will be a GPJob object and
+                              results will be returned asynchronously. Keyword only parameter.
         =================     ====================================================================
 
         :return:  converted feature layer item

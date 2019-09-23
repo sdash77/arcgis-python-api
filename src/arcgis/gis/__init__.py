@@ -9802,7 +9802,6 @@ def rot13(s, b64=False, of=False):
     else:
         return result
 
-
 class _GISResource(object):
     """ a GIS service
     """
@@ -9818,9 +9817,6 @@ class _GISResource(object):
             gis = GIS(set_active=False)
             self._gis = gis
             self._con = gis._con
-        #elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
-            #self._gis = GIS(set_active=False)
-            #self._con = gis
         else:
             self._gis = gis
             if isinstance(gis, (ServerConnection, _ArcGISConnection)):
@@ -9837,21 +9833,16 @@ class _GISResource(object):
     def _refresh(self):
         params = {"f": "json"}
         if type(self).__name__ == 'ImageryLayer':
+            if hasattr(self, "_uri"):
+                if self._uri:
+                    params["Raster"] = self._uri
             if self._fn is not None:
                 params['renderingRule'] = self._fn
-            if hasattr(self, "_uri"):
-                if isinstance(self._uri, bytes):
-                    if 'renderingRule' in params.keys():
-                        del params['renderingRule']
-                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
-            try:
-                dictdata = self._con.post(self.url, params, token=self._lazy_token)
-            except:
-                dictdata = self._con.get(self.url, params, token=self._lazy_token)
+            dictdata = self._con.post(self.url, params, token=self._lazy_token)
 
         self._lazy_properties = PropertyMap(dictdata)
 
@@ -9933,7 +9924,6 @@ class _GISResource(object):
                 params[k] = v
                 del k,v
         return self._con.post(path=url, postdata=params, token=self._token)
-
 
 class Layer(_GISResource):
     """
