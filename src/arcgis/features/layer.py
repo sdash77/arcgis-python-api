@@ -628,7 +628,7 @@ class FeatureLayer(Layer):
             params['resultType'] = "none"
         if order_by_field:
             params['orderByFields'] = order_by_field
-        url = self._url + "/`query_top_feaures`"
+        url = self._url + "/queryTopFeatures"
         if as_df and \
            return_count_only == False and \
            return_ids_only == False:
