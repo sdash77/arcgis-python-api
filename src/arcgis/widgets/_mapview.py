@@ -1253,14 +1253,24 @@ class MapView(widgets.DOMWidget):
                                  " {}".format(graphic))
                         continue
 
-                    # Create a python object from the JS geometry
-                    feat = Feature(geom)
-                    fset = FeatureSet([feat])
+                    if not self._check_if_graphic_already_saved(geom):
+                        # Create a python object from the JS geometry
+                        feat = Feature(geom)
+                        fset = FeatureSet([feat])
 
-                    # Add to webmap
-                    self.webmap.add_layer(fset,
-                                          {'title' : 'Notes from ArcGIS API for Python'})
+                        # Add to webmap
+                        self.webmap.add_layer(fset,
+                                              {'title': 'Notes from ArcGIS API for Python'})
 
+    def _check_if_graphic_already_saved(self, geom):
+        from arcgis.geometry import Geometry
+        for layer in self.webmap.layers:
+            for fset in layer["featureCollection"]['layers']:
+                for feat in fset['featureSet']['features']:
+                    wm_geom = Geometry(feat['geometry'])
+                    if wm_geom.equals(geom):
+                        return True
+        return False
 
     def _save_as_webscene(self, item_properties, thumbnail=None,
                           metadata=None, owner=None, folder=None):
@@ -1539,6 +1549,17 @@ class MapView(widgets.DOMWidget):
                         shape['type'] = 'multipoint'
                     else:
                         shape['type'] = 'point'
+
+                switcher = {
+                    'polygon': 'esriGeometryPolygon',
+                    'polyline': 'esriGeometryPolyline',
+                    'multipoint': 'esriGeometryMultipoint',
+                    'point': 'esriGeometryPoint'
+                }
+                geometry_kind = switcher.get(shape['type'])
+                if geometry_kind is None:
+                    geometry_kind = 'esriGeometryNull'
+
                 graphic = {
                     "geometry": shape,
                     "popupTemplate": popup,
@@ -1548,7 +1569,7 @@ class MapView(widgets.DOMWidget):
                 self._add_graphic(graphic)
                 f = Feature(shape)
                 fset = FeatureSet([f],
-                                  geometry_type='esriGeometryPoint',
+                                  geometry_type=geometry_kind,
                                   spatial_reference={'wkid':4326})
 
             # Now that the `fset` is set, add to webmap

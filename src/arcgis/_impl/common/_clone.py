@@ -2723,6 +2723,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                 # Get the item properties from the original application which will be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
                 workforce_json = self.data
+                user = self.target.users.get(self.owner)
 
                 # Update the webmap references
                 webmaps = ['workerWebMapId', 'dispatcherWebMapId']
@@ -2747,7 +2748,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
 
                                 if service == 'dispatchers':
                                     feature_layer = FeatureLayer(service_definiton['url'], self.target)
-                                    features = feature_layer.query("userId = '{0}'".format(self.owner)).features
+                                    features = feature_layer.query("userId = '{0}'".format(user.username)).features
                                     if len(features) == 0:
                                         features = [{"attributes" : {"name" : user.fullName, "userId" : user.username}}]
                                         feature_layer.edit_features(adds=features)
@@ -2759,7 +2760,6 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
 
                 # Update the folder reference
                 if 'folderId' in workforce_json:
-                    user = self.target.users.get(self.owner)
                     if self.folder is not None:
                         folders = user.folders
                         target_folder = next((f for f in folders if f['title'].lower() == self.folder.lower()), None)
