@@ -9849,7 +9849,6 @@ class _GISResource(object):
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)
                 else:
                     raise e
-            #dictdata = self._con.post(self.url, params, token=self._lazy_token)
 
         self._lazy_properties = PropertyMap(dictdata)
 
