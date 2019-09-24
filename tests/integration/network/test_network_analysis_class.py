@@ -132,7 +132,6 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-
     def test_findRoutes_method(self):
         """
         Test to check if the find_routes method of network analysis module works without throwing an error.
@@ -178,7 +177,6 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
-
 
     def test_generateServiceAreas_method(self):
         """
@@ -282,6 +280,78 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    def test_find_nearest_method(self):
+        """
+        Test to check if the closest_facility_service method of network analysis module works without throwing an error.
+        :return:
+        """
+        try:
+
+            import arcgis.features.use_proximity as use_proximity
+            import arcgis.features as features
+            import arcgis.network as network
+
+            incidents = features.FeatureSet.from_dict({
+                "features": [{"attributes": {"CurbApproach": 0,
+                                             "ID": "C100045",
+                                             "Name": "Incident 1"},
+                              "geometry": {"x": -0.1891, "y": 51.5251}},
+                             {"attributes": {"CurbApproach": 0,
+                                             "ID": "F100086",
+                                             "Name": "Incident 2"},
+                              "geometry": {"x": -0.1884, "y": 51.5353}}],
+                "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                "geometryType": "esriGeometryPoint",
+                "fields": [
+                    {"name": "ID", "type": "esriFieldTypeString", "alias": "ID", "length": "50"},
+                    {"name": "Name", "type": "esriFieldTypeString", "alias": "Name", "length": "50"},
+                    {"name": "CurbApproach", "type": "esriFieldTypeInteger", "alias": "CurbApproach"}
+                ]})
+
+            facilities = features.FeatureSet.from_dict({
+                "features": [{"attributes": {"CurbApproach": 0,
+                                             "ID": "F100045",
+                                             "Name": "Facility 1"},
+                              "geometry": {"x": -0.1892, "y": 51.5252}},
+                             {"attributes": {"CurbApproach": 0,
+                                             "ID": "F100086",
+                                             "Name": "Facility 2"},
+                              "geometry": {"x": -0.1879, "y": 51.5256}}],
+                "spatialReference": {"wkid": 4326, "latestWkid": 4326},
+                "geometryType": "esriGeometryPoint",
+                "fields": [
+                    {"name": "ID", "type": "esriFieldTypeString", "alias": "ID", "length": "50"},
+                    {"name": "Name", "type": "esriFieldTypeString", "alias": "Name", "length": "50"},
+                    {"name": "CurbApproach", "type": "esriFieldTypeInteger", "alias": "CurbApproach"}
+                ]})
+
+            incidents_fc = features.FeatureCollection.from_featureset(incidents)
+            facilities_fc = features.FeatureCollection.from_featureset(facilities)
+
+            route_service_url = self.gis.properties.helperServices.route.url
+            route_service = network.RouteLayer(route_service_url, gis=self.gis)
+
+            car_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes']
+                        if i['name'] == 'Driving Time'][0]
+
+            result = use_proximity.find_nearest(incidents_fc, facilities_fc, measurement_type=car_mode,
+                                                context={'outSR': {"wkid": 4326}},
+                                                future=False)
+
+            if result.solve_succeeded:
+                print(result)
+
+            self.assertTrue(result.solve_succeeded, "Task Unsuccessful: Closest facilities could not be generated")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
 
     def test_OriginDestinationCostMatrix_method(self):
         """
@@ -338,7 +408,6 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
-
 
     def test_LocationAllocation_service(self):
         """
@@ -493,6 +562,7 @@ class Test_NetworkAnalysisModule(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+            
     def test_VehicleRoutingProblem_service(self):
         """
         Test to check if the vehicle routing problem of network analysis module works without throwing an error.
