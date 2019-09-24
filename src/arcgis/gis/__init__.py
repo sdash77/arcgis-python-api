@@ -4398,8 +4398,11 @@ class ContentManager(object):
             del i
         return results
     #----------------------------------------------------------------------
-
-    def replace_service(self, replace_item, new_item, replaced_service_name=None):
+    def replace_service(self,
+                        replace_item,
+                        new_item,
+                        replaced_service_name=None,
+                        replace_metadata=False):
         """
         The replace_service operation allows you to replace your production vector tile layers with staging ones. This
         operation allows you to perform quality control on a staging tile layer and to then replace the production tile
@@ -4438,13 +4441,18 @@ class ContentManager(object):
         new_item                Required Item or Item's Id as string. The replacement service.
         ----------------------  ----------------------------------------------------------------------
         replaced_service_name   Optional string. The name of the replacement service.
+        ----------------------  ----------------------------------------------------------------------
+        replace_metadata        Optional Boolean. When set to `True`, the item info {"thumbnail", "tag",
+                                "description", "summary"} of the current service is updated to that of
+                                the replacement service. The Credits, Terms of use, and Created from
+                                details will not be replaced. This option is set to `False` by default.
+
         ======================  ======================================================================
 
         :returns: boolean
         """
         user = self._gis.users.me
         if 'id' in user:
-            #user = user.id
             user = user.username
         else:
             user = user.username
@@ -4456,9 +4464,15 @@ class ContentManager(object):
         if isinstance(new_item, Item):
             new_item = new_item.itemid
 
+        create_new_item = False
+        if replaced_service_name:
+            create_new_item = True
+
         params = {
             'toReplaceItemId': replace_item,
             'replacementItemId': new_item,
+            'replaceMetadata' : replace_metadata,
+            'createNewItem': create_new_item,
             'f': 'json'
         }
         if replaced_service_name is not None:
@@ -5523,7 +5537,7 @@ class Group(dict):
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
-               thumbnail=None, max_file_size=None, users_update_items=False):
+               thumbnail=None, max_file_size=None, users_update_items=False, clear_empty_fields=False):
         """
         Updates this group with only values supplied for particular arguments.
 
@@ -5565,6 +5579,9 @@ class Group(dict):
                             item's description, tags, metadata, as well as content.
                             This option can't be disabled once the group has
                             been created. Default is False.
+        ------------------  ---------------------------------------------------------
+        clear_empty_fields  Optional Boolean. If True, the user can set values to
+                            empty string, else, None values will be ignored.
         ==================  =========================================================
 
 
@@ -5583,7 +5600,8 @@ class Group(dict):
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
                                          sort_order, is_view_only, thumbnail,
-                                         max_file_size, users_update_items)
+                                         max_file_size, users_update_items,
+                                         clear_empty_fields=clear_empty_fields)
         if resp:
             self._hydrate()
         return resp
@@ -9784,7 +9802,6 @@ def rot13(s, b64=False, of=False):
     else:
         return result
 
-
 class _GISResource(object):
     """ a GIS service
     """
@@ -9800,9 +9817,6 @@ class _GISResource(object):
             gis = GIS(set_active=False)
             self._gis = gis
             self._con = gis._con
-        #elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
-            #self._gis = GIS(set_active=False)
-            #self._con = gis
         else:
             self._gis = gis
             if isinstance(gis, (ServerConnection, _ArcGISConnection)):
@@ -9819,21 +9833,22 @@ class _GISResource(object):
     def _refresh(self):
         params = {"f": "json"}
         if type(self).__name__ == 'ImageryLayer':
+            if hasattr(self, "_uri"):
+                if self._uri:
+                    params["Raster"] = self._uri
             if self._fn is not None:
                 params['renderingRule'] = self._fn
-            if hasattr(self, "_uri"):
-                if isinstance(self._uri, bytes):
-                    if 'renderingRule' in params.keys():
-                        del params['renderingRule']
-                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
         else:
             try:
                 dictdata = self._con.post(self.url, params, token=self._lazy_token)
-            except:
-                dictdata = self._con.get(self.url, params, token=self._lazy_token)
+            except Exception as e:
+                if e.msg == "Method Not Allowed":
+                    dictdata = self._con.get(self.url, params, token=self._lazy_token)
+                else:
+                    raise e
 
         self._lazy_properties = PropertyMap(dictdata)
 
@@ -9915,7 +9930,6 @@ class _GISResource(object):
                 params[k] = v
                 del k,v
         return self._con.post(path=url, postdata=params, token=self._token)
-
 
 class Layer(_GISResource):
     """

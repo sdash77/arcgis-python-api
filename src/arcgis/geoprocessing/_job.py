@@ -284,7 +284,7 @@ class GPJob(object):
                     r[key] = value
             if len(r) == 1:
                 return r[list(r.keys())[0]]
-            if (self.task == "CalculateDistance" or 
+            if (self.task == "CalculateDistance" or
                 self.task == "DetermineOptimumTravelCostNetwork" or
                 self.task == "FlowDirection" or
                 self.task == "CalculateTravelCost"):
@@ -300,7 +300,7 @@ class GPJob(object):
                         temp_dict=json.loads(row)
                         if isinstance(temp_dict["message"],list):
                             html_final+="<tr><td>"+temp_dict["message"][0]+"</td><td style='float:right'>"+temp_dict["params"][temp_dict["message"][1].split("${")[1].split("}")[0]]+"</td></tr>"
-        
+
                     html_final+="</tbody></table><br></br>"
                     from IPython.display import HTML
                     process_info_html = HTML(html_final)
@@ -313,7 +313,7 @@ class GPJob(object):
             num_returns = len(r)
             if num_returns == 1:
                 return r[return_value_names[0]]
- 
+
             else:
                 ret_names = []
                 for return_value in return_value_names:
@@ -389,22 +389,33 @@ class GPJob(object):
 
     def _process_fa(self, result):
         import arcgis
+        HAS_ITEM = False
         if hasattr(result, '_fields'):
             r = {}
             iids = []
             for key in result._fields:
                 value = getattr(result, key)
-                if isinstance(value, dict) and 'featureSet' in value:
+                if self.task in ['AggregatePoints', 'ConnectOriginsToDestinations', 'SummarizeNearby'] and \
+                   isinstance(value, dict) and 'featureSet' in value:
+                    r[key] = arcgis.features.FeatureCollection(value)
+                elif isinstance(value, dict) and 'featureSet' in value:
+                    HAS_ITEM = True
                     r[key] = arcgis.features.FeatureCollection(value)
                 elif isinstance(value, dict) and 'itemId' in value and len(value['itemId']) > 0:
                     if not value['itemId'] in iids:
+                        HAS_ITEM = True
                         r[key] = arcgis.gis.Item(self._gis, value['itemId'])
                         iids.append(value['itemId'])
                 elif len(str(value)) > 0 and value:
                     r[key] = value
+                elif HAS_ITEM == False and \
+                     (self.task in ['AggregatePoints', 'CreateWatersheds', 'PlanRoutes',
+                                   'ConnectOriginsToDestinations',
+                                   'SummarizeNearby'] or \
+                      self.task == 'ConnectOriginsToDestinations'):
+                    r[key] = value
             if len(r) == 1:
                 return r[list(r.keys())[0]]
-
             return r
         else:
             value = result
