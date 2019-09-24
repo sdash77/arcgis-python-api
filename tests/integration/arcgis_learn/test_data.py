@@ -20,7 +20,7 @@ if not HAS_DEPS:
     module_skip = True
 else:
     from arcgis.learn._data import prepare_data
-    from arcgis.learn import SingleShotDetector, UnetClassifier, FeatureClassifier, PSPNetClassifier
+    from arcgis.learn import SingleShotDetector, UnetClassifier, FeatureClassifier, PSPNetClassifier, RetinaNet
 
 #TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Prepare Data tests")

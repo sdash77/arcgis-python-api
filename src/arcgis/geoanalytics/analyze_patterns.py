@@ -572,6 +572,7 @@ def find_point_clusters(
     distance_unit=None,
     output_name=None,
     gis=None,
+    context=None,
     future=False):
     """
     This tool extracts clusters from your input point features and identifies any surrounding noise.
@@ -603,7 +604,20 @@ def find_point_clusters(
     gis                          optional GIS, the GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
-    future                       optional Boolean. If True, a GPJob is returned instead of
+    context                      Optional dict. The context parameter contains additional settings 
+                                 that affect task execution. For this task, there are four settings:
+
+                                 #. Extent (``extent``) - A bounding box that defines the analysis area. 
+                                    Only those features that intersect the bounding box will be analyzed.
+                                 #. Processing spatial reference (``processSR``) - The features will be 
+                                    projected into this coordinate system for analysis.
+                                 #. Output spatial reference (``outSR``) - The features will be projected 
+                                    into this coordinate system after the analysis to be saved. 
+                                    The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                 #. Data store (``dataStore``) - Results will be saved to the 
+                                    specified data store. The default is the spatiotemporal big data store.
+    --------------------------   ---------------------------------------------------------------    
+    future                       Optional boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
     ==========================   ===============================================================
 
@@ -633,7 +647,10 @@ def find_point_clusters(
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db={
         "input_layer": (_FeatureSet, "inputLayer"),
@@ -678,6 +695,7 @@ def calculate_density(
     area_units="""SquareKilometers""",
     output_name=None,
     gis=None,
+    context=None,
     future=False):
     """
     .. image:: _static/images/calculate_density/calculate_density.png
@@ -790,12 +808,12 @@ def calculate_density(
     -------------------------------------------------     ------------------------------------------------------------------------
     context                                               Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                            * Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                            * Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                                            * Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                            * Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                          #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                          #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                          #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                          #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     -------------------------------------------------     ------------------------------------------------------------------------
-    future                                                optional Boolean. If True, a GPJob is returned instead of
+    future                                                Optional boolean. If True, a GPJob is returned instead of
                                                           results. The GPJob can be queried on the status of the execution.
     =================================================     ========================================================================
 
@@ -837,7 +855,10 @@ def calculate_density(
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db={
         "input_layer": (_FeatureSet, "inputLayer"),
@@ -902,6 +923,7 @@ def find_hot_spots(
     time_step_reference=None,
     output_name=None,
     gis=None,
+    context=None,
     future=False):
     """
     .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png
@@ -981,6 +1003,8 @@ def find_hot_spots(
                                                                                                     #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     gis                                                                                             Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
+    future                                                                                          Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ==============================================================================================  ===============================================================
 
     :returns: Output Features as a feature layer collection item
@@ -1023,7 +1047,10 @@ def find_hot_spots(
         "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
         "itemProperties": {"itemId" : output_service.itemid}})
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db={
         "point_layer": (_FeatureSet, "pointLayer"),
@@ -1081,43 +1108,104 @@ def create_space_time_cube(point_layer: _FeatureSet,
                            gis=None,
                            future: bool=False) -> DataFile:
     """
-    Summarizes a set of points into a netCDF data structure by aggregating them into space-time bins. Within each bin,
-    the points are counted and specified attributes are aggregated. For all bin locations, the trend for counts and
-    summary field values are evaluated.
-
-    Parameters:
-
-       point_layer: Input Features (FeatureSet). Required parameter.
-
-       bin_size: Distance Interval (float). Required parameter.
-
-       bin_size_unit: Distance Interval Unit (str). Required parameter.
-          Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
-
-       time_step_interval: Time Step Interval (int). Required parameter.
-
-       time_step_interval_unit: Time Step Interval Unit (str). Required parameter.
-          Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
-
-       time_step_alignment: Time Step Alignment (str). Optional parameter.
-          Choice list:['EndTime', 'StartTime', 'ReferenceTime']
-
-       time_step_reference: Time Step Reference (datetime). Optional parameter.
-
-       summary_fields: Summary Fields (str). Optional parameter.
-
-       output_name: Output Name (str). Required parameter.
-
-       context: Context (str). Optional parameter.
-
-        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-        future: Optional, If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
-
-    Returns:
-       output_cube - Output Space Time Cube as a DataFile
-
+    .. image:: _static/images/create_space_time_cube/create_space_time_cube.png 
+    ``create_space_time_cube`` works with a layer of point features that are time enabled. 
+    It aggregates the data into a three-dimensional cube of space-time bins. 
+    When determining the point in a space-time bin relationship, statistics about all 
+    points in the space-time bins are calculated and assigned to the bins. 
+    The most basic statistic is the number of points within the bins, but you can 
+    calculate other statistics as well.
+    For example, suppose you have point features of crimes in a city, and you want 
+    to summarize the number of crimes in both space and time. You can calculate the 
+    space-time cube for the dataset, and use the cube to further analyze trends 
+    such as emerging hot and cold spots.
+    ============================================================================     ===================================================================================================
+    **Argument**                                                                     **Description**
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    point_layer                                                                      Required point feature layer. The point features that will be 
+                                                                                     aggregated into the bins specified in geographical size by the ``bin_size`` 
+                                                                                     and ``bin_size_unit`` parameters and temporal size by 
+                                                                                     the ``time_step_interval`` and ``time_step_interval_unit`` parameters. 
+                                                                                     See :ref:`Feature Input<FeatureInput>`.
+                                                                                     Analysis using bins requires a projected coordinate system. 
+                                                                                     When aggregating layers into bins, the input layer or processing 
+                                                                                     extent (``processSR``) must have a projected coordinate system. 
+                                                                                     At 10.5.1, 10.6, and 10.6.1, if a projected coordinate system is 
+                                                                                     not specified when running analysis, the World Cylindrical Equal 
+                                                                                     Area (WKID 54034) projection will be used. At 10.7 or later, if a 
+                                                                                     projected coordinate system is not specified when running analysis, 
+                                                                                     a projection will be picked based on the extent of the data.
+                                                                                     .. Note: The ``input_layer`` must have a minimum of 60 features.
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    bin_size                                                                         Required float. The distance for the bins into which ``point_layer`` will be aggregated.
+                                                                                     .. Note: A ``create_space_time_cube`` must have at least 10 time slices.
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    bin_size_unit                                                                    Required string. The distance unit for the bins into which ``point_layer`` will be aggregated.
+                                                                                     Choice list: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    time_step_interval                                                               Required integer. A numeric value that specifies the duration of the time bin.
+                                                                                     .. Note: 
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    time_step_interval_unit                                                          Required string. A numeric value that specifies the duration unit of the time bin.
+                                                                                     Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    time_step_alignment                                                              Optional string. Defines how aggregation will occur based on a given timeInterval. Options are as follows:
+                                                                                     Choice list: ['EndTime', 'StartTime', 'ReferenceTime']
+                                                                                        * ``StartTime`` - Time is aligned to the first feature in time
+                                                                                        * ``EndTime`` - Time is aligned to the last feature in time
+                                                                                        * ``ReferenceTime`` - Time is aligned a specified time
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    time_step_reference (Required if ``time_step_alignment`` is ReferenceTime)       Optional datetime. A date that specifies the reference time to align the 
+                                                                                     time bins to if ReferenceTime is specified in ``time_step_alignment``. 
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    summary_fields                                                                   Optional string. A list of field names, statistical summary types, and the 
+                                                                                     fill option for empty values that you want to calculate for all points 
+                                                                                     within each space-time bin. Note that the count of points within each 
+                                                                                     bin is always returned. By default, all statistics are returned.
+                                                                                     Example: [{"statisticType": "statistic type", "onStatisticField": "field name", "fillType": "fill type", "onStatisticField": "fieldName2"}]
+                                        
+                                                                                     fieldName is the name of the fields in the input point layer.
+                                                                                     statisticType is one of the following for numeric fields:
+                                                                                     * ``Sum`` - Adds the total value of all the points in each polygon.
+                                                                                     * ``Mean`` - Calculates the average of all the points in each polygon.
+                                                                                     * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                                                                     * ``Max`` - Finds the largest value of all the points in each polygon.
+                                                                                     * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+                                                                                     statisticType is the following for string fields:
+                                                                                     * ``Count`` - Totals the number of strings for all the points in each polygon.
+ 
+                                                                                     fillType is one of the following:
+                                                                                     * ``zeros`` - Fills missing values with zeros. This is most appropriate for fields representing counts.
+                                                                                     * ``spatialNeighbors`` - Fills missing values by averaging the spatial neighbors. Neighbors are determined by a second degree queens contiguity.
+                                                                                     * ``spaceTimeNeighbors`` - Fills missing values by averaging the space-time neighbors. Neighbors are determined by a second degree queens contiguity in both space and time.
+                                                                                     * ``temporalTrend`` - Interpolates values using a univariate spline.   
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    output_name                                                                      Required string. The task will create a space time cube (netCDF) of the results. You define the name of the space time cube.
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    context                                                                          Optional string. Context contains additional settings that affect task execution. For this task, there are three settings:
+                                                                                     
+                                                                                     #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                     #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    gis                                                                              Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
+    future                                                                           Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    ============================================================================     ===================================================================================================
+    :returns: dict with url containing the path to Output Space Time Cube (netCDF) dataFile. When you browse to the output url, your netCDF will automatically download to your local machine.
+    
+    .. code-block:: python
+            # Usage Example: To aggregate Chicago homicides date layer into 3-dimensional cubes of 5 miles bin.
+            create_space_time_cube(point_layer=lyr,
+                                   bin_size=5,
+                                   bin_size_unit="Miles",
+                                   time_step_interval=1,
+                                   time_step_interval_unit="Days",
+                                   time_step_alignment='StartTime',
+                                   time_step_reference=datetime(1995, 10, 4),
+                                   summary_fields=[{"statisticType": "Mean", "onStatisticField" : "Beat", "fillType" : "temporalTrend" }],
+                                   output_name="spacecube")
     """
+
     kwargs=locals()
 
     gis=_arcgis.env.active_gis if gis is None else gis
@@ -1128,7 +1216,10 @@ def create_space_time_cube(point_layer: _FeatureSet,
         if value is not None:
             params[key]=value
 
-    _set_context(params)
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)
 
     param_db={
         "point_layer": (_FeatureSet, "pointLayer"),
@@ -1151,4 +1242,5 @@ def create_space_time_cube(point_layer: _FeatureSet,
         gpjob = _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True, future=future)
         return GAJob(gpjob=gpjob, return_service=output_service)
     return _execute_gp_tool(gis, "CreateSpaceTimeCube", params, param_db, return_values, _use_async, url, True, future=future)
+
 
