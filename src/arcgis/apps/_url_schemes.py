@@ -1,7 +1,8 @@
 import urllib.parse
 import arcgis
+import json
 
-def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None):
+def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None, search=None, portal=None,  action=None, geometry=None, callback=None, callback_prompt=None):
     """
     Creates a url that can be used to open Collector for ArcGIS
 
@@ -10,50 +11,153 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
     ------------------     --------------------------------------------------------------------
     webmap                 Optional :class:`String`, :class:`~arcgis.mapping.WebMap`, :class:`~arcgis.gis.Item`.
                            The item id, webmap, or item representing the map to open in Collector.
-                           Item can be of type Web Map.
     ------------------     --------------------------------------------------------------------
-    center                 Optional :class:`String`. The "lat,long" in WGS84 of where to center the map
+    center                 Optional :class:`String`, :class:`list`, :class:`tuple`.
+                           The "lat,long" in WGS84 of where to center the map
     ------------------     --------------------------------------------------------------------
     feature_layer          Optional :class:`String` or :class:`~arcgis.features.FeatureLayer`.
                            The feature layer url as string or the feature layer representing the layer to open
                            for collection.
     ------------------     --------------------------------------------------------------------
     fields                 Optional :class:`Dict`. The feature attributes dictionary {"field":"value"}
+    ------------------     --------------------------------------------------------------------
+    search                 Optional :class:`String` An address, place, coordinate, or feature to search for
+                           Requires webmap and action=search to be set.
+                           Value must be URL encoded
+    ------------------     --------------------------------------------------------------------
+    portal                 Optional :class:`String`, :class:`~arcgis.gis.GIS`.
+                           The URL of the portal the mobile worker must be connected to.
+    ------------------     --------------------------------------------------------------------
+    action                 Optional :class:`String` What the app should do, if anything, once open
+                           and the user is signed in.
+                           The following values are supported: addFeature, center, open, search.
+    ------------------     --------------------------------------------------------------------
+    geometry               Optional :class:`String`. Defines the location for the newly collectoed
+                           or edited feature
+                           Requires webmap, action=addFeature, and feature_layer.
+                           Value is a coordinate containing x, y (z if available)
+    ------------------     --------------------------------------------------------------------
+    callback               Optional :class:`String`. The URL to call when capturing the asset or
+                           observation is complete.
+                           Requires webmap, action=addFeature, and feature_layer to be set.
+                           Optionally, before calling the URL provide a prompt for the user,
+                           specified with the callback_prompt parameter.
+    ------------------     --------------------------------------------------------------------
+    callback_prompt        Optional :class:`String`. Prompt the mobile worker before executing the callback,
+                           and display this value in the prompt as where the mobile worker will be taken.
+                           Requires webmap, action=addFeature, feature_layer, and callback to be specified.
+                           Value must be URL encoded
     ==================     ====================================================================
 
     Additional info can be found here: https://github.com/Esri/collector-integration
-
     :return: :class:`String`
     """
-    _validate_collector_url(webmap, center, feature_layer, fields)
     params = []
-    url = "arcgis-collector://"
-    item_id = webmap
-    # webmap falsy bug #1244
-    if webmap is not None:
-        if isinstance(webmap, arcgis.mapping.WebMap):
-            item_id = webmap.item.id
-        elif isinstance(webmap, arcgis.gis.Item):
-            item_id = webmap.id
-        params.append("itemID=" + item_id)
+
+    # Branch out based on the version of Collector.
+    if portal or action:
+        url = "https://collector.arcgis.app"
+        if portal:
+            if isinstance(portal,arcgis.gis.GIS):
+                portal = portal.url
+            params.append("portalURL=" + portal)
+
+        if action:
+            params.append("referenceContext=" + action)
+            if not webmap:
+                raise ValueError("Invalid parameters -- Must specify a webmap")
+            else:
+                item_id = webmap
+                if isinstance(item_id, arcgis.mapping.WebMap):
+                    item_id = item_id.item.id
+                elif isinstance(item_id, arcgis.gis.Item):
+                    item_id = item_id.id
+                params.append("itemID=" + item_id)
+
+            actions = {'open': lambda: _build_collector_url_for_open_action(params),
+                       'center': lambda: _build_collector_url_for_center_action(params, center),
+                       'search': lambda: _build_collector_url_for_search_action(params, search),
+                       'addFeature': lambda: _build_collector_url_for_addFeature_action(params, feature_layer, geometry, fields, callback, callback_prompt)}
+
+            params = actions.get(action)()
+
+    # Collector Classic app integration logic.
+    else:
+        url = "arcgis-collector://"
+        _validate_collector_url(webmap, center, feature_layer, fields)
+        item_id = webmap
+        # webmap falsy bug #1244
+        if webmap is not None:
+            if isinstance(webmap, arcgis.mapping.WebMap):
+                item_id = webmap.item.id
+            elif isinstance(webmap, arcgis.gis.Item):
+                item_id = webmap.id
+            params.append("itemID=" + item_id)
+        if center:
+            if isinstance(center,(list, tuple)):
+                center = '{},{}'.format(center[0],center[1])
+            params.append("center=" + center)
+        if feature_layer:
+            feature_source_url = feature_layer
+        if isinstance(feature_layer, arcgis.features.FeatureLayer):
+            feature_source_url = feature_layer.url
+        params.append("featureSourceURL=" + feature_source_url)
+        if fields:
+            attributes = []
+            # unencoded format is featureAttributes={"fieldName":"value","fieldName2":"value2"}
+            for k, v in fields.items():
+                attributes.append(_encode_string('"{}":"{}"'.format(k, v)))
+            params.append("featureAttributes=%7B" + ",".join(attributes) + "%7D")
+
+    if params:
+        url += "?" + "&".join(params)
+        return url
+
+def _build_collector_url_for_open_action(params):
+    return params
+
+def _build_collector_url_for_center_action(params, center):
     if center:
+        if isinstance(center, (list, tuple)):
+            center = '{},{}'.format(center[0], center[1])
         params.append("center=" + center)
+        return params
+    else:
+        raise ValueError("Invalid parameters -- Must specify a center parameter if action = center")
+
+def _build_collector_url_for_search_action(params, search):
+    if search:
+        params.append("search=" + _encode_string(search))
+        return params
+    else:
+        raise ValueError("Invalid parameters -- Must specify a search parameter if action = search")
+
+def _build_collector_url_for_addFeature_action(params, feature_layer, geometry, fields, callback, callback_prompt):
     if feature_layer:
         feature_source_url = feature_layer
         if isinstance(feature_layer, arcgis.features.FeatureLayer):
             feature_source_url = feature_layer.url
         params.append("featureSourceURL=" + feature_source_url)
+    else:
+        raise ValueError("Invalid parameters -- Must specify a feature_layer parameter if action = addFeature")
+
+    if geometry:
+        if isinstance(geometry, dict):
+            geometry = json.dumps(geometry)
+        params.append("geometry=" + geometry)
+
     if fields:
         attributes = []
-        # unencoded format is featureAttributes={"fieldName":"value","fieldName2":"value2"}
         for k, v in fields.items():
-            # allow for template values (e.g. "{assignment.location}"
             attributes.append(_encode_string('"{}":"{}"'.format(k, v)))
         params.append("featureAttributes=%7B" + ",".join(attributes) + "%7D")
-    if params:
-        url += "?" + "&".join(params)
-    return url
 
+    if callback:
+        params.append("callback=" + callback)
+        if callback_prompt:
+            params.append("callbackPrompt=" + _encode_string(callback_prompt))
+
+    return params
 
 def _validate_collector_url(webmap, center, feature_layer, fields):
     if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item), isinstance(webmap, arcgis.mapping.WebMap)]):
@@ -69,7 +173,6 @@ def _validate_collector_url(webmap, center, feature_layer, fields):
             raise ValueError("Invalid parameters -- Must specify a webmap if setting feature attributes")
         if not feature_layer:
             raise ValueError("Invalid parameters -- Must specify a webmap if setting feature layer")
-
 
 def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, scale=None, wkid=None, rotation=None,
                        markup=None, url_type="Web"):
@@ -87,7 +190,8 @@ def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, sca
     ------------------     --------------------------------------------------------------------
     bookmark               Optional :class:`String`. The name of the bookmark in the map to open.
     ------------------     --------------------------------------------------------------------
-    center                 Optional :class:`String`. The "lat,long" in WGS84 of where to center the map.
+    center                 Optional :class:`String`, :class:`list`, :class:`tuple`.
+                           The "lat,long" in WGS84 of where to center the map
     ------------------     --------------------------------------------------------------------
     scale                  Optional :class:`Int`. The scale at which to open the map.
     ------------------     --------------------------------------------------------------------
@@ -120,6 +224,8 @@ def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, sca
     if bookmark:
         params.append("bookmark=" + _encode_string(bookmark))
     if center:
+        if isinstance(center, (list, tuple)):
+            center = '{},{}'.format(center[0], center[1])
         params.append("center=" + _encode_string(center))
     if scale:
         params.append("scale=" + str(scale))
