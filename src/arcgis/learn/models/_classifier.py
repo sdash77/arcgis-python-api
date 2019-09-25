@@ -79,7 +79,7 @@ class FeatureClassifier(ArcGISModel):
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None):
-
+        
         super().__init__(data, backbone)
 
         backbone_cut = None
@@ -145,6 +145,29 @@ class FeatureClassifier(ArcGISModel):
         json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
 
         return path.stem
+
+    def _create_tf_emd(self, saved_path, onnx_path):
+        import random
+        super()._create_tf_emd(saved_path, onnx_path)
+
+        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        self._emd_template["ModelConfiguration"] = "_classifier"
+        self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['Classes'] = []
+
+        class_data = {}
+        for i, class_name in enumerate(self._data.classes):
+            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+            class_data["Value"] = inverse_class_mapping[class_name]
+            class_data["Name"] = class_name
+            color = [random.choice(range(256)) for i in range(3)]
+            class_data["Color"] = color
+            self._emd_template['Classes'].append(class_data.copy())
+
+        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
+
+        return saved_path.stem
 
     @classmethod
     def from_model(cls, emd_path, data=None):

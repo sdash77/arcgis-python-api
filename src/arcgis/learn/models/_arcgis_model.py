@@ -4,6 +4,7 @@ try:
     from torch import nn
     import torch
     from torchvision import models
+    import math
 except ImportError:
     HAS_FASTAI = False
     class TrackerCallback():
@@ -23,7 +24,6 @@ logger = logging.getLogger()
 losses_skipped = 5
 trailing_losses_skipped = 5
 
-
 class _MultiGPUCallback(LearnerCallback):
     """
     Parallize over multiple GPUs only if multiple GPUs are present.
@@ -41,7 +41,6 @@ class _MultiGPUCallback(LearnerCallback):
     def on_train_end(self, **kwargs):
         if self.multi_gpu:
             self.learn.model = self.learn.model.module
-
 
 def _set_multigpu_callback(model):
     model.learn.callback_fns.append(_MultiGPUCallback)
@@ -276,7 +275,7 @@ class ArcGISModel(object):
         fil.close()
         return HTML_TEMPLATE
 
-    def _save(self, name_or_path, zip_files=True):
+    def _save(self, name_or_path, framework='PyTorch', zip_files=True, **kwargs):
         temp = self.learn.path
 
         if '\\' in name_or_path or '/' in name_or_path:
@@ -303,17 +302,41 @@ class ArcGISModel(object):
         finally:
             self.learn.path = temp
             self.learn.model_dir = 'models'
-        zip_name = self._create_emd(saved_path)
-        html_string = self._create_html(saved_path)
+
+        if framework.lower() == "tf-onnx":
+            if kwargs['batch_size'] is None:
+                batch_size = 16
+            else:
+                batch_size = kwargs['batch_size']
+
+            self._save_as_tfonnx(saved_path, batch_size)
+            zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
+            os.remove(saved_path.with_suffix('.pth'))
+        else:
+            zip_name = self._create_emd(saved_path)
+            html_string = self._create_html(saved_path)     
+
         with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
             f.write(self._code)
         if zip_files:
-            _create_zip(zip_name, str(saved_path.parent))
+            _create_zip(str(zip_name), str(saved_path.parent))
         if arcgis.env.verbose:
             print('Created model files at {spp}'.format(spp=saved_path.parent))
+
         return saved_path.parent
 
-    def save(self, name_or_path):
+    def _save_as_tfonnx(self, saved_path, batch_size):
+        try:
+            import onnx
+            from onnx_tf.backend import prepare
+        except:
+            raise Exception('Onnx and Onnx_tf libraries are not installed. Install them using "pip install onnx onnx_tf".')
+
+        batch_size = int(math.sqrt(int(batch_size)))**2
+        dummy_input = torch.randn(batch_size, 3, self._data.chip_size, self._data.chip_size, device=self._device, requires_grad=True)
+        torch.onnx.export(self.learn.model, dummy_input, saved_path.with_suffix('.onnx'))
+
+    def save(self, name_or_path, framework='PyTorch', **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro
@@ -328,9 +351,15 @@ class ArcGISModel(object):
                                 is passed then it stores at the specified path
                                 with model name as directory name. and creates
                                 all the intermediate directories.
+        ---------------------   -------------------------------------------
+        framework               Optional string. Defines the framework of the
+                                model. Framework can be PyTorch or TF-ONNX.
+                                If framework used is TF-ONNX, batch_size has
+                                to be passed as keyword arguments. Default
+                                batch_size is 16.
         =====================   ===========================================
         """        
-        return self._save(name_or_path)
+        return self._save(name_or_path, framework=framework, **kwargs)
         
     def load(self, name_or_path):
         """
@@ -361,7 +390,7 @@ class ArcGISModel(object):
         else:
             # fixing fastai bug
             self.learn.path = self.learn.path.parent
-            self.learn.model_dir = Path(self.learn.model_dir) /  name_or_path
+            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
             name = name_or_path
 
         try:
