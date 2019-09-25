@@ -1466,35 +1466,45 @@ class FeatureLayer(Layer):
                         where=None,
                         geometry_filter=None,
                         gdb_version=None,
-                        rollback_on_failure=True):
+                        rollback_on_failure=True,
+                        return_delete_results=True,
+                        future=False):
         """
         This operation deletes features in a feature layer or table
 
-        ====================     ====================================================================
-        **Argument**             **Description**
-        --------------------     --------------------------------------------------------------------
-        deletes                  Optional string. A comma seperated string of OIDs to remove from the
-                                 service.
-        --------------------     --------------------------------------------------------------------
-        where                    Optional string.  A where clause for the query filter. Any legal SQL
-                                 where clause operating on the fields in the layer is allowed.
-                                 Features conforming to the specified where clause will be deleted.
-        --------------------     --------------------------------------------------------------------
-        geometry_filter          Optional SpatialFilter. A spatial filter from
-                                 arcgis.geometry.filters module to filter results by a spatial
-                                 relationship with another geometry.
-        --------------------     --------------------------------------------------------------------
-        gdb_version              Optional string. A Geodatabase version to apply the edits.
-        --------------------     --------------------------------------------------------------------
-        rollback_on_failure      Optional boolean. Optional parameter to specify if the edits should
-                                 be applied only if all submitted edits succeed. If false, the server
-                                 will apply the edits that succeed even if some of the submitted
-                                 edits fail. If true, the server will apply the edits only if all
-                                 edits succeed. The default value is true.
-        ====================     ====================================================================
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        deletes                    Optional string. A comma seperated string of OIDs to remove from the
+                                   service.
+        ----------------------     --------------------------------------------------------------------
+        where                      Optional string.  A where clause for the query filter. Any legal SQL
+                                   where clause operating on the fields in the layer is allowed.
+                                   Features conforming to the specified where clause will be deleted.
+        ----------------------     --------------------------------------------------------------------
+        geometry_filter            Optional SpatialFilter. A spatial filter from
+                                   arcgis.geometry.filters module to filter results by a spatial
+                                   relationship with another geometry.
+        ----------------------     --------------------------------------------------------------------
+        gdb_version                Optional string. A Geodatabase version to apply the edits.
+        ----------------------     --------------------------------------------------------------------
+        rollback_on_failure        Optional boolean. Optional parameter to specify if the edits should
+                                   be applied only if all submitted edits succeed. If false, the server
+                                   will apply the edits that succeed even if some of the submitted
+                                   edits fail. If true, the server will apply the edits only if all
+                                   edits succeed. The default value is true.
+        ----------------------     --------------------------------------------------------------------
+        return_delete_results      Optional Boolean. Optional parameter that indicates whether a result
+                                   is returned per deleted row when the deleteFeatures operation is run.
+                                   The default is true.
+        ----------------------     --------------------------------------------------------------------
+        future                     Optional Boolean.  If future=True, then the operation will occur
+                                   asynchronously else the operation will occur synchronously.  False
+                                   is the default.
+        ======================     ====================================================================
 
 
-        :return: dict
+        :return: Dict if future=False (default), else a concurrent.Future class.
 
 
         """
@@ -1533,8 +1543,37 @@ class FeatureLayer(Layer):
         if 'objectIds' not in params and 'where' not in params and 'geometry' not in params:
             print("Parameters not valid for delete_features")
             return None
-        return self._con.post(path=delete_url, postdata=params, token=self._token)
-
+        if future is False:
+            return self._con.post(path=delete_url, postdata=params, token=self._token)
+        else:
+            params['async'] = True
+            import concurrent.futures
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            res = self._con.post(path=delete_url, postdata=params, token=self._token)
+            future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+            executor.shutdown(False)
+            return future
+    # ----------------------------------------------------------------------
+    def _status_via_url(self, con, url, params):
+        """
+        performs the asynchronous check to see if the operation finishes
+        """
+        status_allowed = ['Pending', 'InProgress', 'Completed', 'Failed ImportChanges',
+                          'ExportChanges', 'ExportingData', 'ExportingSnapshot',
+                          'ExportAttachments', 'ImportAttachments', 'ProvisioningReplica',
+                          'UnRegisteringReplica', 'CompletedWithErrors']
+        status = con.get(url, params)
+        while not status['status'] in status_allowed:
+            if status['status'] == 'Completed':
+                return status
+            elif status['status'] == 'CompletedWithErrors':
+                break
+            elif 'fail' in status['status'].lower():
+                break
+            elif 'error' in status['status'].lower():
+                break
+            status = con.get(url, params)
+        return status
     # ----------------------------------------------------------------------
     def edit_features(self,
                       adds=None,
