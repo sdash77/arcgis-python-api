@@ -38,8 +38,7 @@ class _EmptyData():
         self.c = c
         self.loss_func = loss_func
         self.chip_size = chip_size
-
-
+        
 class SingleShotDetector(ArcGISModel):
 
     """
@@ -172,7 +171,6 @@ class SingleShotDetector(ArcGISModel):
             raise Exception('SSDVersion can only be 1 or 2')
 
         self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
-
         self.learn.model = self.learn.model.to(self._device)
 
         if focal_loss:
@@ -221,6 +219,9 @@ class SingleShotDetector(ArcGISModel):
 
         if data is None:
             data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            data.class_mapping = class_mapping
+            data.Classes = emd['Classes']
+            data.color_mapping = color_mapping
 
         data.resize_to = resize_to
         return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
@@ -367,6 +368,35 @@ class SingleShotDetector(ArcGISModel):
 
         return path.stem
 
+    def _create_tfonnx_emd(self, saved_path, batch_size):
+        import random
+        super()._create_emd(saved_path)
+
+        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        self._emd_template["ModelConfiguration"] = "_SSDTensorflow"
+        self._emd_template["ModelType"] = "ObjectDetection"
+        self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['Grids'] = self.grids
+        self._emd_template['Zooms'] = self.zooms
+        self._emd_template['Ratios'] = self.ratios
+        self._emd_template['SSDVersion'] = self.ssd_version
+        self._emd_template['Classes'] = []
+        self._emd_template['BatchSize'] = batch_size
+
+        class_data = {}
+        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
+            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+            class_data["Value"] = inverse_class_mapping[class_name]
+            class_data["Name"] = class_name
+            color = [random.choice(range(256)) for i in range(3)]
+            class_data["Color"] = color
+            self._emd_template['Classes'].append(class_data.copy())
+
+        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
+
+        return saved_path.stem
+    
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
         Displays the results of a trained model on a part of the validation set.
