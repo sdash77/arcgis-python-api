@@ -9841,11 +9841,13 @@ class _GISResource(object):
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
+        elif type(self).__name__ == 'ImageryLayer':
+            dictdata = self._con.post(self.url, params, token=self._lazy_token)
         else:
             try:
                 dictdata = self._con.post(self.url, params, token=self._lazy_token)
             except Exception as e:
-                if e.msg == "Method Not Allowed":
+                if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)
                 else:
                     raise e
