@@ -5,14 +5,18 @@ import json
 from ._codetemplate import code
 import logging
 logger = logging.getLogger() 
+import os, csv
+import xml.etree.ElementTree as ET
+HAS_OPENCV = True
 
 try:
     import torch
     import numpy as np
+    from fastprogress import progress_bar
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
-    from fastai.vision.image import open_image
+    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from torchvision.models import resnet34
     from torchvision.models import mobilenet_v2
     from torchvision import models
@@ -22,12 +26,17 @@ try:
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     from ._unet_utils import is_no_color
     from torch.nn import Module as NnModule
+    import PIL
     HAS_FASTAI = True
 except Exception as e:
     class NnModule():
         pass
     HAS_FASTAI = False
 
+try:
+    import cv2
+except Exception:
+    HAS_OPENCV = False
 
 def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
 
@@ -404,6 +413,119 @@ class SingleShotDetector(ArcGISModel):
         if rows > self._data.batch_size:
             rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+
+    def predict_video(self, input_video_path, metadata_file, threshold=0.5, nms_overlap=0.1, visualize=False, output_video_path=None):
+        """
+        Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        input_video_path        Required. Path to the video file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        metadata_file           Required. Path to the metadata csv file where
+                                the predictions will be saved in VMTI format.
+        ---------------------   -------------------------------------------
+        threshold               Optional float. The probability above which
+                                a prediction will be considered.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional.
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. If True a video is saved
+                                to with the prediction results
+        ---------------------   -------------------------------------------
+        output_video_path       Optional path. Path of the final video to be saved.
+                                If not supplied, video will be saved at path input_video_path
+                                appended with _prediction.
+        =====================   ===========================================
+        """
+
+        video_read = cv2.VideoCapture(input_video_path)
+        fps = video_read.get(cv2.CAP_PROP_FPS)
+        video_obj = None
+        success = True
+        count = int(video_read.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        vmtis = ['vmtilocaldataset']
+
+        for pb in progress_bar(range(count)):
+            success, frame = video_read.read()
+
+            if not success:
+                break
+
+            height, width, layers = frame.shape
+            if visualize and not video_obj:
+                if not output_video_path:
+                    output_video_path = os.path.join(
+                        os.path.dirname(input_video_path),
+                        os.path.basename(input_video_path).split('.')[0] + '_predictions.avi'
+                    )
+                video_obj = cv2.VideoWriter(output_video_path, 0, fps, (width, height))
+            image = Image(pil2tensor(PIL.Image.fromarray(frame).convert('RGB'), dtype=np.float32).div_(255))
+
+            if self._data.chip_size is not None:
+                image = image.resize(size=self._data.chip_size)
+
+            bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=False, ssd=self)[0]
+            vmti_detections = '\n'
+            if bbox:
+                bboxes, lbls = bbox._compute_boxes()
+
+                bboxes.add_(1).mul_(torch.tensor([height / 2, width / 2, height / 2, width / 2])).long()
+                for i, bbox_data in enumerate(bboxes):
+                    if lbls is not None:
+                        text = str(lbls[i])
+                    else:
+                        text = 'Default'
+                    data = bb2hw(bbox_data)
+                    image = cv2.rectangle(
+                        frame,
+                        (int(data[0]), int(data[1])), (int(data[0] + data[2]), int(data[1] + data[3])),
+                        (255, 255, 255),
+                        2
+                    )
+                    cv2.putText(
+                        image,
+                        text,
+                        (int(data[0]), int(data[1]) - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.7,
+                        (255, 255, 255),
+                        2
+                    )
+                    top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
+                    bottom_right = max(0, (int(data[1] + data[3]) - 1)) * width + int(data[0] + data[2])
+                    center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (
+                            int(data[0]) + int((data[2]) / 2))
+
+                    vmti_detections = f'{text} 0.0 {top_left} {bottom_right} {center_pixel};' + vmti_detections
+            else:
+                image = frame
+
+            vmtis.append(vmti_detections)
+
+            if visualize:
+                video_obj.write(image)
+
+        cv2.destroyAllWindows()
+        if video_obj:
+            video_obj.release()
+        video_read.release()
+
+        data = []
+        index = 0
+        with open(metadata_file, 'r') as csvinput:
+            for row in csv.reader(csvinput):
+                data.append(row+[vmtis[index]])
+                index = index + 1
+
+        with open(metadata_file, 'w', newline='') as csvoutput:
+            writer = csv.writer(csvoutput)
+            for row in data:
+                writer.writerow(row)
+
 
     def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=False, visualize=False):
         image = open_image(image_path).apply_tfms(self._data.valid_ds.tfms)
