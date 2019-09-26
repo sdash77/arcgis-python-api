@@ -7606,6 +7606,19 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
 
+        interval_ranges_val=None
+        if interval_ranges is not None:
+            interval_ranges_val = interval_ranges
+            ele_values=[]
+            if isinstance(interval_ranges, list):
+                for ele in interval_ranges:
+                    if isinstance(ele, list):
+                        ele_values.append(" ".join(ele))
+                    else:
+                        raise RuntimeError("interval_ranges can only be of type list of lists.")
+                if isinstance(ele_values, list):
+                    interval_ranges_val = ";".join(ele_values)
+
         if isinstance(aggregation_function, Item):
             aggregation_function = {"itemId":aggregation_function.itemid}
 
@@ -7620,7 +7633,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                             interval_keyword=interval_keyword_val,
                                                             interval_value=interval_value,
                                                             interval_unit=interval_unit,
-                                                            interval_ranges=interval_ranges,
+                                                            interval_ranges=interval_ranges_val,
                                                             aggregation_function=aggregation_function,
                                                             ignore_nodata=ignore_nodata,
                                                             context=context,
@@ -7902,13 +7915,19 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if interval_unit.upper() == element:
                     interval_unit_val = element
 
+        values=None
+        if dimension_values is not None:
+            if isinstance(dimension_values, list):
+                values = ";".join(dimension_values)
+
+
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
         gpjob = self._tbx.predict_using_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
                                                      output_name=output_raster,
                                                      variables=variables,
                                                      dimension_definition=dimension_definition_val,
-                                                     dimension_values=dimension_values,
+                                                     dimension_values=values,
                                                      start=start,
                                                      end=end,
                                                      interval_value=interval_value,
