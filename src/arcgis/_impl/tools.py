@@ -174,8 +174,12 @@ class BaseAnalytics(object):
             input_param = input_layer.layers[0]._lyr_dict
 
         elif isinstance(input_layer, arcgis.features.FeatureCollection):
-            input_param = input_layer.properties["layers"][0]
-
+            if 'layers' in input_layer.properties:
+                input_param = input_layer.properties["layers"][0]
+            elif hasattr(input_layer, '_lyr_dict'):
+                input_param = input_layer._lyr_dict
+            elif hasattr(input_layer, 'layer'):
+                input_param = input_layer.layer
         elif isinstance(input_layer, arcgis.gis.Layer):
             input_param = input_layer._lyr_dict
 
