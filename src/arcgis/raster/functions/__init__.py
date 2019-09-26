@@ -14,7 +14,8 @@ Functions can be applied to various rasters (or images), including the following
 # Mosaic datasets
 # Rasters within mosaic datasets
 from .._layer import ImageryLayer
-from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra
+from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra, \
+                     _pixel_type_string_to_long
 from arcgis.gis import Item
 import copy
 import numbers
@@ -90,6 +91,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
+    newlyr._raster_info = layer._raster_info
 
     newlyr._lazy_token = layer._token
     newlyr._refresh()
@@ -131,6 +133,7 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
+    newlyr._raster_info = layer._raster_info
 
     newlyr._lazy_token = layer._token
     newlyr._refresh()
@@ -4070,6 +4073,259 @@ def monitor_vegetation(raster, method='NDVI', band_indexes=None, astype=None):
 
     return band_arithmetic(raster, band_indexes, astype, method)
 
+def constant_raster(constant, raster_info, gis=None):
+    """
+    Creates a virtual raster with a single pixel value.
+
+    :param constant: Required list. The value of the constant to be added to the virtual raster.
+    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+                        Example for RasterInfo dict - 
+                        {'bandCount': 3, 
+
+                         'extent': {"xmin": 4488761.95,
+                                     "ymin": 5478609.805,
+                                     "xmax": 4489727.05,
+                                     "ymax": 5479555.305,
+                                     "spatialReference": {
+
+                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+
+                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+
+                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+
+                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+
+                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+
+                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+
+                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+
+                                     }}, 
+                         'pixelSizeX': 0.0999999999999614, 
+
+                         'pixelSizeY': 0.1, 
+
+                         'pixelType': 'U8'}
+
+
+    :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
+                If not provided, active gis will be used to do this.
+                If gis parameter is not specified the output of constant_raster() cannot be displayed. 
+
+    :return: output raster 
+    """
+
+    template_dict = {
+        "rasterFunction" : "Constant",
+        "rasterFunctionArguments": {
+        }
+    }
+
+    if constant is not None:
+        template_dict["rasterFunctionArguments"]["Constant"] = constant
+
+    if raster_info is not None:
+        layer_raster_info = {}
+        if isinstance(raster_info, ImageryLayer):
+            layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        else:
+            layer_raster_info = copy.deepcopy(raster_info)
+        if "pixelType" in layer_raster_info.keys():
+            if isinstance(layer_raster_info["pixelType"], str):
+                layer_raster_info["pixelType"] = _pixel_type_string_to_long(layer_raster_info["pixelType"])
+        layer_raster_info.update({'type': 'RasterInfo'})
+        template_dict["rasterFunctionArguments"]['RasterInfo'] = layer_raster_info
+    else:
+        raise RuntimeError('raster_info cannot be None')
+
+    if gis is not None:
+        newlyr = ImageryLayer(template_dict, gis)
+    else:
+        newlyr = ImageryLayer(template_dict,None)
+    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    return newlyr
+
+def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0, min_integer=1, 
+                  max_integer=10, normal_mean=0.0, std_dev=1.0, exp_mean=1.0, poisson_mean= 1.0,
+                  alpha=1.0, beta=1.0, N=10, r=10, probability=0.5, seed=1, generator_type=2, 
+                  gis=None):
+    """
+    Creates a virtual raster with random values for each cell.
+
+    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+
+                        Example for RasterInfo dict - 
+                        {'bandCount': 3, 
+
+                         'extent': {"xmin": 4488761.95,
+                                     "ymin": 5478609.805,
+                                     "xmax": 4489727.05,
+                                     "ymax": 5479555.305,
+                                     "spatialReference": {
+
+                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+
+                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+
+                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+
+                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+
+                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+
+                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+
+                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+
+                                     }}, 
+                         'pixelSizeX': 0.0999999999999614, 
+
+                         'pixelSizeY': 0.1, 
+
+                         'pixelType': 'U8'}
+
+    :param distribution: Optional int. Specify the random value distribution method to use.
+     Default 1. i,e; Uniform
+                         Choice list:
+                           Uniform = 1
+                           UniformInteger = 2
+                           Normal = 3
+                           Exponential = 4
+                           Poisson = 5
+                           Gamma = 6
+                           Binomial = 7
+                           Geometric = 8
+                           NegativeBinomial = 9
+
+                        Uniform - A uniform distribution with the defined range.
+
+                        UniformInteger - An integer distribution with the defined range.
+
+                        Normal - A normal distribution with a defined {normal_mean} and {std_dev}. 
+
+                        Exponential - An exponential distribution with a defined {exp_mean}.
+
+                        Poisson - A Poisson distribution with a defined {Mean}.
+
+                        Gamma - A gamma distribution with a defined {alpha} and {beta}.
+                                
+                        Binomial - A binomial distribution with a defined {N} and {probability}.
+
+                        Geometric - A geometric distribution with a defined {probability}. 
+
+                        NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
+
+    :param min_uniform: Optional float. The default values is 0.0
+    :param max_uniform: Optional float. The default values is 1.0
+    :param min_integer: Optional int. The default values is 1
+    :param max_integer: Optional int. The default values is 10
+    :param normal_mean: Optional float. The default values is 0.0
+    :param std_dev: Optional float. The default values is 1.0
+    :param exp_mean: Optional float. The default values is 1.0
+    :param poisson_mean: Optional float. The default values is 1.0
+    :param alpha: Optional float. The default values is 1.0
+    :param beta: Optional float. The default values is 1.0
+    :param N: Optional int. The default values is 0.0
+    :param r: Optional int. The default values is 0.0
+    :param probability: Optional float. The default values is 0.5
+    :param seed: Optional int. The default values is 0.0
+    :param generator_type: Optional int. Default 2. i.e; MersenneTwister
+                           Choice list:
+                           Standard C Rand = 0
+                           ACM collected algorithm 599 = 1
+                           MersenneTwister = 2
+
+    :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
+                If not provided, active gis will be used to do this.
+                If gis parameter is not specified the output of constant_raster() cannot be displayed. 
+
+    :return: output raster 
+    """
+
+    template_dict = {
+        "rasterFunction" : "Random",
+        "rasterFunctionArguments": {
+        }
+    }
+
+    if distribution is not None:
+        template_dict["rasterFunctionArguments"]["Distribution"] = distribution
+
+    if min_uniform is not None:
+        template_dict["rasterFunctionArguments"]["MinimumUniform"] = min_uniform
+
+    if max_uniform is not None:
+        template_dict["rasterFunctionArguments"]["MaximumUniform"] = max_uniform
+
+    if min_integer is not None:
+        template_dict["rasterFunctionArguments"]["MinimumInteger"] = min_integer
+
+    if max_integer is not None:
+        template_dict["rasterFunctionArguments"]["MaximumInteger"] = max_integer
+
+    if normal_mean is not None:
+        template_dict["rasterFunctionArguments"]["NormalMean"] = normal_mean
+
+    if std_dev is not None:
+        template_dict["rasterFunctionArguments"]["StandardDeviation"] = std_dev
+
+    if exp_mean is not None:
+        template_dict["rasterFunctionArguments"]["ExponentialMean"] = exp_mean
+
+    if poisson_mean is not None:
+        template_dict["rasterFunctionArguments"]["ExponentialMean"] = poisson_mean
+
+    if alpha is not None:
+        template_dict["rasterFunctionArguments"]["Alpha"] = alpha
+
+    if beta is not None:
+        template_dict["rasterFunctionArguments"]["Beta"] = beta
+
+    if N is not None:
+        template_dict["rasterFunctionArguments"]["N"] = N
+
+    if r is not None:
+        template_dict["rasterFunctionArguments"]["r"] = r
+
+    if probability is not None:
+        template_dict["rasterFunctionArguments"]["Probability"] = probability
+
+    if seed is not None:
+        template_dict["rasterFunctionArguments"]["Seed"] = seed
+
+    if generator_type is not None:
+        template_dict["rasterFunctionArguments"]["GeneratorType"] = generator_type
+
+    if raster_info is not None:
+        layer_raster_info = {}
+        if isinstance(raster_info, ImageryLayer):
+            layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        else:
+            layer_raster_info = copy.deepcopy(raster_info)
+        if "pixelType" in layer_raster_info.keys():
+            if isinstance(layer_raster_info["pixelType"], str):
+                layer_raster_info["pixelType"] = _pixel_type_string_to_long(layer_raster_info["pixelType"])
+        layer_raster_info.update({'type': 'RasterInfo'})
+        template_dict["rasterFunctionArguments"]['RasterInfo'] = layer_raster_info
+    else:
+        raise RuntimeError('raster_info cannot be None')
+
+    if gis is not None:
+        newlyr = ImageryLayer(template_dict, gis)
+    else:
+        newlyr = ImageryLayer(template_dict,None)
+    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    return newlyr
+
+
 class RFT:
     def __init__(self, raster_function_template,gis=None):
         try:
@@ -4764,4 +5020,3 @@ class RFT:
         graph=self.draw_graph()
         svg_graph=graph.pipe().decode('utf-8')
         return svg_graph
-

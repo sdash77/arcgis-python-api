@@ -386,3 +386,53 @@ def _python_variable_name(var):
         var = ''.join(e for e in var if e.isalnum() or e=="_")
         return var
 
+def _pixel_type_string_to_long(pixel_type):
+    pixel_type = pixel_type.upper()
+    if(pixel_type ==  'U1'):
+        return 0
+    elif(pixel_type ==  'U2'):
+            return 1
+    elif(pixel_type ==  'U4'):
+            return 2
+    elif(pixel_type ==  'U8'):
+            return 3
+    elif(pixel_type ==  'S8'):
+            return 4
+    elif(pixel_type ==  'U16'):
+            return 5
+    elif(pixel_type ==  'S16'):
+            return 6
+    elif(pixel_type ==  'U32'):
+            return 7
+    elif(pixel_type ==  'S32'):
+            return 8
+    elif(pixel_type ==  'F32'):
+            return 9
+    elif(pixel_type ==  'F64'):
+            return 10
+    elif(pixel_type ==  'C16'):
+            return 13
+    elif(pixel_type ==  'C32'):
+            return 14
+    elif(pixel_type ==  'C64'):
+            return 11
+    elif(pixel_type ==  'C128'):
+            return 12
+    elif(pixel_type ==  'D8'):
+            return 15
+    elif(pixel_type ==  'D10'):
+            return 16
+    elif(pixel_type ==  'D12'):
+            return 17
+    elif(pixel_type ==  'D16'):
+            return 18
+    elif(pixel_type ==  'D20'):
+            return 19
+    elif(pixel_type ==  'D24'):
+            return 20
+    elif(pixel_type ==  'D32'):
+            return 21
+    elif(pixel_type ==  'D36'):
+            return 22
+    else:
+        return -1
