@@ -382,6 +382,7 @@ class ImageryLayer(Layer):
         self._extent = None
         self._uses_gbl_function = False
         self._other_outputs = {}
+        self._raster_info = {}
 
     @property
     def rasters(self):
@@ -591,6 +592,28 @@ class ImageryLayer(Layer):
             return hist_return['histograms']
         else:
             return None
+
+    @property
+    def raster_info(self):
+        """
+        Returns information about the ImageryLayer such as 
+        bandCount, extent , pixelSizeX, pixelSizeY, pixelType
+        """
+        if "extent" in self.properties:
+            self._raster_info.update({"extent":dict(self.properties.extent)})
+
+        if "bandCount" in self.properties:
+            self._raster_info.update({"bandCount":self.properties.bandCount})
+
+        if "pixelType" in self.properties:
+            self._raster_info.update({"pixelType":self.properties.pixelType})
+
+        if "pixelSizeX" in self.properties:
+            self._raster_info.update({"pixelSizeX":self.properties.pixelSizeX})
+
+        if "pixelSizeY" in self.properties:
+            self._raster_info.update({"pixelSizeY":self.properties.pixelSizeY})
+        return self._raster_info
 
     @extent.setter
     def extent(self, value):
