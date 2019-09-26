@@ -139,6 +139,8 @@ def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3
     final_conv = nn.Conv2d(in_channels=in_final, out_channels=512, kernel_size=3, padding=1)
 
     ## To make Dynamic Unet work as it expects a backbone which can be indexed.
+    if "densenet" in backbone_name or "vgg" in backbone_name:
+        backbone = backbone[0]
     layers = [*backbone, ppm, final_conv]
     return nn.Sequential(*layers)
 
