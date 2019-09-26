@@ -3971,12 +3971,12 @@ def generate_trend_raster(input_multidimensional_raster,
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    dimension                                Required String. The aggregation dimension. This is the dimension
-                                             along which the variables will be aggregated.
+    dimension                                Required String. The dimension along which a trend will be extracted 
+                                             for the variable or variables selected in the analysis.
     ------------------------------------     --------------------------------------------------------------------
-    variables                                Optional List. The variable or variables for which anomalies will
-                                             be calculated. If no variable is specified, all variables with a time
-                                             dimension will be analyzed.
+    variables                                Optional List. The variable or variables for which trends will be calculated. 
+                                             If no variable is specified, the first variable in the multidimensional 
+                                             raster will be analyzed.
     ------------------------------------     --------------------------------------------------------------------
     trend_line_type                          Optional String. Specifies the type of line to be used to fit to the 
                                              pixel values along a dimension.
@@ -4017,9 +4017,6 @@ def generate_trend_raster(input_multidimensional_raster,
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ====================================     ====================================================================
-
-    .. code-block:: python
-
 
     Returns
     -------
@@ -4115,9 +4112,9 @@ def predict_using_trend_raster(input_multidimensional_raster,
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    variables                                Optional List. The variable or variables for which anomalies will
-                                             be calculated. If no variable is specified, all variables with a time
-                                             dimension will be analyzed.
+    variables                                Optional List. The variable or variables that will be predicted in 
+                                             the analysis. If no variables are specified, all variables will be used.
+
     ------------------------------------     --------------------------------------------------------------------
     dimension_definition                     Required String. Specifies the method used to provide prediction dimension values.
 
@@ -4174,9 +4171,6 @@ def predict_using_trend_raster(input_multidimensional_raster,
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ====================================     ====================================================================
-
-    .. code-block:: python
-
 
     Returns
     -------
@@ -4287,12 +4281,20 @@ def find_argument_statistics(input_raster,
     input_raster                             Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    dimension                                Required String. The aggregation dimension. This is the dimension
-                                             along which the variables will be aggregated.
+    dimension                                Required String. The dimension from which the statistic will be 
+                                             extracted. If the input raster is not a multidimensional raster, 
+                                             this parameter is not required.
     ------------------------------------     --------------------------------------------------------------------
-    variables                                Optional List. The variable or variables for which anomalies will
-                                             be calculated. If no variable is specified, all variables with a time
-                                             dimension will be analyzed.
+    variables                                Optional List. The variable or variables to be analyzed. If the input 
+                                             raster is not multidimensional, the pixel values of the multiband raster 
+                                             are considered the variable. If the input raster is multidimensional and 
+                                             no variable is specified, all variables with the selected dimension will be analyzed.
+
+                                             For example, to find the years in which temperature values were highest, 
+                                             specify temperature as the variable to be analyzed. If you do not specify any 
+                                             variables and you have both temperature and precipitation variables, 
+                                             both variables will be analyzed and the output multidimensional raster will 
+                                             include both variables.
     ------------------------------------     --------------------------------------------------------------------
     statistics_type                          Optional String. Specifies the statistic to extract from the variable or variables along the given dimension.
                                              
@@ -4339,9 +4341,6 @@ def find_argument_statistics(input_raster,
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
     ====================================     ====================================================================
-
-    .. code-block:: python
-
 
     Returns
     -------
@@ -4466,9 +4465,6 @@ def linear_spectral_unmixing(input_raster,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
-    .. code-block:: python
-
-
     Returns
     -------
     output_raster : Imagery layer item
@@ -4483,7 +4479,6 @@ def linear_spectral_unmixing(input_raster,
                                                context=context,
                                                future=future,
                                                **kwargs)
-
 
 def costpath_as_polyline(input_destination_data,
                          input_cost_distance_raster,
