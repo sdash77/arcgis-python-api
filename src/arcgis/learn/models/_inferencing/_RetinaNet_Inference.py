@@ -294,15 +294,8 @@ class ChildObjectDetector:
             'fixedTileSize': 1
         }
 
-    def vectorize(self, **pixelBlocks): # 8 x 224 x 224 x 3
+    def vectorize(self, **pixelBlocks):
         input_image = pixelBlocks['raster_pixels']
-
-        # # Pickle input image for testing
-        # import pickle
-        # with open(r'C:\Users\kap10429\tasks\retinanet-integration\retinanet_pool\pool_chips_256_stride0\inp_img.pkl', 'wb') as f:
-        #     pickle.dump(input_image, f)
-        # f.close()
-
         batch, batch_height, batch_width = \
             tile_to_batch(input_image,
                                     self.json_info['ImageHeight'],
@@ -311,16 +304,6 @@ class ChildObjectDetector:
                                     fixed_tile_size=True,
                                     batch_height=self.rectangle_height,
                                     batch_width=self.rectangle_width)
-
-
-        # # Pickle batch for testing
-        # import pickle
-        # with open(r'C:\Users\kap10429\tasks\retinanet-integration\retinanet_pool\pool_chips_256_stride0\batch.pkl', 'wb') as f:
-        #     pickle.dump([batch, batch_height, batch_width], f)
-        # f.close()
-        
-        # import sys
-        # sys.exit()
 
         class_names = [clas['Name'] for clas in self.json_info['Classes']]
 
@@ -392,17 +375,5 @@ class ChildObjectDetector:
                 classes[idx] = pred['class']
                 
                 idx = idx+1
-
-        # Pickle outputs to debug
-        # import pickle
-        # from pathlib import Path
-        # path = 'D:/test/'
-        # with open(path + 'int') as f:
-        #     batch_number = int(f.readline())
-        #     with open(path + f'batch_{batch_number}.txt', 'wb') as f_p:
-        #         pickle.dump([preds, bounding_boxes, scores, classes], f_p)
-        
-        # with open(path + 'int', 'w') as f:
-        #     f.write(str(batch_number + 1))
 
         return convert_bounding_boxes_to_coord_list(bounding_boxes), scores * 100, classes

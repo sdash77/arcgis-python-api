@@ -120,7 +120,12 @@ InvitationManager
     :undoc-members:
     :show-inheritance:
 
-
+CertificateManager
+---------------------------
+.. autoclass:: arcgis.gis._impl.CertificateManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 --------------

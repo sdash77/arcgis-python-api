@@ -14,8 +14,9 @@ try:
     import pandas as pd
     from fastai.vision.learner import create_body
     from fastai.vision.image import open_image
+    from fastai.core import ifnone
     from torchvision import models
-    from ._retinanet_utils import * # Remove *
+    from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
@@ -53,7 +54,8 @@ class RetinaNet(ArcGISModel):
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used for
                             creating the base of the `RetinaNet`, which
-                            is `resnet50` by default.
+                            is `resnet50` by default. 
+                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -64,19 +66,18 @@ class RetinaNet(ArcGISModel):
 
     def __init__(self, data, scales=None, ratios=None, backbone=None, pretrained_path=None):
 
+        # Set default backbone to be 'resnet50'
+        if backbone is None: 
+            backbone = models.resnet50
+
         super().__init__(data, backbone)
+
+        # Check if a backbone provided is compatible, use resnet50 as default
+        if not self._check_backbone_support(backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         self.name = RetinaNet
-
         self._code = code
-
-        # Check if a backbone is provided, use resnet50 as default
-        if backbone is None:
-            self._backbone = models.resnet50
-        elif type(backbone) is str:
-            self._backbone = getattr(models, backbone)
-        else:
-            self._backbone = backbone
-        # TODO: Check what all backbone models can be used with the current model architecture
 
         self.scales = ifnone(scales, [1,2**(-1/3), 2**(-2/3)])
         self.ratios = ifnone(ratios, [1/2,1,2])
@@ -96,6 +97,11 @@ class RetinaNet(ArcGISModel):
         self.learn.freeze()
         if pretrained_path is not None:
             self.load(str(pretrained_path))
+    
+    # Return a list of supported backbones names
+    @property
+    def supported_backbones(self):
+        return [*self._resnet_family]
 
     def _create_emd(self, path):
         """

@@ -539,7 +539,8 @@ def zonal_statistics(in_zone_data,
                      zone_field,
                      in_value_raster,
                      ignore_nodata=True,
-                     statistics_type=None):
+                     statistics_type='MEAN',
+                     process_as_multidimensional=None):
 
     """"
     Calculates statistics on values of a raster within the zones of another dataset.
@@ -548,42 +549,57 @@ def zonal_statistics(in_zone_data,
 
     Parameters
     ----------
-    :param in_zone_data: Dataset that defines the zones. The zones can be defined by an integer raster
-    :param zone_field: Field that holds the values that define each zone. It can be an integer or a
+    :param in_zone_data: Required ImageryLayer. Dataset that defines the zones. The zones can be defined by an integer raster
+    :param zone_field: Required str. Field that holds the values that define each zone. It can be an integer or a
                             string field of the zone raster.
-    :param in_value_raster: Raster that contains the values on which to calculate a statistic.
-    :param ignore_no_data: Denotes whether NoData values in the Value Raster will influence the results
+    :param in_value_raster: Required ImageryLayer. Raster that contains the values on which to calculate a statistic.
+    :param ignore_no_data: Optional bool. Denotes whether NoData values in the Value Raster will influence the results
                             of the zone that they fall within.
+
                             True - Within any particular zone, only pixels that have a value in the Value
                             Raster will be used in determining the output value for that zone. NoData
                             pixels in the Value Raster will be ignored in the statistic calculation.
+
                             This is the default.
+
                             False - Within any particular zone, if any NoData pixels exist in the Value
                             Raster, it is deemed that there is insufficient information to perform
                             statistical calculations for all the pixels in that zone; therefore, the
                             entire zone will receive the NoData value on the output raster.
-    :param statistics_type: Statistic type to be calculated.
+    :param statistics_type: Optional str. Statistic type to be calculated. Default is MEAN
+
                             MEAN-Calculates the average of all pixels in the Value Raster that belong to
                             the same zone as the output pixel.
+
                             MAJORITY-Determines the value that occurs most often of all pixels in the
                             Value Raster that belong to the same zone as the output pixel.
+
                             MAXIMUM-Determines the largest value of all pixels in the Value Raster
                             that belong to the same zone as the output pixel.
+
                             MEDIAN-Determines the median value of all pixels in the Value Raster
                             that belong to the same zone as the output pixel.
+
                             MINIMUM-Determines the smallest value of all pixels in the Value Raster
                             that belong to the same zone as the output pixel.
+
                             MINORITY-Determines the value that occurs least often of all pixels in
                             the Value Raster that belong to the same zone as the output pixel.
+
                             RANGE-Calculates the difference between the largest and smallest value
                             of all pixels in the Value Raster that belong to the same zone as the
                             output pixel.
+
                             STD-Calculates the standard deviation of all pixels in
                             the Value Rasterthat belong to the same zone as the output pixel.
+
                             SUM-Calculates the total value of all pixels in the Value Raster that
                             belong to the same zone as the output pixel.
+
                             VARIETY-Calculates the number of unique values for all pixels in the
                             Value Raster that belong to the same zone as the output pixel.
+
+    :param process_as_multidimensional: Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
     :return: output raster with function applied
 
     """
@@ -618,6 +634,13 @@ def zonal_statistics(in_zone_data,
         if statistics_type.upper() not in statistics_type_list:
             raise RuntimeError('statistics_type should be one of the following '+ str(statistics_type_list))
         template_dict["rasterFunctionArguments"]["statistics_type"] = statistics_type
+
+    if process_as_multidimensional is not None:
+        if isinstance(process_as_multidimensional, bool):
+            if process_as_multidimensional==True:
+                template_dict["rasterFunctionArguments"]["process_as_multidimensional"]="ALL_SLICES"
+            else:
+                template_dict["rasterFunctionArguments"]["process_as_multidimensional"]="CURRENT_SLICE"
 
 
     function_chain_ra = copy.deepcopy(template_dict)

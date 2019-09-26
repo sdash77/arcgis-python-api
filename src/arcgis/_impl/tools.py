@@ -5678,6 +5678,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                     future=True)
         gpjob._is_ra = True
         gpjob._return_item = output_service
+        gpjob._item_properties = True
+
         if future:
             return gpjob
         return gpjob.result()
@@ -7354,7 +7356,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_raster = self._layer_input(input_raster)
 
         if segmented_raster is not None:
-            segmented_raster = _layer_input(segmented_raster)
+            segmented_raster = self._layer_input(segmented_raster)
 
         gpjob = self._tbx.train_classifier(input_raster=input_raster,
                                            input_training_sample_json=input_training_sample_json,
@@ -7603,6 +7605,9 @@ class _RasterAnalysisTools(BaseAnalytics):
             for element in interval_keyword_allowed_values:
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
+
+        if isinstance(aggregation_function, Item):
+            aggregation_function = {"itemId":aggregation_function.itemid}
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
@@ -8063,6 +8068,121 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         return gpjob.result()
+
+    def subset_multidimensional_raster(self,
+                                       input_multidimensional_raster=None,
+                                       output_name=None,
+                                       variables=None,
+                                       dimension_definition='BY_VALUE',
+                                       dimension_ranges=None,
+                                       dimension_values=None,
+                                       dimension=None,
+                                       recurrence_from=None,
+                                       recurrence_to=None,
+                                       recurrence_interval=None,
+                                       recurrence_unit=None,
+                                       context=None,
+                                       future=False,
+                                       **kwargs):
+        """
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.  
+
+       output_name: outputName (str). Required parameter.  
+
+       variables: variables (str). Optional parameter.  
+
+       dimension_definition: dimensionDefinition (str). Optional parameter.  
+          Choice list:['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_RECURRENCE']
+
+       dimension_ranges: dimensionRanges (str). Optional parameter.  
+
+       dimension_values: dimensionValues (str). Optional parameter.  
+
+       dimension: dimension (str). Optional parameter.  
+
+       recurrence_from: recurrenceFrom (str). Optional parameter.  
+
+       recurrence_to: recurrenceTo (str). Optional parameter.  
+
+       recurrence_interval: recurrenceInterval (float). Optional parameter.  
+
+       recurrence_unit: recurrenceUnit (str). Optional parameter.  
+          Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
+
+       context: context (str). Optional parameter.
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "SubsetMultidimensionalRaster"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+
+        dimension_definition_val = dimension_definition
+        if dimension_definition is not None:
+            dimension_definition_allowed_values = ['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_RECURRENCE']
+            if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
+                raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+
+            for element in dimension_definition_allowed_values:
+                if dimension_definition.upper() == element:
+                    dimension_definition_val = element
+
+        recurrence_unit_val = recurrence_unit
+        if recurrence_unit is not None:
+            recurrence_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
+            if [element.lower() for element in recurrence_unit_allowed_values].count(recurrence_unit.lower()) <= 0 :
+                raise RuntimeError('recurrence_unit can only be one of the following: '+str(recurrence_unit_allowed_values))
+
+            for element in recurrence_unit_allowed_values:
+                if recurrence_unit.upper() == element:
+                    recurrence_unit_val = element
+
+        dimension_ranges_val = dimension_ranges
+        ele_values=[]
+        if isinstance(dimension_ranges, list):
+            for ele in dimension_ranges:
+                if isinstance(ele, list):
+                    ele_values.append(" ".join(ele))
+                else:
+                    raise Run
+            if isinstance(ele_values, list):
+                dimension_ranges_val = ";".join(ele_values)
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                         output_name=output_raster,
+                                                         variables=variables,
+                                                         dimension_definition=dimension_definition_val,
+                                                         dimension_ranges=dimension_ranges_val,
+                                                         dimension_values=dimension_values,
+                                                         dimension=dimension,
+                                                         recurrence_from=recurrence_from,
+                                                         recurrence_to=recurrence_to,
+                                                         recurrence_interval=recurrence_interval,
+                                                         recurrence_unit=recurrence_unit_val,
+                                                         context=context,
+                                                         gis=self._gis,
+                                                         future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
 
     def cost_path_as_polyline(self,
                               input_destination_raster_or_features=None,

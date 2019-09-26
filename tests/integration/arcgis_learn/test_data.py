@@ -11,6 +11,7 @@ try:
     import fastai
     import torch
     import torchvision
+    from torchvision import models
 except Exception:
     HAS_DEPS = False
 
@@ -21,6 +22,14 @@ if not HAS_DEPS:
 else:
     from arcgis.learn._data import prepare_data
     from arcgis.learn import SingleShotDetector, UnetClassifier, FeatureClassifier, PSPNetClassifier, RetinaNet
+
+    # Declare the family of backbones to be unpacked and used by different models as supported types
+    _vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__, 
+                        models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
+    _resnet_family = [models.resnet18.__name__, models.resnet34.__name__, models.resnet50.__name__, 
+                            models.resnet101.__name__, models.resnet152.__name__]
+    _densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__, 
+                                models.densenet201.__name__]
 
 #TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Prepare Data tests")
@@ -137,13 +146,19 @@ class Test_Data(unittest.TestCase):
         self.assertEqual(data_bunch.batch_size, 4)
         self.assertEqual(data_bunch.chip_size, 300)
         self.assertDictEqual(self.ssd_data_class_mapping, data_bunch.class_mapping)
+
+        supported_backbones = [*_resnet_family]
+        for backbone in supported_backbones:
+            rn = RetinaNet(data_bunch, backbone=backbone)
+            rn.learn.pred_batch()
+
         rn = RetinaNet(data_bunch)
         rn.fit(1)
         rn.save('test_e1')
         rn.load('test_e1')
         rn.show_results()
         rn.average_precision_score()
-        rn.predict(cls.ssd_img)
+        rn.predict(self.ssd_img)
 
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
@@ -158,13 +173,19 @@ class Test_Data(unittest.TestCase):
         self.assertEqual(data_bunch.batch_size, 4)
         self.assertEqual(data_bunch.chip_size, 200)
         self.assertDictEqual(data_bunch.class_mapping, self.ssd_pascal_voc_data_class_mapping)
+
+        supported_backbones = [*_resnet_family]
+        for backbone in supported_backbones:
+            rn = RetinaNet(data_bunch, backbone=backbone)
+            rn.learn.pred_batch()
+        
         rn = RetinaNet(data_bunch)
         rn.fit(1)
         rn.save('test_e1')
         rn.load('test_e1')
         rn.show_results()
         rn.average_precision_score()
-        rn.predict(cls.ssd_pascal_voc_img)
+        rn.predict(self.ssd_pascal_voc_img)
     
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_psp_data(self):

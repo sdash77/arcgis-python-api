@@ -20,6 +20,7 @@ try:
     from fastai.vision.models import unet
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
+    from fastai.torch_core import split_model_idx
     from fastai.vision import flatten_model
     HAS_FASTAI = True
 except Exception as e:
@@ -33,7 +34,7 @@ def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), 
 
 def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, **kwargs):
     "Build psp_net learner from `data` and `arch`."
-    model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c)
+    model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
     learn = Learner(data, model, **kwargs)
     return learn
        
@@ -52,7 +53,7 @@ class PSPNetClassifier(ArcGISModel):
     backbone                Optional function. Backbone CNN model to be used for
                             creating the base of the `PSPNetClassifier`, which
                             is `resnet50` by default. It supports the ResNet,
-                            DenseNet, ResNext families.
+                            DenseNet, ResNext and VGG families.
     ---------------------   -------------------------------------------
     use_unet                Optional Bool. Specify whether to use Unet-Decoder or not,
                             Default True.                          
@@ -71,7 +72,7 @@ class PSPNetClassifier(ArcGISModel):
     """
 
     
-    def __init__(self, data, backbone='resnet50', use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained=True, pretrained_path=None):
+    def __init__(self, data, backbone='resnet50', use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None):
       
         super().__init__(data, backbone)
 
@@ -79,9 +80,9 @@ class PSPNetClassifier(ArcGISModel):
         self.pyramid_sizes = pyramid_sizes
         self._use_unet = use_unet
         if use_unet:
-            self.learn = _pspnet_learner_with_unet(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=pretrained, metrics=self.accuracy)
+            self.learn = _pspnet_learner_with_unet(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=True, metrics=self.accuracy)
         else:
-            self.learn = _pspnet_learner(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=pretrained, metrics=self.accuracy)
+            self.learn = _pspnet_learner(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=True, metrics=self.accuracy)
             self.learn.loss_func = self._psp_loss
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
@@ -149,7 +150,7 @@ class PSPNetClassifier(ArcGISModel):
 
     def freeze(self):
         "Freezes the pretrained backbone."
-        for i in flatten_model(self.learn.model):
+        for idx, i in enumerate(flatten_model(self.learn.model)):
             if hasattr(i, 'dilation'):
                 dilation = i.dilation
                 dilation = dilation[0] if isinstance(dilation, tuple) else dilation
@@ -157,6 +158,8 @@ class PSPNetClassifier(ArcGISModel):
                     break        
             for p in i.parameters():
                 p.requires_grad = False
+
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.      
   
     def unfreeze(self):
         for _, param in self.learn.model.named_parameters():

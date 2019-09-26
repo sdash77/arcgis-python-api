@@ -1283,7 +1283,7 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, process_as_multiband=None):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
     a pixel-by-pixel basis. For more information, see
@@ -1300,6 +1300,8 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
+                                 Applicable for operations - Majority, Maximum, Mean, Median, Minimum, Minority, Range, Standard Deviation, Sum, and Variety.
     :return: the output raster
 
     """
@@ -1344,6 +1346,13 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
         template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
+
+    if process_as_multiband is not None:
+        if isinstance(process_as_multiband, bool):
+            template_dict["rasterFunctionArguments"]["ProcessAsMultiband"] = process_as_multiband
+        else:
+            raise RuntimeError('process_as_multiband should be an instance of bool')
+
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
@@ -1942,7 +1951,7 @@ def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 37, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Majority operation
 
@@ -1953,14 +1962,15 @@ def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nod
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 66 if ignore_nodata else 38
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband= process_as_multiband)
 
 
-def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Max operation
 
@@ -1970,14 +1980,15 @@ def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 67 if ignore_nodata else 39
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Mean operation
 
@@ -1988,14 +1999,15 @@ def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 68 if ignore_nodata else 40
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Med operation
 
@@ -2006,14 +2018,15 @@ def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 69 if ignore_nodata else 41
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Min operation
 
@@ -2024,14 +2037,15 @@ def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 70 if ignore_nodata else 42
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Minority operation
 
@@ -2042,11 +2056,12 @@ def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nod
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 71 if ignore_nodata else 43
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2097,7 +2112,7 @@ def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
     return local(rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Range operation
 
@@ -2108,11 +2123,12 @@ def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ign
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 72 if ignore_nodata else 47
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2211,7 +2227,7 @@ def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
     return local(rasters, 53, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Std operation
 
@@ -2222,14 +2238,15 @@ def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 73 if ignore_nodata else 54
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False,  astype=None):
+def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False,  astype=None, process_as_multiband=None):
     """
     The Sum operation
 
@@ -2240,11 +2257,12 @@ def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 74 if ignore_nodata else 55
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2279,7 +2297,7 @@ def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Variety operation
 
@@ -2290,11 +2308,12 @@ def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_noda
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 75 if ignore_nodata else 58
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
