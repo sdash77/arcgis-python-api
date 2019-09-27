@@ -395,7 +395,8 @@ class GPJob(object):
             iids = []
             for key in result._fields:
                 value = getattr(result, key)
-                if self.task in ['AggregatePoints', 'ConnectOriginsToDestinations', 'SummarizeNearby'] and \
+                if self.task in ['AggregatePoints', 'ConnectOriginsToDestinations', 
+                                 'SummarizeNearby', "InterpolatePoints"] and \
                    isinstance(value, dict) and 'featureSet' in value:
                     r[key] = arcgis.features.FeatureCollection(value)
                 elif isinstance(value, dict) and 'featureSet' in value:
@@ -411,7 +412,7 @@ class GPJob(object):
                 elif HAS_ITEM == False and \
                      (self.task in ['AggregatePoints', 'CreateWatersheds', 'PlanRoutes',
                                    'ConnectOriginsToDestinations',
-                                   'SummarizeNearby'] or \
+                                   'SummarizeNearby', "InterpolatePoints"] or \
                       self.task == 'ConnectOriginsToDestinations'):
                     r[key] = value
             if len(r) == 1:
