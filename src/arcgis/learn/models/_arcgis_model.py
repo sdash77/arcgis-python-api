@@ -61,11 +61,11 @@ def _create_zip(zipname, path):
 
 class SaveModelCallback(TrackerCallback):
 
-    def __init__(self, model, every='improvement', name='bestmodel', load_best_at_end=True, **kwargs):
+    def __init__(self, model, every='improvement', load_best_at_end=True, **kwargs):
         super().__init__(learn=model.learn, **kwargs)
         self.model = model
         self.every = every
-        self.name = name        
+        self.name = tempfile.NamedTemporaryFile().name
         self.load_best_at_end = load_best_at_end
         if self.every not in ['improvement', 'epoch']:
             warn('SaveModel every {} is invalid, falling back to "improvement".'.format(self.every))
@@ -113,8 +113,6 @@ class ArcGISModel(object):
         self._densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__, 
                                  models.densenet201.__name__]
 
-
-    
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
         backbone_name = backbone if type(backbone) is str else backbone.__name__
@@ -230,7 +228,7 @@ class ArcGISModel(object):
         if early_stopping:
             callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='valid_loss', min_delta=0.01, patience=5))
         if checkpoint:
-            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name='checkpoint'))
+            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement'))
 
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
