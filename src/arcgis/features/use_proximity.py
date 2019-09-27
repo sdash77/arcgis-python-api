@@ -634,7 +634,7 @@ def find_nearest(
 
                                  Choice list: ['StraightLine', 'Driving Distance', 'Driving Time ', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
 
-                                 The default is 'Driving Time'.
+                                 The default is 'StraightLine'.
     -------------------------    ---------------------------------------------------------
     max_count                    Optional string. The maximum number of nearest locations to find for each feature in ``analysis_layer``. The default is the maximum cutoff allowed by the service, which is 100.
 
@@ -762,12 +762,14 @@ def find_nearest(
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     if isinstance(measurement_type, str):
-        if measurement_type != 'StraightLine':
-            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            measurement_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-        else:
-            pass
+          route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+          travelmodes = route_service.retrieve_travel_modes()
 
+          for tm in travelmodes['supportedTravelModes']:
+            if tm['name'] == measurement_type:
+              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
+              measurement_type = tm
+         
     return gis._tools.featureanalysis.find_nearest(
         analysis_layer,
         near_layer,
