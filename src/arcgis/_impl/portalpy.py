@@ -15,7 +15,7 @@ from .common._utils import _to_utf8
 from six.moves.urllib import request
 from six.moves.urllib_parse import urlparse
 
-__version__ = '1.0'
+__version__ = '1.7.0'
 
 _log = logging.getLogger(__name__)
 
