@@ -111,7 +111,7 @@ def _get_class_mapping(path):
     return class_mapping
 
 
-def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None, resize_to=None,address_tag='Address'):
+def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None, resize_to=None,address_tag='Address', random_flip=True):
     """
     Prepares a data object from training sample exported by the 
     Export Training Data tool in ArcGIS Pro or Image Server, or training 
@@ -166,6 +166,12 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                             preparing data for text extraction from documents 
                             with geo information. This needs to be set as the 
                             address label in your training data.
+    ---------------------   -------------------------------------------
+    random_flip             Optional boolean. Applies only when 
+                            ``dataset_type``='PASCAL_VOC_rectangles'. If 'True', 
+                            this parameter is used to randomly flip the training images. 
+
+                            The default value is 'True'.
     =====================   ===========================================
 
     :returns: data object
@@ -277,10 +283,15 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
 
         if transforms is None:
+            if random_flip:
+                flip_rand_p = 1
+            else:
+                flip_rand_p = 0
+
             ranges = (0, 1)
             train_tfms = [
                 crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
-                dihedral_affine(),
+                dihedral_affine(p=flip_rand_p),
                 brightness(change=(0.4, 0.6)),
                 contrast(scale=(0.75, 1.5)),
                 rand_zoom(scale=(1.0, 1.5))

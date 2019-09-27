@@ -4754,7 +4754,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         create_parameters = {
             "name": output_name,
             "description": "",
-            "capabilities": "Image",
+            "capabilities": "Image, Metadata",
             "properties": {
                 "path": "@",
                 "description": "",

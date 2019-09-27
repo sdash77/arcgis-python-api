@@ -230,7 +230,6 @@ class SingleShotDetector(ArcGISModel):
             data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
             data.class_mapping = class_mapping
             data.Classes = emd['Classes']
-            data.color_mapping = color_mapping
 
         data.resize_to = resize_to
         return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
@@ -358,6 +357,7 @@ class SingleShotDetector(ArcGISModel):
         self._emd_template["ModelConfiguration"] = "_DynamicSSD"
         self._emd_template["ModelType"] = "ObjectDetection"
         self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['backbone'] = self._backbone.__name__
         self._emd_template['Grids'] = self.grids
         self._emd_template['Zooms'] = self.zooms
         self._emd_template['Ratios'] = self.ratios
@@ -386,6 +386,7 @@ class SingleShotDetector(ArcGISModel):
         self._emd_template["ModelConfiguration"] = "_SSDTensorflow"
         self._emd_template["ModelType"] = "ObjectDetection"
         self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['backbone'] = self._backbone.__name__
         self._emd_template['Grids'] = self.grids
         self._emd_template['Zooms'] = self.zooms
         self._emd_template['Ratios'] = self.ratios
