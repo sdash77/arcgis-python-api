@@ -3503,14 +3503,15 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
     .. code-block:: python
 
-        # Usage Example 1: This example aggregates temperature data into yearly data with the average temperature values.
+        # Usage Example 1: This example generates an anomaly multidimensional raster for temperature data, comparing pixel values with the mean 
+        # pixel value across all slices.
         
         multidimensional_input = gis.content.search("mdim")[0].layers[0]
         generate_anomaly = generate_multidimensional_anomaly(input_multidimensional_raster=multidimensional_input, 
-                                                             variables=["cceiling", "ccover", "gust", "temperature"], 
-                                                             method="DIFFERENCE_FROM_MEAN", 
-                                                             temporal_interval="WEEKLY", 
-                                                             output_name="TempAnomaly", 
+                                                             variables=["oceantemp"], 
+                                                             method="PERCENT_DIFFERENCE_FROM_MEAN", 
+                                                             temporal_interval="YEARLY", 
+                                                             output_name="temp_anomaly", 
                                                              ignore_missing_values=True, 
                                                              gis=gis)
 
@@ -3792,15 +3793,15 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                              - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
                                              - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
     ------------------------------------     --------------------------------------------------------------------
-    interval_ranges                          Optional String. Interval ranges specified in a value table will
-                                             be used to aggregate groups of values. The value table consists of
-                                             pairs of minimum and maximum range values, with data type string.
+    interval_ranges                          Optional List of Lists. Interval ranges specified will
+                                             be used to aggregate groups of values. The list consists of a list of
+                                             pairs of minimum and maximum range values, of type string.
 
                                              This parameter is required when the aggregation_def parameter is
                                              set to INTERVAL_RANGE.
     ------------------------------------     --------------------------------------------------------------------
-    aggregation_function                     Optional String(fileshare path) or JSON. A custom raster function
-                                             that will be used to compute the pixel values of the aggregated
+    aggregation_function                     Optional String(fileshare path) or JSON or Raster Funtion Template item from portal.
+                                             A custom raster function that will be used to compute the pixel values of the aggregated
                                              rasters. The input is a raster function JSON object or an .rft.xml
                                              file created from a function chain or a custom Python raster function.
 
@@ -3832,30 +3833,58 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
+    Returns
+    -------
+    output_raster : Imagery layer item 
+
     .. code-block:: python
 
         # Usage Example 1: This example aggregates temperature data into yearly data with the average temperature values.
         
         multidimensional_input = gis.content.search("mdim")[0].layers[0]
-        aggMultidim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input, variables="temperature", dimension="StdTime", aggregation_method="MEAN", aggregation_definition="INTERVAL_KEYWORD", interval_keyword="YEARLY", interval_value=None, output_name="YearlyTemp", ignore_nodata=True, gis=gis)
+        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input,
+                                                          variables=["temperature"],
+                                                          dimension="StdTime",
+                                                          aggregation_method="MAXIMUM",
+                                                          aggregation_definition="INTERVAL_KEYWORD",
+                                                          interval_keyword="YEARLY",
+                                                          interval_value=None,
+                                                          output_name="yearly_temp",
+                                                          ignore_nodata=True,
+                                                          gis=gis)
 
     .. code-block:: python
 
         # Usage Example 2: This example aggregates temperature data into hourly data with the average temperature values for multiple variables.
 
         multidimensional_input = gis.content.search("mdim")[0].layers[0]
-        aggMultidim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input, variables="cceiling;ccover;gust;temperature", dimension="StdTime", aggregation_method="MEAN", aggregation_definition="INTERVAL_VALUE", interval_value=3, interval_unit="HOURS", output_name="YearlyTemp", ignore_nodata=True, gis=gis)
-        
+        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input,
+                                                          variables=["cceiling","ccover","gust","temperature"],
+                                                          dimension="StdTime", 
+                                                          aggregation_method="MEAN", 
+                                                          aggregation_definition="INTERVAL_VALUE",
+                                                          interval_value=3, 
+                                                          interval_unit="HOURS", 
+                                                          output_name="hourly_data",
+                                                          ignore_nodata=True, 
+                                                          gis=gis)
+
     .. code-block:: python
         
-        # Usage Example 3: This example aggregates temperature data into hourly data using a custom aggregation method(given using the fileshare path) for multiple variables.
+        # Usage Example 3: This example aggregates temperature data using a custom aggregation method(given using the fileshare path) for multiple variables.
 
         multidimensional_input = gis.content.search("mdim")[0].layers[0]
-        aggMultidim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input, variables="cceiling;ccover;gust;temperature", dimension="StdTime", aggregation_method="CUSTOM", aggregation_definition="INTERVAL_RANGES", interval_ranges="40923.125 40923.25;40923.5 40923.625", aggregation_function="/fileShares/temp/Mdim.rft.json", output_name="YearlyTemp", ignore_nodata=True, gis=gis)
+        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input, 
+                                                          variables=["temperature"], 
+                                                          dimension="StdTime",
+                                                          aggregation_method="CUSTOM",
+                                                          aggregation_definition="INTERVAL_RANGES", 
+                                                          interval_ranges=[["2012-01-15T03:00:00","2012-01-15T09:00:00"],["2012-01-15T12:00:00","2012-01-15T21:00:00"]], 
+                                                          aggregation_function="/fileShares/mdim/Minus_Portal_Mdim.rft.json", 
+                                                          output_name="temp_range4", 
+                                                          ignore_nodata=True, 
+                                                          gis=gis)
 
-    Returns
-    -------
-    output_raster : Imagery layer item 
     """
 
     #task = "AggregateMultidimensionalRaster"
@@ -4021,6 +4050,21 @@ def generate_trend_raster(input_multidimensional_raster,
     Returns
     -------
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example aggregates temperature data into yearly data with the average temperature values.
+        
+        multidimensional_input = gis.content.search("mdim")[0].layers[0]
+        trend_coeff_multidim  = generate_trend_raster(input_multidimensional_raster=multidimensional_input, 
+                                                      variables=["NightLightData"], 
+                                                      dimension="StdTime", 
+                                                      trend_line_type='POLYNOMIAL', 
+                                                      frequency=2, 
+                                                      ignore_nodata=True, 
+                                                      output_name="polynomial_trend_coefficients", 
+                                                      gis=gis)
+
     """
 
     #task = "GenerateTrendRaster"
@@ -4119,18 +4163,18 @@ def predict_using_trend_raster(input_multidimensional_raster,
     dimension_definition                     Required String. Specifies the method used to provide prediction dimension values.
 
                                              - BY_VALUE : The prediction will be calculated for a single dimension value or 
-                                               a list of dimension values defined by the Values parameter (dimension_values in Python). 
-                                               This is the default.For example, you want to predict yearly precipitation for the years 
-                                               2050, 2100, and 2150. This is the default. 
+                                               a list of dimension values defined by the dimension_values parameter. 
+                                               This is the default. 
+                                               
+                                               For example, you want to predict yearly precipitation for the years 
+                                               2050, 2100, and 2150.
 
                                              - BY_INTERVAL - The prediction will be calculated for an interval of the dimension defined 
-                                               by a start and an end value.For example, you want to predict yearly precipitation for 
+                                               by a start and an end value. For example, you want to predict yearly precipitation for 
                                                every year between 2050 and 2150.
     ------------------------------------     --------------------------------------------------------------------
-    dimension_values                         Optional String. The dimension value or values to be used in the prediction. 
-                                             
-                                             The format of the dimension_values must match the format of the dimension values 
-                                             in the input multidimensional raster, and multiple values are separated with a semicolon. 
+    dimension_values                         Optional list. The dimension value or values to be used in the prediction. 
+
                                              This parameter is required when dimension_def parameter is set to BY_VALUE.
     ------------------------------------     --------------------------------------------------------------------
     start                                    Optional String.The start date, height, or depth of the dimension interval to be used 
@@ -4175,6 +4219,34 @@ def predict_using_trend_raster(input_multidimensional_raster,
     Returns
     -------
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example generates the forecasted precipitation and temperature for January 1, 2050, and January 1, 2100.
+
+        multidimensional_input = gis.content.search("LinearTrendCoefficients")[0].layers[0]
+        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_input, 
+                                                    variables=["temp","precip"], 
+                                                    dimension_definition='BY_VALUE',
+                                                    dimension_values=["2050-01-01T00:00:00","2100-01-01T00:00:00"],
+                                                    output_name="predicted_temp_precip",
+                                                    gis=gis)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example generates the forecasted NDVI values for each month in year 2025.
+
+        multidimensional_input = gis.content.search("LinearTrendCoefficients")[0].layers[0]
+        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_input, 
+                                                    variables=["NDVI"], 
+                                                    dimension_definition='BY_INTERVAL',
+                                                    start="2025-01-01T00:00:00",
+                                                    end="2025-12-31T00:00:00",
+                                                    interval_value=1,
+                                                    interval_unit="MONTHS",
+                                                    output_name="predict_using_trend_raster", 
+                                                    gis=gis)
+
     """
 
     #task = "PredictUsingTrendRaster"
@@ -4264,7 +4336,7 @@ def find_argument_statistics(input_raster,
                              statistics_type='ARGUMENT_MIN',
                              min_value=None,
                              max_value=None,
-                             multiple_occurrence_value=True,
+                             multiple_occurrence_value=None,
                              ignore_nodata=True,
                              output_name=None,
                              context=None,
@@ -4278,7 +4350,7 @@ def find_argument_statistics(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required ImageryLayer object. The input multidimensional raster.
+    input_raster                             Required ImageryLayer object. The input raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
     dimension                                Required String. The dimension from which the statistic will be 
@@ -4312,7 +4384,7 @@ def find_argument_statistics(input_raster,
     ------------------------------------     --------------------------------------------------------------------
     max_value                                Optional Float. The maximum variable value to be used to extract the duration.
     ------------------------------------     --------------------------------------------------------------------
-    multiple_occurrence_value                Optional Long.. Specifies the pixel value to use to indicate that a given argument 
+    multiple_occurrence_value                Optional Long. Specifies the pixel value to use to indicate that a given argument 
                                              statistic was reached more than once in the input raster dataset. If not specified,
                                              the pixel value will be the value of the dimension the first time the argument 
                                              statistic was reached.
@@ -4345,6 +4417,36 @@ def find_argument_statistics(input_raster,
     Returns
     -------
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example finds the minimum precipitation and temperature values across a time series multidimensional raster. 
+        # If the same minimum value is found multiple times, the pixel value will be 99999.
+
+        input_layer = gis.content.search("prcp_temp_time_series")[0].layers[0]
+        arg_stat_output = arcgis.raster.analytics.find_argument_statistics(input_raster=input_layer, 
+                                                                                  dimension="StdTime", 
+                                                                                  variables=["precip","temp"], 
+                                                                                  statistics_type='ARGUMENT_MIN', 
+                                                                                  multiple_occurrence_value=99999, 
+                                                                                  ignore_nodata=True, 
+                                                                                  output_name="arg_stat_output", 
+                                                                                  gis=gis)
+
+    .. code-block:: python
+
+        # Usage Example 2: This example finds the longest time interval for which salinity fell between 10 and 15 units of measurement in the multidimensional raster.
+
+        input_layer = gis.content.search("Salinity")[0].layers[0]
+        arg_stat_output = find_argument_statistics(input_raster=input_layer, 
+                                                   dimension="StdTime", 
+                                                   variables=["salinity"], 
+                                                   statistics_type='DURATION', 
+                                                   min_value=10, 
+                                                   max_value=15, 
+                                                   ignore_nodata=True, 
+                                                   output_name="arg_stat_output", 
+                                                   gis=gis)
     """
     #task = "FindArgumentStatistics"
 
@@ -4436,10 +4538,10 @@ def linear_spectral_unmixing(input_raster,
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required ImageryLayer object. The input multidimensional raster.
+    input_raster                             Required ImageryLayer object. The input raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    input_spectral_profile                   Optional dict. The class spectral profile information.
+    input_spectral_profile                   Optional Dict or String. The class spectral profile information.
     ------------------------------------     --------------------------------------------------------------------
     value_option                             Optional String. Specifies the options to define the output pixel values. 
 
@@ -4468,6 +4570,35 @@ def linear_spectral_unmixing(input_raster,
     Returns
     -------
     output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This example calculates the fractional abundance of classes from a classifier definition file (.ecd)
+        # located in a datastore registered with the raster analytics server and generates a multiband raster.
+
+        input_layer = gis.content.search("landsat7_image")[0].layers[0]
+        unmixing_output = linear_spectral_unmixing(input_raster=input_layer, 
+                                                   input_spectral_profile="/fileShares/Mdim/SpectralUnmixing_json.ecd",
+                                                   output_name="linear_spectral_unmixing", 
+                                                   gis=gis)
+
+
+    .. code-block:: python
+
+        # Usage Example 2: This example calculates the fractional abundance of classes from a dictionary and generates a multiband raster.
+
+        multidimensional_input = gis.content.search("LinearTrendCoefficients")[0].layers[0]
+        input_spectral_profile_dict = {"EsriEndmemberDefinitionFile":0,"FileVersion":1,"NumberEndmembers":3,"NumberBands":7,
+                                       "Endmembers":[{"EndmemberID":1,"EndmemberName":"urban","SpectralProfile":[88,42,48,38,86,115,59]},
+                                                     {"EndmemberID":2,"EndmemberName":"vegetation","SpectralProfile":[50,21,20,35,50,110,23]},
+                                                     {"EndmemberID":3,"EndmemberName":"water","SpectralProfile":[51,20,14,9,7,116,4]}]}
+
+        unmixing_outputs = arcgis.raster.analytics.linear_spectral_unmixing(input_raster=multidimensional_input, 
+                                                                            input_spectral_profile=input_spectral_profile_dict,
+                                                                            value_option=["SUM_TO_ONE","NON_NEGATIVE"],
+                                                                            output_name="linear_spectral_unmixing", 
+                                                                            gis=gis)
+
     """
 
 
