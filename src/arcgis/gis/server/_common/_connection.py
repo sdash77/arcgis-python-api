@@ -35,7 +35,7 @@ from arcgis._impl.connection import _ArcGISConnection
 from arcgis.gis import GIS
 class Error(Exception): pass
 
-__version__ = '2.0'
+__version__ = '1.7.0'
 _log = logging.getLogger(__name__)
 ########################################################################
 class MultiPartForm(object):
