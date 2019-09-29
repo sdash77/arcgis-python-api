@@ -194,17 +194,23 @@ def connect_origins_to_destinations(origins_layer,
 
         This example creates route between esri regional offices to esri headquarter.
 
-        import arcgis.network as network
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes']
-            if i['name'] == 'Rural Driving Distance'][0]
         routes =  connect_origins_to_destinations(origins_layer=esri_regional,
                                          destinations_layer=dest_layer,
-                                         measurement_type=travel_mode,
+                                         measurement_type='Rural Driving Distance',
                                          time_of_day=datetime(1990, 1, 4, 1, 3),
                                          output_name="routes_from_offices_to_hq")
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    
+    if isinstance(measurement_type, str):
+          route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+          travelmodes = route_service.retrieve_travel_modes()
+
+          for tm in travelmodes['supportedTravelModes']:
+            if tm['name'] == measurement_type:
+              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
+              measurement_type = tm
+
     return gis._tools.featureanalysis.connect_origins_to_destinations(
         origins_layer,
         destinations_layer,
@@ -1077,8 +1083,7 @@ def plan_routes(
             if tm['name'] == travel_mode:
               tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
               travel_mode = tm
-            else: pass
-            
+           
     return gis._tools.featureanalysis.plan_routes(
         stops_layer,
         route_count,
