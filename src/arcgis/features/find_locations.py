@@ -947,7 +947,11 @@ def choose_best_facilities(goal='Allocate',
 
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+        travelmodes = route_service.retrieve_travel_modes()
+        for tm in travelmodes['supportedTravelModes']:
+            if tm['name'] == travel_mode:
+              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+              travel_mode = tm
 
     return gis._tools.featureanalysis.choose_best_facilities(
         goal,
