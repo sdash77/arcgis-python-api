@@ -6114,6 +6114,23 @@ class User(dict):
             return all(status)
         return res
     #----------------------------------------------------------------------
+    def delete_thumbnail(self):
+        """
+        Removes the thumbnail from the user's profile.
+        
+        :returns: Boolean
+        
+        """
+        if self._gis.version >= [7,3]:
+            url = self._gis._portal.resturl + "community/users/%s/deleteThumbnail" % self.username
+            params = {'f' : 'json'}
+            res = self._gis._con.post(url, params)
+            if 'success' in res:
+                return res['success']
+            return res
+        else:
+            raise Exception("The operation delete_thumbnail is not supported on this portal.")
+    #----------------------------------------------------------------------
     def reset(self,
               password=None,
               new_password=None,
