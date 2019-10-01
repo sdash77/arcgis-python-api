@@ -53,7 +53,7 @@ class PSPNetClassifier(ArcGISModel):
     backbone                Optional function. Backbone CNN model to be used for
                             creating the base of the `PSPNetClassifier`, which
                             is `resnet50` by default. It supports the ResNet,
-                            DenseNet, ResNext and VGG families.
+                            DenseNet, and VGG families.
     ---------------------   -------------------------------------------
     use_unet                Optional Bool. Specify whether to use Unet-Decoder or not,
                             Default True.                          
@@ -72,9 +72,17 @@ class PSPNetClassifier(ArcGISModel):
     """
 
     
-    def __init__(self, data, backbone='resnet50', use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None):
+    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None):
+
+        # Set default backbone to be 'resnet50'
+        if backbone is None: 
+            backbone = models.resnet50              
       
-        super().__init__(data, backbone)
+        super().__init__(data, backbone)     
+
+        # Check if a backbone provided is compatible, use resnet50 as default
+        if not self._check_backbone_support(backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")              
 
         self._code = image_classifier_prf
         self.pyramid_sizes = pyramid_sizes
@@ -90,6 +98,11 @@ class PSPNetClassifier(ArcGISModel):
             self.load(pretrained_path)
         
         self.freeze()
+
+    # Return a list of supported backbones names
+    @property
+    def supported_backbones(self):
+        return [*self._resnet_family, *self._densenet_family, *self._vgg_family]        
 
     @classmethod
     def from_model(cls, emd_path, data=None):
