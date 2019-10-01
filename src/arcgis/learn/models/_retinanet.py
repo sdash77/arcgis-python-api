@@ -150,7 +150,7 @@ class RetinaNet(ArcGISModel):
         html_model = f"""
         <p><b>{self.name}</b></p>
         """
-        ap_score = self.average_precision_score()
+        ap_score = self.average_precision_score(show_progress=False)
         ap_df = pd.DataFrame(list(ap_score.items()), columns=['Class', 'Score'])
         html_string = f""" 
         <p><b>Mean average precision score: </b></p>
@@ -264,7 +264,7 @@ class RetinaNet(ArcGISModel):
 
         return None if bbox is None else (bbox.data, bbox.scores)
 
-    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.1, mean=False):
+    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.1, mean=False, show_progress=True):
         """
         Computes average precision on the validation set for each class.
 
@@ -288,7 +288,7 @@ class RetinaNet(ArcGISModel):
         :returns: `dict` if mean is False otherwise `float`
         """
 
-        aps = compute_class_AP(self, self._data.valid_dl, n_classes=(self._data.c - 1), detect_thresh=detect_thresh, iou_thresh=iou_thresh)
+        aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
         if mean:
             return statistics.mean(aps)
         else:

@@ -371,14 +371,14 @@ def compute_ap(precision, recall):
     ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
     return ap
 
-def compute_class_AP(model, dl, n_classes, iou_thresh=0.1, detect_thresh=0.5, num_keep=100):
+def compute_class_AP(model, dl, n_classes, show_progress, iou_thresh=0.1, detect_thresh=0.5, num_keep=100):
 
     tps, clas, p_scores = [], [], []
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
     model.learn.model.eval()
 
     with torch.no_grad():
-        for input,target in progress_bar(dl):
+        for input,target in progress_bar(dl, display=show_progress):
             # input - 4(batch-size),3,256,256
             # target - 2(regression,classification), 4(batch-size), 3/4/2(max no of detections in the batch), 4/1(bbox,class)  
             output = model.learn.pred_batch(batch=(input, target))

@@ -344,11 +344,11 @@ def compute_ap(precision, recall):
     ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
     return ap
 
-def compute_class_AP(ssd, dl, n_classes, iou_thresh=0.5, detect_thresh=0.35, num_keep=100):
+def compute_class_AP(ssd, dl, n_classes, show_progress, iou_thresh=0.5, detect_thresh=0.35, num_keep=100):
     tps, clas, p_scores = [], [], []
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
     with torch.no_grad():
-        for input,target in progress_bar(dl, display=False):
+        for input,target in progress_bar(dl, display=show_progress):
             output = ssd.learn.pred_batch(batch=(input, target))#, reconstruct=True)
 
             for i in range(target[0].size(0)):

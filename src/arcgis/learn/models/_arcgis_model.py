@@ -338,6 +338,10 @@ class ArcGISModel(object):
 
         return saved_path.parent
 
+    def _create_tfonnx_emd(self, saved_path, batch_size):
+        "Raises error if framework specified is TF-ONNX but is not supported by the model"
+        raise NotImplementedError('TF-ONNX framework is currently not supported by this model.')
+
     def _save_as_tfonnx(self, saved_path, batch_size):
         try:
             import onnx
@@ -366,10 +370,11 @@ class ArcGISModel(object):
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
-                                model. Framework can be PyTorch or TF-ONNX.
+                                model. Framework can be PyTorch or TF-ONNX 
+                                (Only supported by SingleShotDetector, currently.)
                                 If framework used is TF-ONNX, batch_size has
                                 to be passed as keyword arguments. Default
-                                batch_size is 16.
+                                batch_size is 16. 
         =====================   ===========================================
         """        
         return self._save(name_or_path, framework=framework, **kwargs)
