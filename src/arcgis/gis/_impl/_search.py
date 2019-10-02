@@ -84,7 +84,7 @@ def _search(gis, query, stype="content",
         "q" : query,
         "start" : start,
         "num" : page_size,
-        "sortFields" : sort_field,
+        "sortField" : sort_field,
         "sortOrder" : sort_order
     }
     stype = str(stype).lower()
