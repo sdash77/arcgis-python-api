@@ -6228,7 +6228,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_neighbor_network_service_name = 'Neighbor Network Raster_' + _id_generator()
             output_neighbor_network_name = output_neighbor_network_service_name.replace(' ', '_')
         else:
-            output_optimum_network_service_name = output_optimum_network_name.replace(' ', '_')
+            output_neighbor_network_service_name = output_neighbor_network_name.replace(' ', '_')
 
 
         output_neighbor_network_service = self._create_output_feature_service(output_name=output_neighbor_network_name,
@@ -7544,7 +7544,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         interval_keyword: intervalKeyword (str). Optional parameter.
           Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
-                       'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
+                       'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'DEKADLY', 'PENTADLY']
 
         interval_value: intervalValue (str). Optional parameter.
 
@@ -7598,7 +7598,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         interval_keyword_val=interval_keyword
         if interval_keyword is not None:
             interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
-                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
+                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'PENTADLY', 'DEKADLY']
             if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
                 raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
             interval_keyword_val=interval_keyword

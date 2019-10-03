@@ -3287,6 +3287,14 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                              - WEEKLY : The data values will be aggregated into weekly time steps, 
                                                and the result will include every week in the time series.
 
+                                             - DEKADLY : Divides each month into 3 periods of 10 days each 
+                                               (last period might have more or less than 10 days)
+                                               and each month would output 3 slices.
+
+                                             - PENTADLY : Divides each month into 6 periods of 5 days each 
+                                               (last period might have more or less than 5 days)
+                                               and each month would output 6 slices.
+
                                              - MONTHLY : The data values will be aggregated into monthly time steps, 
                                                and the result will include every month in the time series.
 
