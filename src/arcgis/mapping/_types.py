@@ -461,7 +461,7 @@ class WebMap(collections.OrderedDict):
                                  "xoffset": 0,
                                  "yoffset": 12,
                                  "type": "esriPMS",
-                                 "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
+                                 "url": "https://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
                                  "contentType": "image/png",
                                  "width": 24,
                                  "height": 24}
