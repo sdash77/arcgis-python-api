@@ -573,7 +573,10 @@ def find_point_clusters(
     output_name=None,
     gis=None,
     context=None,
-    future=False):
+    future=False,
+    time_method=None,
+    search_duration=None,
+    duration_unit=None):
     """
     This tool extracts clusters from your input point features and identifies any surrounding noise.
 
@@ -619,6 +622,23 @@ def find_point_clusters(
     --------------------------   ---------------------------------------------------------------    
     future                       Optional boolean. If True, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
+    --------------------------   ---------------------------------------------------------------    
+    time_method                  Optional String. When this parameter is set to Linear and `method` 
+                                 is `DBSCAN`, both space and time will be used to find point clusters. 
+                                 If `method` is `HDBSCAN`, this parameter will be ignored and clusters 
+                                 will be found in space only. This parameter can only be used if 
+                                 `input_layer` has time enabled and is of type instant. Temporal 
+                                 clustering is available at ArcGIS Enterprise 10.8.
+    --------------------------   ---------------------------------------------------------------    
+    search_duration              Optional String. When using DBSCAN with timeMethod set as Linear, 
+                                 this parameter is the time duration within which 
+                                 `min_feature_clusters` must be found. This parameter is not used
+                                 when HDBSCAN is chosen as the clustering method or when 
+                                 `time_method` is not used.
+    --------------------------   ---------------------------------------------------------------    
+    duration_unit                Optional String. The units used for the `search_duration` 
+                                 parameter. This parameter is required when using DBSCAN but will
+                                 not be used with HDBSCAN or space-only DBSCAN.
     ==========================   ===============================================================
 
     :returns:
@@ -659,6 +679,9 @@ def find_point_clusters(
         "distance_unit": (str, "searchDistanceUnit"),
         "search_distance" : (float, "searchDistance"),
         "output_name": (str, "outputName"),
+        "time_method" : (str, "timeMethod"),
+        "search_duration" : (str, "searchDuration"),
+        "duration_unit" : (str, "searchDurationUnit"),
         "context": (str, "context"),
         "output": (_FeatureSet, "Output Features"),
     }
