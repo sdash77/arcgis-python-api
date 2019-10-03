@@ -7945,6 +7945,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                  input_raster=None,
                                  output_name=None,
                                  dimension=None,
+                                 dimension_definition='ALL',
+                                 interval_keyword=None,
                                  variables=None,
                                  statistics_type='ARGUMENT_MIN',
                                  min_value=None,
@@ -7960,6 +7962,13 @@ class _RasterAnalysisTools(BaseAnalytics):
        output_name: outputName (str). Required parameter.
 
        dimension: dimension (str). Optional parameter.
+
+       dimension_definition: dimensionDefinition (str). Optional parameter.  
+          Choice list:['ALL', 'INTERVAL_KEYWORD']
+
+       interval_keyword: intervalKeyword (str). Optional parameter.  
+          Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 
+          'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
 
        variables: variables (str). Optional parameter.
 
@@ -7994,6 +8003,31 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         input_raster = self._layer_input(input_layer=input_raster)
 
+        dimension_definition_val=dimension_definition
+        if dimension_definition is not None:
+            dimension_definition_allowed_values = ['ALL', 'INTERVAL_KEYWORD']
+
+            if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
+                raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+
+            for element in dimension_definition_allowed_values:
+                if dimension_definition.upper() == element:
+                    dimension_definition_val = element
+
+        interval_keyword_val=interval_keyword
+        if interval_keyword is not None:
+            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 
+                                               'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 
+                                               'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 
+                                               'RECURRING_QUARTERLY']
+
+            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
+                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
+
+            for element in interval_keyword_allowed_values:
+                if interval_keyword.upper() == element:
+                    interval_keyword_val = element
+
         statistics_type_val=statistics_type
         if statistics_type is not None:
             statistics_type_allowed_values = ['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
@@ -8009,6 +8043,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         gpjob = self._tbx.find_argument_statistics(input_raster=input_raster,
                                                    output_name=output_raster,
                                                    dimension=dimension,
+                                                   dimension_definition=dimension_definition_val,
+                                                   interval_keyword=interval_keyword_val,
                                                    variables=variables,
                                                    statistics_type=statistics_type_val,
                                                    min_value=min_value,

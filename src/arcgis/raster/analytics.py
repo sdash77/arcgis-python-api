@@ -3689,6 +3689,8 @@ def predict_using_trend_raster(input_multidimensional_raster,
 
 def find_argument_statistics(input_raster,
                              dimension=None,
+                             dimension_definition='ALL',
+                             interval_keyword=None,
                              variables=None,
                              statistics_type='ARGUMENT_MIN',
                              min_value=None,
@@ -3713,6 +3715,24 @@ def find_argument_statistics(input_raster,
     dimension                                Required String. The dimension from which the statistic will be 
                                              extracted. If the input raster is not a multidimensional raster, 
                                              this parameter is not required.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_definition                     Required String. Specifies the dimension interval for which the data will be analyzed.
+
+                                              -  ALL : The data values will be analyzed across all slices. This is the default.
+
+                                              -  INTERVAL_KEYWORD :The variable data will be analyzed using a commonly known interval. 
+
+                                             Example:
+                                                'ALL'
+    ------------------------------------     --------------------------------------------------------------------
+    interval_keyword                         Required String. Specifies the keyword interval that will be used 
+                                             when analyzing along the dimension. This parameter is required when the 
+                                             dimension_definition parameter is set to INTERVAL_KEYWORD, and the 
+                                             analysis must be across time.
+
+                                             Possible options:
+                                             HOURLY, DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY, 
+                                             RECURRING_DAILY, RECURRING_WEEKLY, RECURRING_MONTHLY, RECURRING_QUARTERLY
     ------------------------------------     --------------------------------------------------------------------
     variables                                Optional List. The variable or variables to be analyzed. If the input 
                                              raster is not multidimensional, the pixel values of the multiband raster 
@@ -3810,7 +3830,9 @@ def find_argument_statistics(input_raster,
     gis = _arcgis.env.active_gis if gis is None else gis
     return gis._tools.rasteranalysis.find_argument_statistics(input_raster=input_raster, 
                                                output_name=output_name, 
-                                               dimension=dimension, 
+                                               dimension=dimension,
+                                               dimension_definition=dimension_definition,
+                                               interval_keyword=interval_keyword,
                                                variables=variables, 
                                                statistics_type=statistics_type, 
                                                min_value=min_value, 
