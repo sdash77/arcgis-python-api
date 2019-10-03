@@ -628,7 +628,7 @@ def find_point_clusters(
                                  If `method` is `HDBSCAN`, this parameter will be ignored and clusters 
                                  will be found in space only. This parameter can only be used if 
                                  `input_layer` has time enabled and is of type instant. Temporal 
-                                 clustering is available at `ArcGIS Enterprise 10.8`.
+                                 clustering is available at ArcGIS Enterprise 10.8.
     --------------------------   ---------------------------------------------------------------    
     search_duration              Optional String. When using DBSCAN with timeMethod set as Linear, 
                                  this parameter is the time duration within which 
