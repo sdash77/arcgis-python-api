@@ -158,14 +158,13 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                             the `dataset_type` on its own if it contains a 
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
-                            'RCNN_Masks' and 'Classified_Tiles'                    
+                            'RCNN_Masks' and 'Classified_Tiles'    
+                            For dataset_type=BIO, LBIOU or ner_json:
+                                Provide address field as class mapping
+                                in below format:
+                                class_mapping={'address_tag':'address_field'}                   
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
-    ---------------------   -------------------------------------------
-    address_tag             Optional string. This parameter is used while 
-                            preparing data for text extraction from documents 
-                            with geo information. This needs to be set as the 
-                            address label in your training data.
     ---------------------   -------------------------------------------
     random_flip             Optional boolean. Applies only when 
                             ``dataset_type``='PASCAL_VOC_rectangles'. If 'True', 
@@ -331,7 +330,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
     elif dataset_type in ['ner_json','BIO','LBIOU']:
-        return ner_prepare_data(dataset_type=dataset_type, path=path, address_tag=address_tag, val_split_pct=val_split_pct)
+        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct)
 
     
     else:
