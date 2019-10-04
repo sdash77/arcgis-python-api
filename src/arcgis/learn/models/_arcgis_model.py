@@ -12,9 +12,19 @@ except ImportError:
     class LearnerCallback():
         pass
 
+# Try importing Fastai Tensorboard callback and tensorboardX package
+# and set the flag accordingly
+HAS_TENSORBOARDX = True
+try:
+    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
+    import tensorboardX # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
+except:
+    HAS_TENSORBOARDX = False
+    
 import arcgis
 from pathlib import Path
 import os
+import time
 import tempfile
 import json
 import logging
@@ -266,7 +276,7 @@ class ArcGISModel(object):
     def _model_metrics(self):
         raise NotImplementedError
 
-    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
+    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False, **kwargs):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
@@ -293,6 +303,12 @@ class ArcGISModel(object):
                                 during training. If set to `True` the best model 
                                 based on validation loss will be saved during 
                                 training.
+        ---------------------   -------------------------------------------
+        tensorboard             Optional boolean; defaults to False. 
+                                Parameter to write the training log. 
+                                If set to `True` the log will be saved at 
+                                <dataset-path>/training_log which can be visualized in
+                                tensorboard.
         =====================   ===========================================
         """
         if lr is None:
@@ -306,6 +322,7 @@ class ArcGISModel(object):
 
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
+        
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         kwargs.pop('callbacks', None)
         if early_stopping:
@@ -314,6 +331,18 @@ class ArcGISModel(object):
             from datetime import datetime
             now = datetime.now()
             callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name=now.strftime("checkpoint_%d-%m-%Y_%H-%M-%S")))
+        
+        # Check if training log needs to be written and tensorboardx is available
+        if tensorboard and HAS_TENSORBOARDX:
+            # Create a directory path using the timestamp to write the logs in
+            training_id = time.strftime("%Y%m%d-%H%M%S")
+            log_path = Path(os.path.dirname(self._data.path)) / 'training_log'
+            # Append the tensorboard callback in the list of callbacks to be passed to fit method
+            callbacks.append(LearnerTensorboardWriter(learn=self.learn, base_dir=log_path, name=training_id))
+            print("Monitor training using Tensorboard using the following command: 'tensorboard --logdir={}'".format(log_path))
+        # Send out a warning if tensorboardX is not installed
+        elif tensorboard:
+            warn("Install tensorboardX 1.8 'conda install -c conda-forge tensorboardx=1.8' to write training log")
 
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
