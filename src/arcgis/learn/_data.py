@@ -15,6 +15,7 @@ try:
     import torch
     from .models._ssd_utils import SSDObjectItemList
     from .models._unet_utils import ArcGISSegmentationItemList
+    from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList
     from .models._ner_utils import ner_prepare_data
     HAS_FASTAI = True
 except:
@@ -234,7 +235,40 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             class_mapping = _get_class_mapping(path / 'labels')
             alter_class_mapping = True
 
-    if dataset_type in ['RCNN_Masks', 'Classified_Tiles']:
+    if dataset_type == 'RCNN_Masks':
+
+        def get_labels(x, label_dirs, ext=right):
+            label_path = []
+            for lbl in label_dirs:
+                if os.path.exists(Path(lbl) / (x.stem + '.{}'.format(ext))):
+                    label_path.append(Path(lbl) / (x.stem + '.{}'.format(ext)))
+            return label_path
+
+        if class_mapping.get(0):
+            del class_mapping[0]
+
+        if color_mapping.get(0):
+            del color_mapping[0]
+
+      
+        src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
+            .split_by_rand_pct(val_split_pct, seed=seed))
+
+        label_dirs = os.listdir(path/'labels')
+        label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
+        get_y_func = partial(get_labels, label_dirs= label_dir)
+        src = src.label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)
+
+        if transforms is None:
+            transforms = get_transforms(
+                flip_vert=True,
+                max_rotate=90.,
+                max_zoom=3.,
+                max_lighting=0.5,
+            )
+    
+    
+    elif dataset_type == 'Classified_Tiles':
 
         def get_y_func(x, ext=right):
             return x.parents[1] / 'labels' / (x.stem + '.{}'.format(ext))
@@ -336,9 +370,13 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
 
-    data = (data.transform(transforms, **kwargs_transforms)
-            .databunch(**databunch_kwargs)
-            .normalize(imagenet_stats))
+    if dataset_type == 'RCNN_Masks':
+        data = (src.transform(transforms, size=chip_size, tfm_y=True)
+                .databunch(**databunch_kwargs))
+    else:
+        data = (data.transform(transforms, **kwargs_transforms)
+                .databunch(**databunch_kwargs)
+                .normalize(imagenet_stats))
 
     data.chip_size = data.x[0].shape[-1] if transforms is False else chip_size
 
