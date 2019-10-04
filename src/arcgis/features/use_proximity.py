@@ -26,7 +26,8 @@ def connect_origins_to_destinations(origins_layer,
                                     point_barrier_layer=None,
                                     line_barrier_layer=None,
                                     polygon_barrier_layer=None,
-                                    future=False):
+                                    future=False,
+                                    route_shape='FollowStreets'):
     """
     .. image:: _static/images/connect_origins_to_destinations/connect_origins_to_destinations.png
     
@@ -177,6 +178,17 @@ def connect_origins_to_destinations(origins_layer,
                                            One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------    ---------------------------------------------------------
     future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    -----------------------------------    ---------------------------------------------------------
+    route_shape                            Optional String. Specify the shape of the route that connects each origin to it's destination when using a travel mode.
+
+                                           Values: FollowStreets or StraightLine
+
+                                           Default: FollowStreets
+
+                                              + FollowStreets - The shape is based on the underlying street network. This option is best when you want to generate the routes between origins and destinations. This is the default value when using a travel mode.
+                                              + StraightLine - The shape is a straight line connecting the origin-destination pair. This option is best when you want to generate spider diagrams or desire lines (for example, to show which stores customers are visiting). This is the default value when not using a travel mode.
+                                           
+                                           The best route between an origin and it's matched destination is always calculated based on the travel mode, regardless of which route shape is chosen.
     ===================================    =========================================================
 
 
@@ -203,13 +215,13 @@ def connect_origins_to_destinations(origins_layer,
     gis = _arcgis.env.active_gis if gis is None else gis
     
     if isinstance(measurement_type, str):
-          route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-          travelmodes = route_service.retrieve_travel_modes()
+        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+        travelmodes = route_service.retrieve_travel_modes()
 
-          for tm in travelmodes['supportedTravelModes']:
+        for tm in travelmodes['supportedTravelModes']:
             if tm['name'] == measurement_type:
-              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-              measurement_type = tm
+                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
+                measurement_type = tm
 
     return gis._tools.featureanalysis.connect_origins_to_destinations(
         origins_layer,
@@ -221,7 +233,9 @@ def connect_origins_to_destinations(origins_layer,
         time_zone_for_time_of_day,
         output_name,
         context,
-        estimate=estimate, future=future)
+        estimate=estimate, 
+        route_shape=route_shape,
+        future=future)
 
 
 def create_buffers(
@@ -404,7 +418,10 @@ def create_drive_time_areas(input_layer,
                             point_barrier_layer=None,
                             line_barrier_layer=None,
                             polygon_barrier_layer=None,
-                            future=False):
+                            future=False,
+                            travel_direction=False,
+                            show_holes=False,
+                            include_reachable_streets=False):
     """
     .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png
 
@@ -554,6 +571,14 @@ def create_drive_time_areas(input_layer,
                                  One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    -------------------------    ---------------------------------------------------------
+    travel_direction             Optiona String. Specify whether the direction of travel used to generate the travel areas is toward or away from the input locations.
+
+                                 Values: AwayFromFacility or TowardsFacility
+
+                                 The travel direction can influence how the areas are generated. CreateDriveTimeAreas will obey one-way streets, avoid illegal turns, and follow other rules based on the direction of travel. You should select the direction of travel based on the type of input locations and the context of your analysis. For example, the drive-time area for a pizza delivery store should be created away from the facility, whereas the drive-time area for a hospital should be created toward the facility.
+    -------------------------    ---------------------------------------------------------
+    show_holes                   Optional boolean. When set to true, the output areas will include holes if some streets couldn't be reached without exceeding the cutoff or due to travel restrictions imposed by the travel mode.
     =========================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -594,7 +619,10 @@ def create_drive_time_areas(input_layer,
         estimate=estimate,
         point_barrier_layer=point_barrier_layer,
         line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer, future=future)
+        polygon_barrier_layer=polygon_barrier_layer, future=future,
+        travel_direction=travel_direction, 
+        show_holes=show_holes)
+        
 
 
 def find_nearest(
