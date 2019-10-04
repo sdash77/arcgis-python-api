@@ -92,6 +92,72 @@ class SaveModelCallback(TrackerCallback):
             self.model.load('{}'.format(self.name))
             self.model.save('{}'.format(self.name))
 
+def _get_tail(model):
+    index_order = 0
+    first_layer = None
+    try:
+        first_layer = model._modules[list(model._modules.keys())[0]]
+        while True:
+            first_layer = first_layer[0]
+            index_order+=1
+    except:
+        pass
+    return first_layer, index_order
+
+def _get_ms_tail(tail, bands, type_init='average'):
+    new_tail = tail.__class__(
+        in_channels=len(bands), 
+        out_channels=tail.out_channels,
+        kernel_size=tail.kernel_size,
+        stride=tail.stride,
+        padding=tail.padding,
+        dilation=tail.dilation,
+        groups=tail.groups,
+        bias=tail.bias is not None,
+        padding_mode=tail.padding_mode,
+    )
+    if type_init == 'average':
+        rgb_weights = tail.weight.data
+        avg_weights = tail.weight.data.mean(dim=1)
+        rgb_map = {'r':0, 'g':1, 'b': 2}
+        for i, j in enumerate(bands):
+            b = rgb_map.get(str(j).lower())
+            if b:
+                new_tail.weight.data[:, i] = tail.weight.data[:, b]
+            else:
+                print('unknown band')
+                new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Wieghts for all other band weights
+    return new_tail
+
+def _set_tail(model, new_tail, index_order=0, inplace=True):
+    i = 0
+    codeblock = 'model._modules[list(model._modules.keys())[0]]'
+    while i < index_order:
+        codeblock+='[0]'
+        i+=1
+    exec(codeblock + ' = new_tail')
+    
+    #first_layer = model._modules[list(model._modules.keys())[0]]
+    #i = 0
+    #while i < index_order:
+    #    first_layer = first_layer[0]
+    #    i+=1
+    #first_layer = new_tail
+    
+    if not inplace:
+        return model
+
+def _change_tail(model, bands):
+        tail, index_order = _get_tail(model)
+        new_tail = _get_ms_tail(tail, bands)
+        _set_tail(
+            model, 
+            new_tail, 
+            index_order,
+            inplace=True
+        )
+        return model
+
 class ArcGISModel(object):
     
     def __init__(self, data, backbone=None, **kwargs):
@@ -105,7 +171,17 @@ class ArcGISModel(object):
             self._backbone = getattr(models, backbone)
         else:
             self._backbone = backbone
+        
+        self._is_multispectral = data._is_multispectral
+        if self._is_multispectral: # multispectral support
+            self._imagery_type = data._imagery_type   
+            self._bands = data._bands
+            self._backbone_ = self._backbone
+            def backbone_wrapper(pretrained):
+                return _change_tail(self._backbone_(pretrained), data._bands)
+            self._backbone = backbone_wrapper
 
+        self.learn = None
         self._data = data
         self._learning_rate = None
         # Declare the family of backbones to be unpacked and used by different models as supported types
@@ -120,7 +196,13 @@ class ArcGISModel(object):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         return False if backbone_name not in self.supported_backbones else True
-
+    
+    def _arcgis_init_callback(self):
+        if self._is_multispectral:
+            next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
+        if hasattr(self, '_show_results_multispectral'):
+            self.show_results = self._show_results_multispectral
+            
     def lr_find(self, allow_plot=True):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
