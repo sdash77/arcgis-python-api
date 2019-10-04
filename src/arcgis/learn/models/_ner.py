@@ -42,11 +42,13 @@ class EntityRecognizer(ArcGISModel):
         self._emd_template = {}
         self.model = None
         self.model_dir=Path('Models')
-        self.address_tag = 'Address'  #Defines the default addres field
+        self._address_tag = 'Address'  #Defines the default addres field
         self.entities = None #Stores all the entity names from the training data into a list
-        self.has_address = True #Flag to identify if the training data has any address  
+        self._has_address = False #Flag to identify if the training data has any address  
         self.trained = False #Flag to check if model has been trained      
         if data:
+            self._address_tag=data._address_tag
+            self._has_address=data._has_address
             self.path = data.path
             self.data = data
             self.train_ds = data.train_ds
@@ -149,11 +151,13 @@ class EntityRecognizer(ArcGISModel):
         self._emd_template["InferenceFunction"] = "EntityRecognizer.py"
         self._emd_template['ModelDir'] = str(Path(path))
         self._emd_template['Labels'] = self.model.entity.labels
+        if self._has_address:
+            self._emd_template['address_tag'] = self._address_tag
         json.dump(self._emd_template, open(path/Path(path.stem).with_suffix('.emd'), 'w'), indent=4)
         pathstr = path/Path(path.stem).with_suffix('.emd')
         print(f'Model has been saved to {path}')
 
-    def _save(self, name_or_path, zip_files=True):
+    def _save(self, name_or_path, zip_files=True, framework='Spacy'):
         temp=self.path
         if self.model == None:
             return logging.error("Model needs to be fitted, before saving.")
@@ -194,7 +198,11 @@ class EntityRecognizer(ArcGISModel):
         with open(name_or_path, 'r', encoding='utf-8') as f:
             emd = f.read()
         emd = json.loads(emd)
-        name_or_path = emd['ModelDir']
+        name_or_path = emd.get('ModelDir')
+        address_tag= emd.get('Address_tag')
+        if address_tag:
+            self._has_address=True
+            self._address_tag=address_tag
         self.model = spacy.load(name_or_path)
         self.trained = True
         self.entities = list({item[2:] for item in self.model.entity.move_names if item !='O'})
@@ -243,7 +251,7 @@ class EntityRecognizer(ArcGISModel):
         """
         This function post processes the output dataframe from extract_entities function and returns a processed dataframe with cleaned up missed detections.
         """
-        address_tag = self.address_tag
+        address_tag = self._address_tag
         processed_df = pd.DataFrame(columns = unprocessed_df.columns) #creating a empty processed dataframe
         for i,adds in unprocessed_df[address_tag].iteritems(): #duplicating rows with multiple addresses to be one row per address
             if len(adds)>0:
@@ -299,52 +307,56 @@ class EntityRecognizer(ArcGISModel):
 
         :returns: Pandas DataFrame
         """
-        df = pd.DataFrame(columns = ['TEXT']+self.entities)
 
-        if isinstance(text_list, list):
-            item_list= pd.Series(text_list)
+        if self.trained==True:
+            df = pd.DataFrame(columns = ['TEXT']+self.entities)
 
-        elif isinstance(text_list, str):
-            item_names = os.listdir(text_list)
-            item_list = pd.Series()
-            text = []
+            if isinstance(text_list, list):
+                item_list= pd.Series(text_list)
 
-            for item_name in item_names:
-                try:
-                    with open(f'{text_list}/{item_name}', 'r', encoding='latin-1') as f:
-                        item_list[item_name] = f.read()
-                except:
-                    with open(f'{text_list}/{item_name}', 'r', encoding='utf-8') as f:
-                        item_list[item_name]=f.read()
-  
-        if self.address_tag not in self.entities and self.has_address==True:
-            return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
-                1. Set address tag to the address field in your data [your_model.address_tag=\'your_address_field\']\n\
-                2. If your data does not have any address field set has_address=False [your_model.has_address=False]')
-        
-        for i,item in item_list.iteritems():
-            df.loc[i] = None
-            doc = self._extract_entities_text(item) ## predicting entities using entity_extractor model
-            text = doc.text
-            tmp_ents = {}
-            for ent in doc.ents:  ##Preparing a dataframe from results
-                if tmp_ents.get(ent.label_) == None:
-                    tmp_ents[ent.label_] = []+[ent.text]
-                else:
-                    tmp_ents[ent.label_].extend([ent.text])
+            elif isinstance(text_list, str):
+                item_names = os.listdir(text_list)
+                item_list = pd.Series()
+                text = []
 
-            df.loc[i]['TEXT'] = text
+                for item_name in item_names:
+                    try:
+                        with open(f'{text_list}/{item_name}', 'r', encoding='latin-1') as f:
+                            item_list[item_name] = f.read()
+                    except:
+                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-8') as f:
+                            item_list[item_name]=f.read()
+    
+            # if self._address_tag not in self.entities and self._has_address==True:
+            #     return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
+            #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
+            #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
             
-            for label in tmp_ents.keys():
-                df.loc[i][label] = tmp_ents[label]
-        
-        df.fillna('', inplace=True)
-        if self.has_address:
-            df = self._post_process_address_df(df) #Post processing the dataframe
-        else: 
-            df = self._post_process_non_address_df(df)  #Post processing the dataframe
-        # df.to_csv(f'{output_path}/output.csv')
-        return df
+            for i,item in item_list.iteritems():
+                df.loc[i] = None
+                doc = self._extract_entities_text(item) ## predicting entities using entity_extractor model
+                text = doc.text
+                tmp_ents = {}
+                for ent in doc.ents:  ##Preparing a dataframe from results
+                    if tmp_ents.get(ent.label_) == None:
+                        tmp_ents[ent.label_] = []+[ent.text]
+                    else:
+                        tmp_ents[ent.label_].extend([ent.text])
+
+                df.loc[i]['TEXT'] = text
+                
+                for label in tmp_ents.keys():
+                    df.loc[i][label] = tmp_ents[label]
+            
+            df.fillna('', inplace=True)
+            if self._has_address:
+                df = self._post_process_address_df(df) #Post processing the dataframe
+            else: 
+                df = self._post_process_non_address_df(df)  #Post processing the dataframe
+            # df.to_csv(f'{output_path}/output.csv')
+            return df
+        else:
+             return logging.error("Model needs to be fitted, before extraction.")
 
     def show_results(self, ds_type='valid'):
         """
@@ -365,10 +377,10 @@ class EntityRecognizer(ArcGISModel):
         Make predictions on a batch of documents from specified ds_type.
         ds_type:['valid'|'train] 
         '''
-        if self.address_tag not in self.entities and self.has_address == True:
+        if self._address_tag not in self.entities and self._has_address == True:
             return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
-                1. Set address tag to the address field in your data [your_model.address_tag=\'your_address_field\']\n\
-                2. If your data does not have any address field set has_address=False [your_model.has_address=False]')
+                1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
+                2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
 
         if ds_type.lower() == 'valid':
             xs = self.val_ds._random_batch(self.val_ds.x)

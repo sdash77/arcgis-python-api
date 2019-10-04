@@ -407,7 +407,7 @@ def create_buffers(
 def create_drive_time_areas(input_layer,
                             break_values=[5, 10, 15],
                             break_units="Minutes",
-                            travel_mode="Driving Time",
+                            travel_mode="Driving",
                             overlap_policy="Overlap",
                             time_of_day=None,
                             time_zone_for_time_of_day="GeoLocal",
@@ -600,7 +600,11 @@ def create_drive_time_areas(input_layer,
     gis = _arcgis.env.active_gis if gis is None else gis
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+        travelmodes = route_service.retrieve_travel_modes()
+        for tm in travelmodes['supportedTravelModes']:
+            if tm['name'] == travel_mode:
+              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+              travel_mode = tm
 
     return gis._tools.featureanalysis.create_drive_time_areas(
         input_layer,
@@ -1111,7 +1115,6 @@ def plan_routes(
             if tm['name'] == travel_mode:
               tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
               travel_mode = tm
-           
     return gis._tools.featureanalysis.plan_routes(
         stops_layer,
         route_count,

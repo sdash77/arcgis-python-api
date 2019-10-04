@@ -7,7 +7,7 @@ try:
 except:
     HAS_SPACY = False
 from pathlib import Path
-import json,random,os,tempfile
+import json,random,os,tempfile,logging
 
 __all__=["_from_bio_tags","_from_json","ner_prepare_data","_create_zip"]
 
@@ -98,7 +98,7 @@ def _from_json(path, text_key='text', offset_key='labels'):
         
     return train_data
 
-def ner_prepare_data(dataset_type, path , address_tag='Address', has_address=True, val_split_pct=0.1):
+def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
 
     """
     Prepares a data object
@@ -110,10 +110,6 @@ def ner_prepare_data(dataset_type, path , address_tag='Address', has_address=Tru
     ---------------------   -------------------------------------------
     address_tag             Optional string=Address. Address field/tag name 
                             in the training data
-    --------------------   -------------------------------------------
-    has_address=True        Optional:Bool=True. Bool flag stating if training
-                             data has address information.
-    --------------------   -------------------------------------------
     val_split_pct           Optional:Float=0.1 .Percentage of training data to keep
                             as validation.
     =====================   ===========================================
@@ -123,6 +119,12 @@ def ner_prepare_data(dataset_type, path , address_tag='Address', has_address=Tru
     if not HAS_SPACY:
         _raise_spacy_import_error()
     path=Path(path)
+    if class_mapping:
+        address_tag=class_mapping.get('address_tag')
+    
+    else:
+        address_tag='Address'
+
     if dataset_type == 'ner_json':
         train_data = _from_json(path=path)
         path=path.parent
@@ -153,9 +155,10 @@ def ner_prepare_data(dataset_type, path , address_tag='Address', has_address=Tru
             tokens_collection.append(list(tokens.dropna()))
         train_data = _offsets_from_biluo_tags(tags=tags_collection, tokens=tokens_collection)
     # return train_data
-    data=DatabunchNER(train_data, val_split_pct=val_split_pct, test_ds=None)
+    data=DatabunchNER(train_data, val_split_pct=val_split_pct, address_tag=address_tag, test_ds=None)
     data.path=path
     return data
+
 class _NERItemlist():
     """
     Creates a dataset to store data within ner_databunch object.
@@ -209,8 +212,6 @@ class _NERItemlist():
                 if out.get(key) == None:
                     out[key] = []
                 out[key].append(text[tpl[0]:tpl[1]])
-            
-
         return pd.Series(out)
 
 
@@ -222,7 +223,7 @@ class _NERItemlist():
         lst = []
         for item in data:
             lst.append(self._entities_to_dataframe(item))
-        batch_df = pd.concat(lst,axis=1).T
+        batch_df = pd.concat(lst,axis=1,sort=True).T
         batch_df
 
         return batch_df.fillna('')
@@ -230,6 +231,7 @@ class _NERItemlist():
     
 
 class DatabunchNER():
+
 
     """
     Creates a databunch object.
@@ -250,10 +252,21 @@ class DatabunchNER():
     :returns: dataset
     """
 
-    def __init__(self, ds, val_split_pct, bs=5, test_ds=None,):
+    def __init__(self, ds, val_split_pct, bs=5, test_ds=None,address_tag=None):
         random.shuffle(ds)
         self.train_ds = _NERItemlist(bs,data = ds[:int(len(ds)*(1-val_split_pct))]) #creating an _NERItemlist with training dataset
         self.val_ds = _NERItemlist(bs,data = ds[int(len(ds)*(1-val_split_pct)):]) #creating an _NERItemlist with validation dataset
+        self.entities=list(set(self.train_ds.entities).union(set(self.val_ds.entities)))
+        self._address_tag=address_tag
+        self._has_address=True
+        if self._address_tag not in self.entities:
+            self._has_address=False
+            return logging.warning("No Address tag found in your data.\n\
+                1. If your data has an address field, pass your address field name as address tag in class mapping \n\
+                e.g. - data=prepare_data(val_split_pct=.1,dataset_type=ds_type,\
+                                        path=training_data_folder,\
+                                        class_mapping={address_tag:address_field_name})\n\
+                2. Else no action is required, if your data does not have any address information.")
 
     def show_batch(self):
         return self.train_ds.show_batch()
