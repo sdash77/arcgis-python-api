@@ -11,18 +11,32 @@ except ImportError:
         pass
     class LearnerCallback():
         pass
+
+# Try importing Fastai Tensorboard callback and tensorboardX package
+# and set the flag accordingly
+HAS_TENSORBOARDX = True
+try:
+    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
+    import tensorboardX # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
+except:
+    HAS_TENSORBOARDX = False
     
 import arcgis
 from pathlib import Path
 import os
+import time
 import tempfile
+import json
 import logging
 from .._data import _raise_fastai_import_error
+from warnings import warn
+
 logger = logging.getLogger()
 
 #For lr computation, skip beginning and trailing values.
 losses_skipped = 5
 trailing_losses_skipped = 5
+model_characteristics_folder = 'ModelCharacteristics'
 
 class _MultiGPUCallback(LearnerCallback):
     """
@@ -61,11 +75,11 @@ def _create_zip(zipname, path):
 
 class SaveModelCallback(TrackerCallback):
 
-    def __init__(self, model, every='improvement', load_best_at_end=True, **kwargs):
+    def __init__(self, model, every='improvement', name='bestmodel', load_best_at_end=True, **kwargs):
         super().__init__(learn=model.learn, **kwargs)
         self.model = model
         self.every = every
-        self.name = tempfile.NamedTemporaryFile().name
+        self.name = name
         self.load_best_at_end = load_best_at_end
         if self.every not in ['improvement', 'epoch']:
             warn('SaveModel every {} is invalid, falling back to "improvement".'.format(self.every))
@@ -80,13 +94,79 @@ class SaveModelCallback(TrackerCallback):
                 if arcgis.env.verbose:
                     print('saving checkpoint.')
                 self.best = current
-                self.model._save('{}'.format(self.name), zip_files=False)
+                self.model._save('{}'.format(self.name), zip_files=False, save_html=False)
 
     def on_train_end(self, **kwargs):
         "Load the best model."      
         if self.every == "improvement" and self.load_best_at_end:
             self.model.load('{}'.format(self.name))
             self.model.save('{}'.format(self.name))
+
+def _get_tail(model):
+    index_order = 0
+    first_layer = None
+    try:
+        first_layer = model._modules[list(model._modules.keys())[0]]
+        while True:
+            first_layer = first_layer[0]
+            index_order+=1
+    except:
+        pass
+    return first_layer, index_order
+
+def _get_ms_tail(tail, bands, type_init='average'):
+    new_tail = tail.__class__(
+        in_channels=len(bands), 
+        out_channels=tail.out_channels,
+        kernel_size=tail.kernel_size,
+        stride=tail.stride,
+        padding=tail.padding,
+        dilation=tail.dilation,
+        groups=tail.groups,
+        bias=tail.bias is not None,
+        padding_mode=tail.padding_mode,
+    )
+    if type_init == 'average':
+        rgb_weights = tail.weight.data
+        avg_weights = tail.weight.data.mean(dim=1)
+        rgb_map = {'r':0, 'g':1, 'b': 2}
+        for i, j in enumerate(bands):
+            b = rgb_map.get(str(j).lower())
+            if b:
+                new_tail.weight.data[:, i] = tail.weight.data[:, b]
+            else:
+                print('unknown band')
+                new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Wieghts for all other band weights
+    return new_tail
+
+def _set_tail(model, new_tail, index_order=0, inplace=True):
+    i = 0
+    codeblock = 'model._modules[list(model._modules.keys())[0]]'
+    while i < index_order:
+        codeblock+='[0]'
+        i+=1
+    exec(codeblock + ' = new_tail')
+    
+    #first_layer = model._modules[list(model._modules.keys())[0]]
+    #i = 0
+    #while i < index_order:
+    #    first_layer = first_layer[0]
+    #    i+=1
+    #first_layer = new_tail
+    
+    if not inplace:
+        return model
+
+def _change_tail(model, bands):
+        tail, index_order = _get_tail(model)
+        new_tail = _get_ms_tail(tail, bands)
+        _set_tail(
+            model, 
+            new_tail, 
+            index_order,
+            inplace=True
+        )
+        return model
 
 class ArcGISModel(object):
     
@@ -101,9 +181,19 @@ class ArcGISModel(object):
             self._backbone = getattr(models, backbone)
         else:
             self._backbone = backbone
+        
+        self._is_multispectral = data._is_multispectral
+        if self._is_multispectral: # multispectral support
+            self._imagery_type = data._imagery_type   
+            self._bands = data._bands
+            self._backbone_ = self._backbone
+            def backbone_wrapper(pretrained):
+                return _change_tail(self._backbone_(pretrained), data._bands)
+            self._backbone = backbone_wrapper
 
+        self.learn = None
         self._data = data
-
+        self._learning_rate = None
         # Declare the family of backbones to be unpacked and used by different models as supported types
         self._vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__, 
                             models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
@@ -116,7 +206,13 @@ class ArcGISModel(object):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
         backbone_name = backbone if type(backbone) is str else backbone.__name__
         return False if backbone_name not in self.supported_backbones else True
-
+    
+    def _arcgis_init_callback(self):
+        if self._is_multispectral:
+            next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
+        if hasattr(self, '_show_results_multispectral'):
+            self.show_results = self._show_results_multispectral
+            
     def lr_find(self, allow_plot=True):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
@@ -176,15 +272,11 @@ class ArcGISModel(object):
 
         return lrs[final_index], losses_skipped + final_index
 
-    def _get_model_metrics(self, **kwargs):
-        """DOC REQUIRED"""
+    @property
+    def _model_metrics(self):
         raise NotImplementedError
 
-    def _html_metrics(self):
-        """DOC REQUIRED"""
-        raise NotImplementedError
-
-    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
+    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False, **kwargs):
         """
         Train the model for the specified number of epocs and using the
         specified learning rates
@@ -211,6 +303,12 @@ class ArcGISModel(object):
                                 during training. If set to `True` the best model 
                                 based on validation loss will be saved during 
                                 training.
+        ---------------------   -------------------------------------------
+        tensorboard             Optional boolean; defaults to False. 
+                                Parameter to write the training log. 
+                                If set to `True` the log will be saved at 
+                                <dataset-path>/training_log which can be visualized in
+                                tensorboard.
         =====================   ===========================================
         """
         if lr is None:
@@ -224,12 +322,27 @@ class ArcGISModel(object):
 
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
+        
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         kwargs.pop('callbacks', None)
         if early_stopping:
             callbacks.append(EarlyStoppingCallback(learn=self.learn, monitor='valid_loss', min_delta=0.01, patience=5))
         if checkpoint:
-            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement'))
+            from datetime import datetime
+            now = datetime.now()
+            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name=now.strftime("checkpoint_%d-%m-%Y_%H-%M-%S")))
+        
+        # Check if training log needs to be written and tensorboardx is available
+        if tensorboard and HAS_TENSORBOARDX:
+            # Create a directory path using the timestamp to write the logs in
+            training_id = time.strftime("%Y%m%d-%H%M%S")
+            log_path = Path(os.path.dirname(self._data.path)) / 'training_log'
+            # Append the tensorboard callback in the list of callbacks to be passed to fit method
+            callbacks.append(LearnerTensorboardWriter(learn=self.learn, base_dir=log_path, name=training_id))
+            print("Monitor training using Tensorboard using the following command: 'tensorboard --logdir={}'".format(log_path))
+        # Send out a warning if tensorboardX is not installed
+        elif tensorboard:
+            warn("Install tensorboardX 1.8 'conda install -c conda-forge tensorboardx=1.8' to write training log")
 
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
@@ -247,8 +360,23 @@ class ArcGISModel(object):
             'ModelFile': path.name,
             'ImageHeight': self._data.chip_size,
             'ImageWidth': self._data.chip_size,
-            'ModelParameters': {'backbone': self._backbone.__name__}
+            'ModelParameters': {'backbone': self._backbone.__name__},
+            'LearningRate': str(self._learning_rate),
+            'ModelName': self.__repr__()
         }
+
+        model_metrics = self._model_metrics
+
+        if model_metrics.get('accuracy'):
+            self._emd_template['accuracy'] = model_metrics.get('accuracy')
+
+        model_characteristics_dir = os.path.join(path.parent, model_characteristics_folder)
+        if model_metrics.get('confusion_matrix'):
+            if not os.path.exists(model_characteristics_dir):
+                os.mkdir(model_characteristics_dir)
+            file = open(os.path.join(model_characteristics_dir, 'confusion_matrix.png'), 'wb')
+            file.write(model_metrics.get('confusion_matrix'))
+            file.close()
 
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
@@ -256,47 +384,69 @@ class ArcGISModel(object):
 
         self._emd_template['resize_to'] = resize_to
 
-    def _create_html(self, path_model):
-        import matplotlib.pyplot as plt
+    @staticmethod
+    def _create_html(path_model):
         import base64
-        plot_losses_png = self.learn.recorder.plot_losses()
-        plot_losses_dir = tempfile.NamedTemporaryFile().name + '.png'
-        plt.savefig(plot_losses_dir)
-        plt.close()
-        show_results_png = self.show_results()
-        show_results_dir = tempfile.NamedTemporaryFile().name + '.png'
-        plt.savefig(show_results_dir)
-        plt.close()
-        encoded_losses_img = base64.b64encode(open(plot_losses_dir, 'rb').read()).decode('utf-8')
-        encoded_losses_img = "data:image/png;base64,{0}".format(encoded_losses_img)
-        encoded_sresults_img = base64.b64encode(open(show_results_dir, 'rb').read()).decode('utf-8')
-        encoded_sresults_img = "data:image/png;base64,{0}".format(encoded_sresults_img)
-        html_file_path = os.path.join(path_model.parent,'model_metrics.html')
-        model_type, model_analysis = self._html_metrics() 
-        fil = open(html_file_path, 'w')
+
+        model_characteristics_dir = os.path.join(path_model.parent, model_characteristics_folder)
+        loss_graph = os.path.join(model_characteristics_dir, 'loss_graph.png')
+        show_results = os.path.join(model_characteristics_dir, 'show_results.png')
+        confusion_matrix = os.path.join(model_characteristics_dir, 'confusion_matrix.png')
+
+        encoded_losses_img = None
+        if os.path.exists(loss_graph):
+            encoded_losses_img = "data:image/png;base64,{0}".format(base64.b64encode(open(loss_graph, 'rb').read()).decode('utf-8'))
+
+        encoded_showresults = None
+        if os.path.exists(show_results):
+            encoded_showresults = "data:image/png;base64,{0}".format(base64.b64encode(open(show_results, 'rb').read()).decode('utf-8'))
+
+        confusion_matrix_img = None
+        if os.path.exists(confusion_matrix):
+            confusion_matrix_img = "data:image/png;base64,{0}".format(base64.b64encode(open(confusion_matrix, 'rb').read()).decode('utf-8'))
+
+        html_file_path = os.path.join(path_model.parent, 'model_metrics.html')
+
+        emd_path = os.path.join(path_model.parent, path_model.stem + '.emd')
+        if not os.path.exists(emd_path):
+            return
+
+        emd_template = json.load(open(emd_path, 'r'))
+
         HTML_TEMPLATE = f"""        
-                <p><b> {model_type} </b></p>
-                <p><b>Backbone:</b> {self._backbone.__name__}</p>
-                <p><b>Learning Rate:</b> {self._learning_rate}</p>
+                <p><b> {emd_template.get("ModelName")} </b></p>
+                <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
+                <p><b>Learning Rate:</b> {emd_template.get('LearningRate')}</p>
                 <p><b>Training and Validation loss</b></p>
-                <img src="{encoded_losses_img}" alt="training and validation losses">"""
+                <img src="{encoded_losses_img}" alt="training and validation losses">
+        """
+
+        model_analysis = None
+        if confusion_matrix_img:
+             model_analysis = f""" <p><b>Confusion Matrix</p></b>
+                    <img src="{confusion_matrix_img}" alt="Confusion Matrix" width="500" height="333">
+            """
+        if emd_template.get('accuracy'):
+            model_analysis = f"""
+            <p><b>Model Metrics:</b> {emd_template.get('accuracy')}</p>
+        """
 
         if model_analysis:
-            HTML_TEMPLATE = HTML_TEMPLATE + f"""
-                <p><b>Analysis of the model</b></p>
-                {model_analysis}"""
-
-        HTML_TEMPLATE = HTML_TEMPLATE + """
-                <p><b>Sample Results</b></p>
-                <img src="{encoded_sresults_img}" alt="Sample Results">
+            HTML_TEMPLATE += f"""
+            <p><b>Analysis of the model</b></p>
+            {model_analysis}
         """
-        fil.write(HTML_TEMPLATE)
-        fil.close()
-        return HTML_TEMPLATE
 
+        HTML_TEMPLATE += f"""
+            <p><b>Sample Results</b></p>
+            <img src="{encoded_showresults}" alt="Sample Results">
+        """
 
-    def _save(self, name_or_path, framework='PyTorch', zip_files=True, **kwargs):
+        file = open(html_file_path, 'w')
+        file.write(HTML_TEMPLATE)
+        file.close()
 
+    def _save(self, name_or_path, framework='PyTorch', zip_files=True, save_html=True, publish=False, gis=None, **kwargs):
         temp = self.learn.path
 
         if '\\' in name_or_path or '/' in name_or_path:
@@ -335,7 +485,10 @@ class ArcGISModel(object):
             os.remove(saved_path.with_suffix('.pth'))
         else:
             zip_name = self._create_emd(saved_path)
-            html_string = self._create_html(saved_path)     
+            self._save_model_characteristics(saved_path.parent/model_characteristics_folder)
+
+            if save_html:
+                ArcGISModel._create_html(saved_path)
 
         with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
             f.write(self._code)
@@ -344,7 +497,65 @@ class ArcGISModel(object):
         if arcgis.env.verbose:
             print('Created model files at {spp}'.format(spp=saved_path.parent))
 
+        if publish:
+            self._publish_dlpk((saved_path.parent/saved_path.stem).with_suffix('.dlpk'), gis=gis)
+
         return saved_path.parent
+
+    def _save_model_characteristics(self, model_characteristics_dir):
+        import matplotlib.pyplot as plt
+
+        if not os.path.exists(os.path.join(model_characteristics_dir, model_characteristics_dir)):
+            os.mkdir(os.path.join(model_characteristics_dir, model_characteristics_dir))
+
+        if hasattr(self.learn, 'recorder'):
+            self.learn.recorder.plot_losses()
+            plt.savefig(os.path.join(model_characteristics_dir, 'loss_graph.png'))
+            plt.close()
+
+        self.show_results()
+        plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
+        plt.close()
+
+    def _publish_dlpk(self, dlpk_path, gis=None):
+        gis_user = arcgis.env.active_gis if gis is None else gis
+        if not gis_user:
+            warn('No active gis user found!')
+            return
+
+        if not os.path.exists(dlpk_path):
+            warn('DLPK file not found!')
+            return
+
+        emd_path = os.path.join(dlpk_path.parent, dlpk_path.stem + '.emd')
+
+        if not os.path.exists(emd_path):
+            warn('EMD File not found!')
+
+        emd_data = json.load(open(emd_path, 'r'))
+        formatted_description = f"""
+                <p><b> {emd_data.get('ModelName')} </b></p>
+                <p><b>Backbone:</b> {emd_data.get('ModelParameters', {}).get('backbone')}</p>
+                <p><b>Learning Rate:</b> {emd_data.get('LearningRate')}</p>
+        """
+
+        if emd_data.get('accuracy'):
+            formatted_description = formatted_description + f"""
+                <p><b>Analysis of the model</b></p>
+                <p><b>Model Metrics:</b> {emd_data.get('accuracy')}</p>
+            """
+
+        item = gis_user.content.add(
+            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem},
+            data=str(dlpk_path.absolute())
+        )
+
+        logger.info(f"Published DLPK Item Id: {item.itemid}")
+
+        model_characteristics_dir = os.path.join(dlpk_path.parent.absolute(), model_characteristics_folder)
+        screenshots = [os.path.join(model_characteristics_dir, screenshot) for screenshot in os.listdir(model_characteristics_dir)]
+
+        item.update(item_properties={'screenshots': screenshots})
 
     def _create_tfonnx_emd(self, saved_path, batch_size):
         "Raises error if framework specified is TF-ONNX but is not supported by the model"
@@ -361,7 +572,7 @@ class ArcGISModel(object):
         dummy_input = torch.randn(batch_size, 3, self._data.chip_size, self._data.chip_size, device=self._device, requires_grad=True)
         torch.onnx.export(self.learn.model, dummy_input, saved_path.with_suffix('.onnx'))
 
-    def save(self, name_or_path, framework='PyTorch', **kwargs):
+    def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
         Learning Package zip for deployment to Image Server or ArcGIS Pro
@@ -382,10 +593,15 @@ class ArcGISModel(object):
                                 (Only supported by SingleShotDetector, currently.)
                                 If framework used is TF-ONNX, batch_size has
                                 to be passed as keyword arguments. Default
-                                batch_size is 16. 
+                                batch_size is 16.
+        ---------------------   -------------------------------------------
+        publish                 Optional Boolean. Publishes the DLPK as an item.
+        ---------------------   -------------------------------------------
+        gis                     Optional GIS Object. Used for publishing the item.
+                                If not specified then active gis user is taken.
         =====================   ===========================================
         """        
-        return self._save(name_or_path, framework=framework, **kwargs)
+        return self._save(name_or_path, framework=framework, publish=publish, gis=gis, **kwargs)
         
     def load(self, name_or_path):
         """

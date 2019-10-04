@@ -126,12 +126,9 @@ class MaskRCNN(ArcGISModel):
         json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
 
-    def _html_metrics(self):
-        html_model = f"""
-        <p><b>MaskRCNN</b></p>
-        """
-        html_string = None
-        return html_model, html_string      
+    @property
+    def _model_metrics(self):
+        return {}
 
     def show_results(self, ds_type = 'valid', thresold = 0.5, nrows = None, imsize = 5, index = 0, alpha = 0.5, cmap = 'tab20'):
         # Get Number of items

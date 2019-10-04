@@ -2184,6 +2184,11 @@ class Portal(object):
                 files.append(('file', data, os.path.basename(data)))
             else:
                 postdata['text'] = data
+        if item_properties.get('screenshots'):
+            for screenshot in item_properties.get('screenshots', [])[0:4]:
+                files.append(('screenshot', screenshot, os.path.basename(screenshot)))
+            del item_properties['screenshots']
+
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]
