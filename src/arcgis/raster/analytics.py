@@ -4081,7 +4081,7 @@ def find_argument_statistics(input_raster,
 
 
 def linear_spectral_unmixing(input_raster,
-                             input_spectral_profile=None,
+                             input_spectral_profile,
                              value_option=[],
                              output_name=None,
                              context=None,
@@ -4098,7 +4098,7 @@ def linear_spectral_unmixing(input_raster,
     input_raster                             Required ImageryLayer object. The input raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    input_spectral_profile                   Optional Dict or String. The class spectral profile information.
+    input_spectral_profile                   Required Dict or String. The class spectral profile information.
     ------------------------------------     --------------------------------------------------------------------
     value_option                             Optional String. Specifies the options to define the output pixel values. 
 
