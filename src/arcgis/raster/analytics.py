@@ -3031,7 +3031,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
                                       variables=None,
                                       method='DIFFERENCE_FROM_MEAN',
                                       calculation_interval=None,
-                                      ignore_missing_values=True,
+                                      ignore_nodata=True,
                                       output_name=None,
                                       context=None,
                                       *,
@@ -3092,7 +3092,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
                                              - HOURLY : Calculates the hourly mean for each pixel.
     ------------------------------------     --------------------------------------------------------------------
-    ignore_missing_values                    Optional Boolean. Specifies whether NoData values are ignored in
+    ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in
                                              the analysis.
 
                                              - True : The analysis will include all valid pixels along a given dimension and ignore any NoData pixels. This is the default.
@@ -3107,7 +3107,51 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution.
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -3121,18 +3165,16 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
         # Usage Example 1: This example generates an anomaly multidimensional raster for temperature data, comparing pixel values with the mean 
         # pixel value across all slices.
         
-        multidimensional_input = gis.content.search("mdim")[0].layers[0]
-        generate_anomaly = generate_multidimensional_anomaly(input_multidimensional_raster=multidimensional_input, 
+        generate_anomaly = generate_multidimensional_anomaly(input_multidimensional_raster=multidimensional_lyr_input, 
                                                              variables=["oceantemp"], 
                                                              method="PERCENT_DIFFERENCE_FROM_MEAN", 
                                                              temporal_interval="YEARLY", 
                                                              output_name="temp_anomaly", 
-                                                             ignore_missing_values=True, 
+                                                             ignore_nodata=True, 
                                                              gis=gis)
 
-    Returns
-    -------
-    output_raster : Imagery layer item
+    :return:
+    output_raster : Imagery Layer Item
     """
 
     #task = "GenerateMultidimensionalAnomaly"
@@ -3143,7 +3185,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
                                                                        variables=variables, 
                                                                        method=method, 
                                                                        calculation_interval=calculation_interval, 
-                                                                       ignore_missing_values=ignore_missing_values, 
+                                                                       ignore_nodata=ignore_nodata, 
                                                                        context=context,
                                                                        future=future,
                                                                        **kwargs)
@@ -3165,7 +3207,22 @@ def build_multidimensional_transpose(input_multidimensional_raster,
     input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS object. the GIS on which this tool runs. If not specified, 
                                              the active GIS is used.
@@ -3174,16 +3231,15 @@ def build_multidimensional_transpose(input_multidimensional_raster,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
+    :return:
+    output_raster : Imagery Layer URL 
+
     .. code-block:: python
 
         # Usage Example 1: Build the transpose for a sea surface temperature CRF dataset.
-        
-        multidimensional_input = gis.content.search("SST_1992_2018")[0].layers[0]
-        build_mdim_anomaly_op = build_multidimensional_transpose(input_multidimensional_raster=multidimensional_input, gis=gis)
 
-    Returns
-    -------
-    output_raster : Image layer item 
+        build_mdim_transpose_op = build_multidimensional_transpose(input_multidimensional_raster=multidimensional_lyr_input, gis=gis)
+
     """
 
     #task = "BuildMultidimensionalTranspose"
@@ -3342,17 +3398,23 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                              - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
                                              - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
     ------------------------------------     --------------------------------------------------------------------
-    interval_ranges                          Optional List of Lists. Interval ranges specified will
-                                             be used to aggregate groups of values. The list consists of a list of
-                                             pairs of minimum and maximum range values, of type string.
+    interval_ranges                          Optional List of dictionary objects. Interval ranges specified as list of dictionary objects 
+                                             that will be used to aggregate groups of values. 
 
-                                             This parameter is required when the aggregation_def parameter is
-                                             set to INTERVAL_RANGE.
+                                             This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE.
+                                             If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
+
+                                             Syntax: 
+                                                 [{"minValue":"<min value>","maxValue":"<max value>"},
+                                                 {"minValue":"<min value>","maxValue":"<max value>"}]
+
+                                             Example:
+                                                 [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
+                                                 {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
     ------------------------------------     --------------------------------------------------------------------
-    aggregation_function                     Optional String(fileshare path) or JSON or Raster Funtion Template item from portal.
+    aggregation_function                     Optional RFT dict object or Raster Funtion Template item from portal.
                                              A custom raster function that will be used to compute the pixel values of the aggregated
-                                             rasters. The input is a raster function JSON object or an .rft.xml
-                                             file created from a function chain or a custom Python raster function.
+                                             rasters.
 
                                              This parameter is required when the aggregation_method parameter
                                              is set to CUSTOM.
@@ -3373,7 +3435,51 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution.
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -3382,16 +3488,14 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
-    Returns
-    -------
-    output_raster : Imagery layer item 
+    :return:
+    output_raster : Imagery Layer Item
 
     .. code-block:: python
 
         # Usage Example 1: This example aggregates temperature data into yearly data with the average temperature values.
-        
-        multidimensional_input = gis.content.search("mdim")[0].layers[0]
-        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input,
+
+        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_lyr_input,
                                                           variables=["temperature"],
                                                           dimension="StdTime",
                                                           aggregation_method="MAXIMUM",
@@ -3406,8 +3510,7 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
 
         # Usage Example 2: This example aggregates temperature data into hourly data with the average temperature values for multiple variables.
 
-        multidimensional_input = gis.content.search("mdim")[0].layers[0]
-        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input,
+        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_lyr_input,
                                                           variables=["cceiling","ccover","gust","temperature"],
                                                           dimension="StdTime", 
                                                           aggregation_method="MEAN", 
@@ -3420,16 +3523,16 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
 
     .. code-block:: python
         
-        # Usage Example 3: This example aggregates temperature data using a custom aggregation method(given using the fileshare path) for multiple variables.
+        # Usage Example 3: This example aggregates temperature data using a custom aggregation function for multiple variables. This example uses aggregation function 
+        # uploaded as a Raster Function Template item on portal.
 
-        multidimensional_input = gis.content.search("mdim")[0].layers[0]
-        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_input, 
+        agg_multi_dim = aggregate_multidimensional_raster(input_multidimensional_raster=multidimensional_lyr_input, 
                                                           variables=["temperature"], 
                                                           dimension="StdTime",
                                                           aggregation_method="CUSTOM",
                                                           aggregation_definition="INTERVAL_RANGES", 
                                                           interval_ranges=[["2012-01-15T03:00:00","2012-01-15T09:00:00"],["2012-01-15T12:00:00","2012-01-15T21:00:00"]], 
-                                                          aggregation_function="/fileShares/mdim/Minus_Portal_Mdim.rft.json", 
+                                                          aggregation_function=rft_item, 
                                                           output_name="temp_range4", 
                                                           ignore_nodata=True, 
                                                           gis=gis)
@@ -3516,7 +3619,51 @@ def generate_trend_raster(input_multidimensional_raster,
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution.
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -3525,16 +3672,14 @@ def generate_trend_raster(input_multidimensional_raster,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
-    Returns
-    -------
-    output_raster : Imagery layer item
+    :return:
+    output_raster : Imagery Layer Item
 
     .. code-block:: python
 
         # Usage Example 1: This example aggregates temperature data into yearly data with the average temperature values.
         
-        multidimensional_input = gis.content.search("mdim")[0].layers[0]
-        trend_coeff_multidim  = generate_trend_raster(input_multidimensional_raster=multidimensional_input, 
+        trend_coeff_multidim  = generate_trend_raster(input_multidimensional_raster=multidimensional_lyr_input, 
                                                       variables=["NightLightData"], 
                                                       dimension="StdTime", 
                                                       trend_line_type='POLYNOMIAL', 
@@ -3635,7 +3780,51 @@ def predict_using_trend_raster(input_multidimensional_raster,
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution.
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -3644,16 +3833,14 @@ def predict_using_trend_raster(input_multidimensional_raster,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
-    Returns
-    -------
-    output_raster : Imagery layer item
+    :return:
+    output_raster : Imagery Layer Item
 
     .. code-block:: python
 
         # Usage Example 1: This example generates the forecasted precipitation and temperature for January 1, 2050, and January 1, 2100.
 
-        multidimensional_input = gis.content.search("LinearTrendCoefficients")[0].layers[0]
-        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_input, 
+        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_lyr_input, 
                                                     variables=["temp","precip"], 
                                                     dimension_definition='BY_VALUE',
                                                     dimension_values=["2050-01-01T00:00:00","2100-01-01T00:00:00"],
@@ -3664,8 +3851,7 @@ def predict_using_trend_raster(input_multidimensional_raster,
 
         # Usage Example 2: This example generates the forecasted NDVI values for each month in year 2025.
 
-        multidimensional_input = gis.content.search("LinearTrendCoefficients")[0].layers[0]
-        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_input, 
+        predict_output = predict_using_trend_raster(input_multidimensional_raster=multidimensional_lyr_input, 
                                                     variables=["NDVI"], 
                                                     dimension_definition='BY_INTERVAL',
                                                     start="2025-01-01T00:00:00",
@@ -3790,7 +3976,51 @@ def find_argument_statistics(input_raster,
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution.
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -3799,16 +4029,14 @@ def find_argument_statistics(input_raster,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
-    Returns
-    -------
-    output_raster : Imagery layer item
+    :return:
+    output_raster : Imagery Layer Item
 
     .. code-block:: python
 
         # Usage Example 1: This example finds the minimum precipitation and temperature values across a time series multidimensional raster. 
         # If the same minimum value is found multiple times, the pixel value will be 99999.
 
-        input_layer = gis.content.search("prcp_temp_time_series")[0].layers[0]
         arg_stat_output = arcgis.raster.analytics.find_argument_statistics(input_raster=input_layer, 
                                                                                   dimension="StdTime", 
                                                                                   variables=["precip","temp"], 
@@ -3822,7 +4050,6 @@ def find_argument_statistics(input_raster,
 
         # Usage Example 2: This example finds the longest time interval for which salinity fell between 10 and 15 units of measurement in the multidimensional raster.
 
-        input_layer = gis.content.search("Salinity")[0].layers[0]
         arg_stat_output = find_argument_statistics(input_raster=input_layer, 
                                                    dimension="StdTime", 
                                                    variables=["salinity"], 
@@ -3888,7 +4115,51 @@ def linear_spectral_unmixing(input_raster,
 
                                              A RuntimeError is raised if a service by that name already exists
     ------------------------------------     --------------------------------------------------------------------
-    context                                  Context contains additional settings that affect task execution.
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
@@ -3897,16 +4168,14 @@ def linear_spectral_unmixing(input_raster,
                                              results will be returned asynchronously.
     ====================================     ====================================================================
 
-    Returns
-    -------
-    output_raster : Imagery layer item
+    :return:
+    output_raster : Imagery Layer Item
 
     .. code-block:: python
 
         # Usage Example 1: This example calculates the fractional abundance of classes from a classifier definition file (.ecd)
         # located in a datastore registered with the raster analytics server and generates a multiband raster.
 
-        input_layer = gis.content.search("landsat7_image")[0].layers[0]
         unmixing_output = linear_spectral_unmixing(input_raster=input_layer, 
                                                    input_spectral_profile="/fileShares/Mdim/SpectralUnmixing_json.ecd",
                                                    output_name="linear_spectral_unmixing", 
@@ -3917,13 +4186,12 @@ def linear_spectral_unmixing(input_raster,
 
         # Usage Example 2: This example calculates the fractional abundance of classes from a dictionary and generates a multiband raster.
 
-        multidimensional_input = gis.content.search("LinearTrendCoefficients")[0].layers[0]
         input_spectral_profile_dict = {"EsriEndmemberDefinitionFile":0,"FileVersion":1,"NumberEndmembers":3,"NumberBands":7,
                                        "Endmembers":[{"EndmemberID":1,"EndmemberName":"urban","SpectralProfile":[88,42,48,38,86,115,59]},
                                                      {"EndmemberID":2,"EndmemberName":"vegetation","SpectralProfile":[50,21,20,35,50,110,23]},
                                                      {"EndmemberID":3,"EndmemberName":"water","SpectralProfile":[51,20,14,9,7,116,4]}]}
 
-        unmixing_outputs = arcgis.raster.analytics.linear_spectral_unmixing(input_raster=multidimensional_input, 
+        unmixing_outputs = arcgis.raster.analytics.linear_spectral_unmixing(input_raster=multidimensional_lyr_input, 
                                                                             input_spectral_profile=input_spectral_profile_dict,
                                                                             value_option=["SUM_TO_ONE","NON_NEGATIVE"],
                                                                             output_name="linear_spectral_unmixing", 
@@ -3940,6 +4208,208 @@ def linear_spectral_unmixing(input_raster,
                                                context=context,
                                                future=future,
                                                **kwargs)
+
+def subset_multidimensional_raster(input_multidimensional_raster,
+                                   variables=None,
+                                   dimension_definition='ALL',
+                                   dimension_ranges=None,
+                                   dimension_values=None,
+                                   dimension=None,
+                                   start_of_first_iteration=None,
+                                   end_of_first_iteration=None,
+                                   iteration_step=None,
+                                   iteration_unit=None,
+                                   output_name=None,
+                                   context=None,
+                                   *,
+                                   gis=None,
+                                   future=False,
+                                   **kwargs):
+    """
+    Subsets a multidimensional raster by slicing data along defined variables and dimensions.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_multidimensional_raster            Required ImageryLayer object. The input multidimensional raster.
+                                             Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    variables                                Optional list. The variables that will be included in the output 
+                                             multidimensional raster. If no variable is specified, all of the 
+                                             variables will be used.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_definition                     Optional String. Specifies the method that will be used to slice the dimension.
+
+                                              - ALL : The full range for each dimension will be used. This is the default.
+
+                                              - BY_RANGES : The dimension will be sliced using a range or a list of ranges.
+
+                                              - BY_ITERATION : The dimension will be sliced over a specified interval.
+
+                                              - BY_VALUE : The dimension will be sliced using a list of dimension values.
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_ranges                         Optional list of dicts. 
+
+                                             This slices the data based on the dimension name and the 
+                                             minimum and maximum values for the range. 
+
+                                             This parameter is required when the dimension_definition is set to BY_RANGE.
+
+                                             If dimension is StdTime, then the min value and max value must be specified in 
+                                             human readable time format (YYYY-MM-DDTHH:MM:SS).
+
+                                             dimension_values has to be specified as:
+
+                                             [{"dimension":"<dimension_name>", 
+                                             "minValue":"<dimension_min_value>", 
+                                             "maxValue":"<dimension_max_value>"},
+                                             {"dimension":"<dimension_name>", 
+                                             "minValue":"<dimension_min_value>", 
+                                             "maxValue":"<dimension_max_value>"}]
+
+                                             Example:
+                                                 [{"dimension":"StdTime",
+                                                 "minValue":"2013-05-17T00:00:00",
+                                                 "maxValue":"2013-05-17T03:00:00"},
+                                                 {"dimension":"StdZ",
+                                                 "minValue":"-5000",
+                                                 "maxValue":"-4000"}]
+    ------------------------------------     --------------------------------------------------------------------
+    dimension_values                         Optional list of dicts. 
+
+                                             This slices the data based on the dimension name and the value specified.
+
+                                             This parameter is required when the dimension_definition is set to BY_VALUE.
+
+                                             If dimension is StdTime, then the value must be specified in 
+                                             human readable time format (YYYY-MM-DDTHH:MM:SS).
+
+                                             dimension_values has to be specified as:
+                                             [{"dimension":"<dimension_name>", "value":"<dimension_value>"},
+                                             {"dimension":"<dimension_name>", "value":"<dimension_value>"}]
+
+                                             Example:
+                                                [{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},
+                                                {"dimension":" StdZ ", "value":"-4000"}]
+    ------------------------------------     --------------------------------------------------------------------
+    dimension                                Optional string. The dimension along which the variables will be sliced. 
+    ------------------------------------     --------------------------------------------------------------------
+    start_of_first_iteration                 Optional string. The beginning of the interval. 
+                                             This parameter is required when the dimension_definition is set to BY_ITERATION
+    ------------------------------------     --------------------------------------------------------------------
+    end_of_first_iteration                   Optional String.The end of the interval. 
+                                             This parameter is required when the dimension_definition is set to BY_ITERATION
+    ------------------------------------     --------------------------------------------------------------------
+    iteration_step                           Optional Float. The interval over which the data will be sliced. 
+                                             This parameter is required when the dimension_definition is set to BY_ITERATION
+    ------------------------------------     --------------------------------------------------------------------
+    iteration_unit                           Optional String. The iteration unit.
+
+                                             This parameter is required when the dimension_definition is set to BY_ITERATION
+
+                                             - HOURS - Uses hours as the specified unit of time.
+
+                                             - DAYS - Uses days as the specified unit of time.
+
+                                             - WEEKS - Uses weeks as the specified unit of time.
+
+                                             - MONTHS - Uses months as the specified unit of time.
+
+                                             - YEARS -Uses years as the specified unit of time.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster. 
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+                                             used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  context contains additional settings that affect task execution. 
+
+                                             context parameter overwrites values set through arcgis.env parameter
+                                         
+                                             This function has the following settings:
+
+                                              - Extent (extent): A bounding box that defines the analysis area.
+                                            
+                                                Example: 
+                                                    {"extent": {"xmin": -122.68,
+                                                    "ymin": 45.53,
+                                                    "xmax": -122.45,
+                                                    "ymax": 45.6, 
+                                                    "spatialReference": {"wkid": 4326}}}
+
+                                              - Output Spatial Reference (outSR): The output raster will be 
+                                                projected into the output spatial reference.
+                                                
+                                                Example: 
+                                                    {"outSR": {spatial reference}}
+
+                                              - Snap Raster (snapRaster): The output raster will have its 
+                                                cells aligned with the specified snap raster.
+                                                        
+                                                Example: 
+                                                    {'snapRaster': {'url': '<image_service_url>'}}
+
+                                              - Cell Size (cellSize): The output raster will have the resolution 
+                                                specified by cell size.
+
+                                                Example:
+                                                    {'cellSize': {'x': 11}} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+
+                                              - Parallel Processing Factor (parallelProcessingFactor): controls 
+                                                Raster Processing (CPU) service instances.
+
+                                                Example:
+                                                    Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                    Syntax example with a specified percentage of total 
+                                                    processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+                                             the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return:
+    output_raster : Imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example 1: This creates a new multidimensional image service with variables cceiling and ccover for StdTime  dimensions
+        values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
+
+        subset_output = linear_spectral_unmixing(input_multidimensional_raster=input_multidimensional_lyr, 
+                                                   variables=["cceiling","ccover"],
+                                                   dimension_definition='BY_VALUE',
+                                                   dimension_values=[{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},
+                                                                     {"dimension":"StdTime", "value":"2012-01-15T09:00:00"}]
+                                                   output_name="subset_op", 
+                                                   gis=gis)
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster, 
+                                                                    output_name=output_name, 
+                                                                    variables=variables, 
+                                                                    dimension_definition=dimension_definition,
+                                                                    dimension_ranges=dimension_ranges,
+                                                                    dimension_values=dimension_values, 
+                                                                    dimension=dimension, 
+                                                                    start_of_first_iteration=start_of_first_iteration, 
+                                                                    end_of_first_iteration=end_of_first_iteration, 
+                                                                    iteration_step=iteration_step, 
+                                                                    iteration_unit=iteration_unit,
+                                                                    context=context,
+                                                                    future=future,
+                                                                    **kwargs)
+
 
 def costpath_as_polyline(input_destination_data,
                          input_cost_distance_raster,

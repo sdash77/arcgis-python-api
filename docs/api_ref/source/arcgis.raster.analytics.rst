@@ -140,6 +140,10 @@ linear_spectral_unmixing
 -------------------------
 .. automethod:: arcgis.raster.analytics.linear_spectral_unmixing
 
+subset_multidimensional_raster
+------------------------------
+.. automethod:: arcgis.raster.analytics.subset_multidimensional_raster
+
 costpath_as_polyline
 --------------------
 .. automethod:: arcgis.raster.analytics.costpath_as_polyline

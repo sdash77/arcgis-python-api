@@ -7606,18 +7606,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if interval_keyword.upper() == element:
                     interval_keyword_val = element
 
-        interval_ranges_val=None
-        if interval_ranges is not None:
-            interval_ranges_val = interval_ranges
-            ele_values=[]
-            if isinstance(interval_ranges, list):
-                for ele in interval_ranges:
-                    if isinstance(ele, list):
-                        ele_values.append(" ".join(ele))
-                    else:
-                        raise RuntimeError("interval_ranges can only be of type list of lists.")
-                if isinstance(ele_values, list):
-                    interval_ranges_val = ";".join(ele_values)
+
 
         if isinstance(aggregation_function, Item):
             aggregation_function = {"itemId":aggregation_function.itemid}
@@ -7633,7 +7622,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                             interval_keyword=interval_keyword_val,
                                                             interval_value=interval_value,
                                                             interval_unit=interval_unit,
-                                                            interval_ranges=interval_ranges_val,
+                                                            interval_ranges=interval_ranges,
                                                             aggregation_function=aggregation_function,
                                                             ignore_nodata=ignore_nodata,
                                                             context=context,
@@ -7651,7 +7640,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                           variables=None,
                                           method=None,
                                           calculation_interval=None,
-                                          ignore_missing_values=True,
+                                          ignore_nodata=True,
                                           context=None,
                                           future=False,
                                           **kwargs):
@@ -7668,7 +7657,7 @@ class _RasterAnalysisTools(BaseAnalytics):
        temporal_interval: temporalInterval (str). Optional parameter.
           Choice list: ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
 
-       ignore_missing_values: ignoreMissingValues (bool). Optional parameter.
+       ignore_nodata: ignoreNodata (bool). Optional parameter.
 
         context: context (str). Optional parameter.
 
@@ -7717,7 +7706,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                             variables=variables,
                                                             method=method_val,
                                                             calculation_interval=calculation_interval_val,
-                                                            ignore_missing_values=ignore_missing_values,
+                                                            ignore_nodata=ignore_nodata,
                                                             context=context,
                                                             gis=self._gis,
                                                             future=True)
@@ -8132,10 +8121,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                                        dimension_ranges=None,
                                        dimension_values=None,
                                        dimension=None,
-                                       recurrence_from=None,
-                                       recurrence_to=None,
-                                       recurrence_interval=None,
-                                       recurrence_unit=None,
+                                       start_of_first_iteration=None,
+                                       end_of_first_iteration=None,
+                                       iteration_step=None,
+                                       iteration_unit=None,
                                        context=None,
                                        future=False,
                                        **kwargs):
@@ -8147,7 +8136,7 @@ class _RasterAnalysisTools(BaseAnalytics):
        variables: variables (str). Optional parameter.  
 
        dimension_definition: dimensionDefinition (str). Optional parameter.  
-          Choice list:['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_RECURRENCE']
+          Choice list:['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
 
        dimension_ranges: dimensionRanges (str). Optional parameter.  
 
@@ -8155,13 +8144,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
        dimension: dimension (str). Optional parameter.  
 
-       recurrence_from: recurrenceFrom (str). Optional parameter.  
+       start_of_first_iteration: recurrenceFrom (str). Optional parameter.  
 
-       recurrence_to: recurrenceTo (str). Optional parameter.  
+       end_of_first_iteration: recurrenceTo (str). Optional parameter.  
 
-       recurrence_interval: recurrenceInterval (float). Optional parameter.  
+       iteration_step: recurrenceInterval (float). Optional parameter.  
 
-       recurrence_unit: recurrenceUnit (str). Optional parameter.  
+       iteration_unit: recurrenceUnit (str). Optional parameter.  
           Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
 
        context: context (str). Optional parameter.
@@ -8187,7 +8176,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         dimension_definition_val = dimension_definition
         if dimension_definition is not None:
-            dimension_definition_allowed_values = ['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_RECURRENCE']
+            dimension_definition_allowed_values = ['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
             if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
                 raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
 
@@ -8195,26 +8184,15 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if dimension_definition.upper() == element:
                     dimension_definition_val = element
 
-        recurrence_unit_val = recurrence_unit
-        if recurrence_unit is not None:
-            recurrence_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
-            if [element.lower() for element in recurrence_unit_allowed_values].count(recurrence_unit.lower()) <= 0 :
-                raise RuntimeError('recurrence_unit can only be one of the following: '+str(recurrence_unit_allowed_values))
+        iteration_unit_val = iteration_unit
+        if iteration_unit is not None:
+            iteration_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
+            if [element.lower() for element in iteration_unit_allowed_values].count(iteration_unit.lower()) <= 0 :
+                raise RuntimeError('iteration_unit can only be one of the following: '+str(iteration_unit_allowed_values))
 
-            for element in recurrence_unit_allowed_values:
-                if recurrence_unit.upper() == element:
-                    recurrence_unit_val = element
-
-        dimension_ranges_val = dimension_ranges
-        ele_values=[]
-        if isinstance(dimension_ranges, list):
-            for ele in dimension_ranges:
-                if isinstance(ele, list):
-                    ele_values.append(" ".join(ele))
-                else:
-                    raise Run
-            if isinstance(ele_values, list):
-                dimension_ranges_val = ";".join(ele_values)
+            for element in iteration_unit_allowed_values:
+                if iteration_unit.upper() == element:
+                    iteration_unit_val = element
 
         output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
@@ -8222,13 +8200,13 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                          output_name=output_raster,
                                                          variables=variables,
                                                          dimension_definition=dimension_definition_val,
-                                                         dimension_ranges=dimension_ranges_val,
+                                                         dimension_ranges=dimension_ranges,
                                                          dimension_values=dimension_values,
                                                          dimension=dimension,
-                                                         recurrence_from=recurrence_from,
-                                                         recurrence_to=recurrence_to,
-                                                         recurrence_interval=recurrence_interval,
-                                                         recurrence_unit=recurrence_unit_val,
+                                                         start_of_first_iteration=start_of_first_iteration,
+                                                         end_of_first_iteration=end_of_first_iteration,
+                                                         iteration_step=iteration_step,
+                                                         iteration_unit=iteration_unit_val,
                                                          context=context,
                                                          gis=self._gis,
                                                          future=True)
