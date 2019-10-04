@@ -88,7 +88,6 @@ class SaveModelCallback(TrackerCallback):
             self.model.load('{}'.format(self.name))
             self.model.save('{}'.format(self.name))
 
-
 class ArcGISModel(object):
     
     def __init__(self, data, backbone=None, **kwargs):
@@ -178,9 +177,11 @@ class ArcGISModel(object):
         return lrs[final_index], losses_skipped + final_index
 
     def _get_model_metrics(self, **kwargs):
+        """DOC REQUIRED"""
         raise NotImplementedError
 
     def _html_metrics(self):
+        """DOC REQUIRED"""
         raise NotImplementedError
 
     def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, **kwargs):
@@ -272,15 +273,20 @@ class ArcGISModel(object):
         encoded_sresults_img = "data:image/png;base64,{0}".format(encoded_sresults_img)
         html_file_path = os.path.join(path_model.parent,'model_metrics.html')
         model_type, model_analysis = self._html_metrics() 
-        fil = open(html_file_path,'w')
+        fil = open(html_file_path, 'w')
         HTML_TEMPLATE = f"""        
                 <p><b> {model_type} </b></p>
                 <p><b>Backbone:</b> {self._backbone.__name__}</p>
                 <p><b>Learning Rate:</b> {self._learning_rate}</p>
                 <p><b>Training and Validation loss</b></p>
-                <img src="{encoded_losses_img}" alt="training and validation losses">
+                <img src="{encoded_losses_img}" alt="training and validation losses">"""
+
+        if model_analysis:
+            HTML_TEMPLATE = HTML_TEMPLATE + f"""
                 <p><b>Analysis of the model</b></p>
-                {model_analysis}
+                {model_analysis}"""
+
+        HTML_TEMPLATE = HTML_TEMPLATE + """
                 <p><b>Sample Results</b></p>
                 <img src="{encoded_sresults_img}" alt="Sample Results">
         """
@@ -288,7 +294,9 @@ class ArcGISModel(object):
         fil.close()
         return HTML_TEMPLATE
 
+
     def _save(self, name_or_path, framework='PyTorch', zip_files=True, **kwargs):
+
         temp = self.learn.path
 
         if '\\' in name_or_path or '/' in name_or_path:
