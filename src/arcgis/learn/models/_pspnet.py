@@ -37,7 +37,8 @@ def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 
     model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
     learn = Learner(data, model, **kwargs)
     return learn
-       
+
+
 class PSPNetClassifier(ArcGISModel):
 
     """
@@ -71,12 +72,10 @@ class PSPNetClassifier(ArcGISModel):
     :returns: `PSPNetClassifier` Object
     """
 
-    
     def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None):
-
         # Set default backbone to be 'resnet50'
         if backbone is None: 
-            backbone = models.resnet50              
+            backbone = models.resnet50
       
         super().__init__(data, backbone)     
 
@@ -99,10 +98,16 @@ class PSPNetClassifier(ArcGISModel):
         
         self.freeze()
 
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
+
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
-        return [*self._resnet_family, *self._densenet_family, *self._vgg_family]        
+        return [*self._resnet_family, *self._densenet_family, *self._vgg_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -211,14 +216,9 @@ class PSPNetClassifier(ArcGISModel):
             rows = self._data.batch_size
         self.learn.show_results(rows=rows, **kwargs)   
 
-    def _html_metrics(self):
-        html_model = f"""
-        <p><b>PSPNet Classifier</b></p>
-        """
-        html_string = f"""
-        <p><b>Model Metrics:</b> {format(self._get_model_metrics(), 'e')}</p> 
-        """
-        return html_model, html_string         
+    @property
+    def _model_metrics(self):
+        return {'accuracy': self._get_model_metrics()}
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get('checkpoint', True)

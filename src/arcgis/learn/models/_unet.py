@@ -72,6 +72,12 @@ class UnetClassifier(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
 
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
+
     @classmethod
     def from_model(cls, emd_path, data=None):
         return cls.from_emd(data, emd_path)
@@ -108,14 +114,9 @@ class UnetClassifier(ArcGISModel):
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
-    def _html_metrics(self):
-        html_model = f"""
-        <p><b>Unet Classifier</b></p>
-        """
-        html_string = f"""
-        <p><b>Model Metrics:</b> {format(self._get_model_metrics(), 'e')}</p> 
-        """
-        return html_model, html_string
+    @property
+    def _model_metrics(self):
+        return {'accuracy': self._get_model_metrics()}
     
     def _create_emd(self, path):
         import random

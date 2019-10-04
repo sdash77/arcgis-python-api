@@ -192,6 +192,12 @@ class SingleShotDetector(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)        
 
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
+
     @classmethod
     def from_model(cls, emd_path, data=None):
         return cls.from_emd(data, emd_path)
@@ -335,19 +341,10 @@ class SingleShotDetector(ArcGISModel):
     def _normalize_bbox(self, bbox):
         return (bbox+1.)/2.
 
-    def _html_metrics(self):
-        import pandas as pd
-        html_model = f"""
-        <p><b>Single Shot Detector</b></p>
-        """
-        ap_score = self.average_precision_score(show_progress=False)
-        ap_df = pd.DataFrame(list(ap_score.items()), columns=['Class', 'Score'])
-        html_string = f""" 
-        <p><b>Mean average precision score: </b></p>
-        {ap_df.to_html()} 
-        """
-        return html_model, html_string
-        
+    @property
+    def _model_metrics(self):
+        return {'accuracy': self.average_precision_score(show_progress=False)}
+
     def _create_emd(self, path):
         import random
         super()._create_emd(path)
@@ -570,12 +567,3 @@ class SingleShotDetector(ArcGISModel):
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
-
-    def _get_model_metrics(self, **kwargs):
-        kwargs_metrics = {
-            'detect_thresh': 0.5,
-            'iou_thresh': 0.5,
-            'mean': True
-        }
-
-        return self.average_precision_score(**kwargs_metrics)
