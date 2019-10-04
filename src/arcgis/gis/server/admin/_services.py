@@ -1050,6 +1050,28 @@ class Service(BaseServer):
             self._init()
         return self._jsonProperties
     #----------------------------------------------------------------------
+    def change_provider(self, provider):
+        """
+        Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
+        
+        Values:
+        
+           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap      
+           + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+           + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+        
+        :returns: Boolean
+        
+        """
+        allowed_providers = ['ArcObjects',  'ArcObjects11', 'DMaps']
+        url = self._url + "/changeProvider"
+        params = {'f' : 'json',
+                  'provider' : provider}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     @property
     def extensions(self):
         """lists the extensions on a service"""

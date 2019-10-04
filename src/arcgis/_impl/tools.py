@@ -905,6 +905,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                         line_barrier_layer=None,
                                         polygon_barrier_layer=None,
                                         include_route_layer=False,
+                                        route_shape=None,
                                         future=False):
         """
         Calculates routes between pairs of points.
@@ -954,6 +955,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["originsLayer"] = origins_layer
             params["destinationsLayer"] = destinations_layer
             params["measurementType"] = measurement_type
+            if route_shape is not None:
+                params['routeShape'] = route_shape
             if origins_layer_route_id_field is not None:
                 params["originsLayerRouteIDField"] = origins_layer_route_id_field
             if destinations_layer_route_id_field is not None:
@@ -977,19 +980,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             return _estimate_credits(task=task,
                                          parameters=params)
         gpjob = self._tbx.connect_origins_to_destinations(origins_layer=origins_layer,
-                                                  destinations_layer=destinations_layer,
-                                                  measurement_type=measurement_type,
-                                                  origins_layer_route_id_field=origins_layer_route_id_field,
-                                                  destinations_layer_route_id_field=destinations_layer_route_id_field,
-                                                  time_of_day=time_of_day,
-                                                  time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                                  output_name=output_name,
-                                                  context=context,
-                                                  include_route_layers=include_route_layer,
-                                                  point_barrier_layer=point_barrier_layer,
-                                                  line_barrier_layer=line_barrier_layer,
-                                                  polygon_barrier_layer=polygon_barrier_layer,
-                                                  gis=self._gis, future=True)
+                                                          destinations_layer=destinations_layer,
+                                                          measurement_type=measurement_type,
+                                                          origins_layer_route_id_field=origins_layer_route_id_field,
+                                                          destinations_layer_route_id_field=destinations_layer_route_id_field,
+                                                          time_of_day=time_of_day,
+                                                          time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                                          output_name=output_name,
+                                                          context=context,
+                                                          include_route_layers=include_route_layer,
+                                                          point_barrier_layer=point_barrier_layer,
+                                                          line_barrier_layer=line_barrier_layer,
+                                                          polygon_barrier_layer=polygon_barrier_layer,
+                                                          route_shape=route_shape,
+                                                          gis=self._gis, 
+                                                          future=True)   
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -1012,7 +1017,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                 point_barrier_layer=None,
                                 line_barrier_layer=None,
                                 polygon_barrier_layer=None,
-                                future=False):
+                                future=False,
+                                travel_direction=False,
+                                show_holes=False,
+                                include_reachable_streets=False):
         """
 
 
@@ -1077,6 +1085,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["lineBarrierLayer"] = line_barrier_layer
             if polygon_barrier_layer is not None:
                 params["polygonBarrierLayer"] = polygon_barrier_layer
+            if travel_direction is not None:
+                params['travelDirection'] = travel_direction
+            if show_holes is not None:
+                params['showHoles'] = show_holes
+            if include_reachable_streets is not None:
+                params['includeReachableStreets'] = include_reachable_streets
 
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
@@ -1092,7 +1106,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                   context=context, point_barrier_layer=point_barrier_layer,
                                                   line_barrier_layer=line_barrier_layer,
                                                   polygon_barrier_layer=polygon_barrier_layer,
-                                                  gis=self._gis, future=True)
+                                                  gis=self._gis, future=True,
+                                                  travel_direction=travel_direction,
+                                                  show_holes=show_holes,
+                                                  include_reachable_streets=include_reachable_streets)
         gpjob._is_fa = True
         if future:
             return gpjob
