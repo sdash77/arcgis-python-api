@@ -131,8 +131,9 @@ def _get_ms_tail(tail, bands, type_init='average'):
         avg_weights = tail.weight.data.mean(dim=1)
         rgb_map = {'r':0, 'g':1, 'b': 2}
         for i, j in enumerate(bands):
-            b = rgb_map.get(str(j).lower())
-            if b:
+            b = rgb_map.get(str(j).lower(), None)
+            print(b)
+            if b is not None:
                 new_tail.weight.data[:, i] = tail.weight.data[:, b]
             else:
                 print('unknown band')
@@ -210,8 +211,8 @@ class ArcGISModel(object):
     def _arcgis_init_callback(self):
         if self._is_multispectral:
             next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
-        if hasattr(self, '_show_results_multispectral'):
-            self.show_results = self._show_results_multispectral
+            if hasattr(self, '_show_results_multispectral'):
+                self.show_results = self._show_results_multispectral
             
     def lr_find(self, allow_plot=True):
         """

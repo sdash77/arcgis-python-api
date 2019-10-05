@@ -401,7 +401,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         rgb_bands = [ bands.index(b) for b in ['r', 'g', 'b'] if b in bands ]
         print(rgb_bands)
     
-    if (bands is not None) or (not rgb_bands is not None):
+    if (bands is not None) or (rgb_bands is not None):
         if imagery_type == 'RGB':
             imagery_type = 'multispectral'
         _is_multispectral = True
@@ -625,7 +625,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         if kwargs.get('do_normalize', None) is not None:
             data._do_normalize = kwargs.get('do_normalize')
         else:
-            data._do_normalize = True
+            data._do_normalize = False
         if data._do_normalize:
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
     else:
