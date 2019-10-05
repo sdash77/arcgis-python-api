@@ -16,8 +16,8 @@ except ImportError:
 # and set the flag accordingly
 HAS_TENSORBOARDX = True
 try:
-    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
     import tensorboardX # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
+    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
 except:
     HAS_TENSORBOARDX = False
     
