@@ -388,8 +388,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             if type(b) == str:
                 bands[i] = b.lower()
     elif imagery_type_lib.get(imagery_type, None) is not None:
-        pass
-        #bands = imagery_type_lib.get(imagery_type)['bands']
+        bands = imagery_type_lib.get(imagery_type)['bands']
     elif _bands is not None:
         bands = _bands
 
@@ -443,7 +442,6 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                 max_zoom=3.,
                 max_lighting=0.5,
             )
-    
     
     elif dataset_type == 'Classified_Tiles':
 
@@ -558,8 +556,11 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
-    if _is_multispectral:
-        print('Multispectral')
+    if dataset_type == 'RCNN_Masks':
+        data = (src.transform(transforms, size=chip_size, tfm_y=True)
+                .databunch(**databunch_kwargs))
+    elif _is_multispectral:
+        #print('Multispectral')
         data = data.databunch(**databunch_kwargs)
 
         # Statistics        
@@ -631,38 +632,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         data = (data.transform(transforms, **kwargs_transforms)
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats))
-        """
-        try:
-            data = (data.transform(transforms, **kwargs_transforms)
-                .databunch(**databunch_kwargs)
-                .normalize(imagenet_stats))
-        except:
-            print('failed to open data ')
-            return prepare_data(
-                path, 
-                class_mapping=class_mapping, 
-                chip_size=chip_size, 
-                val_split_pct=val_split_pct, 
-                batch_size=batch_size, 
-                transforms=transforms, 
-                collate_fn=collate_fn, 
-                seed=seed, 
-                dataset_type=dataset_type, 
-                resize_to=resize_to,
-                address_tag=address_tag, 
-                imagery_type='multispectral', 
-                band_order=band_order,
-                **kwargs
-                )
-        """
-     
-    if dataset_type == 'RCNN_Masks':
-        data = (src.transform(transforms, size=chip_size, tfm_y=True)
-                .databunch(**databunch_kwargs))
-    else:
-        data = (data.transform(transforms, **kwargs_transforms)
-                .databunch(**databunch_kwargs)
-                .normalize(imagenet_stats))
+
 
     data.chip_size = data.x[0].shape[-1] if transforms is False else chip_size
 
