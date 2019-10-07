@@ -49,7 +49,8 @@ imagery_type_lib = {
 }
 
 def _raise_fastai_import_error():
-    raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai pytorch torchvision"')
+    raise Exception("""This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies. 
+Install them using 'conda install -c pytorch -c fastai fastai=1.0.54 pytorch=1.1.0 torchvision scikit-image'""")
 
 def _bb_pad_collate(samples, pad_idx=0):
     "Function that collect `samples` of labelled bboxes and adds padding with `pad_idx`."
@@ -388,8 +389,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             if type(b) == str:
                 bands[i] = b.lower()
     elif imagery_type_lib.get(imagery_type, None) is not None:
-        pass
-        #bands = imagery_type_lib.get(imagery_type)['bands']
+        bands = imagery_type_lib.get(imagery_type)['bands']
     elif _bands is not None:
         bands = _bands
 
@@ -401,7 +401,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         rgb_bands = [ bands.index(b) for b in ['r', 'g', 'b'] if b in bands ]
         print(rgb_bands)
     
-    if (bands is not None) or (not rgb_bands is not None):
+    if (bands is not None) or (rgb_bands is not None):
         if imagery_type == 'RGB':
             imagery_type = 'multispectral'
         _is_multispectral = True
@@ -443,7 +443,6 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                 max_zoom=3.,
                 max_lighting=0.5,
             )
-    
     
     elif dataset_type == 'Classified_Tiles':
 
@@ -558,8 +557,11 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
-    if _is_multispectral:
-        print('Multispectral')
+    if dataset_type == 'RCNN_Masks':
+        data = (src.transform(transforms, size=chip_size, tfm_y=True)
+                .databunch(**databunch_kwargs))
+    elif _is_multispectral:
+        #print('Multispectral')
         data = data.databunch(**databunch_kwargs)
 
         # Statistics        
@@ -623,7 +625,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         if kwargs.get('do_normalize', None) is not None:
             data._do_normalize = kwargs.get('do_normalize')
         else:
-            data._do_normalize = True
+            data._do_normalize = False
         if data._do_normalize:
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
     else:
@@ -631,38 +633,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         data = (data.transform(transforms, **kwargs_transforms)
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats))
-        """
-        try:
-            data = (data.transform(transforms, **kwargs_transforms)
-                .databunch(**databunch_kwargs)
-                .normalize(imagenet_stats))
-        except:
-            print('failed to open data ')
-            return prepare_data(
-                path, 
-                class_mapping=class_mapping, 
-                chip_size=chip_size, 
-                val_split_pct=val_split_pct, 
-                batch_size=batch_size, 
-                transforms=transforms, 
-                collate_fn=collate_fn, 
-                seed=seed, 
-                dataset_type=dataset_type, 
-                resize_to=resize_to,
-                address_tag=address_tag, 
-                imagery_type='multispectral', 
-                band_order=band_order,
-                **kwargs
-                )
-        """
-     
-    if dataset_type == 'RCNN_Masks':
-        data = (src.transform(transforms, size=chip_size, tfm_y=True)
-                .databunch(**databunch_kwargs))
-    else:
-        data = (data.transform(transforms, **kwargs_transforms)
-                .databunch(**databunch_kwargs)
-                .normalize(imagenet_stats))
+
 
     data.chip_size = data.x[0].shape[-1] if transforms is False else chip_size
 
