@@ -201,7 +201,8 @@ class Portal(object):
                              postdata)
         return resp
 
-    def add_item(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None):
+    def add_item(self, item_properties, data=None, thumbnail=None, metadata=None, owner=None, folder=None, 
+                 screenshot=None, banner=None, large_thumbnail=None):
         """ Adds content to a Portal.
 
 
@@ -267,6 +268,8 @@ class Portal(object):
         commentsEnabled   optional boolean.  Default is true.  Controls whether comments are allowed.
         ----------------  ----------------------------------------------------------------------------
         culture           optional string.  Language and country information.
+        ----------------  ----------------------------------------------------------------------------
+        screenshots       optional list. A list of screenshots from a path on disk.
         ================  ============================================================================
 
 
@@ -305,7 +308,21 @@ class Portal(object):
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
             files.append(('thumbnail', thumbnail, os.path.basename(thumbnail)))
-
+            
+        if 'large_thumbnail' in item_properties:
+            large_thumbnail = item_properties.pop('large_thumbnail')
+            files.append(('largeThumbnail', large_thumbnail, os.path.basename(large_thumbnail)))        
+            
+        if 'banner' in item_properties:
+            banner = item_properties.pop('banner')
+            files.append(('banner', banner, os.path.basename(banner)))
+            
+        if item_properties.get('screenshots'):
+            for screenshot in item_properties.get('screenshots', []):
+                files.append(('screenshot', screenshot, os.path.basename(screenshot)))
+            del item_properties['screenshots'] 
+            if 'screenshots' in postdata:
+                postdata.pop('screenshots')
         # If owner isn't specified, use the logged in user
         if not owner:
             owner = self.logged_in_user()['username']
@@ -2185,9 +2202,11 @@ class Portal(object):
             else:
                 postdata['text'] = data
         if item_properties.get('screenshots'):
-            for screenshot in item_properties.get('screenshots', [])[0:4]:
+            for screenshot in item_properties.get('screenshots', []):
                 files.append(('screenshot', screenshot, os.path.basename(screenshot)))
             del item_properties['screenshots']
+            if 'screenshots' in postdata:
+                postdata.pop('screenshots')
 
         if metadata:
             if _is_http_url(metadata):

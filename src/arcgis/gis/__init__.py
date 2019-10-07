@@ -3191,6 +3191,8 @@ class ContentManager(object):
                            or not allowed (false).
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Language and country information.
+        -----------------  ---------------------------------------------------------------------
+        screenshots        Optional List. The path to a screen shot image.  The max amount of image allowed is 4.
         =================  =====================================================================
 
 
@@ -8129,6 +8131,8 @@ class Item(dict):
         -----------------  ---------------------------------------------------------------------
         commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
                            or not allowed (false).
+        -----------------  ---------------------------------------------------------------------
+        screenshots        Optional List. The path to a screen shot image.  The max amount of image allowed is 4.
         =================  =====================================================================
 
 
