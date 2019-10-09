@@ -99,7 +99,10 @@ class SaveModelCallback(TrackerCallback):
     def on_train_end(self, **kwargs):
         "Load the best model."      
         if self.every == "improvement" and self.load_best_at_end:
-            self.model.load('{}'.format(self.name))
+            try:
+                self.model.load('{}'.format(self.name))
+            except:
+                pass
             self.model.save('{}'.format(self.name))
 
 def _get_tail(model):
@@ -377,8 +380,11 @@ class ArcGISModel(object):
 
         if model_metrics.get('accuracy'):
             self._emd_template['accuracy'] = model_metrics.get('accuracy')
+        
+        if model_metrics.get('average_precision_score'):
+            self._emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
 
-        model_characteristics_dir = os.path.join(path.parent, model_characteristics_folder)
+        model_characteristics_dir = os.path.join(path.parent.absolute(), model_characteristics_folder)
         if model_metrics.get('confusion_matrix'):
             if not os.path.exists(model_characteristics_dir):
                 os.mkdir(model_characteristics_dir)
@@ -396,7 +402,7 @@ class ArcGISModel(object):
     def _create_html(path_model):
         import base64
 
-        model_characteristics_dir = os.path.join(path_model.parent, model_characteristics_folder)
+        model_characteristics_dir = os.path.join(path_model.parent.absolute(), model_characteristics_folder)
         loss_graph = os.path.join(model_characteristics_dir, 'loss_graph.png')
         show_results = os.path.join(model_characteristics_dir, 'show_results.png')
         confusion_matrix = os.path.join(model_characteristics_dir, 'confusion_matrix.png')
@@ -436,7 +442,12 @@ class ArcGISModel(object):
             """
         if emd_template.get('accuracy'):
             model_analysis = f"""
-            <p><b>Model Metrics:</b> {emd_template.get('accuracy')}</p>
+            <p><b>Accuracy:</b> {emd_template.get('accuracy')}</p>
+        """
+
+        if emd_template.get('average_precision_score'):
+            model_analysis = f"""
+            <p><b>Average Precision Score:</b> {emd_template.get('average_precision_score')}</p>
         """
 
         if model_analysis:
@@ -493,7 +504,7 @@ class ArcGISModel(object):
             os.remove(saved_path.with_suffix('.pth'))
         else:
             zip_name = self._create_emd(saved_path)
-            self._save_model_characteristics(saved_path.parent/model_characteristics_folder)
+            self._save_model_characteristics(saved_path.parent.absolute()/model_characteristics_folder)
 
             if save_html:
                 ArcGISModel._create_html(saved_path)
@@ -550,7 +561,13 @@ class ArcGISModel(object):
         if emd_data.get('accuracy'):
             formatted_description = formatted_description + f"""
                 <p><b>Analysis of the model</b></p>
-                <p><b>Model Metrics:</b> {emd_data.get('accuracy')}</p>
+                <p><b>Accuracy:</b> {emd_data.get('accuracy')}</p>
+            """
+
+        if emd_data.get('average_precision_score'):
+            formatted_description = formatted_description + f"""
+                <p><b>Analysis of the model</b></p>
+                <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
 
         item = gis_user.content.add(

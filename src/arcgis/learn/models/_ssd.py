@@ -343,7 +343,7 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'accuracy': self.average_precision_score(show_progress=False)}
+        return {'average_precision_score': self.average_precision_score(show_progress=False)}
 
     def _create_emd(self, path):
         import random
