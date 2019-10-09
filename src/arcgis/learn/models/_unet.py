@@ -3,6 +3,7 @@ from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._ssd import _EmptyData
 from functools import partial
+import math
 
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
@@ -116,6 +117,12 @@ class UnetClassifier(ArcGISModel):
         if data._is_multispectral:
             data._bands = emd.get('Bands')
             data._imagery_type = emd.get("ImageryType")
+            normalization_stats = emd.get("NormalizationStats")
+            for _stat in normalization_stats:
+                if normalization_stats[_stat] is not None:
+                    normalization_stats[_stat] = torch.tensor(normalization_stats[_stat])
+                setattr(data, ('_'+_stat), normalization_stats[_stat])
+            data._do_normalize = emd.get("DoNormalize")
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
@@ -147,6 +154,20 @@ class UnetClassifier(ArcGISModel):
         if self._emd_template["IsMultispectral"]:
             self._emd_template["Bands"] = self._data._bands
             self._emd_template["ImageryType"] = self._data._imagery_type
+            self._emd_template["NormalizationStats"] = {
+                "band_min_values": self._data._band_min_values, 
+                "band_max_values": self._data._band_max_values, 
+                "band_mean_values": self._data._band_mean_values, 
+                "band_std_values": self._data._band_std_values, 
+                "scaled_min_values": self._data._scaled_min_values, 
+                "scaled_max_values": self._data._scaled_max_values, 
+                "scaled_mean_values": self._data._scaled_mean_values, 
+                "scaled_std_values": self._data._scaled_std_values
+            }
+            for _stat in self._emd_template["NormalizationStats"]:
+                if self._emd_template["NormalizationStats"][_stat] is not None:
+                    self._emd_template["NormalizationStats"][_stat] = self._emd_template["NormalizationStats"][_stat].tolist()
+            self._emd_template["DoNormalize"] = self._data._do_normalize
 
         json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
@@ -188,10 +209,23 @@ class UnetClassifier(ArcGISModel):
         imsize = 5
         if kwargs.get('imsize', None) is not None:
             imsize = kwargs.get('imsize')
-            
-        top = 0.97
+
+        do_scale = True
+        if kwargs.get('do_scale', None) is not None:
+            do_scale = kwargs.get('do_scale')  
+
+        do_normalize = True
+        if hasattr(self._data, '_do_normalize'):
+            do_normalize = getattr(self._data, '_do_normalize', True)
+        if kwargs.get('do_normalize', None) is not None:
+            do_normalize = kwargs.get('do_normalize')  
+
+        title_font_size = 16
         if kwargs.get('top', None) is not None:
-            imsize = kwargs.get('top')
+            top = kwargs.get('top')
+        else:
+            top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
+
 
         e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
         symbology_bands = []
@@ -206,15 +240,20 @@ class UnetClassifier(ArcGISModel):
             else:
                 raise(e)
             symbology_bands.append(b_index)
-            
 
         # Get Batch
         x_batch, y_batch = [], []
         for i in range(index, index+nrows):
             x_batch.append(ds.x[i].data)
             y_batch.append(ds.y[i].data[0])
-        x_batch = self._data._min_max_scaler(torch.stack(x_batch))
-        symbology_x_batch = x_batch[:, symbology_bands].cpu().numpy()
+        x_batch = torch.stack(x_batch)
+
+        # Scaling and normalization
+        if do_scale:
+            x_batch = _tensor_scaler(x_batch, self._data._band_min_values, self._data._band_max_values, mode='minmax')
+        symbology_x_batch = x_batch[:, symbology_bands].cpu().numpy() # Scaled Images 0-1 for plotting
+        if do_normalize:
+            x_batch = ( x_batch - self._data._scaled_mean_values.view(1, -1, 1, 1) ) / self._data._scaled_std_values.view(1, -1, 1, 1)
 
         # Get Predictions
         predictions = []
@@ -227,10 +266,10 @@ class UnetClassifier(ArcGISModel):
         predictions = torch.cat(predictions).cpu().numpy()
 
         #return x_batch, y_batch, predictions
-
+        
         # Size for plotting
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
-        fig.suptitle('Ground Truth / Predictions', fontsize=16)
+        fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
         for r in range(nrows):
             ax[r][0].imshow(symbology_x_batch[r])
             y_rgb = _class_array_to_rbg(y_batch[r], self._data._multispectral_color_mapping, nodata)

@@ -625,7 +625,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         if kwargs.get('do_normalize', None) is not None:
             data._do_normalize = kwargs.get('do_normalize')
         else:
-            data._do_normalize = False
+            data._do_normalize = True
         if data._do_normalize:
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
     else:
