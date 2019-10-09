@@ -29,10 +29,14 @@ from arcgis.features import Feature, FeatureSet, FeatureCollection, FeatureLayer
 from six.moves.urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
 from arcgis.raster._util import _set_context as _set_raster_context
-import pandas as pd
 _log = logging.getLogger(__name__)
 
-_FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer,FeatureCollection, pd.DataFrame)
+try:
+    import pandas as pd
+    _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer,FeatureCollection, pd.DataFrame)
+except ImportError:
+    _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer,FeatureCollection)
+
 __all__ = ['_GeoanalyticsTools', '_FeatureAnalysisTools', '_GeometryService', '_RasterAnalysisTools']
 #--------------------------------------------------------------------------
 def _id_generator(size=6, chars=string.ascii_uppercase + string.digits):
