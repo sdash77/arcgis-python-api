@@ -288,9 +288,10 @@ class ArcGISModel(object):
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
         ---------------------   -------------------------------------------
-        lr                      Required float or slice of floats. Learning rate
-                                to be used for training the model. Select from
-                                the `lr_find` plot.
+        lr                      Optional float or slice of floats. Learning rate
+                                to be used for training the model. If ``lr=None``, 
+                                an optimal learning rate is automatically deduced 
+                                for training the model.
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
                                 learning rate schedule. If set to `False` no 
