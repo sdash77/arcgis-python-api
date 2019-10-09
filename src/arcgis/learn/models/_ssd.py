@@ -412,7 +412,7 @@ class SingleShotDetector(ArcGISModel):
             rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
 
-    def predict_video(self, input_video_path, metadata_file, threshold=0.5, nms_overlap=0.1, visualize=False, output_video_path=None):
+    def predict_video(self, input_video_path, metadata_file, threshold=0.5, nms_overlap=0.1, visualize=False, output_file_path=None):
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
 
@@ -433,34 +433,39 @@ class SingleShotDetector(ArcGISModel):
         visualize               Optional boolean. If True a video is saved
                                 to with the prediction results
         ---------------------   -------------------------------------------
-        output_video_path       Optional path. Path of the final video to be saved.
+        output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
                                 appended with _prediction.
         =====================   ===========================================
         """
+        if not HAS_OPENCV:
+            raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
 
         video_read = cv2.VideoCapture(input_video_path)
         fps = video_read.get(cv2.CAP_PROP_FPS)
         video_obj = None
         success = True
-        count = int(video_read.get(cv2.CAP_PROP_FRAME_COUNT))
-
+        total_frames = int(video_read.get(cv2.CAP_PROP_FRAME_COUNT))
+        frame_number = 0
         vmtis = ['vmtilocaldataset']
 
-        for pb in progress_bar(range(count)):
+        for pb in progress_bar(range(total_frames)):
             success, frame = video_read.read()
+            frame_number = frame_number + 1
 
-            if not success:
+            if not success and frame_number < total_frames:
+                continue
+            elif not success:
                 break
 
             height, width, layers = frame.shape
             if visualize and not video_obj:
-                if not output_video_path:
-                    output_video_path = os.path.join(
+                if not output_file_path:
+                    output_file_path = os.path.join(
                         os.path.dirname(input_video_path),
                         os.path.basename(input_video_path).split('.')[0] + '_predictions.avi'
                     )
-                video_obj = cv2.VideoWriter(output_video_path, 0, fps, (width, height))
+                video_obj = cv2.VideoWriter(output_file_path, 0, fps, (width, height))
             image = Image(pil2tensor(PIL.Image.fromarray(frame).convert('RGB'), dtype=np.float32).div_(255))
 
             if self._data.chip_size is not None:
@@ -514,16 +519,28 @@ class SingleShotDetector(ArcGISModel):
 
         data = []
         index = 0
-        with open(metadata_file, 'r') as csvinput:
-            for row in csv.reader(csvinput):
-                data.append(row+[vmtis[index]])
-                index = index + 1
+
+        if not os.path.exists(metadata_file):
+            for vmti in vmtis:
+                data.append([vmti])
+        else:
+            fields = 0
+            with open(metadata_file, 'r') as csvinput:
+                for row in csv.reader(csvinput):
+                    fields = len(row)
+                    data.append(row + [vmtis[index]])
+                    index = index + 1
+            if len(data) < len(vmtis):
+                index = len(data)
+                empty_row = [None for i in range(fields)]
+                while index < len(vmtis):
+                    data.append(empty_row + [vmtis[index]])
+                    index = index + 1
 
         with open(metadata_file, 'w', newline='') as csvoutput:
             writer = csv.writer(csvoutput)
             for row in data:
                 writer.writerow(row)
-
 
     def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=False, visualize=False):
         image = open_image(image_path).apply_tfms(self._data.valid_ds.tfms)
