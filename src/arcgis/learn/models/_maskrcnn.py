@@ -15,7 +15,7 @@ try:
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
-    from .._data import prepare_data
+    from .._data import prepare_data, _raise_fastai_import_error
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     import torchvision
@@ -45,17 +45,18 @@ class MaskRCNN(ArcGISModel):
 
     def __init__(self, data, backbone=None, pretrained_path=None):
 
-        if backbone is None: 
-            backbone = models.detection.maskrcnn_resnet50_fpn
-
         super().__init__(data, backbone)
-
-        self._code = instance_detector_prf
         
-        if not self._check_backbone_support(backbone):
+        if backbone is None:
+            self._backbone = models.detection.maskrcnn_resnet50_fpn
+
+        if not self._check_backbone_support(self._backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        model = backbone(pretrained=True, min_size = data.chip_size)
+
+        self._code = instance_detector_prf
+
+        model = self._backbone(pretrained=True, min_size = data.chip_size)
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
         in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
@@ -69,11 +70,14 @@ class MaskRCNN(ArcGISModel):
         self.learn.model = self.learn.model.to(self._device)
 
         if pretrained_path is not None:
-            self.load(pretrained_path) 
+            self.load(pretrained_path)           
 
     @property
     def supported_backbones(self):
         return [models.detection.maskrcnn_resnet50_fpn.__name__]
+
+    def __repr__(self):
+        return "MaskRCNN Model"
 
     @classmethod
     def from_model(cls, emd_path, data=None):

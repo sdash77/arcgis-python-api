@@ -182,7 +182,10 @@ class ArcGISModel(object):
         if backbone is None:
             self._backbone = models.resnet34
         elif type(backbone) is str:
-            self._backbone = getattr(models, backbone)
+            if hasattr(models, backbone):
+                self._backbone = getattr(models, backbone)
+            elif hasattr(models.detection, backbone):
+                self._backbone = getattr(models.detection, backbone)
         else:
             self._backbone = backbone
 
