@@ -132,11 +132,11 @@ def _get_ms_tail(tail, bands, type_init='average'):
         rgb_map = {'r':0, 'g':1, 'b': 2}
         for i, j in enumerate(bands):
             b = rgb_map.get(str(j).lower(), None)
-            print(b)
+            #print(b)
             if b is not None:
                 new_tail.weight.data[:, i] = tail.weight.data[:, b]
             else:
-                print('unknown band')
+                #print('unknown band')
                 new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Wieghts for all other band weights
     return new_tail
 
@@ -182,9 +182,12 @@ class ArcGISModel(object):
             self._backbone = getattr(models, backbone)
         else:
             self._backbone = backbone
-        
-        self._is_multispectral = data._is_multispectral
-        if self._is_multispectral: # multispectral support
+
+        if hasattr(data, '_is_multispectral'): # multispectral support
+            self._is_multispectral = getattr(data, '_is_multispectral')
+        else:
+            self._is_multispectral = False
+        if self._is_multispectral: 
             self._imagery_type = data._imagery_type   
             self._bands = data._bands
             self._backbone_ = self._backbone
@@ -358,11 +361,14 @@ class ArcGISModel(object):
         self.learn.unfreeze()
 
     def _create_emd(self, path):
+        backbone = self._backbone.__name__
+        if backbone == 'backbone_wrapper':
+            backbone = self._backbone_.__name__
         self._emd_template = {
             'ModelFile': path.name,
             'ImageHeight': self._data.chip_size,
             'ImageWidth': self._data.chip_size,
-            'ModelParameters': {'backbone': self._backbone.__name__},
+            'ModelParameters': {'backbone': backbone},
             'LearningRate': str(self._learning_rate),
             'ModelName': self.__repr__()
         }

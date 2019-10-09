@@ -112,6 +112,11 @@ class UnetClassifier(ArcGISModel):
 
         data.resize_to = resize_to
 
+        data._is_multispectral = emd.get('IsMultispectral', False)
+        if data._is_multispectral:
+            data._bands = emd.get('Bands')
+            data._imagery_type = emd.get("ImageryType")
+
         return cls(data, **model_params, pretrained_path=str(model_file))
 
     @property
@@ -137,6 +142,11 @@ class UnetClassifier(ArcGISModel):
             self._data.color_mapping[inverse_class_mapping[class_name]]
             class_data["Color"] = color
             self._emd_template['Classes'].append(class_data.copy())
+
+        self._emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)
+        if self._emd_template["IsMultispectral"]:
+            self._emd_template["Bands"] = self._data._bands
+            self._emd_template["ImageryType"] = self._data._imagery_type
 
         json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
@@ -220,6 +230,7 @@ class UnetClassifier(ArcGISModel):
 
         # Size for plotting
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+        fig.suptitle('Ground Truth / Predictions', fontsize=16)
         for r in range(nrows):
             ax[r][0].imshow(symbology_x_batch[r])
             y_rgb = _class_array_to_rbg(y_batch[r], self._data._multispectral_color_mapping, nodata)

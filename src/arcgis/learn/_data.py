@@ -397,9 +397,9 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     if kwargs.get('rgb_bands', None) is not None:
         rgb_bands = kwargs.get('rgb_bands')
     elif bands is not None:
-        print('bands is not None')
+        #print('bands is not None')
         rgb_bands = [ bands.index(b) for b in ['r', 'g', 'b'] if b in bands ]
-        print(rgb_bands)
+        #print(rgb_bands)
     
     if (bands is not None) or (rgb_bands is not None):
         if imagery_type == 'RGB':
