@@ -419,9 +419,8 @@ def create_drive_time_areas(input_layer,
                             line_barrier_layer=None,
                             polygon_barrier_layer=None,
                             future=False,
-                            travel_direction=False,
-                            show_holes=False,
-                            include_reachable_streets=False):
+                            travel_direction="AwayFromFacility",
+                            show_holes=False):
     """
     .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png
 
@@ -603,8 +602,8 @@ def create_drive_time_areas(input_layer,
         travelmodes = route_service.retrieve_travel_modes()
         for tm in travelmodes['supportedTravelModes']:
             if tm['name'] == travel_mode:
-              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-              travel_mode = tm
+                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+                travel_mode = tm
 
     return gis._tools.featureanalysis.create_drive_time_areas(
         input_layer,
