@@ -141,10 +141,13 @@ class FeatureClassifier(ArcGISModel):
     
     def _create_emd(self, path):
         super()._create_emd(path)
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["ModelConfiguration"] = "_classifier"
-        self._emd_template["InferenceFunction"] = "ArcGISFeatureClassifier.py"
+        self._emd_template["Framework"] = "PyTorch"
+        self._emd_template["ModelConfiguration"] = "FeatureClassifier"
+        self._emd_template["ModelType"] = "ObjectClassification"
         self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['CropSizeFixed'] = 1  # hardcoded
+        self._emd_template['BlackenAroundFeature'] = 0 #hardcoded
+        self._emd_template['ImageSpaceUsed'] = "MAP_SPACE"
         self._emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes):
