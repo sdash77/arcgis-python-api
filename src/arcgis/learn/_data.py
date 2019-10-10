@@ -232,7 +232,17 @@ def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
     x = _tensor_scaler(x, min_values, max_values, mode, create_view=False)
     return (x, y)
 
-def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None, resize_to=None, random_flip=True, **kwargs):
+def prepare_data(path,
+                 class_mapping=None, 
+                 chip_size=224, 
+                 val_split_pct=0.1, 
+                 batch_size=64, 
+                 transforms=None, 
+                 collate_fn=_bb_pad_collate, 
+                 seed=42, 
+                 dataset_type=None, 
+                 resize_to=None,
+                 **kwargs):
     """
     Prepares a data object from training sample exported by the 
     Export Training Data tool in ArcGIS Pro or Image Server, or training 
@@ -501,15 +511,10 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
             logger.warning("Please check your dataset. " + str(not_label_count[0]) + " images dont have the corresponding label files.")
 
         if transforms is None:
-            if random_flip:
-                flip_rand_p = 1
-            else:
-                flip_rand_p = 0
-
             ranges = (0, 1)
             train_tfms = [
                 crop(size=chip_size, p=1., row_pct=ranges, col_pct=ranges),
-                dihedral_affine(p=flip_rand_p),
+                dihedral_affine() if has_esri_files else flip_lr(),
                 brightness(change=(0.4, 0.6)),
                 contrast(scale=(0.75, 1.5)),
                 rand_zoom(scale=(1.0, 1.5))

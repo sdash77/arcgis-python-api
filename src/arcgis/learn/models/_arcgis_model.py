@@ -101,7 +101,7 @@ class SaveModelCallback(TrackerCallback):
         if self.every == "improvement" and self.load_best_at_end:
             try:
                 self.model.load('{}'.format(self.name))
-            except:
+            except FileNotFoundError:
                 pass
             self.model.save('{}'.format(self.name))
 
@@ -220,6 +220,7 @@ class ArcGISModel(object):
     def _arcgis_init_callback(self):
         if self._is_multispectral:
             next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
+            self.learn.create_opt(slice(3e-3))
             if hasattr(self, '_show_results_multispectral'):
                 self.show_results = self._show_results_multispectral
             
@@ -323,8 +324,7 @@ class ArcGISModel(object):
         =====================   ===========================================
         """
         if lr is None:
-            if arcgis.env.verbose:
-                logger.info('Finding optimum learning rate.')
+            print('Finding optimum learning rate.')
 
             lr = self.lr_find(allow_plot=False)
             lr = slice(lr/10, lr)
@@ -548,6 +548,7 @@ class ArcGISModel(object):
 
         if not os.path.exists(emd_path):
             warn('EMD File not found!')
+            return
 
         emd_data = json.load(open(emd_path, 'r'))
         formatted_description = f"""
@@ -573,7 +574,7 @@ class ArcGISModel(object):
             data=str(dlpk_path.absolute())
         )
 
-        logger.info(f"Published DLPK Item Id: {item.itemid}")
+        print(f"Published DLPK Item Id: {item.itemid}")
 
         model_characteristics_dir = os.path.join(dlpk_path.parent.absolute(), model_characteristics_folder)
         screenshots = [os.path.join(model_characteristics_dir, screenshot) for screenshot in os.listdir(model_characteristics_dir)]

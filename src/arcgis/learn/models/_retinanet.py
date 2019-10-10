@@ -251,11 +251,17 @@ class RetinaNet(ArcGISModel):
             image = image.resize(size=self._data.resize_to)
 
         bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=return_scores, ssd=self)[0] ## ssd because 'data' is an SSD Object
+        # refer to analyze_pred and reconstruct in _ssd_utils.py to see how 'predict' works
 
         if visualize:
             image.show(y=bbox)
 
-        return None if bbox is None else (bbox.data, bbox.scores)
+        if bbox is None:
+            return None
+        elif return_scores:
+            return (bbox.data, bbox.scores)
+        else:
+            return bbox.data
 
     def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.1, mean=False, show_progress=True):
         """
