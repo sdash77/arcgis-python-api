@@ -262,6 +262,8 @@ class UnetClassifier(ArcGISModel):
 
         # Channel first to channel last for plotting
         symbology_x_batch = np.rollaxis(symbology_x_batch, 1, 4)
+        if symbology_x_batch.max() < 1.5:
+            symbology_x_batch = symbology_x_batch.clip(0, 1)
         y_batch = torch.stack(y_batch).cpu().numpy()
         predictions = torch.cat(predictions).cpu().numpy()
 

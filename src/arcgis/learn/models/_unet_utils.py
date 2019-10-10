@@ -90,7 +90,8 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
 
     # Channel first to channel last for plotting
     symbology_x_batch = np.rollaxis(symbology_x_batch, 1, 4)
-    #return symbology_x_batch, y_batch
+    if symbology_x_batch.max() < 1.5:
+        symbology_x_batch = symbology_x_batch.clip(0, 1)
 
     # Size for plotting
     fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))

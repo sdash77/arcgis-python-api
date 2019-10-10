@@ -136,7 +136,7 @@ def _get_class_mapping(path):
 
 def _get_batch_stats(image_list, norm_pct=1, _band_std_values=False):
     n_normalization_samples = round(len(image_list)*norm_pct)
-    n_normalization_samples = max(256, n_normalization_samples)
+    #n_normalization_samples = max(256, n_normalization_samples)
     random_indexes = np.random.randint(0, len(image_list), size=min(n_normalization_samples, len(image_list)))
 
     # Original Band Stats
@@ -148,9 +148,8 @@ def _get_batch_stats(image_list, norm_pct=1, _band_std_values=False):
     n_bands = data_shape[0]
     feasible_chunk = round(512*4*400/(n_bands*data_shape[1])) # ~3gb footprint
     chunk = min(feasible_chunk, n_normalization_samples)
-    print('chunk', chunk)
     i = 0
-    for i in range(0, n_normalization_samples, chunk):    
+    for i in range(0, n_normalization_samples, chunk):
         x_tensor_chunk = torch.stack([ x.data for x in image_list[random_indexes[i:i+chunk]] ] )
         """
         min_values = torch.zeros(n_bands)
@@ -216,7 +215,6 @@ def _get_view_shape(tensor_batch, band_factors):
     return tuple(view_shape)
 
 def _tensor_scaler(tensor_batch, min_values, max_values, mode='minmax', create_view=True):
-    #print(tensor_batch)
     if create_view:
         view_shape = _get_view_shape(tensor_batch, min_values)
         max_values = max_values.view(view_shape)
@@ -397,9 +395,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     if kwargs.get('rgb_bands', None) is not None:
         rgb_bands = kwargs.get('rgb_bands')
     elif bands is not None:
-        #print('bands is not None')
         rgb_bands = [ bands.index(b) for b in ['r', 'g', 'b'] if b in bands ]
-        #print(rgb_bands)
     
     if (bands is not None) or (rgb_bands is not None):
         if imagery_type == 'RGB':
@@ -561,7 +557,6 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
         data = (src.transform(transforms, size=chip_size, tfm_y=True)
                 .databunch(**databunch_kwargs))
     elif _is_multispectral:
-        #print('Multispectral')
         data = data.databunch(**databunch_kwargs)
 
         # Statistics        
@@ -594,7 +589,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                     batch_stats[s] = torch.tensor(batch_stats[s])
         else:
             batch_stats = _get_batch_stats(data.x, norm_pct)
-            normstats[norm_pct_search] = batch_stats
+            normstats[norm_pct_search] = dict(batch_stats)
             for s in normstats[norm_pct_search]:
                 if normstats[norm_pct_search][s] is not None:
                     normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
