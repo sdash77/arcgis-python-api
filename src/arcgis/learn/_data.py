@@ -234,7 +234,7 @@ def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
     x = _tensor_scaler(x, min_values, max_values, mode, create_view=False)
     return (x, y)
 
-def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None, resize_to=None, address_tag='Address', random_flip=True, **kwargs):
+def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, batch_size=64, transforms=None, collate_fn=_bb_pad_collate, seed=42, dataset_type=None, resize_to=None, random_flip=True, **kwargs):
     """
     Prepares a data object from training sample exported by the 
     Export Training Data tool in ArcGIS Pro or Image Server, or training 
@@ -253,6 +253,10 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
+                            For dataset_type=BIO, LBIOU or ner_json:
+                                Provide address field as class mapping
+                                in below format:
+                                class_mapping={'address_tag':'address_field'}
     ---------------------   -------------------------------------------
     chip_size               Optional integer. Size of the image to train the
                             model.
@@ -281,11 +285,7 @@ def prepare_data(path, class_mapping=None, chip_size=224, val_split_pct=0.1, bat
                             the `dataset_type` on its own if it contains a 
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
-                            'RCNN_Masks' and 'Classified_Tiles'    
-                            For dataset_type=BIO, LBIOU or ner_json:
-                                Provide address field as class mapping
-                                in below format:
-                                class_mapping={'address_tag':'address_field'}                   
+                            'RCNN_Masks' and 'Classified_Tiles'                    
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     ---------------------   -------------------------------------------
