@@ -6,6 +6,7 @@ from ._codetemplate import code
 import logging
 logger = logging.getLogger() 
 import os, csv
+from warnings import warn
 import xml.etree.ElementTree as ET
 HAS_OPENCV = True
 
@@ -38,7 +39,16 @@ try:
 except Exception:
     HAS_OPENCV = False
 
+HAS_ARCPY = True
+
+try:
+    import arcpy
+except Exception:
+    HAS_ARCPY = False
+
+
 def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
+
 
 class _EmptyData():
     def __init__(self, path, c, loss_func, chip_size):
@@ -47,7 +57,8 @@ class _EmptyData():
         self.c = c
         self.loss_func = loss_func
         self.chip_size = chip_size
-        
+
+
 class SingleShotDetector(ArcGISModel):
 
     """
@@ -412,7 +423,17 @@ class SingleShotDetector(ArcGISModel):
             rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
 
-    def predict_video(self, input_video_path, metadata_file, threshold=0.5, nms_overlap=0.1, visualize=False, output_file_path=None):
+    def predict_video(
+            self,
+            input_video_path,
+            metadata_file,
+            threshold=0.5,
+            nms_overlap=0.1,
+            visualize=False,
+            output_file_path=None,
+            multiplex=False,
+            multiplex_file_path=None
+    ):
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
 
@@ -436,6 +457,12 @@ class SingleShotDetector(ArcGISModel):
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
                                 appended with _prediction.
+        ---------------------   -------------------------------------------
+        multiplex               Optional boolean. Multiplex using the VMTI detections.
+        ---------------------   -------------------------------------------
+        multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
+                                By default a new file with _multiplex.mp4 extension is saved
+                                in the same folder.
         =====================   ===========================================
         """
         if not HAS_OPENCV:
@@ -448,6 +475,9 @@ class SingleShotDetector(ArcGISModel):
         total_frames = int(video_read.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_number = 0
         vmtis = ['vmtilocaldataset']
+
+        object_id_mapping = {}
+        object_id = 1
 
         for pb in progress_bar(range(total_frames)):
             success, frame = video_read.read()
@@ -482,6 +512,11 @@ class SingleShotDetector(ArcGISModel):
                         text = str(lbls[i])
                     else:
                         text = 'Default'
+
+                    if not object_id_mapping.get(text):
+                        object_id_mapping[text] = object_id
+                        object_id = object_id + 1
+
                     data = bb2hw(bbox_data)
                     image = cv2.rectangle(
                         frame,
@@ -503,7 +538,7 @@ class SingleShotDetector(ArcGISModel):
                     center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (
                             int(data[0]) + int((data[2]) / 2))
 
-                    vmti_detections = f'{text} 0.0 {top_left} {bottom_right} {center_pixel};' + vmti_detections
+                    vmti_detections = f'{object_id_mapping[text]} 0.0 {top_left} {bottom_right} {center_pixel};' + vmti_detections
             else:
                 image = frame
 
@@ -520,27 +555,40 @@ class SingleShotDetector(ArcGISModel):
         data = []
         index = 0
 
+        file_exists = True
         if not os.path.exists(metadata_file):
+            file_exists = False
             for vmti in vmtis:
                 data.append([vmti])
         else:
-            fields = 0
             with open(metadata_file, 'r') as csvinput:
                 for row in csv.reader(csvinput):
-                    fields = len(row)
                     data.append(row + [vmtis[index]])
-                    index = index + 1
-            if len(data) < len(vmtis):
-                index = len(data)
-                empty_row = [None for i in range(fields)]
-                while index < len(vmtis):
-                    data.append(empty_row + [vmtis[index]])
                     index = index + 1
 
         with open(metadata_file, 'w', newline='') as csvoutput:
             writer = csv.writer(csvoutput)
             for row in data:
                 writer.writerow(row)
+
+        if not multiplex:
+            return
+
+        if not HAS_ARCPY:
+            warn("Arcpy doesn't exist, multiplexing skipped.")
+            return
+
+        if not file_exists:
+            warn("Metadata file doesn't exist, multiplexing skipped.")
+            return
+
+        if not multiplex_file_path:
+            multiplex_file_path = os.path.join(
+                os.path.dirname(input_video_path),
+                os.path.basename(input_video_path).split('.')[0] + '_multiplex.mp4'
+            )
+
+        arcpy.ia.VideoMultiplexer(input_video_path, metadata_file, multiplex_file_path)
 
     def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=False, visualize=False):
         image = open_image(image_path).apply_tfms(self._data.valid_ds.tfms)
