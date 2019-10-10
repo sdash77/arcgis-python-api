@@ -387,14 +387,6 @@ class ArcGISModel(object):
         if model_metrics.get('average_precision_score'):
             self._emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
 
-        model_characteristics_dir = os.path.join(path.parent.absolute(), model_characteristics_folder)
-        if model_metrics.get('confusion_matrix'):
-            if not os.path.exists(model_characteristics_dir):
-                os.mkdir(model_characteristics_dir)
-            file = open(os.path.join(model_characteristics_dir, 'confusion_matrix.png'), 'wb')
-            file.write(model_metrics.get('confusion_matrix'))
-            file.close()
-
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
             resize_to = self._data.resize_to
@@ -507,9 +499,9 @@ class ArcGISModel(object):
             os.remove(saved_path.with_suffix('.pth'))
         else:
             zip_name = self._create_emd(saved_path)
-            self._save_model_characteristics(saved_path.parent.absolute()/model_characteristics_folder)
 
             if save_html:
+                self._save_model_characteristics(saved_path.parent.absolute()/model_characteristics_folder)
                 ArcGISModel._create_html(saved_path)
 
         with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
@@ -538,6 +530,9 @@ class ArcGISModel(object):
         self.show_results()
         plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
         plt.close()
+
+        if hasattr(self, '_save_confusion_matrix'):
+            self._save_confusion_matrix(model_characteristics_dir)
 
     def _publish_dlpk(self, dlpk_path, gis=None):
         gis_user = arcgis.env.active_gis if gis is None else gis

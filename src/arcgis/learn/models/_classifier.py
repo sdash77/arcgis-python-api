@@ -124,15 +124,20 @@ class FeatureClassifier(ArcGISModel):
         predictions_conf = (predictions_conf*100).tolist()
         return predicted_classes, predictions_conf
 
-    @property
-    def _model_metrics(self):
+    def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
-        confusion_matrix = tempfile.NamedTemporaryFile().name + '.png'
+        import fastai
+        import fastprogress
+        fastprogress.fastprogress.NO_BAR = True
+        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.force_console_behavior()
         self.plot_confusion_matrix()
-        plt.savefig(confusion_matrix)
+        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.master_bar, fastprogress.progress_bar
+        plt.savefig(os.path.join(path, 'confusion_matrix.png'))
         plt.close()
 
-        return {'confusion_matrix': open(confusion_matrix, 'rb').read()}
+    @property
+    def _model_metrics(self):
+        return {}
     
     def _create_emd(self, path):
         super()._create_emd(path)
