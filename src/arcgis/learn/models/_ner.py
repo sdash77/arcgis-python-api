@@ -156,8 +156,26 @@ class EntityRecognizer(ArcGISModel):
         json.dump(self._emd_template, open(path/Path(path.stem).with_suffix('.emd'), 'w'), indent=4)
         pathstr = path/Path(path.stem).with_suffix('.emd')
         print(f'Model has been saved to {path}')
+    
+    def save(self, name_or_path, **kwargs):
+        """
+        Saves the model weights, creates an Esri Model Definition.
+        Train the model for the specified number of epochs and using the
+        specified learning rates.
+        
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        name_or_path            Required string. Name of the model to save. It
+                                stores it at the pre-defined location. If path
+                                is passed then it stores at the specified path
+                                with model name as directory name. and creates
+                                all the intermediate directories.
+        =====================   ===========================================
+        """        
+        return self._save(name_or_path, **kwargs)
 
-    def _save(self, name_or_path, zip_files=True, framework='Spacy'):
+    def _save(self, name_or_path, zip_files=True):
         temp=self.path
         if self.model == None:
             return logging.error("Model needs to be fitted, before saving.")
@@ -199,7 +217,7 @@ class EntityRecognizer(ArcGISModel):
             emd = f.read()
         emd = json.loads(emd)
         name_or_path = emd.get('ModelDir')
-        address_tag= emd.get('Address_tag')
+        address_tag= emd.get('address_tag')
         if address_tag:
             self._has_address=True
             self._address_tag=address_tag
@@ -308,7 +326,7 @@ class EntityRecognizer(ArcGISModel):
         :returns: Pandas DataFrame
         """
 
-        if self.trained==True:
+        if self.trained:
             df = pd.DataFrame(columns = ['TEXT']+self.entities)
 
             if isinstance(text_list, list):
@@ -377,10 +395,10 @@ class EntityRecognizer(ArcGISModel):
         Make predictions on a batch of documents from specified ds_type.
         ds_type:['valid'|'train] 
         '''
-        if self._address_tag not in self.entities and self._has_address == True:
-            return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
-                1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
-                2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
+        # if self._address_tag not in self.entities and self._has_address == True:
+        #     return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
+        #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
+        #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
 
         if ds_type.lower() == 'valid':
             xs = self.val_ds._random_batch(self.val_ds.x)

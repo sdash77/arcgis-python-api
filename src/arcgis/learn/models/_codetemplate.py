@@ -471,6 +471,31 @@ sys.path.append(os.path.dirname(__file__))
 import numpy as np
 import math
 
+def get_centroid(polygon):
+    polygon = np.array(polygon)
+    return [polygon[:, 0].mean(), polygon[:, 1].mean()]        
+
+def check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding):
+    return ((centroid[1] >= (start_y + padding)) and  \
+                (centroid[1] <= (start_y + (chip_sz - padding))) and \
+                (centroid[0] >= (start_x + padding)) and \
+                (centroid[0] <= (start_x + (chip_sz - padding))))
+
+def find_i_j(centroid, n_rows, n_cols, chip_sz, padding, filter_detections):
+    for i in range(n_rows):
+        for j in range(n_cols):
+            start_x = i * chip_sz
+            start_y = j * chip_sz
+
+            if (centroid[1] > (start_y)) and (centroid[1] < (start_y + (chip_sz))) and (centroid[0] > (start_x)) and (centroid[0] < (start_x + (chip_sz))):
+                in_center = check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding)
+                if filter_detections:
+                    if in_center: 
+                        return i, j, in_center
+                else:
+                    return i, j, in_center
+    return None        
+
 def get_available_device(max_memory=0.8):
     '''
     select available device based on the memory utilization status of the device
@@ -599,9 +624,9 @@ class ArcGISInstanceDetector:
 
         self.child_instance_detector = ChildInstanceDetector()
         self.child_instance_detector.initialize(model, model_as_file)
-        
 
-    def getParameterInfo(self):     
+        
+    def getParameterInfo(self):       
         required_parameters = [
             {
                 'name': 'raster',
@@ -624,13 +649,11 @@ class ArcGISInstanceDetector:
                 'displayName': 'Device ID',
                 'description': 'Device ID'
             }
-        ]
-        xx = self.child_instance_detector.getParameterInfo(required_parameters)   
-        return xx
+        ]     
+        return self.child_instance_detector.getParameterInfo(required_parameters)
 
 
-    def getConfiguration(self, **scalars):
-       
+    def getConfiguration(self, **scalars):         
         configuration = self.child_instance_detector.getConfiguration(**scalars)
         if 'DataRange' in self.json_info:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
@@ -641,8 +664,7 @@ class ArcGISInstanceDetector:
     def getFields(self):
         return json.dumps(fields)
 
-    def getGeometryType(self):
-        
+    def getGeometryType(self):          
         return GeometryType.Polygon        
 
     def vectorize(self, **pixelBlocks):
@@ -654,61 +676,33 @@ class ArcGISInstanceDetector:
 
         masks, pred_class, pred_score = self.child_instance_detector.vectorize(**pixelBlocks)
 
-####################################################### PADDING ####################################################################################################    
-
-        def check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding):
-            return ((centroid[1] >= (start_y + padding)) and  \
-                        (centroid[1] <= (start_y + (chip_sz - padding))) and \
-                        (centroid[0] >= (start_x + padding)) and \
-                        (centroid[0] <= (start_x + (chip_sz - padding))))
-
-        def find_i_j(centroid, n_rows, n_cols, chip_sz, padding, filter_detections):
-            for i in range(n_rows):
-                for j in range(n_cols):
-                    start_x = i * chip_sz
-                    start_y = j * chip_sz
-
-                    if (centroid[1] > (start_y)) and (centroid[1] < (start_y + (chip_sz))) and (centroid[0] > (start_x)) and (centroid[0] < (start_x + (chip_sz))):
-                        in_center = check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding)
-                        if filter_detections:
-                            if in_center: 
-                                return i, j, in_center
-                        else:
-                            return i, j, in_center
-            return None        
-
         n_rows = int(math.sqrt(self.child_instance_detector.batch_size))
         n_cols = int(math.sqrt(self.child_instance_detector.batch_size))
         padding = self.child_instance_detector.padding
         keep_masks = []
         keep_scores = []
-        keep_classes = []
+        keep_classes = []       
 
         for idx, mask in enumerate(masks):
-
             if mask == []:
                 continue
-            centroid = list(np.array(mask[0]).mean(0))
-            grid_location = find_i_j(centroid, n_rows, n_cols, self.json_info['ImageHeight'], padding, True)#self.child_object_detector.filter_outer_padding_detections)        
+            centroid = get_centroid(mask[0])
+            grid_location = find_i_j(centroid, n_rows, n_cols, self.json_info['ImageHeight'], padding, True)
             if grid_location is not None:
-                i, j, in_center = grid_location  
-                local_polygons = []
-                for polygon in mask:
+                i, j, in_center = grid_location
+                for poly_id, polygon in enumerate(mask):
                     polygon = np.array(polygon)
-                    polygon[:, 0] = polygon[:, 0] - (2*i + 1)*padding
-                    polygon[:, 1] = polygon[:, 1] - (2*j + 1)*padding
-                    local_polygons.append(polygon.tolist())
-                    # if not in_center:
-                    #     scores[idx] = (self.child_object_detector.thres * 100) + scores[idx] * 0.01
-                keep_masks.append(local_polygons)
-                keep_scores.append(pred_score[idx])
-                keep_classes.append(pred_class[idx])
+                    polygon[:, 0] = polygon[:, 0] - (2*i + 1)*padding  # Inplace operation
+                    polygon[:, 1] = polygon[:, 1] - (2*j + 1)*padding  # Inplace operation            
+                    mask[poly_id] = polygon.tolist()
+                if in_center:
+                    keep_masks.append(mask)
+                    keep_scores.append(pred_score[idx])
+                    keep_classes.append(pred_class[idx])
 
         masks =  keep_masks
         pred_score = keep_scores
         pred_class = keep_classes        
-
-#######################################################################################################################################################################
 
 
         features['features'] = []
@@ -718,8 +712,8 @@ class ArcGISInstanceDetector:
             features['features'].append({
                 'attributes': {
                     'OID': mask_idx + 1,
-                    'Class': pred_class[mask_idx],
-                    'Confidence': pred_score[mask_idx] 
+                    'Class': self.json_info['Classes'][pred_class[mask_idx] - 1]['Name'],
+                    'Confidence': pred_score[mask_idx]
                 },
                 'geometry': {
                     'rings': mask
@@ -727,5 +721,6 @@ class ArcGISInstanceDetector:
         }) 
 
         return {'output_vectors': json.dumps(features)}
+
 
 """

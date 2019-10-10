@@ -115,6 +115,11 @@ def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
     =====================   ===========================================
     returns: A list [text,{entities},text,{entities}] that can be ingested by EntityRecognizer.
     """
+    import spacy
+    v_list=spacy.__version__.split('.')
+    version=sum([int(j)*10**(2*i) for i,j in enumerate(v_list[::-1])])
+    if version<20108: #checking spacy version
+        return logging.error(f'Entity recognition model needs spacy version 2.1.8 or higher. Your current spacy version is {spacy.__version__}, please update using \'pip install')
 
     if not HAS_SPACY:
         _raise_spacy_import_error()
@@ -263,9 +268,8 @@ class DatabunchNER():
             self._has_address=False
             return logging.warning("No Address tag found in your data.\n\
                 1. If your data has an address field, pass your address field name as address tag in class mapping \n\
-                e.g. - data=prepare_data(val_split_pct=.1,dataset_type=ds_type,\
-                                        path=training_data_folder,\
-                                        class_mapping={address_tag:address_field_name})\n\
+                e.g. - data=prepare_data(dataset_type=ds_type,path=training_data_folder,\n\t\t\t\
+                    class_mapping={address_tag:address_field_name})\n\
                 2. Else no action is required, if your data does not have any address information.")
 
     def show_batch(self):

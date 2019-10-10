@@ -99,7 +99,10 @@ class SaveModelCallback(TrackerCallback):
     def on_train_end(self, **kwargs):
         "Load the best model."      
         if self.every == "improvement" and self.load_best_at_end:
-            self.model.load('{}'.format(self.name))
+            try:
+                self.model.load('{}'.format(self.name))
+            except:
+                pass
             self.model.save('{}'.format(self.name))
 
 def _get_tail(model):
@@ -132,11 +135,11 @@ def _get_ms_tail(tail, bands, type_init='average'):
         rgb_map = {'r':0, 'g':1, 'b': 2}
         for i, j in enumerate(bands):
             b = rgb_map.get(str(j).lower(), None)
-            print(b)
+            #print(b)
             if b is not None:
                 new_tail.weight.data[:, i] = tail.weight.data[:, b]
             else:
-                print('unknown band')
+                #print('unknown band')
                 new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Wieghts for all other band weights
     return new_tail
 
@@ -179,12 +182,18 @@ class ArcGISModel(object):
         if backbone is None:
             self._backbone = models.resnet34
         elif type(backbone) is str:
-            self._backbone = getattr(models, backbone)
+            if hasattr(models, backbone):
+                self._backbone = getattr(models, backbone)
+            elif hasattr(models.detection, backbone):
+                self._backbone = getattr(models.detection, backbone)
         else:
             self._backbone = backbone
-        
-        self._is_multispectral = data._is_multispectral
-        if self._is_multispectral: # multispectral support
+
+        if hasattr(data, '_is_multispectral'): # multispectral support
+            self._is_multispectral = getattr(data, '_is_multispectral')
+        else:
+            self._is_multispectral = False
+        if self._is_multispectral: 
             self._imagery_type = data._imagery_type   
             self._bands = data._bands
             self._backbone_ = self._backbone
@@ -288,9 +297,10 @@ class ArcGISModel(object):
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
         ---------------------   -------------------------------------------
-        lr                      Required float or slice of floats. Learning rate
-                                to be used for training the model. Select from
-                                the `lr_find` plot.
+        lr                      Optional float or slice of floats. Learning rate
+                                to be used for training the model. If ``lr=None``, 
+                                an optimal learning rate is automatically deduced 
+                                for training the model.
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
                                 learning rate schedule. If set to `False` no 
@@ -357,11 +367,14 @@ class ArcGISModel(object):
         self.learn.unfreeze()
 
     def _create_emd(self, path):
+        backbone = self._backbone.__name__
+        if backbone == 'backbone_wrapper':
+            backbone = self._backbone_.__name__
         self._emd_template = {
             'ModelFile': path.name,
             'ImageHeight': self._data.chip_size,
             'ImageWidth': self._data.chip_size,
-            'ModelParameters': {'backbone': self._backbone.__name__},
+            'ModelParameters': {'backbone': backbone},
             'LearningRate': str(self._learning_rate),
             'ModelName': self.__repr__()
         }
@@ -370,14 +383,9 @@ class ArcGISModel(object):
 
         if model_metrics.get('accuracy'):
             self._emd_template['accuracy'] = model_metrics.get('accuracy')
-
-        model_characteristics_dir = os.path.join(path.parent, model_characteristics_folder)
-        if model_metrics.get('confusion_matrix'):
-            if not os.path.exists(model_characteristics_dir):
-                os.mkdir(model_characteristics_dir)
-            file = open(os.path.join(model_characteristics_dir, 'confusion_matrix.png'), 'wb')
-            file.write(model_metrics.get('confusion_matrix'))
-            file.close()
+        
+        if model_metrics.get('average_precision_score'):
+            self._emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
 
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
@@ -389,7 +397,7 @@ class ArcGISModel(object):
     def _create_html(path_model):
         import base64
 
-        model_characteristics_dir = os.path.join(path_model.parent, model_characteristics_folder)
+        model_characteristics_dir = os.path.join(path_model.parent.absolute(), model_characteristics_folder)
         loss_graph = os.path.join(model_characteristics_dir, 'loss_graph.png')
         show_results = os.path.join(model_characteristics_dir, 'show_results.png')
         confusion_matrix = os.path.join(model_characteristics_dir, 'confusion_matrix.png')
@@ -429,7 +437,12 @@ class ArcGISModel(object):
             """
         if emd_template.get('accuracy'):
             model_analysis = f"""
-            <p><b>Model Metrics:</b> {emd_template.get('accuracy')}</p>
+            <p><b>Accuracy:</b> {emd_template.get('accuracy')}</p>
+        """
+
+        if emd_template.get('average_precision_score'):
+            model_analysis = f"""
+            <p><b>Average Precision Score:</b> {emd_template.get('average_precision_score')}</p>
         """
 
         if model_analysis:
@@ -486,9 +499,9 @@ class ArcGISModel(object):
             os.remove(saved_path.with_suffix('.pth'))
         else:
             zip_name = self._create_emd(saved_path)
-            self._save_model_characteristics(saved_path.parent/model_characteristics_folder)
 
             if save_html:
+                self._save_model_characteristics(saved_path.parent.absolute()/model_characteristics_folder)
                 ArcGISModel._create_html(saved_path)
 
         with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
@@ -518,6 +531,9 @@ class ArcGISModel(object):
         plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
         plt.close()
 
+        if hasattr(self, '_save_confusion_matrix'):
+            self._save_confusion_matrix(model_characteristics_dir)
+
     def _publish_dlpk(self, dlpk_path, gis=None):
         gis_user = arcgis.env.active_gis if gis is None else gis
         if not gis_user:
@@ -543,7 +559,13 @@ class ArcGISModel(object):
         if emd_data.get('accuracy'):
             formatted_description = formatted_description + f"""
                 <p><b>Analysis of the model</b></p>
-                <p><b>Model Metrics:</b> {emd_data.get('accuracy')}</p>
+                <p><b>Accuracy:</b> {emd_data.get('accuracy')}</p>
+            """
+
+        if emd_data.get('average_precision_score'):
+            formatted_description = formatted_description + f"""
+                <p><b>Analysis of the model</b></p>
+                <p><b>Average Precision Score:</b> {emd_data.get('average_precision_score')}</p>
             """
 
         item = gis_user.content.add(

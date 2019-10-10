@@ -7781,7 +7781,7 @@ class Item(dict):
         except:
             folder = None
 
-        #get list of group IDs
+        # get list of group IDs
         group_ids = ''
         if isinstance(groups, list):
             for group in groups:
@@ -7789,12 +7789,12 @@ class Item(dict):
                     group_ids = group_ids + "," + group.id
 
                 elif isinstance(group, str):
-                    #search for group using title
-                    search_result = self._gis.groups.search(query='title:' + group, max_groups=1)
-                    if len(search_result) >0:
+                    # search for group using id
+                    search_result = self._gis.groups.search(query='id:' + group, max_groups=1)
+                    if len(search_result) > 0:
                         group_ids = group_ids + "," + search_result[0].id
                     else:
-                        raise Exception("Cannot find: " + group)
+                        raise Exception("Cannot find group with id: " + group)
                 else:
                     raise Exception("Invalid group(s)")
 
@@ -7859,12 +7859,12 @@ class Item(dict):
                     group_ids = group_ids + "," + group.id
 
                 elif isinstance(group, str):
-                    # search for group using title
-                    search_result = self._gis.groups.search(query='title:' + group, max_groups=1)
+                    # search for group using id
+                    search_result = self._gis.groups.search(query='id:' + group, max_groups=1)
                     if len(search_result) > 0:
                         group_ids = group_ids + "," + search_result[0].id
                     else:
-                        raise Exception("Cannot find: " + group)
+                        raise Exception("Cannot find group with id: " + group)
                 else:
                     raise Exception("Invalid group(s)")
 
