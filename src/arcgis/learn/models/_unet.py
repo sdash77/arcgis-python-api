@@ -9,7 +9,7 @@ try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
     import torch
     from torchvision import models
-    from fastai.vision.learner import unet_learner
+    from fastai.vision.learner import unet_learner, cnn_config
     import numpy as np
     from ._unet_utils import is_no_color, LabelCallback, _class_array_to_rbg
     from fastai.callbacks import EarlyStoppingCallback
@@ -57,6 +57,11 @@ class UnetClassifier(ArcGISModel):
 
         backbone_cut = None
         backbone_split = None
+
+        if hasattr(self, '_backbone_'):
+            _backbone_meta = cnn_config(self._backbone_)
+            backbone_cut = _backbone_meta['cut']
+            backbone_split = _backbone_meta['split']
 
         if self._backbone == models.mobilenet_v2:
             backbone_cut = -1

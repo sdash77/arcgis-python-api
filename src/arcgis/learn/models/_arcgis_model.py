@@ -220,6 +220,7 @@ class ArcGISModel(object):
     def _arcgis_init_callback(self):
         if self._is_multispectral:
             next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
+            self.learn.create_opt(slice(3e-3))
             if hasattr(self, '_show_results_multispectral'):
                 self.show_results = self._show_results_multispectral
             
