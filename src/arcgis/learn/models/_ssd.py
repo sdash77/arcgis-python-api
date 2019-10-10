@@ -601,7 +601,12 @@ class SingleShotDetector(ArcGISModel):
         if visualize:
             image.show(y=bbox)
 
-        return None if bbox is None else bbox.data, bbox.scores
+        if bbox is None:
+            return None
+        elif return_scores:
+            return (bbox.data, bbox.scores)
+        else:
+            return bbox.data
 
     def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
         """
