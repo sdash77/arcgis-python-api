@@ -42,11 +42,25 @@ class _EmptyData():
         self.chip_size = chip_size
 
 class MaskRCNN(ArcGISModel):
+    """
+    Creates a MaskRCNN Instance segmentation object
 
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    data                    Required fastai Databunch. Returned data object from
+                            `prepare_data` function.
+    ---------------------   -------------------------------------------
+    pretrained_path         Optional string. Path where pre-trained model is
+                            saved.
+    =====================   ===========================================
+
+    :returns: `MaskRCNN` Object
+    """
     def __init__(self, data, backbone=None, pretrained_path=None):
 
         super().__init__(data, backbone)
-        
+    
         if backbone is None:
             self._backbone = models.detection.maskrcnn_resnet50_fpn
 
@@ -81,6 +95,24 @@ class MaskRCNN(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
+        """
+        Creates a RetinaNet Object Detector from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+
+        =====================   ===========================================
+
+        :returns: `MaskRCNN` Object
+        """
+
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
@@ -134,62 +166,115 @@ class MaskRCNN(ArcGISModel):
     def _model_metrics(self):
         return {}
 
-    def show_results(self, ds_type = 'valid', thresold = 0.5, nrows = None, imsize = 5, index = 0, alpha = 0.5, cmap = 'tab20'):
+    def _predict_results(self, xb):
+
+        self.learn.model.eval()
+        predictions = self.learn.model(xb.cuda())
+        predictionsf =[]
+        for i in range(len(predictions)):
+            predictionsf.append({})
+            predictionsf[i]['masks'] = predictions[i]['masks'].detach().cpu().numpy()
+            predictionsf[i]['boxes'] = predictions[i]['boxes'].detach().cpu().numpy()
+            predictionsf[i]['labels'] = predictions[i]['labels'].detach().cpu().numpy()
+            predictionsf[i]['scores'] = predictions[i]['scores'].detach().cpu().numpy()
+            del predictions[i]['masks']
+            del predictions[i]['boxes']
+            del predictions[i]['labels']
+            del predictions[i]['scores']
+        del xb
+        torch.cuda.empty_cache()      
+
+        return predictionsf
+
+    def _predict_postprocess(self, predictions, threshold=0.5, box_threshold = 0.5):
+
+        pred_mask = []
+        pred_box = []
+
+        for i in range(len(predictions)):
+            out = predictions[i]['masks'].squeeze()
+            pred_box.append([])
+
+            if out.shape[0] != 0:  # handle for prediction with n masks
+                if len(out.shape) == 2: # for out dimension hxw (in case of only one predicted mask)
+                    out = out[None]
+                ymask = np.where(out[0]> threshold, 1, 0)
+                #if torch.max(out[0]) > threshold:
+                if predictions[i]['scores'][0] > box_threshold:
+                    pred_box[i].append(predictions[i]['boxes'][0])
+                for j in range(1,out.shape[0]):
+                    ym1 = np.where(out[j]> threshold, j+1, 0)
+                    ymask += ym1
+                    #if torch.max(out[j]) > threshold:
+                    if predictions[i]['scores'][j] > box_threshold:
+                        pred_box[i].append(predictions[i]['boxes'][j])
+            else:
+                ymask = np.zeros((self._data.chip_size, self._data.chip_size)) # handle for not predicted masks
+            pred_mask.append(ymask)
+        return pred_mask, pred_box
+
+    def show_results(self, mode='mask', mask_threshold=0.5, box_threshold=0.7, nrows=None, imsize=5, index=0, alpha=0.5, cmap='tab20'):
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        mode                    Required arguments within ['bbox', 'mask', 'bbox_mask'].
+                                bbox - For visualizing only boundig boxes.
+                                mask - For visualizing only mask
+                                bbox_mask - For visualizing both mask and bounding boxes.
+        ---------------------   -------------------------------------------
+        mask_threshold          Optional float. The probabilty above which
+                                a pixel will be considered mask.
+        ---------------------   -------------------------------------------
+        box_threshold           Optional float. The pobabilty above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nrows                   Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+        """ 
+
+        if not type(mode) == str:
+            raise Exception("mode can be only ['bbox', 'mask', 'bbox_mask']")
+
         # Get Number of items
         if nrows is None:
             nrows = self._data.batch_size
         ncols=2
- 
+    
         # Get Batch
         xb,yb = self._data.one_batch('DatasetType.Valid')
         
-        # prediction
-        self.learn.model.eval()
-        predictions = self.learn.model(xb.cuda())
-        pred_mask = []
-        pred_box = []
-        pred_class = []
-        for i in range(len(predictions)):
-            out = predictions[i]['masks'].squeeze()
-            pred_box.append([])
-            pred_class.append([])
-            if out.shape[0] != 0:  # handle for prediction with n masks
-                if len(out.shape) == 2: # for out dimension hxw (in case of only one predicted mask)
-                    out = out[None]
-                ymask = np.where(out[0]> thresold, 1, 0)
-                if torch.max(out[0]) > thresold:
-                    pred_box[i].append(predictions[i]['boxes'][0])
-                    pred_class[i].append(predictions[i]['labels'][0])
-                for j in range(1,out.shape[0]):
-                    ym1 = np.where(out[j]> thresold, j+1, 0)
-                    ymask += ym1
-                    if torch.max(out[j]) > thresold:
-                        pred_box[i].append(predictions[i]['boxes'][j])
-                        pred_class[i].append(predictions[i]['labels'][j])
-            else:
-                ymask = np.zeros((self._data.chip_size, self._data.chip_size)) # handle for not predicted masks
-            pred_mask.append(ymask)
+        predictions = self._predict_results(xb)
+
+        pred_mask, pred_box = self._predict_postprocess(predictions, mask_threshold, box_threshold)
 
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
         fig.suptitle('Ground Truth / Predictions', fontsize=20)
 
         for i in range(nrows):
-            ax[i][0].imshow(xb[i].cpu().numpy().transpose(1,2,0))
+            ax[i][0].imshow(xb[i].numpy().transpose(1,2,0))
             ax[i][0].axis('off')
-            yb_mask = yb[i][0].numpy()
-            for j in range(1, yb[i].shape[0]):
-                max_unique = np.max(np.unique(yb_mask))
-                yb_j = np.where(yb[i][j]>0, yb[i][j] + max_unique, yb[i][j])
-                yb_mask += yb_j
-            ax[i][0].imshow(yb_mask, cmap = cmap, alpha = alpha)
+            if mode in ['mask', 'bbox_mask']:
+                yb_mask = yb[i][0].numpy()
+                for j in range(1, yb[i].shape[0]):
+                    max_unique = np.max(np.unique(yb_mask))
+                    yb_j = np.where(yb[i][j]>0, yb[i][j] + max_unique, yb[i][j])
+                    yb_mask += yb_j
+                ax[i][0].imshow(yb_mask, cmap = cmap, alpha = alpha)
             ax[i][0].axis('off')
-            ax[i][1].imshow(xb[i].cpu().numpy().transpose(1,2,0))
+            ax[i][1].imshow(xb[i].numpy().transpose(1,2,0))
             ax[i][1].axis('off')
-            ax[i][1].imshow(pred_mask[i], cmap=cmap, alpha = alpha)
-            if pred_box[i] != []:
-                for num_boxes in pred_box[i]:
-                    rect = patches.Rectangle((num_boxes[0], num_boxes[1]), num_boxes[2]-num_boxes[0], num_boxes[3]-num_boxes[1], linewidth=1, edgecolor='r', facecolor='none')
-                    ax[i][1].add_patch(rect)
+            if mode in ['mask', 'bbox_mask']:
+                ax[i][1].imshow(pred_mask[i], cmap=cmap, alpha = alpha)
+            if mode in ['bbox','bbox']:
+                if pred_box[i] != []:
+                    for num_boxes in pred_box[i]:
+                        rect = patches.Rectangle((num_boxes[0], num_boxes[1]), num_boxes[2]-num_boxes[0], num_boxes[3]-num_boxes[1], linewidth=1, edgecolor='r', facecolor='none')
+                        ax[i][1].add_patch(rect)
             ax[i][1].axis('off')
         plt.subplots_adjust(top=0.95)
+        torch.cuda.empty_cache()
         #plt.show()

@@ -500,6 +500,7 @@ class ArcGISModel(object):
         else:
             zip_name = self._create_emd(saved_path)
 
+            # print(save_html)
             if save_html:
                 self._save_model_characteristics(saved_path.parent.absolute()/model_characteristics_folder)
                 ArcGISModel._create_html(saved_path)
@@ -527,7 +528,6 @@ class ArcGISModel(object):
             self.learn.recorder.plot_losses()
             plt.savefig(os.path.join(model_characteristics_dir, 'loss_graph.png'))
             plt.close()
-
         self.show_results()
         plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
         plt.close()
