@@ -179,7 +179,10 @@ def plot(df,
     fc = df.spatial.to_feature_collection(name=name)
     df.columns = col_old
     gt = [el for el in df.spatial.geometry_type if el is not None]
-    if renderer_type is None and \
+    if renderer_type is None and renderer is None:  # Use the renderer off of the SeDF
+        r = df.spatial.renderer
+        fc.layer['layerDefinition']['drawingInfo']['renderer'] = r.renderer  
+    elif renderer_type is None and \
        not renderer is None:
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = renderer
         if map_exists:
@@ -188,7 +191,7 @@ def plot(df,
             map_widget.add_layer(fc, options={'title':name})
             return map_widget
         return
-    elif renderer_type in [None, 's']:
+    elif renderer_type in ['s']:
         renderer_type = 's' # simple (default)
         r = generate_renderer(
                    geometry_type=gt[0].lower(),
