@@ -503,9 +503,10 @@ class ArcGISModel(object):
             if save_html:
                 self._save_model_characteristics(saved_path.parent.absolute()/model_characteristics_folder)
                 ArcGISModel._create_html(saved_path)
-
-        with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
-            f.write(self._code)
+                
+        if self._emd_template.get('InferenceFunction', False):
+            with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
+                f.write(self._code)
         if zip_files:
             _create_zip(str(zip_name), str(saved_path.parent))
         if arcgis.env.verbose:
