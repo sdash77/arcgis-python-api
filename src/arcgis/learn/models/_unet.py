@@ -159,6 +159,7 @@ class UnetClassifier(ArcGISModel):
         if self._emd_template["IsMultispectral"]:
             self._emd_template["Bands"] = self._data._bands
             self._emd_template["ImageryType"] = self._data._imagery_type
+            self._emd_template["ExtractBands"] = list(range(len(self._data._bands)))
             self._emd_template["NormalizationStats"] = {
                 "band_min_values": self._data._band_min_values, 
                 "band_max_values": self._data._band_max_values, 
