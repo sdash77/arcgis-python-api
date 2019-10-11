@@ -35,6 +35,7 @@ class _EmptyData():
         self.loss_func = loss_func
         self.chip_size = chip_size
 
+
 class RetinaNet(ArcGISModel):
     """
     Creates a RetinaNet Object Detector with the specified zoom scales
@@ -97,7 +98,13 @@ class RetinaNet(ArcGISModel):
         self.learn.freeze()
         if pretrained_path is not None:
             self.load(str(pretrained_path))
-    
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
+
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
@@ -140,24 +147,10 @@ class RetinaNet(ArcGISModel):
 
         json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
         return path.stem
- 
-    def _html_metrics(self):
-        """
-        Creates html doc for model name and metric to be returned to parent class.
-        :returns: model name and average precision score as HTML docs
-        """
 
-        html_model = f"""
-        <p><b>{self.name}</b></p>
-        """
-        ap_score = self.average_precision_score()
-        ap_df = pd.DataFrame(list(ap_score.items()), columns=['Class', 'Score'])
-        html_string = f""" 
-        <p><b>Mean average precision score: </b></p>
-        {ap_df.to_html()} 
-        """
-        return html_model, html_string
-
+    @property
+    def _model_metrics(self):
+        return {'accuracy': self.average_precision_score(show_progress=False)}
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -258,13 +251,19 @@ class RetinaNet(ArcGISModel):
             image = image.resize(size=self._data.resize_to)
 
         bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=return_scores, ssd=self)[0] ## ssd because 'data' is an SSD Object
+        # refer to analyze_pred and reconstruct in _ssd_utils.py to see how 'predict' works
 
         if visualize:
             image.show(y=bbox)
 
-        return None if bbox is None else (bbox.data, bbox.scores)
+        if bbox is None:
+            return None
+        elif return_scores:
+            return (bbox.data, bbox.scores)
+        else:
+            return bbox.data
 
-    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.1, mean=False):
+    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.1, mean=False, show_progress=True):
         """
         Computes average precision on the validation set for each class.
 
@@ -288,7 +287,7 @@ class RetinaNet(ArcGISModel):
         :returns: `dict` if mean is False otherwise `float`
         """
 
-        aps = compute_class_AP(self, self._data.valid_dl, n_classes=(self._data.c - 1), detect_thresh=detect_thresh, iou_thresh=iou_thresh)
+        aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
         if mean:
             return statistics.mean(aps)
         else:

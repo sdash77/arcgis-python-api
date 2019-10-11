@@ -69,6 +69,7 @@ tests/integration/test-results/
 /*.wpr
 /*.wpu
 tests/geckodriver.log
+tests/.coverage*
 
 #Any builds from setup.py for pip go in a dist folder
 /src/dist

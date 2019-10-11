@@ -99,6 +99,12 @@ class FeatureClassifier(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
 
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
+
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
@@ -118,30 +124,30 @@ class FeatureClassifier(ArcGISModel):
         predictions_conf = (predictions_conf*100).tolist()
         return predicted_classes, predictions_conf
 
-
-    def _html_metrics(self):
+    def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
-        import base64
-        c_matrix_png = self.plot_confusion_matrix()
-        c_matrix_dir = tempfile.NamedTemporaryFile().name + '.png'
-        plt.savefig(c_matrix_dir)
+        import fastai
+        import fastprogress
+        fastprogress.fastprogress.NO_BAR = True
+        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.force_console_behavior()
+        self.plot_confusion_matrix()
+        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.master_bar, fastprogress.progress_bar
+        plt.savefig(os.path.join(path, 'confusion_matrix.png'))
         plt.close()
-        encoded_cmatrix_img = base64.b64encode(open(c_matrix_dir, 'rb').read()).decode('utf-8')
-        encoded_cmatrix_img = "data:image/png;base64,{0}".format(encoded_cmatrix_img)
-        html_model = f"""
-        <p><b>Feature Classifier</b></p>
-        """
-        html_string = f""" <p><b>Confusion Matrix</p></b>
-        <img src="{encoded_cmatrix_img}" alt="Confusion Matrix" width="500" height="333">
-        """
-        return html_model, html_string
+
+    @property
+    def _model_metrics(self):
+        return {}
     
     def _create_emd(self, path):
         super()._create_emd(path)
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["ModelConfiguration"] = "_classifier"
-        self._emd_template["InferenceFunction"] = "ArcGISFeatureClassifier.py"
+        self._emd_template["Framework"] = "PyTorch"
+        self._emd_template["ModelConfiguration"] = "FeatureClassifier"
+        self._emd_template["ModelType"] = "ObjectClassification"
         self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['CropSizeFixed'] = 1  # hardcoded
+        self._emd_template['BlackenAroundFeature'] = 0 #hardcoded
+        self._emd_template['ImageSpaceUsed'] = "MAP_SPACE"
         self._emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes):
@@ -243,27 +249,7 @@ class FeatureClassifier(ArcGISModel):
                                 `prepare_data` function.
         """
         interp = ClassificationInterpretation.from_learner(self.learn)
-        interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=True)        
-
-    def _get_model_metrics(self, **kwargs):
-
-        interp = ClassificationInterpretation.from_learner(self.learn)
-        cm = interp.confusion_matrix(slice_size=1)
-
-        message = ""
-        for value in self.learn.data.classes:
-            message = message + \
-                      "\t" + f"predicted_{(self.learn.data.class_mapping.get(value) or self.learn.data.class_mapping.get(int(value)))}"
-
-        message = message + "\n"
-        for i in range(len(self.learn.data.classes)):
-            message = message + (self.learn.data.class_mapping.get(self.learn.data.classes[i]) or self.learn.data.class_mapping.get(
-                int(self.learn.data.classes[i]))) + "\t"
-            for val in cm[i]:
-                message = message + "\t" + str(val) + "\t"
-            message = message + "\n"
-
-        return message
+        interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=True)
 
     @staticmethod
     def _convert_to_degrees(value, reference):

@@ -6114,6 +6114,23 @@ class User(dict):
             return all(status)
         return res
     #----------------------------------------------------------------------
+    def delete_thumbnail(self):
+        """
+        Removes the thumbnail from the user's profile.
+        
+        :returns: Boolean
+        
+        """
+        if self._gis.version >= [7,3]:
+            url = self._gis._portal.resturl + "community/users/%s/deleteThumbnail" % self.username
+            params = {'f' : 'json'}
+            res = self._gis._con.post(url, params)
+            if 'success' in res:
+                return res['success']
+            return res
+        else:
+            raise Exception("The operation delete_thumbnail is not supported on this portal.")
+    #----------------------------------------------------------------------
     def reset(self,
               password=None,
               new_password=None,
@@ -7764,7 +7781,7 @@ class Item(dict):
         except:
             folder = None
 
-        #get list of group IDs
+        # get list of group IDs
         group_ids = ''
         if isinstance(groups, list):
             for group in groups:
@@ -7772,12 +7789,12 @@ class Item(dict):
                     group_ids = group_ids + "," + group.id
 
                 elif isinstance(group, str):
-                    #search for group using title
-                    search_result = self._gis.groups.search(query='title:' + group, max_groups=1)
-                    if len(search_result) >0:
+                    # search for group using id
+                    search_result = self._gis.groups.search(query='id:' + group, max_groups=1)
+                    if len(search_result) > 0:
                         group_ids = group_ids + "," + search_result[0].id
                     else:
-                        raise Exception("Cannot find: " + group)
+                        raise Exception("Cannot find group with id: " + group)
                 else:
                     raise Exception("Invalid group(s)")
 
@@ -7842,12 +7859,12 @@ class Item(dict):
                     group_ids = group_ids + "," + group.id
 
                 elif isinstance(group, str):
-                    # search for group using title
-                    search_result = self._gis.groups.search(query='title:' + group, max_groups=1)
+                    # search for group using id
+                    search_result = self._gis.groups.search(query='id:' + group, max_groups=1)
                     if len(search_result) > 0:
                         group_ids = group_ids + "," + search_result[0].id
                     else:
-                        raise Exception("Cannot find: " + group)
+                        raise Exception("Cannot find group with id: " + group)
                 else:
                     raise Exception("Invalid group(s)")
 

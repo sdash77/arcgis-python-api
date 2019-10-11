@@ -2830,36 +2830,36 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm">statistics function</a>.
     The arguments for the statistics function are as follows:
 
-    
-    The focal_statistics() is different from focal_stats() in the following aspects:
-
-    focal_statistics() supports  Minimum, Maximum, Mean and Standard Deviation.
-    while focal_stats() supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, Variety
-
-    focal_statistics() supports only Rectangle,
-    while focal_stats() supports Rectangle, Circle, Annulus, Wedge, Irregular, Weight neighbourhoods, 
-
-    Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
-    This option is not present in focal_stats()    
-
-    Option to determine whether NoData values are ignored or not is available in focal_stats() by setting bool value for ignore_no_data param.
-    This option is not present in focal_statistics()
-
     :param raster: input raster
     :param kernel_columns: int (e.g. 3)
     :param kernel_rows: int (e.g. 3)
-    :param stat_type: int or string 
-					  There are four types of focal statistical functions:
-					  1=Min, 2=Max, 3=Mean, 4=StandardDeviation
-					  -Min-Calculates the minimum value of the pixels within the neighborhood
-				      -Max-Calculates the maximum value of the pixels within the neighborhood
-				      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
-				      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
+    :param stat_type: int or string.
+                      There are four types of focal statistical functions:
+                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+                      -Min-Calculates the minimum value of the pixels within the neighborhood
+                      -Max-Calculates the maximum value of the pixels within the neighborhood
+                      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
+                      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
     :param astype: output pixel type
     :return: the output raster
+
+    .. note::
+        The focal_statistics() function is different from the focal_stats() function in the following aspects:
+
+        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation.
+        The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
+
+        The focal_statistics() function supports only Rectangle.
+        The focal_stats() function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods.
+
+        The option to determine if NoData pixels are to be processed out is available in the focal_statistics() function by setting a bool value for fill_no_data_only param.
+        This option is not present in the focal_stats() function.
+
+        The option to determine whether NoData values are ignored or not is available in the focal_stats() function by setting a bool value for ignore_no_data param.
+        This option is not present in the focal_statistics() function.
 
     """
 
@@ -3815,20 +3815,6 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
 
-    The focal_stats() is different from focal_statistics() in the following aspects:
-
-    focal_stats() supports Mean, Majority, Maximum, Median, Minimum, Minority, Percentile, Range, Standard deviation, Sum, Variety,
-    while the focal_statistics() supports only Minimum, Maximum, Mean and Standard Deviation.
-
-    focal_stats() supports Rectangle, Circle, Annulus, Wedge, Irregular, Weight neighbourhoods, focal_statistics() supports only Rectangle.
-
-    Option to determine whether NoData values are ignored or not is available in focal_stats() by setting bool value for ignore_no_data param.
-    This option is not present in focal_statistics()
-
-    Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
-    This option is not present in focal_stats()
-
-
     :param raster: input raster
     :param neighborhood_type: int, default is 1. The shape of the area around each cell used to calculate the statistic.
                                1 = Rectangle
@@ -3838,45 +3824,73 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
                                5 = Irregular
                                6 = Weight
                                
-    :param width: int, default is 3 - specified when neighborhood_type is Rectangle
-    :param height: int, default is 3 - specified when neighborhood_type is Rectangle
-    :param inner_radius: int, default is 1 - specified when neighborhood_type is Annulus
-    :param outer_radius: int, default is 3 - specified when neighborhood_type is Annulus
-    :param radius: int default is 3 - specified when neighborhood_type is Circle or Wedge
-    :param start_angle: float, default is 0
-    :param end_angle: float, default is 90
-    :param neighborhood_values: - specified when neighborhood_type is Irregular or Weight.
-                                  It can be a list of list, in which the width and height will be automatically set from the columns and rows 
-                                  respectively of the two dimensional list.
-                                  or a one dimensional list obtained from flattening a two dimensional list. In this case 
-                                  the dimensions needs to be specified explicitly in width and height parameters
-    :param stat_type: int
-                      There are 11 types of focal statistical functions:
+    :param width: int, default is 3. Specified when neighborhood_type is Rectangle
+    :param height: int, default is 3. Specified when neighborhood_type is Rectangle
+    :param inner_radius: int, default is 1. Specified when neighborhood_type is Annulus
+    :param outer_radius: int, default is 3. Specified when neighborhood_type is Annulus
+    :param radius: int, default is 3. Specified when neighborhood_type is Circle or Wedge
+    :param start_angle: float, default is 0. Specified when neighborhood_type is Wedge
+    :param end_angle: float, default is 90. Specified when neighborhood_type is Wedge
+    :param neighborhood_values: Specified when neighborhood_type is Irregular or Weight.
+                                It can be a list of lists, in which the width and height will be automatically set from the columns and rows 
+                                of the two dimensional list, respectively. 
+                                Alternatively, it can be a one dimensional list obtained from flattening a two dimensional list. In this case, 
+                                the dimensions need to be specified explicitly with the width and height parameters.
+    :param stat_type: int, default is 3(Mean)
+
+                      There are 11 types of statistics available:
                       1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
                       7=Range, 8=Standard deviation, 9=Sum, 10=Variety, 12=Percentile
-                      Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
-                      Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
-                      Mean = Calculates the mean (average value) of the cells in the neighborhood.
-                      Median = Calculates the median of the cells in the neighborhood.
-                      Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
-                      Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
-                      Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
-                      Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
-                      Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
-                      Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
-                      Percentile = Calculates a specified percentile of the cells in the neighborhood.
 
-                      Default is 3(Mean)
-    :param ignore_no_data: boolean
-                           True. Specifies that if a NoData value exists within a neighborhood, 
-                           the NoData value will be ignored. Only cells within the neighborhood 
-                           that have data values will be used in determining the output value. 
-                           This is the default.
-                           False - Specifies that if any cell in a neighborhood has a value of 
-                           NoData, the output for the processing cell will be NoData
-    :param percentile_value: float, default is 90. 
+                          Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
+
+                          Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
+
+                          Mean = Calculates the mean (average value) of the cells in the neighborhood.
+
+                          Median = Calculates the median of the cells in the neighborhood.
+
+                          Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
+
+                          Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
+
+                          Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
+
+                          Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
+
+                          Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
+
+                          Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
+
+                          Percentile = Calculates a specified percentile of the cells in the neighborhood.
+
+    :param ignore_no_data: boolean, default is True.
+
+                        True - Specifies that if a NoData value exists within a neighborhood, 
+                        the NoData value will be ignored. Only cells within the neighborhood 
+                        that have data values will be used in determining the output value. 
+                        This is the default.
+
+                        False - Specifies that if any cell in a neighborhood has a value of 
+                        NoData, the output for the processing cell will be NoData.
+    :param percentile_value: float, default is 90. Denotes which percentile to calculate when the stat_type is Percentile.   
+                             The value can range from 0 to 100.
 
     :return: the output raster
+
+    .. note::
+        The focal_stats() function is different from the focal_statistics() function in the following aspects:
+
+        The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Percentile, Range, Standard deviation, Sum, and Variety.
+        The focal_statistics() function supports only Minimum, Maximum, Mean, and Standard Deviation.
+
+        The focal_stats() function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods. The focal_statistics() function supports only Rectangle.
+
+        The option to determine whether NoData values are ignored or not is available in the focal_stats() function by setting a bool value for ignore_no_data param.
+        This option is not present in the focal_statistics() function.
+
+        The option to determine if NoData pixels are to be processed out is available in the focal_statistics() function by setting a bool value for fill_no_data_only param.
+        This option is not present in the focal_stats() function.
 
     """
 
