@@ -190,11 +190,11 @@ class UnetClassifier(ArcGISModel):
         nrows = rows
         ncols=2
 
-        ds = self._data.train_ds
+        ds = self._data.valid_ds
         if kwargs.get('type_ds', None) is not None:
             type_ds = kwargs.get('type_ds')
-            if getattr(self, type_ds, None) is not None:
-                ds = getattr(self, type_ds)
+            if hasattr(self._data, type_ds):
+                ds = getattr(self._data, type_ds)
             else:
                 e = Exception(f'could not find {str(type_ds)} in data.')
                 raise(e)
