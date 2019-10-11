@@ -495,13 +495,15 @@ class SingleShotDetector(ArcGISModel):
                         os.path.dirname(input_video_path),
                         os.path.basename(input_video_path).split('.')[0] + '_predictions.avi'
                     )
-                video_obj = cv2.VideoWriter(output_file_path, 0, fps, (width, height))
+                video_obj = cv2.VideoWriter(output_file_path, cv2.VideoWriter_fourcc(*'DIVX'), fps, (width, height))
+
             image = Image(pil2tensor(PIL.Image.fromarray(frame).convert('RGB'), dtype=np.float32).div_(255))
 
             if self._data.chip_size is not None:
                 image = image.resize(size=self._data.chip_size)
 
-            bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=False, ssd=self)[0]
+            bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
+            scores = bbox.scores
             vmti_detections = '\n'
             if bbox:
                 bboxes, lbls = bbox._compute_boxes()
@@ -538,7 +540,7 @@ class SingleShotDetector(ArcGISModel):
                     center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (
                             int(data[0]) + int((data[2]) / 2))
 
-                    vmti_detections = f'{object_id_mapping[text]} 0.0 {top_left} {bottom_right} {center_pixel};' + vmti_detections
+                    vmti_detections = f'{object_id_mapping[text]} {scores[i]*100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
             else:
                 image = frame
 
@@ -556,6 +558,8 @@ class SingleShotDetector(ArcGISModel):
         index = 0
 
         file_exists = True
+        fields = []
+
         if not os.path.exists(metadata_file):
             file_exists = False
             for vmti in vmtis:
@@ -563,8 +567,16 @@ class SingleShotDetector(ArcGISModel):
         else:
             with open(metadata_file, 'r') as csvinput:
                 for row in csv.reader(csvinput):
+                    if index == 0:
+                        fields = row
                     data.append(row + [vmtis[index]])
                     index = index + 1
+
+        if 'vmtilocaldataset' in fields:
+            warn("Field 'vmtilocaldataset' already exists in the file, appending column at the end.")
+
+        if len(data) < len(vmtis):
+            warn(f"Writing {len(data)} rows only!")
 
         with open(metadata_file, 'w', newline='') as csvoutput:
             writer = csv.writer(csvoutput)
