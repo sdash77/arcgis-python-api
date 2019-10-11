@@ -86,7 +86,7 @@ class ArcGISSegmentationLabelList(ImageList):
 
             for j in range(len(self.class_mapping)):
 
-                if len(fn) != k:
+                if k < len(fn):
                     lbl_name = int(fn[k].parent.name)
                 else:
                     lbl_name = len(self.class_mapping) + 1
@@ -145,7 +145,7 @@ class train_callback(LearnerCallback):
                 mask = np.array(last_target[i].data[j])
                 obj_ids = np.unique(mask)
 
-                if len(obj_ids)==0:
+                if len(obj_ids)==1:
                     continue
 
                 obj_ids = obj_ids[1:]

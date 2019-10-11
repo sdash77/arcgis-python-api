@@ -444,10 +444,10 @@ def prepare_data(path,
 
         if transforms is None:
             transforms = get_transforms(
-                flip_vert=True,
-                max_rotate=90.,
-                max_zoom=3.,
-                max_lighting=0.5,
+                #flip_vert=True,
+                #max_rotate=90.,
+                #max_zoom=3.,
+                #max_lighting=0.5,
             )
     
     elif dataset_type == 'Classified_Tiles':
@@ -559,7 +559,7 @@ def prepare_data(path,
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
     if dataset_type == 'RCNN_Masks':
-        data = (src.transform(transforms, size=chip_size, tfm_y=True)
+        data = (src.transform(transforms, size=chip_size, tfm_y=True) #transforms, 
                 .databunch(**databunch_kwargs))
     elif _is_multispectral:
         data = data.databunch(**databunch_kwargs)

@@ -72,3 +72,10 @@ PSPNetClassifier
     :members:
     :inherited-members:
     :undoc-members:
+
+MaskRCNN
+------------------
+.. autoclass:: arcgis.learn.MaskRCNN
+    :members:
+    :inherited-members:
+    :undoc-members:
