@@ -503,9 +503,9 @@ class SingleShotDetector(ArcGISModel):
                 image = image.resize(size=self._data.chip_size)
 
             bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
-            scores = bbox.scores
             vmti_detections = '\n'
             if bbox:
+                scores = bbox.scores
                 bboxes, lbls = bbox._compute_boxes()
 
                 bboxes.add_(1).mul_(torch.tensor([height / 2, width / 2, height / 2, width / 2])).long()
