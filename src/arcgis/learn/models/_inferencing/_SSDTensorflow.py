@@ -2,9 +2,12 @@ try:
     import os, sys, json
     import numpy as np
     import math
-    import onnx
-    from onnx_tf.backend import prepare
-    from . import tf_util
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        import onnx
+        from onnx_tf.backend import prepare
+        from . import tf_util
     HAS_TF_ONNX = True
 
     prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
