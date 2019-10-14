@@ -559,8 +559,12 @@ def prepare_data(path,
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
     if dataset_type == 'RCNN_Masks':
-        data = (src.transform(transforms, size=chip_size, tfm_y=True) #transforms, 
+        if transforms ==  None:
+            data = (src.transform(size=chip_size, tfm_y=True)
                 .databunch(**databunch_kwargs))
+        else:
+            data = (src.transform(transforms, size=chip_size, tfm_y=True) 
+                    .databunch(**databunch_kwargs))
     elif _is_multispectral:
         data = data.databunch(**databunch_kwargs)
 

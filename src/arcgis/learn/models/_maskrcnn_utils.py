@@ -89,7 +89,7 @@ class ArcGISSegmentationLabelList(ImageList):
                 if k < len(fn):
                     lbl_name = int(fn[k].parent.name)
                 else:
-                    lbl_name = len(self.class_mapping) + 1
+                    lbl_name = len(self.class_mapping) + 2
                 if lbl_name == j+1:                    
                     img = io.imread(fn[k])
                     k = k + 1

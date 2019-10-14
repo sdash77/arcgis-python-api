@@ -96,7 +96,7 @@ class MaskRCNN(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a RetinaNet Object Detector from an Esri Model Definition (EMD) file.
+        Creates a MaskRCNN Instance segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -236,7 +236,7 @@ class MaskRCNN(ArcGISModel):
         =====================   ===========================================
         """ 
 
-        if not type(mode) == str:
+        if mode not in ['bbox', 'mask', 'bbox_mask']:
             raise Exception("mode can be only ['bbox', 'mask', 'bbox_mask']")
 
         # Get Number of items
@@ -277,4 +277,3 @@ class MaskRCNN(ArcGISModel):
             ax[i][1].axis('off')
         plt.subplots_adjust(top=0.95)
         torch.cuda.empty_cache()
-        #plt.show()
