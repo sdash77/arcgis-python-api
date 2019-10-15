@@ -23,28 +23,47 @@ try:
 except:
     HAS_FASTAI = False
 
+band_abrevation_lib = {
+    'b': 'BLUE',
+    'c': 'CIRRUS',
+    'ca': 'COASTAL AEROSOL',
+    'g': 'GREEN',
+    'nir': 'NEAR INFRARED',
+    'nnir': 'NARROW NEAR INFRARED',
+    'p': 'PANCHROMATIC',
+    'r': 'RED',
+    'swir': 'SHORT WAVELENGTH INFRARED',
+    'swirc': 'SHORT WAVELENGTH INFRARED – Cirrus',
+    'tir': 'THERMAL INFRARED',
+    'vre': 'Vegetation red edge',
+    'wv': 'WATER VAPOUR'
+}
+
 imagery_type_lib = {
-    'landsat8': { # incomplete
-        "band_order": ['r', 'g', 'b', 'nir'],
-        "not_implemented": 1
+    'landsat8': {
+        "bands": ['ca', 'b', 'g', 'r', 'nir', 'swir', 'swir', 'c', 'qa', 'tir', 'tir'],
+        "bands_info": { # incomplete
+        }
     },
-    'sentinel2': { # incomplete
-        "bands": ['aerosols', 'r', 'g', 'b', 'nir'],
-        "bands_info": {
+    "naip": {
+        "bands": ['r', 'g', 'b', 'nir'],
+        "bands_info": { # incomplete
+        }
+    },
+    'sentinel2': { 
+        "bands": ['ca', 'b', 'g', 'r', 'vre', 'vre', 'vre', 'nir', 'nnir', 'wv', 'swirc', 'swir', 'swir'],
+        "bands_info": { # incomplete
             "b1": {
                 "Name": "costal",
                 "max": 10000,
                 "min": 10000
             },            
-            "b1": {
+            "b2": {
                 "Name": "blue",
                 "max": 10000,
                 "min": 10000
             }
         }
-    },
-    "naip": {
-        "bands": ['r', 'g', 'b', 'nir']
     }
 }
 
