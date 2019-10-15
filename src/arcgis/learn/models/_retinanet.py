@@ -143,8 +143,8 @@ class RetinaNet(ArcGISModel):
         self._emd_template["ModelConfiguration"] = "_RetinaNet_Inference"
         self._emd_template["ModelType"] = "ObjectDetection"
         self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['ModelParameters']['Scales'] = self._loss_f.scales #Scales and Ratios are attributes of RetinaNetFocalLoss object _loss_f
-        self._emd_template['ModelParameters']['Ratios'] = self._loss_f.ratios
+        self._emd_template['ModelParameters']['scales'] = self._loss_f.scales #Scales and Ratios are attributes of RetinaNetFocalLoss object _loss_f
+        self._emd_template['ModelParameters']['ratios'] = self._loss_f.ratios
         self._emd_template['Classes'] = []
 
         class_data = {}
@@ -198,7 +198,7 @@ class RetinaNet(ArcGISModel):
         resize_to = emd.get('resize_to')
         data.resize_to = resize_to
         
-        return cls(data, backbone=backbone, pretrained_path=model_file)
+        return cls(data, **emd['ModelParameters'], pretrained_path=model_file)
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
