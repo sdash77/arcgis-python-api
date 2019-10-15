@@ -100,6 +100,8 @@ class SingleShotDetector(ArcGISModel):
                             location and classification loss. This factor
                             adjusts the focus of model on the location of 
                             bounding box.
+    ---------------------   -------------------------------------------
+    ssd_version             Optional int within [1,2]. Use version=1 for arcgis v1.6.2 or earlier
     =====================   ===========================================
 
     :returns: `SingleShotDetector` Object
@@ -111,6 +113,9 @@ class SingleShotDetector(ArcGISModel):
         super().__init__(data, backbone)
 
         # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
+        if not ssd_version in [1, 2]:
+            raise Exception("ssd_version can be only [1,2]")
+
         if location_loss_factor is not None:
             if not ((location_loss_factor > 0) and (location_loss_factor < 1)):
                 raise Exception('`location_loss_factor` should be greater than 0 and less than 1')
@@ -137,7 +142,9 @@ class SingleShotDetector(ArcGISModel):
             backbone_split = _mobilenet_split
 
         if ssd_version == 1:
-
+            if grids == None:
+                grids =[4,2,1]
+                
             self._create_anchors(grids, zooms, ratios)
 
             feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
