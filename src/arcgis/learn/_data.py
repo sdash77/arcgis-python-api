@@ -441,14 +441,6 @@ def prepare_data(path,
         label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
         get_y_func = partial(get_labels, label_dirs= label_dir)
         src = src.label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)
-
-        if transforms is None:
-            transforms = get_transforms(
-                #flip_vert=True,
-                #max_rotate=90.,
-                #max_zoom=3.,
-                #max_lighting=0.5,
-            )
     
     elif dataset_type == 'Classified_Tiles':
 
@@ -559,8 +551,12 @@ def prepare_data(path,
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
     if dataset_type == 'RCNN_Masks':
-        data = (src.transform(transforms, size=chip_size, tfm_y=True) #transforms, 
+        if transforms ==  None:
+            data = (src.transform(size=chip_size, tfm_y=True)
                 .databunch(**databunch_kwargs))
+        else:
+            data = (src.transform(transforms, size=chip_size, tfm_y=True) 
+                    .databunch(**databunch_kwargs))
     elif _is_multispectral:
         data = data.databunch(**databunch_kwargs)
 

@@ -179,7 +179,7 @@ class UnetClassifier(ArcGISModel):
         return path.stem
 
     def _predict_batch(self, imagetensor_batch):
-        predictions = self.learn.model.eval()(imagetensor_batch.to(self._device)).detach().cpu()
+        predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach().cpu()
         return  predictions.max(dim=1)[1]
 
     #def _show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters 

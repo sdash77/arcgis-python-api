@@ -5226,7 +5226,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context = context_param['context']
 
         if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_point_or_line_features = self._feature_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
         elif isinstance(input_source_raster_or_features, Item):
             input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
         else:
@@ -5234,7 +5234,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if input_barrier_raster_or_features:
             if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
-                input_point_or_line_features = self._feature_input(input_barrier_raster_or_features)
+                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
             elif isinstance(input_barrier_raster_or_features, Item):
                 input_barrier_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
             else:
@@ -6378,7 +6378,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             context = context_param['context']
 
         if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
-            input_point_or_line_features = self._feature_input(input_source_raster_or_features)
+            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
         elif isinstance(input_source_raster_or_features, Item):
             input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
         else:

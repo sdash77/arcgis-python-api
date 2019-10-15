@@ -1,7 +1,10 @@
-import tensorflow as tf
-tf.enable_eager_execution()
-import onnx
-from onnx_tf.backend import prepare
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import tensorflow as tf
+    tf.enable_eager_execution()
+    import onnx
+    from onnx_tf.backend import prepare
 import numpy as np
 import math
 

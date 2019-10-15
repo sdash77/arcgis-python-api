@@ -5,18 +5,10 @@ try:
     import torch.nn as nn
     import math
     HAS_TORCH = True
-
-    prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
-    sys.path.append(prf_root_dir)
-
-    sys.path.append(os.path.dirname(__file__))
-
-    import util
-    import pickle
 except Exception as e:
     HAS_TORCH = False
     
-from arcgis.learn import MaskRcnn
+from arcgis.learn import MaskRCNN
 from skimage.measure import find_contours
 
 
@@ -71,9 +63,9 @@ def convert_bounding_boxes_to_coord_list(bounding_boxes):
         coord_array[3][0] = bounding_boxes[i][2]
         coord_array[3][1] = bounding_boxes[i][1]
 
-        bounding_box_coord_list.append(coord_array)
+        bounding_box_coord_list.append([coord_array.tolist()])
 
-    return bounding_box_coord_list    
+    return bounding_box_coord_list      
 
 
 def get_tile_size(model_height, model_width, padding, batch_height, batch_width):
@@ -155,7 +147,7 @@ class ChildInstanceDetector:
         if model_as_file and not os.path.isabs(model_path):
             model_path = os.path.abspath(os.path.join(os.path.dirname(model), model_path))
 
-        self.mask_rcnn = MaskRcnn.from_model(emd_path=model)
+        self.mask_rcnn = MaskRCNN.from_model(emd_path=model)
         self.model = self.mask_rcnn.learn.model.to(self.device)
         self.model.eval()
 
@@ -188,13 +180,13 @@ class ChildInstanceDetector:
                     'description': 'Threshold'
                 },
                 {
-                    'name': 'if_mask',
+                    'name': 'return_bboxes',
                     'dataType': 'string',
                     'required': False,
                     'domain': ('True', 'False'),
-                    'value': 'True',
-                    'displayName': 'mask',
-                    'description': 'mask'
+                    'value': 'False',
+                    'displayName': 'return_bboxes',
+                    'description': 'return_bboxes'
                 }            
             ]
         )
@@ -204,7 +196,7 @@ class ChildInstanceDetector:
         self.padding = int(scalars['padding'])
         self.batch_size = int(math.sqrt(int(scalars['batch_size']))) ** 2
         self.threshold = float(scalars['threshold'])
-        self.if_mask = eval(scalars['if_mask'])
+        self.return_bboxes = eval(scalars['return_bboxes'])
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
@@ -238,7 +230,7 @@ class ChildInstanceDetector:
                                     self.json_info['ImageHeight'],
                                     threshold=self.threshold,
                                     batch_size=self.batch_size,
-                                    if_mask=self.if_mask) 
+                                    return_bboxes=self.return_bboxes) 
         
         return predictions
 
@@ -252,7 +244,7 @@ def predict_mask_rcnn(model, images, device, chip_size, threshold=0.5):
     return predictions
     
 
-def pixel_mask_image(model, tiles, device, classes, chip_size, threshold=0.5, batch_size=4, if_mask=True):
+def pixel_mask_image(model, tiles, device, classes, chip_size, threshold=0.5, batch_size=4, return_bboxes=False):
 
     side = int(math.sqrt(batch_size))
     img_normed = tiles/255
@@ -264,7 +256,7 @@ def pixel_mask_image(model, tiles, device, classes, chip_size, threshold=0.5, ba
     pred_score = []
     
     for batch_idx in range(len(predictions)):
-        i, j = batch_idx//side, batch_idx%side
+        i, j = batch_idx//side, batch_idx % side
         masks = predictions[batch_idx]['masks'].squeeze()
         if masks.shape[0] != 0: # handle for prediction with n masks
             if len(masks.shape) == 2:  # for mask dimension hxw (in case of only one predicted mask)
@@ -283,16 +275,18 @@ def pixel_mask_image(model, tiles, device, classes, chip_size, threshold=0.5, ba
                             coord_list.append(list(reversed(contour[:, [1,0]].tolist())))
                     all_contour_list.append(coord_list)
                     pred_class.append(predictions[batch_idx]['labels'][n].tolist())
-                    pred_score.append(predictions[batch_idx]['scores'][n].tolist())
+                    pred_score.append(predictions[batch_idx]['scores'][n].tolist()*100)
                     box = predictions[batch_idx]['boxes'][n].cpu().detach().numpy()
-                    box[0] +=  j * chip_size
-                    box[2] +=  j * chip_size
-                    box[1] +=  i * chip_size
-                    box[3] +=  i * chip_size
+                    box[0] += j * chip_size
+                    box[2] += j * chip_size
+                    box[1] += i * chip_size
+                    box[3] += i * chip_size
                     pred_box.append(box)
                 
-    if if_mask:
+    if return_bboxes:
         pred_box = np.array(pred_box)
+        bbox = convert_bounding_boxes_to_coord_list(pred_box)
+        return bbox, pred_class, pred_score
+        
+    else:        
         return all_contour_list, pred_class, pred_score
-    else:
-        return convert_bounding_boxes_to_coord_list(pred_box), pred_class, pred_score

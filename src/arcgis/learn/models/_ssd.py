@@ -7,8 +7,12 @@ import logging
 logger = logging.getLogger() 
 import os, csv
 from warnings import warn
-import xml.etree.ElementTree as ET
+
+from . import _tracker_util
+
 HAS_OPENCV = True
+HAS_FASTAI = True
+HAS_ARCPY = True
 
 try:
     import torch
@@ -28,7 +32,7 @@ try:
     from ._unet_utils import is_no_color
     from torch.nn import Module as NnModule
     import PIL
-    HAS_FASTAI = True
+    from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
 except Exception as e:
     class NnModule():
         pass
@@ -38,8 +42,6 @@ try:
     import cv2
 except Exception:
     HAS_OPENCV = False
-
-HAS_ARCPY = True
 
 try:
     import arcpy
@@ -99,6 +101,8 @@ class SingleShotDetector(ArcGISModel):
                             location and classification loss. This factor
                             adjusts the focus of model on the location of 
                             bounding box.
+    ---------------------   -------------------------------------------
+    ssd_version             Optional int within [1,2]. Use version=1 for arcgis v1.6.2 or earlier
     =====================   ===========================================
 
     :returns: `SingleShotDetector` Object
@@ -110,6 +114,9 @@ class SingleShotDetector(ArcGISModel):
         super().__init__(data, backbone)
 
         # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
+        if not ssd_version in [1, 2]:
+            raise Exception("ssd_version can be only [1,2]")
+
         if location_loss_factor is not None:
             if not ((location_loss_factor > 0) and (location_loss_factor < 1)):
                 raise Exception('`location_loss_factor` should be greater than 0 and less than 1')
@@ -136,7 +143,9 @@ class SingleShotDetector(ArcGISModel):
             backbone_split = _mobilenet_split
 
         if ssd_version == 1:
-
+            if grids == None:
+                grids =[4,2,1]
+                
             self._create_anchors(grids, zooms, ratios)
 
             feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
@@ -240,7 +249,7 @@ class SingleShotDetector(ArcGISModel):
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+        class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
         resize_to = emd.get('resize_to')
 
         if data is None:
@@ -422,21 +431,20 @@ class SingleShotDetector(ArcGISModel):
         if rows > self._data.batch_size:
             rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
-
-    def predict_video(
-            self,
-            input_video_path,
-            metadata_file,
-            threshold=0.5,
-            nms_overlap=0.1,
-            visualize=False,
-            output_file_path=None,
-            multiplex=False,
-            multiplex_file_path=None
-    ):
+    
+    def predict_video(self,
+                      input_video_path, 
+                      metadata_file, 
+                      threshold=0.5, 
+                      nms_overlap=0.1, 
+                      track=False, 
+                      visualize=False, 
+                      output_file_path=None,
+                      multiplex=False,
+                      multiplex_file_path=None,
+                      tracker_options={'assignment_iou_thrd':0.3, 'vanish_frames':40, 'detect_frames':10}):
         """
-        Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
-
+        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -447,24 +455,39 @@ class SingleShotDetector(ArcGISModel):
                                 the predictions will be saved in VMTI format.
         ---------------------   -------------------------------------------
         threshold               Optional float. The probability above which
-                                a prediction will be considered.
+                                a detection will be considered.
         ---------------------   -------------------------------------------
-        nms_overlap             Optional.
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        track                   Optional bool. Set this parameter as True to
+                                enable object tracking. 
         ---------------------   -------------------------------------------
         visualize               Optional boolean. If True a video is saved
-                                to with the prediction results
+                                with prediction results.
         ---------------------   -------------------------------------------
         output_file_path        Optional path. Path of the final video to be saved.
                                 If not supplied, video will be saved at path input_video_path
                                 appended with _prediction.
         ---------------------   -------------------------------------------
-        multiplex               Optional boolean. Multiplex using the VMTI detections.
+        multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
         multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
                                 By default a new file with _multiplex.mp4 extension is saved
                                 in the same folder.
+        ---------------------   -------------------------------------------
+        tracking_options        Optional dictionary. Set different parameters for
+                                object tracking. assignment_iou_thrd parameter is used
+                                to assign threshold for assignment of trackers, 
+                                vanish_frames is the number of frames the object should
+                                be absent to consider it as vanished, detect_frames 
+                                is the number of frames an object should be detected
+                                to track it. 
         =====================   ===========================================
         """
+
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
 
@@ -475,6 +498,7 @@ class SingleShotDetector(ArcGISModel):
         total_frames = int(video_read.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_number = 0
         vmtis = ['vmtilocaldataset']
+
 
         object_id_mapping = {}
         object_id = 1
@@ -488,7 +512,8 @@ class SingleShotDetector(ArcGISModel):
             elif not success:
                 break
 
-            height, width, layers = frame.shape
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            height, width, _ = frame.shape
             if visualize and not video_obj:
                 if not output_file_path:
                     output_file_path = os.path.join(
@@ -497,50 +522,44 @@ class SingleShotDetector(ArcGISModel):
                     )
                 video_obj = cv2.VideoWriter(output_file_path, cv2.VideoWriter_fourcc(*'DIVX'), fps, (width, height))
 
-            image = Image(pil2tensor(PIL.Image.fromarray(frame).convert('RGB'), dtype=np.float32).div_(255))
+            predictions, labels, scores = self.predict(frame, threshold=threshold, nms_overlap=nms_overlap, return_scores=True)
 
-            if self._data.chip_size is not None:
-                image = image.resize(size=self._data.chip_size)
-
-            bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
-            scores = bbox.scores
             vmti_detections = '\n'
-            if bbox:
-                bboxes, lbls = bbox._compute_boxes()
+            
+            if predictions:
+                if track:
+                    bboxes = []
+                    for prediction in predictions:
+                        bboxes.append([prediction[0], prediction[1], prediction[0] + prediction[2], prediction[1] + prediction[3]])
 
-                bboxes.add_(1).mul_(torch.tensor([height / 2, width / 2, height / 2, width / 2])).long()
-                for i, bbox_data in enumerate(bboxes):
-                    if lbls is not None:
-                        text = str(lbls[i])
-                    else:
-                        text = 'Default'
+                    image, obj_info = _tracker_util.main_tracker(frame, 
+                                                                 bboxes,
+                                                                 scores, 
+                                                                 tracker_options['assignment_iou_thrd'], 
+                                                                 tracker_options['vanish_frames'], 
+                                                                 tracker_options['detect_frames'])
 
-                    if not object_id_mapping.get(text):
-                        object_id_mapping[text] = object_id
-                        object_id = object_id + 1
+                    for ids , bbox_data in obj_info.items():
+                        data = bb2hw(bbox_data[0])
 
-                    data = bb2hw(bbox_data)
-                    image = cv2.rectangle(
-                        frame,
-                        (int(data[0]), int(data[1])), (int(data[0] + data[2]), int(data[1] + data[3])),
-                        (255, 255, 255),
-                        2
-                    )
-                    cv2.putText(
-                        image,
-                        text,
-                        (int(data[0]), int(data[1]) - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.7,
-                        (255, 255, 255),
-                        2
-                    )
-                    top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
-                    bottom_right = max(0, (int(data[1] + data[3]) - 1)) * width + int(data[0] + data[2])
-                    center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (
-                            int(data[0]) + int((data[2]) / 2))
+                        top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
+                        bottom_right = max(0, (int(data[1] + data[3]) - 1)) * width + int(data[0] + data[2])
+                        center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (int(data[0]) + int((data[2]) / 2))
 
-                    vmti_detections = f'{object_id_mapping[text]} {scores[i]*100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
+                        vmti_detections = f'{ids} {bbox_data[1]*100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
+                else:
+                    for index, data in enumerate(predictions):
+                        top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
+                        bottom_right = max(0, (int(data[1] + data[3]) - 1)) * width + int(data[0] + data[2])
+                        center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (
+                                int(data[0]) + int((data[2]) / 2))
+
+                        if not object_id_mapping.get(labels[index]):
+                            object_id_mapping[labels[index]] = object_id
+                            object_id = object_id + 1
+
+                        vmti_detections = f'{object_id_mapping[labels[index]]} {scores[index] * 100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
+                    image = _draw_predictions(frame, predictions, labels)
             else:
                 image = frame
 
@@ -549,9 +568,9 @@ class SingleShotDetector(ArcGISModel):
             if visualize:
                 video_obj.write(image)
 
-        cv2.destroyAllWindows()
         if video_obj:
             video_obj.release()
+
         video_read.release()
 
         data = []
@@ -559,7 +578,6 @@ class SingleShotDetector(ArcGISModel):
 
         file_exists = True
         fields = []
-
         if not os.path.exists(metadata_file):
             file_exists = False
             for vmti in vmtis:
@@ -569,7 +587,10 @@ class SingleShotDetector(ArcGISModel):
                 for row in csv.reader(csvinput):
                     if index == 0:
                         fields = row
-                    data.append(row + [vmtis[index]])
+                    if len(vmtis) <= index:
+                        data.append(row + [""])
+                    else:
+                        data.append(row + [vmtis[index]])
                     index = index + 1
 
         if 'vmtilocaldataset' in fields:
@@ -602,23 +623,100 @@ class SingleShotDetector(ArcGISModel):
 
         arcpy.ia.VideoMultiplexer(input_video_path, metadata_file, multiplex_file_path)
 
-    def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=False, visualize=False):
-        image = open_image(image_path).apply_tfms(self._data.valid_ds.tfms)
+    def predict(
+            self,
+            image_path,
+            threshold=0.5,
+            nms_overlap=0.1,
+            return_scores=False,
+            visualize=False
+    ):
+        """
+        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        image_path              Required. Path to the image file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        threshold               Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        return_scores           Optional boolean. Will return the probability
+                                scores of the bounding box predictions if True.
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. Displays the image with
+                                predicted bounding boxes if True.
+        =====================   ===========================================
+
+        :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
+        """
+        if not HAS_OPENCV:
+            raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
+
+        if isinstance(image_path, str):
+            image = cv2.imread(image_path)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        else:
+            image = image_path
 
         if self._data.resize_to is not None:
-            image = image.resize(size=self._data.resize_to)
+            image = cv2.resize(image,(self._data.resize_to, self._data.resize_to))
 
-        bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=return_scores, ssd=self)[0]
+        height, width, _ = image.shape
+
+        if self._data.chip_size is not None:
+            chips = _get_image_chips(image, self._data.chip_size)
+        else:
+            chips = [{'width': width, 'height': height, 'xmin': 0, 'ymin': 0, 'chip': image, 'predictions': []}]
+
+        valid_tfms = self._data.valid_ds.tfms
+
+        for chip in chips:
+            frame = Image(pil2tensor(PIL.Image.fromarray(chip['chip']).convert('RGB'), dtype=np.float32).div_(255))
+            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
+            if bbox:
+                scores = bbox.scores
+                bboxes, lbls = bbox._compute_boxes()
+                bboxes.add_(1).mul_(torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
+                for index, bbox in enumerate(bboxes):
+                    if lbls is not None:
+                        label = lbls[index]
+                    else:
+                        label = 'Default'
+
+                    data = bb2hw(bbox)
+                    if not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                        chip['predictions'].append({
+                            'xmin': data[0],
+                            'ymin': data[1],
+                            'width': data[2],
+                            'height': data[3],
+                            'score': float(scores[index]),
+                            'label': label
+                        })
+
+        self._data.valid_ds.tfms = valid_tfms
+
+        predictions, labels, scores = _get_transformed_predictions(chips)
 
         if visualize:
-            image.show(y=bbox)
+            image = _draw_predictions(image, predictions, labels)
+            import matplotlib.pyplot as plt
+            plt.xticks([])
+            plt.yticks([])
+            plt.imshow(PIL.Image.fromarray(image).convert('RGB'))
 
-        if bbox is None:
-            return None
-        elif return_scores:
-            return (bbox.data, bbox.scores)
+        if return_scores:
+            return predictions, labels, scores
         else:
-            return bbox.data
+            return predictions, labels
 
     def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
         """

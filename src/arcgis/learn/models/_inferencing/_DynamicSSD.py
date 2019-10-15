@@ -4,14 +4,9 @@ try:
     import torch
     import torch.nn as nn
     import math
+    from . import util
     HAS_TORCH = True
 
-    prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
-    sys.path.append(prf_root_dir)
-
-    sys.path.append(os.path.dirname(__file__))
-
-    import util
 except Exception as e:
     HAS_TORCH = False
 
