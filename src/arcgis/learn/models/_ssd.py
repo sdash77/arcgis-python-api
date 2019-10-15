@@ -135,6 +135,9 @@ class SingleShotDetector(ArcGISModel):
             self._backbone = backbone
             backbone_name = 'custom'
 
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         backbone_cut = None
         backbone_split = None
 
@@ -217,6 +220,10 @@ class SingleShotDetector(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @property
+    def supported_backbones(self):
+        return [*self._resnet_family, *self._densenet_family, *self._vgg_family, models.mobilenet_v2.__name__]
 
     @classmethod
     def from_model(cls, emd_path, data=None):

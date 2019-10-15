@@ -90,6 +90,9 @@ class FeatureClassifier(ArcGISModel):
             backbone_cut = -1
             backbone_split = _mobilenet_split
 
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         self._code = feature_classifier_prf
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
 
@@ -104,6 +107,10 @@ class FeatureClassifier(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @property
+    def supported_backbones(self):
+        return [*self._resnet_family, models.mobilenet_v2.__name__]
 
     def show_results(self, rows=5, **kwargs):
         """
