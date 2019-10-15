@@ -28,10 +28,10 @@ class EntityRecognizer(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Requires data object returned from
-                            `prepare_data` function.
+                            ``prepare_data`` function.
     =====================   ===========================================
 
-    :returns: `EntityRecognizer` Object
+    :returns: ``EntityRecognizer`` Object
     """
     
     def __init__(self, data=None):
@@ -77,12 +77,11 @@ class EntityRecognizer(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        epoch                   Optional int. Number of times the model will train 
+        epoch                   Optional integer. Number of times the model will train 
                                 on the complete dataset.
         ---------------------   -------------------------------------------
         lr                      Optional float. Learning rate
                                 to be used for training the model.
-                                Defaults to 0.001
         ---------------------   -------------------------------------------
         one_cycle               Not implemented for this model.
         ---------------------   -------------------------------------------

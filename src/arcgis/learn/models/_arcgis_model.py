@@ -289,7 +289,7 @@ class ArcGISModel(object):
 
     def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False, **kwargs):
         """
-        Train the model for the specified number of epocs and using the
+        Train the model for the specified number of epochs and using the
         specified learning rates
         
         =====================   ===========================================
@@ -308,7 +308,7 @@ class ArcGISModel(object):
                                 learning rate schedule is used.       
         ---------------------   -------------------------------------------
         early_stopping          Optional boolean. Parameter to add early stopping.
-                                If set to `True` training will stop if validation
+                                If set to 'True' training will stop if validation
                                 loss stops improving for 5 epochs.        
         ---------------------   -------------------------------------------
         checkpoint              Optional boolean. Parameter to save the best model
@@ -316,11 +316,12 @@ class ArcGISModel(object):
                                 based on validation loss will be saved during 
                                 training.
         ---------------------   -------------------------------------------
-        tensorboard             Optional boolean; defaults to False. 
-                                Parameter to write the training log. 
-                                If set to `True` the log will be saved at 
+        tensorboard             Optional boolean. Parameter to write the training log. 
+                                If set to 'True' the log will be saved at 
                                 <dataset-path>/training_log which can be visualized in
-                                tensorboard.
+                                tensorboard. Required tensorboardx version=1.7
+
+                                The default value is 'False'.
         =====================   ===========================================
         """
         if lr is None:
@@ -598,9 +599,7 @@ class ArcGISModel(object):
     def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
-        Learning Package zip for deployment to Image Server or ArcGIS Pro
-        Train the model for the specified number of epocs and using the
-        specified learning rates.
+        Learning Package zip for deployment to Image Server or ArcGIS Pro.   
         
         =====================   ===========================================
         **Argument**            **Description**
@@ -608,17 +607,17 @@ class ArcGISModel(object):
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
                                 is passed then it stores at the specified path
-                                with model name as directory name. and creates
+                                with model name as directory name and creates
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
-                                model. Framework can be PyTorch or TF-ONNX 
-                                (Only supported by SingleShotDetector, currently.)
-                                If framework used is TF-ONNX, batch_size has
-                                to be passed as keyword arguments. Default
-                                batch_size is 16.
+                                model. (Only supported by ``SingleShotDetector``, currently.)
+                                If framework used is ``TF-ONNX``, ``batch_size`` is required
+                                to be passed as keyword arguments. 
+                                
+                                Choice list: ['PyTorch', 'TF-ONNX']
         ---------------------   -------------------------------------------
-        publish                 Optional Boolean. Publishes the DLPK as an item.
+        publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.

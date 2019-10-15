@@ -43,19 +43,19 @@ class _EmptyData():
 
 class MaskRCNN(ArcGISModel):
     """
-    Creates a MaskRCNN Instance segmentation object
+    Creates a ``MaskRCNN`` Instance segmentation object
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            ``prepare_data`` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :returns: `MaskRCNN` Object
+    :returns: ``MaskRCNN`` Object
     """
     def __init__(self, data, backbone=None, pretrained_path=None):
 
@@ -96,7 +96,7 @@ class MaskRCNN(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a MaskRCNN Instance segmentation object from an Esri Model Definition (EMD) file.
+        Creates a ``MaskRCNN`` Instance segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -105,7 +105,7 @@ class MaskRCNN(ArcGISModel):
                                 file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from ``prepare_data`` function or None for
                                 inferencing.
 
         =====================   ===========================================
@@ -221,9 +221,9 @@ class MaskRCNN(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         mode                    Required arguments within ['bbox', 'mask', 'bbox_mask'].
-                                bbox - For visualizing only boundig boxes.
-                                mask - For visualizing only mask
-                                bbox_mask - For visualizing both mask and bounding boxes.
+                                    * ``bbox`` - For visualizing only boundig boxes.
+                                    * ``mask`` - For visualizing only mask
+                                    * ``bbox_mask`` - For visualizing both mask and bounding boxes.
         ---------------------   -------------------------------------------
         mask_threshold          Optional float. The probabilty above which
                                 a pixel will be considered mask.

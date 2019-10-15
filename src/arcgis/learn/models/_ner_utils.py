@@ -28,7 +28,7 @@ def _create_zip(zipname, path):
 
 def _from_bio_tags(tokens_collection, tags_collection):
     """
-    Converts training data from BIO format to spacy offsets.
+    Converts training data from ``BIO`` format to spacy offsets.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -106,14 +106,14 @@ def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    dataset_type            Required string. [ner_json,BIO,LBIOU]
+    dataset_type            Required string. ['ner_json', 'BIO', 'LBIOU']
     ---------------------   -------------------------------------------
-    address_tag             Optional string=Address. Address field/tag name 
-                            in the training data
-    val_split_pct           Optional:Float=0.1 .Percentage of training data to keep
-                            as validation.
+    address_tag             Optional dict. Address field/tag name 
+                            in the training data.
+    val_split_pct           Optional Float. Percentage of training data to keep
+                            as validation. The default value is 0.1.
     =====================   ===========================================
-    returns: A list [text,{entities},text,{entities}] that can be ingested by EntityRecognizer.
+    returns: A list [text,{entities},text,{entities}] that can be ingested by ``EntityRecognizer``.
     """
     import spacy
     v_list=spacy.__version__.split('.')
@@ -166,7 +166,7 @@ def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
 
 class _NERItemlist():
     """
-    Creates a dataset to store data within ner_databunch object.
+    Creates a dataset to store data within ``ner_databunch`` object.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -248,10 +248,10 @@ class DatabunchNER():
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
                             as validation.
-                            Default Valuse is 0.1
+                            The default Value is 0.1.
     ---------------------   -------------------------------------------
-    bs                      Optional int. Batch size
-                            Default valuse is 5                       
+    bs                      Optional integer. Batch size
+                            The default value is 5.                       
     =====================   ===========================================
 
     :returns: dataset
