@@ -193,7 +193,7 @@ def detect_objects_image_space(model, tiles, anchors, grid_sizes, device, classe
 
 def segment_image(model, images, device, predict_bg):
     model = model.to(device)
-    normed_batch_tensor = tensor(images).to(device)
+    normed_batch_tensor = tensor(images).to(device).float()
     output = model(normed_batch_tensor)
     if predict_bg:
         return output.max(dim=1)[1]
