@@ -5,18 +5,10 @@ try:
     import torch.nn as nn
     import math
     HAS_TORCH = True
-
-    prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
-    sys.path.append(prf_root_dir)
-
-    sys.path.append(os.path.dirname(__file__))
-
-    import util
-    import pickle
 except Exception as e:
     HAS_TORCH = False
     
-from arcgis.learn import MaskRcnn
+from arcgis.learn import MaskRCNN
 from skimage.measure import find_contours
 
 
@@ -155,7 +147,7 @@ class ChildInstanceDetector:
         if model_as_file and not os.path.isabs(model_path):
             model_path = os.path.abspath(os.path.join(os.path.dirname(model), model_path))
 
-        self.mask_rcnn = MaskRcnn.from_model(emd_path=model)
+        self.mask_rcnn = MaskRCNN.from_model(emd_path=model)
         self.model = self.mask_rcnn.learn.model.to(self.device)
         self.model.eval()
 

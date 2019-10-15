@@ -10,11 +10,6 @@ try:
         from . import tf_util
     HAS_TF_ONNX = True
 
-    prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
-    sys.path.append(prf_root_dir)
-
-    sys.path.append(os.path.dirname(__file__))
-
 except Exception as e:
     HAS_TF_ONNX = False
 
