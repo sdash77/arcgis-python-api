@@ -4,7 +4,7 @@ try:
     import math
     import warnings
     with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
+        warnings.simplefilter("ignore")
         import onnx
         from onnx_tf.backend import prepare
         from . import tf_util

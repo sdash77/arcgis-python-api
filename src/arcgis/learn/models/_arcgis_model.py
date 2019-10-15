@@ -489,10 +489,7 @@ class ArcGISModel(object):
             self.learn.model_dir = 'models'
 
         if framework.lower() == "tf-onnx":
-            if kwargs['batch_size'] is None:
-                batch_size = 16
-            else:
-                batch_size = kwargs['batch_size']
+            batch_size = kwargs.get('batch_size', 16)
 
             self._save_as_tfonnx(saved_path, batch_size)
             zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
@@ -587,8 +584,10 @@ class ArcGISModel(object):
 
     def _save_as_tfonnx(self, saved_path, batch_size):
         try:
-            import onnx
-            from onnx_tf.backend import prepare
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                import onnx
+                from onnx_tf.backend import prepare
         except:
             raise Exception('Tensorflow(version 1.13.1 or above), Onnx(version 1.5.0) and Onnx_tf(version 1.3.0) libraries are not installed. Install Tensorflow using "conda install tensorflow-gpu=1.13.1". Install onnx and onnx_tf using "pip install onnx onnx_tf".')
 

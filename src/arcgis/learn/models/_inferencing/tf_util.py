@@ -1,6 +1,6 @@
 import warnings
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore", DeprecationWarning)
+    warnings.simplefilter("ignore")
     import tensorflow as tf
     tf.enable_eager_execution()
     import onnx
