@@ -119,6 +119,7 @@ class EntityRecognizer(ArcGISModel):
                 else:
                     optimizer.alpha=lr
             mb = master_bar(range(epochs))
+            mb.write(['Epoch','Train_loss','Val_loss'],table=True)
             for itn in mb:
                 random.shuffle(TRAIN_DATA)
                 losses = {}
@@ -138,7 +139,7 @@ class EntityRecognizer(ArcGISModel):
                 train_loss = losses['ner']/len(TRAIN_DATA)
                 val_loss = val_losses['ner']/len(VAL_DATA)
                 # mb.write(f'Epoch: {itn} , train_loss: {losses['ner']/len(TRAIN_DATA)}, val_loss: {val_losses['ner']/len(VAL_DATA)}') 
-                mb.write(f'Epoch: {itn} , train_loss: {round(train_loss,2)}, val_loss: {round(val_loss,2)}')           
+                mb.write([itn,round(train_loss,2),round(val_loss,2)],table=True)
 
         self.trained = True
         self.model = nlp
