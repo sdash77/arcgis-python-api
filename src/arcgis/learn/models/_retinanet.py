@@ -203,6 +203,9 @@ class RetinaNet(ArcGISModel):
             data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, classes=class_mapping.values(), c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
         
         resize_to = emd.get('resize_to')
+        if isinstance(resize_to, list):
+            resize_to = (resize_to[0], resize_to[1])
+
         data.resize_to = resize_to
         
         return cls(data, **emd['ModelParameters'], pretrained_path=model_file)
@@ -463,7 +466,10 @@ class RetinaNet(ArcGISModel):
             image = image_path
 
         if self._data.resize_to is not None:
-            image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
+            if isinstance(self._data.resize_to, tuple):
+                image = cv2.resize(image, self._data.resize_to)
+            else:
+                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
 

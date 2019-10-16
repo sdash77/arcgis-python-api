@@ -259,6 +259,9 @@ class SingleShotDetector(ArcGISModel):
         class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
         resize_to = emd.get('resize_to')
 
+        if isinstance(resize_to, list):
+            resize_to = (resize_to[0], resize_to[1])
+
         if data is None:
             data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
             data.class_mapping = class_mapping
@@ -674,7 +677,10 @@ class SingleShotDetector(ArcGISModel):
             image = image_path
 
         if self._data.resize_to is not None:
-            image = cv2.resize(image,(self._data.resize_to, self._data.resize_to))
+            if isinstance(self._data.resize_to, tuple):
+                image = cv2.resize(image, self._data.resize_to)
+            else:
+                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
 
