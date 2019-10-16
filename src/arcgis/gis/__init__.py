@@ -3530,7 +3530,16 @@ class ContentManager(object):
                                              create_params,
                                              owner, folder, item_properties, is_view)
         if itemid is not None:
-            return Item(self._gis, itemid)
+            item = Item(self._gis, itemid)
+            item.update(item_properties=item_properties)
+            if 'access' in item_properties.keys():
+                if item_properties['access'] == 'public':
+                    item.share(everyone=True)
+                elif item_properties['access'] == 'org':
+                    item.share(org=True)
+                else:
+                    pass
+            return item
         else:
             return None
 
