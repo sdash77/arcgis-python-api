@@ -5,7 +5,6 @@ try:
     import torch
     from torchvision import models
     import math
-    import warnings
 except ImportError:
     HAS_FASTAI = False
     class TrackerCallback():
@@ -32,24 +31,12 @@ import logging
 from .._data import _raise_fastai_import_error
 from warnings import warn
 
-import contextlib
-import io
-import sys
-
 logger = logging.getLogger()
 
 #For lr computation, skip beginning and trailing values.
 losses_skipped = 5
 trailing_losses_skipped = 5
 model_characteristics_folder = 'ModelCharacteristics'
-
-
-@contextlib.contextmanager
-def nostdout():
-    save_stdout = sys.stdout
-    sys.stdout = io.BytesIO()
-    yield
-    sys.stdout = save_stdout
 
 class _MultiGPUCallback(LearnerCallback):
     """
@@ -506,9 +493,8 @@ class ArcGISModel(object):
             batch_size = kwargs.get('batch_size', 16)
 
             self._save_as_tfonnx(saved_path, batch_size)
-            with nostdout():
-                zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
-                os.remove(saved_path.with_suffix('.pth'))
+            zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
+            os.remove(saved_path.with_suffix('.pth'))
         else:
             zip_name = self._create_emd(saved_path)
 
