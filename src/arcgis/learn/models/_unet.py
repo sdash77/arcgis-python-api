@@ -58,7 +58,11 @@ class UnetClassifier(ArcGISModel):
         backbone_cut = None
         backbone_split = None
 
-        if not self._check_backbone_support(self._backbone):
+        _backbone = self._backbone
+        if hasattr(self, '_backbone_'):
+            _backbone = self._backbone_
+            
+        if not (self._check_backbone_support(_backbone)):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         if hasattr(self, '_backbone_'):
