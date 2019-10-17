@@ -278,7 +278,7 @@ class RetinaNet(ArcGISModel):
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
         multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
-                                By default a new file with _multiplex.mp4 extension is saved
+                                By default a new file with _multiplex.MOV extension is saved
                                 in the same folder.
         ---------------------   -------------------------------------------
         tracking_options        Optional dictionary. Set different parameters for
@@ -314,7 +314,6 @@ class RetinaNet(ArcGISModel):
             elif not success:
                 break
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             height, width, _ = frame.shape
             if visualize and not video_obj:
                 if not output_file_path:
@@ -422,7 +421,7 @@ class RetinaNet(ArcGISModel):
         if not multiplex_file_path:
             multiplex_file_path = os.path.join(
                 os.path.dirname(input_video_path),
-                os.path.basename(input_video_path).split('.')[0] + '_multiplex.mp4'
+                os.path.basename(input_video_path).split('.')[0] + '_multiplex.MOV'
             )
 
         arcpy.ia.VideoMultiplexer(input_video_path, metadata_file, multiplex_file_path)
@@ -461,7 +460,6 @@ class RetinaNet(ArcGISModel):
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         else:
             image = image_path
 
@@ -481,7 +479,7 @@ class RetinaNet(ArcGISModel):
         valid_tfms = self._data.valid_ds.tfms
 
         for chip in chips:
-            frame = Image(pil2tensor(PIL.Image.fromarray(chip['chip']).convert('RGB'), dtype=np.float32).div_(255))
+            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
             bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
             if bbox:
                 scores = bbox.scores
@@ -514,7 +512,8 @@ class RetinaNet(ArcGISModel):
             import matplotlib.pyplot as plt
             plt.xticks([])
             plt.yticks([])
-            plt.imshow(PIL.Image.fromarray(image).convert('RGB'))
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            plt.imshow(PIL.Image.fromarray(image))
 
         if return_scores:
             return predictions, labels, scores

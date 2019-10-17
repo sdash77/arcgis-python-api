@@ -61,7 +61,7 @@ def _draw_predictions(frame, predictions, labels):
             frame,
             (int(data[0]), int(data[1])), (int(data[0] + data[2]), int(data[1] + data[3])),
             (255, 255, 255),
-            5
+            2
         )
         cv2.putText(
             frame,
@@ -70,7 +70,7 @@ def _draw_predictions(frame, predictions, labels):
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,
             (255, 255, 255),
-            5
+            2
         )
 
     return frame
