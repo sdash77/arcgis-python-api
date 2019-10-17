@@ -1583,6 +1583,7 @@ def cost_path(in_destination_data,
               in_cost_backlink_raster,
               path_type="EACH_CELL",
               destination_field=None,
+              force_flow_direction_convention=None,
              ):
     """
     Calculates the least-cost path from a source to a destination.
@@ -1615,6 +1616,7 @@ def cost_path(in_destination_data,
                                     from the cell with the minimum of the least-cost paths to source cells.
     :param destination_field:       The field used to obtain values for the destination locations. Input feature data must
                                     contain at least one valid field.
+    :param force_flow_direction_convention: Optional boolean. Set to True to force flow direction convention for backlink raster
 
     :return: output raster with function applied
     """
@@ -1642,6 +1644,9 @@ def cost_path(in_destination_data,
 
     if destination_field is not None:
         template_dict["rasterFunctionArguments"]["destination_field"] = destination_field
+
+    if force_flow_direction_convention is not None:
+        template_dict["rasterFunctionArguments"]["force_flow_direction_convention"] = force_flow_direction_convention
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_destination_data"] = raster_ra1
