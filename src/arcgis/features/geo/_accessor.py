@@ -1025,29 +1025,6 @@ class GeoAccessor(object):
                              svg)
         return
     #----------------------------------------------------------------------
-    @property
-    def renderer(self):
-        """Gets/Sets the Renderer on the DataFrame"""
-        if self._viz is None:
-            from arcgis.mapping._viz import SimpleRenderer            
-            self._viz = SimpleRenderer(self.geometry_type[0])
-        return self._viz
-    #----------------------------------------------------------------------
-    @renderer.setter
-    def renderer(self, renderer):
-        """Gets/Sets the Renderer on the DataFrame"""
-        from arcgis.mapping._viz import (SimpleRenderer, EqualIntervalRenderer, QuantileRenderer, 
-                                         StandardDeviationRenderer, NaturalBreaksRenderer, UniqueRenderer,
-                                         HeatMapRenderer)
-        if isinstance(renderer, (SimpleRenderer, EqualIntervalRenderer, QuantileRenderer, 
-                                 StandardDeviationRenderer, NaturalBreaksRenderer, UniqueRenderer,
-                                 HeatMapRenderer)):
-            self._viz = renderer
-        elif self._viz is None:
-            self._viz = SimpleRenderer(self.geometry_type[0])
-        else:
-            raise "Invalid Geometry"
-    #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):
         """Assigns the Geometry Column by Name or by List"""
         from ._array import GeoArray

@@ -10,7 +10,7 @@ from ._types import SceneLayer
 from ._utils import export_map, get_layout_templates
 from .symbol import create_symbol, display_colormaps, show_styles
 from .renderer import generate_renderer
-from ._viz import SizeVariable, RotationVariable, TransparencyVariable, SimpleRenderer, EqualIntervalRenderer, QuantileRenderer, StandardDeviationRenderer, NaturalBreaksRenderer, UniqueRenderer, HeatMapRenderer, SimpleLine, SimpleMarker, SimpleFill
+
 
 __all__ = ['WebMap', 'WebScene', 'MapImageLayer', 'MapImageLayerManager', 'VectorTileLayer',
            'export_map', 'get_layout_templates', 'OfflineMapAreaManager', 'SceneLayer']
