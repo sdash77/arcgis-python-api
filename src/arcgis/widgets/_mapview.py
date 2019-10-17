@@ -873,9 +873,7 @@ class MapView(widgets.DOMWidget):
         from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping import MapImageLayer, VectorTileLayer
         from pandas import DataFrame
-        for k,v in options.items():
-            if hasattr(v, 'renderer'):
-                options[k] = v.renderer
+
         if isinstance(item, Item):
             for layer in item.layers:
                 self._add_layer_to_widget(layer, options)

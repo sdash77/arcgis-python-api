@@ -179,11 +179,7 @@ def plot(df,
     fc = df.spatial.to_feature_collection(name=name)
     df.columns = col_old
     gt = [el for el in df.spatial.geometry_type if el is not None]
-    if renderer_type is None and renderer is None and\
-       hasattr(df.spatial, "renderer"):  
-        r = df.spatial.renderer
-        fc.layer['layerDefinition']['drawingInfo']['renderer'] = r.renderer  
-    elif renderer_type is None and \
+    if renderer_type is None and \
        not renderer is None:
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = renderer
         if map_exists:
