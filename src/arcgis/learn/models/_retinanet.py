@@ -349,7 +349,7 @@ class RetinaNet(ArcGISModel):
                     bboxes = []
                     for prediction in predictions:
                         bboxes.append(
-                            [prediction[0], prediction[1], prediction[0] + prediction[2], prediction[1] + prediction[3]])
+                            [prediction[1], prediction[0], prediction[1] + prediction[3], prediction[0] + prediction[2]])
 
                     image, obj_info = _tracker_util.main_tracker(frame,
                                                                  bboxes,
@@ -480,6 +480,8 @@ class RetinaNet(ArcGISModel):
         else:
             image = image_path
 
+        orig_height, orig_width, _ = image.shape
+
         if self._data.resize_to is not None:
             if isinstance(self._data.resize_to, tuple):
                 image = cv2.resize(image, self._data.resize_to)
@@ -494,6 +496,7 @@ class RetinaNet(ArcGISModel):
             chips = [{'width': width, 'height': height, 'xmin': 0, 'ymin': 0, 'chip': image, 'predictions': []}]
 
         valid_tfms = self._data.valid_ds.tfms
+        self._data.valid_ds.tfms = []
 
         for chip in chips:
             frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
@@ -523,6 +526,41 @@ class RetinaNet(ArcGISModel):
         self._data.valid_ds.tfms = valid_tfms
 
         predictions, labels, scores = _get_transformed_predictions(chips)
+
+
+        # Scale the predictions to original image and clip the predictions to image dims
+        y_ratio = orig_height/height
+        x_ratio = orig_width/width
+        for index, prediction in enumerate(predictions):
+            prediction[0] = prediction[0]*x_ratio
+            prediction[1] = prediction[1]*y_ratio
+            prediction[2] = prediction[2]*x_ratio
+            prediction[3] = prediction[3]*y_ratio
+
+            # Clip xmin
+            if prediction[0] < 0: 
+                prediction[2] = prediction[2] + prediction[0]
+                prediction[0] = 1
+
+            # Clip width when xmax greater than original width
+            if prediction[0] + prediction[2] > orig_width:
+                prediction[2] = (prediction[0] + prediction[2]) - orig_width
+
+            # Clip ymin
+            if prediction[1] < 0:
+                prediction[3] = prediction[3] + prediction[1]
+                prediction[1] = 1
+
+            # Clip height when ymax greater than original height
+            if prediction[1] + prediction[3] > orig_height:
+                prediction[3] = (prediction[1] + prediction[3]) - orig_height
+
+            predictions[index] = [
+                prediction[0],
+                prediction[1],
+                prediction[2],
+                prediction[3]
+            ]
 
         if visualize:
             image = _draw_predictions(image, predictions, labels)
