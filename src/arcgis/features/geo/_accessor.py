@@ -962,6 +962,7 @@ class GeoAccessor(object):
     This includes visualization, spatial indexing, IO and dataset level properties.
     """
     _sr = None
+    _viz = None
     _data = None
     _name = None
     _index = None
@@ -1023,7 +1024,6 @@ class GeoAccessor(object):
                              transform,
                              svg)
         return
-
     #----------------------------------------------------------------------
     def set_geometry(self, col, sr=None):
         """Assigns the Geometry Column by Name or by List"""

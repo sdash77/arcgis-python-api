@@ -122,7 +122,7 @@ class System(BasePortalAdmin):
         url = "%s/properties/update" % self._url
         params = {"f" : "json",
                   "properties" : properties}
-        self._con.get(path=url, params=params)
+        self._con.post(path=url, params=params)
     #----------------------------------------------------------------------
     @property
     def web_adaptors(self):
