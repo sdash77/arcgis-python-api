@@ -1027,7 +1027,7 @@ class GeoAccessor(object):
     #----------------------------------------------------------------------
     @property
     def renderer(self):
-        """"""
+        """Gets/Sets the Renderer on the DataFrame"""
         if self._viz is None:
             from arcgis.mapping._viz import SimpleRenderer            
             self._viz = SimpleRenderer(self.geometry_type[0])
@@ -1035,7 +1035,7 @@ class GeoAccessor(object):
     #----------------------------------------------------------------------
     @renderer.setter
     def renderer(self, renderer):
-        """"""    
+        """Gets/Sets the Renderer on the DataFrame"""
         from arcgis.mapping._viz import (SimpleRenderer, EqualIntervalRenderer, QuantileRenderer, 
                                          StandardDeviationRenderer, NaturalBreaksRenderer, UniqueRenderer,
                                          HeatMapRenderer)

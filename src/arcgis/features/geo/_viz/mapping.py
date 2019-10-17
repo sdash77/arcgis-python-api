@@ -179,7 +179,8 @@ def plot(df,
     fc = df.spatial.to_feature_collection(name=name)
     df.columns = col_old
     gt = [el for el in df.spatial.geometry_type if el is not None]
-    if renderer_type is None and renderer is None:  # Use the renderer off of the SeDF
+    if renderer_type is None and renderer is None and\
+       hasattr(df.spatial, "renderer"):  # Use the renderer off of the SeDF if supported
         r = df.spatial.renderer
         fc.layer['layerDefinition']['drawingInfo']['renderer'] = r.renderer  
     elif renderer_type is None and \
