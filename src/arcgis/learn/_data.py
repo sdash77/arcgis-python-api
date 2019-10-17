@@ -431,7 +431,7 @@ def prepare_data(path,
     elif bands is not None:
         rgb_bands = [ bands.index(b) for b in ['r', 'g', 'b'] if b in bands ]
     
-    if (bands is not None) or (rgb_bands is not None):
+    if (bands is not None) or (rgb_bands is not None) or (not imagery_type == 'RGB'):
         if imagery_type == 'RGB':
             imagery_type = 'multispectral'
         _is_multispectral = True
@@ -488,7 +488,12 @@ def prepare_data(path,
                     class_mapping=class_mapping,
                     color_mapping=color_mapping
                 )
-            _show_batch_multispectral = _show_batch_unet_multispectral
+            _show_batch_multispectral = _show_batch_unet_multispectral            
+
+            def classified_tiles_collate_fn(samples): # The default fastai collate_fn was causing memory leak on tensors
+                r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
+                return r
+            databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
 
         else:
             data = ArcGISSegmentationItemList.from_folder(path/'images')\
