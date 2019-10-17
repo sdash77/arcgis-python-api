@@ -133,6 +133,7 @@ class UnetClassifier(ArcGISModel):
         if data._is_multispectral:
             data._bands = emd.get('Bands')
             data._imagery_type = emd.get("ImageryType")
+            data._extract_bands = emd.get("ExtractBands")
             normalization_stats = emd.get("NormalizationStats")
             for _stat in normalization_stats:
                 if normalization_stats[_stat] is not None:
@@ -170,7 +171,7 @@ class UnetClassifier(ArcGISModel):
         if self._emd_template["IsMultispectral"]:
             self._emd_template["Bands"] = self._data._bands
             self._emd_template["ImageryType"] = self._data._imagery_type
-            self._emd_template["ExtractBands"] = list(range(len(self._data._bands)))
+            self._emd_template["ExtractBands"] = self._data._extract_bands
             self._emd_template["NormalizationStats"] = {
                 "band_min_values": self._data._band_min_values, 
                 "band_max_values": self._data._band_max_values, 
@@ -271,6 +272,10 @@ class UnetClassifier(ArcGISModel):
         symbology_x_batch = x_batch[:, symbology_bands].cpu().numpy() # Scaled Images 0-1 for plotting
         if do_normalize:
             x_batch = ( x_batch - self._data._scaled_mean_values.view(1, -1, 1, 1) ) / self._data._scaled_std_values.view(1, -1, 1, 1)
+
+        # Extract Bands
+        if hasattr(self._data, '_extract_bands_tfm'):
+            x_batch = self._data._extract_bands_tfm((x_batch, None))[0]
 
         # Get Predictions
         predictions = []

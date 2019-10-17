@@ -251,6 +251,11 @@ def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
     x = _tensor_scaler(x, min_values, max_values, mode, create_view=False)
     return (x, y)
 
+def _extract_bands_tfm(tensor_batch, band_indices):
+    x_batch = tensor_batch[0][:, band_indices]
+    y_batch = tensor_batch[1]
+    return (x_batch, y_batch)
+
 def prepare_data(path,
                  class_mapping=None, 
                  chip_size=224, 
@@ -703,11 +708,33 @@ def prepare_data(path,
         
         # Overwrite band values at r g b indexes with 'r' 'g' 'b'
         for i, band_idx in enumerate(data._rgb_bands):
-            if data._bands[band_idx] == 'u':
-                data._bands[band_idx] = ['r', 'g', 'b'][i]
+            if band_idx is not None:
+                if data._bands[band_idx] == 'u':
+                    data._bands[band_idx] = ['r', 'g', 'b'][i]
 
         # Attach custom show batch
         if _show_batch_multispectral is not None:
             data.show_batch = types.MethodType( _show_batch_multispectral, data )
-     
+
+        # Apply filter band transformation if user has specified extract_bands otherwise add a generic extract_bands
+        """
+        extract_bands : List containing band indices of the bands from imagery on which the model would be trained. 
+                        Useful for benchmarking and applied training, for reference see examples below.
+                        
+                        4 band naip ['r, 'g', 'b', 'nir'] + extract_bands=[0, 1, 2] -> 3 band naip with bands ['r', 'g', 'b'] 
+
+        """
+        data._extract_bands = kwargs.get('extract_bands', None) 
+        if data._extract_bands is None:
+            data._extract_bands = list(range(len(data._bands)))
+        else:
+            data._extract_bands_tfm = partial(_extract_bands_tfm, band_indices=data._extract_bands)
+            data.add_tfm(data._extract_bands_tfm)   
+
+        # Tail Training Override
+        _train_tail = True
+        if [data._bands[i] for i in data._extract_bands] == ['r', 'g', 'b']:
+            _train_tail = False
+        data._train_tail = kwargs.get('train_tail', _train_tail)
+
     return data

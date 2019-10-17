@@ -127,9 +127,9 @@ def _get_tail(model):
         pass
     return first_layer, index_order
 
-def _get_ms_tail(tail, bands, type_init='average'):
+def _get_ms_tail(tail, data, type_init='average'):
     new_tail = tail.__class__(
-        in_channels=len(bands), 
+        in_channels=len(data._extract_bands), 
         out_channels=tail.out_channels,
         kernel_size=tail.kernel_size,
         stride=tail.stride,
@@ -143,8 +143,9 @@ def _get_ms_tail(tail, bands, type_init='average'):
         rgb_weights = tail.weight.data
         avg_weights = tail.weight.data.mean(dim=1)
         rgb_map = {'r':0, 'g':1, 'b': 2}
-        for i, j in enumerate(bands):
-            b = rgb_map.get(str(j).lower(), None)
+        for i, j in enumerate(data._extract_bands):
+            band = str(data._bands[j]).lower()
+            b = rgb_map.get(band, None)
             #print(b)
             if b is not None:
                 new_tail.weight.data[:, i] = tail.weight.data[:, b]
@@ -203,12 +204,12 @@ class ArcGISModel(object):
             self._is_multispectral = getattr(data, '_is_multispectral')
         else:
             self._is_multispectral = False
-        if self._is_multispectral: 
+        if self._is_multispectral:
             self._imagery_type = data._imagery_type   
             self._bands = data._bands
             self._backbone_ = self._backbone
             def backbone_wrapper(pretrained):
-                return _change_tail(self._backbone_(pretrained), data._bands)
+                return _change_tail(self._backbone_(pretrained), data)
             self._backbone = backbone_wrapper
 
         self.learn = None
@@ -229,8 +230,9 @@ class ArcGISModel(object):
     
     def _arcgis_init_callback(self):
         if self._is_multispectral:
-            next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
-            self.learn.create_opt(slice(3e-3))
+            if self._data._train_tail:
+                next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
+                self.learn.create_opt(slice(3e-3))
             if hasattr(self, '_show_results_multispectral'):
                 self.show_results = self._show_results_multispectral
             
