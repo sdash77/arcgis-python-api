@@ -6,12 +6,14 @@ from ._codetemplate import code
 import random
 import os, csv
 import statistics
+import warnings
 from . import _tracker_util
 from warnings import warn
 
 HAS_OPENCV = True
 HAS_FASTAI = True
 HAS_ARCPY = True
+
 # Try to import the necessary modules
 # Exception will turn the HAS_FASTAI flag to false so that relevant exception can be raised
 try:
@@ -21,9 +23,12 @@ try:
     import PIL
     from fastai.vision.learner import create_body
     from fastprogress import progress_bar
+    from fastai.vision import ImageList
+    from fastai.vision import imagenet_stats, normalize
     from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from fastai.core import ifnone
     from torchvision import models
+    from ._ssd_utils import SSDObjectCategoryList
     from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
@@ -43,16 +48,6 @@ try:
     import arcpy
 except:
     HAS_ARCPY = False
-
-class _EmptyData():
-    def __init__(self, path, classes, c, loss_func, chip_size):
-        self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        self.classes = classes
-        self.c = c
-        self.loss_func = loss_func
-        self.chip_size = chip_size
-
 
 class RetinaNet(ArcGISModel):
     """
@@ -192,20 +187,45 @@ class RetinaNet(ArcGISModel):
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
-        backbone = emd.get('backbone', 'resnet50')
+        chip_size = emd["ImageWidth"]
 
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
         class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
-
-        if data is None:
-            data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, classes=class_mapping.values(), c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
         
         resize_to = emd.get('resize_to')
+        if isinstance(resize_to, list):
+            resize_to = (resize_to[0], resize_to[1])
+
+        data_passed = True
+        # Create an image databunch for when loading the model using emd (without training data)
+        if data is None:
+            data_passed = False
+            train_tfms = []
+            val_tfms = []
+            ds_tfms = (train_tfms, val_tfms)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                
+                sd = ImageList([], path=tempfile.TemporaryDirectory().name).split_by_idx([])
+                tempdata = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                tempdata.chip_size = chip_size
+                tempdata.class_mapping = class_mapping
+                tempdata.classes = ['background'] + list(class_mapping.values())
+                data = tempdata
+                data.c += 1 # Add 1 for background class
+
         data.resize_to = resize_to
+        ret = cls(data, **emd['ModelParameters'], pretrained_path=model_file)
         
-        return cls(data, **emd['ModelParameters'], pretrained_path=model_file)
+        if not data_passed:
+            ret.learn.data.single_ds.classes = ret._data.classes
+            ret.learn.data.single_ds.y.classes = ret._data.classes
+        
+        return ret
+
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
@@ -275,7 +295,7 @@ class RetinaNet(ArcGISModel):
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
         multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
-                                By default a new file with _multiplex.mp4 extension is saved
+                                By default a new file with _multiplex.MOV extension is saved
                                 in the same folder.
         ---------------------   -------------------------------------------
         tracking_options        Optional dictionary. Set different parameters for
@@ -311,7 +331,6 @@ class RetinaNet(ArcGISModel):
             elif not success:
                 break
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             height, width, _ = frame.shape
             if visualize and not video_obj:
                 if not output_file_path:
@@ -419,7 +438,7 @@ class RetinaNet(ArcGISModel):
         if not multiplex_file_path:
             multiplex_file_path = os.path.join(
                 os.path.dirname(input_video_path),
-                os.path.basename(input_video_path).split('.')[0] + '_multiplex.mp4'
+                os.path.basename(input_video_path).split('.')[0] + '_multiplex.MOV'
             )
 
         arcpy.ia.VideoMultiplexer(input_video_path, metadata_file, multiplex_file_path)
@@ -458,12 +477,14 @@ class RetinaNet(ArcGISModel):
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         else:
             image = image_path
 
         if self._data.resize_to is not None:
-            image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
+            if isinstance(self._data.resize_to, tuple):
+                image = cv2.resize(image, self._data.resize_to)
+            else:
+                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
 
@@ -475,7 +496,7 @@ class RetinaNet(ArcGISModel):
         valid_tfms = self._data.valid_ds.tfms
 
         for chip in chips:
-            frame = Image(pil2tensor(PIL.Image.fromarray(chip['chip']).convert('RGB'), dtype=np.float32).div_(255))
+            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
             bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
             if bbox:
                 scores = bbox.scores
@@ -508,7 +529,8 @@ class RetinaNet(ArcGISModel):
             import matplotlib.pyplot as plt
             plt.xticks([])
             plt.yticks([])
-            plt.imshow(PIL.Image.fromarray(image).convert('RGB'))
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            plt.imshow(PIL.Image.fromarray(image))
 
         if return_scores:
             return predictions, labels, scores

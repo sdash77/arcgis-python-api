@@ -11,7 +11,6 @@ try:
     import shutil
     import warnings
     from pathlib import Path
-    from ._ssd import _EmptyData
     from functools import partial
     from ._unet_utils import is_no_color
     from ._codetemplate import feature_classifier_prf
@@ -70,8 +69,8 @@ class FeatureClassifier(ArcGISModel):
                             `prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional torchvision model. Backbone CNN model to be used for
-                            creating the base of the `FeatureClassifier`, which
-                            is `resnet34` by default.
+                            creating the base of the ``FeatureClassifier``, which
+                            is ``resnet34`` by default.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -90,6 +89,9 @@ class FeatureClassifier(ArcGISModel):
             backbone_cut = -1
             backbone_split = _mobilenet_split
 
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         self._code = feature_classifier_prf
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
 
@@ -104,6 +106,10 @@ class FeatureClassifier(ArcGISModel):
 
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
+
+    @property
+    def supported_backbones(self):
+        return [*self._resnet_family, models.mobilenet_v2.__name__]
 
     def show_results(self, rows=5, **kwargs):
         """
@@ -206,7 +212,6 @@ class FeatureClassifier(ArcGISModel):
             class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
             color_mapping = {i['ClassValue']: i['Color'] for i in emd['Classes']}
 
-        resize_to = emd.get('resize_to')
         if data is None:
             ranges = (0, 1)
             train_tfms = [rotate(degrees=30, p=0.5),
@@ -227,6 +232,8 @@ class FeatureClassifier(ArcGISModel):
                 tempdata.class_mapping = class_mapping
                 tempdata.classes = list(class_mapping.keys())
                 data = tempdata
+
+        resize_to = emd.get('resize_to')
         data.resize_to = resize_to
 
         return cls(data, **model_params, pretrained_path=str(model_file))
@@ -246,7 +253,8 @@ class FeatureClassifier(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         num_examples            Number of hard examples to plot
-                                `prepare_data` function.
+                                ``prepare_data`` function.
+        =====================   ===========================================
         """
         interp = ClassificationInterpretation.from_learner(self.learn)
         interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=True)
@@ -532,7 +540,7 @@ class FeatureClassifier(ArcGISModel):
     ):
 
         """
-        Classifies the exported images and updates the feature layer with the prediction results in the output_label_field.
+        Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -553,7 +561,7 @@ class FeatureClassifier(ArcGISModel):
         confidence_field                         Optional. Output column name to be added in the layer which contains the confidence score.
         ------------------------------------     --------------------------------------------------------------------
         predict_function                         Optional. Used for calculation of final prediction result when each feature
-                                                 has more than one attachment. The predict_function takes as input a list of tuples.
+                                                 has more than one attachment. The ``predict_function`` takes as input a list of tuples.
                                                  Each tuple has first element as the class predicted and second element is the confidence score.
                                                  The function should return the final tuple classifying the feature and its confidence
         ====================================     ====================================================================
@@ -1038,34 +1046,38 @@ class FeatureClassifier(ArcGISModel):
         overwrite=False 
     ):
         """
-        Categorizes each feature by classifying it's attachments or an image of its geographical area (using the provided Imagery Layer)
-        and updates the feature layer with the prediction results in the output_label_field.
+        Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
+        and updates the feature layer with the prediction results in the ``output_label_field``.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         feature_layer                            Required. Feature Layer or path of local feature class for classification with read, write, edit permissions.
         ------------------------------------     --------------------------------------------------------------------
-        raster                                   Optional. ImageryLayer or path of local raster to be used for exporting image chips. (Requires arcpy)
+        raster                                   Optional. Imagery layer or path of local raster to be used for exporting image chips. (Requires arcpy)
         ------------------------------------     --------------------------------------------------------------------
-        class_value_field                        Required. Output field to be added in the layer, containing class value of predictions.
+        class_value_field                        Required string. Output field to be added in the layer, containing class value of predictions.
         ------------------------------------     --------------------------------------------------------------------
-        class_name_field                         Required. Output field to be added in the layer, containing class name of predictions.
+        class_name_field                         Required string. Output field to be added in the layer, containing class name of predictions.
         ------------------------------------     --------------------------------------------------------------------
-        confidence_field                         Optional. Output column name to be added in the layer which contains the confidence score.
+        confidence_field                         Optional string. Output column name to be added in the layer which contains the confidence score.
         ------------------------------------     --------------------------------------------------------------------
-        cell_size                                Optional. Cell size to be used for exporting the image chips.
+        cell_size                                Optional float. Cell size to be used for exporting the image chips.
         ------------------------------------     --------------------------------------------------------------------
         coordinate_system                        Optional. Cartographic Coordinate System to be used for exporting the image chips.
         ------------------------------------     --------------------------------------------------------------------
-        predict_function                         Optional. Used for calculation of final prediction result when each feature
-                                                 has more than one attachment. The predict_function takes as input a list of tuples.
+        predict_function                         Optional list of tuples. Used for calculation of final prediction result when each feature
+                                                 has more than one attachment. The ``predict_function`` takes as input a list of tuples.
                                                  Each tuple has first element as the class predicted and second element is the confidence score.
                                                  The function should return the final tuple classifying the feature and its confidence.
         ------------------------------------     --------------------------------------------------------------------
-        batch_size                               Optional. The no of images or tiles to process in a single go, defaults to 64.
+        batch_size                               Optional integer. The no of images or tiles to process in a single go. 
+                                                 
+                                                 The default value is 64.
         ------------------------------------     --------------------------------------------------------------------
-        overwrite                                Optional. If set to True the output fields will be overwritten by new values, defaults to False.
+        overwrite                                Optional boolean. If set to True the output fields will be overwritten by new values. 
+
+                                                 The default value is False.
         ====================================     ====================================================================
 
         :return:

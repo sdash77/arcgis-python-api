@@ -14,7 +14,7 @@ try:
     import torch.nn.functional as F
     from torchvision import models
     from ._unet_utils import LabelCallback
-    from ._ssd import _EmptyData
+    from ._arcgis_model import _EmptyData
     from fastai.vision import to_device
     from ._psp_utils import PSPNet, _pspnet_unet
     from fastai.vision.models import unet

@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 import json
 from ._codetemplate import code
+from ._arcgis_model import _EmptyData
 import logging
 from ._codetemplate import instance_detector_prf
 
@@ -33,29 +34,21 @@ except Exception as e:
     HAS_FASTAI = False
 
 
-class _EmptyData():
-    def __init__(self, path, c, loss_func, chip_size):
-        self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        self.c = c
-        self.loss_func = loss_func
-        self.chip_size = chip_size
-
 class MaskRCNN(ArcGISModel):
     """
-    Creates a MaskRCNN Instance segmentation object
+    Creates a ``MaskRCNN`` Instance segmentation object
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            ``prepare_data`` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :returns: `MaskRCNN` Object
+    :returns: ``MaskRCNN`` Object
     """
     def __init__(self, data, backbone=None, pretrained_path=None):
 
@@ -96,7 +89,7 @@ class MaskRCNN(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a MaskRCNN Instance segmentation object from an Esri Model Definition (EMD) file.
+        Creates a ``MaskRCNN`` Instance segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -105,7 +98,7 @@ class MaskRCNN(ArcGISModel):
                                 file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from ``prepare_data`` function or None for
                                 inferencing.
 
         =====================   ===========================================
@@ -221,9 +214,9 @@ class MaskRCNN(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         mode                    Required arguments within ['bbox', 'mask', 'bbox_mask'].
-                                bbox - For visualizing only boundig boxes.
-                                mask - For visualizing only mask
-                                bbox_mask - For visualizing both mask and bounding boxes.
+                                    * ``bbox`` - For visualizing only boundig boxes.
+                                    * ``mask`` - For visualizing only mask
+                                    * ``bbox_mask`` - For visualizing both mask and bounding boxes.
         ---------------------   -------------------------------------------
         mask_threshold          Optional float. The probabilty above which
                                 a pixel will be considered mask.

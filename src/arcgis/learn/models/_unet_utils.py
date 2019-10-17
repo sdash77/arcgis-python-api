@@ -134,6 +134,11 @@ class ArcGISImageSegment(Image):
                         interpolation='nearest', alpha=alpha, vmin=0, norm=self.mplnorm, **kwargs)
         if title: ax.set_title(title)
 
+class ArcGISMultispectralImageSegment():
+    def __init__(self, tensor):
+        self.data = tensor
+        self.size = tensor.shape
+
 def is_no_color(color_mapping):
     if isinstance(color_mapping, dict):
         color_mapping = list(color_mapping.values())
@@ -204,7 +209,6 @@ class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
         x = torch.tensor(x.astype(np.long))[None]
         return ArcGISImageSegment(x, cmap=self.cmap, norm=self.mplnorm)
 
-
 class ArcGISSegmentationMSItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationMSLabelList, False
@@ -214,6 +218,8 @@ class ArcGISSegmentationMSItemList(ImageList):
         x = gdal.Open(path).ReadAsArray()
         #x = ArcGISImageMSSegment(x.astype(np.float32))
         x = torch.tensor(x.astype(np.float32))
+        #x = ArcGISImageSegment( x[:3, ] )
+        x = ArcGISMultispectralImageSegment(x)
         return x
 
 class LabelCallback(LearnerCallback):

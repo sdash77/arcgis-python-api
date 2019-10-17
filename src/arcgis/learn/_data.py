@@ -23,28 +23,47 @@ try:
 except:
     HAS_FASTAI = False
 
+band_abrevation_lib = {
+    'b': 'BLUE',
+    'c': 'CIRRUS',
+    'ca': 'COASTAL AEROSOL',
+    'g': 'GREEN',
+    'nir': 'NEAR INFRARED',
+    'nnir': 'NARROW NEAR INFRARED',
+    'p': 'PANCHROMATIC',
+    'r': 'RED',
+    'swir': 'SHORT WAVELENGTH INFRARED',
+    'swirc': 'SHORT WAVELENGTH INFRARED – Cirrus',
+    'tir': 'THERMAL INFRARED',
+    'vre': 'Vegetation red edge',
+    'wv': 'WATER VAPOUR'
+}
+
 imagery_type_lib = {
-    'landsat8': { # incomplete
-        "band_order": ['r', 'g', 'b', 'nir'],
-        "not_implemented": 1
+    'landsat8': {
+        "bands": ['ca', 'b', 'g', 'r', 'nir', 'swir', 'swir', 'c', 'qa', 'tir', 'tir'],
+        "bands_info": { # incomplete
+        }
     },
-    'sentinel2': { # incomplete
-        "bands": ['aerosols', 'r', 'g', 'b', 'nir'],
-        "bands_info": {
+    "naip": {
+        "bands": ['r', 'g', 'b', 'nir'],
+        "bands_info": { # incomplete
+        }
+    },
+    'sentinel2': { 
+        "bands": ['ca', 'b', 'g', 'r', 'vre', 'vre', 'vre', 'nir', 'nnir', 'wv', 'swirc', 'swir', 'swir'],
+        "bands_info": { # incomplete
             "b1": {
                 "Name": "costal",
                 "max": 10000,
                 "min": 10000
             },            
-            "b1": {
+            "b2": {
                 "Name": "blue",
                 "max": 10000,
                 "min": 10000
             }
         }
-    },
-    "naip": {
-        "bands": ['r', 'g', 'b', 'nir']
     }
 }
 
@@ -232,6 +251,11 @@ def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
     x = _tensor_scaler(x, min_values, max_values, mode, create_view=False)
     return (x, y)
 
+def _extract_bands_tfm(tensor_batch, band_indices):
+    x_batch = tensor_batch[0][:, band_indices]
+    y_batch = tensor_batch[1]
+    return (x_batch, y_batch)
+
 def prepare_data(path,
                  class_mapping=None, 
                  chip_size=224, 
@@ -407,7 +431,7 @@ def prepare_data(path,
     elif bands is not None:
         rgb_bands = [ bands.index(b) for b in ['r', 'g', 'b'] if b in bands ]
     
-    if (bands is not None) or (rgb_bands is not None):
+    if (bands is not None) or (rgb_bands is not None) or (not imagery_type == 'RGB'):
         if imagery_type == 'RGB':
             imagery_type = 'multispectral'
         _is_multispectral = True
@@ -464,7 +488,12 @@ def prepare_data(path,
                     class_mapping=class_mapping,
                     color_mapping=color_mapping
                 )
-            _show_batch_multispectral = _show_batch_unet_multispectral
+            _show_batch_multispectral = _show_batch_unet_multispectral            
+
+            def classified_tiles_collate_fn(samples): # The default fastai collate_fn was causing memory leak on tensors
+                r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
+                return r
+            databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
 
         else:
             data = ArcGISSegmentationItemList.from_folder(path/'images')\
@@ -684,11 +713,33 @@ def prepare_data(path,
         
         # Overwrite band values at r g b indexes with 'r' 'g' 'b'
         for i, band_idx in enumerate(data._rgb_bands):
-            if data._bands[band_idx] == 'u':
-                data._bands[band_idx] = ['r', 'g', 'b'][i]
+            if band_idx is not None:
+                if data._bands[band_idx] == 'u':
+                    data._bands[band_idx] = ['r', 'g', 'b'][i]
 
         # Attach custom show batch
         if _show_batch_multispectral is not None:
             data.show_batch = types.MethodType( _show_batch_multispectral, data )
-     
+
+        # Apply filter band transformation if user has specified extract_bands otherwise add a generic extract_bands
+        """
+        extract_bands : List containing band indices of the bands from imagery on which the model would be trained. 
+                        Useful for benchmarking and applied training, for reference see examples below.
+                        
+                        4 band naip ['r, 'g', 'b', 'nir'] + extract_bands=[0, 1, 2] -> 3 band naip with bands ['r', 'g', 'b'] 
+
+        """
+        data._extract_bands = kwargs.get('extract_bands', None) 
+        if data._extract_bands is None:
+            data._extract_bands = list(range(len(data._bands)))
+        else:
+            data._extract_bands_tfm = partial(_extract_bands_tfm, band_indices=data._extract_bands)
+            data.add_tfm(data._extract_bands_tfm)   
+
+        # Tail Training Override
+        _train_tail = True
+        if [data._bands[i] for i in data._extract_bands] == ['r', 'g', 'b']:
+            _train_tail = False
+        data._train_tail = kwargs.get('train_tail', _train_tail)
+
     return data

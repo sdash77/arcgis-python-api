@@ -28,10 +28,10 @@ class EntityRecognizer(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Requires data object returned from
-                            `prepare_data` function.
+                            ``prepare_data`` function.
     =====================   ===========================================
 
-    :returns: `EntityRecognizer` Object
+    :returns: ``EntityRecognizer`` Object
     """
     
     def __init__(self, data=None):
@@ -77,12 +77,11 @@ class EntityRecognizer(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        epoch                   Optional int. Number of times the model will train 
+        epoch                   Optional integer. Number of times the model will train 
                                 on the complete dataset.
         ---------------------   -------------------------------------------
         lr                      Optional float. Learning rate
                                 to be used for training the model.
-                                Defaults to 0.001
         ---------------------   -------------------------------------------
         one_cycle               Not implemented for this model.
         ---------------------   -------------------------------------------
@@ -120,6 +119,7 @@ class EntityRecognizer(ArcGISModel):
                 else:
                     optimizer.alpha=lr
             mb = master_bar(range(epochs))
+            mb.write(['Epoch','Train_loss','Val_loss'],table=True)
             for itn in mb:
                 random.shuffle(TRAIN_DATA)
                 losses = {}
@@ -139,7 +139,7 @@ class EntityRecognizer(ArcGISModel):
                 train_loss = losses['ner']/len(TRAIN_DATA)
                 val_loss = val_losses['ner']/len(VAL_DATA)
                 # mb.write(f'Epoch: {itn} , train_loss: {losses['ner']/len(TRAIN_DATA)}, val_loss: {val_losses['ner']/len(VAL_DATA)}') 
-                mb.write(f'Epoch: {itn} , train_loss: {round(train_loss,2)}, val_loss: {round(val_loss,2)}')           
+                mb.write([itn,round(train_loss,2),round(val_loss,2)],table=True)
 
         self.trained = True
         self.model = nlp

@@ -6,8 +6,8 @@ from ._codetemplate import code
 import logging
 logger = logging.getLogger() 
 import os, csv
+import warnings
 from warnings import warn
-
 from . import _tracker_util
 
 HAS_OPENCV = True
@@ -21,11 +21,15 @@ try:
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
+    from fastai.vision.data import ImageDataBunch
+    from fastai.vision import ImageList
+    from fastai.vision import imagenet_stats, normalize
     from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from torchvision.models import resnet34
     from torchvision.models import mobilenet_v2
     from torchvision import models
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2, kmeans, avg_iou
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
+    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
@@ -50,15 +54,6 @@ except Exception:
 
 
 def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
-
-
-class _EmptyData():
-    def __init__(self, path, c, loss_func, chip_size):
-        self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        self.c = c
-        self.loss_func = loss_func
-        self.chip_size = chip_size
 
 
 class SingleShotDetector(ArcGISModel):
@@ -134,6 +129,9 @@ class SingleShotDetector(ArcGISModel):
         else:
             self._backbone = backbone
             backbone_name = 'custom'
+
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         backbone_cut = None
         backbone_split = None
@@ -218,6 +216,10 @@ class SingleShotDetector(ArcGISModel):
     def __repr__(self):
         return '<%s>' % (type(self).__name__)
 
+    @property
+    def supported_backbones(self):
+        return [*self._resnet_family, *self._densenet_family, *self._vgg_family, models.mobilenet_v2.__name__]
+
     @classmethod
     def from_model(cls, emd_path, data=None):
         return cls.from_emd(data, emd_path)
@@ -245,20 +247,44 @@ class SingleShotDetector(ArcGISModel):
         model_file = Path(emd['ModelFile'])
         backbone = emd.get('backbone', 'resnet34')
         ssd_version = int(emd.get('SSDVersion', 1))
+        chip_size = emd["ImageWidth"]
 
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
         class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+        
         resize_to = emd.get('resize_to')
+        if isinstance(resize_to, list):
+            resize_to = (resize_to[0], resize_to[1])
 
+        data_passed = True
+        # Create an image databunch for when loading the model using emd (without training data)
         if data is None:
-            data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
-            data.class_mapping = class_mapping
-            data.Classes = emd['Classes']
+            data_passed = False
+            train_tfms = []
+            val_tfms = []
+            ds_tfms = (train_tfms, val_tfms)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                
+                sd = ImageList([], path=tempfile.TemporaryDirectory().name).split_by_idx([])
+                tempdata = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                tempdata.chip_size = chip_size
+                tempdata.class_mapping = class_mapping
+                tempdata.classes = ['background'] + list(class_mapping.values())
+                data = tempdata
+                data.c += 1 # Add 1 for background class
 
         data.resize_to = resize_to
-        return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
+        ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
+
+        if not data_passed:
+            ssd.learn.data.single_ds.classes = ssd._data.classes
+            ssd.learn.data.single_ds.y.classes = ssd._data.classes
+        
+        return ssd
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
 
@@ -475,7 +501,7 @@ class SingleShotDetector(ArcGISModel):
         multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
         ---------------------   -------------------------------------------
         multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
-                                By default a new file with _multiplex.mp4 extension is saved
+                                By default a new file with _multiplex.MOV extension is saved
                                 in the same folder.
         ---------------------   -------------------------------------------
         tracking_options        Optional dictionary. Set different parameters for
@@ -499,7 +525,6 @@ class SingleShotDetector(ArcGISModel):
         frame_number = 0
         vmtis = ['vmtilocaldataset']
 
-
         object_id_mapping = {}
         object_id = 1
 
@@ -512,7 +537,6 @@ class SingleShotDetector(ArcGISModel):
             elif not success:
                 break
 
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             height, width, _ = frame.shape
             if visualize and not video_obj:
                 if not output_file_path:
@@ -539,7 +563,7 @@ class SingleShotDetector(ArcGISModel):
                                                                  tracker_options['vanish_frames'], 
                                                                  tracker_options['detect_frames'])
 
-                    for ids , bbox_data in obj_info.items():
+                    for ids, bbox_data in obj_info.items():
                         data = bb2hw(bbox_data[0])
 
                         top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
@@ -618,7 +642,7 @@ class SingleShotDetector(ArcGISModel):
         if not multiplex_file_path:
             multiplex_file_path = os.path.join(
                 os.path.dirname(input_video_path),
-                os.path.basename(input_video_path).split('.')[0] + '_multiplex.mp4'
+                os.path.basename(input_video_path).split('.')[0] + '_multiplex.MOV'
             )
 
         arcpy.ia.VideoMultiplexer(input_video_path, metadata_file, multiplex_file_path)
@@ -662,12 +686,14 @@ class SingleShotDetector(ArcGISModel):
 
         if isinstance(image_path, str):
             image = cv2.imread(image_path)
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         else:
             image = image_path
 
         if self._data.resize_to is not None:
-            image = cv2.resize(image,(self._data.resize_to, self._data.resize_to))
+            if isinstance(self._data.resize_to, tuple):
+                image = cv2.resize(image, self._data.resize_to)
+            else:
+                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
 
@@ -679,7 +705,7 @@ class SingleShotDetector(ArcGISModel):
         valid_tfms = self._data.valid_ds.tfms
 
         for chip in chips:
-            frame = Image(pil2tensor(PIL.Image.fromarray(chip['chip']).convert('RGB'), dtype=np.float32).div_(255))
+            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
             bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
             if bbox:
                 scores = bbox.scores
@@ -711,7 +737,8 @@ class SingleShotDetector(ArcGISModel):
             import matplotlib.pyplot as plt
             plt.xticks([])
             plt.yticks([])
-            plt.imshow(PIL.Image.fromarray(image).convert('RGB'))
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            plt.imshow(PIL.Image.fromarray(image))
 
         if return_scores:
             return predictions, labels, scores

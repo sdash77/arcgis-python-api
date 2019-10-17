@@ -38,6 +38,16 @@ losses_skipped = 5
 trailing_losses_skipped = 5
 model_characteristics_folder = 'ModelCharacteristics'
 
+
+class _EmptyData():
+    def __init__(self, path, c, loss_func, chip_size):
+        self.path = path
+        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        self.c = c
+        self.loss_func = loss_func
+        self.chip_size = chip_size
+
+
 class _MultiGPUCallback(LearnerCallback):
     """
     Parallize over multiple GPUs only if multiple GPUs are present.
@@ -117,9 +127,9 @@ def _get_tail(model):
         pass
     return first_layer, index_order
 
-def _get_ms_tail(tail, bands, type_init='average'):
+def _get_ms_tail(tail, data, type_init='average'):
     new_tail = tail.__class__(
-        in_channels=len(bands), 
+        in_channels=len(data._extract_bands), 
         out_channels=tail.out_channels,
         kernel_size=tail.kernel_size,
         stride=tail.stride,
@@ -133,8 +143,9 @@ def _get_ms_tail(tail, bands, type_init='average'):
         rgb_weights = tail.weight.data
         avg_weights = tail.weight.data.mean(dim=1)
         rgb_map = {'r':0, 'g':1, 'b': 2}
-        for i, j in enumerate(bands):
-            b = rgb_map.get(str(j).lower(), None)
+        for i, j in enumerate(data._extract_bands):
+            band = str(data._bands[j]).lower()
+            b = rgb_map.get(band, None)
             #print(b)
             if b is not None:
                 new_tail.weight.data[:, i] = tail.weight.data[:, b]
@@ -193,12 +204,12 @@ class ArcGISModel(object):
             self._is_multispectral = getattr(data, '_is_multispectral')
         else:
             self._is_multispectral = False
-        if self._is_multispectral: 
+        if self._is_multispectral:
             self._imagery_type = data._imagery_type   
             self._bands = data._bands
             self._backbone_ = self._backbone
             def backbone_wrapper(pretrained):
-                return _change_tail(self._backbone_(pretrained), data._bands)
+                return _change_tail(self._backbone_(pretrained), data)
             self._backbone = backbone_wrapper
 
         self.learn = None
@@ -219,8 +230,9 @@ class ArcGISModel(object):
     
     def _arcgis_init_callback(self):
         if self._is_multispectral:
-            next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
-            self.learn.create_opt(slice(3e-3))
+            if self._data._train_tail:
+                next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
+                self.learn.create_opt(slice(3e-3))
             if hasattr(self, '_show_results_multispectral'):
                 self.show_results = self._show_results_multispectral
             
@@ -289,7 +301,7 @@ class ArcGISModel(object):
 
     def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False, **kwargs):
         """
-        Train the model for the specified number of epocs and using the
+        Train the model for the specified number of epochs and using the
         specified learning rates
         
         =====================   ===========================================
@@ -308,7 +320,7 @@ class ArcGISModel(object):
                                 learning rate schedule is used.       
         ---------------------   -------------------------------------------
         early_stopping          Optional boolean. Parameter to add early stopping.
-                                If set to `True` training will stop if validation
+                                If set to 'True' training will stop if validation
                                 loss stops improving for 5 epochs.        
         ---------------------   -------------------------------------------
         checkpoint              Optional boolean. Parameter to save the best model
@@ -316,11 +328,12 @@ class ArcGISModel(object):
                                 based on validation loss will be saved during 
                                 training.
         ---------------------   -------------------------------------------
-        tensorboard             Optional boolean; defaults to False. 
-                                Parameter to write the training log. 
-                                If set to `True` the log will be saved at 
+        tensorboard             Optional boolean. Parameter to write the training log. 
+                                If set to 'True' the log will be saved at 
                                 <dataset-path>/training_log which can be visualized in
-                                tensorboard.
+                                tensorboard. Required tensorboardx version=1.7
+
+                                The default value is 'False'.
         =====================   ===========================================
         """
         if lr is None:
@@ -598,9 +611,7 @@ class ArcGISModel(object):
     def save(self, name_or_path, framework='PyTorch', publish=False, gis=None, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition and Deep
-        Learning Package zip for deployment to Image Server or ArcGIS Pro
-        Train the model for the specified number of epocs and using the
-        specified learning rates.
+        Learning Package zip for deployment to Image Server or ArcGIS Pro.   
         
         =====================   ===========================================
         **Argument**            **Description**
@@ -608,17 +619,17 @@ class ArcGISModel(object):
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
                                 is passed then it stores at the specified path
-                                with model name as directory name. and creates
+                                with model name as directory name and creates
                                 all the intermediate directories.
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
-                                model. Framework can be PyTorch or TF-ONNX 
-                                (Only supported by SingleShotDetector, currently.)
-                                If framework used is TF-ONNX, batch_size has
-                                to be passed as keyword arguments. Default
-                                batch_size is 16.
+                                model. (Only supported by ``SingleShotDetector``, currently.)
+                                If framework used is ``TF-ONNX``, ``batch_size`` is required
+                                to be passed as keyword arguments. 
+                                
+                                Choice list: ['PyTorch', 'TF-ONNX']
         ---------------------   -------------------------------------------
-        publish                 Optional Boolean. Publishes the DLPK as an item.
+        publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
