@@ -192,7 +192,7 @@ def plot(df,
             map_widget.add_layer(fc, options={'title':name})
             return map_widget
         return
-    elif renderer_type in ['s']:
+    elif renderer_type in [None, 's']:
         renderer_type = 's' # simple (default)
         r = generate_renderer(
                    geometry_type=gt[0].lower(),
