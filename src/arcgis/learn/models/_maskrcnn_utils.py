@@ -57,6 +57,9 @@ class ArcGISSegmentationLabelList(ImageList):
         self.color_mapping = color_mapping
         self.copy_new.append('classes')
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
+        self.inverse_class_mapping = {}
+        for k, v in self.class_mapping.items():
+            self.inverse_class_mapping[v] = k
         if is_no_color(list(color_mapping.values())):
             self.cmap = 'tab20'  ## compute cmap from palette
             import matplotlib as mpl
@@ -81,13 +84,13 @@ class ArcGISSegmentationLabelList(ImageList):
             warnings.simplefilter("ignore", UserWarning) # EXIF warning from TiffPlugin
             img_shape = io.imread(fn[0]).shape
             k = 0
- 
+
             labeled_mask = np.zeros((1, img_shape[0], img_shape[1]))
 
             for j in range(len(self.class_mapping)):
 
                 if k < len(fn):
-                    lbl_name = int(fn[k].parent.name)
+                    lbl_name = int(self.inverse_class_mapping[fn[k].parent.name])
                 else:
                     lbl_name = len(self.class_mapping) + 2
                 if lbl_name == j+1:                    
