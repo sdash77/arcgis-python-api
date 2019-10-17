@@ -63,7 +63,7 @@ class UnetClassifier(ArcGISModel):
             _backbone = self._backbone_
             
         if not (self._check_backbone_support(_backbone)):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         if hasattr(self, '_backbone_'):
             _backbone_meta = cnn_config(self._backbone_)
@@ -93,7 +93,7 @@ class UnetClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        return [*self._resnet_family, models.mobilenet_v2.__name__]
+        return [*self._resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
