@@ -38,6 +38,16 @@ losses_skipped = 5
 trailing_losses_skipped = 5
 model_characteristics_folder = 'ModelCharacteristics'
 
+
+class _EmptyData():
+    def __init__(self, path, c, loss_func, chip_size):
+        self.path = path
+        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        self.c = c
+        self.loss_func = loss_func
+        self.chip_size = chip_size
+
+
 class _MultiGPUCallback(LearnerCallback):
     """
     Parallize over multiple GPUs only if multiple GPUs are present.

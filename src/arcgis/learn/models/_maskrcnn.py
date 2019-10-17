@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 import json
 from ._codetemplate import code
+from ._arcgis_model import _EmptyData
 import logging
 from ._codetemplate import instance_detector_prf
 
@@ -32,14 +33,6 @@ except Exception as e:
     #raise Exception(e)
     HAS_FASTAI = False
 
-
-class _EmptyData():
-    def __init__(self, path, c, loss_func, chip_size):
-        self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        self.c = c
-        self.loss_func = loss_func
-        self.chip_size = chip_size
 
 class MaskRCNN(ArcGISModel):
     """

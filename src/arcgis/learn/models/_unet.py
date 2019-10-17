@@ -1,7 +1,7 @@
 import json, tempfile
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
-from ._ssd import _EmptyData
+from ._arcgis_model import _EmptyData
 from functools import partial
 import math
 

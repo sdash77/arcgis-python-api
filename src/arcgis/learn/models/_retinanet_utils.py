@@ -101,7 +101,7 @@ class RetinaNetModel(nn.Module):
 
 
     def _head_subnet(self, n_classes, n_anchors, final_bias=0., n_conv=4, chs=256):
-        layers = [conv_layer(chs, chs, bias=True) for _ in range(n_conv)]  # conv2d_relu to conv_layer
+        layers = [conv_layer(chs, chs, bias=True) for _ in range(n_conv)]
         layers += [conv2d(chs, n_classes * n_anchors, bias=True)]
         layers[-1].bias.data.zero_().add_(final_bias)
         layers[-1].weight.data.fill_(0)
@@ -317,7 +317,7 @@ def nms(boxes, scores, thresh=0.2):
     return LongTensor(to_keep)
 
 def process_output(output, i, detect_thresh=0.25, crit=None):
-    clas_pred, bbox_pred, sizes = output[0], output[1], crit.sizes # Index using i-if batch is passed
+    clas_pred, bbox_pred, sizes = output[0], output[1], crit.sizes
     anchors = create_anchors(sizes, crit.ratios, crit.scales).to(clas_pred.device)
     bbox_pred = activ_to_bbox(bbox_pred, anchors)
     clas_pred = torch.sigmoid(clas_pred) 

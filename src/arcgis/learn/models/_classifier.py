@@ -11,7 +11,6 @@ try:
     import shutil
     import warnings
     from pathlib import Path
-    from ._ssd import _EmptyData
     from functools import partial
     from ._unet_utils import is_no_color
     from ._codetemplate import feature_classifier_prf
@@ -213,7 +212,6 @@ class FeatureClassifier(ArcGISModel):
             class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
             color_mapping = {i['ClassValue']: i['Color'] for i in emd['Classes']}
 
-        resize_to = emd.get('resize_to')
         if data is None:
             ranges = (0, 1)
             train_tfms = [rotate(degrees=30, p=0.5),
@@ -234,6 +232,8 @@ class FeatureClassifier(ArcGISModel):
                 tempdata.class_mapping = class_mapping
                 tempdata.classes = list(class_mapping.keys())
                 data = tempdata
+
+        resize_to = emd.get('resize_to')
         data.resize_to = resize_to
 
         return cls(data, **model_params, pretrained_path=str(model_file))

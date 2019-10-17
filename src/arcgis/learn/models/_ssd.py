@@ -6,8 +6,8 @@ from ._codetemplate import code
 import logging
 logger = logging.getLogger() 
 import os, csv
+import warnings
 from warnings import warn
-
 from . import _tracker_util
 
 HAS_OPENCV = True
@@ -21,11 +21,15 @@ try:
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
+    from fastai.vision.data import ImageDataBunch
+    from fastai.vision import ImageList
+    from fastai.vision import imagenet_stats, normalize
     from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from torchvision.models import resnet34
     from torchvision.models import mobilenet_v2
     from torchvision import models
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2, kmeans, avg_iou
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
+    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
@@ -50,15 +54,6 @@ except Exception:
 
 
 def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
-
-
-class _EmptyData():
-    def __init__(self, path, c, loss_func, chip_size):
-        self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        self.c = c
-        self.loss_func = loss_func
-        self.chip_size = chip_size
 
 
 class SingleShotDetector(ArcGISModel):
@@ -252,23 +247,44 @@ class SingleShotDetector(ArcGISModel):
         model_file = Path(emd['ModelFile'])
         backbone = emd.get('backbone', 'resnet34')
         ssd_version = int(emd.get('SSDVersion', 1))
+        chip_size = emd["ImageWidth"]
 
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
         class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+        
         resize_to = emd.get('resize_to')
-
         if isinstance(resize_to, list):
             resize_to = (resize_to[0], resize_to[1])
 
+        data_passed = True
+        # Create an image databunch for when loading the model using emd (without training data)
         if data is None:
-            data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
-            data.class_mapping = class_mapping
-            data.Classes = emd['Classes']
+            data_passed = False
+            train_tfms = []
+            val_tfms = []
+            ds_tfms = (train_tfms, val_tfms)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                
+                sd = ImageList([], path=tempfile.TemporaryDirectory().name).split_by_idx([])
+                tempdata = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                tempdata.chip_size = chip_size
+                tempdata.class_mapping = class_mapping
+                tempdata.classes = ['background'] + list(class_mapping.values())
+                data = tempdata
+                data.c += 1 # Add 1 for background class
 
         data.resize_to = resize_to
-        return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
+        ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
+
+        if not data_passed:
+            ssd.learn.data.single_ds.classes = ssd._data.classes
+            ssd.learn.data.single_ds.y.classes = ssd._data.classes
+        
+        return ssd
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
 
