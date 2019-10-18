@@ -42,6 +42,17 @@ class NotebookManager(object):
             self._init()
         return self._properties
     #----------------------------------------------------------------------
+    def list(self):    
+        """
+        Returns a list of notebook instances on the Notebook Server
+        
+        :returns: List of Notebook Objects
+        
+        """
+        return [Notebook(url=self._url, 
+                         item_id=nbs['id'], 
+                         properties=nbs) for nbs in self.properties.notebooks]
+    #----------------------------------------------------------------------
     @property
     def runtimes(self):
         """
@@ -71,13 +82,70 @@ class NotebookManager(object):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
-    def _open_notebook(self,
+    def execute_notebook(self,
+                         itemid,
+                         update_portal_item=True,
+                         parameters=None,
+                         save_parameters=False):
+        """
+        
+        The Execute Notebook operation allows administrators to remotely 
+        run a notebook in their ArcGIS Notebook Server site. The notebook 
+        specified in the operation will be run with all cells in order.
+
+        Using this operation, you can schedule the execution of a notebook, 
+        either once or with a regular occurrence. This allows you to 
+        automate repeating tasks such as data collection and cleaning, 
+        content updates, and portal administration. On Linux machines, use 
+        a cron job to schedule the executeNotebook operation; on Windows 
+        machines, you can use the Task Scheduler app.
+
+        :Note: To run this operation, you must be logged in with an ArcGIS 
+               Enterprise portal account. You cannot execute notebooks from 
+               the ArcGIS Notebook Server primary site administrator 
+               account.
+
+        You can specify parameters to be used in the notebook at execution 
+        time. If you've specified one or more parameters, they'll be 
+        inserted into the notebook as a new cell. This cell will be placed 
+        at the beginning of the notebook, unless you have added the tag 
+        parameters to a cell.
+        
+        ====================     ====================================================================
+        **Argument**           **Description**
+        --------------------     --------------------------------------------------------------------
+        itemid                   Required String. Opens an existing portal item.
+        --------------------     --------------------------------------------------------------------
+        update_portal_item       Optional Boolean. Specifies whether you want to update the notebook's portal item after execution. The default is true. You may want to specify true when the notebook you're executing contains information that needs to be updated, such as a workflow that collects the most recent version of a dataset. It may not be important to update the portal item if the notebook won't store any new information after executing, such as an administrative notebook that emails reminders to inactive users.
+        --------------------     --------------------------------------------------------------------
+        parameters               Optional Array. An optional array of parameters to add to the notebook for this execution. The parameters will be inserted as a new cell directly after the cell you have tagged "parameters." Separate parameters with a comma. Use the format "x":1 when defining parameters with numbers, and "y":"text" when defining parameters with text strings.
+        --------------------     --------------------------------------------------------------------
+        save_parameters          Optional Boolean.  Specifies whether the notebookParameters cell should be saved in the notebook for future use. The default is false.
+        ====================     ====================================================================
+        
+        :returns: Boolean
+        
+        """
+        url = self._url + "/executeNotebook"
+        params = {
+            'f' : 'json',
+            'itemId' : itemid,
+            'updatePortalItem' : update_portal_item,
+            'saveInjectedParameters' : save_parameters
+        }
+        if parameters:
+            params['notebookParameters'] = parameters
+        res = self._gis._con.post(url, params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
+    #----------------------------------------------------------------------
+    def open_notebook(self,
                       itemid,
                       templateid=None,
                       nb_runtimeid=None,
                       template_nb=None):
         """
-        **Internal call used to open notebooks this call can and will be changed**
 
         Opens a notebook on the notebook server
 
@@ -109,12 +177,22 @@ class NotebookManager(object):
             "itemId" : itemid,
             "templateId" : templateid,
             'notebookRuntimeId' : nb_runtimeid,
-            'templateNotebook' : template_nb ,
+            'templateNotebook' : template_nb,
             'async' : True,
             'f' : 'json'
         }
         url = self._url + "/openNotebook"
-        return self._con.post(url, params)
+        res = self._con.post(url, params)
+        if 'jobUrl' in res:
+            job_url = res['jobUrl']
+            params = {'f' : 'json'}
+            job_res = self._con.get(job_url, params)
+            while job_res["status"] != 'COMPLETED':
+                job_res = self._con.get(job_url, params)
+                if job_res["status"].lower().find("fail") > -1:
+                    return job_res
+            return job_res
+        return res
     #----------------------------------------------------------------------
     def _add_runtime(self,
                      name,
@@ -169,6 +247,7 @@ class NotebookManager(object):
 ########################################################################
 class Runtime(object):
     """
+    Provides information about the properties of a specific notebook runtime in your ArcGIS Notebook Server site
     """
     _url = None
     _gis = None
@@ -315,6 +394,62 @@ class Runtime(object):
         if "libraries" in res:
             return res["libraries"]
         return res
-
-
-
+###########################################################################
+class Notebook(object):
+    """
+    This represents an individual notebook resource in the notebook server. 
+    """
+    _url = None
+    _item_id = None
+    _properties = None
+    _gis = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, item_id, properties=None, gis=None):
+        self._url = url + "/%s" % item_id
+        self._item_id = item_id
+        if properties:
+            self._properties = properties
+        if gis is None:
+            from arcgis.env import active_gis
+            gis = active_gis
+        self._gis = gis
+    #----------------------------------------------------------------------
+    def _init(self):
+        """loads the properties"""
+        try:
+            params = {'f': 'json'}
+            res = self._gis._con.get(self._url, params)
+            self._properties = PropertyMap(res)
+        except:
+            self._properties = PropertyMap({})
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return "<Notebook @ {url}>".format(url=self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return "<Notebook @ {url}>".format(url=self._url)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the properties of the resource"""
+        if self._properties is None:
+            self._init()
+        return self._properties
+    #----------------------------------------------------------------------
+    def close(self):
+        """
+        This operation stops a running notebook. You can use it to free up 
+        space in your notebook container. Idle notebooks are automatically 
+        cleaned up according to the duration defined by the 
+        idleNotebookThreshold property. The default value for that property
+        is 24 hours.
+        
+        :returns: Boolean
+        
+        """
+        params = {'f' : 'json'}
+        url = self._url + "/closeNotebook"
+        res = self._gis._con.post(url, params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
