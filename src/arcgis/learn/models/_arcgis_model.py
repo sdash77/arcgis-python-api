@@ -131,7 +131,11 @@ class SaveModelCallback(TrackerCallback):
                 self.model.load('{}'.format(self.name))
             except FileNotFoundError:
                 pass
-            self.model.save('{}'.format(self.name))
+            
+            try:
+                self.model.save('{}'.format(self.name))
+            except:
+                pass
 
 def _get_tail(model):
     index_order = 0
