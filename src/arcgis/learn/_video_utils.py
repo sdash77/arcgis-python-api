@@ -53,6 +53,8 @@ class VideoUtils():
 
         object_id_mapping = {}
         object_id = 1
+        tracker_list = []
+        tracker_ind = 0
 
         thickness = None
         fontface = None
@@ -96,12 +98,14 @@ class VideoUtils():
                         bboxes.append(
                             [prediction[1], prediction[0], prediction[1] + prediction[3], prediction[0] + prediction[2]])
 
-                    predictions, labels, scores = _tracker_util.main_tracker(frame,
+                    predictions, labels, scores, tracker_list, tracker_ind = _tracker_util.main_tracker(frame,
                                                                  bboxes,
                                                                  scores,
                                                                  tracker_options['assignment_iou_thrd'],
                                                                  tracker_options['vanish_frames'],
-                                                                 tracker_options['detect_frames'])
+                                                                 tracker_options['detect_frames'], 
+                                                                 tracker_list, 
+                                                                 tracker_ind)
 
                     for index, data in enumerate(predictions):
                         top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])

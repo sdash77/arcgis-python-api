@@ -92,6 +92,7 @@ def _draw_predictions(frame, predictions, labels, scores=None, show_scores=True,
 
         if show_scores and scores is not None:
             if text_to_display:
+                scores[index] = float("{0:.2f}".format(scores[index]))
                 text_to_display = text_to_display + ": " + str(scores[index])
             else:
                 text_to_display = str(scores[index])

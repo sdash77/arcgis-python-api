@@ -10,9 +10,6 @@ try:
 except Exception as e:
     pass
 
-tracker_list =[] # list for trackers
-tracker_ind = 0 # tracker id assignment
-
 class Tracker(): # class for Kalman Filter-based tracker
     def __init__(self):
         # Initialize parametes for tracker (history)
@@ -93,6 +90,14 @@ class Tracker(): # class for Kalman Filter-based tracker
         self.P = dot(self.A, self.P).dot(self.A.T) + self.Q
         self.x_state = x.astype(int)
 
+def delete_trackers(deleted_tracks, tracker_list):
+    '''
+    Delete unused tracks from memory.
+
+    '''
+    for trk in deleted_tracks:
+        tracker_list.remove(trk)
+
 def box_iou(a, b):
     '''
     Helper funciton to calculate the ratio between intersection and the union of
@@ -155,13 +160,10 @@ def munkres_assignment(trackers, detections, iou_thrd):
     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)    
 
 
-def main_tracker(img, detections, scores, assignment_iou_thrd, vanish_frames, detect_frames):
+def main_tracker(img, detections, scores, assignment_iou_thrd, vanish_frames, detect_frames, tracker_list, tracker_ind):
     '''
     main_tracker function for detection and tracking
     '''
-    global tracker_list
-    global tracker_ind
-    
     vanish_frames = vanish_frames  # no.of consecutive unmatched detection before
 
     detect_frames = detect_frames  # no. of consecutive matches needed to establish a track
@@ -239,6 +241,8 @@ def main_tracker(img, detections, scores, assignment_iou_thrd, vanish_frames, de
             labels.append(trk.trackid)
 
     # Book keeping
-    # deleted_tracks = filter(lambda x: x.lost_tracks > vanish_frames, tracker_list)  
+    deleted_tracks = filter(lambda x: x.lost_tracks > vanish_frames, tracker_list)  
 
-    return predictions, labels, scores
+    delete_trackers(deleted_tracks, tracker_list)
+
+    return predictions, labels, scores, tracker_list, tracker_ind
