@@ -714,6 +714,99 @@ def list_models(*,
     return output_model_list
     """
 
+def classify_objects(input_raster,
+                     model,
+                     model_arguments=None,
+                     input_features=None,
+                     class_label_field=None,
+                     process_all_raster_items=False,
+                     output_name=None,
+                     context=None,
+                     *,
+                     gis=None,
+                     future=False,
+                     **kwargs):
+
+    """
+    Function can be used to output feature service with assigned class label for each feature based on
+    information from overlapped imagery data using the designated deep learning model. 
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required. raster layer that contains objects that needs to be classified.
+    ------------------------------------     --------------------------------------------------------------------
+    model                                    Required model object.
+    ------------------------------------     --------------------------------------------------------------------
+    model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+                                             
+                                             eg: {"name1":"value1", "name2": "value2"}
+    ------------------------------------     --------------------------------------------------------------------
+    input_features                           Optional feature layer.
+                                             The point, line, or polygon input feature layer that identifies the location of each object to be 
+                                             classified and labelled. Each row in the input feature layer represents a single object.
+
+                                             If no input feature layer is specified, the function assumes that each input image contains a single object 
+                                             to be classified. If the input image or images use a spatial reference, the output from the function is a 
+                                             feature layer, where the extent of each image is used as the bounding geometry for each labelled 
+                                             feature layer. If the input image or images are not spatially referenced, the output from the function 
+                                             is a table containing the image ID values and the class labels for each image.
+    ------------------------------------     --------------------------------------------------------------------
+    class_label_field                        Optional str. The name of the field that will contain the classification label in the output feature layer.
+
+                                             If no field name is specified, a new field called ClassLabel will be generated in the output feature layer.
+
+                                             Example:
+                                                "ClassLabel"
+    ------------------------------------     --------------------------------------------------------------------
+    process_all_raster_items                 Optional bool. 
+
+                                             If set to False, all raster items in the image service will be mosaicked together and processed. This is the default.
+
+                                             If set to True, all raster items in the image service will be processed as separate images.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. If not provided, a Feature layer is created by the method and used as the output .
+                                             You can pass in an existing Feature Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+                                             to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                             Dictionary can contain value for following keys:
+
+                                             - cellSize - Set the output raster cell size, or resolution
+
+                                             - extent - Sets the processing extent used by the function
+
+                                             - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                             - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                             Eg: {"processorType" : "CPU"}
+
+                                             Setting context parameter will override the values set using arcgis.env 
+                                             variable for this particular function.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
+
+    :return:
+        The output feature layer item containing the classified objects
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.classify_objects_using_deep_learning(input_raster=input_raster,
+                                                                          input_features=input_features,
+                                                                          output_feature_class=output_name,
+                                                                          model=model,
+                                                                          model_arguments=model_arguments,
+                                                                          class_label_field=class_label_field,
+                                                                          process_all_raster_items=process_all_raster_items,
+                                                                          context=context,
+                                                                          future=future,
+                                                                          **kwargs)
+
 class Model:
     def __init__(self, model = None):
         self._model_package = False

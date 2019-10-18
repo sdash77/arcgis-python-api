@@ -8353,7 +8353,158 @@ class _RasterAnalysisTools(BaseAnalytics):
         return gpjob.result()
 
 
+    def classify_objects_using_deep_learning(self,
+                                             input_raster,
+                                             model,
+                                             model_arguments=None,
+                                             input_features=None,
+                                             class_label_field=None,
+                                             process_all_raster_items=None,
+                                             output_feature_class=None,
+                                             context=None, 
+                                             future=False, 
+                                             **kwargs):
+        """
+        Function can be used to output feature service with assigned class label for each feature based on
+        information from overlapped imagery data using the designated deep learning model. 
 
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_raster                             Required. raster layer that contains objects that needs to be classified.
+        ------------------------------------     --------------------------------------------------------------------
+        model                                    Required model object.
+        ------------------------------------     --------------------------------------------------------------------
+        model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+                                             
+                                                 eg: {"name1":"value1", "name2": "value2"}
+        ------------------------------------     --------------------------------------------------------------------
+        input_features                           Optional feature layer.
+                                                 The point, line, or polygon input feature layer that identifies the location of each object to be 
+                                                 classified and labelled. Each row in the input feature layer represents a single object.
+
+                                                 If no input feature layer is specified, the function assumes that each input image contains a single object 
+                                                 to be classified. If the input image or images use a spatial reference, the output from the function is a 
+                                                 feature layer, where the extent of each image is used as the bounding geometry for each labelled 
+                                                 feature layer. If the input image or images are not spatially referenced, the output from the function 
+                                                 is a table containing the image ID values and the class labels for each image.
+        ------------------------------------     --------------------------------------------------------------------
+        class_label_field                        Optional str. The name of the field that will contain the classification label in the output feature layer.
+
+                                                 If no field name is specified, a new field called ClassLabel will be generated in the output feature layer.
+        ------------------------------------     --------------------------------------------------------------------
+        process_all_raster_items                 Optional bool. 
+
+                                                 If set to False, all raster items in the mosaic dataset or image service will be mosaicked together and processed. This is the default.
+
+                                                 If set to True, all raster items in the mosaic dataset or image service will be processed as separate images.
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              Optional. If not provided, a Feature layer is created by the method and used as the output .
+                                                 You can pass in an existing Feature Service Item from your GIS to use that instead.
+                                                 Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+                                                 to be used as the output for the tool.
+                                                 A RuntimeError is raised if a service by that name already exists
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                                 Dictionary can contain value for following keys:
+
+                                                 - cellSize - Set the output raster cell size, or resolution
+
+                                                 - extent - Sets the processing extent used by the function
+
+                                                 - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                                 - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                                 Eg: {"processorType" : "CPU"}
+
+                                                 Setting context parameter will override the values set using arcgis.env 
+                                                 variable for this particular function.
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ====================================     ====================================================================
+
+        :return:
+            The output feature layer item containing the detected objects
+
+        """
+        task = "ClassifyObjectsUsingDeepLearning"
+        gis = self._gis
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        if input_features is not None:
+            input_features = self._layer_input(input_layer=input_features)
+
+        if model is None:
+            raise RuntimeError('model cannot be None')
+        else:
+            model_value = self._set_param(model)
+
+        model_arguments_value = None
+        if model_arguments:
+            try:
+                model_arguments_value = dict((str(k),str(v)) for k, v in model_arguments.items())
+            except:
+                model_arguments_value = model_arguments
+
+        if not isinstance(process_all_raster_items, bool):
+            raise RuntimeError("process_all_raster_items value should be an instance of bool")
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if output_feature_class is None:
+            output_service_name = 'ClassifyObjectsUsingDeepLearning_' + _id_generator()
+            output_feature_class = output_service_name.replace(' ', '_')
+        else:
+            output_service_name = output_feature_class.replace(' ', '_')
+
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+        output_service = self._create_output_feature_service(output_name=output_feature_class,
+                                                             output_service_name=output_service_name,
+                                                             task='Classify Objects',
+                                                             folder=folder)
+        if folderId is not None:
+            output_feature_class = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                           "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+        else:
+            output_feature_class= json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                           "itemProperties": {"itemId": output_service.itemid}})
+
+        gpjob = self._tbx.classify_objects_using_deep_learning(input_raster=input_raster,
+                                                               input_features=input_features,
+                                                               output_feature_class=output_feature_class,
+                                                               model=model_value,
+                                                               model_arguments=model_arguments_value,
+                                                               class_label_field=class_label_field,
+                                                               process_all_raster_items=process_all_raster_items,
+                                                               context=context, gis=self._gis,
+                                                               future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        gpjob._return_item = output_service
+        if future:
+            return gpjob
+        return gpjob.result()
 
 
 ###########################################################################

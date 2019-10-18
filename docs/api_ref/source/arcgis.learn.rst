@@ -6,6 +6,10 @@ arcgis.learn module
 detect_objects
 --------------
 .. automethod:: arcgis.learn.detect_objects
+
+classify_objects
+----------------
+.. automethod:: arcgis.learn.classify_objects
     
 classify_pixels
 --------------
