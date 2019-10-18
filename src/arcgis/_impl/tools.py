@@ -5254,19 +5254,32 @@ class _RasterAnalysisTools(BaseAnalytics):
         if output_back_direction_name is not None:
             output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_name, task=task,  output_properties=kwargs)
 
-        gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features,
-                                             output_distance_name=output_distance_raster,
-                                             maximum_distance=maximum_distance,
-                                             output_cell_size=output_cell_size,
-                                             output_direction_name=output_direction_raster,
-                                             output_allocation_name=output_allocation_raster,
-                                             allocation_field=allocation_field,
-                                             distance_method=distance_method,
-                                             input_barrier_raster_or_features=input_barrier_raster_or_features,
-                                             output_back_direction_name=output_back_direction_raster,
-                                             context=context,
-                                             gis=self._gis,
-                                             future=True)
+        
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features,
+                                                 output_distance_name=output_distance_raster,
+                                                 maximum_distance=maximum_distance,
+                                                 output_cell_size=output_cell_size,
+                                                 output_direction_name=output_direction_raster,
+                                                 output_allocation_name=output_allocation_raster,
+                                                 allocation_field=allocation_field,
+                                                 distance_method=distance_method,
+                                                 input_barrier_raster_or_features=input_barrier_raster_or_features,
+                                                 output_back_direction_name=output_back_direction_raster,
+                                                 context=context,
+                                                 gis=self._gis,
+                                                 future=True)
+        else:
+            gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features,
+                                        output_distance_name=output_distance_raster,
+                                        maximum_distance=maximum_distance,
+                                        output_cell_size=output_cell_size,
+                                        output_direction_name=output_direction_raster,
+                                        output_allocation_name=output_allocation_raster,
+                                        allocation_field=allocation_field,
+                                        context=context,
+                                        gis=self._gis,
+                                        future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -5348,7 +5361,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         if "context" in context_param.keys():
             context = context_param['context']
 
-        output_distance_raster, output_distance_service = self._set_output_raster(output_name=output_distance_name, task=task, output_properties=kwargs)
+        output_distance_raster, output_distance_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
 
 
         if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
@@ -5455,6 +5468,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                                             model,
                                             model_arguments=None,
                                             output_classified_raster=None,
+                                            process_all_raster_items=False,
                                             context=None,
                                             future=False,
                                             **kwargs):
@@ -5464,46 +5478,55 @@ class _RasterAnalysisTools(BaseAnalytics):
         Note that the deep learning library needs to be installed separately,
         in addition to the server's built in Python 3.x library.
 
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        input_raster           Required. raster layer that needs to be classified
-        ------------------     --------------------------------------------------------------------
-        model                  Required model object.
-        ------------------     --------------------------------------------------------------------
-        model_arguments        Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                               eg: {"name1":"value1", "name2": "value2"}
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_raster                             Required. raster layer that needs to be classified
+        ------------------------------------     --------------------------------------------------------------------
+        model                                    Required model object.
+        ------------------------------------     --------------------------------------------------------------------
+        model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
 
-        ------------------     --------------------------------------------------------------------
-        output_name            Optional. If not provided, an imagery layer is created by the method and used as the output .
-                               You can pass in an existing Image Service Item from your GIS to use that instead.
-                               Alternatively, you can pass in the name of the output Image Service that should be created by this method
-                               to be used as the output for the tool.
-                               A RuntimeError is raised if a service by that name already exists
-        ------------------     --------------------------------------------------------------------
-        context                Optional dictionary. Context contains additional settings that affect task execution.
-                               Dictionary can contain value for following keys:
+                                                 eg: {"name1":"value1", "name2": "value2"}
 
-                               - outSR - (Output Spatial Reference) Saves the result in the specified spatial reference
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              Optional. If not provided, an imagery layer is created by the method and used as the output .
+                                                 You can pass in an existing Image Service Item from your GIS to use that instead.
+                                                 Alternatively, you can pass in the name of the output Image Service that should be created by this method
+                                                 to be used as the output for the tool.
+                                                 A RuntimeError is raised if a service by that name already exists
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                                   Dictionary can contain value for following keys:
 
-                               - snapRaster - Function will adjust the extent of output rasters so that they
-                                 match the cell alignment of the specified snap raster.
+                                                   - outSR - (Output Spatial Reference) Saves the result in the specified spatial reference
 
-                               - cellSize - Set the output raster cell size, or resolution
+                                                   - snapRaster - Function will adjust the extent of output rasters so that they 
+                                                     match the cell alignment of the specified snap raster.
 
-                               - extent - Sets the processing extent used by the function
+                                                   - cellSize - Set the output raster cell size, or resolution
 
-                               - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+                                                   - extent - Sets the processing extent used by the function
 
-                               - processorType - Sets the processor type. "CPU" or "GPU"
+                                                   - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
 
-                               Eg: {"outSR" : {spatial reference}}
+                                                   - processorType - Sets the processor type. "CPU" or "GPU"
 
-                               Setting context parameter will override the values set using arcgis.env
-                               variable for this particular function.
-        ------------------     --------------------------------------------------------------------
-        gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-        ==================     ====================================================================
+                                                   Eg: {"outSR" : {spatial reference}}
+
+                                                   Setting context parameter will override the values set using arcgis.env 
+                                                   variable for this particular function.
+        ------------------------------------     --------------------------------------------------------------------
+        process_all_raster_items                 Optional bool. Specifies how all raster items in a mosaic dataset or an image service will be processed.
+
+                                                  - False : all raster items in the mosaic dataset or image service will be mosaicked together and processed. This is the default.
+
+                                                  - True : all raster items in the mosaic dataset or image service will be processed as separate images.
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ====================================     ====================================================================
 
         :return:
             The classified imagery layer item
@@ -5534,13 +5557,25 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         output_raster, output_service = self._set_output_raster(output_name=output_classified_raster, task=task, output_properties=kwargs)
 
-        gpjob = self._tbx.classify_pixels_using_deep_learning(input_raster=input_raster,
-                                                              output_classified_raster=output_raster,
-                                                              model=model_value,
-                                                              model_arguments=model_arguments_value,
-                                                              context=context,
-                                                              gis=self._gis,
-                                                              future=True)
+        
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.classify_pixels_using_deep_learning(input_raster=input_raster,
+                                                                  output_classified_raster=output_raster,
+                                                                  model=model_value,
+                                                                  model_arguments=model_arguments_value,
+                                                                  process_all_raster_items=process_all_raster_items,
+                                                                  context=context,
+                                                                  gis=self._gis,
+                                                                  future=True)
+        else:
+            gpjob = self._tbx.classify_pixels_using_deep_learning(input_raster=input_raster,
+                                                                  output_classified_raster=output_raster,
+                                                                  model=model_value,
+                                                                  model_arguments=model_arguments_value,
+                                                                  context=context,
+                                                                  gis=self._gis,
+                                                                  future=True)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -6021,7 +6056,7 @@ class _RasterAnalysisTools(BaseAnalytics):
     #Done: Format Inputs/ Outputs, doc
     def detect_objects_using_deep_learning(self, input_raster, model, output_objects=None, model_arguments=None,
                                            run_nms=False, confidence_score_field=None, class_value_field=None,
-                                           max_overlap_ratio=None, context=None, future=False, **kwargs):
+                                           max_overlap_ratio=None, process_all_raster_items=False, context=None, future=False, **kwargs):
         """
         Function can be used to generate feature service that contains polygons on detected objects
         found in the imagery data using the designated deep learning model. Note that the deep learning
@@ -6058,6 +6093,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         max_overlap_ratio                        Optional integer. The maximum overlap ratio for two overlapping features.
                                                  Defined as the ratio of intersection area over union area.
                                                  Set only if run_nms  is set to True
+        ------------------------------------     --------------------------------------------------------------------
+        process_all_raster_items                 Optional bool. Specifies how all raster items in a mosaic dataset or an image service will be processed.
+
+                                                  - False : all raster items in the mosaic dataset or image service will be mosaicked together and processed. This is the default.
+
+                                                  - True : all raster items in the mosaic dataset or image service will be processed as separate images.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Context contains additional settings that affect task execution.
                                                  Dictionary can contain value for following keys:
@@ -6146,16 +6187,30 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_objects= json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
                                            "itemProperties": {"itemId": output_service.itemid}})
 
-        gpjob = self._tbx.detect_objects_using_deep_learning(input_raster=input_raster,
-                                                             output_objects=output_objects,
-                                                             model=model_value,
-                                                             model_arguments=model_arguments_value,
-                                                             run_nms=run_nms,
-                                                             confidence_score_field=confidence_score_field,
-                                                             class_value_field=class_value_field,
-                                                             max_overlap_ratio=max_overlap_ratio,
-                                                             context=context, gis=self._gis,
-                                                             future=True)
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.detect_objects_using_deep_learning(input_raster=input_raster,
+                                                                 output_objects=output_objects,
+                                                                 model=model_value,
+                                                                 model_arguments=model_arguments_value,
+                                                                 run_nms=run_nms,
+                                                                 confidence_score_field=confidence_score_field,
+                                                                 class_value_field=class_value_field,
+                                                                 max_overlap_ratio=max_overlap_ratio,
+                                                                 process_all_raster_items=process_all_raster_items,
+                                                                 context=context, 
+                                                                 gis=self._gis,
+                                                                 future=True)
+        else:
+            gpjob = self._tbx.detect_objects_using_deep_learning(input_raster=input_raster,
+                                                            output_objects=output_objects,
+                                                            model=model_value,
+                                                            model_arguments=model_arguments_value,
+                                                            run_nms=run_nms,
+                                                            confidence_score_field=confidence_score_field,
+                                                            class_value_field=class_value_field,
+                                                            max_overlap_ratio=max_overlap_ratio,
+                                                            context=context, gis=self._gis,
+                                                            future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         gpjob._return_item = output_service
@@ -6428,13 +6483,22 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name, "serviceUrl": output_polyline_service.url},
                                            "itemProperties": {"itemId": output_polyline_service.itemid}})
 
-        gpjob = self._tbx.determine_travel_cost_path_as_polyline(input_source_raster_or_features=input_source_raster_or_features,
-                                                                 input_cost_raster=input_cost_raster,
-                                                                 input_destination_raster_or_features=input_destination_raster_or_features,
-                                                                 output_polyline_name=output_polyline_name,
-                                                                 path_type=path_type, destination_field=destination_field,
-                                                                 context=context,
-                                                                 gis=self._gis, future=True)
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.determine_travel_cost_path_as_polyline(input_source_raster_or_features=input_source_raster_or_features,
+                                                                     input_cost_raster=input_cost_raster,
+                                                                     input_destination_raster_or_features=input_destination_raster_or_features,
+                                                                     output_polyline_name=output_polyline_name,
+                                                                     path_type=path_type, destination_field=destination_field,
+                                                                     context=context,
+                                                                     gis=self._gis, future=True)
+        else:
+            gpjob = self._tbx.determine_travel_cost_path_as_polyline(input_source_raster_or_features=input_source_raster_or_features,
+                                                            input_cost_raster=input_cost_raster,
+                                                            input_destination_raster_or_features=input_destination_raster_or_features,
+                                                            output_polyline_name=output_polyline_name,
+                                                            path_type=path_type,
+                                                            context=context,
+                                                            gis=self._gis, future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
@@ -6443,11 +6507,13 @@ class _RasterAnalysisTools(BaseAnalytics):
     #----------------------------------------------------------------------
     #Done: Format Inputs/ Outputs, doc
     def export_training_data_for_deep_learning(self, input_raster, output_location,
-                                              input_class_data, chip_format='TIFF',
+                                              input_class_data=None, chip_format='TIFF',
                                               tile_size=None, stride_size=None,
                                               metadata_format='KITTI_rectangles', class_value_field=None,
                                               buffer_radius=0, input_mask_polygons=None,
-                                              rotation_angle=0, context=None, future=False, **kwargs):
+                                              rotation_angle=0, reference_system="MAP_SPACE",
+                                              process_all_raster_items=False, blacken_around_feature= False,
+                                              fix_chip_size=True, context=None, future=False, **kwargs):
         """
         Function is designed to generate training sample image chips from the input imagery data with
         labeled vector data or classified images. The output of this service tool is the data store string
@@ -6552,17 +6618,53 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                     eg: {"exportAllTiles" : False, "startIndex": 0 }
         ------------------------------------     --------------------------------------------------------------------
         input_mask_polygons                       Optional feature layer. The feature layer that delineates the area where
-                                                   image chips will be created.
-                                                   Only image chips that fall completely within the polygons will be created.
+                                                    image chips will be created.
+                                                    Only image chips that fall completely within the polygons will be created.
         ------------------------------------     --------------------------------------------------------------------
         rotation_angle                           Optional float. The rotation angle that will be used to generate additional
-                                                   image chips.
+                                                    image chips.
 
-                                                   An image chip will be generated with a rotation angle of 0, which
-                                                   means no rotation. It will then be rotated at the specified angle to
-                                                   create an additional image chip. The same training samples will be
-                                                   captured at multiple angles in multiple image chips for data augmentation.
-                                                   The default rotation angle is 0.
+                                                    An image chip will be generated with a rotation angle of 0, which
+                                                    means no rotation. It will then be rotated at the specified angle to
+                                                    create an additional image chip. The same training samples will be
+                                                    captured at multiple angles in multiple image chips for data augmentation.
+                                                    The default rotation angle is 0.
+        ------------------------------------     --------------------------------------------------------------------
+        reference_system                         Optional string. Specifies the type of reference system to be used to interpret 
+                                                    the input image. The reference system specified should match the reference system 
+                                                    used to train the deep learning model. 
+
+                                                    - MAP_SPACE : The input image is in a map-based coordinate system. This is the default.
+
+                                                    - IMAGE_SPACE : The input image is in image space, viewed from the direction of the sensor 
+                                                    that captured the image, and rotated such that the tops of buildings and trees point upward in the image.
+
+                                                    - PIXEL_SPACE : The input image is in image space, with no rotation and no distortion. 
+        ------------------------------------     --------------------------------------------------------------------
+        process_all_raster_items                 Optional bool. Specifies how all raster items in a mosaic dataset or an image service will be processed.
+
+                                                    - False : all raster items in the mosaic dataset or image service will be mosaicked together and processed. This is the default.
+
+                                                    - True : all raster items in the mosaic dataset or image service will be processed as separate images.
+        ------------------------------------     --------------------------------------------------------------------
+        blacken_around_feature                   Optional bool. 
+                                             
+                                                    Specifies whether to blacken the pixels around each object or feature in each image tile.
+
+                                                    This parameter only applies when the metadata format is set to Labeled_Tiles and an input feature class or classified raster has been specified.
+
+                                                    - False : Pixels surrounding objects or features will not be blackened. This is the default.
+
+                                                    - True : Pixels surrounding objects or features will be blackened.
+
+        ------------------------------------     --------------------------------------------------------------------
+        fix_chip_size                            Optional bool. Specifies whether to crop the exported tiles such that they are all the same size.
+
+                                                    This parameter only applies when the metadata format is set to Labeled_Tiles and an input feature class or classified raster has been specified.
+
+                                                    - True : Exported tiles will be the same size and will center on the feature. This is the default.
+
+                                                    - False : Exported tiles will be cropped such that the bounding geometry surrounds only the feature in the tile.
         ------------------------------------     --------------------------------------------------------------------
         gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
         ====================================     ====================================================================
@@ -6580,7 +6682,8 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         input_raster = self._layer_input(input_layer=input_raster)
 
-        input_class_data = self._layer_input(input_layer=input_class_data)
+        if input_class_data is not None:
+            input_class_data = self._layer_input(input_layer=input_class_data)
 
         if chip_format is not None:
             chipFormatAllowedValues = ['TIFF', 'PNG', 'JPEG','MRF']
@@ -6592,7 +6695,13 @@ class _RasterAnalysisTools(BaseAnalytics):
             if not metadata_format in metadataFormatAllowedValues:
                 raise RuntimeError('metadata_format can only be one of the following: '+ str(metadataFormatAllowedValues))
 
-        gpjob = self._tbx.export_training_datafor_deep_learning(input_raster=input_raster,
+        if reference_system is not None:
+            reference_system_allowed_values = ['MAP_SPACE', 'IMAGE_SPACE', 'PIXEL_SPACE']
+            if not reference_system in reference_system_allowed_values:
+                raise RuntimeError('reference_system can only be one of the following: '+ str(reference_system_allowed_values))
+
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.export_training_datafor_deep_learning(input_raster=input_raster,
                                                                 output_location=output_location,
                                                                 input_class_data=input_class_data,
                                                                 chip_format=chip_format,
@@ -6602,8 +6711,25 @@ class _RasterAnalysisTools(BaseAnalytics):
                                                                 class_value_field=class_value_field,
                                                                 buffer_radius=buffer_radius,
                                                                 input_mask_polygons=input_mask_polygons,
-                                                                rotation_angle=rotation_angle, context=context,
+                                                                rotation_angle=rotation_angle, 
+                                                                reference_system=reference_system,
+                                                                process_all_raster_items=process_all_raster_items,
+                                                                blacken_around_feature=blacken_around_feature,
+                                                                fix_chip_size=fix_chip_size,
+                                                                context=context,
                                                                 gis=self._gis, future=True)
+        else:
+            gpjob = self._tbx.export_training_datafor_deep_learning(input_raster=input_raster,
+                                                        output_location=output_location,
+                                                        input_class_data=input_class_data,
+                                                        chip_format=chip_format,
+                                                        tile_size=tile_size,
+                                                        stride_size=stride_size,
+                                                        metadata_format=metadata_format,
+                                                        class_value_field=class_value_field,
+                                                        buffer_radius=buffer_radius,
+                                                        context=context,
+                                                        gis=self._gis, future=True)
         gpjob._is_ra = True
         gpjob._item_properties = True
         if future:
