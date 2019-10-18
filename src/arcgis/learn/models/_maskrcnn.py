@@ -54,16 +54,16 @@ class MaskRCNN(ArcGISModel):
 
         super().__init__(data, backbone)
     
-        if backbone is None:
-            self._backbone = models.detection.maskrcnn_resnet50_fpn
+        #if backbone is None:
+        #    self._backbone = models.detection.maskrcnn_resnet50_fpn
 
-        if not self._check_backbone_support(self._backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+        #if not self._check_backbone_support(self._backbone):
+        #    raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
 
         self._code = instance_detector_prf
 
-        model = self._backbone(pretrained=True, min_size = data.chip_size)
+        model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = data.chip_size)
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
         in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels

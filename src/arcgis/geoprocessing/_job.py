@@ -288,9 +288,11 @@ class GPJob(object):
                 self.task == "DetermineOptimumTravelCostNetwork" or
                 self.task == "FlowDirection" or
                 self.task == "CalculateTravelCost"):
-
-                for key, value in r.items():
-                    r[key[0:key.rindex('_')+1]+'service'] = r.pop(key)
+                m = {}
+                if isinstance (r,dict):
+                    for key, value in r.items():
+                        m[key[0:key.rindex('_')+1]+'service'] = r[key]
+                    r=m
 
             if(self.task == 'InterpolatePoints'):
                 if "process_info" in  r.keys():

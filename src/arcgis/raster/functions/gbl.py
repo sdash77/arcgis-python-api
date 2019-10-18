@@ -2602,7 +2602,7 @@ def calculate_distance(in_source_data,
     if isinstance(in_source_data, ImageryLayer):
         return _gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, out_back_direction_raster=generate_out_back_direction_raster, use_ra=True)
     else:
-        return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, use_ra=True)
+        return _feature_gbl_clone_layer(in_source_data, template_dict, function_chain_ra, out_allocation_raster = generate_out_allocation_raster, out_direction_raster = generate_out_direction_raster, out_back_direction_raster=generate_out_back_direction_raster, use_ra=True)
 
 
 def euclidean_back_direction(in_source_data,

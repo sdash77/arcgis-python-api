@@ -154,6 +154,7 @@ def detect_objects(input_raster,
                    class_value_field=None,
                    max_overlap_ratio=0,
                    context=None,
+                   process_all_raster_items=False,
                    *,
                    gis=None,
                    future=False,
@@ -212,7 +213,15 @@ def detect_objects(input_raster,
                                              Setting context parameter will override the values set using arcgis.env 
                                              variable for this particular function.
     ------------------------------------     --------------------------------------------------------------------
+    process_all_raster_items                 Optional bool. Specifies how all raster items in an image service will be processed.
+
+                                              - False : all raster items in the image service will be mosaicked together and processed. This is the default.
+
+                                              - True : all raster items in the image service will be processed as separate images.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================================     ====================================================================
 
     :return:
@@ -233,6 +242,7 @@ def detect_objects(input_raster,
                                                                         class_value_field=class_value_field,
                                                                         max_overlap_ratio=max_overlap_ratio,
                                                                         context=context,
+                                                                        process_all_raster_items=process_all_raster_items,
                                                                         future=future,
                                                                         **kwargs)
 
@@ -325,6 +335,7 @@ def classify_pixels(input_raster,
                     model_arguments=None,
                     output_name=None,
                     context=None,
+                    process_all_raster_items=False,
                     *,
                     gis=None,
                     future=False,
@@ -335,46 +346,55 @@ def classify_pixels(input_raster,
     Note that the deep learning library needs to be installed separately,
     in addition to the server's built in Python 3.x library.
 
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    input_raster           Required. raster layer that needs to be classified
-    ------------------     --------------------------------------------------------------------
-    model                  Required model object.
-    ------------------     --------------------------------------------------------------------
-    model_arguments        Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
-                           eg: {"name1":"value1", "name2": "value2"}
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required. raster layer that needs to be classified
+    ------------------------------------     --------------------------------------------------------------------
+    model                                    Required model object.
+    ------------------------------------     --------------------------------------------------------------------
+    model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
 
-    ------------------     --------------------------------------------------------------------
-    output_name            Optional. If not provided, an imagery layer is created by the method and used as the output .
-                           You can pass in an existing Image Service Item from your GIS to use that instead.
-                           Alternatively, you can pass in the name of the output Image Service that should be created by this method
-                           to be used as the output for the tool.
-                           A RuntimeError is raised if a service by that name already exists
-    ------------------     --------------------------------------------------------------------
-    context                Optional dictionary. Context contains additional settings that affect task execution.
-                           Dictionary can contain value for following keys:
+                                             eg: {"name1":"value1", "name2": "value2"}
 
-                           - outSR - (Output Spatial Reference) Saves the result in the specified spatial reference
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. If not provided, an imagery layer is created by the method and used as the output .
+                                             You can pass in an existing Image Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Image Service that should be created by this method
+                                             to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                               Dictionary can contain value for following keys:
 
-                           - snapRaster - Function will adjust the extent of output rasters so that they 
-                             match the cell alignment of the specified snap raster.
+                                               - outSR - (Output Spatial Reference) Saves the result in the specified spatial reference
 
-                           - cellSize - Set the output raster cell size, or resolution
+                                               - snapRaster - Function will adjust the extent of output rasters so that they 
+                                                 match the cell alignment of the specified snap raster.
 
-                           - extent - Sets the processing extent used by the function
+                                               - cellSize - Set the output raster cell size, or resolution
 
-                           - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+                                               - extent - Sets the processing extent used by the function
 
-                           - processorType - Sets the processor type. "CPU" or "GPU"
+                                               - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
 
-                           Eg: {"outSR" : {spatial reference}}
+                                               - processorType - Sets the processor type. "CPU" or "GPU"
 
-                           Setting context parameter will override the values set using arcgis.env 
-                           variable for this particular function.
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    ==================     ====================================================================
+                                               Eg: {"outSR" : {spatial reference}}
+
+                                               Setting context parameter will override the values set using arcgis.env 
+                                               variable for this particular function.
+    ------------------------------------     --------------------------------------------------------------------
+    process_all_raster_items                 Optional bool. Specifies how all raster items in an image service will be processed.
+
+                                              - False : all raster items in the image service will be mosaicked together and processed. This is the default.
+
+                                              - True : all raster items in the image service will be processed as separate images.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    ====================================     ====================================================================
 
     :return:
         The classified imagery layer item
@@ -390,6 +410,7 @@ def classify_pixels(input_raster,
                                                                         model_arguments=model_arguments,
                                                                         output_classified_raster=output_name,
                                                                         context=context,
+                                                                        process_all_raster_items=process_all_raster_items,
                                                                         future=future,
                                                                         **kwargs)
 
@@ -446,6 +467,10 @@ def export_training_data(input_raster,
                          context=None,
                          input_mask_polygons=None,
                          rotation_angle=0,
+                         reference_system="MAP_SPACE",
+                         process_all_raster_items=False,
+                         blacken_around_feature=False,
+                         fix_chip_size=True,
                          *,
                          gis=None,
                          future=False,
@@ -567,7 +592,45 @@ def export_training_data(input_raster,
                                                captured at multiple angles in multiple image chips for data augmentation.
                                                The default rotation angle is 0.
     ------------------------------------     --------------------------------------------------------------------
+    reference_system                         Optional string. Specifies the type of reference system to be used to interpret 
+                                             the input image. The reference system specified should match the reference system 
+                                             used to train the deep learning model. 
+
+                                             - MAP_SPACE : The input image is in a map-based coordinate system. This is the default.
+
+                                             - IMAGE_SPACE : The input image is in image space, viewed from the direction of the sensor 
+                                               that captured the image, and rotated such that the tops of buildings and trees point upward in the image.
+
+                                             - PIXEL_SPACE : The input image is in image space, with no rotation and no distortion. 
+    ------------------------------------     --------------------------------------------------------------------
+    process_all_raster_items                 Optional bool. Specifies how all raster items in an image service will be processed.
+
+                                              - False : all raster items in the image service will be mosaicked together and processed. This is the default.
+
+                                              - True : all raster items in the image service will be processed as separate images.
+    ------------------------------------     --------------------------------------------------------------------
+    blacken_around_feature                   Optional bool. 
+                                             
+                                             Specifies whether to blacken the pixels around each object or feature in each image tile.
+
+                                             This parameter only applies when the metadata format is set to Labeled_Tiles and an input feature class or classified raster has been specified.
+
+                                             - False : Pixels surrounding objects or features will not be blackened. This is the default.
+
+                                             - True : Pixels surrounding objects or features will be blackened.
+
+    ------------------------------------     --------------------------------------------------------------------
+    fix_chip_size                            Optional bool. Specifies whether to crop the exported tiles such that they are all the same size.
+
+                                             This parameter only applies when the metadata format is set to Labeled_Tiles and an input feature class or classified raster has been specified.
+
+                                             - True : Exported tiles will be the same size and will center on the feature. This is the default.
+
+                                             - False : Exported tiles will be cropped such that the bounding geometry surrounds only the feature in the tile.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ====================================     ====================================================================
 
     :return:
@@ -589,6 +652,10 @@ def export_training_data(input_raster,
                                                                             output_location=output_location,
                                                                             input_mask_polygons=input_mask_polygons,
                                                                             rotation_angle=rotation_angle,
+                                                                            reference_system=reference_system,
+                                                                            process_all_raster_items=process_all_raster_items,
+                                                                            blacken_around_feature=blacken_around_feature,
+                                                                            fix_chip_size=fix_chip_size,
                                                                             context=context,
                                                                             future=future,
                                                                             **kwargs)
@@ -673,6 +740,8 @@ def list_models(*,
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ------------------     --------------------------------------------------------------------
+    future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ==================     ====================================================================
 
     :return:
@@ -713,6 +782,99 @@ def list_models(*,
                     output_model_list.append(Model(item))
     return output_model_list
     """
+
+def classify_objects(input_raster,
+                     model,
+                     model_arguments=None,
+                     input_features=None,
+                     class_label_field=None,
+                     process_all_raster_items=False,
+                     output_name=None,
+                     context=None,
+                     *,
+                     gis=None,
+                     future=False,
+                     **kwargs):
+
+    """
+    Function can be used to output feature service with assigned class label for each feature based on
+    information from overlapped imagery data using the designated deep learning model. 
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required. raster layer that contains objects that needs to be classified.
+    ------------------------------------     --------------------------------------------------------------------
+    model                                    Required model object.
+    ------------------------------------     --------------------------------------------------------------------
+    model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+                                             
+                                             eg: {"name1":"value1", "name2": "value2"}
+    ------------------------------------     --------------------------------------------------------------------
+    input_features                           Optional feature layer.
+                                             The point, line, or polygon input feature layer that identifies the location of each object to be 
+                                             classified and labelled. Each row in the input feature layer represents a single object.
+
+                                             If no input feature layer is specified, the function assumes that each input image contains a single object 
+                                             to be classified. If the input image or images use a spatial reference, the output from the function is a 
+                                             feature layer, where the extent of each image is used as the bounding geometry for each labelled 
+                                             feature layer. If the input image or images are not spatially referenced, the output from the function 
+                                             is a table containing the image ID values and the class labels for each image.
+    ------------------------------------     --------------------------------------------------------------------
+    class_label_field                        Optional str. The name of the field that will contain the classification label in the output feature layer.
+
+                                             If no field name is specified, a new field called ClassLabel will be generated in the output feature layer.
+
+                                             Example:
+                                                "ClassLabel"
+    ------------------------------------     --------------------------------------------------------------------
+    process_all_raster_items                 Optional bool. 
+
+                                             If set to False, all raster items in the image service will be mosaicked together and processed. This is the default.
+
+                                             If set to True, all raster items in the image service will be processed as separate images.
+    ------------------------------------     --------------------------------------------------------------------
+    output_name                              Optional. If not provided, a Feature layer is created by the method and used as the output .
+                                             You can pass in an existing Feature Service Item from your GIS to use that instead.
+                                             Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+                                             to be used as the output for the tool.
+                                             A RuntimeError is raised if a service by that name already exists
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                             Dictionary can contain value for following keys:
+
+                                             - cellSize - Set the output raster cell size, or resolution
+
+                                             - extent - Sets the processing extent used by the function
+
+                                             - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                             - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                             Eg: {"processorType" : "CPU"}
+
+                                             Setting context parameter will override the values set using arcgis.env 
+                                             variable for this particular function.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ====================================     ====================================================================
+
+    :return:
+        The output feature layer item containing the classified objects
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.classify_objects_using_deep_learning(input_raster=input_raster,
+                                                                          input_features=input_features,
+                                                                          output_feature_class=output_name,
+                                                                          model=model,
+                                                                          model_arguments=model_arguments,
+                                                                          class_label_field=class_label_field,
+                                                                          process_all_raster_items=process_all_raster_items,
+                                                                          context=context,
+                                                                          future=future,
+                                                                          **kwargs)
 
 class Model:
     def __init__(self, model = None):
@@ -808,6 +970,8 @@ class Model:
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------     --------------------------------------------------------------------
+        future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         ==================     ====================================================================
 
         :return:
@@ -867,6 +1031,8 @@ class Model:
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------     --------------------------------------------------------------------
+        future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         ==================     ====================================================================
 
         :return:
@@ -930,6 +1096,8 @@ class Model:
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------     --------------------------------------------------------------------
+        future                 Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
         ==================     ====================================================================
 
         :return:

@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(__file__))
 
 import numpy as np
 import math
+import arcpy
 
 def check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding):
     return ((centroid[1] >= (start_y + padding)) and  \
@@ -146,14 +147,20 @@ class ArcGISObjectDetector:
         else:
             raise Exception("Invalid model configuration")
 
+        device = None
         if 'device' in kwargs:
             device = kwargs['device']
-            if device < -1:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+            if device == -2:
                 device = get_available_device()
-            os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
-        else:
-            os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+        if device is not None:
+            if device >= 0:
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                arcpy.env.processorType = "GPU"
+                arcpy.env.gpuId = str(device)
+            else:
+                arcpy.env.processorType = "CPU"
 
         self.child_object_detector = ChildModelDetector()
         self.child_object_detector.initialize(model, model_as_file)
@@ -265,12 +272,37 @@ print('not implemented')
 
 image_classifier_prf = """
 
+import arcpy
 import numpy as np
 import json
 import sys, os, importlib
 import math
 
 sys.path.append(os.path.dirname(__file__))
+
+def get_available_device(max_memory=0.8):
+    '''
+    select available device based on the memory utilization status of the device
+    :param max_memory: the maximum memory utilization ratio that is considered available
+    :return: GPU id that is available, -1 means no GPU is available/uses CPU, if GPUtil package is not installed, will
+    return 0
+    '''
+    try:
+        import GPUtil
+    except ModuleNotFoundError:
+        return 0
+
+    GPUs = GPUtil.getGPUs()
+    freeMemory = 0
+    available=-1
+    for GPU in GPUs:
+        if GPU.memoryUtil > max_memory:
+            continue
+        if GPU.memoryFree >= freeMemory:
+            freeMemory = GPU.memoryFree
+            available = GPU.id
+
+    return available
 
 def chunk_it(image, tile_size):
     s = image.shape
@@ -352,7 +384,7 @@ attribute_table = {
 class ArcGISImageClassifier:
     def __init__(self):
         self.name = 'Image Classifier'
-        self.description = 'Image classification python raster function to inference a tensorflow '                            'deep learning model'
+        self.description = 'Image classification python raster function to inference a pytorch image classifier'
 
     def initialize(self, **kwargs):
         if 'model' not in kwargs:
@@ -381,12 +413,24 @@ class ArcGISImageClassifier:
                     '{}.{}'.format(framework, self.json_info['ModelConfiguration']['Name'])), 'ChildImageClassifier')
         else:
             raise Exception("Invalid model configuration")
-        self.child_image_classifier = ChildImageClassifier()
-        self.child_image_classifier.initialize(model, model_as_file)
 
+        device = None
         if 'device' in kwargs:
             device = kwargs['device']
-            os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+            if device == -2:
+                device = get_available_device()
+
+        if device is not None:
+            if device >= 0:
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                arcpy.env.processorType = "GPU"
+                arcpy.env.gpuId = str(device)
+            else:
+                arcpy.env.processorType = "CPU"
+
+        self.child_image_classifier = ChildImageClassifier()
+        self.child_image_classifier.initialize(model, model_as_file)
 
     def getParameterInfo(self):
         required_parameters = [
@@ -470,6 +514,7 @@ sys.path.append(os.path.dirname(__file__))
 
 import numpy as np
 import math
+import arcpy
 
 def get_centroid(polygon):
     polygon = np.array(polygon)
@@ -613,14 +658,20 @@ class ArcGISInstanceDetector:
         else:
             raise Exception("Invalid model configuration")
 
+        device = None
         if 'device' in kwargs:
             device = kwargs['device']
-            if device < -1:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+            if device == -2:
                 device = get_available_device()
-            os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
-        else:
-            os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+        if device is not None:
+            if device >= 0:
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                arcpy.env.processorType = "GPU"
+                arcpy.env.gpuId = str(device)
+            else:
+                arcpy.env.processorType = "CPU"
 
         self.child_instance_detector = ChildInstanceDetector()
         self.child_instance_detector.initialize(model, model_as_file)

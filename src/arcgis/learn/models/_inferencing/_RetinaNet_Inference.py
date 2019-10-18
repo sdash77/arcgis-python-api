@@ -9,6 +9,11 @@ try:
 except Exception as e:
     HAS_TORCH = False
 
+try:
+    import arcpy
+except:
+    pass
+
 def pred2dict(bb_np, score, cat_str, c):
     '''
     Create a dictionary with the attributes of a single predicted bounding box
@@ -196,12 +201,15 @@ class ChildObjectDetector:
         if not HAS_TORCH:
             raise Exception('PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision')
 
+        import arcgis
         from arcgis.learn.models import RetinaNet
 
-        if torch.cuda.is_available():
+        if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
             self.device = torch.device('cuda')
+            arcgis.env._processorType = "GPU"
         else:
             self.device = torch.device('cpu')
+            arcgis.env._processorType = "CPU"
 
         if model_as_file:
             with open(model, 'r') as f:

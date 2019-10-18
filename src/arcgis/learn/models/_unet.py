@@ -21,8 +21,6 @@ except Exception as e:
     HAS_FASTAI = False
 
 
-def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
-
 def accuracy(input, target, void_code=0, class_mapping=None):  
     target = target.squeeze(1)
     mask = target != void_code
@@ -70,10 +68,6 @@ class UnetClassifier(ArcGISModel):
             backbone_cut = _backbone_meta['cut']
             backbone_split = _backbone_meta['split']
 
-        if self._backbone == models.mobilenet_v2:
-            backbone_cut = -1
-            backbone_split = _mobilenet_split
-
         acc_metric = partial(accuracy, void_code=0, class_mapping=data.class_mapping) 
         self.learn = unet_learner(data, arch=self._backbone, metrics=acc_metric, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
         self._arcgis_init_callback() # make first conv weights learnable
@@ -97,10 +91,42 @@ class UnetClassifier(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
+        """
+        Creates a Unet like classifier from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+        
+        :returns: `UnetClassifier` Object
+        """
         return cls.from_emd(data, emd_path)
 
     @classmethod
     def from_emd(cls, data, emd_path):
+        """
+        Creates a Unet like classifier from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        =====================   ===========================================
+        
+        :returns: `UnetClassifier` Object
+        """
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
@@ -126,20 +152,20 @@ class UnetClassifier(ArcGISModel):
                               chip_size=emd['ImageHeight'])
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data._is_multispectral = emd.get('IsMultispectral', False)
+            if data._is_multispectral:
+                data._bands = emd.get('Bands')
+                data._imagery_type = emd.get("ImageryType")
+                data._extract_bands = emd.get("ExtractBands")
+                data._train_tail = False # Hardcoded because we are never going to train a model with empty data
+                normalization_stats = emd.get("NormalizationStats")
+                for _stat in normalization_stats:
+                    if normalization_stats[_stat] is not None:
+                        normalization_stats[_stat] = torch.tensor(normalization_stats[_stat])
+                    setattr(data, ('_'+_stat), normalization_stats[_stat])
+                data._do_normalize = emd.get("DoNormalize")
 
-        data.resize_to = resize_to
-
-        data._is_multispectral = emd.get('IsMultispectral', False)
-        if data._is_multispectral:
-            data._bands = emd.get('Bands')
-            data._imagery_type = emd.get("ImageryType")
-            data._extract_bands = emd.get("ExtractBands")
-            normalization_stats = emd.get("NormalizationStats")
-            for _stat in normalization_stats:
-                if normalization_stats[_stat] is not None:
-                    normalization_stats[_stat] = torch.tensor(normalization_stats[_stat])
-                setattr(data, ('_'+_stat), normalization_stats[_stat])
-            data._do_normalize = emd.get("DoNormalize")
+        data.resize_to = resize_to        
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 

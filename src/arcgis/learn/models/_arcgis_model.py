@@ -1,26 +1,3 @@
-HAS_FASTAI = True
-try:
-    from fastai.callbacks import TrackerCallback, EarlyStoppingCallback, LearnerCallback
-    from torch import nn
-    import torch
-    from torchvision import models
-    import math
-except ImportError:
-    HAS_FASTAI = False
-    class TrackerCallback():
-        pass
-    class LearnerCallback():
-        pass
-
-# Try importing Fastai Tensorboard callback and tensorboardX package
-# and set the flag accordingly
-HAS_TENSORBOARDX = True
-try:
-    import tensorboardX # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
-    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
-except:
-    HAS_TENSORBOARDX = False
-    
 import arcgis
 from pathlib import Path
 import os
@@ -30,6 +7,34 @@ import json
 import logging
 from .._data import _raise_fastai_import_error
 from warnings import warn
+import contextlib
+import io
+import sys
+import socket
+
+HAS_FASTAI = True
+HAS_TENSORBOARDX = True
+
+try:
+    from fastai.callbacks import TrackerCallback, EarlyStoppingCallback, LearnerCallback
+    from torch import nn
+    import torch
+    from torchvision import models
+    import math
+    import warnings
+except ImportError:
+    HAS_FASTAI = False
+    class TrackerCallback():
+        pass
+    class LearnerCallback():
+        pass
+
+try:
+    import tensorboardX 
+    # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
+    from fastai.callbacks.tensorboard import LearnerTensorboardWriter
+except:
+    HAS_TENSORBOARDX = False
 
 logger = logging.getLogger()
 
@@ -39,10 +44,22 @@ trailing_losses_skipped = 5
 model_characteristics_folder = 'ModelCharacteristics'
 
 
+@contextlib.contextmanager
+def nostdout():
+    save_stdout = sys.stdout
+    sys.stdout = io.BytesIO()
+    yield
+    sys.stdout = save_stdout
+    
 class _EmptyData():
     def __init__(self, path, c, loss_func, chip_size):
         self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif getattr(arcgis.env, "_processorType", "") == "CPU":
+            self.device = torch.device("cpu")
+        else:
+            self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.c = c
         self.loss_func = loss_func
         self.chip_size = chip_size
@@ -113,7 +130,11 @@ class SaveModelCallback(TrackerCallback):
                 self.model.load('{}'.format(self.name))
             except FileNotFoundError:
                 pass
-            self.model.save('{}'.format(self.name))
+            
+            try:
+                self.model.save('{}'.format(self.name))
+            except:
+                pass
 
 def _get_tail(model):
     index_order = 0
@@ -189,7 +210,13 @@ class ArcGISModel(object):
         if not HAS_FASTAI:
             _raise_fastai_import_error()
 
-        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+            self._device = torch.device("cuda")
+        elif getattr(arcgis.env, "_processorType", "") == "CPU":
+            self._device = torch.device("cpu")
+        else:
+            self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
         if backbone is None:
             self._backbone = models.resnet34
         elif type(backbone) is str:
@@ -215,6 +242,7 @@ class ArcGISModel(object):
         self.learn = None
         self._data = data
         self._learning_rate = None
+
         # Declare the family of backbones to be unpacked and used by different models as supported types
         self._vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__, 
                             models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
@@ -331,7 +359,7 @@ class ArcGISModel(object):
         tensorboard             Optional boolean. Parameter to write the training log. 
                                 If set to 'True' the log will be saved at 
                                 <dataset-path>/training_log which can be visualized in
-                                tensorboard. Required tensorboardx version=1.7
+                                tensorboard. Required tensorboardx version=1.7 (Experimental support).
 
                                 The default value is 'False'.
         =====================   ===========================================
@@ -354,19 +382,18 @@ class ArcGISModel(object):
         if checkpoint:
             from datetime import datetime
             now = datetime.now()
-            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name=now.strftime("checkpoint_%d-%m-%Y_%H-%M-%S")))
+            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S")))
         
-        # Check if training log needs to be written and tensorboardx is available
+        # If tensorboardx is installed write a log with name as timestamp
         if tensorboard and HAS_TENSORBOARDX:
-            # Create a directory path using the timestamp to write the logs in
-            training_id = time.strftime("%Y%m%d-%H%M%S")
+            training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
             log_path = Path(os.path.dirname(self._data.path)) / 'training_log'
-            # Append the tensorboard callback in the list of callbacks to be passed to fit method
             callbacks.append(LearnerTensorboardWriter(learn=self.learn, base_dir=log_path, name=training_id))
-            print("Monitor training using Tensorboard using the following command: 'tensorboard --logdir={}'".format(log_path))
+            hostname = socket.gethostname()
+            print("Monitor training using Tensorboard using the following command: 'tensorboard --host={} --logdir={}'".format(hostname, log_path))
         # Send out a warning if tensorboardX is not installed
         elif tensorboard:
-            warn("Install tensorboardX 1.8 'conda install -c conda-forge tensorboardx=1.8' to write training log")
+            warn("Install tensorboardX 1.7 'pip install tensorboardx==1.7' to write training log")
 
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)
@@ -504,9 +531,10 @@ class ArcGISModel(object):
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get('batch_size', 16)
 
-            self._save_as_tfonnx(saved_path, batch_size)
-            zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
-            os.remove(saved_path.with_suffix('.pth'))
+            with nostdout():
+                self._save_as_tfonnx(saved_path, batch_size)
+                zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
+                os.remove(saved_path.with_suffix('.pth'))
         else:
             zip_name = self._create_emd(saved_path)
 
