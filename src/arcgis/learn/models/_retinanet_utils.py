@@ -53,6 +53,7 @@ from fastai.layers import conv2d, conv_layer
 from fastai.core import ifnone, is_tuple, range_of
 import math
 import matplotlib.pyplot as plt
+import warnings
 
 
 class LateralUpsampleMerge(nn.Module):
@@ -64,7 +65,10 @@ class LateralUpsampleMerge(nn.Module):
     
     def forward(self, x):
         scale_factor=2
-        size_to_interpolate = tuple(torch.tensor(x.shape[2:]) * scale_factor)
+        # To catch warning from tensorboard
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            size_to_interpolate = tuple([int(a) * scale_factor for a in [x.shape[2], x.shape[3]]])
         # Interpolate the Lateral layer to match the size of the Upsample layer before merging them
         return F.interpolate(self.conv_lat(self.hook.stored), size=size_to_interpolate) + F.interpolate(x, scale_factor=scale_factor)
 

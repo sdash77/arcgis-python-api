@@ -1,4 +1,20 @@
+import arcgis
+from pathlib import Path
+import os
+import time
+import tempfile
+import json
+import logging
+from .._data import _raise_fastai_import_error
+from warnings import warn
+import contextlib
+import io
+import sys
+import socket
+
 HAS_FASTAI = True
+HAS_TENSORBOARDX = True
+
 try:
     from fastai.callbacks import TrackerCallback, EarlyStoppingCallback, LearnerCallback
     from torch import nn
@@ -13,29 +29,12 @@ except ImportError:
     class LearnerCallback():
         pass
 
-# Try importing Fastai Tensorboard callback and tensorboardX package
-# and set the flag accordingly
-HAS_TENSORBOARDX = True
 try:
-    import tensorboardX # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
+    import tensorboardX 
+    # LearnerTensorboardWriter uses SummaryWriter from tensorboardX
     from fastai.callbacks.tensorboard import LearnerTensorboardWriter
 except:
     HAS_TENSORBOARDX = False
-
-
-import arcgis
-from pathlib import Path
-import os
-import time
-import tempfile
-import json
-import logging
-from .._data import _raise_fastai_import_error
-from warnings import warn
-
-import contextlib
-import io
-import sys
 
 logger = logging.getLogger()
 
@@ -243,6 +242,7 @@ class ArcGISModel(object):
         self.learn = None
         self._data = data
         self._learning_rate = None
+
         # Declare the family of backbones to be unpacked and used by different models as supported types
         self._vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__, 
                             models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
@@ -382,19 +382,18 @@ class ArcGISModel(object):
         if checkpoint:
             from datetime import datetime
             now = datetime.now()
-            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name=now.strftime("checkpoint_%d-%m-%Y_%H-%M-%S")))
+            callbacks.append(SaveModelCallback(self, monitor='valid_loss', every='improvement', name=now.strftime("checkpoint_%Y-%m-%d_%H-%M-%S")))
         
-        # Check if training log needs to be written and tensorboardx is available
+        # If tensorboardx is installed write a log with name as timestamp
         if tensorboard and HAS_TENSORBOARDX:
-            # Create a directory path using the timestamp to write the logs in
-            training_id = time.strftime("%Y%m%d-%H%M%S")
+            training_id = time.strftime("log_%Y-%m-%d_%H-%M-%S")
             log_path = Path(os.path.dirname(self._data.path)) / 'training_log'
-            # Append the tensorboard callback in the list of callbacks to be passed to fit method
             callbacks.append(LearnerTensorboardWriter(learn=self.learn, base_dir=log_path, name=training_id))
-            print("Monitor training using Tensorboard using the following command: 'tensorboard --logdir={}'".format(log_path))
+            hostname = socket.gethostname()
+            print("Monitor training using Tensorboard using the following command: 'tensorboard --host={} --logdir={}'".format(hostname, log_path))
         # Send out a warning if tensorboardX is not installed
         elif tensorboard:
-            warn("Install tensorboardX 1.8 'conda install -c conda-forge tensorboardx=1.8' to write training log")
+            warn("Install tensorboardX 1.7 'pip install tensorboardx==1.7' to write training log")
 
         if one_cycle:
             self.learn.fit_one_cycle(epochs, lr, callbacks=callbacks, **kwargs)

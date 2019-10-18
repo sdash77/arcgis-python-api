@@ -91,7 +91,7 @@ class RetinaNet(ArcGISModel):
         if not self._check_backbone_support(backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        self.name = RetinaNet
+        self.name = "RetinaNet"
         self._code = code
 
         self.scales = ifnone(scales, [1,2**(-1/3), 2**(-2/3)])
