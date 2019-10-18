@@ -51,12 +51,13 @@ def is_no_color(color_mapping):
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
     _processor = SegmentationProcessor
-    def __init__(self, items, classes=None, class_mapping=None, color_mapping=None, **kwargs):
+    def __init__(self, items, chip_size, classes=None, class_mapping=None, color_mapping=None, **kwargs):
         super().__init__(items, **kwargs)
         self.class_mapping = class_mapping
         self.color_mapping = color_mapping
         self.copy_new.append('classes')
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
+        self.chip_size = chip_size
         self.inverse_class_mapping = {}
         for k, v in self.class_mapping.items():
             self.inverse_class_mapping[v] = k
@@ -82,7 +83,11 @@ class ArcGISSegmentationLabelList(ImageList):
     def open(self, fn):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning) # EXIF warning from TiffPlugin
-            img_shape = io.imread(fn[0]).shape
+            if len(fn) != 0:
+                img_shape = io.imread(fn[0]).shape
+            else:
+                labeled_mask = torch.zeros((len(self.class_mapping), self.chip_size, self.chip_size))
+                return ArcGISImageSegment(labeled_mask, cmap=self.cmap, norm=self.mplnorm)
             k = 0
 
             labeled_mask = np.zeros((1, img_shape[0], img_shape[1]))

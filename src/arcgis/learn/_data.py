@@ -464,7 +464,7 @@ def prepare_data(path,
         label_dirs = os.listdir(path/'labels')
         label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
         get_y_func = partial(get_labels, label_dirs= label_dir)
-        src = src.label_from_func(get_y_func, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)
+        src = src.label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)
     
     elif dataset_type == 'Classified_Tiles':
 
