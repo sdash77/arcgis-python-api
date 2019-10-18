@@ -120,20 +120,20 @@ class UnetClassifier(ArcGISModel):
                               chip_size=emd['ImageHeight'])
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data._is_multispectral = emd.get('IsMultispectral', False)
+            if data._is_multispectral:
+                data._bands = emd.get('Bands')
+                data._imagery_type = emd.get("ImageryType")
+                data._extract_bands = emd.get("ExtractBands")
+                data._train_tail = False # Hardcoded because we are never going to train a model with empty data
+                normalization_stats = emd.get("NormalizationStats")
+                for _stat in normalization_stats:
+                    if normalization_stats[_stat] is not None:
+                        normalization_stats[_stat] = torch.tensor(normalization_stats[_stat])
+                    setattr(data, ('_'+_stat), normalization_stats[_stat])
+                data._do_normalize = emd.get("DoNormalize")
 
-        data.resize_to = resize_to
-
-        data._is_multispectral = emd.get('IsMultispectral', False)
-        if data._is_multispectral:
-            data._bands = emd.get('Bands')
-            data._imagery_type = emd.get("ImageryType")
-            data._extract_bands = emd.get("ExtractBands")
-            normalization_stats = emd.get("NormalizationStats")
-            for _stat in normalization_stats:
-                if normalization_stats[_stat] is not None:
-                    normalization_stats[_stat] = torch.tensor(normalization_stats[_stat])
-                setattr(data, ('_'+_stat), normalization_stats[_stat])
-            data._do_normalize = emd.get("DoNormalize")
+        data.resize_to = resize_to        
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
