@@ -320,12 +320,6 @@ def prepare_data(path,
                             'RCNN_Masks' and 'Classified_Tiles'                    
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
-    ---------------------   -------------------------------------------
-    random_flip             Optional boolean. Applies only when 
-                            ``dataset_type``='PASCAL_VOC_rectangles'. If 'True', 
-                            this parameter is used to randomly flip the training images. 
-
-                            The default value is 'True'.
     =====================   ===========================================
 
     :returns: data object

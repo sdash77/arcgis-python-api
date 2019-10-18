@@ -359,7 +359,7 @@ class ArcGISModel(object):
         tensorboard             Optional boolean. Parameter to write the training log. 
                                 If set to 'True' the log will be saved at 
                                 <dataset-path>/training_log which can be visualized in
-                                tensorboard. Required tensorboardx version=1.7
+                                tensorboard. Required tensorboardx version=1.7 (Experimental support).
 
                                 The default value is 'False'.
         =====================   ===========================================
