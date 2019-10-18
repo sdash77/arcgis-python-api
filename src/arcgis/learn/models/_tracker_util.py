@@ -154,23 +154,6 @@ def munkres_assignment(trackers, detections, iou_thrd):
     
     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)    
 
-def draw_box_label(img, bbox_cv2, trackids, scores, box_color=(0, 255, 255)): #upd : to show class
-    '''
-    Helper funciton for drawing the bounding boxes and the labels
-    bbox_cv2 = [left, top, right, bottom]
-    '''
-    #box_color= (0, 255, 255)
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    font_size = 0.7
-    left, top, right, bottom = bbox_cv2[1], bbox_cv2[0], bbox_cv2[3], bbox_cv2[2]
-    
-    # Draw the bounding box
-    text = 'obj: ' + str(trackids) 
-    cv2.putText(img, text, (left, top), font, font_size, (255, 255, 255), 2)
-    cv2.putText(img, str(int(scores*100)), (left, bottom), font, font_size, (255, 255, 255), 2)
-    cv2.rectangle(img, (left, top), (right, bottom), box_color, 4)
-
-    return img
 
 def main_tracker(img, detections, scores, assignment_iou_thrd, vanish_frames, detect_frames):
     '''
@@ -242,13 +225,20 @@ def main_tracker(img, detections, scores, assignment_iou_thrd, vanish_frames, de
     # The list of tracks to be annotated  
     good_tracker_list =[]
     obj_info = {}
+    predictions = []
+    scores = []
+    labels = []
     for trk in tracker_list:
         if ((trk.hits >= detect_frames) and (trk.lost_tracks <= vanish_frames)):
             good_tracker_list.append(trk)
             x_cv2 = trk.box
             obj_info[trk.trackid] = (x_cv2, trk.score)
-            img= draw_box_label(img, x_cv2, trk.trackid, trk.score) # Draw the bounding boxes on the images
+
+            predictions.append([x_cv2[1], x_cv2[0], x_cv2[3] - x_cv2[1], x_cv2[2] - x_cv2[0]])
+            scores.append(trk.score)
+            labels.append(trk.trackid)
+
     # Book keeping
     # deleted_tracks = filter(lambda x: x.lost_tracks > vanish_frames, tracker_list)  
 
-    return img, obj_info
+    return predictions, labels, scores

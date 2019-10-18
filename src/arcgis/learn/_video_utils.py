@@ -37,52 +37,9 @@ class VideoUtils():
         output_file_path=None,
         multiplex=False,
         multiplex_file_path=None,
-        tracker_options={'assignment_iou_thrd':0.3, 'vanish_frames':40, 'detect_frames':10}):
-        """
-        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        input_video_path        Required. Path to the video file to make the
-                                predictions on.
-        ---------------------   -------------------------------------------
-        metadata_file           Required. Path to the metadata csv file where
-                                the predictions will be saved in VMTI format.
-        ---------------------   -------------------------------------------
-        threshold               Optional float. The probability above which
-                                a detection will be considered.
-        ---------------------   -------------------------------------------
-        nms_overlap             Optional float. The intersection over union
-                                threshold with other predicted bounding
-                                boxes, above which the box with the highest
-                                score will be considered a true positive.
-        ---------------------   -------------------------------------------
-        track                   Optional bool. Set this parameter as True to
-                                enable object tracking. 
-        ---------------------   -------------------------------------------
-        visualize               Optional boolean. If True a video is saved
-                                with prediction results.
-        ---------------------   -------------------------------------------
-        output_file_path        Optional path. Path of the final video to be saved.
-                                If not supplied, video will be saved at path input_video_path
-                                appended with _prediction.
-        ---------------------   -------------------------------------------
-        multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
-        ---------------------   -------------------------------------------
-        multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
-                                By default a new file with _multiplex.mp4 extension is saved
-                                in the same folder.
-        ---------------------   -------------------------------------------
-        tracking_options        Optional dictionary. Set different parameters for
-                                object tracking. assignment_iou_thrd parameter is used
-                                to assign threshold for assignment of trackers, 
-                                vanish_frames is the number of frames the object should
-                                be absent to consider it as vanished, detect_frames 
-                                is the number of frames an object should be detected
-                                to track it. 
-        =====================   ===========================================
-        """
-
+        tracker_options={'assignment_iou_thrd': 0.3, 'vanish_frames': 40, 'detect_frames': 10},
+        visual_options={'show_scores': True, 'thickness': 2, 'fontface': 0, 'show_labels': True, 'color': (255, 255, 255)}
+    ):
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
 
@@ -96,6 +53,19 @@ class VideoUtils():
 
         object_id_mapping = {}
         object_id = 1
+
+        thickness = None
+        fontface = None
+        show_labels = None
+        color = None
+        show_scores = True
+
+        if visualize:
+            thickness = visual_options.get('thickness', 2)
+            fontface = visual_options.get('fontface', 0)
+            show_labels = visual_options.get('show_labels', True)
+            color = visual_options.get('color', (255, 255, 255))
+            show_scores = visual_options.get('show_scores', True)
 
         for pb in progress_bar(range(total_frames)):
             success, frame = video_read.read()
@@ -126,21 +96,19 @@ class VideoUtils():
                         bboxes.append(
                             [prediction[1], prediction[0], prediction[1] + prediction[3], prediction[0] + prediction[2]])
 
-                    image, obj_info = _tracker_util.main_tracker(frame,
+                    predictions, labels, scores = _tracker_util.main_tracker(frame,
                                                                  bboxes,
                                                                  scores,
                                                                  tracker_options['assignment_iou_thrd'],
                                                                  tracker_options['vanish_frames'],
                                                                  tracker_options['detect_frames'])
 
-                    for ids, bbox_data in obj_info.items():
-                        data = bb2hw(bbox_data[0])
-
+                    for index, data in enumerate(predictions):
                         top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
                         bottom_right = max(0, (int(data[1] + data[3]) - 1)) * width + int(data[0] + data[2])
                         center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (int(data[0]) + int((data[2]) / 2))
 
-                        vmti_detections = f'{ids} {bbox_data[1] * 100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
+                        vmti_detections = f'{labels[index]} {scores[index] * 100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
                 else:
                     for index, data in enumerate(predictions):
                         top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
@@ -153,7 +121,18 @@ class VideoUtils():
                             object_id = object_id + 1
 
                         vmti_detections = f'{object_id_mapping[labels[index]]} {scores[index] * 100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
-                    image = _draw_predictions(frame, predictions, labels)
+
+                image = _draw_predictions(
+                    frame,
+                    predictions,
+                    labels,
+                    scores=scores,
+                    show_scores=show_scores,
+                    thickness=thickness,
+                    fontface=fontface,
+                    color=color,
+                    show_labels=show_labels
+                )
             else:
                 image = frame
 
@@ -217,4 +196,3 @@ class VideoUtils():
             )
 
         arcpy.ia.VideoMultiplexer(input_video_path, metadata_file, multiplex_file_path)
-        

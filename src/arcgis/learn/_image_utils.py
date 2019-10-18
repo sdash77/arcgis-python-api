@@ -77,23 +77,35 @@ def _get_transformed_predictions(chips_data):
     return predictions, labels, scores
 
 
-def _draw_predictions(frame, predictions, labels):
+def _draw_predictions(frame, predictions, labels, scores=None, show_scores=True, show_labels=True, color=(255, 255, 255), fontface=0, thickness=2):
     for index, data in enumerate(predictions):
         frame = cv2.rectangle(
             frame,
             (int(data[0]), int(data[1])), (int(data[0] + data[2]), int(data[1] + data[3])),
-            (255, 255, 255),
-            2
+            color,
+            thickness
         )
-        cv2.putText(
-            frame,
-            labels[index],
-            (int(data[0]), int(data[1]) - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
-            (255, 255, 255),
-            2
-        )
+
+        text_to_display = None
+        if show_labels:
+            text_to_display = str(labels[index])
+
+        if show_scores and scores is not None:
+            if text_to_display:
+                text_to_display = text_to_display + ": " + str(scores[index])
+            else:
+                text_to_display = str(scores[index])
+
+        if text_to_display:
+            frame = cv2.putText(
+                frame,
+                text_to_display,
+                (int(data[0]), int(data[1]) - 10),
+                fontface,
+                0.7,
+                color,
+                thickness
+            )
 
     return frame
 

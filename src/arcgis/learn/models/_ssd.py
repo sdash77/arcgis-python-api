@@ -477,18 +477,31 @@ class SingleShotDetector(ArcGISModel):
         if rows > self._data.batch_size:
             rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
-    
-    def predict_video(self,
-                      input_video_path, 
-                      metadata_file, 
-                      threshold=0.5, 
-                      nms_overlap=0.1, 
-                      track=False, 
-                      visualize=False, 
-                      output_file_path=None,
-                      multiplex=False,
-                      multiplex_file_path=None,
-                      tracker_options={'assignment_iou_thrd':0.3, 'vanish_frames':40, 'detect_frames':10}):
+
+    def predict_video(
+        self,
+        input_video_path,
+        metadata_file,
+        threshold=0.5,
+        nms_overlap=0.1,
+        track=False,
+        visualize=False,
+        output_file_path=None,
+        multiplex=False,
+        multiplex_file_path=None,
+        tracker_options={
+            'assignment_iou_thrd': 0.3,
+            'vanish_frames': 40,
+            'detect_frames': 10
+        },
+        visual_options={
+            'show_scores': True,
+            'show_labels': True,
+            'thickness': 2,
+            'fontface': 0,
+            'color': (255, 255, 255)
+        }
+    ):
 
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
@@ -532,29 +545,42 @@ class SingleShotDetector(ArcGISModel):
                                 vanish_frames is the number of frames the object should
                                 be absent to consider it as vanished, detect_frames 
                                 is the number of frames an object should be detected
-                                to track it. 
+                                to track it.
+        ---------------------   -------------------------------------------
+        visual_options          Optional dictionary. Set different parameters for
+                                visualization.
+                                show_scores boolean, to view scores on predictions,
+                                show_labels boolean, to view labels on predictions,
+                                thickness integer, to set the thickness level of box,
+                                fontface integer, fontface value from opencv values,
+                                color tuple (B, G, R), tuple containing values between
+                                0-255.
         =====================   ===========================================
         
         """
 
-        VideoUtils.predict_video(self,
-                                 input_video_path,
-                                  metadata_file, 
-                                  threshold, 
-                                  nms_overlap, 
-                                  track, visualize, 
-                                  output_file_path, 
-                                  multiplex, 
-                                  multiplex_file_path, 
-                                  tracker_options)
+        VideoUtils.predict_video(
+            self,
+            input_video_path,
+            metadata_file,
+            threshold,
+            nms_overlap,
+            track, visualize,
+            output_file_path,
+            multiplex,
+            multiplex_file_path,
+            tracker_options,
+            visual_options
+        )
 
     def predict(
-            self,
-            image_path,
-            threshold=0.5,
-            nms_overlap=0.1,
-            return_scores=False,
-            visualize=False):
+        self,
+        image_path,
+        threshold=0.5,
+        nms_overlap=0.1,
+        return_scores=False,
+        visualize=False
+    ):
 
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
@@ -591,6 +617,7 @@ class SingleShotDetector(ArcGISModel):
             image = image_path
 
         orig_height, orig_width, _ = image.shape
+        orig_frame = image.copy()
 
         if self._data.resize_to is not None:
             if isinstance(self._data.resize_to, tuple):
@@ -671,7 +698,7 @@ class SingleShotDetector(ArcGISModel):
             ]      
 
         if visualize:
-            image = _draw_predictions(image, predictions, labels)
+            image = _draw_predictions(orig_frame, predictions, labels)
             import matplotlib.pyplot as plt
             plt.xticks([])
             plt.yticks([])
