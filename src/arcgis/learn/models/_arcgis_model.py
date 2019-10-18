@@ -528,8 +528,8 @@ class ArcGISModel(object):
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get('batch_size', 16)
 
-            self._save_as_tfonnx(saved_path, batch_size)
             with nostdout():
+                self._save_as_tfonnx(saved_path, batch_size)
                 zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
                 os.remove(saved_path.with_suffix('.pth'))
         else:

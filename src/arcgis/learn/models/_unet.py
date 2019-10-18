@@ -91,10 +91,42 @@ class UnetClassifier(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
+        """
+        Creates a Unet like classifier from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+        
+        :returns: `UnetClassifier` Object
+        """
         return cls.from_emd(data, emd_path)
 
     @classmethod
     def from_emd(cls, data, emd_path):
+        """
+        Creates a Unet like classifier from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        =====================   ===========================================
+        
+        :returns: `UnetClassifier` Object
+        """
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)

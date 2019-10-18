@@ -55,6 +55,7 @@ class RetinaNet(ArcGISModel):
     Creates a RetinaNet Object Detector with the specified zoom scales
     and aspect ratios. 
     Based on the Fast.ai notebook at https://github.com/fastai/fastai_dev/blob/master/dev_nb/102a_coco.ipynb
+
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -74,6 +75,7 @@ class RetinaNet(ArcGISModel):
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
+    
     :returns: `RetinaNet` Object
     """
 
@@ -126,12 +128,14 @@ class RetinaNet(ArcGISModel):
         """
         Creates an Esri Model Definition (EMD) file with the parameters and 
         other information about the model.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. Path where the created 
                                 Esri Model Definition file will be saved.
         =====================   ===========================================
+        
         :returns: path of the saved EMD file
         """
 
@@ -166,16 +170,18 @@ class RetinaNet(ArcGISModel):
     def from_model(cls, emd_path, data=None):
         """
         Creates a RetinaNet Object Detector from an Esri Model Definition (EMD) file.
+
         =====================   ===========================================
         **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
                                 inferencing.
-        ---------------------   -------------------------------------------
-        emd_path                Required string. Path to Esri Model Definition
-                                file.
         =====================   ===========================================
+        
         :returns: `RetinaNet` Object
         """
 
@@ -225,6 +231,7 @@ class RetinaNet(ArcGISModel):
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
         Displays the results of a trained model on a part of the validation set.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -239,6 +246,7 @@ class RetinaNet(ArcGISModel):
                                 boxes, above which the box with the highest
                                 score will be considered a true positive.
         =====================   ===========================================
+        
         """ 
 
         if rows > self._data.batch_size:
@@ -259,6 +267,7 @@ class RetinaNet(ArcGISModel):
                   tracker_options={'assignment_iou_thrd': 0.3, 'vanish_frames': 40, 'detect_frames': 10}):
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -300,6 +309,7 @@ class RetinaNet(ArcGISModel):
                                 is the number of frames an object should be detected
                                 to track it.
         =====================   ===========================================
+        
         """
 
         VideoUtils.predict_video(self,
@@ -316,6 +326,7 @@ class RetinaNet(ArcGISModel):
     def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=True, visualize=False):
         """
         Predicts and displays the results of a trained model on a single image.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -447,6 +458,7 @@ class RetinaNet(ArcGISModel):
     def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.1, mean=False, show_progress=True):
         """
         Computes average precision on the validation set for each class.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -463,6 +475,7 @@ class RetinaNet(ArcGISModel):
                                 average precision otherwise returns mean
                                 average precision.                        
         =====================   ===========================================
+        
         :returns: `dict` if mean is False otherwise `float`
         """
 

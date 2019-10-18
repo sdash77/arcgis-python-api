@@ -62,6 +62,7 @@ class SingleShotDetector(ArcGISModel):
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
     and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
+    
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -99,6 +100,7 @@ class SingleShotDetector(ArcGISModel):
     ---------------------   -------------------------------------------
     ssd_version             Optional int within [1,2]. Use version=1 for arcgis v1.6.2 or earlier
     =====================   ===========================================
+    
     :returns: `SingleShotDetector` Object
     """
 
@@ -221,12 +223,31 @@ class SingleShotDetector(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
+
+        """
+        Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+        
+        :returns: `SingleShotDetector` Object
+        """
         return cls.from_emd(data, emd_path)
 
     @classmethod
     def from_emd(cls, data, emd_path):
+
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -237,6 +258,7 @@ class SingleShotDetector(ArcGISModel):
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
+        
         :returns: `SingleShotDetector` Object
         """
         emd_path = Path(emd_path)
@@ -448,6 +470,7 @@ class SingleShotDetector(ArcGISModel):
         return saved_path.stem
     
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
+
         """
         Displays the results of a trained model on a part of the validation set.
         """ 
@@ -466,8 +489,10 @@ class SingleShotDetector(ArcGISModel):
                       multiplex=False,
                       multiplex_file_path=None,
                       tracker_options={'assignment_iou_thrd':0.3, 'vanish_frames':40, 'detect_frames':10}):
+
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -509,6 +534,7 @@ class SingleShotDetector(ArcGISModel):
                                 is the number of frames an object should be detected
                                 to track it. 
         =====================   ===========================================
+        
         """
 
         VideoUtils.predict_video(self,
@@ -528,10 +554,11 @@ class SingleShotDetector(ArcGISModel):
             threshold=0.5,
             nms_overlap=0.1,
             return_scores=False,
-            visualize=False
-    ):
+            visualize=False):
+
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -552,6 +579,7 @@ class SingleShotDetector(ArcGISModel):
         visualize               Optional boolean. Displays the image with
                                 predicted bounding boxes if True.
         =====================   ===========================================
+        
         :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
         """
         if not HAS_OPENCV:
@@ -656,8 +684,10 @@ class SingleShotDetector(ArcGISModel):
             return predictions, labels
 
     def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
+
         """
         Computes average precision on the validation set for each class.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -674,6 +704,7 @@ class SingleShotDetector(ArcGISModel):
                                 average precision otherwise returns mean
                                 average precision.                        
         =====================   ===========================================
+        
         :returns: `dict` if mean is False otherwise `float`
         """        
         aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
