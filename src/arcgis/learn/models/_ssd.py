@@ -37,6 +37,7 @@ try:
     from torch.nn import Module as NnModule
     import PIL
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
+    from .._video_utils import VideoUtils
 except Exception as e:
     class NnModule():
         pass
@@ -61,7 +62,6 @@ class SingleShotDetector(ArcGISModel):
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
     and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
-
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -99,7 +99,6 @@ class SingleShotDetector(ArcGISModel):
     ---------------------   -------------------------------------------
     ssd_version             Optional int within [1,2]. Use version=1 for arcgis v1.6.2 or earlier
     =====================   ===========================================
-
     :returns: `SingleShotDetector` Object
     """
 
@@ -228,7 +227,6 @@ class SingleShotDetector(ArcGISModel):
     def from_emd(cls, data, emd_path):
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -239,7 +237,6 @@ class SingleShotDetector(ArcGISModel):
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
-
         :returns: `SingleShotDetector` Object
         """
         emd_path = Path(emd_path)
@@ -514,138 +511,16 @@ class SingleShotDetector(ArcGISModel):
         =====================   ===========================================
         """
 
-        if not HAS_OPENCV:
-            raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
-
-        video_read = cv2.VideoCapture(input_video_path)
-        fps = video_read.get(cv2.CAP_PROP_FPS)
-        video_obj = None
-        success = True
-        total_frames = int(video_read.get(cv2.CAP_PROP_FRAME_COUNT))
-        frame_number = 0
-        vmtis = ['vmtilocaldataset']
-
-        object_id_mapping = {}
-        object_id = 1
-
-        for pb in progress_bar(range(total_frames)):
-            success, frame = video_read.read()
-            frame_number = frame_number + 1
-
-            if not success and frame_number < total_frames:
-                continue
-            elif not success:
-                break
-
-            height, width, _ = frame.shape
-            if visualize and not video_obj:
-                if not output_file_path:
-                    output_file_path = os.path.join(
-                        os.path.dirname(input_video_path),
-                        os.path.basename(input_video_path).split('.')[0] + '_predictions.avi'
-                    )
-                video_obj = cv2.VideoWriter(output_file_path, cv2.VideoWriter_fourcc(*'DIVX'), fps, (width, height))
-
-            predictions, labels, scores = self.predict(frame, threshold=threshold, nms_overlap=nms_overlap, return_scores=True)
-
-            vmti_detections = '\n'
-            
-            if predictions:
-                if track:
-                    bboxes = []
-                    for prediction in predictions:
-                        bboxes.append([prediction[1], prediction[0], prediction[1] + prediction[3], prediction[0] + prediction[2]])
-
-                    image, obj_info = _tracker_util.main_tracker(frame, 
-                                                                 bboxes,
-                                                                 scores, 
-                                                                 tracker_options['assignment_iou_thrd'], 
-                                                                 tracker_options['vanish_frames'], 
-                                                                 tracker_options['detect_frames'])
-
-                    for ids, bbox_data in obj_info.items():
-                        data = bb2hw(bbox_data[0])
-
-                        top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
-                        bottom_right = max(0, (int(data[1] + data[3]) - 1)) * width + int(data[0] + data[2])
-                        center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (int(data[0]) + int((data[2]) / 2))
-
-                        vmti_detections = f'{ids} {bbox_data[1]*100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
-                else:
-                    for index, data in enumerate(predictions):
-                        top_left = max(0, (int(data[1]) - 1)) * width + int(data[0])
-                        bottom_right = max(0, (int(data[1] + data[3]) - 1)) * width + int(data[0] + data[2])
-                        center_pixel = (int(data[1]) + int((data[3]) / 2)) * width + (
-                                int(data[0]) + int((data[2]) / 2))
-
-                        if not object_id_mapping.get(labels[index]):
-                            object_id_mapping[labels[index]] = object_id
-                            object_id = object_id + 1
-
-                        vmti_detections = f'{object_id_mapping[labels[index]]} {scores[index] * 100} {top_left} {bottom_right} {center_pixel};' + vmti_detections
-                    image = _draw_predictions(frame, predictions, labels)
-            else:
-                image = frame
-
-            vmtis.append(vmti_detections)
-
-            if visualize:
-                video_obj.write(image)
-
-        if video_obj:
-            video_obj.release()
-
-        video_read.release()
-
-        data = []
-        index = 0
-
-        file_exists = True
-        fields = []
-        if not os.path.exists(metadata_file):
-            file_exists = False
-            for vmti in vmtis:
-                data.append([vmti])
-        else:
-            with open(metadata_file, 'r') as csvinput:
-                for row in csv.reader(csvinput):
-                    if index == 0:
-                        fields = row
-                    if len(vmtis) <= index:
-                        data.append(row + [""])
-                    else:
-                        data.append(row + [vmtis[index]])
-                    index = index + 1
-
-        if 'vmtilocaldataset' in fields:
-            warn("Field 'vmtilocaldataset' already exists in the file, appending column at the end.")
-
-        if len(data) < len(vmtis):
-            warn(f"Writing {len(data)} rows only!")
-
-        with open(metadata_file, 'w', newline='') as csvoutput:
-            writer = csv.writer(csvoutput)
-            for row in data:
-                writer.writerow(row)
-
-        if not multiplex:
-            return
-
-        if not HAS_ARCPY:
-            warn("Arcpy doesn't exist, multiplexing skipped.")
-            return
-
-        if not file_exists:
-            warn("Metadata file doesn't exist, multiplexing skipped.")
-            return
-
-        if not multiplex_file_path:
-            multiplex_file_path = os.path.join(
-                os.path.dirname(input_video_path),
-                os.path.basename(input_video_path).split('.')[0] + '_multiplex.MOV'
-            )
-
-        arcpy.ia.VideoMultiplexer(input_video_path, metadata_file, multiplex_file_path)
+        VideoUtils.predict_video(self,
+                                 input_video_path,
+                                  metadata_file, 
+                                  threshold, 
+                                  nms_overlap, 
+                                  track, visualize, 
+                                  output_file_path, 
+                                  multiplex, 
+                                  multiplex_file_path, 
+                                  tracker_options)
 
     def predict(
             self,
@@ -657,7 +532,6 @@ class SingleShotDetector(ArcGISModel):
     ):
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -678,7 +552,6 @@ class SingleShotDetector(ArcGISModel):
         visualize               Optional boolean. Displays the image with
                                 predicted bounding boxes if True.
         =====================   ===========================================
-
         :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
         """
         if not HAS_OPENCV:
@@ -785,7 +658,6 @@ class SingleShotDetector(ArcGISModel):
     def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
         """
         Computes average precision on the validation set for each class.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -802,7 +674,6 @@ class SingleShotDetector(ArcGISModel):
                                 average precision otherwise returns mean
                                 average precision.                        
         =====================   ===========================================
-
         :returns: `dict` if mean is False otherwise `float`
         """        
         aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)

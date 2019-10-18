@@ -21,8 +21,6 @@ except Exception as e:
     HAS_FASTAI = False
 
 
-def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
-
 def accuracy(input, target, void_code=0, class_mapping=None):  
     target = target.squeeze(1)
     mask = target != void_code
@@ -69,10 +67,6 @@ class UnetClassifier(ArcGISModel):
             _backbone_meta = cnn_config(self._backbone_)
             backbone_cut = _backbone_meta['cut']
             backbone_split = _backbone_meta['split']
-
-        if self._backbone == models.mobilenet_v2:
-            backbone_cut = -1
-            backbone_split = _mobilenet_split
 
         acc_metric = partial(accuracy, void_code=0, class_mapping=data.class_mapping) 
         self.learn = unet_learner(data, arch=self._backbone, metrics=acc_metric, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
