@@ -8,9 +8,14 @@ try:
     HAS_TORCH = True
 except Exception as e:
     HAS_TORCH = False
-    
+
+import arcgis
 from arcgis.learn import UnetClassifier
 
+try:
+    import arcpy
+except:
+    pass
 
 def calculate_rectangle_size_from_batch_size(batch_size):
     '''
@@ -105,10 +110,12 @@ class ChildImageClassifier:
         if not HAS_TORCH:
             raise Exception('PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision')
 
-        if torch.cuda.is_available():
+        if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
             self.device = torch.device('cuda')
+            arcgis.env._processorType = "GPU"
         else:
             self.device = torch.device('cpu')
+            arcgis.env._processorType = "CPU"
 
         if model_as_file:
             with open(model, 'r') as f:

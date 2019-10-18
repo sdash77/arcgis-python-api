@@ -10,6 +10,10 @@ try:
 except Exception as e:
     HAS_TORCH = False
 
+try:
+    import arcpy
+except:
+    pass
 
 def convert_bounding_boxes_to_coord_list(bounding_boxes):
     '''
@@ -169,11 +173,14 @@ class ChildObjectDetector:
             raise Exception('PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision')
 
         from arcgis.learn.models import SingleShotDetector
+        import arcgis
 
-        if torch.cuda.is_available():
+        if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
             self.device = torch.device('cuda')
+            arcgis.env._processorType = "GPU"
         else:
             self.device = torch.device('cpu')
+            arcgis.env._processorType = "CPU"
 
         if model_as_file:
             with open(model, 'r') as f:
@@ -189,7 +196,6 @@ class ChildObjectDetector:
         self.model = self.ssd.learn.model.to(self.device)
         self.model.eval()
 
-        
     def getParameterInfo(self, required_parameters):
         required_parameters.extend(
             [

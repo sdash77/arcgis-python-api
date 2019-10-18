@@ -21,7 +21,8 @@ try:
     from fastai.callbacks.tensorboard import LearnerTensorboardWriter
 except:
     HAS_TENSORBOARDX = False
-    
+
+
 import arcgis
 from pathlib import Path
 import os
@@ -54,7 +55,12 @@ def nostdout():
 class _EmptyData():
     def __init__(self, path, c, loss_func, chip_size):
         self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        elif getattr(arcgis.env, "_processorType", "") == "CPU":
+            self.device = torch.device("cpu")
+        else:
+            self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         self.c = c
         self.loss_func = loss_func
         self.chip_size = chip_size
@@ -201,7 +207,13 @@ class ArcGISModel(object):
         if not HAS_FASTAI:
             _raise_fastai_import_error()
 
-        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
+            self._device = torch.device("cuda")
+        elif getattr(arcgis.env, "_processorType", "") == "CPU":
+            self._device = torch.device("cpu")
+        else:
+            self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
         if backbone is None:
             self._backbone = models.resnet34
         elif type(backbone) is str:
