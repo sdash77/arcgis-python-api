@@ -1,5 +1,5 @@
 import os, sys
-#sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")
+#sys.path.append(r"C:\SVN\achapkowski_geosaurus_fork\src")
 import shutil, datetime
 import tempfile
 from arcgis.features.geo._array import GeoArray, GeoType
@@ -257,7 +257,7 @@ def test_full_extent():
     data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
     df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
     df.spatial.set_geometry(geoms)
-    assert df.spatial.full_extent == (-118.15, 32.832, -97.06124, 33.8)
+    assert df.spatial.full_extent == (-118.15, 32.749000000000024, -97.06123999999994, 33.8)
 #--------------------------------------------------------------------------
 def test_sr_single():
     """tests getting the sr"""
@@ -287,7 +287,7 @@ def test_project_as():
     df.spatial.set_geometry(g)
     s = df.spatial.project(3857)
     assert s == True
-    assert df.spatial.sr == {'wkid': 102100}
+    assert df.spatial.sr['wkid'] == 102100
 def test_bbox():
     """returns the bounding box as a polygon"""
     g = geoms
