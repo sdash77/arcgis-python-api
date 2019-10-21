@@ -259,7 +259,8 @@ class Version(object):
                  session_guid=None,
                  mode=None):
         """Constructor"""
-        self._mode = mode
+        if mode:
+            self.mode = mode
         self._url = url
         self._save = False
         if gis is None:
