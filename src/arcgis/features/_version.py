@@ -209,7 +209,7 @@ class VersionManager(object):
 
 
         """
-        for v in self.versions:
+        for v in self.all:
             if version.lower() == v.properties['versionName'].lower():
                 v.mode = mode
                 return v
