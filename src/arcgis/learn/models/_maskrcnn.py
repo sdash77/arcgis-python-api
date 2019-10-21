@@ -25,6 +25,7 @@ try:
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
     from fastai.basic_train import Learner
     from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback
+    from fastai.torch_core import split_model_idx
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
 
@@ -44,6 +45,11 @@ class MaskRCNN(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             ``prepare_data`` function.
     ---------------------   -------------------------------------------
+    backbone                Optional function. Backbone CNN model to be used for
+                            creating the base of the `MaskRCNN`, which
+                            is `resnet50` by default. 
+                            Compatible backbones: 'resnet50'
+    ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
@@ -54,12 +60,10 @@ class MaskRCNN(ArcGISModel):
 
         super().__init__(data, backbone)
     
-        #if backbone is None:
-        #    self._backbone = models.detection.maskrcnn_resnet50_fpn
+        self._backbone = models.resnet50
 
         #if not self._check_backbone_support(self._backbone):
         #    raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
-
 
         self._code = instance_detector_prf
 
@@ -76,15 +80,22 @@ class MaskRCNN(ArcGISModel):
         self.learn.callbacks.append(train_callback(self.learn))
         self.learn.model = self.learn.model.to(self._device)
 
+        # fixes for zero division error when slice is passed
+        self.learn.layer_groups = split_model_idx(self.learn.model, [28])
+        self.learn.create_opt(lr=3e-3)
+
         if pretrained_path is not None:
             self.load(pretrained_path)           
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
 
     @property
     def supported_backbones(self):
         return [models.detection.maskrcnn_resnet50_fpn.__name__]
-
-    def __repr__(self):
-        return "MaskRCNN Model"
 
     @classmethod
     def from_model(cls, emd_path, data=None):

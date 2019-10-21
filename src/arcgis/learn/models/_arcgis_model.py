@@ -416,7 +416,7 @@ class ArcGISModel(object):
             'ImageWidth': self._data.chip_size,
             'ModelParameters': {'backbone': backbone},
             'LearningRate': str(self._learning_rate),
-            'ModelName': self.__repr__()
+            'ModelName': type(self).__name__
         }
 
         model_metrics = self._model_metrics
@@ -463,7 +463,7 @@ class ArcGISModel(object):
         emd_template = json.load(open(emd_path, 'r'))
 
         HTML_TEMPLATE = f"""        
-                <p><b> {emd_template.get("ModelName")} </b></p>
+                <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                 <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
                 <p><b>Learning Rate:</b> {emd_template.get('LearningRate')}</p>
                 <p><b>Training and Validation loss</b></p>
@@ -590,7 +590,7 @@ class ArcGISModel(object):
 
         emd_data = json.load(open(emd_path, 'r'))
         formatted_description = f"""
-                <p><b> {emd_data.get('ModelName')} </b></p>
+                <p><b> {emd_data.get('ModelName').replace('>', '').replace('<', '')} </b></p>
                 <p><b>Backbone:</b> {emd_data.get('ModelParameters', {}).get('backbone')}</p>
                 <p><b>Learning Rate:</b> {emd_data.get('LearningRate')}</p>
         """
