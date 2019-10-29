@@ -230,7 +230,6 @@ class _ArcGISConnection(object):
     _token = None
     _product = None
     _referer = None
-    _default_referer = "http"
     _useragent = None
     _parsed_org_url = None
     _username = None
@@ -286,7 +285,7 @@ class _ArcGISConnection(object):
             if not referer and \
                cert_file is None and \
                key_file is None:
-                referer = self._default_referer
+                referer = "http"#urlparse(baseurl).netloc
             self._referer = referer
             parsed_url = urlparse(self.baseurl)
             self._parsed_org_url = urlunparse((parsed_url[0], parsed_url[1], "", "", "", ""))

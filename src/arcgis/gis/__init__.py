@@ -309,8 +309,8 @@ class GIS(object):
                                            client_id=self._client_id,
                                            referer=self._referer)
             if self._is_hosted_nb_home:
-                # For GIS("home") objects, have no referer passed in
-                self._portal.con._default_referer = None
+                # For GIS("home") objects, force no referer passed in
+                self._portal.con._referer = None
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
