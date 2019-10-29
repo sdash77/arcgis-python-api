@@ -308,7 +308,9 @@ class GIS(object):
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id,
                                            referer=self._referer)
-
+            if self._is_hosted_nb_home:
+                # For GIS("home") objects, have no referer passed in
+                self._portal.con._default_referer = None
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
@@ -544,7 +546,6 @@ class GIS(object):
                 if "encryptedToken" in json_data:
                     from arcgis.gis._impl._decrypt_nbauth import get_token
                     self._utoken = get_token(nb_auth_file_path)
-                self._portal.con._default_referer = None
 
         # Catch errors and re-throw in with more human readable messages
         except json.JSONDecodeError as e:
