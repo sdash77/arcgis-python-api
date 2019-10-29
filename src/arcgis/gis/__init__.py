@@ -544,7 +544,7 @@ class GIS(object):
                 if "encryptedToken" in json_data:
                     from arcgis.gis._impl._decrypt_nbauth import get_token
                     self._utoken = get_token(nb_auth_file_path)
-                self._referer = json_data["publicPortalUrl"]
+                self._portal.con._default_referer = None
 
         # Catch errors and re-throw in with more human readable messages
         except json.JSONDecodeError as e:
