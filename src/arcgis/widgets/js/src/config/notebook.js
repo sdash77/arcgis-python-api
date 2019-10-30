@@ -17,11 +17,15 @@ var configureCdn = require("./configure-cdn");
 var jupyterBase = "/";
 if(/\/[0-9A-Fa-f]{32}\/notebooks\//.test(location.pathname)){
     // We are in a hosted notebooks environment
-    jupyterBase = location.pathname.match(/.*\/[0-9A-Fa-f]{32}\//)[0];
+    try{
+        jupyterBase = location.pathname.match(
+            /.*\/[0-9A-Fa-f]{32}\/(?=notebooks\/)/)[0];}
+    catch{}
 }
 var nbextensionPath = jupyterBase + "nbextensions/arcgis/";
 console.log("nbextension path = " + nbextensionPath);
 
+// end section
 // end section
 
 config.JupyterTarget = "notebook"; 
