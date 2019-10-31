@@ -32,8 +32,12 @@ class Dispatcher(FeatureModel):
     """
 
     def __init__(self, project, feature=None, contact_number=None, name=None, user_id=None):
-        super().__init__(project, project.dispatchers_layer, feature)
-        self._schema = DispatcherSchema(project.dispatchers_layer)
+        if project.version == "2.0.0":
+            super().__init__(project, project.dispatchers_table, feature)
+            self._schema = DispatcherSchema(project.dispatchers_table)
+        else:
+            super().__init__(project, project.dispatchers_layer, feature)
+            self._schema = DispatcherSchema(project.dispatchers_layer)
         if not feature:
             self.contact_number = contact_number
             self.name = name

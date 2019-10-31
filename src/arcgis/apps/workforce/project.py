@@ -1,7 +1,7 @@
 """ Defines the Project object.
 """
 import arcgis
-from arcgis.features import FeatureLayer
+from arcgis.features import FeatureLayer, Table
 from arcgis.gis import Group
 from arcgis._impl.common._utils import _lazy_property
 from warnings import warn
@@ -50,7 +50,10 @@ class Project:
         else:
             self._track_schema = None
         self._worker_schema = WorkerSchema(self.workers_layer)
-        self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
+        if self.version == "2.0.0":
+            self._dispatcher_schema = DispatcherSchema(self.dispatchers_table)
+        else:
+            self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         self._update_cached_objects()
 
     def _update_cached_objects(self):
@@ -191,13 +194,28 @@ class Project:
         return self._item_data['assignments']['url']
 
     @_lazy_property
+    def assignment_types_item(self):
+        """The assignments :class:`~arcgis.gis.Item`"""
+        return self.gis.content.get(self._item_data['assignmentTypes']['serviceItemId'])
+
+    @property
+    def assignment_types_table_url(self):
+        """The assignment types table layer url"""
+        return self._item_data['assignmentTypes']['url']
+
+    @_lazy_property
     def dispatchers_item(self):
         """The dispatchers :class:`~arcgis.gis.Item`"""
         return self.gis.content.get(self._item_data['dispatchers']['serviceItemId'])
 
     @property
     def dispatchers_layer_url(self):
-        """The dispatchers feature layer url"""
+        """The dispatchers layer url"""
+        return self._item_data['dispatchers']['url']
+
+    @property
+    def dispatchers_table_url(self):
+        """The dispatchers table url"""
         return self._item_data['dispatchers']['url']
 
     @_lazy_property
@@ -247,9 +265,19 @@ class Project:
         return FeatureLayer(self.assignments_layer_url, self.gis)
 
     @_lazy_property
+    def dispatchers_table(self):
+        """The dispatchers :class:`~arcgis.features.Table`"""
+        return Table(self.dispatchers_table_url, self.gis)
+
+    @_lazy_property
     def dispatchers_layer(self):
         """The dispatchers :class:`~arcgis.features.FeatureLayer`"""
         return FeatureLayer(self.dispatchers_layer_url, self.gis)
+
+    @_lazy_property
+    def assignment_types_table(self):
+        """The dispatchers :class:`~arcgis.features.Table`"""
+        return Table(self.assignment_types_table_url, self.gis)
 
     @_lazy_property
     def tracks_layer(self):

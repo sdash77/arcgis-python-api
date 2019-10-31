@@ -164,7 +164,8 @@ def _v2_create_project(gis, summary, title):
     workforce_service_item = _v2_create_service_with_layers(gis, folder_name, workforce_service_name,
                                                             assignment_layer_definition_v2,
                                                             worker_layer_definition_v2,
-                                                            dispatcher_layer_definition_v2,
+                                                            dispatcher_table_definition_v2,
+                                                            assignment_type_table_definition_v2,
                                                             title)
 
     # create webmaps
@@ -216,12 +217,12 @@ def _v2_create_project(gis, summary, title):
 
     # manually add the owner as the first dispatcher
     user_id_field_name = "userId"
-    for field in workforce_service_item.layers[2].properties.fields:
+    for field in workforce_service_item.tables[0].properties.fields:
         if field['name'].lower() == "userid":
             user_id_field_name = field['name']
             break
 
-    workforce_service_item.layers[2].edit_features(adds=[arcgis.features.Feature(
+    workforce_service_item.tables[0].edit_features(adds=[arcgis.features.Feature(
         attributes={
             "name": gis.users.me.fullName,
             user_id_field_name: gis.users.me.username
@@ -258,7 +259,7 @@ def _v2_create_project_item(gis, folder_name, workforce_service_item, dispatcher
         "dispatcherWebMapId": dispatchers_webmap.id,
         "dispatchers": {
             "serviceItemId": workforce_service_item.id,
-            "url": workforce_service_item.layers[2].url
+            "url": workforce_service_item.tables[0].url
         },
         "assignments": {
             "serviceItemId": workforce_service_item.id,
@@ -276,6 +277,10 @@ def _v2_create_project_item(gis, folder_name, workforce_service_item, dispatcher
             }
         ],
         "version": "2.0.0",
+        "assignmentTypes": {
+            "serviceItemId": workforce_service_item.id,
+            "url": workforce_service_item.tables[1].url
+        },
         "groupId": group_id,
     }
     item_properties["text"] = json.dumps(project_data)
@@ -468,7 +473,7 @@ def _v2_create_service(gis, service_name, folder_name, spatial_ref):
     )
 
 
-def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_layer_def, workers_layer_def, dispatchers_layer_def, title):
+def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_layer_def, workers_layer_def, dispatchers_table_def, assignment_type_table_def, title):
     """
        Creates a service, adds, and layer and optionally enables attachments
        :param gis: An authenticated GIS
@@ -476,12 +481,13 @@ def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_l
        :param service_name: The name of the service
        :param assignments_layer_def: The assignments layer definition (dictionary)
        :param workers_layer_def: The workers layer definition (dictionary)
-       :param dispatchers_layer_def: The dispatchers layer definition (dictionary)
+       :param dispatchers_table_def: The dispatchers table definition (dictionary)
+       :param assignment_type_table_def: The assignment type table definition (dictionary)
        :return: The service item
     """
     default_extent = gis.properties["defaultExtent"]
     spatial_reference = default_extent["spatialReference"]
-    layer_defs = [assignments_layer_def, workers_layer_def, dispatchers_layer_def]
+    layer_defs = [assignments_layer_def, workers_layer_def, dispatchers_table_def, assignment_type_table_def]
     if gis.content.is_service_name_available(service_name, "featureService"):
         item = _v2_create_service(gis, service_name, folder_name, spatial_reference)
         item.update({
@@ -493,12 +499,13 @@ def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_l
         raise Exception("Service name already exists.")
 
     for layer_def in layer_defs:
-        layer_def["extent"] = default_extent
+        if layer_def["type"] is not "Table":
+            layer_def["extent"] = default_extent
         feature_layer_collection.manager.add_to_definition({
             "layers": [layer_def]
         })
 
-    # enabled editor tracking
+        # enabled editor tracking
     feature_layer_collection.manager.update_definition({
         "editorTrackingInfo": {
             "enableEditorTracking": True,
