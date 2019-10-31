@@ -275,11 +275,6 @@ class Project:
         return FeatureLayer(self.dispatchers_layer_url, self.gis)
 
     @_lazy_property
-    def assignment_types_table(self):
-        """The dispatchers :class:`~arcgis.features.Table`"""
-        return Table(self.assignment_types_table_url, self.gis)
-
-    @_lazy_property
     def tracks_layer(self):
         """The tracks :class:`~arcgis.features.FeatureLayer`"""
         if self._supports_tracks:
