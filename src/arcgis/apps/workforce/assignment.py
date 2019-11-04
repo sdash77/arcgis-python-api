@@ -127,7 +127,12 @@ class Assignment(FeatureModel):
             self.worker = worker
 
     def __str__(self):
-        type_name = self.assignment_type.name if self.assignment_type is not None else "no type"
+        if self.assignment_type is None:
+            type_name = "no type"
+        elif int(self.project.version.split(".")[0]) >= 2:
+            type_name = self.assignment_type.description
+        else:
+            type_name = self.assignment_type.name
         location = self.location if self.location is not None else "no location"
         return "{} at {}".format(type_name, location)
 
@@ -250,7 +255,10 @@ class Assignment(FeatureModel):
     @property
     def assignment_type_code(self):
         """Gets the assignment type code"""
-        return self._feature.attributes.get(self._schema.assignment_type)
+        if int(self.project.version.split(".")[0]) < 2:
+            return self._feature.attributes.get(self._schema.assignment_type)
+        else:
+            warn("This is a Version 2 Workforce Project", WorkforceWarning)
 
     @property
     def assignment_type(self):
@@ -259,26 +267,44 @@ class Assignment(FeatureModel):
 
     @assignment_type.setter
     def assignment_type(self, value):
-        if isinstance(value, AssignmentType) or value is None:
-            self._assignment_type = value
-        elif isinstance(value, int):
-            if value in self.project._cached_assignment_types:
-                self._assignment_type = self.project._cached_assignment_types[value]
+        if int(self.project.version.split(".")[0]) < 2:
+            if isinstance(value, AssignmentType) or value is None:
+                self._assignment_type = value
+            elif isinstance(value, int):
+                if value in self.project._cached_assignment_types:
+                    self._assignment_type = self.project._cached_assignment_types[value]
+                else:
+                    raise ValidationError("Invalid Assignment Type", self)
+            elif isinstance(value, str):
+                for at in self.project._cached_assignment_types.values():
+                    if at.name.lower() == value.lower():
+                        self._assignment_type = at
+                        break
+                else:
+                    raise ValidationError("Invalid Assignment Type", self)
             else:
                 raise ValidationError("Invalid Assignment Type", self)
-        elif isinstance(value, str):
-            for at in self.project._cached_assignment_types.values():
-                if at.name.lower() == value.lower():
-                    self._assignment_type = at
-                    break
+            if self._assignment_type:
+                self._feature.attributes[self._schema.assignment_type] = self._assignment_type.code
+            else:
+                self._feature.attributes[self._schema.assignment_type] = None
+        else:
+            if isinstance(value, AssignmentType) or value is None:
+                self._assignment_type = value
+            elif isinstance(value, str):
+                for at in self.project._cached_assignment_types.values():
+                    if at.description.lower() == value.lower():
+                        self._assignment_type = at
+                        break
+                else:
+                    raise ValidationError("Invalid Assignment Type", self)
             else:
                 raise ValidationError("Invalid Assignment Type", self)
-        else:
-            raise ValidationError("Invalid Assignment Type", self)
-        if self._assignment_type:
-            self._feature.attributes[self._schema.assignment_type] = self._assignment_type.code
-        else:
-            self._feature.attributes[self._schema.assignment_type] = None
+            if self._assignment_type:
+                self._feature.attributes[self._schema.assignment_type] = self._assignment_type.description
+            else:
+                self._feature.attributes[self._schema.assignment_type] = None
+
 
     @property
     def completed_date(self):
@@ -523,13 +549,22 @@ class Assignment(FeatureModel):
         errors = []
         if self.assignment_type is None:
             errors.append(ValidationError("An assignment must have an assignment type", self))
-        elif self.assignment_type.code is None:
-            errors.append(ValidationError("Invalid assignment type code: cannot be None", self))
+        elif int(self.project.version.split(".")[0]) < 2:
+            if self.assignment_type.name is None:
+                errors.append(ValidationError("Invalid assignment type name: cannot be None", self))
+            if self.assignment_type.code is None:
+                errors.append(ValidationError("Invalid assignment type code: cannot be None", self))
+        else:
+            if self.assignment_type.description is None:
+                errors.append(ValidationError("Invalid assignment type name: cannot be None", self))
         return errors
 
     def _validate_assignment_type_on_server(self):
         errors = []
-        assignment_type = self.project._cached_assignment_types.get(self.assignment_type_code, None)
+        if int(self.project.version.split(".")[0]) < 2:
+            assignment_type = self.project._cached_assignment_types.get(self.assignment_type_code, None)
+        else:
+            assignment_type = self.project._cached_assignment_types.get(self.assignment_type.description)
         if assignment_type is None:
             errors.append(ValidationError("Unrecognized assignment type", self))
         return errors

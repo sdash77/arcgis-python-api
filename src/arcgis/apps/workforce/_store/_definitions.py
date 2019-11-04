@@ -1078,7 +1078,7 @@ assignment_layer_definition_v2 = json.loads(
         ],
         "indexes": [
             {
-                "name": "PK__workforc__F4B70D85B5F436FE",
+                "name": "PK__workforc__F4B70D85C3D12E22",
                 "fields": "OBJECTID",
                 "isAscending": true,
                 "isUnique": true,

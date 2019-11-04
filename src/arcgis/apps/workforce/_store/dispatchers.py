@@ -39,10 +39,7 @@ def query_dispatchers(project, where):
         :param where: An ArcGIS where clause.
         :returns: list of Dispatchers
     """
-    if project.version == "2.0.0":
-        features = project.dispatchers_table.query(where, return_all_freatures=True).features
-    else:
-        features = project.dispatchers_layer.query(where, return_all_freatures=True).features
+    features = project.dispatchers_layer.query(where, return_all_freatures=True).features
 
     return [workforce.Dispatcher(project, feature) for feature in features]
 
@@ -96,10 +93,7 @@ def add_dispatchers(project, dispatchers):
                 use_global_ids = False
 
         features = [dispatcher.feature for dispatcher in dispatchers]
-        if project.version == "2.0.0":
-            add_features(project.dispatchers_table, features, use_global_ids)
-        else:
-            add_features(project.dispatchers_layer, features, use_global_ids)
+        add_features(project.dispatchers_layer, features, use_global_ids)
 
     # add dispatcher named users to the project's group.
     project.group.add_users([dispatcher.user_id for dispatcher in dispatchers])
@@ -118,10 +112,7 @@ def update_dispatchers(project, dispatchers):
         for dispatcher in dispatchers:
             validate(dispatcher._validate_for_update)
         features = [dispatcher.feature for dispatcher in dispatchers]
-        if project.version == "2.0.0":
-            update_features(project.dispatchers_table, features)
-        else:
-            remove_features(project.dispatchers_layer, features)
+        remove_features(project.dispatchers_layer, features)
     return dispatchers
 
 
@@ -137,10 +128,7 @@ def delete_dispatchers(project, dispatchers):
         for dispatcher in dispatchers:
             validate(dispatcher._validate_for_remove)
         features = [dispatcher.feature for dispatcher in dispatchers]
-        if project.version == "2.0.0":
-            remove_features(project.dispatchers_table, features)
-        else:
-            remove_features(project.dispatchers_layer, features)
+        remove_features(project.dispatchers_layer, features)
 
         # Remove dispatcher named users from the project's group, unless they are also workers.
         user_ids = [dispatcher.user_id for dispatcher in dispatchers]

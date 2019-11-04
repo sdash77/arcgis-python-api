@@ -50,10 +50,9 @@ class Project:
         else:
             self._track_schema = None
         self._worker_schema = WorkerSchema(self.workers_layer)
-        if self.version == "2.0.0":
-            self._dispatcher_schema = DispatcherSchema(self.dispatchers_table)
-        else:
-            self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
+        if int(self.version.split(".")[0]) >= 2:
+            self._assignment_types = AssignmentTypesSchema(self.assignment_types_table)
+        self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         self._update_cached_objects()
 
     def _update_cached_objects(self):
@@ -61,7 +60,10 @@ class Project:
             Caches the types, workers, and dispatchers for quicker assignment creation when querying
             Should be called when querying assignments
         """
-        self._cached_assignment_types = {a.code: a for a in self.assignment_types.search()}
+        if int(self.version.split(".")[0]) >= 2:
+            self._cached_assignment_types = {a.description: a for a in self.assignment_types.search()}
+        else:
+            self._cached_assignment_types = {a.code: a for a in self.assignment_types.search()}
         self._cached_workers = {w.id: w for w in self.workers.search()}
         self._cached_dispatchers = {d.id: d for d in self.dispatchers.search()}
         for d in self._cached_dispatchers.values():
@@ -92,6 +94,9 @@ class Project:
         self.workers_item.delete()
         self.dispatchers_item.protect(False)
         self.dispatchers_item.delete()
+        if int(self.version.split(".")[0]) >= 2:
+            self.assignment_types_item.protect(False)
+            self.assignment_types_item.delete()
         self.dispatcher_webmap.item.protect(False)
         self.dispatcher_webmap.item.delete()
         self.worker_webmap.item.protect(False)
@@ -200,7 +205,7 @@ class Project:
 
     @property
     def assignment_types_table_url(self):
-        """The assignment types table layer url"""
+        """The assignment types table url"""
         return self._item_data['assignmentTypes']['url']
 
     @_lazy_property
@@ -211,11 +216,6 @@ class Project:
     @property
     def dispatchers_layer_url(self):
         """The dispatchers layer url"""
-        return self._item_data['dispatchers']['url']
-
-    @property
-    def dispatchers_table_url(self):
-        """The dispatchers table url"""
         return self._item_data['dispatchers']['url']
 
     @_lazy_property
@@ -265,14 +265,18 @@ class Project:
         return FeatureLayer(self.assignments_layer_url, self.gis)
 
     @_lazy_property
-    def dispatchers_table(self):
-        """The dispatchers :class:`~arcgis.features.Table`"""
-        return Table(self.dispatchers_table_url, self.gis)
-
-    @_lazy_property
     def dispatchers_layer(self):
         """The dispatchers :class:`~arcgis.features.FeatureLayer`"""
-        return FeatureLayer(self.dispatchers_layer_url, self.gis)
+        if int(self.version.split(".")[0]) >= 2:
+            return Table(self.dispatchers_layer_url, self.gis)
+        else:
+            return FeatureLayer(self.dispatchers_layer_url, self.gis)
+
+
+    @_lazy_property
+    def assignment_types_table(self):
+        """The dispatchers :class:`~arcgis.features.Table`"""
+        return Table(self.assignment_types_table_url, self.gis)
 
     @_lazy_property
     def tracks_layer(self):
@@ -333,4 +337,7 @@ class Project:
     @property
     def assignment_types(self):
         """The :class:`~arcgis.apps.workforce.managers.AssignmentTypeManager` for the project"""
-        return AssignmentTypeManager(self)
+        if int(self.version.split(".")[0]) < 2:
+            return AssignmentTypeManager(self)
+        else:
+            return AssignmentTypeV2Manager(self)
