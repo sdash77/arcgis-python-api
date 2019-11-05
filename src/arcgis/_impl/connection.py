@@ -169,7 +169,15 @@ class MultiPartForm(object):
                 with open(filepath, "rb") as f:
                     shutil.copyfileobj(f, buf)
                 textwriter.write('\r\n')
-
+            elif filepath == '':
+                textwriter.write(
+                            '--{boundary}\r\n'
+                            'Content-Disposition: form-data; name="{key}"; '
+                            'filename="{filename}"\r\n'
+                            'Content-Type: {content_type}\r\n\r\n'.format(
+                                boundary=boundary, key=key, filename=filename,
+                                content_type=mimetype))
+                textwriter.write('\r\n')
         for (key, value) in self.form_fields:
             textwriter.write(
                 '--{boundary}\r\n'
@@ -180,8 +188,17 @@ class MultiPartForm(object):
         self.form_data = buf.getvalue()
 ########################################################################
 class HTTPSClientAuthHandler(request.HTTPSHandler):
-    def __init__(self, key, cert):
-        request.HTTPSHandler.__init__(self)
+    _context = None
+    def __init__(self, key, cert, verify=False):
+        if verify == False:
+            import ssl
+            ctx = ssl._create_unverified_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            self._context = ctx
+            request.HTTPSHandler.__init__(self, context=ctx)
+        else:
+            request.HTTPSHandler.__init__(self)
         self.key = key
         self.cert = cert
     def https_open(self, req):
@@ -193,7 +210,8 @@ class HTTPSClientAuthHandler(request.HTTPSHandler):
         return  http_client.HTTPSConnection(host,
                                             key_file=self.key,
                                             cert_file=self.cert,
-                                            timeout=timeout)
+                                            timeout=timeout,
+                                            context=self._context)
 ########################################################################
 def jsonize_dict(val):
     if isinstance(val, (dict, list)):
@@ -808,10 +826,13 @@ class _ArcGISConnection(object):
                 params['token'] = self.token
 
         if len(params.keys()) > 0:
-            params = {k: jsonize_dict(v) for k, v in params.items()}
-            url = "{url}?{params}".format(url=url,
+            if url.lower().find("/generatetoken ") > -1:
+                _log.debug('REQUEST (get): ' + url)
+            else:
+                params = {k: jsonize_dict(v) for k, v in params.items()}
+                url = "{url}?{params}".format(url=url,
                                           params=urlencode(params))
-        _log.debug('REQUEST (get): ' + url)
+                _log.debug('REQUEST (get): ' + url)
 
         try:
             # Send the request and read the response
@@ -990,7 +1011,7 @@ class _ArcGISConnection(object):
                 _log.error('The GIS uses Integrated Windows Authentication which is currently only supported on the Windows platform')
 
         elif self._auth == "PKI":
-            handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file))
+            handlers.append(HTTPSClientAuthHandler(self.key_file, self.cert_file, self._verify_cert))
 
         cj = cookiejar.CookieJar()
         handlers.append(request.HTTPCookieProcessor(cj))
@@ -998,12 +1019,12 @@ class _ArcGISConnection(object):
 
 
         if not verify_cert or not self._verify_cert:
-            ctx = ssl.create_default_context()
+            import ssl
+            ctx = ssl._create_unverified_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
             handler = request.HTTPSHandler(context=ctx)
             handlers.append(handler)
-
         return handlers
     #----------------------------------------------------------------------
 
@@ -1045,7 +1066,10 @@ class _ArcGISConnection(object):
                 postdata['token'] = self.token
 
         if _log.isEnabledFor(logging.DEBUG):
-            msg = 'REQUEST: ' + url + ', ' + str(postdata)
+            if url.lower().find("/generatetoken") > -1:
+                msg = 'REQUEST: ' + url
+            else:
+                msg = 'REQUEST: ' + url + ', ' + str(postdata)
             if files:
                 msg += ', files=' + str(files)
             _log.debug(msg)

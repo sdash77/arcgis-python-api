@@ -6,6 +6,14 @@ var config = require("config");
 var esriLoader = getEsriLoader(config);
 var options = config.EsriLoaderOptions;
 
+var _uuid4 = function() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, 
+          function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+}
+
 var inferNoTypeLayer = function(noTypeLayer, widget){
     ///Take a generic object, constructs the correct layer type, returns
     //a promise that let's you use the typedLayer this func constructs.
@@ -25,7 +33,8 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/FeatureLayer',
                                 'esri/tasks/support/FeatureSet',
                                 'esri/PopupTemplate',
-                                'esri/layers/support/RasterFunction'],
+                                'esri/layers/support/RasterFunction',
+                                'esri/layers/support/MosaicRule'],
         options).then(([ImageryLayer,
                         KMLLayer,
                         TileLayer,
@@ -34,20 +43,37 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         FeatureLayer,
                         FeatureSet,
                         PopupTemplate,
-                        RasterFunction]) => {
+                        RasterFunction,
+                        MosaicRule]) => {
             if (noTypeLayer.type === "ImageryLayer"){
                 var typedLayer = new ImageryLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 if (('options' in noTypeLayer) && 
-                    ('imageServiceParameters' in noTypeLayer.options) &&
-                    ('renderingRule' in noTypeLayer.options.imageServiceParameters)){
-                    //If a raster function is being passed as an arg
-                    console.log("Applying raster function to imagery layer..");
-                    var renderingRule = 
-                        noTypeLayer.options.imageServiceParameters.renderingRule;
-                    var rasterFunction = RasterFunction.fromJSON(renderingRule);
-                    typedLayer.renderingRule = rasterFunction;
-                }
+                    ('imageServiceParameters' in noTypeLayer.options)){
+                        if('renderingRule' in noTypeLayer.options.imageServiceParameters){
+                            console.log("Applying rendering rule to imagery layer..");
+                            var renderingRuleJSON = 
+                                noTypeLayer.options.imageServiceParameters.renderingRule;
+                            var renderingRule = RasterFunction.fromJSON(renderingRuleJSON);
+                            typedLayer.renderingRule = renderingRule;}
+                        if('mosaicRule' in noTypeLayer.options.imageServiceParameters){
+                            console.log("Applying mosaic rule to imagery layer..");
+                            var mosaicRuleJSON = 
+                                noTypeLayer.options.imageServiceParameters.mosaicRule;
+                            var mosaicRule = MosaicRule.fromJSON(mosaicRuleJSON);
+                            typedLayer.mosaicRule = mosaicRule;}
+                        if ('raster' in noTypeLayer.options.imageServiceParameters) {
+                            var raster =
+                                noTypeLayer.options.imageServiceParameters.raster;
+                            var encodedRaster;
+                            if (typeof raster == "string") {
+                                encodedRaster = raster;
+                            }
+                            else {
+                                encodedRaster =
+                                    btoa(JSON.stringify(raster));
+                            }
+                            typedLayer.raster = encodedRaster;}}
                 resolve(typedLayer);}
             else if (noTypeLayer.type == "KMLLayer") {
                 var typedLayer = new KMLLayer(noTypeLayer.url);
@@ -157,6 +183,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
 
                 //Assemble everything from the featureLayer BUT the renderer
                 var typedLayer = new FeatureLayer({
+                    title: _uuid4(), 
                     fields: featureSet.fields,
                     objectIdField: layerDefinition.objectIdField,
                     geometryType: featureSet.geometryType,
@@ -168,6 +195,8 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 //Get the correct renderer and rendererOptions to
                 if("renderer" in noTypeLayer.options){
                     renderer = noTypeLayer.options.renderer;
+                } else if(layerDefinition.drawingInfo.renderer.renderer === "autocast"){
+                    renderer = "autocast";
                 } else {
                     renderer = layerDefinition.drawingInfo.renderer.type;
                 }

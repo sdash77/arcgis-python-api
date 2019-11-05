@@ -7,6 +7,7 @@ travel time or distance from a location.
 """
 
 import arcgis as _arcgis
+import arcgis.network as network
 
 def enrich_layer(input_layer,
                  data_collections=[],
@@ -17,45 +18,98 @@ def enrich_layer(input_layer,
                  units=None,
                  output_name=None,
                  context=None,
-                 gis=None):
+                 gis=None,
+                 estimate=False,
+                 return_boundaries=False,
+                 future=False):
     """
-    The enrich_layer function enriches your data by getting facts about the people, places, and businesses that surround
+    .. image:: _static/images/enrich_layer/enrich_layer.png
+
+    The ``enrich_layer`` method enriches your data by getting facts about the people, places, and businesses that surround
     your data locations. For example: What kind of people live here? What do people like to do in this area? What are
-    their habits and lifestyles? What kind of businesses are there in this area?The result will be a new layer of input
-    features that includes all demographic and geographic information from given data collections.
+    their habits and lifestyles? What kind of businesses are there in this area?
 
-    Parameters
-    ----------
-    input_layer : Required layer (see Feature Input in documentation)
-        Feature layer to enrich with new data
-    data_collections : Optional list of strings
-        Data collections you wish to add to your features.
-    analysis_variables : Optional list of strings
-        A subset of specific variables instead of dataCollections.
-    country : Optional string
-        The two character country code that specifies the country of the input features. Eg. US (United States),
-        FR (France), GB (United Kingdom) etc.
-    buffer_type : Optional string
-        Area to be created around the point or line features for enrichment. Default is 1 Mile straight-line buffer
-        radius.
-    distance : Optional float
-        A double value that defines the straight-line distance or time (when drivingTime is used).
-    units : Optional string
-        The unit (eg. Miles, Minutes) to be used with the distance value(s) specified in the distance parameter to
-        calculate the area.
-    output_name : Optional string
-        Additional properties such as output feature service name.
-    context : Optional string
-        Additional settings such as processing extent and output spatial reference.
-    gis :
-        Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
-    Returns
-    -------
-    enriched_layer : layer (FeatureCollection)
+    =====================================================================     ====================================================================
+    **Parameter**                                                             **Description**
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    input_layer                                                               Required layer. The features to enrich with new data. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    data_collections                                                          Optional list of strings. This optional parameter defines the collections of data you want to use to enrich your features.
+                                                                              Its value is a list of strings. If you don't provide this parameter, you must provide the analysis_variables parameter.
+
+                                                                              For more information about data collections and the values for this parameter, visit the `Esri Demographics site <http://doc.arcgis.com/en/esri-demographics/data/data-browser.htm>`_.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    analysis_variables                                                        Optional list of strings. The parameter defines the specific variables within a data collection you want to use to
+                                                                              your features. Its value is a list of strings in the form of "dataCollection.VariableName". If you don't provide
+                                                                              this parameter, you must provide the dataCollections parameter. You can provide both parameters.
+                                                                              For example, if you want all variables in the KeyGlobalFacts data collection, specify it in the dataCollections
+                                                                              parameter and use this parameter for specific variables in other collections.
+
+                                                                              For more information about variables in data collections, visit the `Esri Demographics site <http://doc.arcgis.com/en/esri-demographics/data/data-browser.htm>`_. Each data collection
+                                                                              has a PDF file describing variables and their names.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    country                                                                   Optional string. This optional parameter further defines what is returned from data collection.
+                                                                              For example, your input features may be countries in Western Europe, and you want to enrich them with the
+                                                                              KeyWEFacts data collection. However, you only want data for France, not every country in your input layer.
+                                                                              The value is the two-character country code.
+
+                                                                              For more information about data collections and the values for this parameter, visit the `Esri Demographics site <http://doc.arcgis.com/en/esri-demographics/data/data-browser.htm>`_.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    buffer_type (Required if input_layer contains point or line features)     Optional string. If your input features are points or lines, you must define an area around your features that you want to enrich. Features that are within (or equal to) the distances you enter will be enriched.
+
+                                                                              Choice list: ['StraightLine', 'Driving Distance', 'Driving Time ', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    distance (Required if input_layer contains point or line features)        Optional float. A value that defines the search distance or time. The units of the distance value is supplied by the units parameter.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    units                                                                     Optional string. The linear unit to be used with the distance value(s) specified in the distance parameter.
+
+                                                                              Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles', 'Seconds', 'Minutes'. 'Hours']
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    output_name                                                               Optional string. If provided, the task will create a feature service of the results.
+                                                                              You define the name of the service. If output_name is not supplied, the task will return a feature collection.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    context                                                                   Optional string. Context contains additional settings that affect task execution. For ``enrich_layer`` method, there are two settings.
+
+                                                                              #. Extent (extent)-a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                                                              #. Output Spatial Reference (outSR) the output features will be projected into the output spatial reference.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    gis                                                                       Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    estimate                                                                  Optional Boolean. If True, the number of credits to run the operation will be returned.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    return_boundaries                                                         Optional boolean. Applies only for point and line input features. If True, a result layer of areas is returned.
+                                                                              The returned areas are defined by the specified buffer_type. For example, if using a buffer_type of StraightLine with
+                                                                              a distance of 5 miles, your result will contain areas with a 5 mile radius around the input features and requested
+                                                                              analysis_variables variables. If False, the resulting layer will return the same features as the input layer with
+                                                                              analysis_variables variables.
+
+                                                                              The default value is False.
+    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    future                                                                    Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    =====================================================================     ====================================================================
+
+    :returns result_layer : feature layer Item if output_name is specified, else Feature Collection.
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To enrich US block groups with population as analysis variable.
+        blkgrp_enrich = enrich_layer(block_groups,
+                                     analysis_variables=["AtRisk.MP27002A_B"],
+                                     country='US',
+                                     output_name='enrich layer')
+
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if isinstance(buffer_type, str):
+        if buffer_type != 'StraightLine':
+            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+            buffer_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == buffer_type][0]
+        else:
+            pass
+
     return gis._tools.featureanalysis.enrich_layer(
                  input_layer,
                  data_collections,
@@ -65,4 +119,6 @@ def enrich_layer(input_layer,
                  distance,
                  units,
                  output_name,
-                 context)
+                 context,
+                 estimate=estimate,
+                 return_boundaries=return_boundaries,future=future)

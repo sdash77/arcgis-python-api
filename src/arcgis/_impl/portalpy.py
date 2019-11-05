@@ -15,7 +15,7 @@ from .common._utils import _to_utf8
 from six.moves.urllib import request
 from six.moves.urllib_parse import urlparse
 
-__version__ = '1.0'
+__version__ = '1.7.0'
 
 _log = logging.getLogger(__name__)
 
@@ -1211,9 +1211,9 @@ class Portal(object):
         """
         return self.con.post('content/items/' + itemid, self._postdata())
 
-    def get_item_data(self, itemid, try_json=True):
+    def get_item_data(self, itemid, try_json=True, folder=None):
         #print('content/items/' + itemid + '/data')
-        return self.con.get('content/items/' + itemid + '/data', try_json=try_json)
+        return self.con.get('content/items/' + itemid + '/data', try_json=try_json, out_folder=folder)
         #return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=try_json)
         #return self.con.post('content/items/' + itemid + '/data', self._postdata(), use_ordered_dict=True)
 
@@ -1988,7 +1988,8 @@ class Portal(object):
     def update_group(self, group_id, title=None, tags=None, description=None,
                      snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
-                     thumbnail=None, max_file_size=None, users_update_items=None):
+                     thumbnail=None, max_file_size=None, users_update_items=None,
+                     clear_empty_fields=False):
         """ Updates a group.
 
         .. note::
@@ -2066,8 +2067,10 @@ class Portal(object):
             properties['capabilities'] = ""
         else:
             properties['capabilities'] = "updateitemcontrol"
+        properties['clearEmptyFields'] = clear_empty_fields
         postdata.update(properties)
-
+        if True:
+            postdata['clearEmptyFields'] = True
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
@@ -2173,14 +2176,20 @@ class Portal(object):
         # Build the files list (tuples)
         files = []
         if data:
-            if _is_http_url(data):
+            if isinstance(data, dict):
+                postdata['text'] = json.dumps(data)
+            elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):
                 files.append(('file', data, os.path.basename(data)))
-            elif isinstance(data, dict):
-                postdata['text'] = json.dumps(data)
             else:
                 postdata['text'] = data
+        if item_properties and \
+           item_properties.get('screenshots', None):
+            for screenshot in item_properties.get('screenshots', [])[0:4]:
+                files.append(('screenshot', screenshot, os.path.basename(screenshot)))
+            del item_properties['screenshots']
+
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]

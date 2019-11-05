@@ -6,9 +6,540 @@ sys.path.append(os.path.dirname(__file__))
 
 import numpy as np
 import math
+import arcpy
+
+def check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding):
+    return ((centroid[1] >= (start_y + padding)) and  \
+                (centroid[1] <= (start_y + (chip_sz - padding))) and \
+                (centroid[0] >= (start_x + padding)) and \
+                (centroid[0] <= (start_x + (chip_sz - padding))))
+
+def find_i_j(centroid, n_rows, n_cols, chip_sz, padding, filter_detections):
+    for i in range(n_rows):
+        for j in range(n_cols):
+            start_x = i * chip_sz
+            start_y = j * chip_sz
+
+            if (centroid[1] > (start_y)) and (centroid[1] < (start_y + (chip_sz))) and (centroid[0] > (start_x)) and (centroid[0] < (start_x + (chip_sz))):
+                in_center = check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding)
+                if filter_detections:
+                    if in_center: 
+                        return i, j, in_center
+                else:
+                    return i, j, in_center
+    return None
 
 
+def get_available_device(max_memory=0.8):
+    '''
+    select available device based on the memory utilization status of the device
+    :param max_memory: the maximum memory utilization ratio that is considered available
+    :return: GPU id that is available, -1 means no GPU is available/uses CPU, if GPUtil package is not installed, will
+    return 0 
+    '''
+    try:
+        import GPUtil
+    except ModuleNotFoundError:
+        return 0
 
+    GPUs = GPUtil.getGPUs()
+    freeMemory = 0
+    available=-1
+    for GPU in GPUs:
+        if GPU.memoryUtil > max_memory:
+            continue
+        if GPU.memoryFree >= freeMemory:
+            freeMemory = GPU.memoryFree
+            available = GPU.id
+
+    return available
+
+features = {
+    'displayFieldName': '',
+    'fieldAliases': {
+        'FID': 'FID',
+        'Class': 'Class',
+        'Confidence': 'Confidence'
+    },
+    'geometryType': 'esriGeometryPolygon',
+    'fields': [
+        {
+            'name': 'FID',
+            'type': 'esriFieldTypeOID',
+            'alias': 'FID'
+        },        
+        {
+            'name': 'Class',
+            'type': 'esriFieldTypeString',
+            'alias': 'Class'
+        },
+        {
+            'name': 'Confidence',
+            'type': 'esriFieldTypeDouble',
+            'alias': 'Confidence'
+        }
+    ],
+    'features': []
+}
+
+fields = {
+    'fields': [
+        {
+            'name': 'OID',
+            'type': 'esriFieldTypeOID',
+            'alias': 'OID'
+        },      
+        {
+            'name': 'Class',
+            'type': 'esriFieldTypeString',
+            'alias': 'Class'
+        },
+        {
+            'name': 'Confidence',
+            'type': 'esriFieldTypeDouble',
+            'alias': 'Confidence'
+        },
+        {
+            'name': 'Shape',
+            'type': 'esriFieldTypeGeometry',
+            'alias': 'Shape'
+        }
+    ]
+}
+
+class GeometryType:
+    Point = 1
+    Multipoint = 2
+    Polyline = 3
+    Polygon = 4
+
+
+class ArcGISObjectDetector:
+    def __init__(self):
+        self.name = 'Object Detector'
+        self.description = 'This python raster function applies deep learning model to detect objects in imagery'
+
+    def initialize(self, **kwargs):
+        if 'model' not in kwargs:
+            return
+
+        model = kwargs['model']
+        model_as_file = True
+        try:
+            with open(model, 'r') as f:
+                self.json_info = json.load(f)
+        except FileNotFoundError:
+            try:
+                self.json_info = json.loads(model)
+                model_as_file = False
+            except json.decoder.JSONDecodeError:
+                raise Exception("Invalid model argument")
+
+        sys.path.append(os.path.dirname(__file__))
+        framework = self.json_info['Framework']
+        if 'ModelConfiguration' in self.json_info:
+            if isinstance(self.json_info['ModelConfiguration'], str):
+                ChildModelDetector = getattr(importlib.import_module(
+                    '{}.{}'.format(framework, self.json_info['ModelConfiguration'])), 'ChildObjectDetector')
+            else:
+                ChildModelDetector = getattr(importlib.import_module(
+                    '{}.{}'.format(framework, self.json_info['ModelConfiguration']['Name'])), 'ChildObjectDetector')
+        else:
+            raise Exception("Invalid model configuration")
+
+        device = None
+        if 'device' in kwargs:
+            device = kwargs['device']
+            if device == -2:
+                device = get_available_device()
+
+        if device is not None:
+            if device >= 0:
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                arcpy.env.processorType = "GPU"
+                arcpy.env.gpuId = str(device)
+            else:
+                arcpy.env.processorType = "CPU"
+
+        self.child_object_detector = ChildModelDetector()
+        self.child_object_detector.initialize(model, model_as_file)
+
+    def getParameterInfo(self):
+        required_parameters = [
+            {
+                'name': 'raster',
+                'dataType': 'raster',
+                'required': True,
+                'displayName': 'Raster',
+                'description': 'Input Raster'
+            },
+            {
+                'name': 'model',
+                'dataType': 'string',
+                'required': True,
+                'displayName': 'Input Model Definition (EMD) File',
+                'description': 'Input model definition (EMD) JSON file'
+            },
+            {
+                'name': 'device',
+                'dataType': 'numeric',
+                'required': False,
+                'displayName': 'Device ID',
+                'description': 'Device ID'
+            }
+        ]
+        return self.child_object_detector.getParameterInfo(required_parameters)
+
+    def getConfiguration(self, **scalars):
+        configuration = self.child_object_detector.getConfiguration(**scalars)
+        if 'DataRange' in self.json_info:
+            configuration['dataRange'] = tuple(self.json_info['DataRange'])
+        configuration['inheritProperties'] = 2|4|8
+        configuration['inputMask'] = True
+        return configuration
+
+    def getFields(self):
+        return json.dumps(fields)
+
+    def getGeometryType(self):
+        return GeometryType.Polygon
+
+    def vectorize(self, **pixelBlocks):
+        # set pixel values in invalid areas to 0
+        raster_mask = pixelBlocks['raster_mask']
+        raster_pixels = pixelBlocks['raster_pixels']
+        raster_pixels[np.where(raster_mask == 0)] = 0
+        pixelBlocks['raster_pixels'] = raster_pixels
+
+        polygon_list, scores, classes = self.child_object_detector.vectorize(**pixelBlocks)
+
+        n_rows = int(math.sqrt(self.child_object_detector.batch_size))
+        n_cols = int(math.sqrt(self.child_object_detector.batch_size))
+        padding = self.child_object_detector.padding
+        keep_polygon = []
+        keep_scores = []
+        keep_classes = []
+
+        for idx, polygon in enumerate(polygon_list):
+            centroid = polygon.mean(0)
+            quadrant = find_i_j(centroid, n_rows, n_cols, self.json_info['ImageHeight'], padding, self.child_object_detector.filter_outer_padding_detections)        
+            if quadrant is not None:
+                i, j, in_center = quadrant             
+                polygon[:, 0] = polygon[:, 0] - (2*i + 1)*padding
+                polygon[:, 1] = polygon[:, 1] - (2*j + 1)*padding
+                keep_polygon.append(polygon)
+                if not in_center:
+                    scores[idx] = (self.child_object_detector.thres * 100) + scores[idx] * 0.01
+                keep_scores.append(scores[idx])
+                keep_classes.append(classes[idx])
+
+        polygon_list =  keep_polygon
+        scores = keep_scores
+        classes = keep_classes
+        features['features'] = []
+        for i in range(len(polygon_list)):
+            rings = [[]]
+            for j in range(polygon_list[i].shape[0]):
+                rings[0].append(
+                    [
+                        polygon_list[i][j][1],
+                        polygon_list[i][j][0]
+                    ]
+                )
+
+            features['features'].append({
+                'attributes': {
+                    'OID': i + 1,                
+                    'Class': self.json_info['Classes'][classes[i] - 1]['Name'],
+                    'Confidence': scores[i]
+                },
+                'geometry': {
+                    'rings': rings
+                }
+            })   
+            
+        return {'output_vectors': json.dumps(features)}
+
+"""
+
+feature_classifier_prf = """
+print('not implemented')
+"""
+entity_recognizer_placeholder= """
+print('not implemented')
+"""
+
+image_classifier_prf = """
+
+import arcpy
+import numpy as np
+import json
+import sys, os, importlib
+import math
+
+sys.path.append(os.path.dirname(__file__))
+
+def get_available_device(max_memory=0.8):
+    '''
+    select available device based on the memory utilization status of the device
+    :param max_memory: the maximum memory utilization ratio that is considered available
+    :return: GPU id that is available, -1 means no GPU is available/uses CPU, if GPUtil package is not installed, will
+    return 0
+    '''
+    try:
+        import GPUtil
+    except ModuleNotFoundError:
+        return 0
+
+    GPUs = GPUtil.getGPUs()
+    freeMemory = 0
+    available=-1
+    for GPU in GPUs:
+        if GPU.memoryUtil > max_memory:
+            continue
+        if GPU.memoryFree >= freeMemory:
+            freeMemory = GPU.memoryFree
+            available = GPU.id
+
+    return available
+
+def chunk_it(image, tile_size):
+    s = image.shape
+    num_rows = math.ceil(s[0]/tile_size)
+    num_cols = math.ceil(s[1]/tile_size)
+    r = np.array_split(image, num_rows)
+    rows = []
+    for x in r:
+        x = np.array_split(x, num_cols, axis=1)
+        rows.append(x)
+    return rows, num_rows, num_cols
+
+def crop_center(img, pad):
+    if pad == 0:
+        return img
+    return img[pad:-pad, pad: -pad, :]
+
+def crop_flatten(chunked, pad):
+    imgs = []
+    for r, row  in enumerate(chunked):
+        for c, col in enumerate(row):
+            col = crop_center(col, pad)
+            imgs.append(col)
+    return imgs
+
+def patch_chips(imgs, n_rows, n_cols):
+    h_stacks = []
+    for i in range(n_rows):
+        h_stacks.append(np.hstack(imgs[i*n_cols:n_cols*(i+1) ]))
+    return np.vstack(h_stacks)
+
+attribute_table = {
+    'displayFieldName': '',
+    'fieldAliases': {
+        'OID': 'OID',
+        'Value': 'Value',
+        'Class': 'Class',
+        'Red': 'Red',
+        'Green': 'Green',
+        'Blue': 'Blue'
+    },
+    'fields': [
+        {
+            'name': 'OID',
+            'type': 'esriFieldTypeOID',
+            'alias': 'OID'
+        },
+        {
+            'name': 'Value',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Value'
+        },
+        {
+            'name': 'Class',
+            'type': 'esriFieldTypeString',
+            'alias': 'Class'
+        },
+        {
+            'name': 'Red',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Red'
+        },
+        {
+            'name': 'Green',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Green'
+        },
+        {
+            'name': 'Blue',
+            'type': 'esriFieldTypeInteger',
+            'alias': 'Blue'
+        }
+    ],
+    'features': []
+}
+
+ 
+
+class ArcGISImageClassifier:
+    def __init__(self):
+        self.name = 'Image Classifier'
+        self.description = 'Image classification python raster function to inference a pytorch image classifier'
+
+    def initialize(self, **kwargs):
+        if 'model' not in kwargs:
+            return
+
+        model = kwargs['model']
+        model_as_file = True
+        try:
+            with open(model, 'r') as f:
+                self.json_info = json.load(f)
+        except FileNotFoundError:
+            try:
+                self.json_info = json.loads(model)
+                model_as_file = False
+            except json.decoder.JSONDecodeError:
+                raise Exception("Invalid model argument")
+
+        sys.path.append(os.path.dirname(__file__))
+        framework = self.json_info['Framework']
+        if 'ModelConfiguration' in self.json_info:
+            if isinstance(self.json_info['ModelConfiguration'], str):
+                ChildImageClassifier = getattr(importlib.import_module(
+                    '{}.{}'.format(framework, self.json_info['ModelConfiguration'])), 'ChildImageClassifier')
+            else:
+                ChildImageClassifier = getattr(importlib.import_module(
+                    '{}.{}'.format(framework, self.json_info['ModelConfiguration']['Name'])), 'ChildImageClassifier')
+        else:
+            raise Exception("Invalid model configuration")
+
+        device = None
+        if 'device' in kwargs:
+            device = kwargs['device']
+            if device == -2:
+                device = get_available_device()
+
+        if device is not None:
+            if device >= 0:
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                arcpy.env.processorType = "GPU"
+                arcpy.env.gpuId = str(device)
+            else:
+                arcpy.env.processorType = "CPU"
+
+        self.child_image_classifier = ChildImageClassifier()
+        self.child_image_classifier.initialize(model, model_as_file)
+
+    def getParameterInfo(self):
+        required_parameters = [
+            {
+                'name': 'raster',
+                'dataType': 'raster',
+                'required': True,
+                'displayName': 'Raster',
+                'description': 'Input Raster'
+            },
+            {
+                'name': 'model',
+                'dataType': 'string',
+                'required': True,
+                'displayName': 'Input Model Definition (EMD) File',
+                'description': 'Input model definition (EMD) JSON file'
+            },
+            {
+                'name': 'device',
+                'dataType': 'numeric',
+                'required': False,
+                'displayName': 'Device ID',
+                'description': 'Device ID'
+            }
+        ]
+        return self.child_image_classifier.getParameterInfo(required_parameters)
+
+    def getConfiguration(self, **scalars):
+        configuration = self.child_image_classifier.getConfiguration(**scalars)
+        if 'DataRange' in self.json_info:
+            configuration['dataRange'] = tuple(self.json_info['DataRange'])
+        configuration['inheritProperties'] = 2|4|8
+        configuration['inputMask'] = True
+        return configuration
+
+    def updateRasterInfo(self, **kwargs):
+        kwargs['output_info']['bandCount'] = 1
+        #todo: type is determined by the value range of classes in the json file
+        kwargs['output_info']['pixelType'] = 'i4'
+        class_info = self.json_info['Classes']
+        attribute_table['features'] = []
+        for i, c in enumerate(class_info):
+            attribute_table['features'].append(
+                {
+                    'attributes':{
+                        'OID':i+1,
+                        'Value':c['Value'],
+                        'Class':c['Name'],
+                        'Red':c['Color'][0],
+                        'Green':c['Color'][1],
+                        'Blue':c['Color'][2]
+                    }
+                }
+            )
+        kwargs['output_info']['rasterAttributeTable'] = json.dumps(attribute_table)
+
+        return kwargs
+
+
+    def updatePixels(self, tlc, shape, props, **pixelBlocks):
+        # set pixel values in invalid areas to 0
+           
+        raster_mask = pixelBlocks['raster_mask']
+        raster_pixels = pixelBlocks['raster_pixels']
+        raster_pixels[np.where(raster_mask == 0)] = 0
+        pixelBlocks['raster_pixels'] = raster_pixels
+
+        xx = self.child_image_classifier.updatePixels(tlc, shape, props, **pixelBlocks).astype(props['pixelType'], copy=False)
+        chunks, num_rows, num_cols =  chunk_it(xx.transpose(1, 2, 0), self.json_info['ImageHeight'])  # ImageHeight = ImageWidth
+        xx = patch_chips(crop_flatten(chunks, self.child_image_classifier.padding), num_rows, num_cols)
+        xx = xx.transpose(2, 0, 1)
+        pixelBlocks['output_pixels'] = xx
+
+        return pixelBlocks
+"""
+
+instance_detector_prf = """
+import json
+import sys, os, importlib
+sys.path.append(os.path.dirname(__file__))
+
+import numpy as np
+import math
+import arcpy
+
+def get_centroid(polygon):
+    polygon = np.array(polygon)
+    return [polygon[:, 0].mean(), polygon[:, 1].mean()]        
+
+def check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding):
+    return ((centroid[1] >= (start_y + padding)) and  \
+                (centroid[1] <= (start_y + (chip_sz - padding))) and \
+                (centroid[0] >= (start_x + padding)) and \
+                (centroid[0] <= (start_x + (chip_sz - padding))))
+
+def find_i_j(centroid, n_rows, n_cols, chip_sz, padding, filter_detections):
+    for i in range(n_rows):
+        for j in range(n_cols):
+            start_x = i * chip_sz
+            start_y = j * chip_sz
+
+            if (centroid[1] > (start_y)) and (centroid[1] < (start_y + (chip_sz))) and (centroid[0] > (start_x)) and (centroid[0] < (start_x + (chip_sz))):
+                in_center = check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding)
+                if filter_detections:
+                    if in_center: 
+                        return i, j, in_center
+                else:
+                    return i, j, in_center
+    return None        
 
 def get_available_device(max_memory=0.8):
     '''
@@ -93,13 +624,13 @@ class GeometryType:
     Polyline = 3
     Polygon = 4
 
-
-class ArcGISObjectDetector:
+class ArcGISInstanceDetector:
     def __init__(self):
-        self.name = 'Object Detector'
-        self.description = 'This python raster function applies deep learning model to detect objects in imagery'
+        self.name = 'Instance Segmentation'
+        self.description = 'Instance Segmentation python raster function to inference a arcgis.learn deep learning model.'
 
     def initialize(self, **kwargs):
+
         if 'model' not in kwargs:
             return
 
@@ -119,27 +650,34 @@ class ArcGISObjectDetector:
         framework = self.json_info['Framework']
         if 'ModelConfiguration' in self.json_info:
             if isinstance(self.json_info['ModelConfiguration'], str):
-                ChildModelDetector = getattr(importlib.import_module(
-                    '{}.{}'.format(framework, self.json_info['ModelConfiguration'])), 'ChildObjectDetector')
+                ChildInstanceDetector = getattr(importlib.import_module(
+                    '{}.{}'.format(framework, self.json_info['ModelConfiguration'])), 'ChildInstanceDetector')
             else:
-                ChildModelDetector = getattr(importlib.import_module(
-                    '{}.{}'.format(framework, self.json_info['ModelConfiguration']['Name'])), 'ChildObjectDetector')
+                ChildInstanceDetector = getattr(importlib.import_module(
+                    '{}.{}'.format(framework, self.json_info['ModelConfiguration']['Name'])), 'ChildInstanceDetector')
         else:
             raise Exception("Invalid model configuration")
 
+        device = None
         if 'device' in kwargs:
             device = kwargs['device']
-            if device < -1:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+            if device == -2:
                 device = get_available_device()
-            os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
-        else:
-            os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-        self.child_object_detector = ChildModelDetector()
-        self.child_object_detector.initialize(model, model_as_file)
+        if device is not None:
+            if device >= 0:
+                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                arcpy.env.processorType = "GPU"
+                arcpy.env.gpuId = str(device)
+            else:
+                arcpy.env.processorType = "CPU"
 
-    def getParameterInfo(self):
+        self.child_instance_detector = ChildInstanceDetector()
+        self.child_instance_detector.initialize(model, model_as_file)
+
+        
+    def getParameterInfo(self):       
         required_parameters = [
             {
                 'name': 'raster',
@@ -162,11 +700,12 @@ class ArcGISObjectDetector:
                 'displayName': 'Device ID',
                 'description': 'Device ID'
             }
-        ]
-        return self.child_object_detector.getParameterInfo(required_parameters)
+        ]     
+        return self.child_instance_detector.getParameterInfo(required_parameters)
 
-    def getConfiguration(self, **scalars):
-        configuration = self.child_object_detector.getConfiguration(**scalars)
+
+    def getConfiguration(self, **scalars):         
+        configuration = self.child_instance_detector.getConfiguration(**scalars)
         if 'DataRange' in self.json_info:
             configuration['dataRange'] = tuple(self.json_info['DataRange'])
         configuration['inheritProperties'] = 2|4|8
@@ -176,43 +715,63 @@ class ArcGISObjectDetector:
     def getFields(self):
         return json.dumps(fields)
 
-    def getGeometryType(self):
-        return GeometryType.Polygon
+    def getGeometryType(self):          
+        return GeometryType.Polygon        
 
     def vectorize(self, **pixelBlocks):
-        # set pixel values in invalid areas to 0
+           
         raster_mask = pixelBlocks['raster_mask']
         raster_pixels = pixelBlocks['raster_pixels']
         raster_pixels[np.where(raster_mask == 0)] = 0
         pixelBlocks['raster_pixels'] = raster_pixels
 
-        polygon_list, scores, classes = self.child_object_detector.vectorize(**pixelBlocks)
+        masks, pred_class, pred_score = self.child_instance_detector.vectorize(**pixelBlocks)
 
-        # bounding_boxes = bounding_boxes.tolist()
-        scores = scores.tolist()
-        classes = classes.tolist()
+        n_rows = int(math.sqrt(self.child_instance_detector.batch_size))
+        n_cols = int(math.sqrt(self.child_instance_detector.batch_size))
+        padding = self.child_instance_detector.padding
+        keep_masks = []
+        keep_scores = []
+        keep_classes = []       
+
+        for idx, mask in enumerate(masks):
+            if mask == []:
+                continue
+            centroid = get_centroid(mask[0])
+            grid_location = find_i_j(centroid, n_rows, n_cols, self.json_info['ImageHeight'], padding, True)
+            if grid_location is not None:
+                i, j, in_center = grid_location
+                for poly_id, polygon in enumerate(mask):
+                    polygon = np.array(polygon)
+                    polygon[:, 0] = polygon[:, 0] - (2*i + 1)*padding  # Inplace operation
+                    polygon[:, 1] = polygon[:, 1] - (2*j + 1)*padding  # Inplace operation            
+                    mask[poly_id] = polygon.tolist()
+                if in_center:
+                    keep_masks.append(mask)
+                    keep_scores.append(pred_score[idx])
+                    keep_classes.append(pred_class[idx])
+
+        masks =  keep_masks
+        pred_score = keep_scores
+        pred_class = keep_classes        
+
+
         features['features'] = []
 
-        for i in range(len(polygon_list)):
-            rings = [[]]
-            for j in range(polygon_list[i].shape[0]):
-                rings[0].append(
-                    [
-                        polygon_list[i][j][1],
-                        polygon_list[i][j][0]
-                    ]
-                )
+        for mask_idx, mask in enumerate(masks):
 
             features['features'].append({
                 'attributes': {
-                    'OID': i + 1,
-                    'Class': self.json_info['Classes'][classes[i] - 1]['Name'],
-                    'Confidence': scores[i]
+                    'OID': mask_idx + 1,
+                    'Class': self.json_info['Classes'][pred_class[mask_idx] - 1]['Name'],
+                    'Confidence': pred_score[mask_idx]
                 },
                 'geometry': {
-                    'rings': rings
+                    'rings': mask
                 }
-            })
+        }) 
+
         return {'output_vectors': json.dumps(features)}
+
 
 """

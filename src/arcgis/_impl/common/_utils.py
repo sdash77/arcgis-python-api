@@ -36,6 +36,9 @@ def create_uid():
 #----------------------------------------------------------------------
 def _date_handler(obj):
     import numpy
+    if type(obj) is datetime.date:
+        import datetime as _dt
+        obj = _dt.datetime.combine(obj.today(), _dt.datetime.min.time())
     if isinstance(obj, datetime.datetime) or isinstance(obj, date):
         try:
             return local_time_to_online(obj)
@@ -62,10 +65,13 @@ def local_time_to_online(dt=None):
        Output:
           Long value
     """
+
     if dt is None:
         dt = datetime.datetime.now()
 
-    if isinstance(dt, datetime.datetime) and dt.tzinfo:
+    if sys.version_info.major == 3:
+        return int(dt.timestamp() * 1000)
+    elif isinstance(dt, datetime.datetime) and dt.tzinfo:
         dt = dt.astimezone()
 
     return int(time.mktime(dt.timetuple())  * 1000)

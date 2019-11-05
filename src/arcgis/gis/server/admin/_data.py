@@ -145,6 +145,42 @@ class DataStoreManager(BaseServer):
         url = self._url + "/config/update"
         return self._con.post(path=url, postdata=params)
     #----------------------------------------------------------------------
+    def federate_data_item(self):
+        """
+        This operation can be used to create a data store item in the portal
+        for a data store that has been registered with one of the portal's
+        federated ArcGIS Server sites.
+
+        Once the operation is complete, a data store item is created in the
+        portal with which the ArcGIS Server site is federated. If the data
+        store is registered with only this federated server, no further
+        steps are required. However, if the data store is registered with
+        multiple federated servers and you want any of those servers to
+        access the data store item, you need to bind the data store item
+        with an additional federated server or servers using the
+        `PortalDataStore.register` method.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required string. The item path for the database, cloud, or file
+                               share data store for which you want to create a data store item.
+        ==================     ====================================================================
+
+
+        :return:
+            Boolean
+        """
+        if path[0] != "/":
+            path = "/%s" % path
+        params = {"f" : "json",
+                  "itemPath" : path}
+        url = "%s/federateDataItem"
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
     def get(self, path):
         """
         Retrieves the data item object at the given path.
@@ -964,6 +1000,7 @@ class Datastore(BaseServer):
 
         resp = self._con.post(path, params, verify_cert=False)
         if resp ['status'] == 'success':
+            self.regenerate()
             return True
         else:
             return False
@@ -990,6 +1027,22 @@ class Datastore(BaseServer):
             res = self._con.post(path, params, verify_cert=False)
 
         return res['status'] == 'success'
+    #----------------------------------------------------------------------
+    def regenerate(self):
+        """
+        This regenerates the manifest for a big data file share. You can
+        regenerate a manifest if you have added new data or if you have
+        uploaded a hints file using the edit resource.
+
+        :returns: Boolean. True = Success, False = Failure
+
+        """
+        url = self._datastore._url + "/regenerate"
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
     #----------------------------------------------------------------------
     @property
     def datasets(self):

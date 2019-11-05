@@ -4,18 +4,20 @@ import datetime
 import inspect
 import logging
 import sys
+import json
 import time
 import datetime
 import collections
+import concurrent.futures
 
 import arcgis
 from arcgis.gis import GIS
-from arcgis.features import FeatureSet, FeatureCollection
+from arcgis.features import FeatureSet, FeatureCollection, Table
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._tool import _camelCase_to_underscore
 from arcgis._impl.common._utils import _date_handler
-
+from arcgis.geoprocessing._job import GPJob
 
 _log = logging.getLogger(__name__)
 
@@ -26,10 +28,13 @@ def _layer_input(input_layer):
 
     url = ""
     if isinstance(input_layer, arcgis.gis.Item):
-        if 'layers' in input_layer:
-            input_param = input_layer.layers[0]._lyr_dict
+        if input_layer.type == "Image Collection":
+            input_param = {"itemId": input_layer.itemid}
         else:
-            raise TypeError("No layers in input layer Item")
+            if 'layers' in input_layer:
+                input_param = input_layer.layers[0]._lyr_dict
+            else:
+                raise TypeError("No layers in input layer Item")
 
     elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
         input_param = input_layer.layers[0]._lyr_dict
@@ -68,6 +73,10 @@ def _layer_input(input_layer):
 
     if "url" in input_param:
         url = input_param["url"]
+        if "/RasterRendering/" in url:
+            url = input_layer._uri
+            input_param = {"uri":url}
+            return input_param
     if "ImageServer" in url or "MapServer" in url:
         if "serviceToken" in input_param:
             url = url+"?token="+ input_param["serviceToken"]
@@ -91,6 +100,9 @@ def _layer_input_gp(input_layer):
 
     elif isinstance(input_layer, arcgis.features.FeatureCollection):
         input_param = input_layer.properties
+
+    elif isinstance(input_layer, arcgis.features.FeatureSet):
+        input_param = input_layer.to_dict()
 
     elif isinstance(input_layer, arcgis.gis.Layer):
         input_param = input_layer._lyr_dict
@@ -163,7 +175,10 @@ def _analysis_job(gptool, task, params):
     submit_url = "{}/submitJob".format(task_url)
 
     params["f"] = "json"
-    resp = gptool._con.post(submit_url, params, token=gptool._token)
+    try:
+        resp = gptool._con.post(submit_url, params, token=gptool._token)
+    except RuntimeError:
+        resp = gptool._con.post(submit_url, params)
     # print(resp)
     return task_url, resp, resp['jobId']
 
@@ -173,49 +188,61 @@ def _analysis_job_status(gptool, task_url, job_info):
     if "jobId" in job_info:
         # Get the id of the Analysis job to track the status.
         #
-        job_id = job_info.get("jobId")
-        job_url = "{}/jobs/{}".format(task_url, job_id)
-        params = {"f": "json"}
-        job_response = gptool._con.post(job_url, params, token=gptool._token)
-
-        # Query and report the Analysis job status.
-        #
-        num_messages = 0
-        if "jobStatus" in job_response:
-            while not job_response.get("jobStatus") == "esriJobSucceeded":
-                time.sleep(1)
-
+        try:
+            job_id = job_info.get("jobId")
+            job_url = "{}/jobs/{}".format(task_url, job_id)
+            params = {"f": "json"}
+            try:
                 job_response = gptool._con.post(job_url, params, token=gptool._token)
-                # print(job_response)
-                messages = job_response['messages'] if 'messages' in job_response else []
-                num = len(messages)
-                if num > num_messages:
-                    for index in range(num_messages, num):
-                        msg = messages[index]
-                        if arcgis.env.verbose:
-                            print(msg['description'])
-                        if msg['type'] == 'esriJobMessageTypeInformative':
-                            _log.info(msg['description'])
-                        elif msg['type'] == 'esriJobMessageTypeWarning':
-                            _log.warning(msg['description'])
-                        elif msg['type'] == 'esriJobMessageTypeError':
-                            _log.error(msg['description'])
-                            # print(msg['description'], file=sys.stderr)
-                        else:
-                            _log.warning(msg['description'])
-                    num_messages = num
+            except RuntimeError:
+                job_response = gptool._con.post(job_url, params)
 
-                if job_response.get("jobStatus") == "esriJobFailed":
-                    raise Exception("Job failed.")
-                elif job_response.get("jobStatus") == "esriJobCancelled":
-                    raise Exception("Job cancelled.")
-                elif job_response.get("jobStatus") == "esriJobTimedOut":
-                    raise Exception("Job timed out.")
+            # Query and report the Analysis job status.
+            #
+            num_messages = 0
+            if "jobStatus" in job_response:
+                while not job_response.get("jobStatus") == "esriJobSucceeded":
+                    time.sleep(1)
 
-            if "results" in job_response:
-                return job_response
-        else:
-            raise Exception("No job results.")
+                    try:
+                        job_response = gptool._con.post(job_url, params, token=gptool._token)
+                    except RuntimeError:
+                        job_response = gptool._con.post(job_url, params)
+                    # print(job_response)
+                    messages = job_response['messages'] if 'messages' in job_response else []
+                    num = len(messages)
+                    if num > num_messages:
+                        for index in range(num_messages, num):
+                            msg = messages[index]
+                            if arcgis.env.verbose:
+                                print(msg['description'])
+                            if msg['type'] == 'esriJobMessageTypeInformative':
+                                _log.info(msg['description'])
+                            elif msg['type'] == 'esriJobMessageTypeWarning':
+                                _log.warning(msg['description'])
+                            elif msg['type'] == 'esriJobMessageTypeError':
+                                _log.error(msg['description'])
+                                # print(msg['description'], file=sys.stderr)
+                            else:
+                                _log.warning(msg['description'])
+                        num_messages = num
+
+                    if job_response.get("jobStatus") == "esriJobFailed":
+                        raise Exception("Job failed.")
+                    elif job_response.get("jobStatus") == "esriJobCancelled":
+                        raise Exception("Job cancelled.")
+                    elif job_response.get("jobStatus") == "esriJobTimedOut":
+                        raise Exception("Job timed out.")
+
+                if "results" in job_response:
+                    return job_response
+            else:
+                raise Exception("No job results.")
+        except KeyboardInterrupt:
+                cancel_url = "%s/jobs/%s/cancel" % (task_url, job_info['jobId'])
+                params = {'f' : "json"}
+                job_info = gptool._con.get(path=cancel_url, params=params)
+                job_info = _analysis_job_status(gptool,task_url, job_info)
     else:
         raise Exception("No job url.")
 
@@ -241,7 +268,11 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
                                                     param_url)
 
                 params = {"f": "json"}
-                param_result = gptool._con.post(result_url, params, token=gptool._token)
+                _set_env_params(params, {})
+                try:
+                    param_result = gptool._con.post(result_url, params, token=gptool._token)
+                except:
+                    param_result = gptool._con.post(result_url, params)
 
                 job_value = param_result.get("value")
                 result_values[key] = job_value
@@ -249,8 +280,36 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
     else:
         raise Exception("Unable to get analysis job results.")
 
+def _future_op(gptool, task_url, job_info, job_id, param_db, return_values, return_messages):
 
-def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False):
+    job_info = _analysis_job_status(gptool, task_url, job_info)
+    resp = _analysis_job_results(gptool, task_url, job_info, job_id)
+
+    # ---------------------async-out---------------------#
+    output_dict = {}
+    for retParamName in resp.keys():
+        output_val = resp[retParamName]
+        try:
+            ret_param_name, ret_val = _get_output_value(gptool, output_val, param_db, retParamName)
+            output_dict[ret_param_name] = ret_val
+        except KeyError:
+            pass # cannot handle unexpected output as return tuple will change
+
+    # tools with output map service - add another output:
+    # result_layer = '' #***self.properties.resultMapServerName
+    if gptool.properties.resultMapServerName != '':
+        job_id = job_info.get("jobId")
+        result_layer_url = gptool._url.replace('/GPServer', '/MapServer') + '/jobs/' + job_id
+
+        output_dict['result_layer'] = MapImageLayer(result_layer_url, gptool._gis)
+
+    num_returns = len(resp)
+    if return_messages:
+        return _return_output(num_returns, output_dict, return_values), job_info
+
+    return _return_output(num_returns, output_dict, return_values)
+
+def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async, url, webtool=False, add_token=True, return_messages=False, future=False):
     if gis is None:
         gis = arcgis.env.active_gis
 
@@ -280,7 +339,8 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                     if type(param_value) == FeatureSet:
                         gp_params[gp_param_name] = param_value.to_dict()
                     elif  _is_geoenabled(param_value):
-                        gp_params[gp_param_name] = param_value.spatial.__feature_set__
+                        gp_params[gp_param_name] = json.loads(json.dumps(param_value.spatial.__feature_set__,
+                                                                         default=_date_handler))
                     elif type(param_value) == str:
 
                         try:
@@ -321,9 +381,20 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
     if use_async:
         task_url = "{}/{}".format(url, task_name)
         submit_url = "{}/submitJob".format(task_url)
-
-        job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+        if add_token and submit_url.lower().find("arcgis.com") == -1:
+            try:
+                job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+            except:
+                job_info = gptool._con.post(submit_url, gp_params)
+        else:
+            job_info = gptool._con.post(submit_url, gp_params)
         job_id = job_info['jobId']
+        if future:
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            future = executor.submit(_future_op, *(gptool, task_url, job_info, job_id, param_db, return_values, return_messages))
+            executor.shutdown(False)
+            gpjob = GPJob(future=future, gptool=gptool, jobid=job_id, task_url=task_url, gis=gptool._gis, notify=arcgis.env.verbose)
+            return gpjob
         job_info = _analysis_job_status(gptool, task_url, job_info)
         resp = _analysis_job_results(gptool, task_url, job_info, job_id)
 
@@ -346,11 +417,17 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
             output_dict['result_layer'] = MapImageLayer(result_layer_url, gptool._gis)
 
         num_returns = len(resp)
+        if return_messages:
+            return _return_output(num_returns, output_dict, return_values), job_info
+
         return _return_output(num_returns, output_dict, return_values)
 
     else: # synchronous
         exec_url = url + "/" + task_name + "/execute"
-        resp = gptool._con.post(exec_url, gp_params, token=gptool._token)
+        if add_token:
+            resp = gptool._con.post(exec_url, gp_params, token=gptool._token)
+        else:
+            resp = gptool._con.post(exec_url, gp_params)
 
         output_dict = {}
 
@@ -365,6 +442,8 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
                 pass  # cannot handle unexpected output as return tuple will change
 
         num_returns = len(resp['results'])
+        if return_messages:
+            return _return_output(num_returns, output_dict, return_values), job_info
         return _return_output(num_returns, output_dict, return_values)
 
 
@@ -401,10 +480,12 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
 
     ret_val = output_val
     if output_val is not None:
-        if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
+        if ret_type in [FeatureSet, LinearUnit, DataFile, RasterData, Table]:
             jsondict = output_val
             if 'mapImage' in jsondict:  # http://resources.esri.com/help/9.3/arcgisserver/apis/rest/gpresult.html#mapimage
                 ret_val = jsondict
+            elif ret_type == Table and 'url' in jsondict:
+                ret_val = arcgis.features.Table(jsondict['url'], gptool._gis)
             elif ret_type == FeatureSet and 'url' in jsondict:
                 ret_val = arcgis.features.FeatureLayer(jsondict['url'], gptool._gis)
             else:

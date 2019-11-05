@@ -3,9 +3,9 @@
 # Purpose:     Tests for reading feature layers, editing them.
 #-------------------------------------------------------------------------------
 import unittest
-from dino_utils.dino_precondition_checks import PreconditionChecks
-from dino_utils.dino_precondition_checks import PortalUtils
-from dino_utils.dino_configs import DinoConfigs
+from integration.dino_utils.dino_precondition_checks import PreconditionChecks
+from integration.dino_utils.dino_precondition_checks import PortalUtils
+from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 
@@ -63,9 +63,9 @@ class Test_FeatureLayer_portal(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
 
-        cls.portal_url = _conf_reader['teamportal']['url']
-        cls.portal_username = _conf_reader['teamportal']['admin_user']
-        cls.portal_password = _conf_reader['teamportal']['admin_password']
+        cls.portal_url = _conf_reader['datascienceqa']['url']
+        cls.portal_username = _conf_reader['datascienceqa']['admin_user']
+        cls.portal_password = _conf_reader['datascienceqa']['admin_password']
 
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
@@ -302,6 +302,168 @@ class Test_FeatureLayer_portal(unittest.TestCase):
             # Verify number of features after truncate
             new_feature_count = flayer0.query(return_count_only=True)
             self.assertEqual(new_feature_count, 0, "Feature count after delete_features not equal to 0")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+class Test_FeatureLayer_online(unittest.TestCase):
+    """
+    Test to check if a FeatureLayer object works with builtin portal
+    """
+    @classmethod
+    def setUpClass(cls):
+        """
+        Check if portal builtin can be reached
+        Get class test asset location
+        :return:
+        """
+
+        #region Read config data
+        _conf_reader = ConfigParser()
+        _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
+
+        cls.portal_url = _conf_reader['arcgiscom']['url']
+        cls.portal_username = _conf_reader['arcgiscom']['admin_user']
+        cls.portal_password = _conf_reader['arcgiscom']['admin_password']
+
+        _conf_reader2 = ConfigParser()
+        _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
+
+        cls.qalab_base_path = _conf_reader2['test_data']['qalab_base_path']
+        cls.qalab_cls_path = cls.qalab_base_path + _conf_reader2['test_data']['qalab_FeatureLayer_cls']
+        #endregion
+
+        #region precondition checks and sign in
+        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        if not r1:
+            cls.class_skip = True
+
+        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        if cls.gis is None:
+            cls.class_skip = True
+        #endregion
+
+        print("==================================================================")
+        print("Beginning tests in Test_FeatureLayer_portal class")
+        #endregion
+
+    def setUp(self):
+        test_skip = False #reset the skip flag
+        print("Test: "+self._testMethodName)
+        # self.namePrefix = "dino_FeatureLayer_"
+
+        t = datetime.datetime.now()
+        self.time_stamp = str.format("Time stamp: {0}_{1}_{2}_{3}_{4}_{5}", str(t.year),
+              str(t.month), str(t.day), str(t.hour), str(t.minute), str(t.second))
+        print("Time stamp: " + self.time_stamp)
+
+    def tearDown(self):
+        print("------------------------------------------------------------------\n")
+
+    @classmethod
+    def tearDownClass(cls):
+        print("\n==================================================================")
+
+    def test_feature_excessive_query_classes(self):
+        """
+        Purpose of this test is to obtain main objects in feature module and verify their types are correct.
+        :return:
+        """
+        try:
+            from arcgis.features import FeatureLayer
+            county_layer = FeatureLayer(
+                "https://demographics8.arcgis.com/arcgis/rest/services/USA_Demographics_and_Boundaries_2018/MapServer/14")
+            county_featureset = county_layer.query()
+            self.assertIsInstance(county_featureset, arcgis.features.FeatureSet, "FeatureLayer.query() does not return a FeatureSet obj")
+            self.assertEqual(32196, len(county_featureset.features), "Number of features not correct")
+
+            #check Feature objects be obtained from FeatureSet object
+            feature_list = county_featureset.features
+            self.assertIsInstance(feature_list, list, "FeatureSet.features does not return a list")
+            f1 = feature_list[0]
+            self.assertIsInstance(f1, arcgis.features.Feature, "FeatureSet.features does not return a list of Feature objects")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_feature_excessive_query_as_df_classes(self):
+        """
+        Purpose of this test is to obtain main objects in feature module and verify their types are correct.
+        :return:
+        """
+        try:
+            from arcgis.features import FeatureLayer
+            county_layer = FeatureLayer(
+                "https://demographics8.arcgis.com/arcgis/rest/services/USA_Demographics_and_Boundaries_2018/MapServer/14")
+            county_featureset = county_layer.query(as_df=True)
+            from pandas import core
+            self.assertIsInstance(county_featureset, core.frame.DataFrame, "FeatureLayer.query(as_df=True) does not return a DataFrame obj")
+            self.assertEqual(32196, county_featureset.shape[0], "Number of features not correct")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_feature_external_query_as_df_classes(self):
+        """
+        Purpose of this test is to obtain main objects in feature module and verify their types are correct.
+        :return:
+        """
+        try:
+            from arcgis.features import FeatureLayer
+            county_layer = FeatureLayer(
+                "https://gisdev.odf.oregon.gov/gisdev/rest/services/GeoEvent/VaisalaLightning/FeatureServer/0")
+            county_featureset = county_layer.query(as_df=True)
+            from pandas import core
+            self.assertIsInstance(county_featureset, core.frame.DataFrame, "FeatureLayer.query(as_df=True) does not return a DataFrame obj")
+            self.assertEqual(3396, county_featureset.shape[0], "Number of features not correct")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_feature_geoevent_query_as_df_classes(self):
+        """
+        Purpose of this test is to obtain main objects in feature module and verify their types are correct.
+        :return:
+        """
+        try:
+            from arcgis.features import FeatureLayer
+            county_layer = FeatureLayer(
+                "https://services8.arcgis.com/mpSDBlkEzjS62WgX/arcgis/rest/services/WorkerPosition/FeatureServer/1")
+            # county_featureset = county_layer.query()
+            # self.assertIsInstance(county_featureset, arcgis.features.FeatureSet, "FeatureLayer.query() does not return a FeatureSet obj")
+            # self.assertEqual(37784, len(county_featureset.features), "Number of features not correct")
+            county_featureset = county_layer.query(as_df=True)
+            from pandas import core
+            self.assertIsInstance(county_featureset, core.frame.DataFrame, "FeatureLayer.query(as_df=True) does not return a DataFrame obj")
+            self.assertEqual(44538, county_featureset.shape[0], "Number of features not correct")
 
         except AssertionError as assertErrorException:
             test_skip = True

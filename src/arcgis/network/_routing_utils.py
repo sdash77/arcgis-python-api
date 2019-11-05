@@ -12,7 +12,7 @@ _use_async = False
 
 
 def get_travel_modes(
-    gis = None):
+    gis=None):
     """
 
 
@@ -49,11 +49,11 @@ See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Util
 
 get_travel_modes.__annotations__ = {
     'return': tuple}
-    
+
 def get_tool_info(
-    service_name = """asyncRoute""",
-    tool_name = """FindRoutes""",
-    gis = None):
+    service_name='asyncRoute',
+    tool_name='FindRoutes',
+    gis=None):
     """
 
 
@@ -95,4 +95,4 @@ See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Util
 get_tool_info.__annotations__ = {
     'service_name': str,
     'tool_name': str,
-    'return': str}    
+    'return': str}

@@ -102,26 +102,7 @@ def from_layer(layer,
     records = []
     if isinstance(layer, (Table, FeatureLayer)) == False:
         raise ValueError("Invalid inputs: must be FeatureLayer or Table")
-    if 'maxRecordCount' in layer.properties:
-        max_records = layer.properties['maxRecordCount']
-    else:
-        max_records = 1000
-    service_count = layer.query(where=query,
-                                return_count_only=True)
-    if service_count > max_records:
-        frames = []
-        oid_info = layer.query(where=query, return_ids_only=True)
-        for ids in _chunks(oid_info['objectIds'], max_records):
-            ids = [str(i) for i in ids]
-            sql = "%s in (%s)" % (oid_info['objectIdFieldName'],
-                                  ",".join(ids))
-            frames.append(layer.query(where=sql, as_df=True))
-        res = pd.concat(frames, ignore_index=True)
-        res.reset_index(drop=True, inplace=True)
-        res.spatial.set_geometry("SHAPE")
-    else:
-        return layer.query(where=query, as_df=True)#.sdf
-    return res
+    return layer.query(where=query, as_df=True)
 #----------------------------------------------------------------------
 def to_layer(df,
              layer,

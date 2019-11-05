@@ -6,7 +6,7 @@ arcgis.geoprocessing module
 
 import_toolbox
 --------------
-.. automethod:: arcgis.geoprocessing.import_toolbox
+.. autofunction:: arcgis.geoprocessing.import_toolbox
 
 DataFile
 --------------
@@ -23,5 +23,11 @@ LinearUnit
 RasterData
 --------------
 .. autoclass:: arcgis.geoprocessing.RasterData
+    :members:
+    :undoc-members:
+
+GPJob
+--------------
+.. autoclass:: arcgis.geoprocessing.GPJob
     :members:
     :undoc-members:

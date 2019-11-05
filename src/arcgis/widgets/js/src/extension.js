@@ -27,7 +27,9 @@ var _httpGetAsync = function(theUrl){
                 reject("HTTP request on " + theUrl + 
                        " returned code " + status);
             }
-        })
+        }).catch((err) => {
+            reject(err);
+        });
     })
 }
 

@@ -7,9 +7,15 @@ try:
 except ImportError as e:
     pass
 from six import add_metaclass
+from functools import partial
+
 #--------------------------------------------------------------------------
 def _is_valid(value):
     """checks if the value is valid"""
+    if 'spatialReference' not in value or \
+       isinstance(value['spatialReference'],
+                  (dict, SpatialReference)) == False:
+        return False
     if isinstance(value, Point):
         if hasattr(value, 'x') and \
            hasattr(value, 'y') :
@@ -87,6 +93,18 @@ def _is_point(coords):
             else:
                 return _is_point(coord)
     return False
+#--------------------------------------------------------------------------
+def _geojson_type_to_esri_type(type_):
+    if type_ in ['LineString','MultiLineString']:
+        return Polyline
+    if type_ in ['Polygon','MultiPolygon']:
+        return Polygon
+    if type_ == 'Point':
+        return Point
+    if type_ == 'MultiPoint':
+        return MultiPoint
+    else:
+        raise ValueError("Unknown GeoJSON Geometry type: {}".format(type_))
 ###########################################################################
 class BaseGeometry(dict):
     _ao = None
@@ -109,12 +127,14 @@ class BaseGeometry(dict):
                 self._HASARCPY = True
             except:
                 self._HASARCPY = False
+
         if self._HASSHAPELY is None:
             try:
                 import shapely
                 self._HASSHAPELY = True
             except:
                 self._HASSHAPELY = False
+
         return self._HASARCPY, self._HASSHAPELY
     #----------------------------------------------------------------------
     def __setattr__(self, key, value):
@@ -178,22 +198,42 @@ class GeometryFactory(type):
             return json.loads(arcpy.FromWKT(iterable).JSON)
         return {}
     #----------------------------------------------------------------------
+    def _from_gj(self, iterable):
+        try:
+            import arcpy
+            HASARCPY = True
+        except:
+            HASARCPY = False
+        if HASARCPY:
+            gj = json.loads(arcpy.AsShape(iterable, False).JSON)
+            gj['spatialReference']['wkid'] = 4326
+            return gj
+        else:
+            cls = _geojson_type_to_esri_type(iterable['type'])
+            return cls._from_geojson(iterable)
+        return {}
+
+    #----------------------------------------------------------------------
     def __call__(cls, iterable=None, **kwargs):
         if iterable is None:
             iterable = {}
 
         if iterable:
-            if hasattr(iterable, "JSON"):
+            if isinstance(iterable, (bytearray, bytes)): # WKB
+                iterable = cls._from_wkb(iterable)
+            elif hasattr(iterable, "JSON"):
                 iterable = json.loads(getattr(iterable, "JSON"))
+            elif 'coordinates' in iterable:
+                iterable = cls._from_gj(iterable)
             elif hasattr(iterable, "exportToString"):
                 iterable = {'wkt' : iterable.exportToString()}
             elif isinstance(iterable, str) and\
                  "{" in iterable:
                 iterable = json.loads(iterable)
             elif isinstance(iterable, str): # WKT
-                iterable = _from_wkt(iterable)
-            elif isinstance(iterable, (bytearray, bytes)): # WKB
-                iterable = _from_wkt(iterable)
+                iterable = cls._from_wkt(iterable)
+            #elif isinstance(iterable, (bytearray, bytes)): # WKB
+            #    iterable = cls._from_wkb(iterable)
 
             if 'x' in iterable:
                 cls = Point
@@ -389,6 +429,16 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
+        """
+        Returns the Geometry as an ArcPy Geometry.
+
+        If `ArcPy` is not installed, none is returned.
+
+        **Requires ArcPy**
+
+        :returns: arcpy.Geometry
+
+        """
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             import arcpy
@@ -417,7 +467,7 @@ class Geometry(BaseGeometry):
     #----------------------------------------------------------------------
     def _wkt(obj, fmt='%.16f'):
         """converts an arcgis.Geometry to WKT"""
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
+        HASARCPY, HASSHAPELY = obj._check_geometry_engine()
         if HASARCPY:
             import arcpy
         if isinstance(obj, Point):
@@ -514,13 +564,17 @@ class Geometry(BaseGeometry):
                 return None
             if len(a) == 0:
                 return None
-            elif len(a) > 1: # single part
+            elif len(a) == 1: # single part
                 x_max = max(a[0], key=lambda x: x[0])[0]
                 x_min = min(a[0], key=lambda x: x[0])[0]
                 y_max = max(a[0], key=lambda x: x[1])[1]
                 y_min = min(a[0], key=lambda x: x[1])[1]
                 return x_min, y_min, x_max, y_max
             else:
+                if 'points' in a:
+                    a = a['points']
+                if 'points' not in a and 'coordinates' in a:
+                    a = a['coordinates']
                 xs = []
                 ys = []
                 for pt in a: # multiple part geometry
@@ -649,7 +703,10 @@ class Geometry(BaseGeometry):
         if isinstance(self, Point):
             return False
         elif isinstance(self, Polygon):
-            return len(self['rings']) == 0
+            if 'rings' in self:
+                return len(self['rings']) == 0
+            elif 'curveRings' in self:
+                return len(self['curveRings']) == 0
         elif isinstance(self, Polyline):
             return len(self['paths']) == 0
         elif isinstance(self, MultiPoint):
@@ -722,14 +779,24 @@ class Geometry(BaseGeometry):
             )
 
         """
-        HASARCPY, HASSHAPELY = self._check_geometry_engine()
+        try:
+            import shapely
+            HASSHAPELY = True
+        except:
+            HASSHAPELY = False
+
         if HASSHAPELY:
-            geometry = cls(shapely_geometry.__geo_interface__)
+            gj = shapely_geometry.__geo_interface__
+            geom_cls = _geojson_type_to_esri_type(gj['type'])
+
             if spatial_reference:
-                geometry.spatial_reference = spatial_reference
+                geometry = geom_cls._from_geojson(gj,sr=spatial_reference)
+            else:
+                geometry = geom_cls._from_geojson(gj)
+
             return geometry
         else:
-            raise Exception('Shapely is required to execute from_shapely.')
+            raise ValueError('Shapely is required to execute from_shapely.')
     #----------------------------------------------------------------------
     @property
     def WKT(self):
@@ -847,6 +914,8 @@ class Geometry(BaseGeometry):
         """
         Returns the center of the geometry
 
+        **Requires ArcPy or Shapely**
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -891,6 +960,8 @@ class Geometry(BaseGeometry):
     def extent(self):
         """
         The extent of the geometry as a tuple containing xmin, ymin, xmax, ymax
+
+        **Requires ArcPy or Shapely**
 
         .. code-block:: python
 
@@ -1008,6 +1079,8 @@ class Geometry(BaseGeometry):
         A space-delimited string of the coordinate pairs of the convex hull
         rectangle.
 
+        **Requires ArcPy or Shapely**
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1035,6 +1108,8 @@ class Geometry(BaseGeometry):
     def is_multipart(self):
         """
         True, if the number of parts for this geometry is more than one.
+
+        **Requires ArcPy or Shapely**
 
         .. code-block:: python
 
@@ -1069,6 +1144,8 @@ class Geometry(BaseGeometry):
         The point at which the label is located. The label_point is always
         located within or on a feature.
 
+        **Requires ArcPy or Shapely**
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1101,7 +1178,6 @@ class Geometry(BaseGeometry):
     def last_point(self):
         """
         The last coordinate of the feature.
-
 
         .. code-block:: python
 
@@ -1153,6 +1229,8 @@ class Geometry(BaseGeometry):
         The length of the linear feature. Zero for point and multipoint feature types.
         The length units is the same as the spatial reference.
 
+        **Requires ArcPy or Shapely**
+
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1184,6 +1262,7 @@ class Geometry(BaseGeometry):
         feature types. The length units is the same as the spatial
         reference.
 
+        **Requires ArcPy or Shapely**
 
         .. code-block:: python
 
@@ -1284,7 +1363,6 @@ class Geometry(BaseGeometry):
         """
         The spatial reference of the geometry.
 
-
         .. code-block:: python
 
             >>> geom = Geometry({
@@ -1301,9 +1379,11 @@ class Geometry(BaseGeometry):
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY and \
            isinstance(self, Envelope):
-            return getattr(self.polygon.as_arcpy, "spatialReference", None)
+            v = getattr(self.polygon.as_arcpy, "spatialReference", None)
+            if v:
+                return SpatialReference(v)
         elif HASARCPY:
-            return SpatialReference(self['spatialReference']).as_arcpy
+            return SpatialReference(self['spatialReference'])
         if 'spatialReference' in self:
             return SpatialReference(self['spatialReference'])
         return None
@@ -1313,6 +1393,7 @@ class Geometry(BaseGeometry):
         """
         The center of gravity for a feature.
 
+        **Requires ArcPy or Shapely**
 
         .. code-block:: python
 
@@ -1380,7 +1461,9 @@ class Geometry(BaseGeometry):
     def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
         Returns a tuple of angle and distance to another point using a
-        measurement type.
+        measurement type.  If `ArcPy` is not installed, none is returned.
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1427,6 +1510,8 @@ class Geometry(BaseGeometry):
         """
         Constructs a polygon at a specified distance from the geometry.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1448,6 +1533,10 @@ class Geometry(BaseGeometry):
     def clip(self, envelope):
         """
         Constructs the intersection of the geometry and the specified extent.
+        If `ArcPy` is not installed, none is returned.
+
+        **Requires ArcPy**
+
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1480,6 +1569,8 @@ class Geometry(BaseGeometry):
     def contains(self, second_geometry, relation=None):
         """
         Indicates if the base geometry contains the comparison geometry.
+
+        **Requires ArcPy/Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1554,6 +1645,8 @@ class Geometry(BaseGeometry):
         Indicates if the two geometries intersect in a geometry of a lesser
         shape type.
 
+        **Requires ArcPy/Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1579,6 +1672,8 @@ class Geometry(BaseGeometry):
         Splits this geometry into a part left of the cutting polyline, and
         a part right of it.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1598,6 +1693,8 @@ class Geometry(BaseGeometry):
     def densify(self, method, distance, deviation):
         """
         Creates a new geometry with added vertices
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1636,6 +1733,8 @@ class Geometry(BaseGeometry):
         following illustration shows the results when the red polygon is the
         source geometry.
 
+        **Requires ArcPy/Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1649,7 +1748,8 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_arcpy
-            return Geometry(self.as_arcpy.difference(other=second_geometry))
+            g = self.as_arcpy.difference(other=second_geometry)
+            return Geometry(g)
         elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             if isinstance(second_geometry, Geometry):
                 second_geometry = second_geometry.as_shapely
@@ -1660,6 +1760,8 @@ class Geometry(BaseGeometry):
         """
         Indicates if the base and comparison geometries share no points in
         common.
+
+        **Requires ArcPy/Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1686,6 +1788,8 @@ class Geometry(BaseGeometry):
         Returns the minimum distance between two geometries. If the
         geometries intersect, the minimum distance is 0.
         Both geometries must have the same projection.
+
+        **Requires ArcPy/Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1715,6 +1819,8 @@ class Geometry(BaseGeometry):
         shape type and define the same set of points in the plane. This is
         a 2D comparison only; M and Z values are ignored.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1741,6 +1847,8 @@ class Geometry(BaseGeometry):
         Creates a new simplified geometry using a specified maximum offset
         tolerance.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1761,6 +1869,8 @@ class Geometry(BaseGeometry):
     def get_area(self, method, units=None):
         """
         Returns the area of the feature using a measurement type.
+
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1792,6 +1902,8 @@ class Geometry(BaseGeometry):
         """
         Returns the length of the feature using a measurement type.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1822,6 +1934,8 @@ class Geometry(BaseGeometry):
         Returns an array of point objects for a particular part of geometry
         or an array containing a number of arrays, one for each part.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1843,6 +1957,8 @@ class Geometry(BaseGeometry):
         different shape types. The intersection of two geometries of the
         same shape type is a geometry containing only the regions of overlap
         between the original geometries.
+
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1890,6 +2006,8 @@ class Geometry(BaseGeometry):
         """
         Returns a measure from the start point of this line to the in_point.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1916,6 +2034,8 @@ class Geometry(BaseGeometry):
         shape type as one of the input geometries and is not equivalent to
         either of the input geometries.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1940,6 +2060,8 @@ class Geometry(BaseGeometry):
         """
         Returns a point at a given angle and distance in degrees and meters
         using the specified measurement type.
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -1971,6 +2093,8 @@ class Geometry(BaseGeometry):
         Returns a point on a line at a specified distance from the beginning
         of the line.
 
+        **Requires ArcPy or Shapely**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -1990,11 +2114,16 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.positionAlongLine(value=value,
                                                             use_percentage=use_percentage))
+        elif HASSHAPELY:
+            return Geometry(self.as_shapely.interpolate(value, normalized=use_percentage).__geo_interface__)
+
         return None
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
         Projects a geometry and optionally applies a geotransformation.
+
+        **Requires ArcPy or pyproj>=1.9 and PROJ.4**
 
         ====================     ====================================================================
         **Argument**             **Description**
@@ -2030,6 +2159,57 @@ class Geometry(BaseGeometry):
                 raise ValueError("Invalid spatial reference object.")
             return Geometry(self.as_arcpy.projectAs(spatial_reference=spatial_reference,
                                                     transformation_name=transformation_name))
+
+        try:
+            import pyproj
+            from shapely.ops import transform
+            HASPROJ = True
+        except:
+            HASPROJ = False
+
+        # Project using Proj4 (pyproj)
+        if HASPROJ:
+
+            esri_projections = {
+                102100: 3857,
+                102113: 3857
+            }
+
+            # Get the input spatial reference
+            in_srid = self.spatial_reference.get('wkid',None)
+            in_srid = self.spatial_reference.get('latestWkid',in_srid)
+            # Convert web mercator from esri SRID
+            in_srid = esri_projections.get(int(in_srid),in_srid)
+            in_srid = 'epsg:{}'.format(in_srid)
+
+            if isinstance(spatial_reference, dict) or isinstance(spatial_reference, SpatialReference):
+                out_srid = spatial_reference.get('wkid',None)
+                out_srid = spatial_reference.get('latestWkid',out_srid)
+            elif isinstance(spatial_reference, integer_types):
+                out_srid = spatial_reference
+            elif isinstance(spatial_reference, string_types):
+                out_srid = spatial_reference
+            else:
+                raise ValueError("Invalid spatial reference object.")
+
+            out_srid = esri_projections.get(int(out_srid),out_srid)
+            out_srid = 'epsg:{}'.format(out_srid)
+
+            try:
+                project = partial(
+                    pyproj.transform,
+                    pyproj.Proj(init=in_srid),
+                    pyproj.Proj(init=out_srid)
+                )
+            except RuntimeError as e:
+                raise ValueError("pyproj projection from {0} to {1} not currently supported".format(in_srid,out_srid))
+
+            g = transform(project,self.as_shapely)
+            return Geometry.from_shapely(
+                g,
+                spatial_reference=spatial_reference
+            )
+
         return None
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
@@ -2039,6 +2219,8 @@ class Geometry(BaseGeometry):
         distance between those points. Also returns information about the
         side of the line the in_point is on as well as the distance along
         the line where the nearest point occurs.
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2066,6 +2248,8 @@ class Geometry(BaseGeometry):
         Returns a Polyline between start and end measures. Similar to
         Polyline.positionAlongLine but will return a polyline segment between
         two points on the polyline instead of a single point.
+
+        **Requires ArcPy**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2095,6 +2279,8 @@ class Geometry(BaseGeometry):
         """
         Returns a new point based on in_point snapped to this geometry.
 
+        **Requires ArcPy**
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -2117,6 +2303,8 @@ class Geometry(BaseGeometry):
         instersection of those geometries.
 
         The two input geometries must be the same shape type.
+
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2146,6 +2334,7 @@ class Geometry(BaseGeometry):
         """
         Indicates if the boundaries of the geometries intersect.
 
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2173,6 +2362,7 @@ class Geometry(BaseGeometry):
         Constructs the geometry that is the set-theoretic union of the input
         geometries.
 
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2199,6 +2389,8 @@ class Geometry(BaseGeometry):
     def within(self, second_geometry, relation=None):
         """
         Indicates if the base geometry is within the comparison geometry.
+
+        **Requires ArcPy or Shapely**
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -2424,17 +2616,19 @@ class Polygon(Geometry):
         if fill_color is None:
             fill_color = "#66cc99" if self.is_valid else "#ff3333"
         rings = []
+        s = ""
         for ring in self['rings']:
-            rings += ring
-        exterior_coords = [
-            ["{},{}".format(*c) for c in rings]]
-        path = " ".join([
-            "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
-            for coords in exterior_coords])
-        return (
+            rings = ring
+            exterior_coords = [
+                ["{},{}".format(*c) for c in rings]]
+            path = " ".join([
+                "M {} L {} z".format(coords[0], " L ".join(coords[1:]))
+                for coords in exterior_coords])
+            s += (
             '<path fill-rule="evenodd" fill="{2}" stroke="#555555" '
             'stroke-width="{0}" opacity="0.6" d="{1}" />'
             ).format(2. * scale_factor, path, fill_color)
+        return s
     #----------------------------------------------------------------------
     @property
     def type(self):
@@ -2568,6 +2762,7 @@ class Polyline(Geometry):
             coordinates = [data[coordkey]]
         else:
             coordinates = data[coordkey]
+
         return cls(
             {'paths' : [[p for p in part] for part in coordinates],
              'spatialReference' : sr
@@ -2699,7 +2894,10 @@ class SpatialReference(BaseGeometry):
         super(SpatialReference, self)
         if iterable is None:
             iterable = {}
-
+        if isinstance(iterable, int):
+            iterable = {'wkid' : iterable}
+        if isinstance(iterable, str):
+            iterable = {'wkt' : iterable}
         HASARCPY, HASSHAPELY = self._check_geometry_engine()
         if HASARCPY:
             import arcpy

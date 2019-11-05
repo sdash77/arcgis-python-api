@@ -290,6 +290,20 @@ class Machine(BaseServer):
         return '<%s at %s>' % (type(self).__name__, self._url)
     #----------------------------------------------------------------------
     @property
+    def hardware(self):
+        """
+        This resource displays hardware information for the machine in your
+        ArcGIS Server site. It updates the information when it detects any 
+        change to the configuration of your machine, as well as each time 
+        the machine is restarted.
+
+        :return: dict
+        """
+        url = self._url + "/hardware"
+        params = {'f' : 'json'}
+        return self._con.get(url, params)    
+    #----------------------------------------------------------------------
+    @property
     def status(self):
         """
         Gets the status/state of this machine.
@@ -316,6 +330,32 @@ class Machine(BaseServer):
         res = self._con.post(path=uURL, postdata=params)
         if 'status' in res:
             return res['status'] == 'success'
+        return res
+    def synchronize(self):
+        """
+        On occasion, one or more machines in a server site might be 
+        unavailable due to network issues or because they are down 
+        (intentionally or unintentionally). Once these machines become 
+        available again, they will need to synchronize with the site to 
+        pick up any changes made to the site during that downtime. This 
+        is done automatically by the site, but it is only a one-time 
+        attempt. If there are any issues with this synchronizing effort, 
+        a SEVERE message is logged.
+
+        This operation allows administrators to manually synchronize specific
+        machines with the site. Synchronizing a machine with the site will 
+        reconfigure the machine and redeploy all services. This will take a 
+        few minutes. During this time, all administrative operations on the 
+        site will be blocked.
+        
+        :returns: Boolean
+        
+        """
+        url = self._url + "/synchronizeWithSite"
+        params = {'f' : 'json'}
+        res = self._con.post(url, params)
+        if "status" in res:
+            return res["status"] == 'success'
         return res
     #----------------------------------------------------------------------
     def stop(self):
@@ -413,10 +453,11 @@ class Machine(BaseServer):
         :return: boolean
 
         """
-        params = {'f' : 'json'}
+        params = {'f' : 'json',
+                  'csrfPreventToken' : self._con.token
+                  }
         url = self._url + "/sslcertificates/{cert}/delete".format(cert=certificate)
-        res = self._con.get(path=url,
-                            params=params)
+        res = self._con.post(url, params)
         if isinstance(res, dict) and 'status' in res:
             return res['status']
         else:

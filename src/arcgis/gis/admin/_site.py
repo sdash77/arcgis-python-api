@@ -1,6 +1,3 @@
-"""
-Module contains a class to manage site level functions on a local GIS
-"""
 from ._base import BasePortalAdmin
 ########################################################################
 class Site(BasePortalAdmin):
@@ -37,7 +34,9 @@ class Site(BasePortalAdmin):
                content_store,
                description="",
                question_idx=None,
-               question_ans=None):
+               question_ans=None,
+               license_file=None,
+               user_license=None):
         """
         The create site operation initializes and configures Portal for
         ArcGIS for use. It must be the first operation invoked after
@@ -79,6 +78,19 @@ class Site(BasePortalAdmin):
                                         forgotten password
         ---------------------------     --------------------------------------------------------------------
         question_ans                    Optional string. The answer to the secret question
+        ---------------------------     --------------------------------------------------------------------
+        license_file                    Optional string. The portal license file. Starting at 10.7, you will
+                                        obtain your portal license file - which contains information
+                                        regarding your user types, apps, and app bundles-from My Esri. For
+                                        more information, see Obtain a portal license file.
+        ---------------------------     --------------------------------------------------------------------
+        user_license                    The user type for the initial administrator account. The values
+                                        listed below are the user types that are compatible with the
+                                        Administrator role.
+
+                                        Values: creatorUT, GISProfessionalBasicUT,
+                                                GISProfessionalStdUT, GISProfessionalAdvUT
+
         ===========================     ====================================================================
 
         :returns: dict
@@ -95,7 +107,11 @@ class Site(BasePortalAdmin):
         if question_idx and question_ans:
             params['securityQuestionIdx'] = question_idx
             params['securityQuestionAns'] = question_ans
-        return con.post(path=url, postdata=params)
+        if user_license:
+            params['userLicenseTypeId'] = user_license
+        if license_file:
+            license_file = {'file' : license_file}
+        return con.post(url, params, files=license_file)
     #----------------------------------------------------------------------
     def export_site(self, location):
         """
@@ -184,7 +200,7 @@ class Site(BasePortalAdmin):
         configuration store.
         If this is the first portal machine in your site, use the Create
         Site operation instead.
-        The joinSite operation:
+        The join operation:
          - Registers a machine to an existing site (active machine)
          - Creates a snapshot of the database of the active machine
          - Updates the token shared key

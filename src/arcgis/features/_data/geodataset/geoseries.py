@@ -20,7 +20,10 @@ try:
     import pandas as pd
     from pandas import Series, DataFrame
     from pandas.core.indexing import _NDFrameIndexer
-    from pandas.util.decorators import cache_readonly
+    try:
+        from pandas.util.decorators import cache_readonly
+    except:
+        from pandas.util import cache_readonly
 
     OLD_PANDAS = issubclass(Series, np.ndarray)
 except:

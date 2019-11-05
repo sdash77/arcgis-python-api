@@ -3,6 +3,7 @@ IO operations for Feature Classes
 """
 import os
 import sys
+import uuid
 import shutil
 import datetime
 
@@ -25,6 +26,7 @@ except:
 try:
     import shapefile
     HASPYSHP = True
+    SHPVERSION = [int(i) for i in shapefile.__version__.split('.')]
 except:
     HASPYSHP = False
 #--------------------------------------------------------------------------
@@ -300,14 +302,31 @@ def to_table(geo, location, overwrite=True):
 #--------------------------------------------------------------------------
 def from_featureclass(filename, **kwargs):
     """
-    Returns a GeoDataFrame from a feature class.
-    Inputs:
-     filename: full path to the feature class
-    Optional Parameters:
-     sql_clause: sql clause to parse data down
-     where_clause: where statement
-     sr: spatial reference object
-     fields: list of fields to extract from the table
+    Returns a GeoDataFrame (Spatially Enabled Pandas DataFrame) from a feature class.
+
+    ===========================     ====================================================================
+    **Argument**                    **Description**
+    ---------------------------     --------------------------------------------------------------------
+    filename                        Required string. Full path to the feature class
+    ===========================     ====================================================================
+
+    *Optional parameters when ArcPy library is available in the current environment*:
+    ===========================     ====================================================================
+    **Key**                         **Value**
+    ---------------------------     --------------------------------------------------------------------
+    sql_clause                      sql clause to parse data down. To learn more see
+                                    [ArcPy Search Cursor](https://pro.arcgis.com/en/pro-app/arcpy/data-access/searchcursor-class.htm)
+    ---------------------------     --------------------------------------------------------------------
+    where_clause                    where statement. To learn more see [ArcPy SQL reference](https://pro.arcgis.com/en/pro-app/help/mapping/navigation/sql-reference-for-elements-used-in-query-expressions.htm)
+    ---------------------------     --------------------------------------------------------------------
+    fields                          list of strings specifying the field names.
+    ---------------------------     --------------------------------------------------------------------
+    spatial_filter                  A `Geometry` object that will filter the results.  This requires
+                                    `arcpy` to work.
+    ===========================     ====================================================================
+
+    :returns: pandas.core.frame.DataFrame
+
     """
     from arcgis.geometry import _types
     import json
@@ -316,6 +335,27 @@ def from_featureclass(filename, **kwargs):
         where_clause = kwargs.pop('where_clause', None)
         fields = kwargs.pop('fields', None)
         sr = kwargs.pop('sr', None)
+        spatial_filter = kwargs.pop('spatial_filter', None)
+        geom = None
+        if spatial_filter:
+            _sf_lu = {
+                "esriSpatialRelIntersects" : "INTERSECT",
+                "esriSpatialRelContains" : "CONTAINS",
+                "esriSpatialRelCrosses" : "CROSSED_BY_THE_OUTLINE_OF",
+                "esriSpatialRelEnvelopeIntersects" : "INTERSECT",
+                "esriSpatialRelIndexIntersects" : "INTERSECT",
+                "esriSpatialRelOverlaps" : "INTERSECT",
+                "esriSpatialRelTouches" : "BOUNDARY_TOUCHES",
+                "esriSpatialRelWithin" : "WITHIN"
+            }
+            relto = _sf_lu[spatial_filter['spatialRel']]
+            geom = spatial_filter['geometry']
+            if hasattr(geom, 'polygon'):
+                geom = geom.polygon
+            geom = geom.as_arcpy
+            flname = "a" + uuid.uuid4().hex[:6]
+            filename = arcpy.management.MakeFeatureLayer(filename, out_layer=flname, where_clause=where_clause)[0]
+            arcpy.management.SelectLayerByLocation(filename, overlap_type=relto, select_features=geom)
         try:
             desc = arcpy.da.Describe(filename)
             area_field = desc.pop('areaFieldName', None)
@@ -333,8 +373,8 @@ def from_featureclass(filename, **kwargs):
             fields = [fld.name for fld in desc['fields'] \
                       if fld.type not in ['Geometry'] and \
                       fld.name not in [area_field, length_field]]
-            cursor_fields = fields + ['SHAPE@JSON']
-            df_fields = fields + ['SHAPE']
+        cursor_fields = fields + ['SHAPE@JSON']
+        df_fields = fields + ['SHAPE']
         count = 0
         dfs = []
         shape_field_idx = cursor_fields.index("SHAPE@JSON")
@@ -399,6 +439,7 @@ def from_featureclass(filename, **kwargs):
             del geom
         sdf = pd.DataFrame(records)
         sdf.spatial.set_geometry('SHAPE')
+        sdf['OBJECTID'] = range(sdf.shape[0])
         sdf.reset_index(inplace=True)
         return sdf
     elif HASARCPY == False and \
@@ -407,28 +448,45 @@ def from_featureclass(filename, **kwargs):
           os.path.dirname(filename).lower().find('.gdb') > -1):
         is_gdb = os.path.dirname(filename).lower().find('.gdb') > -1
         if is_gdb:
-            with fiona.drivers():
+
+            # Remove deprecation warning.
+            fiona_env = fiona.drivers
+            if hasattr(fiona,'Env'):
+                fiona_env = fiona.Env
+
+            with fiona_env():
                 from arcgis.geometry import _types
                 fp = os.path.dirname(filename)
                 fn = os.path.basename(filename)
                 geoms = []
                 atts = []
-                with fiona.open(path=fp, layer=fn) as source:
+                with fiona.open(fp, layer=fn) as source:
                     meta = source.meta
                     cols = list(source.schema['properties'].keys())
+
+                    # Get the CRS
+                    try:
+                        wkid = source.crs['init'].split(':')[1]
+                    except:
+                        wkid = 4326
+
+                    sr = _types.SpatialReference({'wkid':int(wkid)})
+
                     for idx, row in source.items():
-                        geoms.append(_types.Geometry(row['geometry']))
+                        g = _types.Geometry(row['geometry'])
+                        geoms.append(g)
                         atts.append(list(row['properties'].values()))
                         del idx, row
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
+                    df.spatial.sr = sr
                     return df
         else:
             with fiona.drivers():
                 from arcgis.geometry import _types
                 geoms = []
                 atts = []
-                with fiona.open(path=filename) as source:
+                with fiona.open(filename) as source:
                     meta = source.meta
                     cols = list(source.schema['properties'].keys())
                     for idx, row in source.items():
@@ -438,7 +496,17 @@ def from_featureclass(filename, **kwargs):
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
                     return df
-    return
+    else:
+        if os.path.dirname(filename).lower().find('.gdb') > -1:
+            message = """
+            Cannot Open Geodatabase without Arcpy or Fiona
+            \nPlease switch to Arcpy for full support or install fiona by this command `conda install fiona`
+            """.strip()
+            print(message)
+            raise Exception('Failed to import Feature Class from Geodatabase specified')
+        else:
+            raise Exception('Unsupported Data Format or Invalid Feature Class specified')
+    #return
 #--------------------------------------------------------------------------
 def to_featureclass(geo,
                     location,
@@ -457,6 +525,9 @@ def to_featureclass(geo,
     overwrite           Optional Boolean. If overwrite is true, existing
                         data will be deleted and replaced with the spatial
                         dataframe.
+    ---------------     ----------------------------------------------------
+    validate            Optional Boolean. If true, the export will check if
+                        all the geometry objects are correct upon export.
     ===============     ====================================================
 
 
@@ -468,6 +539,8 @@ def to_featureclass(geo,
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
+    old_idx = df.index
+    df.reset_index(drop=True, inplace=True)
     if geo.name is None:
         raise ValueError("DataFrame must have geometry set.")
     if validate and \
@@ -489,7 +562,7 @@ def to_featureclass(geo,
 
         notnull = geo._data[geo._name].notnull()
         idx = geo._data[geo._name][notnull].first_valid_index()
-        sr = sr = geo._data[geo._name][idx]['spatialReference']
+        sr = geo._data[geo._name][idx]['spatialReference']
         gt = geo._data[geo._name][idx].geometry_type.upper()
         null_geom = {
             'point': pd.io.json.dumps({'x' : None, 'y': None, 'spatialReference' : sr}),
@@ -497,20 +570,20 @@ def to_featureclass(geo,
             'polygon' : pd.io.json.dumps({'rings' : [], 'spatialReference' : sr}),
             'multipoint' : pd.io.json.dumps({'points' : [], 'spatialReference' : sr})
         }
-        sr = geo._data[geo._name][idx].spatial_reference
+        sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
         null_geom = null_geom[gt.lower()]
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,
                                                  out_name=fc_name,
-                                                )[0]
+                                                 )[0]
+
         # 2. Add the Fields and Data Types
-        #
         oidfld = da.Describe(fc)['OIDFieldName']
         for col in columns[:]:
             if col.lower() in ['fid', 'oid', 'objectid']:
                 dtypes.append((col, np.int32))
-            elif df[col].dtype.name == 'datetime64[ns]':
+            elif df[col].dtype.name.startswith('datetime64[ns'):
                 dtypes.append((col, '<M8[us]'))
             elif df[col].dtype.name == 'object':
                 try:
@@ -535,13 +608,10 @@ def to_featureclass(geo,
             else:
                 dtypes.append((col, df[col].dtype.type))
 
-        array = np.array([],
-                        np.dtype(dtypes))
-        arcpy.da.ExtendTable(fc,
-                             oidfld, array,
-                             join_dummy, append_only=False)
+        array = np.array([], np.dtype(dtypes))
+        arcpy.da.ExtendTable(fc, oidfld, array, join_dummy, append_only=False)
+
         # 3. Insert the Data
-        #
         fields = arcpy.ListFields(fc)
         icols = [fld.name for fld in fields \
                  if fld.type not in ['OID', 'Geometry'] and \
@@ -552,7 +622,7 @@ def to_featureclass(geo,
 
         with da.InsertCursor(fc, icols) as irows:
             dt_fld_idx = [irows.fields.index(col) for col in df.columns \
-                          if df[col].dtype.name == 'datetime64[ns]']
+                          if df[col].dtype.name.startswith('datetime64[ns')]
             def _insert_row(row):
                 row[-1] = pd.io.json.dumps(row[-1])
                 for idx in dt_fld_idx:
@@ -563,17 +633,28 @@ def to_featureclass(geo,
             df.loc[q, 'SHAPE'] = null_geom # set null values to proper JSON
             np.apply_along_axis(_insert_row, 1, df[dfcols].values)
             df.loc[q, 'SHAPE'] = None # reset null values
+        df.set_index(old_idx)
         return fc
     elif HASPYSHP:
         if fc_name.endswith('.shp') == False:
             fc_name = "%s.shp" % fc_name
-        return _pyshp_to_shapefile(df=df,
+        if SHPVERSION < [2]:
+            res = _pyshp_to_shapefile(df=df,
                             out_path=out_location,
                             out_name=fc_name)
+            df.set_index(old_idx)
+            return res
+        else:
+            res = _pyshp2(df=df,
+                          out_path=out_location,
+                          out_name=fc_name)
+            df.set_index(old_idx)
+            return res
     elif HASARCPY == False and HASPYSHP == False:
         raise Exception(("Cannot Export the data without ArcPy or PyShp modules."
                         " Please install them and try again."))
     else:
+        df.set_index(old_idx)
         return None
 #--------------------------------------------------------------------------
 def _pyshp_to_shapefile(df, out_path, out_name):
@@ -601,7 +682,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
         out_fc = os.path.join(out_path, out_name)
         if out_fc.lower().endswith('.shp') == False:
             out_fc += ".shp"
-        geom_field = df.spatial._name
+        geom_field = df.spatial.name
         if geom_field is None:
             return
         geom_type = "null"
@@ -613,7 +694,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
         dfields = []
         cfields = []
         for c in df.columns:
-            idx = df[c].first_valid_index()
+            idx = df[c].first_valid_index() or df.index.tolist()[0]
             if idx > -1:
                 if isinstance(df[c].loc[idx],
                               Geometry):
@@ -650,7 +731,10 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             for fld in dfields:
                 idx = df[cfields].columns.tolist().index(fld)
                 if row[idx]:
-                    row[idx] = row[idx].to_pydatetime()
+                    if isinstance(row[idx].to_pydatetime(), (type(pd.NaT))):
+                        row[idx] = None
+                    else:
+                        row[idx] = row[idx].to_pydatetime()
             shpfile.record(*row)
             del idx
             del row
@@ -662,7 +746,119 @@ def _pyshp_to_shapefile(df, out_path, out_name):
         try:
             from urllib import request
             wkid = df.spatial.sr['wkid']
+            if wkid == 102100:
+                wkid = 3857
+            prj_filename = out_fc.replace('.shp', '.prj')
 
+            url = 'http://epsg.io/{}.esriwkt'.format(wkid)
+
+            opener = request.build_opener()
+            opener.addheaders = [('User-Agent', 'geosaurus')]
+            resp = opener.open(url)
+
+            wkt = resp.read().decode('utf-8')
+            if len(wkt) > 0:
+                prj = open(prj_filename, "w")
+                prj.write(wkt)
+                prj.close()
+        except:
+            # Unable to write PRJ file.
+            pass
+
+        del shpfile
+        return out_fc
+    return None
+#--------------------------------------------------------------------------
+def _pyshp2(df, out_path, out_name):
+    """
+    Saves a SpatialDataFrame to a Shapefile using pyshp v2.0
+
+    :Parameters:
+     :df: spatial dataframe
+     :out_path: folder location to save the data
+     :out_name: name of the shapefile
+    :Output:
+     path to the shapefile or None if pyshp isn't installed or
+     spatial dataframe does not have a geometry column.
+    """
+    from arcgis.geometry._types import Geometry
+    if HASPYSHP:
+        GEOMTYPELOOKUP = {
+            "Polygon" : shapefile.POLYGON,
+            "Point" : shapefile.POINT,
+            "Polyline" : shapefile.POLYLINE,
+            'null' : shapefile.NULL
+        }
+        if os.path.isdir(out_path) == False:
+            os.makedirs(out_path)
+        out_fc = os.path.join(out_path, out_name)
+        if out_fc.lower().endswith('.shp') == False:
+            out_fc += ".shp"
+        geom_field = df.spatial.name
+        if geom_field is None:
+            return
+        geom_type = "null"
+        idx = df[geom_field].first_valid_index()
+        if idx > -1:
+            geom_type = df.loc[idx][geom_field].type
+        shpfile = shapefile.Writer(target=out_fc, shapeType=GEOMTYPELOOKUP[geom_type], autoBalance=True)
+        dfields = []
+        cfields = []
+        for c in df.columns:
+            idx = df[c].first_valid_index() or df.index.tolist()[0]
+            if idx > -1:
+                if isinstance(df[c].loc[idx],
+                              Geometry):
+                    geom_field = (c, "GEOMETRY")
+                else:
+                    cfields.append(c)
+                    if isinstance(df[c].loc[idx], (str)):
+                        shpfile.field(name=c, size=255)
+                    elif isinstance(df[c].loc[idx], (int)):
+                        shpfile.field(name=c, fieldType="N", size=5)
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                        shpfile.field(name=c, fieldType="N", size=10)
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                        shpfile.field(name=c, fieldType="F", size=19, decimal=11)
+                    elif isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64)) or \
+                         df[c].dtype.name == 'datetime64[ns]':
+                        shpfile.field(name=c, fieldType="D", size=8)
+                        dfields.append(c)
+                    elif isinstance(df[c].loc[idx], (bool, np.bool)):
+                        shpfile.field(name=c, fieldType="L", size=1)
+            del c
+            del idx
+        for idx, row in df.iterrows():
+            geom = row[df.spatial._name]
+            if geom.type == "Polygon":
+                shpfile.poly(geom['rings'])
+            elif geom.type == "Polyline":
+                shpfile.line(geom['paths'])
+            elif geom.type == "Point":
+                shpfile.point(x=geom.x, y=geom.y)
+            else:
+                shpfile.null()
+            row = row[cfields].tolist()
+            for fld in dfields:
+                idx = df[cfields].columns.tolist().index(fld)
+                if row[idx]:
+                    if isinstance(row[idx].to_pydatetime(), (type(pd.NaT))):
+                        row[idx] = None
+                    else:
+                        row[idx] = row[idx].to_pydatetime()
+            shpfile.record(*row)
+            del idx
+            del row
+            del geom
+        shpfile.close()
+
+
+        # create the PRJ file
+        try:
+            from urllib import request
+            wkid = df.spatial.sr['wkid']
+            if wkid == 102100:
+                wkid = 3857
             prj_filename = out_fc.replace('.shp', '.prj')
 
             url = 'http://epsg.io/{}.esriwkt'.format(wkid)

@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 DEFAULT_ELEMENT_HEIGHT = "400px"
 
-_DEFAULT_JS_CDN = "https://js.arcgis.com/4.10/"
+_DEFAULT_JS_CDN = "https://js.arcgis.com/4.11/"
 _js_cdn_override_global = ""
 
 def _is_iterable(obj):
@@ -48,6 +48,140 @@ def _make_jsonable_dict(obj):
         return flag
     dict_ = json.loads(json.dumps(obj, default=default_func))
     return { k:v for k, v in dict_.items() if v != flag }
+
+def _flatten_list(*unpacked_list):
+    return_list = []
+    for x in unpacked_list:
+        if isinstance(x, (list, tuple)):
+            return_list.extend(_flatten_list(*x))
+        else: return_list.append(x)
+    return return_list
+
+def _get_extent(item):
+    from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
+    from arcgis.raster import ImageryLayer
+    from arcgis.gis import Layer
+    from arcgis.gis import Item
+    from arcgis._impl.common._mixins import PropertyMap
+    from arcgis.mapping import MapImageLayer, VectorTileLayer
+    from pandas import DataFrame
+
+    if isinstance(item, Item):
+        return list(map(_get_extent, item.layers))
+    elif isinstance(item, list):
+        return list(map(_get_extent, item))
+    elif isinstance(item, DataFrame):
+        return _get_extent_of_dataframe(item)
+    elif isinstance(item, FeatureSet):
+        return _get_extent(item.sdf)
+    elif isinstance(item, FeatureCollection):
+        return dict(item.properties.layerDefinition.extent)
+    elif isinstance(item, Layer):
+        try:
+            return dict(item.properties.extent)
+        except:
+            ext = item.extent
+            return {
+                'spatialReference': {'wkid': 4326, 'latestWkid': 4326},
+                'xmin': ext[0][1],
+                'ymin': ext[0][0],
+                'xmax': ext[1][1],
+                'ymax': ext[1][0]
+            }
+    else:
+        raise Exception('could not infer layer type')
+
+def _get_extent_of_layers(list_of_layers):
+    extents = []
+    for layer in list_of_layers:
+        extents.append(layer.properties['extent'])
+    if len(extents) == 1:
+        return extents[0]
+    return _get_master_extent(extents)
+
+def _get_extent_of_dataframe(sdf):
+    if hasattr(sdf, 'spatial'):
+        sdf_ext = sdf.spatial.full_extent
+        return {
+            'spatialReference': sdf.spatial.sr,
+            'xmin': sdf_ext[0],
+            'ymin': sdf_ext[1],
+            'xmax': sdf_ext[2],
+            'ymax': sdf_ext[3]
+        }
+    else:
+        raise Exception('Could not add get extent of DataFrame it is not a spatially enabled DataFrame.')
+
+def _get_master_extent(list_of_extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
+    # Check if any extent is different from one another
+    varying_spatial_reference = False
+    for extent in list_of_extents:
+        if not target_sr == extent['spatialReference']:
+            varying_spatial_reference = True
+    if varying_spatial_reference:
+        list_of_extents = _reproject_extent(list_of_extents, target_sr)
+
+    # Calculate master_extent
+    master_extent = list_of_extents[0]
+    for extent in list_of_extents:
+        master_extent['xmin'] = min(master_extent['xmin'], extent['xmin'])
+        master_extent['ymin'] = min(master_extent['ymin'], extent['ymin'])
+        master_extent['xmax'] = max(master_extent['xmax'], extent['xmax'])
+        master_extent['ymax'] = max(master_extent['ymax'], extent['ymax'])
+    return master_extent
+
+def _reproject_extent(extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
+    """Reproject Extent
+
+    ==================     ====================================================================
+    **Argument**              **Description**
+    ------------------     --------------------------------------------------------------------
+    extents                   extent or list of extents you want to project.
+    ------------------     --------------------------------------------------------------------
+    target_sr                 The target Spatial Reference you want to get your extent in.
+                              default is {'wkid': 102100, 'latestWkid': 3857}
+    ==================     ====================================================================
+
+    """
+    if not type(extents) == list:
+        extents = [extents]
+
+    geometry_batches = {}
+    for i, extent in enumerate(extents):
+        if not extent['spatialReference']['wkid'] in geometry_batches:
+            geometry_batches[extent['spatialReference']['wkid']] = {}
+            geometry_batches[extent['spatialReference']['wkid']]['spatialReference'] = extent['spatialReference']
+            geometry_batches[extent['spatialReference']['wkid']]['extents'] = []
+            geometry_batches[extent['spatialReference']['wkid']]['indexes'] = []
+        geometry_batches[extent['spatialReference']['wkid']]['extents'].extend(
+            [
+                {
+                    'x': extent['xmin'], 
+                    'y': extent['ymin']
+                },
+                {
+                    'x': extent['xmax'], 
+                    'y': extent['ymax']
+                }
+            ]
+        )
+        geometry_batches[extent['spatialReference']['wkid']]['indexes'].append(i)
+
+    for wkid in geometry_batches: # Reproject now
+        geometries = arcgis.geometry.project(geometry_batches[wkid]['extents'], in_sr=geometry_batches[wkid]['spatialReference'], out_sr=target_sr)
+        for i in range(0, len(geometries), 2):
+            extents[geometry_batches[wkid]['indexes'][int(i/2)]] = {
+                "xmin": geometries[i]['x'],
+                "ymin": geometries[i]['y'],
+                "xmax": geometries[i+1]['x'],
+                "ymax": geometries[i+1]['y'],
+                "spatialReference": target_sr
+            }
+    
+    if len(extents) == 1:
+        return extents[0]
+    return extents
+
 
 @widgets.register
 class MapView(widgets.DOMWidget):
@@ -182,6 +316,9 @@ class MapView(widgets.DOMWidget):
     def extent(self, value):
         try:
             if isinstance(value, dict):
+                if 'spatialReference' in value and 'spatialReference' in self._extent:
+                    if not self._extent['spatialReference'] == value['spatialReference']:
+                        value = _reproject_extent(value, self._extent['spatialReference'])
                 self._extent = value
             elif _is_iterable(value) and isinstance(value, tuple):
                 self._extent = {
@@ -487,9 +624,9 @@ class MapView(widgets.DOMWidget):
     def _file_output_screenshot_update_callback(self, change):
         """Called every time the front end takes a screenshot for a file
         write"""
-        if self._screenshot_file_output_path:
-            img_data_uri_str = self._parse_js_resp(change['new'])
-            img_data_raw_str = img_data_uri_str.split('base64,')[-1]
+        img_data_uri_str = self._parse_js_resp(change['new'])
+        img_data_raw_str = img_data_uri_str.split('base64,')[-1]
+        if self._screenshot_file_output_path and img_data_raw_str:
             with open(self._screenshot_file_output_path, "wb") as f:
                 img_data_raw_bytes = base64.b64decode(img_data_raw_str)
                 f.write(img_data_raw_bytes)
@@ -615,7 +752,8 @@ class MapView(widgets.DOMWidget):
             default_cdn_unreachable = not self._is_reachable(_DEFAULT_JS_CDN)
             if default_cdn_unreachable:
                 _portal_cdn = "{}/jsapi/jsapi4/".format(
-                    getattr(self, "_portal_url", ""))
+                    getattr(self.gis, "_url", ""))
+                    # use gis._url to get private url (disconn IWA edge case)
                 self._js_cdn_override = _portal_cdn
                 log.debug("Disconnected environment detected: " + 
                     "using JS API CDN from {}. ".format(_portal_cdn) + 
@@ -728,11 +866,13 @@ class MapView(widgets.DOMWidget):
         self.webmap.add_layer(item, webmap_options)
 
     def _add_layer_to_widget(self, item, options):
-        from arcgis.features import FeatureSet, Feature, FeatureCollection
+        from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
         from arcgis.raster import ImageryLayer
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
+        from arcgis.mapping import MapImageLayer, VectorTileLayer
+        from pandas import DataFrame
 
         if isinstance(item, Item):
             for layer in item.layers:
@@ -756,6 +896,11 @@ class MapView(widgets.DOMWidget):
                 _lyr["options"] = options
             _lyr["_hashFromPython"] = self._get_hash(item)
             self._add_notype_layer(item, _lyr)
+        elif isinstance(item, DataFrame):
+            if hasattr(item, 'spatial'):
+                self.add_layer(item.spatial.to_featureset())
+            else:
+                raise Exception('Could not add DataFrame to map it is not a spatially enabled DataFrame')
         elif isinstance(item, FeatureSet):
             fc = FeatureCollection.from_featureset(item)
             self._add_layer_to_widget(fc, options)
@@ -766,8 +911,29 @@ class MapView(widgets.DOMWidget):
                 raise Exception("dict layers must have 'type' and 'url'")
             if "renderer" in options:
                 item["renderer"] = options["renderer"]
-            item["_hashFromPython"] = self._get_hash(item)
-            self._add_notype_layer(item, item)
+            added_successful = False
+            try:
+                if item['type'] == 'FeatureLayer':
+                    layer = FeatureLayer(item.pop('url'))
+                    self._add_layer_to_widget(layer, item)
+                elif item['type'] == 'ImageryLayer':
+                    layer = ImageryLayer(item.pop('url'))
+                    self._add_layer_to_widget(layer, item)
+                elif item['type'] in ['MapImageLayer', 'TileLayer']:
+                    mil_item = MapImageLayer(item.pop('url'))
+                    for layer in mil_item:
+                        self._add_layer_to_widget(layer, item)
+                elif item['type'] == 'VectorTileLayer':
+                    layer = VectorTileLayer(item.pop('url'))
+                    self._add_layer_to_widget(layer, item)
+            except:
+                pass
+            else:
+                added_successful = True
+            finally:
+                if not added_successful:
+                    item["_hashFromPython"] = self._get_hash(item)
+                    self._add_notype_layer(item, item)
         elif _is_iterable(item):
             # If it's any iterable not previously checked, attempt to infer
             if 'layers' in item:
@@ -1044,7 +1210,7 @@ class MapView(widgets.DOMWidget):
             wm_layer_id = wm_layer["id"]
             if wm_layer_id in js_layers:
                 js_layer = js_layers[wm_layer_id] # js representation of wm layer
-                if js_layer["renderer"]:
+                if "renderer" in js_layer and js_layer["renderer"]:
                     renderer = js_layer["renderer"]
                     id = js_layer["id"]
                     self._apply_renderer_to_webmap_layer_id(renderer, id)
@@ -1087,14 +1253,24 @@ class MapView(widgets.DOMWidget):
                                  " {}".format(graphic))
                         continue
 
-                    # Create a python object from the JS geometry
-                    feat = Feature(geom)
-                    fset = FeatureSet([feat])
+                    if not self._check_if_graphic_already_saved(geom):
+                        # Create a python object from the JS geometry
+                        feat = Feature(geom)
+                        fset = FeatureSet([feat])
 
-                    # Add to webmap
-                    self.webmap.add_layer(fset,
-                                          {'title' : 'Notes from ArcGIS API for Python'})
+                        # Add to webmap
+                        self.webmap.add_layer(fset,
+                                              {'title': 'Notes from ArcGIS API for Python'})
 
+    def _check_if_graphic_already_saved(self, geom):
+        from arcgis.geometry import Geometry
+        for layer in self.webmap.layers:
+            for fset in layer["featureCollection"]['layers']:
+                for feat in fset['featureSet']['features']:
+                    wm_geom = Geometry(feat['geometry'])
+                    if wm_geom.equals(geom):
+                        return True
+        return False
 
     def _save_as_webscene(self, item_properties, thumbnail=None,
                           metadata=None, owner=None, folder=None):
@@ -1224,13 +1400,15 @@ class MapView(widgets.DOMWidget):
             raise RuntimeError("Webmap Item object missing. You should use "\
                                "`save()` to save a new web scene item")
         self.mode = "2D"
-        self.webmap._basemap['baseMapLayers'] = \
-            self._readonly_webmap_from_js['basemap']['baseMapLayers']
+        if 'basemap' in self._readonly_webmap_from_js:
+            self.webmap._basemap['baseMapLayers'] = \
+                self._readonly_webmap_from_js['basemap']['baseMapLayers']
         self.webmap._extent = self.extent
         self._update_webmap_layers_from_js()
         return self.webmap.item.update(item_properties=item_properties,
                                        thumbnail=thumbnail,
-                                           metadata=metadata)
+                                       metadata=metadata,
+                                       data=self.webmap._webmapdict)
 
     def _update_as_webscene(self, item_properties, thumbnail, metadata):
         if not self.webscene_item:
@@ -1239,7 +1417,8 @@ class MapView(widgets.DOMWidget):
         self.mode = "3D"
         result = self.webscene_item.update(item_properties=item_properties,
                                            thumbnail=thumbnail,
-                                           metadata=metadata)
+                                           metadata=metadata,
+                                           data=self.webscene_item.get_data())
         self._trigger_webscene_save_to_this_portal_id = ""
         self._trigger_webscene_save_to_this_portal_id = self.webscene_item.id
         return result
@@ -1370,6 +1549,17 @@ class MapView(widgets.DOMWidget):
                         shape['type'] = 'multipoint'
                     else:
                         shape['type'] = 'point'
+
+                switcher = {
+                    'polygon': 'esriGeometryPolygon',
+                    'polyline': 'esriGeometryPolyline',
+                    'multipoint': 'esriGeometryMultipoint',
+                    'point': 'esriGeometryPoint'
+                }
+                geometry_kind = switcher.get(shape['type'])
+                if geometry_kind is None:
+                    geometry_kind = 'esriGeometryNull'
+
                 graphic = {
                     "geometry": shape,
                     "popupTemplate": popup,
@@ -1379,7 +1569,7 @@ class MapView(widgets.DOMWidget):
                 self._add_graphic(graphic)
                 f = Feature(shape)
                 fset = FeatureSet([f],
-                                  geometry_type='esriGeometryPoint',
+                                  geometry_type=geometry_kind,
                                   spatial_reference={'wkid':4326})
 
             # Now that the `fset` is set, add to webmap
@@ -1528,6 +1718,29 @@ class MapView(widgets.DOMWidget):
             self._click_handlers(self, content.get('message', None))
         if content.get('event', '') == 'draw-end':
             self._draw_end_handlers(self, content.get('message', None))
+
+    def zoom_to_layer(self, item, options={}): 
+        """Snaps the map to the extent of provided item or items.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        item                   The item at which you want to zoom your map to.
+                               This can be a single or a list of Items, layers, DataFrame, FeatureSet,
+                               FeatureCollection.                               
+        ------------------     --------------------------------------------------------------------
+        options                Optional set of arguments.
+                               
+        ==================     ====================================================================
+        """
+        target_extent = _get_extent(item)
+        if isinstance(target_extent, list):
+            target_extent = _flatten_list(target_extent)
+            if len(target_extent) > 1:
+                target_extent = _get_master_extent(target_extent, self.extent['spatialReference'])
+            else:
+                target_extent = target_extent[0]
+        self.extent = target_extent
 
     # Start section of no longer supported areas
     def _raise_time_extent_exception(self):

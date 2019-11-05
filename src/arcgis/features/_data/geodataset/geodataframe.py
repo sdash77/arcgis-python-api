@@ -218,7 +218,7 @@ class SpatialDataFrame(BaseSpatialPandas, DataFrame):
         sdf = SpatialDataFrame.from_layer(feature_layer)
 
         """
-        #warnings.warn("SpatialDataFrame has been deprecated.  Please switch to the GeoAccessor/GeoSeriesAccessor.")
+        warnings.warn("SpatialDataFrame has been deprecated.  Please switch to the GeoAccessor/GeoSeriesAccessor.")
 
         if not HAS_PANDAS:
             warnings.warn("pandas and numpy are required for SpatialDataFrame.")

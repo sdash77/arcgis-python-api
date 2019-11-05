@@ -3,9 +3,9 @@
 # Purpose:     Sanity tests for ArcGIS Python API
 #-------------------------------------------------------------------------------
 import unittest
-from dino_utils.dino_precondition_checks import PreconditionChecks
-from dino_utils.dino_precondition_checks import PortalUtils
-from dino_utils.dino_configs import DinoConfigs
+from integration.dino_utils.dino_precondition_checks import PreconditionChecks
+from integration.dino_utils.dino_precondition_checks import PortalUtils
+from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 
@@ -285,6 +285,51 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
                 self.assertTrue(len(publish_output.layer.featureSet.features) > 0,
                                 "No features found in geocoded"
                                 "feature collection")
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+
+    def test_import_data_table_geocode(self):
+        try:
+            #read input data
+            import pandas as pd
+            df = pd.read_html("https://en.wikipedia.org/wiki/Number_of_guns_per_capita_by_country")[0]
+
+            #pre-process
+            df.columns = df.iloc[0]
+            df = df.reindex(df.index.drop(0))
+            df = df.reindex(df.index.drop(1))
+            df = df.drop(df.columns[0], axis=1)
+            df.iloc[0, 1] = 120.5
+
+            converted_column = pd.to_numeric(df["Estimate of civilian firearms per 100 persons"], errors='coerce')
+            df['Estimate of civilian firearms per 100 persons'] = converted_column
+
+            # df.rename(columns={'Country__or_dependent_territory__subnational_area__etc__': 'Country'},
+            #           inplace=True)
+
+            #geocode and publish
+            publish_output = self.gis.content.import_data(df, {"CountryCode":"Country__or_dependent_territory__subnational_area__etc__"})
+
+            #validate
+            if publish_output is None:
+                self.fail("Failed to geocode a known data frame")
+            else:
+                #validate return type
+                self.assertIsInstance(publish_output, arcgis.features.FeatureCollection, "import_data does not return "
+                                        "a Feature Collection upon success. Instead it returns: " + str(type(publish_output)))
+
+                #validate item can be found
+                self.assertTrue(len(publish_output.layer.featureSet.features) > 0, "No features found in geocoded"
+                                                                                   "feature collection")
 
         except AssertionError as assertErrorException:
             test_skip = True

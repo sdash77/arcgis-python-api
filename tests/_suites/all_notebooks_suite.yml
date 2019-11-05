@@ -1,0 +1,35 @@
+unit_tests_to_run:
+    config:
+        blacklist:
+            - "{geosaurus_dir}/tests/integration/**/_*.py"
+    paths: []
+integration_tests_to_run:
+    config:
+        blacklist:
+            - "{geosaurus_dir}/tests/integration/**/_*.py"
+    paths: []
+nbconvert_notebook_tests_to_run:
+    config:
+        blacklist:
+            - "{geosaurus_dir}/**/*ipynb_checkpoint*/**/*"
+            - "{arcgis_python_api_dir}/**/*ipynb_checkpoint*/**/*"
+        cell_timeout_sec:
+            300
+        setup_script: "{arcgis_python_api_dir}/misc/setup.py"
+        teardown_script: "{arcgis_python_api_dir}/misc/teardown.py"
+    paths:
+        - "{geosaurus_dir}/tests/notebooks/nbconvert/**/*.ipynb"
+        - "{arcgis_python_api_dir}/samples/**/*.ipynb"
+        - "{arcgis_python_api_dir}/guide/**/*.ipynb"
+selenium_notebook_tests_to_run:
+    config:
+        blacklist: []
+        cell_timeout_sec:
+            300
+        browser:
+            "dayofweek"
+    paths:
+        - "{geosaurus_dir}/tests/notebooks/selenium/**/*.ipynb"
+widget_unit_tests_to_run:
+    config: {}
+    paths: []

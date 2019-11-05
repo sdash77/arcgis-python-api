@@ -81,9 +81,9 @@ snap_raster
 
 .. py:data:: snap_raster
 
-Tasks that honor the snap_raster environment will adjust the extent of output rasters 
+Tasks that honor the snap_raster environment will adjust the extent of output rasters
 so that they match the cell alignment of the specified snap raster.
-(For more information about this environment setting, 
+(For more information about this environment setting,
 please refer to http://pro.arcgis.com/en/pro-app/tool-reference/environment-settings/snap-raster.htm)
 
 cell_size
@@ -91,10 +91,10 @@ cell_size
 
 .. py:data:: cell_size
 
-Tasks that honor the Cell size environment setting set the output raster cell size, or resolution, 
-for the operation.  The default output resolution is determined by the largest cell size of 
+Tasks that honor the Cell size environment setting set the output raster cell size, or resolution,
+for the operation.  The default output resolution is determined by the largest cell size of
 all the input rasters.
-(For more information about this environment setting, 
+(For more information about this environment setting,
 please refer to http://pro.arcgis.com/en/pro-app/tool-reference/environment-settings/cell-size.htm)
 
 mask
@@ -102,9 +102,9 @@ mask
 
 .. py:data:: mask
 
-Tasks that honor the mask environment will only consider those cells that fall within the analysis 
+Tasks that honor the mask environment will only consider those cells that fall within the analysis
 mask in the operation
-(For more information about this environment setting, 
+(For more information about this environment setting,
 please refer to http://pro.arcgis.com/en/pro-app/tool-reference/environment-settings/mask.htm)
 
 parallel_processing_factor
@@ -112,9 +112,9 @@ parallel_processing_factor
 
 .. py:data:: parallel_processing_factor
 
-Tasks that honor the parallel_processing_factor environment will divide and perform operations across 
+Tasks that honor the parallel_processing_factor environment will divide and perform operations across
 multiple processes.
-(For more information about this environment setting, 
+(For more information about this environment setting,
 please refer to http://pro.arcgis.com/en/pro-app/tool-reference/environment-settings/parallel-processing-factor.htm)
 """
 
@@ -157,7 +157,7 @@ verbose = False
 #: The default_aggregation_styles is False. (supported at 10.6.1+)
 default_aggregation_styles = False
 
-#: Tasks that honor the snap_raster environment will adjust the extent of output rasters 
+#: Tasks that honor the snap_raster environment will adjust the extent of output rasters
 #: so that they match the cell alignment of the specified snap raster.
 snap_raster = None
 

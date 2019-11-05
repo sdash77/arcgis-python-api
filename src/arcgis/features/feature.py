@@ -608,10 +608,10 @@ class FeatureSet(object):
 
         converts the FeatureSet to a Pandas dataframe. Requires pandas
         """
-        #import warnings
-        #warnings.warn(("The SpatialDataFrame has been deprecated. "
-                       #"`df` property will be modified to return the Spatially Enabled DataFrame as v2.0"
-                       #". This property should not be used. Please use `sdf` instead."))
+        import warnings
+        warnings.warn(("The SpatialDataFrame has been deprecated. "
+                       "`df` property will be removed as a future release"
+                       ". Use `sdf` instead."))
         try:
             try:
                 import arcpy
@@ -733,6 +733,8 @@ class FeatureSet(object):
         index = 0
         sr = None
         df = df.fillna('')
+        old_idx = df.index
+        df.reset_index(drop=True, inplace=True)
         if isinstance(df, SpatialDataFrame):
             df_rows = df.copy()
             del df_rows['SHAPE']
@@ -740,7 +742,9 @@ class FeatureSet(object):
             sr = df.sr
         elif isinstance(df, pd.DataFrame) and \
              not df.spatial.name is None:
-            return FeatureSet.from_dict(df.spatial.__feature_set__)
+            fs = FeatureSet.from_dict(df.spatial.__feature_set__)
+            df.set_index(old_idx,  inplace=True)
+            return fs
         elif isinstance(df, pd.DataFrame):
             geoms = []
             df_rows = df.copy()
@@ -773,7 +777,7 @@ class FeatureSet(object):
         fs._fields = fields
         if sr is not None:
             fs.spatial_reference = sr
-
+        df.set_index(old_idx,  inplace=True)
         return fs
     # ----------------------------------------------------------------------
     @staticmethod
@@ -848,7 +852,7 @@ class FeatureSet(object):
                 return "esriGeometryPoint"
             elif geo_type == "MultiPoint":
                 return "esriGeometryMultiPoint"
-            elif geo_type == "LineString":
+            elif geo_type in ["LineString", "MultiLineString"]:
                 return "esriGeometryPolyline"
             elif geo_type == "Polygon" or geo_type == "MultiPolygon":
                 return "esriGeometryPolygon"
@@ -890,8 +894,24 @@ class FeatureSet(object):
                         if part_item:
                             part_list.append([part_item])
                     geometry["rings"] = part_list[0]
-            elif geo_type =="LineString":
-                geometry["paths"] = geom
+            elif geo_type in ["LineString", "MultiPoint"]:
+                geometry = geom
+            elif geo_type == "MultiLineString":
+                if HASARCPY == 'rem':
+                    geom = arcpy.AsShape(geom)
+                    geom['spatialReference'] = {'wkid': 4326}
+                    geometry = Geometry(json.loads(geom))
+                else:
+                    coordkey = ([d for d in geom if d.lower() == 'coordinates']
+                                or ['coordinates']).pop()
+                    coordinates = geom[coordkey]
+                    typekey = ([d for d in geom if d.lower() == 'type']
+                               or ['type']).pop()
+                    if geom[typekey].lower() == "linestring":
+                        coordinates = [coordinates]
+                    geometry["paths"] = coordinates
+            if not 'spatialReference' in geometry:
+                geometry['spatialReference'] = {'wkid': 4326}
 
             return geometry
         return FeatureSet.from_dict(geo_to_esri(geojson))
@@ -1185,7 +1205,7 @@ class FeatureCollection(Layer):
             return FeatureSet.from_dict(self.properties['featureSet'])
 
     @staticmethod
-    def from_featureset(fset, symbol=None):
+    def from_featureset(fset, symbol=None, name=None):
         """
         Create a FeatureCollection object from a FeatureSet object.
 
@@ -1198,6 +1218,10 @@ class FeatureCollection(Layer):
                                can be picked from http://esri.github.io/arcgis-python-api/tools/symbol.html
 
                                If not specified, a default symbol will be created.
+        ------------------     --------------------------------------------------------------------
+        name                   Optional String. The name of the feature collection. This is used
+                               when feature collections are being persisted on a WebMap. If None is
+                               provided, then a random name is generated. (New at 1.6.1)
         ==================     ====================================================================
         :return:
             A FeatureCollection object.
@@ -1209,10 +1233,20 @@ class FeatureCollection(Layer):
 
         # region compose layer definition
 
-        fc_layer_definition = {'geometryType': fset_dict['geometryType'],
-                               'fields':fset_dict['fields'],
-                               'objectIdField':fset.object_id_field_name,
-                               'type':'Feature Layer'}
+        fc_layer_definition = {'geometryType' : fset_dict['geometryType'],
+                               'fields' : fset_dict['fields'],
+                               'spatialReference' : fset_dict['spatialReference'],
+                               'objectIdField' : fset.object_id_field_name,
+                               'type' : 'Feature Layer'}
+
+        if not 'name' in fc_layer_definition:
+            if name:
+                fc_layer_definition['name'] = name.replace(" ", "_")
+            else:
+                fc_layer_definition['name'] = "a" + uuid.uuid4().hex[:5]
+
+        if not 'id' in fc_layer_definition:
+            fc_layer_definition['id'] = 0
 
         if not symbol:
             if fc_layer_definition['geometryType'] == 'esriGeometryPolyline':
@@ -1236,7 +1270,7 @@ class FeatureCollection(Layer):
                                "xoffset": 0,
                                "yoffset": 12,
                                "type": "esriPMS",
-                               "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
+                               "url": "https://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
                                "contentType": "image/png",
                                "width": 24,
                                "height": 24}
@@ -1246,6 +1280,7 @@ class FeatureCollection(Layer):
                                               }
         # endregion
         # compose the feature collection dict
+
         layers_dict = {'featureSet':{'geometryType':fset_dict['geometryType'],
                                    'features':fset_dict['features']},
                     'layerDefinition':fc_layer_definition}

@@ -64,10 +64,12 @@ src/.vscode/launch.json
 src/.vscode/settings.json
 *.bz2
 
-# Unittest outputs
+# test outputs
 tests/integration/test-results/
 /*.wpr
 /*.wpu
+tests/geckodriver.log
+tests/.coverage*
 
 #Any builds from setup.py for pip go in a dist folder
 /src/dist

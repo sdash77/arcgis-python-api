@@ -70,7 +70,10 @@ class System(BasePortalAdmin):
            domain items are separated using a pipe (|).
          - WebContextURL-If you are using a reverse proxy, set this
            property to reverse proxy URL.
-
+         - ldapCertificateValidation Introduced at 10.7. When set to true,
+           any encrypted LDAP communication (LDAPS) made from the portal to
+           the user or group identity store will enforce certificate
+           validation. The default value is false.
         """
         url = "%s/properties" % self._url
         params = {"f" : "json"}
@@ -111,11 +114,15 @@ class System(BasePortalAdmin):
            domain items are separated using a pipe (|).
          - WebContextURL-If you are using a reverse proxy, set this
            property to reverse proxy URL.
+        - ldapCertificateValidation-Introduced at 10.7. When set to true,
+           any encrypted LDAP communication (LDAPS) made from the portal to
+           the user or group identity store will enforce certificate
+           validation. The default value is false.
         """
         url = "%s/properties/update" % self._url
         params = {"f" : "json",
                   "properties" : properties}
-        self._con.get(path=url, params=params)
+        self._con.post(path=url, params=params)
     #----------------------------------------------------------------------
     @property
     def web_adaptors(self):
@@ -169,8 +176,15 @@ class System(BasePortalAdmin):
         Customer Service if you have questions about license levels or
         expiration properties.
         """
-        url = "%s/licenses" % self._url
-        return Licenses(url=url, gis=self._con)
+        if self._gis.version < [7,1]:
+            url = "%s/licenses" % self._url
+            return Licenses(url=url, gis=self._con)
+        else:
+            import os
+            u = os.path.dirname(self._url)
+            url = "%s/license" % u
+            return PortalLicense(url=url, gis=self._con)
+        return None
     #----------------------------------------------------------------------
     @property
     def database(self):
@@ -244,7 +258,7 @@ class System(BasePortalAdmin):
                 }
               ]
             }
-            
+
         """
 
         url = "%s/indexer/status" % self._url
@@ -298,8 +312,8 @@ class System(BasePortalAdmin):
         """
         url = "%s/languages" % self._url
         params = {"f" : "json"}
-        return self._con.get(path=url,
-                             params=params)
+        return self._con.get(url,
+                             params)
     #----------------------------------------------------------------------
     @languages.setter
     def languages(self, value):
@@ -311,8 +325,8 @@ class System(BasePortalAdmin):
         url = "%s/languages/update" % self._url
         params = {"f" : "json",
                   'languages' : value}
-        self._con.post(path=url,
-                       postdata=params)
+        self._con.post(url,
+                       params)
     #----------------------------------------------------------------------
     @property
     def content_discovery(self):
@@ -599,6 +613,220 @@ class Directory(BasePortalAdmin):
 
 
 ########################################################################
+class PortalLicense(BasePortalAdmin):
+    """
+    The Enterprise portal requires a valid license to function correctly.
+    This resource returns information for user types that are licensed
+    for your organization.
+
+    Starting at 10.7, the Enterprise portal enforces user type licensing.
+    Members are assigned a user type which determines the privileges that
+    an be granted to the member through a role. Each user type may
+    include access to specific apps and app bundles.
+
+    The license information returned for the organization includes the
+    total number of registered members that can be added, the current
+    number of members in the organization and the Portal for ArcGIS
+    version. For each user type, the license information includes the ID,
+    the maximum number of registered members that can be assigned, the
+    number of members currently assigned the license and the expiration,
+    in epoch time. In addition, this resource provides access to the
+    Validate License, Import License, Populate License, Update License
+    Manager, and Release License operations.
+
+    """
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis=None, **kwargs):
+        """Constructor"""
+        super(License, self).__init__(url=url,
+                                     gis=gis,
+                                     **kwargs)
+        initialize = kwargs.pop("initialize", False)
+        if isinstance(gis, _ArcGISConnection):
+            self._con = gis
+        elif isinstance(gis, GIS):
+            self._gis = gis
+            self._con = gis._con
+        else:
+            raise ValueError(
+                    "connection must be of type GIS or _ArcGISConnection")
+        if initialize:
+            self._init(self._gis)
+    #----------------------------------------------------------------------
+    def import_license(self, file):
+        """
+        The `import_license` operation is used to import a new license
+        file. The portal license file contains your Enterprise portal's
+        user type, app and app bundle licenses. By importing a portal
+        license file, you will be applying the licenses in the file to your
+        organization.
+
+        Caution:
+
+            Importing a new portal license file will overwrite your
+            organization's current user type, app, and app bundle licenses.
+            Before importing, verify that the new license file has
+            sufficient user type, app, and app bundle licenses.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        file                            Required String. The portal license file.
+        ===========================     ====================================================================
+
+        :returns: Boolean
+
+        """
+        file = {'file' : file}
+        params = {'f' : "json"}
+        url = "%s/importLicense" % self._url
+        res = self._con.post(url, params, files=file)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def populate(self):
+        """
+
+        The `populate` operation applies the license information from the
+        license file that is used to create or upgrade your portal. This
+        operation is only necessary as you create or upgrade your portal
+        through the Portal Admin API.
+
+        :returns: boolean
+
+        """
+        params = {'f' : "json"}
+        url = "%s/populateLicense" % self._url
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def release_license(self, username):
+        """
+        If a user checks out an ArcGIS Pro license for offline or
+        disconnected use, this operation releases the license for the
+        specified account. A license can only be used with a single device
+        running ArcGIS Pro. To check in the license, a valid access token
+        and refresh token is required. If the refresh token for the device
+        is lost, damaged, corrupted, or formatted, the user will not be
+        able to check in the license. This prevents the user from logging
+        in to ArcGIS Pro from any other device. As an administrator, you
+        can release the license. This frees the outstanding license and
+        allows the user to check out a new license or use ArcGIS Pro in a
+        connected environment.
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        username	                Required String. The user name of the account.
+        ===========================     ====================================================================
+
+        :returns: Boolean
+
+
+        """
+        params = {
+            'f' : "json",
+        }
+        url = "%s/releaseLicense" % self._url
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def update(self, info):
+        """
+        ArcGIS License Server Administrator works with your portal and
+        enforces licenses for ArcGIS Pro. This operation allows you to
+        change the license server connection information for your portal.
+
+        You can register a backup license manager for high availability of
+        your licensing portal. After configuring the backup license
+        manager, Portal for ArcGIS is restarted automatically. When the
+        restart completes, the portal is configured with the backup license
+        server you specified. When configuring a backup license manager,
+        you will need to ensure that the backup is authorized using the
+        same license file as your portal.
+
+        :Note:
+
+            Previously, premium apps were licensed individually through the
+            portal. Starting at 10.7, there will no longer be separate
+            licensing for apps; the portal's user types, apps, and app
+            bundles will be licensed using a single portal license file.
+            Licensing ArcGIS Pro and Drone2Map requires licensing your
+            Enterprise portal's ArcGIS License Server Administrator
+            (license manager). Previously, users were required to import a
+            .lic file into the portal's license manager. They would then
+            generate a .json file through the license manager and import
+            the file into portal. Now, users licensing ArcGIS Pro and
+            Drone2Map import the same license file used to license their
+            portal into their license manager. Users are no longer required
+            to generate an additional license file in the license manager.
+
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        info                  	        Required Dict. The JSON representation of the license server
+                                        connection information.
+        ===========================     ====================================================================
+
+        :returns: Boolean
+
+        **Sample Usage**
+
+        >>> gis.admin.system.licenses.update(info={ "hostname": "licensemanager.domain.com,backuplicensemanager.domain.com",
+                                                    "port": 27000
+                                                  })
+        True
+
+
+        """
+        params = {
+            'f' : "json",
+            'licenseManagerInfo' : info
+        }
+        url = "%s/updateLicenseManager" % self._url
+        res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    #----------------------------------------------------------------------
+    def validate(self, file, list_ut=False):
+        """
+        The `validate` operation is used to validate an input license file.
+        Only valid license files can be imported into the Enterprise
+        portal. If the provided file is valid, the operation will return
+        user type, app bundle, and app information from the license file.
+        If the file is invalid, the operation will fail and return an error
+        message.
+
+
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        file                            Required String. The portal license file.
+        ---------------------------     --------------------------------------------------------------------
+        list_ut                         Optional Boolean. Returns a list of user types that are compatible
+                                        with the Administrator role. This identifies the user type(s) that
+                                        can be assigned to the Initial Administrator Account when creating
+                                        a portal.
+        ===========================     ====================================================================
+
+        :returns: Dict
+
+        """
+        file = {'file' : file}
+        params = {'f' : "json",
+                  'listAdministratorUserTypes' : list_ut}
+        url = "%s/validateLicense" % self._url
+        res = self._con.post(url, params, files=file)
+        return res
+
+########################################################################
 class Licenses(BasePortalAdmin):
     """
     Portal for ArcGIS requires a valid license to function correctly. This
@@ -610,6 +838,9 @@ class Licenses(BasePortalAdmin):
     Starting at 10.5, Portal for ArcGIS enforces two levels of membership
     for licensing to define sets of privileges for registered members and
     their assigned roles.
+
+    **Deprecated at ArcGIS Enterprise 10.7**
+
     """
     _gis = None
     _con = None

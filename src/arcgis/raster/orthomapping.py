@@ -111,7 +111,7 @@ def is_supported(gis=None):
 ## Compute Sensor model
 ###################################################################################################
 def compute_sensor_model(image_collection, 
-                         mode='QUICK', 
+                         mode='Quick', 
                          location_accuracy='High', 
                          context=None,
                          *,
@@ -155,7 +155,7 @@ def compute_sensor_model(image_collection,
 
                            - 'Low'     : GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 by 12 images 
 
-                           - 'Verylow' : GPS accuracy is more than 50 meters, and the tool uses a maximum of 4 by 20 images
+                           - 'VeryLow' : GPS accuracy is more than 50 meters, and the tool uses a maximum of 4 by 20 images
 
                            The default location_accuracy is 'High' 
     ------------------     --------------------------------------------------------------------
@@ -182,17 +182,20 @@ def compute_sensor_model(image_collection,
     params = {}
 
     _set_image_collection_param(gis, params, image_collection)
-    modeAllowedValues = ["FULL","QUICK","REFINE"]
-    if not mode.upper() in modeAllowedValues:
-        raise RuntimeError("mode can only be one of the following: Quick, Full or Refine")
 
-    params['mode'] = mode
+    mode_allowed_values = ["Full","Quick","Refine"]
+    if [element.lower() for element in mode_allowed_values].count(mode.lower()) <= 0 :
+        raise RuntimeError("mode can only be one of the following: "+ str(mode_allowed_values))
+    for element in mode_allowed_values:
+        if mode.lower() == element.lower():
+            params['mode'] = element
 
-    locationAccAllowedValues = ['HIGH', 'MEDIUM', 'LOW', 'VERYLOW']
-    if not location_accuracy.upper() in locationAccAllowedValues:
-        raise RuntimeError('location_accuracy can only be one of the following: '+ str(locationAccAllowedValues))
-
-    params['locationAccuracy'] = location_accuracy
+    location_accuracy_allowed_values = ['High', 'Medium', 'Low', 'VeryLow']
+    if [element.lower() for element in location_accuracy_allowed_values].count(location_accuracy.lower()) <= 0 :
+        raise RuntimeError('location_accuracy can only be one of the following: '+ str(location_accuracy_allowed_values))
+    for element in location_accuracy_allowed_values:
+        if location_accuracy.lower() == element.lower():
+            params['locationAccuracy'] = element
 
     _set_context(params, context)
 
@@ -378,7 +381,7 @@ def append_control_points(image_collection, control_points, gis = None):
 ###################################################################################################
 ## Match control points
 ###################################################################################################
-def match_control_points(image_collection, control_points, similarity=None, context=None, *, gis=None, **kwargs):
+def match_control_points(image_collection, control_points, similarity='High', context=None, *, gis=None, **kwargs):
     '''
     The match_control_points is a function that takes a collection of ground control points
     as input (control points to be specified as a list of dictionary objects), and each of the 
@@ -493,7 +496,7 @@ def match_control_points(image_collection, control_points, similarity=None, cont
     ==================     ====================================================================
 
     :return:
-        A dictionary object
+        A list of dictionary objects
 
     '''
 
@@ -505,14 +508,14 @@ def match_control_points(image_collection, control_points, similarity=None, cont
 
     params['inputControlPoints'] = json.dumps(control_points)
 
-    similarityAllowedValues = ['Low', 'Medium', 'High']
-    if similarity is not None:
-        if not similarity in similarityAllowedValues:
-            raise RuntimeError('similarity can only be one of the following: '+str(similarityAllowedValues))
-        params['similarity'] = similarity
+    similarity_allowed_values = ['Low', 'Medium', 'High']
+    if [element.lower() for element in similarity_allowed_values].count(similarity.lower()) <= 0 :
+        raise RuntimeError('similarity can only be one of the following: '+str(similarity_allowed_values))
+    for element in similarity_allowed_values:
+        if similarity.lower() == element.lower():
+            params['similarity'] = element
 
-    if context is not None:
-        params['context'] = json.dumps(context)
+    _set_context(params, context)
 
     task = 'MatchControlPoints'
     job_values = _execute_task(gis, task, params)
@@ -638,19 +641,21 @@ def color_correction(image_collection,
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
-    context = {}
     _set_image_collection_param(gis,params, image_collection)
 
-    color_correction_allowed_values = ['DODGING', 'HISTOGRAM', 'STANDARD_DEVIATION']
+    color_correction_allowed_values = ['Dodging', 'Histogram', 'Standard_Deviation']
+    if [element.lower() for element in color_correction_allowed_values].count(color_correction_method.lower()) <= 0 :
+        raise RuntimeError('color_correction_method can only be one of the following: '+str(color_correction_allowed_values))
+    for element in color_correction_allowed_values:
+        if color_correction_method.lower() == element.lower():
+            params['colorCorrectionMethod'] = element
 
-    if not color_correction_method.upper() in color_correction_allowed_values:
-            raise RuntimeError('similarity can only be one of the following: '+ str(color_correction_allowed_values))        
-    params['colorCorrectionMethod'] = color_correction_method
-
-    dodging_surface_type_allowed_values = ['SINGLE_COLOR', 'COLOR_GRID', 'FIRST_ORDER','SECOND_ORDER','THIRD_ORDER']
-    if not dodging_surface_type.upper() in dodging_surface_type_allowed_values:
-            raise RuntimeError('similarity can only be one of the following: '+ str(dodging_surface_type_allowed_values))
-    params['dodgingSurface'] = dodging_surface_type
+    dodging_surface_type_allowed_values = ['Single_Color', 'Color_Grid', 'First_Order','Second_Order','Third_Order']
+    if [element.lower() for element in dodging_surface_type_allowed_values].count(dodging_surface_type.lower()) <= 0 :
+        raise RuntimeError('dodging_surface_type can only be one of the following:  '+str(dodging_surface_type_allowed_values))
+    for element in dodging_surface_type_allowed_values:
+        if dodging_surface_type.lower() == element.lower():
+            params['dodgingSurface'] = element
 
     if target_image is not None:
         if isinstance(target_image, str):
@@ -696,23 +701,56 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
                                             points set with the image service. 
                                             It can be a portal Item or an image service URL or a URI
     ------------------------------------    --------------------------------------------------------------------
-    image_location_accuracy                 Optional string. This option allows users to specify the location accuracy of the  
-                                            imagery.
-                                            VERYLOW, LOW, MEDIUM, HIGH
+    image_location_accuracy                 Optional string. This option allows you to specify the GPS location accuracy 
+                                            level of the source image. It determines how far the tool will search for 
+                                            neighboring matching images for calculating tie points and block adjustments. 
+                                            The following are the available options:
+                                            Low, Medium, High
 
-                                            LOW-Images have a large shift and a large rotation (> 5 degrees).
-                                                The SIFT algorithm will be used in the point matching computation. 
+                                            Low- GPS accuracy of 20 to 50 meters, and the tool uses a maximum of 4 
+                                                 by 12 images. 
 
-                                            MEDIUM-Images have a medium shift and a small rotation (<5 degrees).
-                                                   The Harris algorithm will be used in the point matching computation. 
+                                            Medium- GPS accuracy of 10 to 20 meters, and the tool uses a maximum of 
+                                                     4 by 6 images. 
 
-                                            HIGH-Images have a small shift and a small rotation.
-                                                 The Harris algorithm will be used in the point matching computation. 
+                                            High- GPS accuracy of 0 to 10 meters, and the tool uses a maximum of 4 by 3 images.
 
-                                            Default is HIGH
+                                            If the image collection is created from satellite data, it will be automatically switched 
+                                            to use RPC adjustment mode. In this case, the mode need not be explicitly set by the user.
+
+                                            Default is High
     ------------------------------------    --------------------------------------------------------------------
     context                                 Optional dictionary. Context contains additional environment settings that affect 
-                                            output control points generation.
+                                            output control points generation. Possible keys and their possible values are: 
+
+                                            pointSimilarity- Sets LOW, MEDIUM, or HIGH tolerance for computing control points 
+                                                             with varying levels of potential error.
+                                                             
+                                                             LOW tolerance will produce the most control point, but may have a higher 
+                                                             level of error. 
+                                                             
+                                                             HIGH tolerance will produce the least number of control point, 
+                                                             but each matching pair will have a lower level of error. 
+
+                                                             MEDIUM tolerance will set the similarity tolerance to medium.
+
+                                            pointDensity- Sets the number of tie points (LOW, MEDIUM, or HIGH), to be created. 
+                                                          LOW point density will create the fewest number of tie points. 
+
+                                                          MEDIUM point density will create a moderate number of tie points.
+                                                          
+                                                          HIGH point density will create the highest number of tie points.
+
+                                            pointDistribution- Randomly generates points that are better for overlapping areas 
+                                                               with irregular shapes.
+                                                               
+                                                               RANDOM- will generate points that are better for overlapping areas 
+                                                               with irregular shapes. 
+
+                                                               REGULAR- will generate points based on a 
+                                                               fixed pattern and uses the point density to determine how frequently to create points.
+                                            Example:
+
                                             {
                                             "pointSimilarity":"MEDIUM",
                                             "pointDensity": "MEDIUM",
@@ -729,7 +767,6 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
-    context = {}
     _set_image_collection_param(gis, params, image_collection)
 
     if reference_image is not None:
@@ -743,7 +780,13 @@ def compute_control_points(image_collection, reference_image=None, image_locatio
         else:
             raise TypeError("reference_image should be a string (url or uri) or Item")
 
-    params["imageLocationAccuracy"]=image_location_accuracy
+
+    image_location_accuracy_allowed_values = ['Low', 'Medium', 'High']
+    if [element.lower() for element in image_location_accuracy_allowed_values].count(image_location_accuracy.lower()) <= 0 :
+        raise RuntimeError('location_accuracy can only be one of the following:' +str(image_location_accuracy_allowed_values))
+    for element in image_location_accuracy_allowed_values:
+        if image_location_accuracy.lower() == element.lower():
+            params["imageLocationAccuracy"]=element
 
     _set_context(params, context)  
 
@@ -823,7 +866,6 @@ def compute_seamlines(image_collection,
     gis = arcgis.env.active_gis if gis is None else gis
 
     params = {}
-    context={}
     _set_image_collection_param(gis, params, image_collection)
 
     contextAllowedValues= {"minRegionSize", "pixelSize", "blendType", "blendWidth", 
@@ -832,9 +874,11 @@ def compute_seamlines(image_collection,
                            }
 
     seamlines_method_allowed_values = ['VORONOI', 'DISPARITY','GEOMETRY', 'RADIOMETRY', 'EDGE_DETECTION']
-    if not seamlines_method.upper() in seamlines_method_allowed_values:
-            raise RuntimeError('similarity can only be one of the following: '+str(seamlines_method_allowed_values))
-    params['seamlinesMethod'] = seamlines_method
+    if [element.lower() for element in seamlines_method_allowed_values].count(seamlines_method.lower()) <= 0 :
+        raise RuntimeError('seamlines_method can only be one of the following: '+str(seamlines_method_allowed_values))
+    for element in seamlines_method_allowed_values:
+        if seamlines_method.lower() == element.lower():
+            params["seamlinesMethod"]=element
 
     _set_context(params, context)
 
@@ -979,10 +1023,10 @@ def generate_dem(image_collection,
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
-    out_dem                This is the output digital elevation model image url or name. 
-                           Like Raster Analysis services, the service can be an existing multi-tenant service URL 
-                           or this service tool can create it. 
-                           It can be a url, uri, portal item, string representing the name of output image service 
+    out_dem                This is the output digital elevation model.
+                           It can be a url, uri, portal item, or string representing the name of output dem 
+                           (either existing or to be created.)
+                           Like Raster Analysis services, the service can be an existing multi-tenant service URL.
     ------------------     --------------------------------------------------------------------
     cell_size              Required, The cell size of the output raster dataset. This is a single numeric input. 
                            Rectangular cell size such as {"x": 10, "y": 10} is not supported. 
@@ -1063,7 +1107,6 @@ def generate_dem(image_collection,
 
     contextAllowedValues= ["maxObjectSize", "groundSpacing", "minAngle", "maxAngle", "minOverlap", "maxOmegaPhiDif", 
                             "maxGSDDif", "numImagePairs", "adjQualityThreshold", "method", "smoothingMethod", "applyToOrtho"]
-    context = {}
     params = {}
     folder = None
     folderId = None
@@ -1079,10 +1122,12 @@ def generate_dem(image_collection,
                 params['outputDEM'] = json.dumps({ 'uri' : out_dem })
         else:
             result = gis.content.search("title:"+str(out_dem), item_type = "Imagery Layer")
-            if len(result)>0:
-                result = result[0]
-                if result is not None:
-                    params["outputDEM"]= json.dumps({"itemId": result.itemid})
+            out_dem_result = None
+            for element in result:
+                if str(out_dem) == element.title:
+                    out_dem_result = element
+            if out_dem_result is not None:
+                params["outputDEM"]= json.dumps({"itemId": out_dem_result.itemid})
             else:
                 doesnotexist = gis.content.is_service_name_available(out_dem, "Image Service") 
                 if doesnotexist:
@@ -1109,13 +1154,20 @@ def generate_dem(image_collection,
 
     params['cellSize'] = cell_size
 
-    surfaceTypeAllowedValues = ['DTM', 'DSM']
-    if not surface_type in surfaceTypeAllowedValues:
-        raise RuntimeError('surface_type can only be one of the following: '+ str(surfaceTypeAllowedValues))
-    params['surfaceType'] = surface_type
-    
+    surface_type_allowed_values = ['DTM', 'DSM']
+    if [element.lower() for element in surface_type_allowed_values].count(surface_type.lower()) <= 0 :
+        raise RuntimeError('surface_type can only be one of the following: '+str(surface_type_allowed_values))
+    for element in surface_type_allowed_values:
+        if surface_type.lower() == element.lower():
+            params["surfaceType"]=element
+
     if matching_method is not None:
-        params['matchingMethod'] = matching_method
+        matching_method_allowed_values = ['ETM', 'SGM', 'MVM']
+        if [element.lower() for element in matching_method_allowed_values].count(matching_method.lower()) <= 0 :
+            raise RuntimeError('matching_method can only be one of the following: '+str(matching_method_allowed_values))
+        for element in matching_method_allowed_values:
+            if matching_method.lower() == element.lower():
+                params["matchingMethod"]=element
 
     _set_context(params, context)  
     
@@ -1149,13 +1201,13 @@ def generate_orthomosaic(image_collection,
                                            The image_collection can be a portal Item or an image service URL or a URI
                                            The image_collection must exist.
     -----------------------------------    --------------------------------------------------------------------
-    out_ortho                               Required. This is the output ortho-mosaicked image converted from the image 
-                                            collection after the block adjustment.   
-                                            It can be a url, uri, portal item, string representing the name of output image 
-                                            service  
+    out_ortho                               Required. This is the ortho-mosaicked image converted from the image 
+                                            collection after the block adjustment.
+                                            It can be a url, uri, portal item, or string representing the name of output dem 
+                                            (either existing or to be created.)
+                                            Like Raster Analysis services, the service can be an existing multi-tenant service URL.
     -----------------------------------    --------------------------------------------------------------------
-    regen_seamlines                        Optional, boolean. 
-
+    regen_seamlines                        Optional, boolean.
                                            Choose whether to apply seamlines before the orthomosaic image generation or not. 
                                            The seamlines will always be regenerated if this parameter is set to True. 
                                            The user can set the seamline options through the context parameter. 
@@ -1205,10 +1257,12 @@ def generate_orthomosaic(image_collection,
                 params['outputOrthoImage'] = json.dumps({ 'uri' : out_ortho })
         else:
             result = gis.content.search("title:"+str(out_ortho), item_type = "Imagery Layer")
-            if len(result) > 0:
-                result = result[0]
-                if result is not None:
-                    params["outputOrthoImage"]= json.dumps({"itemId": result.itemid})
+            out_ortho_result = None
+            for element in result:
+                if str(out_ortho) == element.title:
+                    out_ortho_result = element
+            if out_ortho_result is not None:
+                params["outputOrthoImage"]= json.dumps({"itemId": out_ortho_result.itemid})
             else:
                 doesnotexist = gis.content.is_service_name_available(out_ortho, "Image Service") 
                 if doesnotexist:
@@ -1285,9 +1339,11 @@ def generate_report(image_collection, report_format="PDF", *, gis=None, **kwargs
     _set_image_collection_param(gis, params, image_collection)
 
     report_format_allowed_values = ['PDF', 'HTML']
-    if not report_format in report_format_allowed_values:
+    if [element.lower() for element in report_format_allowed_values].count(report_format.lower()) <= 0 :
         raise RuntimeError('report_format can only be one of the following: '+ str(report_format_allowed_values))
-    params['reportFormat'] = report_format
+    for element in report_format_allowed_values:
+        if report_format.lower() == element.lower():
+            params["reportFormat"]=element
 
     task = 'GenerateReport'
     job_values = _execute_task(gis, task, params)
@@ -1312,6 +1368,10 @@ def query_camera_info(camera_query=None,
     camera_query           Required String. This is a SQL query statement that can 
                            be used to filter a portion of the digital camera
                            database.
+                           Digital camera database can be queried using the fields Make, Model,
+                           Focallength, Columns, Rows, PixelSize.
+
+                           Eg. "Make='Rollei' and Model='RCP-8325'"
     ------------------     --------------------------------------------------------------------
     gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
@@ -1336,10 +1396,8 @@ def query_camera_info(camera_query=None,
     task = 'QueryCameraInfo'
     job_values = _execute_task(gis, task, params)
     pd.set_option('display.max_rows', None)
-    df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = ["Maker","Model", "Focal Length", "Columns", "Rows","Pixel Size"])
-    display(df)
+    df = pd.DataFrame(np.array(job_values["outputCameraInfo"]["content"]),columns = job_values["outputCameraInfo"]["schema"])
     return df
-    #return job_values["outputCameraInfo"]["content"]
 
 ###################################################################################################
 ## query control points

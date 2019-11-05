@@ -89,7 +89,8 @@ def find_hot_spots(analysis_layer: str = None,
                    aggregation_polygon_layer: str = None,
                    output_name: str = None,
                    context: str = None,
-                   gis=None) -> tuple:
+                   gis=None,
+                   shape_type: str = None) -> tuple:
     """
 
 
@@ -97,21 +98,24 @@ The Find Hot Spots task finds statistically significant clusters of incident poi
 
 Parameters:
 
-   analysis_layer: analysisLayer (str). Required parameter.  The point or polygon feature layer for which hot spots will be calculated.
+   analysis_layer: analysis layer (str). Required parameter.  The point or polygon feature layer for which hot spots will be calculated.
 
-   analysis_field: analysisField (str). Optional parameter.  The numeric field in the AnalysisLayer that will be analyzed.
+   analysis_field: analysis field (str). Optional parameter.  The numeric field in the AnalysisLayer that will be analyzed.
 
-   divided_by_field: dividedByField (str). Optional parameter.
+   divided_by_field: divided by field (str). Optional parameter.
 
-   bounding_polygon_layer: boundingPolygonLayer (str). Optional parameter.  When the analysis layer is points and no AnalysisField is specified, you can provide polygons features that define where incidents could have occurred.
+   bounding_polygon_layer: bounding polygon layer (str). Optional parameter.  When the analysis layer is points and no AnalysisField is specified, you can provide polygons features that define where incidents could have occurred.
 
-   aggregation_polygon_layer: aggregationPolygonLayer (str). Optional parameter.  When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
+   aggregation_polygon_layer: aggregation polygon layer (str). Optional parameter.  When the AnalysisLayer contains points and no AnalysisField is specified, you can provide polygon features into which the points will be aggregated and analyzed, such as administrative units.
 
-   output_name: outputName (str). Optional parameter.  Additional properties such as output feature service name.
+   output_name: output name (str). Optional parameter.  Additional properties such as output feature service name.
 
    context: context (str). Optional parameter.  Additional settings such as processing extent and output spatial reference.
 
 gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+shape_type: shape type (str). Optional parameter. The shape of the polygon mesh the input features will be aggregated into.
+  Choice list:['hexagon', 'fishnet']
 
 
 Returns the following as a named tuple:
@@ -132,6 +136,7 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "context": (str, "context"),
         "hot_spots_result_layer": (str, "hotSpotsResultLayer"),
         "process_info": (str, "processInfo"),
+        "shape_type": (str, "shapeType"),
     }
     return_values = [
         {"name": "hot_spots_result_layer", "display_name": "hotSpotsResultLayer", "type": str},
@@ -1536,8 +1541,8 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
     return _execute_gp_tool(gis, "TraceDownstream", kwargs, param_db, return_values, _use_async, url)
 
 
-def connect_origins_to_destinations(origins_layer: str = None,
-                                    destinations_layer: str = None,
+def connect_origins_to_destinations(origins_layer = None,
+                                    destinations_layer = None,
                                     measurement_type: str = """DrivingTime""",
                                     origins_layer_route_id_field: str = None,
                                     destinations_layer_route_id_field: str = None,
@@ -1545,7 +1550,10 @@ def connect_origins_to_destinations(origins_layer: str = None,
                                     time_zone_for_time_of_day: str = """GeoLocal""",
                                     output_name: str = None,
                                     context: str = None,
-                                    gis=None) -> tuple:
+                                    gis=None,
+                                    point_barrier_layer = None,
+                                    line_barrier_layer = None,
+                                    polygon_barrier_layer = None) -> tuple:
     """
 
 
@@ -1583,7 +1591,6 @@ Returns the following as a named tuple:
 See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GPServer/tasks/ConnectOriginsToDestinations.htm for additional help.
     """
     kwargs = locals()
-
     param_db = {
         "origins_layer": (str, "originsLayer"),
         "destinations_layer": (str, "destinationsLayer"),
@@ -1594,6 +1601,9 @@ See http://analysis6.arcgis.com:80/arcgis/rest/directories/arcgisoutput/tasks_GP
         "time_zone_for_time_of_day": (str, "timeZoneForTimeOfDay"),
         "output_name": (str, "outputName"),
         "context": (str, "context"),
+        "point_barrier_layer": (str, "pointBarrierLayer"),
+        "line_barrier_layer": (str, "lineBarrierLayer"),
+        "polygon_barrier_layer": (str, "polygonBarrierLayer"),
         "routes_layer": (str, "routesLayer"),
         "unassigned_origins_layer": (str, "unassignedOriginsLayer"),
         "unassigned_destinations_layer": (str, "unassignedDestinationsLayer"),

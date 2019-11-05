@@ -46,7 +46,6 @@ def add_assignment_types_v2(project, assignment_types):
         :param assignment_types: list of AssignmentTypes
         :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
-    project._update_cached_objects()
     use_global_ids = True
     for assignment_type in assignment_types:
         assignment_type.project = project
@@ -56,6 +55,7 @@ def add_assignment_types_v2(project, assignment_types):
 
     features = [assignment_type.feature for assignment_type in assignment_types]
     add_features(project.assignment_types_table, features, use_global_ids)
+    project._update_cached_assignment_types()
     return assignment_types
 
 
@@ -65,11 +65,11 @@ def update_assignment_types_v2(project, assignment_types):
         :param assignment_types: list of AssignmentTypes
         :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
-    project._update_cached_objects()
     for assignment_type in assignment_types:
         validate(assignment_type._validate_for_update)
     features = [assignment_type.feature for assignment_type in assignment_types]
     update_features(project.assignment_types_table, features)
+    project._update_cached_assignment_types()
     return assignment_types
 
 
@@ -85,8 +85,8 @@ def delete_assignment_types_v2(project, assignment_types):
         :param project:
         :param assignment_types: list of AssignmentTypes.
     """
-    project._update_cached_objects()
     for assignment_type in assignment_types:
         validate(assignment_type._validate_for_remove)
     features = [assignment_type.feature for assignment_type in assignment_types]
     remove_features(project.assignment_types_table, features)
+    project._update_cached_assignment_types()

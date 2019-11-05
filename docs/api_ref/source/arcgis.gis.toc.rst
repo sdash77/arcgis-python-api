@@ -59,6 +59,12 @@ GroupApplication
     :undoc-members:
     :show-inheritance:
 
+CategorySchemaManager
+-------------------------
+.. autoclass:: arcgis.gis.CategorySchemaManager
+    :members:
+    :undoc-members:
+
 ContentManager
 -------------------------
 .. autoclass:: arcgis.gis.ContentManager
@@ -100,6 +106,26 @@ ResourceManager
     :undoc-members:
     :show-inheritance:
 
+ProfileManager
+---------------------------
+.. autoclass:: arcgis.gis._impl._profile.ProfileManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+InvitationManager
+---------------------------
+.. autoclass:: arcgis.gis._impl._invitations.InvitationManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+CertificateManager
+---------------------------
+.. autoclass:: arcgis.gis._impl.CertificateManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 --------------

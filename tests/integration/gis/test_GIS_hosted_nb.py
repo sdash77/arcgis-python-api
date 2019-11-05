@@ -4,8 +4,8 @@
 #-------------------------------------------------------------------------------
 import unittest
 import os
-from dino_utils.dino_precondition_checks import PreconditionChecks
-from dino_utils.dino_configs import DinoConfigs
+from integration.dino_utils.dino_precondition_checks import PreconditionChecks
+from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import tempfile
 import datetime

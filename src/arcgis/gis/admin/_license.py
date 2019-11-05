@@ -25,6 +25,7 @@ class LicenseManager(BasePortalAdmin):
     :returns:
        LicenseManager Object
     """
+
     _con = None
     _url = None
     _json_dict = None
@@ -44,6 +45,12 @@ class LicenseManager(BasePortalAdmin):
                 "connection must be of type GIS or _ArcGISConnection")
         if initialize:
             self._init(connection=self._con)
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return "<License Manager at {url}>".format(url=self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return self.__str__()
     #----------------------------------------------------------------------
     def get(self, name):
         """
@@ -385,9 +392,15 @@ class License(object):
     def plot(self):
         """returns a simple bar chart of assigned and remaining entitlements"""
         report = self.report
-        return report.plot(x=report["Entitlement"],
-                           y=['Assigned', 'Remaining'],
-                           kind='bar',stacked=True)
+        try:
+            return report.plot(x=report["Entitlement"],
+                               y=['Assigned', 'Remaining'],
+                               kind='bar',stacked=True).legend(loc='best')
+        except:
+            report.set_index("Entitlement", drop=True, append=False,
+                             inplace=True, verify_integrity=False)
+            return report.plot(y=['Assigned', 'Remaining'],
+                               kind='bar',stacked=True).legend(loc='best')
     #----------------------------------------------------------------------
     def all(self):
         """
@@ -460,6 +473,7 @@ class License(object):
     def assign(self, username, entitlements, suppress_email=True):
         """
         grants a user an entitlement.
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------

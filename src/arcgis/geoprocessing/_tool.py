@@ -152,7 +152,10 @@ def _generate_fn(task, tbx):
 
 
     taskurl = tbx.url + "/" + task
-    taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+    try:
+        taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+    except:
+        taskprops = tbx._con.post(taskurl, {"f": "json"})
 
     # execution_type = taskprops['executionType']
     #
@@ -181,7 +184,7 @@ def _generate_fn(task, tbx):
 
         src_code += ',\n' \
 
-    src_code += ' '*num_spaces + 'gis=None) -> ' + name_type['return'].__name__ + ':\n'
+    src_code += ' '*num_spaces + 'gis=None, future=False) -> ' + name_type['return'].__name__ + ':\n'
 
     src_code += '\n\t"""\n\n' + helpstring + '\n\t"""\n'
 
@@ -206,7 +209,7 @@ def _generate_fn(task, tbx):
                                             retval['display_name'] + '", "type":' + retval['type'].__name__ + "},"
     src_code += '\n\t                ]\n\n'
 
-    src_code += '\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url)'
+    src_code += '\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url, future=future)'
 
     src_code += '\n\n\n'
     return src_code
@@ -271,6 +274,7 @@ def _inspect_tool(taskprops, map_as_result):
 
     # gis=None
     helpstring += '\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n'
+    helpstring += '\n\n\tfuture: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.\n'
 
     if len(return_values) == 1:
         helpstring = helpstring + "\n\nReturns: " # + name_type['return_display_name'] + " (" + name_type['return'].__name__ + ")"
@@ -411,6 +415,7 @@ from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
+import concurrent.futures
 
 _log = _logging.getLogger(__name__)
     """
@@ -426,10 +431,21 @@ _log = _logging.getLogger(__name__)
 
     src_code += '\n_url = "' + url + '"'
     src_code += '\n_use_async = ' + str(use_async) + '\n\n'
+    if len(tbx.properties.tasks) < 4:
+        for task in tbx.properties.tasks:
+            fn_src = _generate_fn(task, tbx)
+            src_code += fn_src
+    else:
+        source = []
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(8) as executor:
 
-    for task in tbx.properties.tasks:
-        fn_src = _generate_fn(task, tbx)
-        src_code += fn_src
+            for task in tbx.properties.tasks:
+                #_generate_fn(task, tbx)
+                f = executor.submit(fn=_generate_fn, **{"task": task, "tbx" :tbx})
+                source.append(f)
+        for fn_src in source:
+            src_code += fn_src.result()
 
     return _import_code(src_code, 'name', verbose)
     #print(src_code)
@@ -920,7 +936,7 @@ class Toolbox(_AsyncResource):
                 if py_type in [FeatureSet, LinearUnit, DataFile, RasterData]:
                     if type(value) in [FeatureSet, LinearUnit, DataFile, RasterData]:
                         params[key] = value.to_dict()
-                    elif _is_geoenabled(value):
+                    elif _is_geoenabled(value) or hasattr(value, 'spatial'):
                         params[key] = value.spatial.__feature_set__
                     elif type(value) in [SpatialDataFrame]:
                         params[key] = value.__feature_set__

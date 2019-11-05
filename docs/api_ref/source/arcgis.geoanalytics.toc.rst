@@ -3,19 +3,34 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. _FeatureInput:
+
 arcgis.geoanalytics module
 ==========================
 
 .. automodule:: arcgis.geoanalytics
 
+**Feature Input**
+
+All GeoAnalytics Tools have input parameters that take features as their input. Features can be input as:
+
+    * Big data file share layer. These can be obtained by using the layers property of big data file share items.
+    * Item (of type Feature Layer Collection or Feature Collection) - only the first feature layer is used.
+    * Instance of FeatureLayer, FeatureLayerCollection, FeatureCollection.
+    * Feature Service URL as a string.
+    * Python dict in the feature collection format
+
+define_output_datastore
+--------------
+.. autofunction:: arcgis.geoanalytics.define_output_datastore
 
 get_datastores
 --------------
-.. automethod:: arcgis.geoanalytics.get_datastores
-    
+.. autofunction:: arcgis.geoanalytics.get_datastores
+
 is_supported
 --------------
-.. automethod:: arcgis.geoanalytics.is_supported
+.. autofunction:: arcgis.geoanalytics.is_supported
 
 Submodules
 --------------

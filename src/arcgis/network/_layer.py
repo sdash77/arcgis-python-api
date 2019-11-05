@@ -1,4 +1,5 @@
 from arcgis.gis import Layer, _GISResource
+from arcgis.features import Feature, FeatureSet
 
 
 class NetworkLayer(Layer):
@@ -71,11 +72,11 @@ class RouteLayer(NetworkLayer):
         ===================================     ====================================================================
         **Argument**                            **Description**
         -----------------------------------     --------------------------------------------------------------------
-        stops                                   Required Points/FeatureSet. The set of stops loaded as network
-                                                locations during analysis. Stops can be specified using a simple
-                                                comma / semi-colon based syntax or as a JSON structure. If stops are
-                                                not specified, preloaded stops from the map document are used in the
-                                                analysis.
+        stops                                   Required Points/FeatureSet/a list of Features. The set of stops
+                                                loaded as network locations during analysis. Stops can be specified
+                                                using a simple comma / semi-colon based syntax or as a JSON
+                                                structure. If stops are not specified, preloaded stops from the map
+                                                document are used in the analysis.
         -----------------------------------     --------------------------------------------------------------------
         barriers                                Optional Point/FeatureSet. The set of barriers loaded as network
                                                 locations during analysis. Barriers can be specified using a simple
@@ -220,8 +221,25 @@ class RouteLayer(NetworkLayer):
 
         :return: dict
 
+        .. code-block:: python
 
+            # USAGE EXAMPLE: Solving the routing problem by passing in a FeatureSet
 
+            # get a FeatureSet through query
+            fl = sample_cities.layers[0]
+            cities_to_visit = fl.query(where="ST = 'CA' AND POP2010 > 300000",
+                                       out_fields='NAME', out_sr=4326)
+
+            type(cities_to_visit)
+            >> arcgis.features.feature.FeatureSet
+
+            # pass in the FeatureSet
+            result = route_layer.solve(stops=cities_to_visit, preserve_first_stop=True,
+                                       preserve_last_stop=True, find_best_sequence=True, return_directions=False,
+                                       return_stops=True, return_barriers=False, return_polygon_barriers=False,
+                                       return_polyline_barriers=False, return_routes=True,
+                                       output_lines='esriNAOutputLineStraight')
+                                       
         """
 
         if not self.properties.layerType == "esriNAServerRouteLayer":
@@ -229,10 +247,23 @@ class RouteLayer(NetworkLayer):
                              "layer of Route type only")
 
         url = self._url + "/solve"
+
         params = {
-                    "f" : "json",
-                    "stops": stops
-                 }
+            "f": "json",
+        }
+
+        if isinstance(stops, FeatureSet):
+            params['stops'] = stops.to_dict()
+        elif isinstance(stops, list):
+            stops_dict = []
+            for stop in stops:
+                if isinstance(stop, Feature):
+                    stops_dict.append(stop.as_dict)
+                else:
+                    stops_dict.append(stop)
+            params['stops'] = {'features': stops_dict}
+        else:
+            params['stops'] = stops
 
         if not barriers is None:
             params['barriers'] = barriers

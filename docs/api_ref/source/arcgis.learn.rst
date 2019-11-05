@@ -6,6 +6,10 @@ arcgis.learn module
 detect_objects
 --------------
 .. automethod:: arcgis.learn.detect_objects
+
+classify_objects
+----------------
+.. automethod:: arcgis.learn.classify_objects
     
 classify_pixels
 --------------
@@ -36,6 +40,46 @@ SingleShotDetector
 ------------------
 .. autoclass:: arcgis.learn.SingleShotDetector
     :members:
+    :inherited-members:
     :undoc-members:
 
+UnetClassifier
+------------------
+.. autoclass:: arcgis.learn.UnetClassifier
+    :members:
+    :inherited-members:
+    :undoc-members:
 
+FeatureClassifier
+------------------
+.. autoclass:: arcgis.learn.FeatureClassifier
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+RetinaNet
+------------------
+.. autoclass:: arcgis.learn.RetinaNet
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+EntityRecognizer
+------------------
+.. autoclass:: arcgis.learn.EntityRecognizer
+    :members:
+    :undoc-members:
+
+PSPNetClassifier
+------------------
+.. autoclass:: arcgis.learn.PSPNetClassifier
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+MaskRCNN
+------------------
+.. autoclass:: arcgis.learn.MaskRCNN
+    :members:
+    :inherited-members:
+    :undoc-members:

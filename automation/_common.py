@@ -13,25 +13,30 @@ GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
     os.path.dirname( __file__ ),
     '..'))
 
-STAGING_DIR = os.path.abspath(os.path.join(
+AUTOMATION_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
-    "automation",
+    "automation"))
+
+STAGING_DIR = os.path.abspath(os.path.join(
+    AUTOMATION_DIR,
     "staging"))
 
 BUILD_DIR = os.path.abspath(os.path.join(
     GEOSAURUS_ROOT_DIR,
     "build"))
 
+TESTS_DIR = os.path.abspath(os.path.join(
+    GEOSAURUS_ROOT_DIR,
+    "tests"))
+
 MASTER_REGEX = ".*master.*"
-PULL_REQUEST_REGEX = ".*pull.*request.*"
+GEOS_PULL_REQUEST_REGEX = ".*geo.*pull.*request.*"
+PUB_REPO_PULL_REQUEST_REGEX = ".*pub.*repo.*pull.*request"
 PUBLISH_REGEX = ".*publish.*"
 LINUX_SLAVE_REGEX = ".*linux.*slave.*"
-SOURCE_CODE_TEST_REGEX = ".*source.*test.*"
-NOTEBOOK_TEST_REGEX = ".*notebook.*test.*"
-ALL_TEST_REGEX = ".*all.*test.*"
-DEV_SITE_REGEX = ".*dev.*site.*"
+RUN_TEST_SUITE_REGEX = ".*test.*suite.*"
 
-def run_shell_command(cmd):
+def run_shell_command(cmd, throw_exc_on_fail=True):
     try:
         log.info("Currently running command '{}'".format(cmd))
         byte_output = subprocess.check_output(cmd,
@@ -43,16 +48,21 @@ def run_shell_command(cmd):
     except subprocess.CalledProcessError as e:
         log.warn("cmd failed, returned non-zero code. Output:\n"\
                  "{}".format(e.output.decode("utf-8")))
-        raise e
+        if throw_exc_on_fail:
+            raise e
 
 def _bytes_to_str_cp850_workaround(bytes_):
     """Although python encodes everything in utf-8, The Windows CMD prompt 
     has issues printing out some characters (A error was seen printing out 
     the \u03BC Greek 'u'). These stack overflows: http://bit.ly/2HW4fXP and
     http://bit.ly/2DLdbfX provide some insight. The workaround is to
-    decode to cp850, replace all unprinteable characters, encode
+    decode to unicode, encode to cp850, decode from cp850, replacing 
+    unprinteable characters every step along the way with '?'
     """
-    return bytes_.decode('utf-8').encode('cp850','replace').decode('cp850')
+    return bytes_.decode('utf-8',
+        'replace').encode('cp850',
+        'replace').decode('cp850',
+        'replace')
 
 def recursive_file_copy(src_dir_root, dst_dir_root, files_to_ignore=[]):
     """Given two dirs with the same folder structure, copy all files from

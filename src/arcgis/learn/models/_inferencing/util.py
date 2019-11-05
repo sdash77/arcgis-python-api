@@ -190,3 +190,28 @@ def detect_objects_image_space(model, tiles, anchors, grid_sizes, device, classe
             idx = idx+1
 
     return bounding_boxes, scores, classes
+
+def segment_image(model, images, device, predict_bg):
+    model = model.to(device)
+    normed_batch_tensor = tensor(images).to(device).float()
+    output = model(normed_batch_tensor)
+    if predict_bg:
+        return output.max(dim=1)[1]
+    else:
+        return output[:, 1:].max(dim=1)[1]
+    
+
+def pixel_classify_image(model, tiles, device, classes, predict_bg, normalization_stats=None):
+    tile_height, tile_width = tiles.shape[2], tiles.shape[3]
+    if normalization_stats is not None: # Torch Tensors
+        band_min_values = np.array(normalization_stats["band_min_values"]).reshape(1, -1, 1, 1)
+        band_max_values = np.array(normalization_stats["band_max_values"]).reshape(1, -1, 1, 1)
+        scaled_mean_values = np.array(normalization_stats["scaled_mean_values"]).reshape(1, -1, 1, 1)
+        scaled_std_values = np.array(normalization_stats["scaled_std_values"]).reshape(1, -1, 1, 1)
+        img_scaled = ( tiles - band_min_values ) / ( band_max_values - band_min_values)
+        img_normed = ( img_scaled - scaled_mean_values ) / scaled_std_values
+    else:
+        img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
+    semantic_predictions = segment_image(model, img_normed, device, predict_bg)
+    return semantic_predictions
+    

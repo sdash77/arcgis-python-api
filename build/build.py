@@ -13,8 +13,11 @@ import shutil
 import platform
 import subprocess
 import tempfile
+from uuid import uuid4
 import logging
 log = logging.getLogger(__name__)
+
+import yaml
 
 BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version} "\
                  "--output-folder {output_dir}"
@@ -33,7 +36,7 @@ SUPPORTED_UNIX = SUPPORTED_LINUX + SUPPORTED_OSX
 SUPPORTED_OSES = SUPPORTED_WIN +\
                  SUPPORTED_LINUX +\
                  SUPPORTED_OSX
-SUPPORTED_PYS = ['3.5', '3.6', '3.7']
+SUPPORTED_PYS = ['3.6', '3.7']
 DEFAULT_PYS = SUPPORTED_PYS
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(
@@ -54,6 +57,10 @@ SRC_DIR = os.path.abspath(os.path.join(
 SRC_DIST_DIR = os.path.abspath(os.path.join(
     SRC_DIR,
     "dist"))
+META_YAML_FILE_PATH = os.path.abspath(os.path.join(
+    BUILD_DIR,
+    "arcgis",
+    "meta.yaml"))
 
 def _main():
     args = _parse_cmd_line_args()
@@ -69,13 +76,16 @@ def _main():
         return
     elif _only_python_is_specified(args):
         build_conda_packages(python_versions = args.python,
-                             os_build_targets = [ _determine_current_os() ])
+                             os_build_targets = [ _determine_current_os() ],
+                             build_number = args.build_number)
     elif _only_os_is_specified(args):
         build_conda_packages(python_versions = DEFAULT_PYS,
-                             os_build_targets = args.os)
+                             os_build_targets = args.os,
+                             build_number = args.build_number)
     elif _both_os_and_python_are_specified(args):
         build_conda_packages(os_build_targets = args.os,
-                             python_versions = args.python)
+                             python_versions = args.python,
+                             build_number = args.build_number)
     else:
         args.print_help()
         raise Exception("Incorrect usage: See the --help text and try again")
@@ -116,6 +126,8 @@ def _parse_cmd_line_args():
         help="Build the pip .tar.gz package and place it in ./output/pip")
     parser.add_argument("--verbose", "-v", action="store_true",
         help="Print all DEBUG log msgs (i.e. print 'conda build' cmd output)")
+    parser.add_argument("--build-number", "-b", default=0,
+        help="What build number int to apply to meta.yaml/output conda pkg.")
     return parser.parse_args(sys.argv[1:]) #don't use filename as 1st arg
 
 def _setup_logging(args):
@@ -171,7 +183,7 @@ def build_conda_packages_default(clear_output_folder = True):
         _run_conda_build_command(python_version = python_version,
                                  output_dir = BUILD_OUTPUT_DIR)
 
-def build_conda_packages_for_all_os_and_py():
+def build_conda_packages_for_all_os_and_py(build_number=0):
     """Will generate conda packages for all supported os and pys"""
     if _is_current_os_windows():
         os_build_targets = SUPPORTED_WIN
@@ -181,10 +193,12 @@ def build_conda_packages_for_all_os_and_py():
         raise RuntimeError("{} is not a supported OS".format(os.name))
 
     build_conda_packages(os_build_targets = os_build_targets,
-                         python_versions = SUPPORTED_PYS)
+                         python_versions = SUPPORTED_PYS, 
+                         build_number = build_number)
 
 def build_conda_packages(os_build_targets,
                          python_versions,
+                         build_number=0,
                          clear_output_folder = True):
     """Will build conda packages for specified oses, and pys. Places pkgs
     in output folder, will clear output folder if specified. Can only build
@@ -196,19 +210,23 @@ def build_conda_packages(os_build_targets,
         SUPPORTED_PYS for all supported. Ex: ['3.6', '3.5']
     clear_output_folder: bool to toggle if BUILD_OUTPUT_DIR is cleared
     """
+    _apply_build_number_to_meta_yaml(build_number)
+
     if clear_output_folder:
         _clear_output_folder()
     _check_edge_cases(os_build_targets,
                       python_versions)
 
     for python_version in python_versions:
-        with _empty_temp_folder() as tmp_dir:
+        with _empty_tmp_dir() as tmp_dir:
             _run_conda_build_command(python_version = python_version,
                                      output_dir = tmp_dir)
             _convert_conda_package(conda_package = _find_conda_package(tmp_dir),
                                    os_build_targets = os_build_targets,
                                    output_dir = BUILD_OUTPUT_DIR)
             _copy_noarch_dir(src = tmp_dir, dst = BUILD_OUTPUT_DIR)
+
+    _restore_default_build_number_to_meta_yaml()
 
 # Public facing conda uploading func
 def upload_any_conda_packages_in_output_folder():
@@ -345,13 +363,13 @@ def _run_shell_cmd(cmd):
                  "{}".format(e.output.decode("utf-8")))
         raise e
 
-class _empty_temp_folder:
+class _empty_tmp_dir:
     """Use with "with" syntax like "with empty_temp_folder() as tmp:"
     Creates a temporary folder and deletes it after finished being used
     """
     def __enter__(self):
         self.temp_folder = os.path.join(tempfile.gettempdir(),
-                                        ".{}".format(hash(os.times())))
+                                        ".{}".format(uuid4()))
         os.makedirs(self.temp_folder)
         return self.temp_folder
 
@@ -372,6 +390,18 @@ def _determine_current_os():
     architecture = "64" if is_64_bit else "32"
     return "{target_os}-{architecture}".format(target_os = target_os,
                                                architecture = architecture)
+
+def _apply_build_number_to_meta_yaml(build_number: int):
+    meta_yaml = {}
+    with open(META_YAML_FILE_PATH, "r") as f:
+        meta_yaml = yaml.load(f)
+        meta_yaml["build"]["number"] = str(build_number)
+    with open(META_YAML_FILE_PATH, "w") as f:
+        yaml.dump(meta_yaml, f, default_flow_style=False)
+
+def _restore_default_build_number_to_meta_yaml():
+    _apply_build_number_to_meta_yaml(0)
+
 if __name__ == "__main__":
     try:
         _main()

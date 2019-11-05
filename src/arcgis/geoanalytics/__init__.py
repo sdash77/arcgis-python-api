@@ -35,6 +35,59 @@ def get_datastores(gis=None):
 
     return None
 
+def define_output_datastore(datastore=None, template=None):
+    """
+    Sets the `arcgis.env.output_datastore` by providing the datastore and template name
+    to this method. If datastore is None, the `arcgis.env.output_datastore` will reset
+    to default.
+
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    datastore                    Optional Datastore/String. This specifies the big data file
+                                 share to save GeoAnalyticss results to. If specified as None the
+                                 `arcgis.env.output_datastore` will reset to default.  Allowed
+                                 string values are: `spatiotemporal` or `relational`.
+    --------------------------   ---------------------------------------------------------------
+    template                     Optional string. When specified, the `template` determines how
+                                 GeoAnalytics result schema will be formatted. The output will
+                                 be written to a file in the big data file share.
+    ==========================   ===============================================================
+
+    :returns: Boolean
+
+    """
+    import arcgis
+    if isinstance(datastore, str) and \
+       str(datastore).lower() in ["spatiotemporal", "relational"]:
+        arcgis.env.output_datastore = str(datastore).lower()
+        return True
+    elif isinstance(datastore, str) and \
+       not str(datastore).lower() in ["spatiotemporal", "relational"]:
+        raise ValueError("datastore can only ")
+    elif datastore and template:
+        if isinstance(datastore, arcgis.gis.Datastore):
+            arcgis.env.output_datastore = "{path}:{template}".format(path=datastore.path,
+                                                                     template=template)
+        elif isinstance(datastore, str):
+            arcgis.env.output_datastore = "{path}:{template}".format(path=datastore,
+                                                                     template=template)
+        elif isinstance(datastore, arcgis.gis.server.Datastore):
+            path = datastore.properties.path
+            arcgis.env.output_datastore = "{path}:{template}".format(path=datastore,
+                                                                     template=template)
+        else:
+            raise ValueError("Invalid Datastore")
+        return True
+    elif template and datastore is None:
+        raise ValueError("datastore must be specified to set an output template.")
+    elif datastore and template is None:
+        raise ValueError("template must be specified to set the output_datastore.")
+    else:
+        arcgis.env.output_datastore = None
+        return True
+    return False
+
 def is_supported(gis=None):
     """
     Returns True if the GIS supports geoanalytics. If a gis isn't specified,

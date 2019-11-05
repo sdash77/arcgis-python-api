@@ -3,11 +3,18 @@
 FROM jupyter/base-notebook
 
 # Pass in URL to where to get samples ZIP
-ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.4.1.zip"
-ARG githubfolder="arcgis-python-api-1.4.1"
+ARG sampleslink="https://github.com/Esri/arcgis-python-api/archive/v1.6.0.zip"
+ARG githubfolder="arcgis-python-api-1.6.0"
 
 MAINTAINER Esri Docker <docker_sdk@esri.com>
 LABEL vendor="Esri"
+
+# Pinning to Python 3.6
+RUN conda install --quiet --yes \
+    'python=3.6' \
+    && conda clean -tipsy \
+    && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
+
 # Install dependencies for Python API
 RUN conda install -y unzip \
                      pandas \
@@ -21,20 +28,22 @@ RUN conda install -y unzip \
                      seaborn \
                      scikit-image \
                      scikit-learn \
-					 pysal \
-					 pyshp \
-					 keyring \
-    && conda clean -y -a
-RUN conda install jupyter_dashboards -c conda-forge -y
+                     pysal \
+                     pyshp \
+                     keyring \
+    && conda clean -tipsy \
+    && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
+#RUN conda install jupyter_dashboards -c conda-forge -y
 
 # Install latest Python API from Conda
 RUN conda install -c esri arcgis -y \
-    && conda clean -y -a
+    && conda clean -tipsy \
+    && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
 
 # Fix needed for current jupyter notebook view
-RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js
-RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js.map
-RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/outputarea.js
+#RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js
+#RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js.map
+#RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/outputarea.js
 
 # Pull latest SDK from GitHub
 RUN wget -O samples.zip $sampleslink \
@@ -45,8 +54,7 @@ RUN wget -O samples.zip $sampleslink \
            apidoc/ \
            work/ \
            talks/ \
-		   static/ \
-		   environment.yml
+           environment.yml
 		   
 RUN mkdir -p /home/jovyan/.jupyter/custom
 COPY --chown=jovyan:users custom.css /home/jovyan/.jupyter/custom/custom.css

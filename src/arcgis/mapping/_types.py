@@ -142,8 +142,8 @@ class WebMap(collections.OrderedDict):
 
         else:
             #default spatial ref for current web map
-            self._default_spatial_reference = {'wkid': 4326,
-                                               'latestWkid': 4326}
+            self._default_spatial_reference = {'wkid': 102100,
+                                               'latestWkid': 3857}
 
             #pump in a simple, default webmap dict - no layers yet, just basemap
             self._basemap = {
@@ -461,7 +461,7 @@ class WebMap(collections.OrderedDict):
                                  "xoffset": 0,
                                  "yoffset": 12,
                                  "type": "esriPMS",
-                                 "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
+                                 "url": "https://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
                                  "contentType": "image/png",
                                  "width": 24,
                                  "height": 24}
@@ -607,8 +607,11 @@ class WebMap(collections.OrderedDict):
                                                          out_sr=4326)
 
                         #process and return the result
-                        e = [result[0]['x'],result[0]['y'],result[1]['x'],result[1]['y']]
-                        return ','.join(str(i) for i in e)
+                        if self._contains_nans(result):
+                            return ""
+                        else:
+                            e = [result[0]['x'],result[0]['y'],result[1]['x'],result[1]['y']]
+                            return ','.join(str(i) for i in e)
 
             #case when there is no spatialReference. Then simply extract the extent
             if 'xmin' in self._extent:
@@ -618,6 +621,15 @@ class WebMap(collections.OrderedDict):
 
         #if I don't know how to process the extent.
         return self._extent
+
+    def _contains_nans(self, result):
+        """a bool of if projection output `result` contains any NaNs"""
+        for value in result:
+            if "nan" in str(value['x']).lower():
+                return True
+            if "nan" in str(value['y']).lower():
+                return True
+        return False
 
     def save(self, item_properties, thumbnail=None, metadata=None, owner=None, folder=None):
         """
@@ -1102,7 +1114,7 @@ class OfflineMapAreaManager(object):
             aviris_layer = wm.layers[-1]
 
             north_bed = wm.definition.bookmarks[-1]['name']
-            wm.offline_areas.create(extent=north_bed, item_properties=item_prop,
+            wm.offline_areas.create(area=north_bed, item_properties=item_prop,
                                   folder='clear_lake', min_scale=9000, max_scale=4500,
                                    layers_to_ignore=[aviris_layer])
 
@@ -1135,7 +1147,7 @@ class OfflineMapAreaManager(object):
 
         if isinstance(area, str):  # bookmark specified
             _bookmark = area
-        elif isinstance(area, list):  # extent specified as list
+        elif isinstance(area, (list, tuple)):  # extent specified as list
             _extent = {'xmin': area[0][0],
                        'ymin': area[0][1],
                        'xmax': area[1][0],
@@ -1268,7 +1280,30 @@ class OfflineMapAreaManager(object):
         # region call CreateMapArea tool
         from arcgis.geoprocessing._tool import Toolbox
         pkg_tb = Toolbox(url=self._url, gis=self._gis)
-        oma_result = pkg_tb.create_map_area(self._item.id, _bookmark, _extent, output_name=output_name)
+
+        if self._gis.version >= [7,2]:
+
+            if _extent:
+                area = _extent
+            elif _bookmark:
+                area = {'name' : _bookmark}
+
+            if isinstance(area, str):
+                area_type = "BOOKMARK"
+            elif isinstance(area, Polygon) or \
+                 (isinstance(area, dict) and 'rings' in area):
+                area_type = "POLYGON"
+            elif isinstance(area, Envelope) or \
+                 (isinstance(area, dict) and 'xmin' in area):
+                area_type = "ENVELOPE"
+            elif isinstance(area, (list, tuple)):
+                area_type = "ENVELOPE"
+            oma_result = pkg_tb.create_map_area(map_item_id=self._item.id,
+                                                area_type=area_type,
+                                                area=area,
+                                                output_name=output_name)
+        else:
+            oma_result = pkg_tb.create_map_area(self._item.id, _bookmark, _extent, output_name=output_name)
         # endregion
 
         # Call update on Item with Refresh Information
@@ -1279,12 +1314,12 @@ class OfflineMapAreaManager(object):
             'title' : item_properties['title'] if 'title' in item_properties else None,
             'typeKeywords' : "Map, Map Area",
             'clearEmptyFields' : True,
-            'text' : json.dumps({
+            'text' : json.dumps({"mapAreas": {
                 'mapAreaTileScale' : {
                     'minScale': min_scale,
                     'maxScale' : max_scale},
                 "mapAreaRefreshParams": map_area_refresh_params
-            })
+            }})
         }
         item.update(item_properties=update_items)
         update_items = {
@@ -1797,7 +1832,59 @@ class MapImageLayerManager(_GISResource):
         params = {
             "f": "json"
         }
-        return self._con._post(url, params)
+        return self._con.post(url, params)
+    #----------------------------------------------------------------------
+    def import_tiles(self, item,
+                     levels=None, extent=None,
+                     merge=False, replace=False):
+        """
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item                Required ItemId or Item. The TPK file's item id.
+                            This TPK file contains to-be-extracted bundle files
+                            which are then merged into an existing cache service.
+        ---------------     ----------------------------------------------------
+        levels              Optional String / List of integers, The level of details
+                            to update. Example: "1,2,10,20" or [1,2,10,20]
+        ---------------     ----------------------------------------------------
+        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
+                            example: "-100,-50,200,500" or
+                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is false and applicable to
+                            compact cache storage format. It controls whether
+                            the bundle files from the TPK file are merged with
+                            the one in the existing cached service. Otherwise,
+                            the bundle files are overwritten.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean. Default is false, applicable to
+                            compact cache storage format and used when
+                            merge=true. It controls whether the new tiles will
+                            replace the existing ones when merging bundles.
+        ===============     ====================================================
+
+        :returns: Dict
+
+        """
+        params = {
+            'f' : 'json',
+            'sourceItemId' : None,
+            'extent' : extent,
+            'levels' : levels,
+            'mergeBundle' : merge,
+            'replaceTiles' : replace
+        }
+        if isinstance(item, str):
+            params['sourceItemId'] = item
+        elif isinstance(item, Item):
+            params['sourceItemId'] = item.itemid
+        else:
+            raise ValueError("The `item` must be a string or Item")
+        url = self._url + "/importTiles"
+        res = self._con.post(url, params)
+        return res
     #----------------------------------------------------------------------
     def update_tiles(self, levels=None, extent=None):
         """
@@ -1865,7 +1952,7 @@ class MapImageLayerManager(_GISResource):
             "f" : "json",
             "rerun": code
         }
-        return self._con._post(url, params)
+        return self._con.post(url, params)
     # ----------------------------------------------------------------------
     def edit_tile_service(self,
                           service_definition=None,
@@ -1977,18 +2064,17 @@ class MapImageLayer(Layer):
     def _populate_layers(self):
         layers = []
         tables = []
-
-        for lyr in self.properties.layers:
-            if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
-                lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
-            else:
-                lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
-            layers.append(lyr)
-
-        for lyr in self.properties.tables:
-            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, self)
-            tables.append(lyr)
-
+        if self.properties.layers:
+            for lyr in self.properties.layers:
+                if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
+                    lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
+                else:
+                    lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
+                layers.append(lyr)
+        if self.properties.tables:
+            for lyr in self.properties.tables:
+                lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, self)
+                tables.append(lyr)
         # fsurl = self.url + '/layers'
         # params = { "f" : "json" }
         # allayers = self._con.post(fsurl, params, token=self._token)
@@ -2001,17 +2087,39 @@ class MapImageLayer(Layer):
 
         self.layers = layers
         self.tables = tables
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+        patternDict = {}
+        myDict = {}
+        for key,value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
 
     @property
     def manager(self):
         if self._admin is None:
             """accesses the administration service"""
-            url = self._url
-            res = search("/rest/", url).span()
-            addText = "admin/"
-            part1 = url[:res[1]]
-            part2 = url[res[1]:]
-            adminURL = url.replace("/rest/", "/admin/").replace("/MapServer", ".MapServer")#"%s%s%s" % (part1, addText, part2)
+            if self._gis._portal.is_arcgisonline:
+                rd = {'/rest/services/': '/rest/admin/services/'}
+            else:
+                rd = {"/rest/" : "/admin/",
+                      "/MapServer" : ".MapServer"}
+            adminURL = self._str_replace(self._url, rd)
+            #res = search("/rest/", url).span()
+            #addText = "admin/"
+            #part1 = url[:res[1]]
+            #part2 = url[res[1]:]
+            #adminURL = url.replace("/rest/", "/admin/").replace("/MapServer", ".MapServer")#"%s%s%s" % (part1, addText, part2)
 
             self._admin = MapImageLayerManager(adminURL, self._gis, self)
         return self._admin

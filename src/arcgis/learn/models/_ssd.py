@@ -1,58 +1,68 @@
+from ._arcgis_model import ArcGISModel
+import tempfile
+from pathlib import Path
+import json
+from ._codetemplate import code
+import logging
+logger = logging.getLogger() 
+import os, csv
+import warnings
+from warnings import warn
+from . import _tracker_util
+
+HAS_OPENCV = True
+HAS_FASTAI = True
+HAS_ARCPY = True
+
 try:
     import torch
-    from fastai.vision.learner import create_cnn
+    import numpy as np
+    from fastprogress import progress_bar
+    from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
+    from fastai.vision.data import ImageDataBunch
+    from fastai.vision import ImageList
+    from fastai.vision import imagenet_stats, normalize
+    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from torchvision.models import resnet34
-    import numpy as np
+    from torchvision.models import mobilenet_v2
+    from torchvision import models
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
+    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
-    import json
-    import os
-    from pathlib import Path
-    from ._codetemplate import code
-    HAS_FASTAI = True
+    from fastai.callbacks import EarlyStoppingCallback
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
+    from ._unet_utils import is_no_color
+    from torch.nn import Module as NnModule
+    import PIL
+    from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
+    from .._video_utils import VideoUtils
 except Exception as e:
+    class NnModule():
+        pass
     HAS_FASTAI = False
 
-def _raise_fastai_import_error():
-    raise Exception('This module requires fastai, PyTorch and torchvision as its dependencies. Install it using "conda install -c pytorch -c fastai fastai pytorch torchvision"')
+try:
+    import cv2
+except Exception:
+    HAS_OPENCV = False
 
-_EMD_TEMPLATE = {
-    "Framework": "arcgis.learn.models._inferencing",
-    "InferenceFunction":"ArcGISObjectDetector.py",
-    "ModelConfiguration": "_DynamicSSD",
-    "ModelFile":"",
-    "ModelType":"ObjectDetection",
-    "ImageHeight":None,
-    "ImageWidth":None,
-    "ExtractBands":[0,1,2],
-    "Grids":None,
-    "Zooms":None,
-    "Ratios":None,
-    "Classes" : []
-}
+try:
+    import arcpy
+except Exception:
+    HAS_ARCPY = False
 
-_CLASS_TEMPLATE = {
-        "Value": 0,
-        "Name": "Pool",
-        "Color": [0, 255, 0]
-      }
 
-class _EmptyData():
-    def __init__(self, path, c, loss_func, chip_size):
-        self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        self.c = c
-        self.loss_func = loss_func
-        self.chip_size = chip_size
+def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
 
-class SingleShotDetector(object):
+
+class SingleShotDetector(ArcGISModel):
 
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
     and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
-
+    
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -80,46 +90,161 @@ class SingleShotDetector(object):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    location_loss_factor    Optional float. Sets the weight of the bounding box
+                            loss. This should be strictly between 0 and 1. This 
+                            is default `None` which gives equal weight to both 
+                            location and classification loss. This factor
+                            adjusts the focus of model on the location of 
+                            bounding box.
+    ---------------------   -------------------------------------------
+    ssd_version             Optional int within [1,2]. Use version=1 for arcgis v1.6.2 or earlier
     =====================   ===========================================
-
+    
     :returns: `SingleShotDetector` Object
     """
 
-    def __init__(self, data, grids=[4, 2, 1], zooms=[0.7, 1., 1.3], ratios=[[1., 1.], [1., 0.5], [0.5, 1.]],
-                 backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None):
+    def __init__(self, data, grids=None, zooms=[1.], ratios=[[1., 1.]],
+                 backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None, location_loss_factor=None, ssd_version=2):
 
-        super().__init__()
+        super().__init__(data, backbone)
 
-        self._device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+        # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
+        if not ssd_version in [1, 2]:
+            raise Exception("ssd_version can be only [1,2]")
 
-        if not HAS_FASTAI:
-            _raise_fastai_import_error()
+        if location_loss_factor is not None:
+            if not ((location_loss_factor > 0) and (location_loss_factor < 1)):
+                raise Exception('`location_loss_factor` should be greater than 0 and less than 1')
+        self.location_loss_factor = location_loss_factor
+
+        self._code = code
+        self.ssd_version = ssd_version
 
         if backbone is None:
-            backbone = resnet34
+            self._backbone = models.resnet34
+            backbone_name = 'res'
+        elif type(backbone) is str:
+            self._backbone = getattr(models, backbone)
+            backbone_name = backbone[:3]
+        else:
+            self._backbone = backbone
+            backbone_name = 'custom'
 
-        self._create_anchors(grids, zooms, ratios)
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        num_features = model_sizes(create_body(backbone), size=(data.chip_size, data.chip_size))[-1][-1]
+        backbone_cut = None
+        backbone_split = None
 
-        ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias)
+        if self._backbone == models.mobilenet_v2:
+            backbone_cut = -1
+            backbone_split = _mobilenet_split
 
-        self._data = data
-        self.learn = create_cnn(data=data, arch=backbone, custom_head=ssd_head)
+        if ssd_version == 1:
+            if grids == None:
+                grids =[4,2,1]
+                
+            self._create_anchors(grids, zooms, ratios)
+
+            feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
+            num_features = feature_sizes[-1][-1]
+            num_channels = feature_sizes[-1][1]
+
+            ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+        elif ssd_version == 2:
+
+            # find bounding boxes height and width
+        
+            if grids is None:
+                logger.info("Computing optimal grid size...")
+                hw = data.height_width
+                hw = np.array(hw)
+                
+                # find most suitable centroids for dataset
+                centroid = kmeans(hw , 1) 
+                avg = avg_iou(hw, centroid)
+
+                for num_anchor in range(2, 5):
+                    new_centroid = kmeans(hw, num_anchor)
+                    new_avg = avg_iou(hw, new_centroid)
+                    if (new_avg - avg) < 0.05:
+                       break
+                    avg = new_avg
+                    centroid = new_centroid.copy()
+
+                # find grid size
+
+                grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
+                if grids[-1] == 0:
+                    grids[-1] = 1
+
+                grids = list(set(grids))
+                grids.sort(reverse = True)
+            
+            self._create_anchors(grids, zooms, ratios)
+
+            feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+            num_features = feature_sizes[-1][-1]
+            num_channels = feature_sizes[-1][1] 
+
+            if grids[0] > 8 and abs(num_features - grids[0]) > 4 and backbone_name == 'res':
+                num_features = feature_sizes[-2][-1]
+                num_channels = feature_sizes[-2][1]
+                backbone_cut = -3
+                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+            else:
+                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+        else:
+            raise Exception('SSDVersion can only be 1 or 2')
+
+        self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
         self.learn.model = self.learn.model.to(self._device)
-
-        if pretrained_path is not None:
-            self.load(pretrained_path)
 
         if focal_loss:
             self._loss_f = FocalLoss(data.c)
         else:
             self._loss_f = BCE_Loss(data.c)
-
         self.learn.loss_func = self._ssd_loss
+
+        _set_multigpu_callback(self)
+        if pretrained_path is not None:
+            self.load(pretrained_path)        
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
+
+    @property
+    def supported_backbones(self):
+        return [*self._resnet_family, *self._densenet_family, *self._vgg_family, models.mobilenet_v2.__name__]
+
+    @classmethod
+    def from_model(cls, emd_path, data=None):
+
+        """
+        Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+        
+        :returns: `SingleShotDetector` Object
+        """
+        return cls.from_emd(data, emd_path)
 
     @classmethod
     def from_emd(cls, data, emd_path):
+
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
 
@@ -133,56 +258,52 @@ class SingleShotDetector(object):
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
-
+        
         :returns: `SingleShotDetector` Object
         """
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
+        backbone = emd.get('backbone', 'resnet34')
+        ssd_version = int(emd.get('SSDVersion', 1))
+        chip_size = emd["ImageWidth"]
+
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+        class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+        
+        resize_to = emd.get('resize_to')
+        if isinstance(resize_to, list):
+            resize_to = (resize_to[0], resize_to[1])
+
+        data_passed = True
+        # Create an image databunch for when loading the model using emd (without training data)
         if data is None:
-            empty_data = _EmptyData(path='str', loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
-            return cls(empty_data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
-        else:
-            return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file))
+            data_passed = False
+            train_tfms = []
+            val_tfms = []
+            ds_tfms = (train_tfms, val_tfms)
 
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                
+                sd = ImageList([], path=tempfile.TemporaryDirectory().name).split_by_idx([])
+                tempdata = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                tempdata.chip_size = chip_size
+                tempdata.class_mapping = class_mapping
+                tempdata.classes = ['background'] + list(class_mapping.values())
+                data = tempdata
+                data.c += 1 # Add 1 for background class
 
-    def lr_find(self):
-        """
-        Runs the Learning Rate Finder, and displays the graph of it's output.
-        Helps in choosing the optimum learning rate for training the model.
-        """
-        from IPython.display import clear_output
-        self.learn.lr_find()
-        clear_output()
-        self.learn.recorder.plot()
+        data.resize_to = resize_to
+        ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
 
-    def fit(self, epochs=10, lr=slice(1e-4,3e-3)):
-        """
-        Train the model for the specified number of epocs and using the
-        specified learning rates
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        epochs                  Required integer. Number of cycles of training
-                                on the data. Increase it if underfitting.
-        ---------------------   -------------------------------------------
-        lr                      Required float or slice of floats. Learning rate
-                                to be used for training the model. Select from
-                                the `lr_find` plot.
-        =====================   ===========================================
-        """
-        self.learn.fit(epochs, lr)
-
-    def unfreeze(self):
-        """
-        Unfreezes the earlier layers of the detector for fine-tuning.
-        """
-        self.learn.unfreeze()
+        if not data_passed:
+            ssd.learn.data.single_ds.classes = ssd._data.classes
+            ssd.learn.data.single_ds.y.classes = ssd._data.classes
+        
+        return ssd
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
 
@@ -216,7 +337,10 @@ class SingleShotDetector(object):
         return torch.cat([ctr-hw/2, ctr+hw/2], dim=1)
 
     def _get_y(self, bbox, clas):
-        bbox = bbox.view(-1,4) #/sz
+        try:
+            bbox = bbox.view(-1, 4)  # /sz
+        except Exception:
+            bbox = torch.zeros(size=[0, 4])
         bb_keep = ((bbox[:,2]-bbox[:,0])>0).nonzero()[:,0]
         return bbox[bb_keep],clas[bb_keep]
 
@@ -234,7 +358,6 @@ class SingleShotDetector(object):
         for i,o in enumerate(prior_idx): gt_idx[o] = i
         return gt_overlap, gt_idx
 
-
     def _ssd_1_loss(self, b_c, b_bb, bbox, clas, print_it=False):
         bbox,clas = self._get_y(bbox,clas)
         bbox = self._normalize_bbox(bbox)
@@ -244,7 +367,7 @@ class SingleShotDetector(object):
         try:
             gt_overlap,gt_idx = self._map_to_ground_truth(overlaps,print_it)
         except Exception as e:
-            return 0.,0.
+            return torch.tensor(0., requires_grad=True).to(self._device), torch.tensor(0., requires_grad=True).to(self._device)
         gt_clas = clas[gt_idx]
         pos = gt_overlap > 0.4
         pos_idx = torch.nonzero(pos)[:,0]
@@ -255,13 +378,16 @@ class SingleShotDetector(object):
         return loc_loss, clas_loss
 
     def _ssd_loss(self, pred, targ1, targ2, print_it=False):
-        lcs,lls = 0.,0.
+        lcs, lls = 0., 0.
         for b_c,b_bb,bbox,clas in zip(*pred, targ1, targ2):
-            loc_loss,clas_loss = self._ssd_1_loss(b_c,b_bb,bbox.to(self._device),clas.to(self._device),print_it)
+            loc_loss, clas_loss = self._ssd_1_loss(b_c, b_bb,bbox.to(self._device), clas.to(self._device), print_it)
             lls += loc_loss
             lcs += clas_loss
         if print_it: print('loc: {lls}, clas: {lcs}'.format(lls=lls, lcs=lcs))
-        return lls+lcs
+        if self.location_loss_factor is None:
+            return lls + lcs
+        else:
+            return self.location_loss_factor * lls + (1 - self.location_loss_factor) * lcs
 
     def _intersect(self,box_a, box_b):
         max_xy = torch.min(box_a[:, None, 2:], box_b[None, :, 2:])
@@ -270,7 +396,7 @@ class SingleShotDetector(object):
         return inter[:, :, 0] * inter[:, :, 1]
 
     def _box_sz(self, b):
-        return ((b[:, 2]-b[:, 0]) * (b[:, 3]-b[:, 1]))
+        return (b[:, 2]-b[:, 0]) * (b[:, 3]-b[:, 1])
 
     def _jaccard(self, box_a, box_b):
         inter = self._intersect(box_a, box_b)
@@ -280,124 +406,337 @@ class SingleShotDetector(object):
     def _normalize_bbox(self, bbox):
         return (bbox+1.)/2.
 
-    def _create_zip(self, zipname, path):
-        import shutil
-        zip_file = shutil.make_archive(zipname, 'zip', path)
-        shutil.move(zip_file, path)
+    @property
+    def _model_metrics(self):
+        return {'average_precision_score': self.average_precision_score(show_progress=False)}
 
     def _create_emd(self, path):
         import random
-        _EMD_TEMPLATE['ModelFile'] = path.name
-        _EMD_TEMPLATE['ImageHeight'] = self._data.chip_size
-        _EMD_TEMPLATE['ImageWidth'] = self._data.chip_size
-        _EMD_TEMPLATE['Grids'] = self.grids
-        _EMD_TEMPLATE['Zooms'] = self.zooms
-        _EMD_TEMPLATE['Ratios'] = self.ratios
-        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
-            _CLASS_TEMPLATE["Value"] = i
-            _CLASS_TEMPLATE["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)]
-            _CLASS_TEMPLATE["Color"] = color
-            _EMD_TEMPLATE['Classes'].append(_CLASS_TEMPLATE.copy())
+        super()._create_emd(path)
 
-        json.dump(_EMD_TEMPLATE, open(path.with_suffix('.emd'), 'w'), indent=4)
+        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        self._emd_template["ModelConfiguration"] = "_DynamicSSD"
+        self._emd_template["ModelType"] = "ObjectDetection"
+        self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['backbone'] = self._backbone.__name__
+        self._emd_template['Grids'] = self.grids
+        self._emd_template['Zooms'] = self.zooms
+        self._emd_template['Ratios'] = self.ratios
+        self._emd_template['SSDVersion'] = self.ssd_version
+        self._emd_template['Classes'] = []
+
+        class_data = {}
+        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
+            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+            class_data["Value"] = inverse_class_mapping[class_name]
+            class_data["Name"] = class_name
+            color = [random.choice(range(256)) for i in range(3)]
+            class_data["Color"] = color
+            self._emd_template['Classes'].append(class_data.copy())
+
+        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
+
         return path.stem
 
-    def save(self, name_or_path):
-        """
-        Saves the model weights, creates an Esri Model Definition and Deep
-        Learning Package zip for deployment to Image Server or ArcGIS Pro
+    def _create_tfonnx_emd(self, saved_path, batch_size):
+        import random
+        super()._create_emd(saved_path)
 
-        Train the model for the specified number of epocs and using the
-        specified learning rates
+        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        self._emd_template["ModelConfiguration"] = "_SSDTensorflow"
+        self._emd_template["ModelType"] = "ObjectDetection"
+        self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['backbone'] = self._backbone.__name__
+        self._emd_template['Grids'] = self.grids
+        self._emd_template['Zooms'] = self.zooms
+        self._emd_template['Ratios'] = self.ratios
+        self._emd_template['SSDVersion'] = self.ssd_version
+        self._emd_template['Classes'] = []
+        self._emd_template['BatchSize'] = batch_size
 
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to save. It
-                                stores it at the pre-defined location. If path
-                                is passed then it stores at the specified path
-                                with model name as directory name. and creates
-                                all the intermediate directories.
-        =====================   ===========================================
-        """
-        if '\\' in name_or_path or '/' in name_or_path:
-            path = Path(name_or_path)
-            name = path.parts[-1]
-            # to make fastai save to both path and with name
-            temp = self.learn.path
-            self.learn.path = path
-            self.learn.model_dir = ''
-            if not os.path.exists(self.learn.path):
-                os.makedirs(self.learn.path)
-            saved_path = self.learn.save(name, return_path=True)
-            # undoing changes to self.learn.path and self.learn.model
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
-        else:
-            temp = self.learn.path
-            # fixing fastai bug
-            self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
-            if not os.path.exists(self.learn.path / self.learn.model_dir):
-                os.makedirs(self.learn.path / self.learn.model_dir)
-            saved_path = self.learn.save(name_or_path,  return_path=True)
-            # undoing changes to self.learn.path
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
+        class_data = {}
+        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
+            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+            class_data["Value"] = inverse_class_mapping[class_name]
+            class_data["Name"] = class_name
+            color = [random.choice(range(256)) for i in range(3)]
+            class_data["Color"] = color
+            self._emd_template['Classes'].append(class_data.copy())
 
-        zip_name = self._create_emd(saved_path)
-        with open(saved_path.parent / _EMD_TEMPLATE['InferenceFunction'], 'w') as f:
-            f.write(code)
-        self._create_zip(zip_name, str(saved_path.parent))
-        print('Created model files at {spp}'.format(spp=saved_path.parent))
+        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
 
-
-    def load(self, name_or_path):
-        """
-        Loads a saved model for inferencing or fine tuning from the specified
-        path or model name.
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        name_or_path            Required string. Name of the model to load from
-                                the pre-defined location. If path is passed then
-                                it loads from the specified path with model name
-                                as directory name. Path to ".pth" file can also
-                                be passed
-        =====================   ===========================================
-        """
-        if '\\' in name_or_path or '/' in name_or_path:
-            path = Path(name_or_path)
-            # to make fastai from both path and with name
-            temp = self.learn.path
-            if path.is_file():
-                name = path.stem
-                self.learn.path = path.parent
-            else:
-                name = path.parts[-1]
-                self.learn.path = path
-            self.learn.model_dir = ''
-            self.learn.load(name)
-            # undoing changes to self.learn.path and self.learn.model_dir
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
-        else:
-            temp = self.learn.path
-            # fixing fastai bug
-            self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
-            self.learn.load(name_or_path)
-            # undoing changes to self.learn.path
-            self.learn.path = temp
-            self.learn.model_dir = 'models'
-
+        return saved_path.stem
+    
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
+
         """
         Displays the results of a trained model on a part of the validation set.
-        """
+        """ 
+        if rows > self._data.batch_size:
+            rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
 
+    def predict_video(
+        self,
+        input_video_path,
+        metadata_file,
+        threshold=0.5,
+        nms_overlap=0.1,
+        track=False,
+        visualize=False,
+        output_file_path=None,
+        multiplex=False,
+        multiplex_file_path=None,
+        tracker_options={
+            'assignment_iou_thrd': 0.3,
+            'vanish_frames': 40,
+            'detect_frames': 10
+        },
+        visual_options={
+            'show_scores': True,
+            'show_labels': True,
+            'thickness': 2,
+            'fontface': 0,
+            'color': (255, 255, 255)
+        }
+    ):
 
+        """
+        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
 
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        input_video_path        Required. Path to the video file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        metadata_file           Required. Path to the metadata csv file where
+                                the predictions will be saved in VMTI format.
+        ---------------------   -------------------------------------------
+        threshold               Optional float. The probability above which
+                                a detection will be considered.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        track                   Optional bool. Set this parameter as True to
+                                enable object tracking. 
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. If True a video is saved
+                                with prediction results.
+        ---------------------   -------------------------------------------
+        output_file_path        Optional path. Path of the final video to be saved.
+                                If not supplied, video will be saved at path input_video_path
+                                appended with _prediction.
+        ---------------------   -------------------------------------------
+        multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
+        ---------------------   -------------------------------------------
+        multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
+                                By default a new file with _multiplex.MOV extension is saved
+                                in the same folder.
+        ---------------------   -------------------------------------------
+        tracking_options        Optional dictionary. Set different parameters for
+                                object tracking. assignment_iou_thrd parameter is used
+                                to assign threshold for assignment of trackers, 
+                                vanish_frames is the number of frames the object should
+                                be absent to consider it as vanished, detect_frames 
+                                is the number of frames an object should be detected
+                                to track it.
+        ---------------------   -------------------------------------------
+        visual_options          Optional dictionary. Set different parameters for
+                                visualization.
+                                show_scores boolean, to view scores on predictions,
+                                show_labels boolean, to view labels on predictions,
+                                thickness integer, to set the thickness level of box,
+                                fontface integer, fontface value from opencv values,
+                                color tuple (B, G, R), tuple containing values between
+                                0-255.
+        =====================   ===========================================
+        
+        """
+
+        VideoUtils.predict_video(
+            self,
+            input_video_path,
+            metadata_file,
+            threshold,
+            nms_overlap,
+            track, visualize,
+            output_file_path,
+            multiplex,
+            multiplex_file_path,
+            tracker_options,
+            visual_options
+        )
+
+    def predict(
+        self,
+        image_path,
+        threshold=0.5,
+        nms_overlap=0.1,
+        return_scores=False,
+        visualize=False
+    ):
+
+        """
+        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        image_path              Required. Path to the image file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        threshold               Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        return_scores           Optional boolean. Will return the probability
+                                scores of the bounding box predictions if True.
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. Displays the image with
+                                predicted bounding boxes if True.
+        =====================   ===========================================
+        
+        :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
+        """
+        if not HAS_OPENCV:
+            raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
+
+        if isinstance(image_path, str):
+            image = cv2.imread(image_path)
+        else:
+            image = image_path
+
+        orig_height, orig_width, _ = image.shape
+        orig_frame = image.copy()
+
+        if self._data.resize_to is not None:
+            if isinstance(self._data.resize_to, tuple):
+                image = cv2.resize(image, self._data.resize_to)
+            else:
+                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
+
+        height, width, _ = image.shape
+
+        if self._data.chip_size is not None:
+            chips = _get_image_chips(image, self._data.chip_size)
+        else:
+            chips = [{'width': width, 'height': height, 'xmin': 0, 'ymin': 0, 'chip': image, 'predictions': []}]
+
+        valid_tfms = self._data.valid_ds.tfms
+        self._data.valid_ds.tfms = []
+
+        for chip in chips:
+            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
+            if bbox:
+                scores = bbox.scores
+                bboxes, lbls = bbox._compute_boxes()
+                bboxes.add_(1).mul_(torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
+                for index, bbox in enumerate(bboxes):
+                    if lbls is not None:
+                        label = lbls[index]
+                    else:
+                        label = 'Default'
+
+                    data = bb2hw(bbox)
+                    if not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                        chip['predictions'].append({
+                            'xmin': data[0],
+                            'ymin': data[1],
+                            'width': data[2],
+                            'height': data[3],
+                            'score': float(scores[index]),
+                            'label': label
+                        })
+
+        self._data.valid_ds.tfms = valid_tfms
+
+        predictions, labels, scores = _get_transformed_predictions(chips)
+
+        y_ratio = orig_height/height
+        x_ratio = orig_width/width
+
+        for index, prediction in enumerate(predictions):
+            prediction[0] = prediction[0]*x_ratio
+            prediction[1] = prediction[1]*y_ratio
+            prediction[2] = prediction[2]*x_ratio
+            prediction[3] = prediction[3]*y_ratio
+
+            # Clip xmin
+            if prediction[0] < 0: 
+                prediction[2] = prediction[2] + prediction[0]
+                prediction[0] = 1
+
+            # Clip width when xmax greater than original width
+            if prediction[0] + prediction[2] > orig_width:
+                prediction[2] = (prediction[0] + prediction[2]) - orig_width
+
+            # Clip ymin
+            if prediction[1] < 0:
+                prediction[3] = prediction[3] + prediction[1]
+                prediction[1] = 1
+
+            # Clip height when ymax greater than original height
+            if prediction[1] + prediction[3] > orig_height:
+                prediction[3] = (prediction[1] + prediction[3]) - orig_height
+
+            predictions[index] = [
+                prediction[0],
+                prediction[1],
+                prediction[2],
+                prediction[3]
+            ]      
+
+        if visualize:
+            image = _draw_predictions(orig_frame, predictions, labels)
+            import matplotlib.pyplot as plt
+            plt.xticks([])
+            plt.yticks([])
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            plt.imshow(PIL.Image.fromarray(image))
+
+        if return_scores:
+            return predictions, labels, scores
+        else:
+            return predictions, labels
+
+    def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
+
+        """
+        Computes average precision on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        detect_thresh           Optional float. The probabilty above which
+                                a detection will be considered for computing
+                                average precision.
+        ---------------------   -------------------------------------------
+        iou_thresh              Optional float. The intersection over union
+                                threshold with the ground truth labels, above
+                                which a predicted bounding box will be
+                                considered a true positive.
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                average precision otherwise returns mean
+                                average precision.                        
+        =====================   ===========================================
+        
+        :returns: `dict` if mean is False otherwise `float`
+        """        
+        aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
+        if mean:
+            import statistics
+            return statistics.mean(aps)
+        else:
+            return dict(zip(self._data.classes[1:], aps))

@@ -31,9 +31,10 @@ class _DeepCloner():
     A class to handle all of the deep cloning actions
     """
     def __init__(self, target, items=None, folder=None, item_extent=None, service_extent=None,
-                 use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None):
+                 use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None, owner=None):
         self._graph = {}
         self.folder = folder
+        self.owner = owner
         self._logger = logging.getLogger()
         self.target = target
         self._items = items
@@ -42,7 +43,7 @@ class _DeepCloner():
         self._use_org_basemap = use_org_basemap
         self._copy_data = copy_data
         self._search_existing_items=search_existing_items
-        self._clone_mapping = {'Item IDs': {}, 'Group IDs': {}, 'Services': {}}
+        self._clone_mapping = {'Item IDs': {}, 'Group IDs': {}, 'Services': {}, 'Web Tools' : {}}
         if item_mapping is not None:
             self._clone_mapping['Item IDs'] = item_mapping
         if group_mapping is not None:
@@ -342,7 +343,7 @@ class _DeepCloner():
                     item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view,
                                                                 view_sources, view_source_fields, features=None, data=data, folder=self.folder, thumbnail=None, 
                                                                 portal_item=item, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, 
-                                                                search_existing=self._search_existing_items)
+                                                                search_existing=self._search_existing_items, owner=self.owner)
                         
                     for source_fs_definition in source_fs_definitions:
                         item_definition.add_child(source_fs_definition)
@@ -357,7 +358,7 @@ class _DeepCloner():
                     layers_definition['tables'].append(properties)
 
                 item_definition = _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, is_view, features=None, data=data, folder=self.folder,
-                                                            thumbnail=None, portal_item=item, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items)
+                                                            thumbnail=None, portal_item=item, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
             self._graph[item.id] = item_definition
 
         # If the item is a workforce find the group, maps and services that support the project
@@ -370,10 +371,10 @@ class _DeepCloner():
             group_item_definition = self._get_group_definition(group)
             self._graph[group_id] = group_item_definition
 
-            wf_item_definition = self._get_item_definition(item)
-            wf_item_definition.sharing['groups'].append(group_id)
-            self._graph[item.id] = wf_item_definition
-            wf_item_definition.add_child(group_item_definition)
+            item_definition = self._get_item_definition(item)
+            item_definition.sharing['groups'].append(group_id)
+            self._graph[item.id] = item_definition
+            item_definition.add_child(group_item_definition)
 
             # Process the services
             services = ['dispatchers', 'assignments', 'workers', 'tracks']
@@ -381,11 +382,11 @@ class _DeepCloner():
                 item_id = _deep_get(workforce_json, service, 'serviceItemId')
                 if item_id is not None:
                     service_item = source.content.get(item_id)
-                    item_definition = self._get_item_definitions(service_item)
-                    self._graph[item_id] = item_definition
-                    wf_item_definition.add_child(item_definition)
-                    item_definition.sharing['groups'].append(group_id)
-                    item_definition.add_child(group_item_definition)
+                    layer_item_definition = self._get_item_definitions(service_item)
+                    self._graph[item_id] = layer_item_definition
+                    item_definition.add_child(layer_item_definition)
+                    layer_item_definition.sharing['groups'].append(group_id)
+                    layer_item_definition.add_child(group_item_definition)
 
 
             # Process the web maps
@@ -394,24 +395,34 @@ class _DeepCloner():
                 item_id = _deep_get(workforce_json, web_map)
                 if item_id is not None:
                     web_map_item = source.content.get(item_id)
-                    item_definition = self._get_item_definitions(web_map_item)
-                    item_definition.sharing['groups'].append(group_id)
-                    wf_item_definition.add_child(item_definition)
-                    item_definition.add_child(group_item_definition)
+                    map_item_definition = self._get_item_definitions(web_map_item)
+                    map_item_definition.sharing['groups'].append(group_id)
+                    item_definition.add_child(map_item_definition)
+                    map_item_definition.add_child(group_item_definition)
 
             # Handle any app integrations
             integrations = _deep_get(workforce_json, 'assignmentIntegrations')
             if integrations is not None:
                 for integration in integrations:
+                    url_templates = []
                     url_template = _deep_get(integration, 'urlTemplate')
                     if url_template is not None:
+                        url_templates.append(url_template)
+
+                    assignment_types = _deep_get(integration, 'assignmentTypes')
+                    if assignment_types is not None:
+                        for key, value in assignment_types.items():
+                            url_template = _deep_get(value, 'urlTemplate')
+                            if url_template is not None:
+                                url_templates.append(url_template)
+                    
+                    for url_template in url_templates:
                         item_ids = re.findall('itemID=[0-9A-F]{32}', url_template, re.IGNORECASE)
                         for item_id in item_ids:
                             integration_item = source.content.get(item_id[7:])
-                            item_definition = self._get_item_definitions(integration_item)
-                            self._graph[item_id[7:]] = item_definition
-                            wf_item_definition.add_child(item_definition)
-
+                            integration_item_definition = self._get_item_definitions(integration_item)
+                            self._graph[item_id[7:]] = integration_item_definition
+                            item_definition.add_child(integration_item_definition)
 
         # If the item is a form find the feature service that supports it
         elif item['type'] == 'Form':
@@ -526,13 +537,13 @@ class _DeepCloner():
         """
 
         # Create folder if it doesn't already exist
-        user = self.target.users.me
+        user = self.target.users.get(self.owner)
         target_folder = None
         if self.folder is not None:
             folders = user.folders
             target_folder = next((f for f in folders if f['title'].lower() == self.folder.lower()), None)
             if target_folder is None:
-                target_folder = self.target.content.create_folder(self.folder)
+                target_folder = self.target.content.create_folder(self.folder, self.owner)
 
         # Validate the item mapping and build service mapping for Feature Service and Map Service items
         for original_item_id, new_item_id in self._clone_mapping['Item IDs'].items():
@@ -558,6 +569,9 @@ class _DeepCloner():
                 layer_field_mapping, layer_id_mapping, relationship_field_mapping = _compare_service(new_item, original_item, currentVersion)
                 self._clone_mapping['Services'][original_item['url'].rstrip('/')] = {'id' : new_item['id'], 'url' : new_item['url'].rstrip('/'), 'layer_field_mapping' : layer_field_mapping,
                                                                                     'layer_id_mapping' : layer_id_mapping, 'relationship_field_mapping' : relationship_field_mapping}
+            elif new_item.type == 'Geoprocessing Service':
+                self._clone_mapping['Web Tools'][original_item['url'].rstrip('/')] = new_item['url'].rstrip('/')
+
 
     def _clone_synchronous(self):
         """
@@ -570,6 +584,7 @@ class _DeepCloner():
         level = 0
 
         # also includes items that already existed and mapped
+        exceptions = []
         while leaf_nodes:           
             # Resolve any nodes that were provided in the item or group mapping
             for node in [node for node in leaf_nodes if node.info['id'] in self._clone_mapping['Item IDs'] or node.info['id'] in self._clone_mapping['Group IDs']]:
@@ -581,10 +596,24 @@ class _DeepCloner():
                 try:
                     node.clone()
                 except _ItemCreateException as ex:
-                    raise ex
+                    exceptions.append(ex)
+                    break
+
+            if len(exceptions) > 0:
+                break
 
             level += 1
             leaf_nodes = self._get_leaf_nodes()
+        
+        # if any of the exceptions are an _ItemCreate Exception, then delete all created items/groups
+        for ex in exceptions:
+            if isinstance(ex, _ItemCreateException):
+                created_items = self._get_created_items()
+                for item in reversed(created_items):
+                    if item:
+                        item.delete()
+                raise ex
+
         return [i for i in self._get_created_items() if isinstance(i, arcgis.gis.Item)]
 
     def _clone(self, excecutor):
@@ -680,7 +709,7 @@ class _DeepCloner():
         """Get an instance of the group definition for the specified item. This definition can be used to clone or download the group.
         Keyword arguments:
         group - The arcgis.GIS.Group to get the definition for."""
-        return _GroupDefinition(self.target, self._clone_mapping, dict(group), thumbnail=None, portal_group=group, search_existing=self._search_existing_items)
+        return _GroupDefinition(self.target, self._clone_mapping, dict(group), thumbnail=None, portal_group=group, search_existing=self._search_existing_items, owner=self.owner)
 
     def _get_item_definition(self, item):
         """Get an instance of the corresponding definition class for the specified item. This definition can be used to clone or download the item.
@@ -713,31 +742,31 @@ class _DeepCloner():
                         pass
 
             return _ApplicationDefinition(self.target, self._clone_mapping, dict(item), source_app_title=source_app_title, update_url=update_url,
-                                          data=app_json, thumbnail=None, portal_item=item, item_extent=self._item_extent, folder=self.folder, search_existing=self._search_existing_items)
+                                          data=app_json, thumbnail=None, portal_item=item, item_extent=self._item_extent, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
         elif item['type'] == 'Operation View':
             app_json = item.get_data()
-            return _OperationViewDefintion(self.target, self._clone_mapping, dict(item), data=app_json, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items)
+            return _OperationViewDefintion(self.target, self._clone_mapping, dict(item), data=app_json, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
         elif item['type'] == 'Dashboard':
             app_json = item.get_data()
-            return _DashboardDefinition(self.target, self._clone_mapping, dict(item), data=app_json, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items)
+            return _DashboardDefinition(self.target, self._clone_mapping, dict(item), data=app_json, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a web map get the WebMapDefintion
         elif item['type'] == 'Web Map':
             webmap_json = item.get_data()
             return _WebMapDefinition(self.target, self._clone_mapping, dict(item), data=webmap_json, thumbnail=None,
-                                     folder=self.folder, portal_item=item, item_extent=self._item_extent, use_org_basemap=self._use_org_basemap, search_existing=self._search_existing_items)
+                                     folder=self.folder, portal_item=item, item_extent=self._item_extent, use_org_basemap=self._use_org_basemap, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a workforce project get the WorkforceProjectDefintion
         elif item['type'] == 'Workforce Project':
             workforce_json = item.get_data()
-            return _WorkforceProjectDefinition(self.target, self._clone_mapping, dict(item), data=workforce_json, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items)
+            return _WorkforceProjectDefinition(self.target, self._clone_mapping, dict(item), data=workforce_json, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a workforce project get the WorkforceProjectDefintion
         elif item['type'] == 'Form':
             related_items = item.related_items('Survey2Service', 'forward')
-            return _FormDefinition(self.target, self._clone_mapping, dict(item), related_items, data=None, thumbnail=None, portal_item=item, folder=self.folder, item_extent=self._item_extent, search_existing=self._search_existing_items)
+            return _FormDefinition(self.target, self._clone_mapping, dict(item), related_items, data=None, thumbnail=None, portal_item=item, folder=self.folder, item_extent=self._item_extent, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a feature service get the FeatureServiceDefintion
         elif item['type'] == 'Feature Service':
@@ -755,11 +784,11 @@ class _DeepCloner():
             data = item.get_data()
 
             return _FeatureServiceDefinition(self.target, self._clone_mapping, dict(item), service_definition, layers_definition, features=None,
-                                             data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items)
+                                             data=data, thumbnail=None, portal_item=item, folder=self.folder, copy_data=self._copy_data, item_extent=self._item_extent, service_extent=self._service_extent, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a feature collection get the FeatureCollectionDefintion
         elif item['type'] == 'Feature Collection':
-            return _FeatureCollectionDefinition(self.target, self._clone_mapping, dict(item), data=item.get_data(), thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items)
+            return _FeatureCollectionDefinition(self.target, self._clone_mapping, dict(item), data=item.get_data(), thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a pro map get the ProMapDefintion
         elif item['type'] == 'Pro Map':
@@ -767,7 +796,7 @@ class _DeepCloner():
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
             pro_map = item.download(temp_dir)
-            return _ProMapDefinition(self.target, self._clone_mapping, dict(item), data=pro_map, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items)
+            return _ProMapDefinition(self.target, self._clone_mapping, dict(item), data=pro_map, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a pro package get the ProProjectPackageDefintion
         elif item['type'] == 'Project Package':
@@ -775,13 +804,13 @@ class _DeepCloner():
             if not os.path.exists(temp_dir):
                 os.makedirs(temp_dir)
             pro_package = item.download(temp_dir)
-            return _ProProjectPackageDefinition(self.target, self._clone_mapping, dict(item), data=pro_package, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items)
+            return _ProProjectPackageDefinition(self.target, self._clone_mapping, dict(item), data=pro_package, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
         # For all other types get the corresponding definition
         else:
             if item['type'] in _TEXT_BASED_ITEM_TYPES:
-                return _TextItemDefinition(self.target, self._clone_mapping, dict(item), data=item.get_data(), thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items)
-            return _ItemDefinition(self.target, self._clone_mapping, dict(item), data=None, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items)
+                return _TextItemDefinition(self.target, self._clone_mapping, dict(item), data=item.get_data(), thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
+            return _ItemDefinition(self.target, self._clone_mapping, dict(item), data=None, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
 
 class CloneNode:
@@ -852,12 +881,13 @@ class _GroupDefinition(CloneNode):
     Represents the definition of a group within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, thumbnail=None, portal_group=None, search_existing=True):
+    def __init__(self, target, clone_mapping, info, thumbnail=None, portal_group=None, search_existing=True, owner=None):
         super().__init__(target, clone_mapping, search_existing)
         self.info = info
         self.thumbnail = thumbnail
         self.portal_group = portal_group
         self.created_items = []
+        self.owner = owner
 
     def clone(self):
         """Clone the group in the target organization.
@@ -868,7 +898,7 @@ class _GroupDefinition(CloneNode):
             new_group = None
             original_group = self.info
             if self._search_existing:
-                new_group = _search_for_existing_group(self.target.users.me, self.portal_group)
+                new_group = _search_for_existing_group(self.target.users.get(self.owner), self.portal_group)
             if not new_group:
                 title = original_group['title']
                 tags = original_group['tags']
@@ -882,7 +912,7 @@ class _GroupDefinition(CloneNode):
                 #Find a unique name for the group
                 i = 1
                 while True:
-                    search_query = 'title:"{0}" AND owner:{1}'.format(title, self.target.users.me.username)
+                    search_query = 'title:"{0}" AND owner:{1}'.format(title, self.owner)
                     groups = [group for group in self.target.groups.search(search_query, outside_org=False) if group['title'] == title]
                     if len(groups) == 0:
                         break
@@ -898,6 +928,11 @@ class _GroupDefinition(CloneNode):
 
                 new_group = self.target.groups.create(title, tags, original_group['description'], original_group['snippet'],
                                                     'private', thumbnail, True, original_group['sortField'], original_group['sortOrder'], True)
+
+                if self.target.users.me.username != self.owner:
+                    new_group.reassign_to(self.owner)
+                    new_group.leave()
+
                 self.created_items.append(new_group)
             self.resolved=True
             self._clone_mapping['Group IDs'][original_group['id']] = new_group['id']
@@ -911,7 +946,7 @@ class _ItemDefinition(CloneNode):
     Represents the definition of an item within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True):
+    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True, owner=None):
         super().__init__(target, clone_mapping, search_existing)
         self.info = info
         self._data = data
@@ -922,9 +957,10 @@ class _ItemDefinition(CloneNode):
         self._item_property_names = ['title', 'type', 'description',
                                      'snippet', 'tags', 'culture',
                                      'accessInformation', 'licenseInfo',
-                                     'typeKeywords', 'extent', 'url']
+                                     'typeKeywords', 'extent', 'url', 'properties']
         self.portal_item = portal_item
         self.folder = folder
+        self.owner = owner
         self.item_extent = item_extent
         self.created_items = []
 
@@ -942,7 +978,7 @@ class _ItemDefinition(CloneNode):
                 os.makedirs(temp_dir)
             thumbnail = self.portal_item.download_thumbnail(temp_dir)
 
-        new_item = self.target.content.add(item_properties=item_properties, data=data, thumbnail=thumbnail, folder=self.folder)
+        new_item = self.target.content.add(item_properties=item_properties, data=data, thumbnail=thumbnail, folder=self.folder, owner=self.owner)
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
@@ -1012,7 +1048,7 @@ class _ItemDefinition(CloneNode):
 
                 # The item's name will default to the name of the data, if it already exists in the folder we need to rename it to something unique
                 name = os.path.basename(data)
-                item = next((item for item in self.target.users.me.items(folder=self.folder) if item['name'] == name), None)
+                item = next((item for item in self.target.users.get(self.owner).items(folder=self.folder) if item['name'] == name), None)
                 if item:
                     new_name = "{0}_{1}{2}".format(os.path.splitext(name)[0], str(uuid.uuid4()).replace('-', ''), os.path.splitext(name)[1])
                     new_path = os.path.join(temp_dir, new_name)
@@ -1066,8 +1102,8 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
     Represents the definition of a feature collection within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, copy_data=False, search_existing=True):
-        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing)
+    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, copy_data=False, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
         self.copy_data = copy_data
 
     def clone(self):
@@ -1108,8 +1144,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
     Represents the definition of a hosted feature service within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, item_extent=None, service_extent=None, search_existing=True):
-        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing)
+    def __init__(self, target, clone_mapping, info, service_definition, layers_definition, is_view=False, view_sources={}, view_source_fields={}, features=None, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, copy_data=False, item_extent=None, service_extent=None, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
         self._service_definition = service_definition
         self._service_extent = service_extent
         self._layers_definition = layers_definition
@@ -1392,15 +1428,18 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         del service_definition[key]
 
                 # Set the extent and spatial reference of the service
-                new_extent = _deep_get(service_definition, 'initialExtent')
-                if new_extent is not None:
-                    if self._service_extent:
-                        new_extent = json.loads(self._service_extent.JSON)
-                        if 'maintain-spatial-ref' in original_item['tags']:
-                            new_extent = json.loads(project([Geometry(new_extent)], in_sr=new_extent['spatialReference'], out_sr=service_definition['initialExtent']['spatialReference'])[0].JSON)
-                            new_extent['spatialReference'] = service_definition['initialExtent']['spatialReference']
-                    service_definition['initialExtent'] = new_extent
-                    service_definition['spatialReference'] = new_extent['spatialReference']
+                if 'spatialReference' in service_definition:
+                    new_extent = _deep_get(service_definition, 'initialExtent')
+                    if new_extent is not None:
+                        if 'spatialReference' not in new_extent:
+                            new_extent['spatialReference'] = service_definition['spatialReference']
+                        if self._service_extent:
+                            new_extent = json.loads(self._service_extent.JSON)
+                            if 'maintain-spatial-ref' in original_item['tags']:
+                                new_extent = json.loads(project([Geometry(new_extent)], in_sr=new_extent['spatialReference'], out_sr=service_definition['spatialReference'])[0].JSON)
+                                new_extent['spatialReference'] = service_definition['spatialReference']
+                        service_definition['initialExtent'] = new_extent
+                        service_definition['spatialReference'] = new_extent['spatialReference']
 
                 if self.is_view:
                     properties = ['name', 'isView', 'sourceSchemaChangesAllowed', 'isUpdatableView', 'capabilities', 'isMultiServicesView']
@@ -1425,15 +1464,15 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # In some cases create_service fails silently and returns None as the new_item.
                 #  In these cases rasie an exception that will be caught and then try again with a unique name.
                 try:
-                    new_item = self.target.content.create_service(name, service_type='featureService', create_params=service_definition, is_view=self.is_view, folder=self.folder)
+                    new_item = self.target.content.create_service(name, service_type='featureService', create_params=service_definition, is_view=self.is_view, folder=self.folder, owner=self.owner)
                     if new_item is None:
                         raise RuntimeError('already exists')
                     self.created_items.append(new_item)
                 except RuntimeError as ex:
                     if "already exists" in str(ex):
-                        name = self._get_unique_name(self.target, name)
+                        name = self._get_unique_name(self.target, name, True)
                         service_definition['name'] = name
-                        new_item = self.target.content.create_service(name, service_type='featureService', create_params=service_definition, folder=self.folder)
+                        new_item = self.target.content.create_service(name, service_type='featureService', create_params=service_definition, folder=self.folder, owner=self.owner)
                         self.created_items.append(new_item)
                     elif "managed database" in str(ex):
                         raise Exception("The target portal's managed database must be an ArcGIS Data Store.")
@@ -1801,7 +1840,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Add the relationships back to the layers
                 relationship_field_mapping = {}
-                if len(relationships) > 0 and self.is_view == False:
+                if len(relationships) > 0:
                     for layer_id in relationships:
                         for relationship in relationships[layer_id]:
                             if layer_id in layer_field_mapping:
@@ -1815,12 +1854,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     relationship_field_mapping[layer_id] = {}
                                 relationship_field_mapping[layer_id][relationship['id']] = field_mapping
 
-                    relationships_copy = copy.deepcopy(relationships)
-                    for layer_id in relationships_copy:
-                        for relationship in relationships_copy[layer_id]:
-                            relationship['relatedTableId'] = layer_id_mapping[relationship['relatedTableId']]
+                    if self.is_view == False:
+                        relationships_copy = copy.deepcopy(relationships)
+                        for layer_id in relationships_copy:
+                            for relationship in relationships_copy[layer_id]:
+                                relationship['relatedTableId'] = layer_id_mapping[relationship['relatedTableId']]
 
-                    if self.target.properties.isPortal:
                         relationships_definition = {'layers' : []}
                         for key, value in layer_id_mapping.items():
                             if key in relationships_copy:
@@ -1828,10 +1867,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             else:
                                 relationships_definition['layers'].append({'id' : value, 'relationships' : []})
                         feature_service_admin.add_to_definition(relationships_definition)
-                    else:
-                        for layer_id in relationships_copy:
-                            layer = new_layers[layer_id]
-                            layer.manager.add_to_definition({'relationships' : relationships_copy[layer_id]})
 
                 # Get the item properties from the original item
                 item_properties = self._get_item_properties(self.item_extent)
@@ -1927,8 +1962,8 @@ class _WebMapDefinition(_TextItemDefinition):
     Represents the definition of a web map within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, use_org_basemap=False, search_existing=True):
-        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing)
+    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, use_org_basemap=False, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
         self.use_org_basemap = use_org_basemap
 
     def clone(self):
@@ -2330,8 +2365,8 @@ class _ApplicationDefinition(_TextItemDefinition):
     Represents the definition of an application within ArcGIS Online or Portal.
     """
 
-    def __init__(self, target, clone_mapping, info, source_app_title=None, update_url=True, data=None, sharing=None, thumbnail=None, portal_item=None, item_extent=None, folder=None, search_existing=True):
-        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing)
+    def __init__(self, target, clone_mapping, info, source_app_title=None, update_url=True, data=None, sharing=None, thumbnail=None, portal_item=None, item_extent=None, folder=None, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
         self._source_app_title = source_app_title
         self._update_url = update_url
 
@@ -2392,7 +2427,7 @@ class _ApplicationDefinition(_TextItemDefinition):
 
                         else: #Configurable Application Template
                             if 'folderId' in app_json:
-                                user = self.target.users.me
+                                user = self.target.users.get(self.owner)
                                 if self.folder is not None:
                                     folders = user.folders
                                     target_folder = next((f for f in folders if f['title'].lower() == self.folder.lower()), None)
@@ -2429,6 +2464,8 @@ class _ApplicationDefinition(_TextItemDefinition):
                             app_json_text = re.sub(original_url, service['url'], app_json_text, 0, re.IGNORECASE)
                         for original_id in self._clone_mapping['Item IDs']:
                             app_json_text = re.sub(original_id, self._clone_mapping['Item IDs'][original_id], app_json_text, 0, re.IGNORECASE)
+                        for original_web_tool in self._clone_mapping['Web Tools']:
+                            app_json_text = re.sub(original_web_tool, self._clone_mapping['Web Tools'][original_web_tool], app_json_text, 0, re.IGNORECASE)
 
                         # Replace any references to default print service
                         new_print_url = _deep_get(self.target.properties, 'helperServices', 'printTask', 'url')
@@ -2481,7 +2518,7 @@ class _ApplicationDefinition(_TextItemDefinition):
                     url = '{0}sharing/rest/content/items/{1}/package'.format(org_url[org_url.find('://') + 1:], new_item['id'])
                     code_attachment_properties = {'title' : new_item['title'], 'type' : 'Code Attachment', 'typeKeywords' : 'Code,Web Mapping Application,Javascript',
                                                     'relationshipType' : 'WMA2Code', 'originItemId' : new_item['id'], 'url' : url }
-                    code_attachment = self.target.content.add(item_properties=code_attachment_properties, folder=self.folder)
+                    code_attachment = self.target.content.add(item_properties=code_attachment_properties, folder=self.folder, owner=self.owner)
 
                 # With Portal sometimes after sharing the application the url is reset.
                 # Check if the url is incorrect after sharing and set back to correct url.
@@ -2503,8 +2540,8 @@ class _FormDefinition(_ItemDefinition):
     """
     Represents the definition of an form within ArcGIS Online or Portal.
     """
-    def __init__(self, target, clone_mapping, info, related_items, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True):
-        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing)
+    def __init__(self, target, clone_mapping, info, related_items, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
         self._related_items = related_items
 
 
@@ -2686,6 +2723,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                 # Get the item properties from the original application which will be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
                 workforce_json = self.data
+                user = self.target.users.get(self.owner)
 
                 # Update the webmap references
                 webmaps = ['workerWebMapId', 'dispatcherWebMapId']
@@ -2710,7 +2748,6 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
 
                                 if service == 'dispatchers':
                                     feature_layer = FeatureLayer(service_definiton['url'], self.target)
-                                    user = self.target.users.me
                                     features = feature_layer.query("userId = '{0}'".format(user.username)).features
                                     if len(features) == 0:
                                         features = [{"attributes" : {"name" : user.fullName, "userId" : user.username}}]
@@ -2723,7 +2760,6 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
 
                 # Update the folder reference
                 if 'folderId' in workforce_json:
-                    user = self.target.users.me
                     if self.folder is not None:
                         folders = user.folders
                         target_folder = next((f for f in folders if f['title'].lower() == self.folder.lower()), None)
@@ -2738,11 +2774,30 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                     for integration in integrations:
                         url_template = _deep_get(integration, 'urlTemplate')
                         if url_template is not None:
-                            item_references = re.findall('itemID=[0-9A-F]{32}', url_template, re.IGNORECASE)
-                            for item_reference in item_references:
-                                item_id = item_reference[7:]
-                                if item_id in self._clone_mapping['Item IDs']:
-                                    integration['urlTemplate'] = url_template.replace(item_id, self._clone_mapping['Item IDs'][item_id])
+                            for item_id in self._clone_mapping['Item IDs']:
+                                integration['urlTemplate'] = re.sub(item_id, self._clone_mapping['Item IDs'][item_id], integration['urlTemplate'], 0, re.IGNORECASE)
+                            
+                            for original_url in self._clone_mapping['Services']:
+                                service = self._clone_mapping['Services'][original_url]
+                                for key, value in service['layer_id_mapping'].items():
+                                    integration['urlTemplate'] = re.sub("{0}/{1}".format(original_url, key),
+                                                           "{0}/{1}".format(service['url'], value),
+                                                           integration['urlTemplate'], 0, re.IGNORECASE)
+
+                        assignment_types = _deep_get(integration, 'assignmentTypes')
+                        if assignment_types is not None:
+                            for key, value in assignment_types.items():
+                                url_template = _deep_get(value, 'urlTemplate')
+                                if url_template is not None:
+                                    for item_id in self._clone_mapping['Item IDs']:
+                                        value['urlTemplate'] = re.sub(item_id, self._clone_mapping['Item IDs'][item_id], value['urlTemplate'], 0, re.IGNORECASE)
+                            
+                                for original_url in self._clone_mapping['Services']:
+                                    service = self._clone_mapping['Services'][original_url]
+                                    for old_id, new_id in service['layer_id_mapping'].items():
+                                        value['urlTemplate'] = re.sub("{0}/{1}".format(original_url, old_id),
+                                                               "{0}/{1}".format(service['url'], new_id),
+                                                               value['urlTemplate'], 0, re.IGNORECASE)                   
 
                 item_properties['text'] = json.dumps(workforce_json)
                 # Add the new item
@@ -2840,16 +2895,17 @@ class _ProProjectPackageDefinition(_ItemDefinition):
         try:
             new_item = None
             original_item = self.info
+            aprx = None
+            map = None
+            maps = None
+            layers = None
+            lyr = None
+            ppkx = self.data
+
             if self._search_existing:
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
-            if not new_item:
-                aprx = None
-                map = None
-                maps = None
-                layers = None
-                lyr = None
-                ppkx = self.data
 
+            if not new_item:
                 try:
                     import arcpy
 

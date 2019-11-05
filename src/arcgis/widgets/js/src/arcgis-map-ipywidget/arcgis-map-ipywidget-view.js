@@ -345,6 +345,9 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         // Apply CSS to hide any image preview in the live notebook (but keep
         // it in the underlying notebook file)
         this._hidePreviewImageEl();
+
+        // Add screenshot keyboard shortcut
+        this._set_screenshot_keyboard_shortcut();
     },
 
     _hidePreviewImageEl: function(){
@@ -365,13 +368,21 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                                            Compass, Legend){
         this.map = new Map({ground: "world-elevation"});
         this.container = this.elements.mapElement;
-        this._3dMap = new SceneView({map: this.map, container: this.container});
-        this._3dMap._parentIPyWidget = this;
-        this._2dMap = new MapView({
-            map: this.map,
-            container: this.container});
+        var mode = this.model.get("mode").toLowerCase();
+        if(mode === "2d"){
+            this._2dMap = new MapView({
+                map: this.map,
+                container: this.container});
+            this.activeView = this._2dMap;
+            this._3dMap = new SceneView({map: this.map});
+        } else if(mode === "3d"){
+            this._3dMap = new SceneView({
+                map: this.map,
+                container: this.container});
+            this.activeView = this._3dMap;
+            this._2dMap = new MapView({map: this.map});}
         this._2dMap._parentIPyWidget = this;
-        this.activeView = this._2dMap;
+        this._3dMap._parentIPyWidget = this;
 
         //Set the default zoom to a model-less number that looks a bit nicer
         this._2dMap.zoom = 2;
@@ -392,6 +403,27 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             e.stopPropagation();
             return false;
         }, false);
+    },
+
+    _set_screenshot_keyboard_shortcut: function(){
+        this.el.addEventListener('keydown', (e) => {
+            if (e.shiftKey && e.key ==="P"){
+                this.model.set("_trigger_screenshot_with_args",
+                    {"_" : this._get_uuidv4(),
+                     "set_as_preview": true,
+                     "output_in_cell": false,
+                     "file_path": false});
+                this.model.save_changes();
+            }
+        });
+    },
+
+    _get_uuidv4: function() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, 
+          function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
     },
 
     custom_msg_changed: function(){
@@ -433,11 +465,12 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     mode_changed: function(){
     try{
         console.log("updating mode...");
-        this.activeView.container = null;
-        if(this.model.get("mode") === "3D"){
+        var mode = this.model.get("mode").toLowerCase();
+        if(mode === "3d"){
             this.elements.switchButton.src = images.sceneToMapEncoded;
             if(this.activeView.viewpoint){
                 this._3dMap.viewpoint = this.activeView.viewpoint.clone();
+                this.activeView.container = null;
             }
             this._3dMap.container = this.container;
             this.activeView = this._3dMap;
@@ -447,6 +480,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             this.elements.switchButton.src = images.mapToSceneEncoded;
             if(this.activeView.viewpoint){
                 this._2dMap.viewpoint = this.activeView.viewpoint.clone();
+                this.activeView.container = null;
              }
              this._2dMap.container = this.container;
              this.activeView = this._2dMap;
@@ -649,14 +683,16 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                     layer_json.renderer = layer.renderer.toJSON();
                     layer_json.rendererType = layer.renderer.declaredClass;}
                 layers_json.push(layer_json) }
+            var ground_json = map.ground ? map.ground.toJSON() : {}
+            var basemap_json = map.basemap ? map.basemap.toJSON() : {}
             var wm = { layers : layers_json,
-                       ground : map.ground.toJSON(),
-                       basemap : map.basemap.toJSON() };
+                       ground : ground_json,
+                       basemap : basemap_json };
             this.model.set('_readonly_webmap_from_js', wm);
             this.model.save_changes();
         } catch(err){
             this._displayErrorBox("Error updating readonly webmap json.");
-            console.warn("Error updatin readonly webmap"); console.warn(err); }
+            console.warn("Error updating readonly webmap"); console.warn(err); }
     },
 
     webscene_changed: function(){
@@ -1172,7 +1208,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _get_2d_screenshot: function(widget_inst) {
         return new Promise((resolve, reject) => {
-            widget_inst._2dMap.takeScreenshot().then((screenshot) => {
+            widget_inst._2dMap.takeScreenshot({format:"png"}).then((screenshot) => {
                 resolve(screenshot.dataUrl);
             }).catch((err) => {
                 reject(err);
@@ -1182,7 +1218,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     _get_3d_screenshot: function(widget_inst) {
         return new Promise((resolve, reject) => {
-            widget_inst._3dMap.takeScreenshot().then((screenshot) => {
+            widget_inst._3dMap.takeScreenshot({format:"png"}).then((screenshot) => {
                 resolve(screenshot.dataUrl);
             }).catch((err) => {
                 reject(err);

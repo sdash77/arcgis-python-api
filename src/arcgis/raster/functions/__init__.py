@@ -14,11 +14,27 @@ Functions can be applied to various rasters (or images), including the following
 # Mosaic datasets
 # Rasters within mosaic datasets
 from .._layer import ImageryLayer
-from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra
+from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra, \
+                     _pixel_type_string_to_long
 from arcgis.gis import Item
 import copy
 import numbers
 from . import gbl
+import arcgis as _arcgis
+import json as _json
+from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
+                                          _analysis_job_status
+from .utility import _raster_input_rft, _get_raster_ra_rft, _input_rft, _find_object_ref, \
+                     _python_variable_name
+from arcgis.features.layer import FeatureLayer as _FeatureLayer
+import logging
+_LOGGER = logging.getLogger(__name__)
+from datetime import datetime
+import time
+
+key_value_dict={}
+hidden_inputs = ["ToolName","PrimaryInputParameterName", "OutputRasterParameterName"]
+
 
 #
 # def _raster_input(raster):
@@ -47,12 +63,15 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     function_chain_ra = copy.deepcopy(function_chain)
     function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
     if raster_ra2 is not None:
-        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2    
-    newlyr = ImageryLayer(layer._url, layer._gis)
+        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
+    if layer._datastore_raster:
+        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+            newlyr = ImageryLayer(function_chain_ra, layer._gis)
+        else:
+            newlyr = ImageryLayer(layer._uri, layer._gis)
 
-    newlyr._lazy_properties = layer.properties
-    newlyr._hydrated = True
-    newlyr._lazy_token = layer._token
+    else:
+        newlyr = ImageryLayer(layer._url, layer._gis)
 
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
@@ -61,6 +80,9 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     # else:
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
+    if layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+            newlyr._fn = function_chain_ra
 
     newlyr._where_clause = layer._where_clause
     newlyr._spatial_filter = layer._spatial_filter
@@ -69,18 +91,28 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
+    newlyr._raster_info = layer._raster_info
+
+    newlyr._lazy_token = layer._token
+    newlyr._refresh()
+    newlyr._hydrated = True
+    if layer._extent==layer.properties.extent:
+        newlyr._extent = newlyr.properties.extent
 
     return newlyr
 
 def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     if isinstance(layer, Item):
         layer = layer.layers[0]
-      
-    newlyr = ImageryLayer(layer._url, layer._gis)
+   
+    if layer._datastore_raster:
+        if isinstance(layer._uri, dict) or isinstance(layer._uri,bytes):
+            newlyr = ImageryLayer(function_chain_ra, layer._gis)
+        else:
+            newlyr = ImageryLayer(layer._uri, layer._gis)
 
-    newlyr._lazy_properties = layer.properties
-    newlyr._hydrated = True
-    newlyr._lazy_token = layer._token
+    else:
+        newlyr = ImageryLayer(layer._url, layer._gis)
 
     # if layer._fn is not None: # chain the functions
     #     old_chain = layer._fn
@@ -90,6 +122,10 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
 
+    if layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri,bytes):
+            newlyr._fn = function_chain_ra
+
     newlyr._where_clause = layer._where_clause
     newlyr._spatial_filter = layer._spatial_filter
     newlyr._temporal_filter = layer._temporal_filter
@@ -97,7 +133,13 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
+    newlyr._raster_info = layer._raster_info
 
+    newlyr._lazy_token = layer._token
+    newlyr._refresh()
+    newlyr._hydrated = True
+    if layer._extent==layer.properties.extent:
+        newlyr._extent = newlyr.properties.extent
     return newlyr
 
 
@@ -224,7 +266,11 @@ def arithmetic(raster1, raster2, extent_type="FirstOf", cellsize_type="FirstOf",
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
     layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
-    layer = layer1 if layer1 is not None else layer2
+    if layer1 is not None and (layer2 is None or ((layer2 is not None) and layer2._datastore_raster is False)):
+        layer = layer1
+    else:
+        layer = layer2
+    #layer = layer1 if layer1 is not None else layer2
 
     extent_types = {
         "FirstOf" : 0,
@@ -374,13 +420,42 @@ def band_arithmetic(raster, band_indexes=None, astype=None, method=0):
     see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: band indexes or expression
+    :param band_indexes: band indexes or expression. Band indexes can be given as a space seperated string or a list of integers or floating point values. e.g., "4 3" or [4,3]. For user defined methods the band index can be given as an expression such as "(B3 - B1)/(B3 + B1)"
     :param astype: output pixel type
-    :param method: int (0 = UserDefined, 1 = NDVI, 2 = SAVI, 3 = TSAVI, 4 = MSAVI, 5 = GEMI, 6 = PVI, 7 = GVITM, 8 = Sultan)
+    :param method: int. The type of band arithmetic algorithm you want to deploy. 
+                   You can define your custom algorithm, or choose a predefined index.
+                   0 = UserDefined, 
+                   1 = NDVI,
+                   2 = SAVI,
+                   3 = TSAVI,
+                   4 = MSAVI,
+                   5 = GEMI,
+                   6 = PVI,
+                   7 = GVITM,
+                   8 = Sultan,
+                   9 = VARI,
+                   10 = GNDVI,
+                   11 = SR,
+                   12 = NDVIre,
+                   13 = SRre,
+                   14 = MTVI2,
+                   15 = RTVICore,
+                   16 = CIre,
+                   17 = CIg,
+                   18 = NDWI,
+                   19 = EVI,
+                   20 = IronOxide,
+                   21 = FerrousMinerals,
+                   22 = ClayMinerals,
+                   23 = WNDWI
+
     :return: band_arithmetic applied to the input raster
     """
 
     layer, raster, raster_ra = _raster_input(raster)
+
+    if isinstance(band_indexes, list):
+         band_indexes = " ".join(str(index) for index in band_indexes)
 
     template_dict = {
         "rasterFunction": "BandArithmetic",
@@ -403,7 +478,7 @@ def ndvi(raster, band_indexes="4 3", astype=None):
     NDVI = ((NIR - Red)/(NIR + Red))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: Band Indexes "NIR Red", e.g., "4 3"
+    :param band_indexes: Band Indexes "NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: Normalized Difference Vegetation Index raster
     """
@@ -416,7 +491,7 @@ def savi(raster, band_indexes="4 3 0.33", astype=None):
     where L represents amount of green vegetative cover, e.g., 0.5
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "BandIndexes": "NIR Red L", for example, "4 3 0.33"
+    :param band_indexes: "BandIndexes": "NIR Red L", for example, "4 3 0.33" or [4,3,0.33]
     :param astype: output pixel type
     :return: output raster
     """
@@ -428,7 +503,7 @@ def tsavi(raster, band_indexes= "4 3 0.33 0.50 1.50", astype=None):
     TSAVI = (s(NIR-s*Red-a))/(a*NIR+Red-a*s+X*(1+s^2))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Red s a X", e.g., "4 3 0.33 0.50 1.50" where a = the soil line intercept, s = the soil line slope, X = an adjustment factor that is set to minimize soil noise
+    :param band_indexes: "NIR Red s a X", e.g., "4 3 0.33 0.50 1.50" or [4,3,0.33,0.50,1.50] where a = the soil line intercept, s = the soil line slope, X = an adjustment factor that is set to minimize soil noise
     :param astype: output pixel type
     :return: output raster
     """
@@ -440,7 +515,7 @@ def msavi(raster, band_indexes="4 3", astype=None):
     MSAVI2 = (1/2)*(2(NIR+1)-sqrt((2*NIR+1)^2-8(NIR-Red)))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes: "NIR Red", e.g., "4 3"
+    :param band_indexes: "NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -453,7 +528,7 @@ def gemi(raster, band_indexes="4 3", astype=None):
     where eta = (2*(NIR^2-Red^2)+1.5*NIR+0.5*Red)/(NIR+Red+0.5)
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red", e.g., "4 3"
+    :param band_indexes:"NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -465,7 +540,7 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
     PVI = (NIR-a*Red-b)/(sqrt(1+a^2))
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red a b", e.g., "4 3 0.3 0.5"
+    :param band_indexes:"NIR Red a b", e.g., "4 3 0.3 0.5" or [4,3,0.3,0.5]
     :param astype: output pixel type
     :return: output raster
     """
@@ -474,10 +549,10 @@ def pvi(raster, band_indexes="4 3 0.3 0.5", astype=None):
 def gvitm(raster, band_indexes= "1 2 3 4 5 6", astype=None):
     """
     Green Vegetation Index - Landsat TM
-    GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-1.1800*Band7
+    GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-0.1800*Band7
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"NIR Red", e.g., "4 3"
+    :param band_indexes:"NIR Red", e.g., "4 3" or [4,3]
     :param astype: output pixel type
     :return: output raster
     """
@@ -491,11 +566,245 @@ def sultan(raster, band_indexes="1 2 3 4 5 6", astype=None):
         Band 3 = (Band3 / Band4) x (Band5 / Band4) x 100
 
     :param raster: the input raster / imagery layer
-    :param band_indexes:"Band1 Band2 Band3 Band4 Band5 Band6", e.g., "1 2 3 4 5 6"
+    :param band_indexes:"Band1 Band2 Band3 Band4 Band5 Band6", e.g., "1 2 3 4 5 6" or [1,2,3,4,5,6]
     :param astype: output pixel type
     :return: output raster
     """
     return band_arithmetic(raster, band_indexes, astype, 8)
+
+def vari(raster, band_indexes="3 2 1", astype=None):
+    """
+    Visible Atmospherically Resistant Index
+
+    VARI = (Green - Red)/(Green + Red - Blue)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red Green Blue", e.g., "3 2 1" or [3,2,1]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 9)
+
+def gndvi(raster, band_indexes="4 2", astype=None):
+    """
+    Green Normalized Difference Vegetation Index
+
+    GNDVI = (NIR-Green)/(NIR+Green)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Green", e.g., "5 3" or [5,3]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 10)
+
+def sr(raster, band_indexes="4 3", astype=None):
+    """
+    Simple Ratio (SR)
+
+    SR = NIR / Red
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Red", e.g., "4 3" or [4,3]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 11)
+
+def ndvire(raster, band_indexes="7 6", astype=None):
+    """
+    Red-Edge NDVI (NDVIre)
+    The Red-Edge NDVI (NDVIre) is a vegetation index for estimating 
+    vegetation health using the red-edge band. It is especially useful 
+    for estimating crop health in the mid to late stages of growth where 
+    the chlorophyll concentration is relatively higher. Also, NDVIre can
+    be used to map the within-field variability of nitrogen foliage to 
+    understand the fertilizer requirements of crops.
+
+    NDVIre = (NIR-RedEdge)/(NIR+RedEdge)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR RedEdge", e.g., "7 6" or [7,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 12)
+
+def srre(raster, band_indexes="7 6", astype=None):
+    """
+    The Red-Edge Simple Ratio (SRre) is a vegetation index for estimating the 
+    amount of healthy and stressed vegetation. It is the ratio of light scattered 
+    in the NIR and red-edge bands, which reduces the effects of atmosphere and topography.
+
+    Values are high for vegetation with high canopy closure and healthy vegetation, 
+    lower for high canopy closure and stressed vegetation, and low for soil, water, 
+    and nonvegetated features. The range of values is from 0 to about 30, where healthy 
+    vegetation generally falls between values of 1 to 10.
+
+    SRre = NIR / RedEdge
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR RedEdge", e.g., "7 6" or [7,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 13)
+
+def mtvi2(raster, band_indexes="7 5 3", astype=None):
+    """
+    The Modified Triangular Vegetation Index (MTVI2) is a vegetation index 
+    for detecting leaf chlorophyll content at the canopy scale while being 
+    relatively insensitive to leaf area index. It uses reflectance in the green, 
+    red, and near-infrared (NIR) bands
+
+    MTVI2 = (1.5*(1.2*(NIR-Green)-2.5*(Red-Green))/sqrt((2*NIR+1)^2-(6*NIR-5*sqrt(Red))-0.5))
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Red Green", e.g., "7 5 3" or [7,5,3]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 14)
+
+def rtvi_core(raster, band_indexes="7 6 3", astype=None):
+    """
+    The Red-Edge Triangulated Vegetation Index (RTVICore) is a vegetation index 
+    for estimating leaf area index and biomass. This index uses reflectance 
+    in the NIR, red-edge, and green spectral bands
+
+    RTVICore = [100(NIR-RedEdge)-10(NIR-Green)]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR RedEdge Green", e.g., "7 6 3" or [7,6,3]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 15)
+
+def cire(raster, band_indexes="7 6", astype=None):
+    """
+    The Chlorophyll Index - Red-Edge (CIre) is a vegetation index for estimating 
+    the chlorophyll content in leaves using the ratio of reflectivity in the 
+    near-infrared (NIR) and red-edge bands.
+
+    CIre = [(NIR / RedEdge)-1]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR RedEdge", e.g., "7 6" or [7,6]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 16)
+
+def cig(raster, band_indexes="7 3", astype=None):
+    """
+    The Chlorophyll Index - Green (CIg) is a vegetation index for estimating 
+    the chlorophyll content in leaves using the ratio of reflectivity in 
+    the near-infrared (NIR) and green bands.
+
+    CIg = [(NIR / Green)-1]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Green", e.g., "7 3" or [7,3]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 17)
+
+def ndwi(raster, band_indexes="5 3", astype=None):
+    """
+    The Normalized Difference Water Index (NDWI) is an index for delineating and 
+    monitoring content changes in surface water. It is computed with the near-infrared 
+    (NIR) and green bands.
+
+    NDWI = (Green - NIR)/(Green +NIR)
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Green", e.g., "5 3" or [5,3]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 18)
+
+def evi(raster, band_indexes="5 4 2", astype=None):
+    """
+    The Enhanced Vegetation Index (EVI) is an optimized vegetation index that accounts 
+    for atmospheric influences and vegetation background signal. It's similar to NDVI, 
+    but is less sensitive to background and atmospheric noise, and it does not become 
+    saturated NDVI when viewing areas with very dense green vegetation.
+
+    EVI =  2.5 * [(NIR - Red)/(NIR + (6*Red) - (7.5*Blue) + 1)]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "NIR Red Blue", e.g., "5 4 2" or [5,4,2]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 19)
+
+def iron_oxide(raster, band_indexes="4 2", astype=None):
+    """
+    The Iron Oxide (IO) ratio is a geological index for identifying rock 
+    features that have experienced oxidation of iron-bearing sulfides 
+    using the red and blue bands. IO is useful in identifying iron oxide 
+    features below vegetation canopies, and is used in mineral composite mapping.
+
+    IronOxide = Red / Blue
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Red Blue", e.g., "4 2" or [4,2]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 20)
+
+def ferrous_minerals(raster, band_indexes="6 5", astype=None):
+    """
+    The Ferrous Minerals (FM) ratio is a geological index for identifying 
+    rock features containing some quantity of iron-bearing minerals using
+    the shortwave infrared (SWIR) and near-infrared (NIR) bands. FM is used
+    in mineral composite mapping.
+
+    FM = SWIR / NIR
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR NIR", e.g., "6 5" or [6,5]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 21)
+
+def clay_minerals(raster, band_indexes="6 7", astype=None):
+    """
+    The Clay Minerals (CM) ratio is a geological index for identifying 
+    mineral features containing clay and alunite using two shortwave 
+    infrared (SWIR) bands. CM is used in mineral composite mapping.
+
+    CM = SWIR1 / SWIR2
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "SWIR1 SWIR2", e.g., "6 7" or [6,7]
+    :param astype: output pixel type
+    :return: output raster
+    """
+    return band_arithmetic(raster, band_indexes, astype, 22)
+
+def wndwi(raster, band_indexes="2 5 6 0.5", astype=None):
+    """
+    The Weighted Normalized Difference Water Index (WNDWI) is a water index
+    developed to reduce error typically encountered in other water indices,
+    including water turbidity, small water bodies, or shadow in remote sensing scenes.
+    Supported from 10.8.
+
+    WNDWI = [Green – α * NIR – (1 – α) * SWIR ] / [Green + α * NIR + (1 – α) * SWIR]
+
+    :param raster: the input raster / imagery layer
+    :param band_indexes: "Green NIR SWIR α", e.g., "2 5 6 0.5" or [2,5,6,0.5]
+    :param astype: output pixel type
+    :return: output raster
+
+    """
+    return band_arithmetic(raster, band_indexes, astype, 23)
 
 def expression(raster, expression="(B3 - B1 / B3 + B1)", astype=None):
     """
@@ -526,7 +835,10 @@ def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     if raster2 is not None:
         layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
-    layer = layer1 if layer1 is not None else layer2
+    if layer1 is not None or (layer2 is not None and layer2._datastore_raster is False):
+        layer = layer1
+    else:
+        layer = layer2
 
     template_dict = {
         "rasterFunction": "Classify",
@@ -732,8 +1044,8 @@ def curvature(raster, curvature_type='standard', z_factor=1, astype=None):
 
     curv_types = {
         'standard': 0,
-        'planform': 1,
-        'profile': 2
+        'profile': 1,
+        'planform': 2
     }
 
     in_curv_type = curv_types[curvature_type.lower()]
@@ -974,7 +1286,7 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, process_as_multiband=None):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
     a pixel-by-pixel basis. For more information, see
@@ -991,6 +1303,8 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
+                                 Applicable for operations - Majority, Maximum, Mean, Median, Minimum, Minority, Range, Standard Deviation, Sum, and Variety.
     :return: the output raster
 
     """
@@ -1035,6 +1349,13 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
         template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
+
+    if process_as_multiband is not None:
+        if isinstance(process_as_multiband, bool):
+            template_dict["rasterFunctionArguments"]["ProcessAsMultiband"] = process_as_multiband
+        else:
+            raise RuntimeError('process_as_multiband should be an instance of bool')
+
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
@@ -1633,7 +1954,7 @@ def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 37, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Majority operation
 
@@ -1644,14 +1965,15 @@ def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nod
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 66 if ignore_nodata else 38
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband= process_as_multiband)
 
 
-def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Max operation
 
@@ -1661,14 +1983,15 @@ def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 67 if ignore_nodata else 39
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Mean operation
 
@@ -1679,14 +2002,15 @@ def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 68 if ignore_nodata else 40
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Med operation
 
@@ -1697,14 +2021,15 @@ def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 69 if ignore_nodata else 41
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Min operation
 
@@ -1715,14 +2040,15 @@ def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 70 if ignore_nodata else 42
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Minority operation
 
@@ -1733,11 +2059,12 @@ def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nod
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 71 if ignore_nodata else 43
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1788,7 +2115,7 @@ def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
     return local(rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Range operation
 
@@ -1799,11 +2126,12 @@ def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ign
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 72 if ignore_nodata else 47
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1902,7 +2230,7 @@ def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
     return local(rasters, 53, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Std operation
 
@@ -1913,14 +2241,15 @@ def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 73 if ignore_nodata else 54
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False,  astype=None):
+def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False,  astype=None, process_as_multiband=None):
     """
     The Sum operation
 
@@ -1931,11 +2260,12 @@ def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 74 if ignore_nodata else 55
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -1970,7 +2300,7 @@ def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Variety operation
 
@@ -1981,11 +2311,12 @@ def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_noda
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 75 if ignore_nodata else 58
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2092,9 +2423,21 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     The arguments for the mask function are as follows:
 
     :param raster: input raster
-    :param no_data_values: array of string ["band0_val","band1_val",...]
-    :param included_ranges: array of double [band0_lowerbound,band0_upperbound,band1...],
-    :param no_data_interpretation: int 0=MatchAny, 1=MatchAll
+    :param no_data_values: list of strings ["band0_val","band1_val",...]. The NoData values can be specified 
+                           for each band. The index of each element in no_data_values list 
+                           represents the no data value in the corresponding band.
+
+                           You can specify more than one value by entering a space-delimited string for each index.
+                           e.g., ["band0_val1 band0_val2", "band1_val1 band1_val2",...]
+    :param included_ranges: list of floats [band0_lowerbound,band0_upperbound,band1_lowerbound,band1_upperbound, band2_.....], 
+                            The included ranges can be specified for each band by specifying a minimum and maximum value.
+    :param no_data_interpretation: int 0=MatchAny, 1=MatchAll. This parameter refers to how the NoData 
+                                   values will impact the output image.
+
+                                   - 0 (MatchAny) : If the NoData value you specify occurs for a cell in a
+                                     specified band, then that cell in the output image will be NoData.
+                                   - 1 (MatchAll) :  The NoData values you specify for each band must occur 
+                                     in the same cell for the output image to contain the NoData cell.
     :param astype: output pixel type
     :return: the output raster
 
@@ -2499,36 +2842,36 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm">statistics function</a>.
     The arguments for the statistics function are as follows:
 
-    
-    The focal_statistics() is different from focal_stats() in the following aspects:
-
-    focal_statistics() supports  Minimum, Maximum, Mean and Standard Deviation.
-    while focal_stats() supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, Variety
-
-    focal_statistics() supports only Rectangle,
-    while focal_stats() supports Rectangle, Circle, Annulus, Wedge, Irregular, Weight neighbourhoods, 
-
-    Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
-    This option is not present in focal_stats()    
-
-    Option to determine whether NoData values are ignored or not is available in focal_stats() by setting bool value for ignore_no_data param.
-    This option is not present in focal_statistics()
-
     :param raster: input raster
     :param kernel_columns: int (e.g. 3)
     :param kernel_rows: int (e.g. 3)
-    :param stat_type: int or string 
-					  There are four types of focal statistical functions:
-					  1=Min, 2=Max, 3=Mean, 4=StandardDeviation
-					  -Min-Calculates the minimum value of the pixels within the neighborhood
-				      -Max-Calculates the maximum value of the pixels within the neighborhood
-				      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
-				      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
+    :param stat_type: int or string.
+                      There are four types of focal statistical functions:
+                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+                      -Min-Calculates the minimum value of the pixels within the neighborhood
+                      -Max-Calculates the maximum value of the pixels within the neighborhood
+                      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
+                      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
     :param astype: output pixel type
     :return: the output raster
+
+    .. note::
+        The focal_statistics() function is different from the focal_stats() function in the following aspects:
+
+        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation.
+        The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
+
+        The focal_statistics() function supports only Rectangle.
+        The focal_stats() function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods.
+
+        The option to determine if NoData pixels are to be processed out is available in the focal_statistics() function by setting a bool value for fill_no_data_only param.
+        This option is not present in the focal_stats() function.
+
+        The option to determine whether NoData values are ignored or not is available in the focal_stats() function by setting a bool value for ignore_no_data param.
+        This option is not present in the focal_statistics() function.
 
     """
 
@@ -2936,7 +3279,11 @@ def vector_field(raster_u_mag, raster_v_dir, input_data_type='Vector-UV', angle_
     layer1, raster_u_mag_1, raster_ra1 = _raster_input(raster_u_mag)
     layer2, raster_v_dir_1, raster_ra2 = _raster_input(raster_u_mag, raster_v_dir)
 
-    layer = layer1 if layer1 is not None else layer2
+    if layer1 is not None and layer2._datastore_raster is False:
+        layer = layer1
+    else:
+        layer = layer2
+    #layer = layer1 if layer1 is not None else layer2
 
     angle_reference_system_types = {
         "Geographic" : 0,
@@ -3146,7 +3493,7 @@ def grayscale(raster, conversion_parameters=None):
     """
  
     layer, raster, raster_ra = _raster_input(raster)
-       
+
     template_dict = {
         "rasterFunction" : "Grayscale",
         "rasterFunctionArguments": {
@@ -3344,15 +3691,31 @@ def pansharpen(pan_raster,
 
     layer1, pan_raster_1, raster_ra1 = _raster_input(pan_raster)
     layer2, ms_raster_1, raster_ra2 = _raster_input(pan_raster, ms_raster)
+    
+    layer3=None
     if ir_raster is not None:
         layer3, ir_raster_1, raster_ra3 = _raster_input(pan_raster, ir_raster)
 
-    if layer1 is not None:
+    layer = None
+    if layer1._datastore_raster is True:
         layer = layer1
-    elif layer2 is not None:
-       layer = layer2
-    else:
+    elif layer2._datastore_raster is True:
+        layer= layer2
+    elif (layer3 is not None and layer3._datastore_raster is True):
         layer = layer3
+    
+    if layer is not None:
+        pan_raster_1 = raster_ra1
+        ms_raster_1 = raster_ra2
+        if ir_raster is not None:
+            ir_raster_1 = raster_ra3
+    else:
+        if layer1 is not None:
+            layer = layer1
+        elif layer2 is not None:
+            layer = layer2
+        elif layer3 is not None:
+            layer = layer3
 
     pansharpening_types = {
         "IHS" : 0,
@@ -3457,30 +3820,14 @@ def weighted_sum(rasters, fields, weights):
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
 
-def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3, 
+def focal_stats(raster, neighborhood_type=1 , width=3, height=3, 
                 inner_radius=1 , outer_radius=3, radius=3, start_angle=0, end_angle=90, neighborhood_values=None,
-                stat_type=3, ignore_no_data=True):
+                stat_type=3, percentile_value=90, ignore_no_data=True):
     """
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
 
-    The focal_stats() is different from focal_statistics() in the following aspects:
-
-    focal_stats() supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, Variety,
-    while the focal_statistics() supports only Minimum, Maximum, Mean and Standard Deviation.
-
-    focal_stats() supports Rectangle, Circle, Annulus, Wedge, Irregular, Weight neighbourhoods, focal_statistics() supports only Rectangle.
-
-    Option to determine whether NoData values are ignored or not is available in focal_stats() by setting bool value for ignore_no_data param.
-    This option is not present in focal_statistics()
-
-    Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
-    This option is not present in focal_stats()
-
-    
-
     :param raster: input raster
-    :param percentile: int, default is 50. 
     :param neighborhood_type: int, default is 1. The shape of the area around each cell used to calculate the statistic.
                                1 = Rectangle
                                2 = Circle
@@ -3489,39 +3836,73 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
                                5 = Irregular
                                6 = Weight
                                
-    :param width: int, default is 3 - specified when neighborhood_type is Rectangle
-    :param height: int, default is 3 - specified when neighborhood_type is Rectangle
-    :param inner_radius: int, default is 1 - specified when neighborhood_type is Annulus
-    :param outer_radius:int, default is 3 - specified when neighborhood_type is Annulus
-    :param radius:int default is 3 - specified when neighborhood_type is Circle
-    :param start_angle: int, default is 0
-    :param end_angle:int, default is 90
-    :param neighborhood_values: - specified when neighborhood_type is Irregular or Weight
-    :param stat_type: int
-                      There are 10 types of focal statistical functions:
-                      1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
-                      7=Range, 8=Standard deviation, 9=Sum, 10=Variety
-                      Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
-                      Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
-                      Mean = Calculates the mean (average value) of the cells in the neighborhood.
-                      Median = Calculates the median of the cells in the neighborhood.
-                      Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
-                      Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
-                      Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
-                      Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
-                      Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
-                      Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
+    :param width: int, default is 3. Specified when neighborhood_type is Rectangle
+    :param height: int, default is 3. Specified when neighborhood_type is Rectangle
+    :param inner_radius: int, default is 1. Specified when neighborhood_type is Annulus
+    :param outer_radius: int, default is 3. Specified when neighborhood_type is Annulus
+    :param radius: int, default is 3. Specified when neighborhood_type is Circle or Wedge
+    :param start_angle: float, default is 0. Specified when neighborhood_type is Wedge
+    :param end_angle: float, default is 90. Specified when neighborhood_type is Wedge
+    :param neighborhood_values: Specified when neighborhood_type is Irregular or Weight.
+                                It can be a list of lists, in which the width and height will be automatically set from the columns and rows 
+                                of the two dimensional list, respectively. 
+                                Alternatively, it can be a one dimensional list obtained from flattening a two dimensional list. In this case, 
+                                the dimensions need to be specified explicitly with the width and height parameters.
+    :param stat_type: int, default is 3(Mean)
 
-                      Default is 3(Mean)
-    :param ignore_no_data: boolean
-                           True. Specifies that if a NoData value exists within a neighborhood, 
-                           the NoData value will be ignored. Only cells within the neighborhood 
-                           that have data values will be used in determining the output value. 
-                           This is the default.
-                           False - Specifies that if any cell in a neighborhood has a value of 
-                           NoData, the output for the processing cell will be NoData
+                      There are 11 types of statistics available:
+                      1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
+                      7=Range, 8=Standard deviation, 9=Sum, 10=Variety, 12=Percentile
+
+                          Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
+
+                          Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
+
+                          Mean = Calculates the mean (average value) of the cells in the neighborhood.
+
+                          Median = Calculates the median of the cells in the neighborhood.
+
+                          Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
+
+                          Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
+
+                          Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
+
+                          Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
+
+                          Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
+
+                          Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
+
+                          Percentile = Calculates a specified percentile of the cells in the neighborhood.
+
+    :param ignore_no_data: boolean, default is True.
+
+                        True - Specifies that if a NoData value exists within a neighborhood, 
+                        the NoData value will be ignored. Only cells within the neighborhood 
+                        that have data values will be used in determining the output value. 
+                        This is the default.
+
+                        False - Specifies that if any cell in a neighborhood has a value of 
+                        NoData, the output for the processing cell will be NoData.
+    :param percentile_value: float, default is 90. Denotes which percentile to calculate when the stat_type is Percentile.   
+                             The value can range from 0 to 100.
 
     :return: the output raster
+
+    .. note::
+        The focal_stats() function is different from the focal_statistics() function in the following aspects:
+
+        The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Percentile, Range, Standard deviation, Sum, and Variety.
+        The focal_statistics() function supports only Minimum, Maximum, Mean, and Standard Deviation.
+
+        The focal_stats() function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods. The focal_statistics() function supports only Rectangle.
+
+        The option to determine whether NoData values are ignored or not is available in the focal_stats() function by setting a bool value for ignore_no_data param.
+        This option is not present in the focal_statistics() function.
+
+        The option to determine if NoData pixels are to be processed out is available in the focal_statistics() function by setting a bool value for fill_no_data_only param.
+        This option is not present in the focal_stats() function.
 
     """
 
@@ -3537,8 +3918,8 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
 
     if stat_type is not None:
         template_dict["rasterFunctionArguments"]["StatisticType"] = stat_type
-    if percentile is not None:
-        template_dict["rasterFunctionArguments"]["Percentile"] = percentile
+    if percentile_value is not None:
+        template_dict["rasterFunctionArguments"]["Percentile"] = percentile_value
     if neighborhood_type is not None:
         template_dict["rasterFunctionArguments"]["NeighborhoodType"] = neighborhood_type
     if width is not None:
@@ -3556,7 +3937,14 @@ def focal_stats(raster, percentile=50, neighborhood_type=1 , width=3, height=3,
     if end_angle is not None:
         template_dict["rasterFunctionArguments"]["EndAngle"] = end_angle
     if neighborhood_values is not None:
-        template_dict["rasterFunctionArguments"]["NeighborhoodValues"] = neighborhood_values
+        flattened = [item for sublist in neighborhood_values if isinstance(sublist, list) for item in sublist]
+        if flattened == []:
+            flattened = neighborhood_values
+        else:
+            template_dict["rasterFunctionArguments"]["Height"] = len(neighborhood_values)
+            if isinstance(neighborhood_values[0], list):
+                template_dict["rasterFunctionArguments"]["Width"] = len(neighborhood_values[0])
+        template_dict["rasterFunctionArguments"]["NeighborhoodValues"] = flattened
     if ignore_no_data is not None:
         template_dict["rasterFunctionArguments"]["NoDataPolicy"] = ignore_no_data
 
@@ -3587,3 +3975,1074 @@ def lookup(raster, field=None):
         template_dict["rasterFunctionArguments"]['Field'] = field
 
     return _clone_layer(layer, template_dict, raster_ra)
+
+
+def raster_collection_function(raster, item_function, aggregation_function, processing_function):
+    """
+    Creates a new raster by applying item, aggregation and processing function
+
+    :param raster: Input Imagery Layer. The image service the layer is based on should be a mosaic dataset
+    :param item_function: The raster function template to be applied on each item of the mosaic dataset. 
+                          Create an RFT object out of the raster function template item on the portal and 
+                          specify that as the input to item_function 
+    :param aggregation_function: The aggregation function to be applied on the mosaic dataset.
+                                 Create an RFT object out of the raster function template item on the portal and 
+                                 specify that as the input to aggregation_function 
+    :param processing_function: The processing template to be applied on the imagery layer.
+                                Create an RFT object out of the raster function template item on the portal and 
+                                specify that as the input to processing_function 
+
+    :return: the output raster with function applied on it
+    """
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "name" : "collection_raster_function",
+        "function" : {"name":"RasterCollectionFunction"},
+        "arguments" : {
+        "RasterCollection":{  
+             "name":"RasterCollection",
+             "value":raster,
+             "isDataset":True,
+             "isPublic":False,
+             "type":"RasterFunctionVariable"
+          },
+        "type" : "RasterCollectionFunctionArguments"
+         },
+        "functionType" : 3
+    }
+    if item_function is not None:
+        if isinstance(item_function, RFT):
+            template_dict["function"]["itemFunction"]=item_function._rft_json
+        else:
+            template_dict["function"]["itemFunction"]=item_function
+
+    if aggregation_function is not None:
+        if isinstance(aggregation_function, RFT):
+            template_dict["function"]["aggregationFunction"]=aggregation_function._rft_json
+        else:
+            template_dict["function"]["aggregationFunction"]=aggregation_function
+
+    if processing_function is not None:
+        if isinstance(processing_function, RFT):
+            template_dict["function"]["processingFunction"]=processing_function._rft_json
+        else:
+            template_dict["function"]["processingFunction"]=processing_function
+
+    #if mosaic_operation is not None:
+        #template_dict["function"]["mosaicOperation"] = mosaic_operation
+    template_dict["function"]["type"] = "RasterCollectionFunction"
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["arguments"]["RasterCollection"]["value"] = raster_ra
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
+
+def monitor_vegetation(raster, method='NDVI', band_indexes=None, astype=None):
+    """
+    The monitor_vegetation function performs an arithmetic operation on the bands 
+    of a performs an arithmetic operation on the bands of a multiband raster layer 
+    to reveal vegetation coverage information of the study area.
+    see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
+
+    :param raster: the input raster / imagery layer
+    :param method: String. The method to create the vegetation index layer. 
+                    The different vegetation indexes can help highlight certain features or reduce various noise. 
+                    NDVI, SAVI, TSAVI, MSAVI, GEMI, PVI, GVITM, Sultan, VARI, GNDVI, SR, NDVIre, SRre, MTVI2,
+                    RTVICore, CIre, CIg, NDWI, EVI
+                    Default is NDVI.
+    :param band_indexes: band indexes
+    :param astype: output pixel type
+
+    :return: output raster 
+    """
+    if band_indexes is None:
+        raise RuntimeError('band_indexes cannot be None')
+    if isinstance(method, str):
+        if method.upper() == 'NDVI':
+            return band_arithmetic(raster, band_indexes, astype, 1)
+        elif method.upper() == 'SAVI':
+            return band_arithmetic(raster, band_indexes, astype, 2)
+        elif method.upper() == 'TSAVI':
+            return band_arithmetic(raster, band_indexes, astype, 3)
+        elif method.upper() == 'MSAVI':
+            return band_arithmetic(raster, band_indexes, astype, 4)
+        elif method.upper() == 'GEMI':
+            return band_arithmetic(raster, band_indexes, astype, 5)
+        elif method.upper() == 'PVI':
+            return band_arithmetic(raster, band_indexes, astype, 6)
+        elif method.upper() == 'GVITM':
+            return band_arithmetic(raster, band_indexes, astype, 7)
+        elif method.upper() == 'SULTAN':
+            return band_arithmetic(raster, band_indexes, astype, 8)
+        elif method.upper() == 'VARI':
+            return band_arithmetic(raster, band_indexes, astype, 9)
+        elif method.upper() == 'GNDVI':
+            return band_arithmetic(raster, band_indexes, astype, 10)
+        elif method.upper() == 'SR':
+            return band_arithmetic(raster, band_indexes, astype, 11)
+        elif method.upper() == 'NDVIRE':
+            return band_arithmetic(raster, band_indexes, astype, 12)
+        elif method.upper() == 'SRRE':
+            return band_arithmetic(raster, band_indexes, astype, 13)
+        elif method.upper() == 'MTVI2':
+            return band_arithmetic(raster, band_indexes, astype, 14)
+        elif method.upper() == 'RTVICORE':
+            return band_arithmetic(raster, band_indexes, astype, 15)
+        elif method.upper() == 'CIRE':
+            return band_arithmetic(raster, band_indexes, astype, 16)
+        elif method.upper() == 'CIG':
+            return band_arithmetic(raster, band_indexes, astype, 17)
+        elif method.upper() == 'NDWI':
+            return band_arithmetic(raster, band_indexes, astype, 18)
+        elif method.upper() == 'EVI':
+            return band_arithmetic(raster, band_indexes, astype, 19)
+
+    return band_arithmetic(raster, band_indexes, astype, method)
+
+def constant_raster(constant, raster_info, gis=None):
+    """
+    Creates a virtual raster with a single pixel value.
+
+    :param constant: Required list. The value of the constant to be added to the virtual raster.
+    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+                        Example for RasterInfo dict - 
+                        {'bandCount': 3, 
+
+                         'extent': {"xmin": 4488761.95,
+                                     "ymin": 5478609.805,
+                                     "xmax": 4489727.05,
+                                     "ymax": 5479555.305,
+                                     "spatialReference": {
+
+                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+
+                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+
+                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+
+                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+
+                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+
+                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+
+                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+
+                                     }}, 
+                         'pixelSizeX': 0.0999999999999614, 
+
+                         'pixelSizeY': 0.1, 
+
+                         'pixelType': 'U8'}
+
+
+    :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
+                If not provided, active gis will be used to do this.
+                If gis parameter is not specified the output of constant_raster() cannot be displayed. 
+
+    :return: output raster 
+    """
+
+    template_dict = {
+        "rasterFunction" : "Constant",
+        "rasterFunctionArguments": {
+        }
+    }
+
+    if constant is not None:
+        template_dict["rasterFunctionArguments"]["Constant"] = constant
+
+    if raster_info is not None:
+        layer_raster_info = {}
+        if isinstance(raster_info, ImageryLayer):
+            layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        else:
+            layer_raster_info = copy.deepcopy(raster_info)
+        if "pixelType" in layer_raster_info.keys():
+            if isinstance(layer_raster_info["pixelType"], str):
+                layer_raster_info["pixelType"] = _pixel_type_string_to_long(layer_raster_info["pixelType"])
+        layer_raster_info.update({'type': 'RasterInfo'})
+        template_dict["rasterFunctionArguments"]['RasterInfo'] = layer_raster_info
+    else:
+        raise RuntimeError('raster_info cannot be None')
+
+    if gis is not None:
+        newlyr = ImageryLayer(template_dict, gis)
+    else:
+        newlyr = ImageryLayer(template_dict,None)
+    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    return newlyr
+
+def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0, min_integer=1, 
+                  max_integer=10, normal_mean=0.0, std_dev=1.0, exp_mean=1.0, poisson_mean= 1.0,
+                  alpha=1.0, beta=1.0, N=10, r=10, probability=0.5, seed=1, generator_type=2, 
+                  gis=None):
+    """
+    Creates a virtual raster with random values for each cell.
+
+    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+
+                        Example for RasterInfo dict - 
+                        {'bandCount': 3, 
+
+                         'extent': {"xmin": 4488761.95,
+                                     "ymin": 5478609.805,
+                                     "xmax": 4489727.05,
+                                     "ymax": 5479555.305,
+                                     "spatialReference": {
+
+                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+
+                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+
+                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+
+                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+
+                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+
+                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+
+                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+
+                                     }}, 
+                         'pixelSizeX': 0.0999999999999614, 
+
+                         'pixelSizeY': 0.1, 
+
+                         'pixelType': 'U8'}
+
+    :param distribution: Optional int. Specify the random value distribution method to use.
+     Default 1. i,e; Uniform
+                         Choice list:
+                           Uniform = 1
+                           UniformInteger = 2
+                           Normal = 3
+                           Exponential = 4
+                           Poisson = 5
+                           Gamma = 6
+                           Binomial = 7
+                           Geometric = 8
+                           NegativeBinomial = 9
+
+                        Uniform - A uniform distribution with the defined range.
+
+                        UniformInteger - An integer distribution with the defined range.
+
+                        Normal - A normal distribution with a defined {normal_mean} and {std_dev}. 
+
+                        Exponential - An exponential distribution with a defined {exp_mean}.
+
+                        Poisson - A Poisson distribution with a defined {Mean}.
+
+                        Gamma - A gamma distribution with a defined {alpha} and {beta}.
+                                
+                        Binomial - A binomial distribution with a defined {N} and {probability}.
+
+                        Geometric - A geometric distribution with a defined {probability}. 
+
+                        NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
+
+    :param min_uniform: Optional float. The default values is 0.0
+    :param max_uniform: Optional float. The default values is 1.0
+    :param min_integer: Optional int. The default values is 1
+    :param max_integer: Optional int. The default values is 10
+    :param normal_mean: Optional float. The default values is 0.0
+    :param std_dev: Optional float. The default values is 1.0
+    :param exp_mean: Optional float. The default values is 1.0
+    :param poisson_mean: Optional float. The default values is 1.0
+    :param alpha: Optional float. The default values is 1.0
+    :param beta: Optional float. The default values is 1.0
+    :param N: Optional int. The default values is 0.0
+    :param r: Optional int. The default values is 0.0
+    :param probability: Optional float. The default values is 0.5
+    :param seed: Optional int. The default values is 0.0
+    :param generator_type: Optional int. Default 2. i.e; MersenneTwister
+                           Choice list:
+                           Standard C Rand = 0
+                           ACM collected algorithm 599 = 1
+                           MersenneTwister = 2
+
+    :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
+                If not provided, active gis will be used to do this.
+                If gis parameter is not specified the output of constant_raster() cannot be displayed. 
+
+    :return: output raster 
+    """
+
+    template_dict = {
+        "rasterFunction" : "Random",
+        "rasterFunctionArguments": {
+        }
+    }
+
+    if distribution is not None:
+        template_dict["rasterFunctionArguments"]["Distribution"] = distribution
+
+    if min_uniform is not None:
+        template_dict["rasterFunctionArguments"]["MinimumUniform"] = min_uniform
+
+    if max_uniform is not None:
+        template_dict["rasterFunctionArguments"]["MaximumUniform"] = max_uniform
+
+    if min_integer is not None:
+        template_dict["rasterFunctionArguments"]["MinimumInteger"] = min_integer
+
+    if max_integer is not None:
+        template_dict["rasterFunctionArguments"]["MaximumInteger"] = max_integer
+
+    if normal_mean is not None:
+        template_dict["rasterFunctionArguments"]["NormalMean"] = normal_mean
+
+    if std_dev is not None:
+        template_dict["rasterFunctionArguments"]["StandardDeviation"] = std_dev
+
+    if exp_mean is not None:
+        template_dict["rasterFunctionArguments"]["ExponentialMean"] = exp_mean
+
+    if poisson_mean is not None:
+        template_dict["rasterFunctionArguments"]["ExponentialMean"] = poisson_mean
+
+    if alpha is not None:
+        template_dict["rasterFunctionArguments"]["Alpha"] = alpha
+
+    if beta is not None:
+        template_dict["rasterFunctionArguments"]["Beta"] = beta
+
+    if N is not None:
+        template_dict["rasterFunctionArguments"]["N"] = N
+
+    if r is not None:
+        template_dict["rasterFunctionArguments"]["r"] = r
+
+    if probability is not None:
+        template_dict["rasterFunctionArguments"]["Probability"] = probability
+
+    if seed is not None:
+        template_dict["rasterFunctionArguments"]["Seed"] = seed
+
+    if generator_type is not None:
+        template_dict["rasterFunctionArguments"]["GeneratorType"] = generator_type
+
+    if raster_info is not None:
+        layer_raster_info = {}
+        if isinstance(raster_info, ImageryLayer):
+            layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        else:
+            layer_raster_info = copy.deepcopy(raster_info)
+        if "pixelType" in layer_raster_info.keys():
+            if isinstance(layer_raster_info["pixelType"], str):
+                layer_raster_info["pixelType"] = _pixel_type_string_to_long(layer_raster_info["pixelType"])
+        layer_raster_info.update({'type': 'RasterInfo'})
+        template_dict["rasterFunctionArguments"]['RasterInfo'] = layer_raster_info
+    else:
+        raise RuntimeError('raster_info cannot be None')
+
+    if gis is not None:
+        newlyr = ImageryLayer(template_dict, gis)
+    else:
+        newlyr = ImageryLayer(template_dict,None)
+    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    return newlyr
+
+
+class RFT:
+    def __init__(self, raster_function_template,gis=None):
+        try:
+            self._is_public_flag = False
+            self._rft=raster_function_template
+            self._gis = _arcgis.env.active_gis if gis is None else gis
+            key_value_dict={}
+            if(".rft.xml" in self._rft.name):
+                _rft_json = self.to_json(self._gis)
+            else:
+                file_path = self._rft.get_data()
+                f=open(file_path, "r")
+                file_content = f.read()
+                file_content = file_content.replace("false", "False")
+                file_content = file_content.replace("true", "True")
+                _rft_json = eval(file_content)
+            self._rft_json = _find_object_ref(_rft_json, {}, self)
+            global node, end_node 
+            node = 0
+            end_node=0
+            self._rft_dict, self._raster_dict = self._find_arguments_()
+
+            if self._rft_dict.keys() & hidden_inputs:
+                for key in hidden_inputs:
+                    self._rft_dict.pop(key,None)
+            self._arguments=copy.deepcopy(self._rft_dict)
+            self.arguments = copy.deepcopy(self._arguments)
+        except:
+            _LOGGER.warning("Unable to find the arguments for the current raster function template. "
+                  "This might be because the server could not process the template "
+                  "or the template is invalid."
+                  "(Ensure that the user account has access to Raster Utilities of the server. "
+                  "To share the Raster utilities to all user accounts. Please refer Sharing Raster Utilities section in "
+                  "https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.raster.functions.RFT.html)")
+
+    @property
+    def __doc__(self):
+        tab_value =-1
+        help="\"\"\"\n"
+        if("description" in self._rft_json):
+            help=help+self._rft_json["description"]
+        else:
+            help=help+self._rft_json["function"]["description"]
+        help = help+"\n\nParameters\n----------\n"
+        for key,value in self._rft_dict.items():
+            help=help+"\n"+(str(key)+" : "+str(value))
+
+        help=help+("\n\nReturns\n-------\n")
+        help=help+("Imagery Layer, on which the function chain is applied \n")
+        help=help+"\"\"\""
+        print(help)
+
+    @property
+    def __signature__(self):
+        from inspect import Signature, Parameter
+        signature_list=[]
+        for name,value in self.arguments.items():
+            signature_list.append(Parameter(name, Parameter.POSITIONAL_OR_KEYWORD, default=value))
+        sig = Signature(signature_list)
+        return sig
+
+
+    def __call__(self,*args,**kwargs):
+        try:
+            i=0
+            key_list=list(self._arguments.keys())
+            for pos_arg in args:
+                kwargs.update({key_list[i]:pos_arg})
+                i=i+1
+            
+            if(len(kwargs)==1):
+                for k,v in self._raster_dict.items():
+                    self._raster_dict.update({k:kwargs[list(kwargs.keys())[0]]})	
+                return self._apply_rft(self._raster_dict, self._gis)	           
+
+            for key in kwargs.keys():
+                for k in self._arguments.keys():
+                    if(k==key):
+                        self._arguments[k]=kwargs[key]
+            return self._apply_rft(self._arguments, self._gis)
+        except:
+            _LOGGER.warning("Unable to apply the current raster function template on the imagery layer. " 
+                  "This might be because the server could not process the template, "
+                  "the template is invalid or not populated with correct arguments. "
+                  "(Make sure that Raster rendering service is turned on, inorder to display the output dynamically.)")
+
+        
+    def to_json(self, gis =None):
+        """
+        Converts the raster function template into a dictionary.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        gis                   optional, GIS on which the RFT object is based on. 
+        =================     ====================================================================
+
+        :return: dictionary
+        """
+        task = "ConvertRasterFunctionTemplate"
+        gis = _arcgis.env.active_gis if gis is None else gis
+        url = gis.properties.helperServices.rasterUtilities.url
+
+        gptool = _arcgis.gis._GISResource(url, gis)
+        params = {}
+        params["inputRasterFunction"] = {"itemId": self._rft.itemid}
+        params["outputFormat"]="json"
+        task_url, job_info, job_id = _analysis_job(gptool, task, params)
+        job_info = _analysis_job_status(gptool, task_url, job_info)
+        job_values = _analysis_job_results(gptool, task_url, job_info)
+        result = gptool._con.post(job_values["outputRasterFunction"]["url"],{},token=gptool._token)
+        return result
+
+    def _apply_argument(self, input_dict,arg_dict):
+        if "arguments" in input_dict.keys():
+            if "isDataset" in input_dict["arguments"].keys():
+                if(input_dict["arguments"]["isDataset"] == False):
+                    if(("value" in input_dict["arguments"]) and "elements" in input_dict["arguments"]["value"]):
+                        for arg_element in input_dict["arguments"]["value"]["elements"]:
+                            self._apply_argument(arg_element["arguments"],arg_dict)
+                else:
+                    if(("value" in input_dict["arguments"]) and "arguments" in input_dict["arguments"]["value"]):
+                        self._apply_argument(input_dict["arguments"]["value"]["arguments"],arg_dict)
+            self._apply_argument(input_dict["arguments"],arg_dict)
+        flag_rasters = -1
+        for key, value in input_dict.items():
+            if isinstance(value, dict):
+                if (("type" in value) and value["type"]=="RasterFunctionTemplate") and "arguments" in value.keys():
+                    if "isDataset" in value["arguments"].keys():
+                        if(value["arguments"]["isDataset"] == False):
+                            for arg_element in value["arguments"]["value"]["elements"]:
+                                self._apply_argument(arg_element["arguments"],arg_dict)
+                        else:
+                            if "arguments" in value["arguments"]["value"]:
+                                self._apply_argument(value["arguments"]["value"]["arguments"],arg_dict)
+                    self._apply_argument(value["arguments"],arg_dict)
+                    flag_rasters = 1
+                if(("type" in value) and value["type"]=="RasterFunctionVariable"):
+                    for k,v in arg_dict.items():
+                        if(value["name"]==k):
+                            if isinstance(v,ImageryLayer) or isinstance(v, _FeatureLayer):
+                                raster = _raster_input_rft(v)
+                                v =_input_rft(raster)
+                                if isinstance(raster,str):
+                                    value["value"]=v
+                                    flag_rasters=1
+                                elif isinstance(raster,dict):
+                                    if raster.keys() & {"mosaicRule"}:
+                                        value["value"]=v
+                                    else:
+                                        input_dict.update({key:v})
+                                break
+                            else:
+                                if("value" in value):
+                                    if isinstance(value["value"],dict):
+                                        if "type" in value["value"]:
+                                            if value["value"]["type"]=="Scalar":
+                                                value["value"]={"type":"Scalar","value":v}
+                                                break
+                                            elif value["value"]["type"]=="RasterDatasetName":
+                                                value["value"]=v
+                                                break
+                                                
+                                        else:
+                                            value["value"]=v
+                                            break
+                                    else:
+                                        value["value"]=v
+                                        break
+                                else:
+                                    value["value"]=v
+                                    if((key=="RasterInfo")) and isinstance(v, dict):
+                                        v.update({"type":"RasterInfo"})
+                                    if (isinstance(value["value"], numbers.Number) and value["isDataset"]==True):
+                                        value["value"]={"type":"Scalar","value":v}
+                                        break
+
+                            if "name" in value and "value" in value:
+                                if isinstance(value["value"], dict):
+                                    if("elements" in value["value"].keys()):
+                                        raster = _raster_input_rft(v)
+                                        v =_input_rft(raster)
+                                        if isinstance(raster,list):
+                                            value["value"]=v
+                                            flag_rasters=1
+                                            break
+                            else:
+                                if("value" in value):
+                                    if isinstance(value["value"],dict):
+                                        if "type" in value["value"]:
+                                            if value["value"]["type"]=="Scalar":
+                                                value["value"]={"type":"Scalar","value":v}
+                                                break
+                                            elif value["value"]["type"]=="RasterDatasetName":
+                                                value["value"]=v
+                                                break
+                                        else:
+                                            value["value"]=v
+                                            break
+                                    else:
+                                        value["value"]=v
+                                        break
+                                else:
+                                    value["value"]=v
+                                    if isinstance(value["value"], numbers.Number) and value["isDataset"]==True:
+                                        value["value"]={"type":"Scalar","value":v}
+                                        break
+                    if(flag_rasters==-1) and "Rasters" in input_dict.keys():
+                        elements_structure = []
+                        if (isinstance (input_dict["Rasters"]["value"], dict)) and "elements" in input_dict["Rasters"]["value"]:
+                            elements_structure = input_dict["Rasters"]["value"]["elements"]
+                        elif isinstance(input_dict["Rasters"]["value"],list):
+                            elements_structure = input_dict["Rasters"]["value"]
+                        for element in elements_structure:
+                            if isinstance(element,dict):
+                                if (("type" in element) and element["type"]=="RasterFunctionTemplate") and "arguments" in element.keys():
+                                    if "isDataset" in element["arguments"].keys():
+                                        if(element["arguments"]["isDataset"] == False):
+                                            for arg_element in element["arguments"]["value"]["elements"]:
+                                                self._apply_argument(arg_element["arguments"],arg_dict)
+                                        else:
+                                            if(("value" in element["arguments"]) and "arguments" in element["arguments"]["value"]):
+                                                self._apply_argument(element["arguments"]["value"]["arguments"],arg_dict)
+                                    self._apply_argument(element["arguments"],arg_dict)
+                                    flag_rasters = 1
+                            for k,v in arg_dict.items():
+                                if "name" in element:
+                                    if(element["name"]==k):
+                                        if isinstance(v,ImageryLayer) or isinstance(v, _FeatureLayer):
+                                            raster = _raster_input_rft(v)
+                                            v =_input_rft(raster)
+                                            if isinstance(raster,str):
+                                                element.clear()
+                                                element.update(v)
+                                            elif isinstance(raster,dict):
+                                                if raster.keys() & {"mosaicRule"}:
+                                                    element.update(v)
+                                                else:
+                                                    input_dict.update({key:v})
+                                            flag_rasters=1
+                                        else:
+                                            if("value" in element):
+                                                if isinstance(element["value"],dict):
+                                                    if "type" in element["value"]:
+                                                        if element["value"]["type"]=="Scalar":
+                                                            element.clear()
+                                                            element.update({"type":"Scalar","value":v})
+                                                            break
+                                                else:
+                                                    element["value"]=v
+                                                    break
+                                            else:
+                                                element["value"]=v
+                                                if isinstance(element["value"], numbers.Number) and element["isDataset"]==True:
+                                                    element.clear()
+                                                    element.update({"type":"Scalar","value":v})
+                                                    break
+                        if (flag_rasters==1 and "Rasters" in input_dict.keys()):
+                            if "value" in input_dict["Rasters"]:
+                                if "elements" in input_dict["Rasters"]["value"]:
+                                    input_dict["Rasters"]["value"]=input_dict["Rasters"]["value"]["elements"]
+                if((("type" in value) and value["type"]=="RasterFunctionVariable") and ("value" in value)) and isinstance(value["value"],dict):
+                    if "function" in value["value"]:
+                        self._apply_argument(value["value"]["arguments"],arg_dict)
+
+        return input_dict
+
+    def _query_rasters(self, rft_dict, raster_dict):
+        if "arguments" in rft_dict.keys():
+            self._query_rasters(rft_dict["arguments"],raster_dict)
+        for key, value in rft_dict.items():
+            if isinstance(value, dict):
+                if (value["type"]=="RasterFunctionTemplate") and "arguments" in value.keys():
+                    self._query_rasters( value["arguments"],raster_dict)
+                if "isDataset" in value.keys():
+                    if (value["isDataset"]==True) and (value["type"]=="RasterFunctionVariable"):
+                        if "name" in value and "value" not in value:
+                            raster_dict.update({value["name"]:None})
+                    if(value["isDataset"]==False) and (value["type"]=="RasterFunctionVariable"):
+                        if "value" in value.keys():
+                            if(isinstance(value["value"],dict)):
+                                if "type" in value["value"].keys():
+                                    if value["value"]["type"] == "ArgumentArray":
+                                        if value["value"]["elements"]:
+                                            for element in value["value"]["elements"]:
+                                                if (element["type"]=="RasterFunctionTemplate") and "arguments" in element.keys():
+                                                    self._query_rasters( element["arguments"],raster_dict)
+                                                if isinstance(element, dict):
+                                                    if "isDataset" in element and "type" in element:
+                                                        if (element["isDataset"]==True) and (element["type"]=="RasterFunctionVariable"):
+                                                            if "name" in element and "value" not in element:
+                                                                raster_dict.update({element["name"]:None})
+                                        else:
+                                            raster_dict.update({value["name"]:None})
+
+        return raster_dict
+
+    def _find_arguments_(self):
+        from operator import eq
+        import numbers
+        gdict = self._rft_json
+        key_value_dict =  {}
+        raster_dictionary = {}
+
+        def _function_create(value): #Create new node for the function if it doesn't exist yet
+            if "isDataset" in value["arguments"].keys():
+                if(value["arguments"]["isDataset"] == False):
+                    for arg_element in value["arguments"]["value"]["elements"]:
+                        _function_traversal(arg_element)
+                else:
+                    if("value" in value["arguments"]):
+                        _raster_function_traversal(value["arguments"])
+            _function_traversal(value["arguments"])
+
+        def _raster_function_traversal(raster_dict, index=1, scalar_name="Raster", ispublic=False, function_arg_type=None): #If isDataset=True
+            if "value" in raster_dict.keys(): #Handling Scalar rasters
+                if raster_dict["value"] is None:
+                    if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                        raster_name = _python_variable_name(raster_dict["name"])
+                        raster_dict.update({"name":raster_name})
+                        key_value_dict.update({raster_name:None})
+                elif isinstance(raster_dict["value"], dict):
+                    if "value" in raster_dict["value"]:
+                        if isinstance(raster_dict["value"]["value"], numbers.Number):
+                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                if "name" in raster_dict.keys():
+                                    raster_name = _python_variable_name(raster_dict["name"])
+                                    raster_dict.update({"name":raster_name})
+                                    key_value_dict.update({raster_name:raster_dict["value"]["value"]})
+                                    raster_dictionary.update({raster_name:raster_dict["value"]["value"]})
+                                else:
+                                    scalar_name = scalar_name+"_scalar_"+str(index)
+                                    raster_dict.update({"name":scalar_name})
+                                    key_value_dict.update({scalar_name:raster_dict["value"]["value"]}) 
+
+                    elif "elements" in raster_dict["value"]:  #Handling Raster arrays
+                        if raster_dict["value"]["elements"]:  #if elements has any value in the list
+                            for e in raster_dict["value"]["elements"]:
+                                index = (raster_dict["value"]["elements"].index(e))+1
+                                if "name" in raster_dict:
+                                    scalar_name = _python_variable_name(raster_dict["name"])
+                                if ("type" in e) and e["type"]=="FunctionRasterDatasetName":
+                                    if self._is_public_flag is False or  ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                        raster_name = _python_variable_name(raster_dict["name"])
+                                        raster_dict.update({"name":raster_name})
+                                        key_value_dict.update({raster_name:e["arguments"]["Raster"]["datasetName"]["name"]})
+                                        raster_dictionary.update({raster_name:e["arguments"]["Raster"]["datasetName"]["name"]})
+                                elif "function" in e.keys(): # if function template inside
+                                    _function_traversal(e)
+                                else:  #if raster dataset inside raster array
+                                    if function_arg_type is "LocalFunctionArguments":
+                                        if self._is_public_flag is False or ispublic==True or ("isPublic" not in e.keys()) or (("isPublic" in e.keys()) and e["isPublic"] is True):
+                                            _raster_function_traversal(e,  index, scalar_name, ispublic=True)
+                                    elif self._is_public_flag is False or ispublic==True or ("isPublic" not in raster_dict.keys()) or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
+                                        _raster_function_traversal(e,  index, scalar_name, ispublic=True)
+                        else: # If elements is empty i.e Rasters has no value when rft was created
+                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                raster_name = _python_variable_name(raster_dict["name"])
+                                raster_dict.update({"name":raster_name})
+                                key_value_dict.update({raster_name:None})
+                                raster_dictionary.update({raster_name:None})
+                    elif "name" in raster_dict["value"]: #if raster properties are preserved
+                        if "function" in raster_dict["value"]:
+                            _function_traversal(raster_dict["value"])
+                        else:
+                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                raster_name = _python_variable_name(raster_dict["name"])
+                                raster_dict.update({"name":raster_name})
+                                key_value_dict.update({raster_name:raster_dict["value"]["name"]})
+                                raster_dictionary.update({raster_name:raster_dict["value"]["name"]})
+
+                    elif ("type" in raster_dict["value"]) and raster_dict["value"]["type"]=="FunctionRasterDatasetName":
+                        if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                            raster_name = _python_variable_name(raster_dict["name"])
+                            raster_dict.update({"name":raster_name})
+                            key_value_dict.update({raster_name:raster_dict["value"]["arguments"]["Raster"]["datasetName"]["name"]})
+                            raster_dictionary.update({raster_name:raster_dict["value"]["arguments"]["Raster"]["datasetName"]["name"]})
+                    elif ("type" in raster_dict["value"]) and raster_dict["value"]["type"]=="RasterBandCollectionName":
+                        if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                            raster_name = _python_variable_name(raster_dict["name"])
+                            raster_dict.update({"name":raster_name})
+                            key_value_dict.update({raster_name:raster_dict["value"]["datasetName"]["name"]})
+                            raster_dictionary.update({raster_name:raster_dict["value"]["datasetName"]["name"]})
+                    elif "datasetName" in raster_dict["value"]: #local image location
+                        if "name" in raster_dict["value"]["datasetName"]:
+                            if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict["value"]["datasetName"]) and raster_dict["value"]["datasetName"]["isPublic"] is True):
+                                raster_name = _python_variable_name(raster_dict["value"]["datasetName"]["name"])
+                                raster_dict["value"]["datasetName"].update({"name":raster_name})
+                                key_value_dict.update({raster_name:None})
+
+                    elif "function" in raster_dict["value"].keys(): # if function template inside
+                        _function_traversal(raster_dict["value"])
+                elif isinstance (raster_dict["value"], list): #raster_dict"value" does not have "value" or "elements" in it (ArcMap scalar rft case)
+                        for x in raster_dict["value"]:
+                            if isinstance(x, numbers.Number):  #Check if scalar float value
+                                if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                                     if "name" in raster_dict.keys():
+                                         raster_name = _python_variable_name(raster_dict["name"])
+                                         raster_dict.update({"name":raster_name})
+                                         key_value_dict.update({raster_name:x}) 
+                                     #else:
+                                         #time.sleep(.00000001)scalar_name+"scalar"+str(index))
+                                         #scalar_name = "scalar"+''.join(e for e in str(datetime.now()) if e.isalnum())
+                                         #raster_dict.update({"name":scalar_name})
+                                         #key_value_dict.update({scalar_name:x}) 
+                elif isinstance (raster_dict["value"], numbers.Number):
+                    if self._is_public_flag is False or ispublic==True or (("isPublic" in raster_dict.keys()) and raster_dict["isPublic"] is True):
+                        if "name" in raster_dict.keys():
+                            raster_name = _python_variable_name(raster_dict["name"])
+                            raster_dict.update({"name":raster_name})
+                            key_value_dict.update({raster_name:raster_dict["value"]})
+                        else:
+                            scalar_name = scalar_name+"_scalar_"+str(index)
+                            raster_dict.update({"name":scalar_name})
+                            key_value_dict.update({scalar_name:raster_dict["value"]}) 
+            else:
+                if self._is_public_flag is False  or ispublic==True or  (("isPublic" in raster_dict) and raster_dict["isPublic"] is True):
+                    raster_name = _python_variable_name(raster_dict["name"])
+                    raster_dict.update({"name":raster_name})
+                    key_value_dict.update({raster_name:None})
+                    raster_dictionary.update({raster_name:None})
+
+        def _function_traversal(dictionary):
+            if "function" in dictionary.keys():
+                _function_create(dictionary)
+            function_arg_type=dictionary['type'] if 'type' in dictionary else None  
+            for key,value in dictionary.items():
+                if isinstance(value , dict):
+                    if "isDataset" in value.keys():
+                        if (value["isDataset"] == True) or key == "raster" or key == "Raster2" or key == "Rasters" or key == "Raster":
+                            _raster_function_traversal(value,function_arg_type=function_arg_type)
+                        elif (value["isDataset"] == False):  #Parameters
+                            if "value" in value:                                
+                                if value["value"] is not None or isinstance(value["value"],bool):
+                                    if (isinstance(value["value"],dict)) and "elements" in value["value"]:
+                                        if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
+                                            raster_name = _python_variable_name(value["name"])
+                                            value.update({"name":raster_name})
+                                            key_value_dict.update({raster_name:value["value"]["elements"]})
+                                    else:                                        
+                                        if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
+                                            raster_name = _python_variable_name(value["name"])
+                                            value.update({"name":raster_name})
+                                            key_value_dict.update({raster_name:value["value"]})
+                            else:
+                                if self._is_public_flag is False or (("isPublic" in value) and value["isPublic"] is True):
+                                    raster_name = _python_variable_name(value["name"])
+                                    value.update({"name":raster_name})
+                                    key_value_dict.update({raster_name:None})
+                    elif "datasetName" in value.keys():
+                        if self._is_public_flag is False or  (("isPublic" in value["datasetName"]) and value["datasetName"]["isPublic"] is True):
+                            key_value_dict.update({key:value["datasetName"]["name"]})
+                    elif "function" in value.keys():  #Function Chain inside Raster
+                        _function_create(value)
+
+        if "function" in gdict.keys():
+            if "isDataset" in gdict["arguments"].keys():
+                if(gdict["arguments"]["isDataset"] == False):
+                    if ("value" in gdict["arguments"]):
+                        if "elements" in gdict["arguments"]["value"]:
+                            if gdict["arguments"]["value"]["elements"]:
+                                for arg_element in gdict["arguments"]["value"]["elements"]:
+                                    _function_traversal(arg_element)
+                            else: # when gdict["arguments"]["value"]["elements"]=[]
+                                _raster_function_traversal(gdict["arguments"], function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
+                    else:
+                        _raster_function_traversal(gdict["arguments"], function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
+            
+                else:
+                    if "value" in gdict["arguments"]:
+                        _function_traversal(gdict["arguments"]["value"])
+                    elif (gdict["arguments"]["isDataset"] == True): #Aspect function with only raster parameter
+                        _raster_function_traversal(gdict["arguments"],  function_arg_type=gdict['arguments']['type'] if 'type' in gdict['arguments'] else None)
+            _function_traversal(gdict["arguments"])
+        return key_value_dict, raster_dictionary
+
+
+    def _apply_rft(self, arg_dict=None, gis = None):
+        rft_dict = copy.deepcopy(self._rft_json)
+        arg_dict_copy=copy.copy(arg_dict)
+        if arg_dict_copy is not None:
+            for key in list(arg_dict_copy.keys()):
+                if(arg_dict_copy[key] is None):
+                    arg_dict_copy.pop(key,None)
+            complete_rft_dict = self._apply_argument(rft_dict,arg_dict_copy)
+
+        newlyr = ImageryLayer(complete_rft_dict, self._gis)
+        #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+        newlyr._fn = complete_rft_dict
+        newlyr._fnra = complete_rft_dict
+        return newlyr
+
+    def draw_graph(self,show_attributes=False, graph_size="14.25, 15.25"):
+
+        """
+        Displays a structural representation of the function chain and it's raster input values. If
+        show_attributes is set to True, then the draw_graph function also displays the attributes
+        of all the functions in the function chain, representing the rasters in a blue rectangular
+        box, attributes in green rectangular box and the raster function names in yellow.
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        show_attributes       optional boolean. If True, the graph displayed includes all the
+                              attributes of the function and not only it's function name and raster
+                              inputs
+                              Set to False by default, to display only he raster function name and
+                              the raster inputs to it.
+        -----------------     --------------------------------------------------------------------
+        graph_size            optional string. Maximum width and height of drawing, in inches,
+                              seperated by a comma. If only a single number is given, this is used
+                              for both the width and the height. If defined and the drawing is
+                              larger than the given size, the drawing is uniformly scaled down so
+                              that it fits within the given size.
+        =================     ====================================================================
+
+        :return: Graph
+        """
+        from operator import eq
+        import numbers
+        try:
+            from graphviz import Digraph
+        except:
+            print("Graphviz needs to be installed. pip install graphviz")
+
+        G = Digraph(comment='Raster Function Chain', format = 'svg') # To declare the graph
+        G.clear() #clear all previous cases of the same name
+        G.attr(rankdir='LR', len='1',overlap="false",splines='ortho', nodesep='0.5',size=graph_size)   #Display graph from Left to Right
+        root=0
+        gdict = self._rft_json
+        global nodenumber,dict_arg
+        dict_arg={}
+        
+        def _function_create(value,childnode): #Create new node for the function if it doesn't exist yet
+            global nodenumber
+            dict_temp_arg={}
+            list_arg=[]
+            flag=0
+            for k_arg, v_arg in value["arguments"].items():
+                list_arg.append(k_arg+str(v_arg))
+ 
+            list_arg.sort()
+            list_arg_str=str(list_arg)
+            if dict_arg is not None:
+                for k_check in dict_arg.keys():
+                    if k_check == list_arg_str:
+                        G.edge(str(dict_arg.get(k_check)),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                        flag=1
+                                    
+            if flag == 0:
+                nodenumber+=1
+                G.node(str(nodenumber),value["function"]["name"], style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
+                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                connect = nodenumber
+                dict_temp_arg={list_arg_str:connect}
+                dict_arg.update(dict_temp_arg)
+                if "isDataset" in value["arguments"].keys():
+                    if(value["arguments"]["isDataset"] == False):
+                        for arg_element in value["arguments"]["value"]["elements"]:
+                            _function_graph(arg_element,connect)
+                    elif (value["arguments"]["isDataset"] == True):
+                        _raster_function_graph(value["arguments"],connect)
+                _function_graph(value["arguments"],connect)
+
+        def _raster_function_graph(raster_dict, childnode): #If isDataset=True
+            global nodenumber,connect
+            if "value" in raster_dict.keys(): #Handling Scalar rasters
+                if raster_dict["value"] is not None:
+                    if not (isinstance(raster_dict["value"],dict)):
+                        if isinstance(raster_dict["value"], numbers.Number): 
+                            nodenumber+=1
+                            G.node(str(nodenumber), str(raster_dict["value"]) , style=('filled'),fontsize="12", shape='circle',fixedsize="shape",color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "value" in raster_dict["value"]:
+                        if isinstance(raster_dict["value"]["value"], numbers.Number): 
+                            nodenumber+=1
+                            G.node(str(nodenumber), str(raster_dict["value"]["value"]) , style=('filled'),fontsize="12", shape='circle',fixedsize="shape",color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "elements" in raster_dict["value"]:  #Handling Raster arrays
+                        if raster_dict["value"]["elements"]:  #if elements has any value in the list
+                            for e in raster_dict["value"]["elements"]:
+                                if "function" in e.keys(): # if function template inside
+                                    _function_graph(e,childnode)
+                                else:  #if raster dataset inside raster array
+                                    _raster_function_graph(e, childnode)
+                        else: # If elements is empty i.e Rasters has no value when rft was created
+                            nodenumber+=1
+                            G.node(str(nodenumber),str(raster_dict["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "function" in raster_dict["value"]: # If function in value[]
+                        _function_graph(raster_dict,childnode)
+
+                    elif "name" in raster_dict["value"]: #if raster properties are preserved
+                        if "function" in raster_dict["value"]:
+                            _function_graph(raster_dict["value"],childnode)
+                        else:
+                            nodenumber+=1
+                            G.node(str(nodenumber),str(raster_dict["value"]["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "datasetName" in raster_dict["value"]: #local image location
+                        if "name" in raster_dict["value"]["datasetName"]:
+                            nodenumber+=1
+                            G.node(str(nodenumber),str(raster_dict["value"]["datasetName"]["name"]), style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                            G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "function" in raster_dict["value"].keys(): # if function template inside
+                        _function_graph(raster_dict["value"],childnode)
+                    #raster_dict"value" does not have "value" or "elements" in it (ArcMap scalar rft case)
+                    elif isinstance (raster_dict["value"], list):
+                        for x in raster_dict["value"]:
+                            if isinstance(x, numbers.Number):  #Check if scalar float value
+                                nodenumber+=1
+                                G.node(str(nodenumber), str(x), style=('filled'), fontsize="12", shape='circle',fixedsize="shape", color='darkslategray2',fillcolor='darkslategray2', fontname="sans-serif")
+                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                        
+                elif "name" in raster_dict.keys():      
+                    rastername = str(raster_dict["name"]) #Handling Raster
+                    nodenumber+=1
+                    G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                    G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                
+
+            elif "datasetName" in raster_dict.keys():
+                rastername = str(raster_dict["datasetName"]["name"]) #Handling Raster
+                nodenumber+=1
+                G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+
+            elif "name" in raster_dict: 
+                rastername = str(raster_dict["name"]) #Handling Raster
+                nodenumber+=1
+                G.node(str(nodenumber), rastername, style=('filled'), shape='note',color='darkseagreen2',fillcolor='darkseagreen2', fontname="sans-serif")
+                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+
+
+        def _function_graph(dictionary, childnode): 
+            global nodenumber,connect
+            count=0
+            if "function" in dictionary.keys():
+                _function_create(dictionary,childnode)
+
+            for key,value in dictionary.items():
+                if isinstance(value , dict):
+                    if "isDataset" in value.keys():
+                        if (value["isDataset"] == True) or key == "Raster" or key == "Raster2" or key == "Rasters":
+                            _raster_function_graph(value, childnode)
+                        elif (value["isDataset"] == False) and show_attributes == True:  #Parameters
+                            nodenumber+=1
+                            if "name" in value and value["name"] not in hidden_inputs:
+                                if "value" in value:
+                                    if value["value"] is not None or isinstance(value["value"],bool):
+                                        atrr_name=str(value["name"])+" = "+str(value["value"])
+                                else:
+                                    atrr_name=str(value["name"])
+
+                                G.node(str(nodenumber), atrr_name, style=('filled'), shape='rectangle',color='antiquewhite',fillcolor='antiquewhite', fontname="sans-serif")
+                                G.edge(str(nodenumber),str(childnode),color="silver", arrowsize="0.9", penwidth="1")
+                    
+                    elif "datasetName" in value.keys():
+                        _raster_function_graph(value, childnode)
+
+                    elif "function" in value.keys():  #Function Chain inside Raster
+                        _function_create(value,childnode)
+
+        if "function" in gdict.keys():
+            G.node(str(root),gdict["function"]["name"], style=('rounded, filled'), shape='box', color='lightgoldenrod1', fillcolor='lightgoldenrod1', fontname="sans-serif")
+            nodenumber=root
+            if "isDataset" in gdict["arguments"].keys():
+                if(gdict["arguments"]["isDataset"] == False):
+                    if "value" in gdict["arguments"]:
+                        if "elements" in gdict["arguments"]["value"]:
+                            if gdict["arguments"]["value"]["elements"]:
+                                for arg_element in gdict["arguments"]["value"]["elements"]:
+                                    _function_graph(arg_element,root)
+                            else: # when gdict["arguments"]["value"]["elements"]=[]
+                                _raster_function_graph(gdict["arguments"],root)
+                    else:
+                        _raster_function_graph(gdict["arguments"],root)
+                else:
+                    if "value" in gdict["arguments"]:
+                        _function_graph(gdict["arguments"]["value"],root)
+                    elif (gdict["arguments"]["isDataset"] == True):
+                        _raster_function_graph(gdict["arguments"],root)
+            _function_graph(gdict["arguments"],root)
+        return G
+  
+    def _repr_svg_(self):
+        graph=self.draw_graph()
+        svg_graph=graph.pipe().decode('utf-8')
+        return svg_graph

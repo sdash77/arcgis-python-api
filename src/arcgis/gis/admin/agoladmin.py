@@ -5,6 +5,7 @@ from ..._impl.connection import _ArcGISConnection
 from ...gis import GIS
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
+from ...apps.tracker._location_tracking import LocationTrackingManager
 ########################################################################
 class AGOLAdminManager(object):
     """
@@ -30,6 +31,7 @@ class AGOLAdminManager(object):
     _license = None
     _usage = None
     _category_schema = None
+    _certificates = None
     #----------------------------------------------------------------------
     def __init__(self,
                  gis,
@@ -136,6 +138,13 @@ class AGOLAdminManager(object):
         return self._idp
     #----------------------------------------------------------------------
     @property
+    def location_tracking(self):
+        """
+        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+        """
+        return LocationTrackingManager(self._gis)
+    @property
+    #----------------------------------------------------------------------
     def social_providers(self):
         """
         This resource allows for the setting and configuration of the social providers
@@ -242,5 +251,14 @@ class AGOLAdminManager(object):
         return self._gis._con.post(url, params,
                                    file_name="history.csv",
                                    out_folder=save_folder)
-
+    #----------------------------------------------------------------------
+    @property
+    def certificates(self):
+        """
+        Provides access to managing the organization's certificates.
+        """
+        if self._certificates is None:
+            from .._impl import CertificateManager
+            self._certificates = CertificateManager(gis=self._gis)
+        return self._certificates
 

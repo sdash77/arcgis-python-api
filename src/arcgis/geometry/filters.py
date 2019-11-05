@@ -36,7 +36,30 @@ def _filter(geometry, sr, rel):
     return filter
 
 def intersects(geometry, sr=None):
-    """filters results whose geometry intersects with the specified geometry"""
+    """filters results whose geometry intersects with the specified geometry
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: Select the gas lines that intersect a specific
+        freeway feature, United States Interstate 15.
+
+        from arcgis.geometry import Geometry
+        from arcgis.geometry.filters import intersects
+
+        # select a filter feature to construct its geometry
+        rte15_fset = freeway_lyr.query(where="ROUTE_NUM = 'I15'")
+        rte15_geom_dict = rte15_fset.features[0].geometry
+        rte15_geom_dict['spatialReference'] = freeway_sr
+        rte15_geom = Geometry(rte15_geom_dict)
+
+        # construct a geometry filter using the filter geometry
+        flyr_filter = intersects(rte15_geom, sr=freeway_sr)
+
+        # query a feature layer for features that meet filter criteria
+        gas_lines_I15 = gas_line_lyr.query(geometry_filter=flyr_filter)
+
+    """
+
     return _filter(geometry, sr, 'esriSpatialRelIntersects')
 
 def contains(geometry, sr=None):

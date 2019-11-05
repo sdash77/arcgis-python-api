@@ -4,6 +4,7 @@ from datetime import datetime
 from arcgis.features import FeatureSet
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
+from arcgis.geoprocessing import import_toolbox
 from arcgis.geoprocessing._support import _execute_gp_tool
 
 _log = _logging.getLogger(__name__)
@@ -22,7 +23,7 @@ default_incidents = {
                {'alias': 'Curb Approach', 'name': 'CurbApproach', 'type': 'esriFieldTypeSmallInteger'}],
     'geometryType': 'esriGeometryPoint', 'displayFieldName': '', 'exceededTransferLimit': False,
     'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
-    
+
 default_facilities = {
                                 'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
@@ -49,8 +50,8 @@ default_point_barriers = {
                                            {'alias': 'CurbApproach', 'name': 'CurbApproach',
                                             'type': 'esriFieldTypeSmallInteger'}], 'geometryType': 'esriGeometryPoint',
                                 'displayFieldName': '', 'exceededTransferLimit': False,
-                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}                                
-                                
+                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+
 default_line_barriers = {
                                 'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
@@ -58,8 +59,8 @@ default_line_barriers = {
                                                              'type': 'esriFieldTypeDouble'}],
                                 'geometryType': 'esriGeometryPolyline', 'displayFieldName': '',
                                 'exceededTransferLimit': False, 'spatialReference': {'latestWkid': 4326, 'wkid': 4326},
-                                'features': []}                                
-                                
+                                'features': []}
+
 default_polygon_barriers = {
                                 'fields': [{'alias': 'OBJECTID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'Name', 'name': 'Name', 'type': 'esriFieldTypeString',
@@ -74,8 +75,8 @@ default_polygon_barriers = {
                                            {'alias': 'SHAPE_Area', 'name': 'SHAPE_Area',
                                             'type': 'esriFieldTypeDouble'}], 'geometryType': 'esriGeometryPolygon',
                                 'displayFieldName': '', 'exceededTransferLimit': False,
-                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}                                
-                                
+                                'spatialReference': {'latestWkid': 4326, 'wkid': 4326}, 'features': []}
+
 default_attributes = {
                                 'fields': [{'alias': 'ObjectID', 'name': 'OBJECTID', 'type': 'esriFieldTypeOID'},
                                            {'alias': 'AttributeName', 'name': 'AttributeName',
@@ -311,47 +312,48 @@ default_attributes = {
                                                                                                             'AttributeName': 'Width Restriction',
                                                                                                             'ParameterValue': '0',
                                                                                                             'ParameterName': 'Vehicle Width (meters)'}}],
-                                'displayFieldName': '', 'exceededTransferLimit': False}                                
-                                
-default_tolerance = {'distance': 10, 'units': 'esriMeters'}                                
-                                
-                                
-                                
+                                'displayFieldName': '', 'exceededTransferLimit': False}
+
+default_tolerance = {'distance': 10, 'units': 'esriMeters'}
+
+
+
 def find_closest_facilities(
     incidents,
     facilities,
-    measurement_units = """Minutes""",
-    analysis_region = None,
-    number_of_facilities_to_find = 1,
-    cutoff = None,
-    travel_direction = """Incident to Facility""",
-    use_hierarchy = True,
-    time_of_day = None,
-    time_of_day_usage = """Start Time""",
-    uturn_at_junctions = """Allowed Only at Intersections and Dead Ends""",
-    point_barriers = None,
-    line_barriers = None,
-    polygon_barriers = None,
-    restrictions = """['Avoid Unpaved Roads',
-    'Avoid Private Roads',
-    'Driving an Automobile',
-    'Through Traffic Prohibited',
-    'Roads Under Construction Prohibited',
-    'Avoid Gates',
-    'Avoid Express Lanes',
-    'Avoid Carpool Roads']""",
-    attribute_parameter_values = None,
-    route_shape = """True Shape""",
-    route_line_simplification_tolerance = None,
-    populate_directions = False,
-    directions_language = """en""",
-    directions_distance_units = """Miles""",
-    directions_style_name = """NA Desktop""",
-    time_zone_for_time_of_day = """Geographically Local""",
-    travel_mode = """Custom""",
-    impedance = """Drive Time""",
-    gis = None):
+    measurement_units="Minutes",
+    analysis_region=None,
+    number_of_facilities_to_find=1,
+    cutoff=None,
+    travel_direction="Incident to Facility",
+    use_hierarchy=True,
+    time_of_day=None,
+    time_of_day_usage="Start Time",
+    uturn_at_junctions="Allowed Only at Intersections and Dead Ends",
+    point_barriers=None,
+    line_barriers=None,
+    polygon_barriers=None,
+    restrictions=None,
+    attribute_parameter_values=None,
+    route_shape="True Shape",
+    route_line_simplification_tolerance=None,
+    populate_directions=False,
+    directions_language ="en",
+    directions_distance_units="Miles",
+    directions_style_name="NA Desktop",
+    time_zone_for_time_of_day="Geographically Local",
+    travel_mode="Custom",
+    impedance="Drive Time",
+    save_output_network_analysis_layer=False,
+    overrides=None,
+    save_route_data=False,
+    time_impedance="TravelTime",
+    distance_impedance="Kilometers",
+    output_format="Feature Set",
+    gis=None,
+    future=False):
     """
+
 
 
 Finds one or more facilities that are closest from an incident based on travel time or travel distance and outputs the best routes, driving directions between the incidents and the chosen facilities, and a copy of the chosen facilities. You can use the tool, for example, to find the closest hospital to an accident, the closest police cars to a crime scene, or the closest store to a customer's address., When finding closest facilities, you can specify how many to find and whether the direction of travel is toward or away from them. You can also specify the time of day to account for travel times based on live or predictive traffic conditions for that time and date. For instance, you can use the tool to search for hospitals within a 15-minute drive time of the site of an accident at a given time of day. Any hospitals that take longer than 15 minutes to reach based on the traffic conditions will not be included in the results.
@@ -962,73 +964,74 @@ Returns the following as a named tuple:
 
 See http://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/ClosestFacility_GPServer/World_ClosestFacility/FindClosestFacilities.htm for additional help.
     """
-    kwargs = locals()
-    if incidents is None:
-        incidents = default_incidents
-
-    if facilities is None:
-        facilities = default_facilities
-
-    if point_barriers is None:
-        point_barriers = default_point_barriers
-
-    if line_barriers is None:
-        line_barriers = default_line_barriers
-
-    if polygon_barriers is None:
-        polygon_barriers = default_polygon_barriers
-
-    if attribute_parameter_values is None:
-        attribute_parameter_values = default_attributes
-
-    if route_line_simplification_tolerance is None:
-        route_line_simplification_tolerance = default_tolerance
-
-    param_db = {
-        "incidents": (FeatureSet, "Incidents"),
-        "facilities": (FeatureSet, "Facilities"),
-        "measurement_units": (str, "Measurement_Units"),
-        "analysis_region": (str, "Analysis_Region"),
-        "number_of_facilities_to_find": (int, "Number_of_Facilities_to_Find"),
-        "cutoff": (float, "Cutoff"),
-        "travel_direction": (str, "Travel_Direction"),
-        "use_hierarchy": (bool, "Use_Hierarchy"),
-        "time_of_day": (datetime, "Time_of_Day"),
-        "time_of_day_usage": (str, "Time_of_Day_Usage"),
-        "uturn_at_junctions": (str, "UTurn_at_Junctions"),
-        "point_barriers": (FeatureSet, "Point_Barriers"),
-        "line_barriers": (FeatureSet, "Line_Barriers"),
-        "polygon_barriers": (FeatureSet, "Polygon_Barriers"),
-        "restrictions": (str, "Restrictions"),
-        "attribute_parameter_values": (FeatureSet, "Attribute_Parameter_Values"),
-        "route_shape": (str, "Route_Shape"),
-        "route_line_simplification_tolerance": (LinearUnit, "Route_Line_Simplification_Tolerance"),
-        "populate_directions": (bool, "Populate_Directions"),
-        "directions_language": (str, "Directions_Language"),
-        "directions_distance_units": (str, "Directions_Distance_Units"),
-        "directions_style_name": (str, "Directions_Style_Name"),
-        "time_zone_for_time_of_day": (str, "Time_Zone_for_Time_of_Day"),
-        "travel_mode": (str, "Travel_Mode"),
-        "impedance": (str, "Impedance"),
-        "output_routes": (FeatureSet, "Output Routes"),
-        "output_directions": (FeatureSet, "Output Directions"),
-        "solve_succeeded": (bool, "Solve Succeeded"),
-        "output_closest_facilities": (FeatureSet, "Output Closest Facilities"),
-    }
-    return_values = [
-        {"name": "output_routes", "display_name": "Output Routes", "type": FeatureSet},
-        {"name": "output_directions", "display_name": "Output Directions", "type": FeatureSet},
-        {"name": "solve_succeeded", "display_name": "Solve Succeeded", "type": bool},
-        {"name": "output_closest_facilities", "display_name": "Output Closest Facilities", "type": FeatureSet},
-    ]
-
-
     if gis is None:
         gis = arcgis.env.active_gis
-
     url = gis.properties.helperServices.asyncClosestFacility.url[:-len('/FindClosestFacilities')]
+    tbx = import_toolbox(url)
+    defaults = dict(zip(tbx.find_closest_facilities.__annotations__.keys(),
+                        tbx.find_closest_facilities.__defaults__))
+    if restrictions is None:
+        restrictions = defaults['restrictions']
+    if incidents is None:
+        incidents = defaults['incidents']
 
-    return _execute_gp_tool(gis, "FindClosestFacilities", kwargs, param_db, return_values, _use_async, url)
+    if facilities is None:
+        facilities = defaults['facilities']
+
+    if point_barriers is None:
+        point_barriers = defaults['point_barriers']
+
+    if line_barriers is None:
+        line_barriers = defaults['line_barriers']
+
+    if polygon_barriers is None:
+        polygon_barriers = defaults['polygon_barriers']
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = defaults['attribute_parameter_values']
+
+    if route_line_simplification_tolerance is None:
+        route_line_simplification_tolerance = defaults['route_line_simplification_tolerance']
+
+
+
+
+    job = tbx.find_closest_facilities(incidents=incidents,
+                                      facilities=facilities,
+                                      measurement_units=measurement_units,
+                                      analysis_region=analysis_region,
+                                      number_of_facilities_to_find=number_of_facilities_to_find,
+                                      cutoff=cutoff,
+                                      travel_direction=travel_direction,
+                                      use_hierarchy=use_hierarchy,
+                                      time_of_day=time_of_day,
+                                      time_of_day_usage=time_of_day_usage,
+                                      uturn_at_junctions=uturn_at_junctions,
+                                      point_barriers=point_barriers,
+                                      line_barriers=line_barriers,
+                                      polygon_barriers=polygon_barriers,
+                                      restrictions=restrictions,
+                                      attribute_parameter_values=attribute_parameter_values,
+                                      route_shape=route_shape,
+                                      route_line_simplification_tolerance=route_line_simplification_tolerance,
+                                      populate_directions=populate_directions,
+                                      directions_language=directions_language,
+                                      directions_distance_units=directions_distance_units,
+                                      directions_style_name=directions_style_name,
+                                      time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                      travel_mode=travel_mode,
+                                      impedance=impedance,
+                                      save_output_network_analysis_layer=save_output_network_analysis_layer,
+                                      overrides=overrides,
+                                      save_route_data=save_route_data,
+                                      time_impedance=time_impedance,
+                                      distance_impedance=distance_impedance,
+                                      output_format=output_format,
+                                      gis=gis,
+                                      future=True)
+    if future:
+        return job
+    return job.result()
 
 find_closest_facilities.__annotations__ = {
     'incidents': FeatureSet,
@@ -1056,4 +1059,4 @@ find_closest_facilities.__annotations__ = {
     'time_zone_for_time_of_day': str,
     'travel_mode': str,
     'impedance': str,
-    'return': tuple}    
+    'return': tuple}

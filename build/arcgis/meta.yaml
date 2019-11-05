@@ -1,48 +1,43 @@
-# This file created by conda-build 2.0.1
-# meta.yaml template originally from:
-# e:\share\conda-project\conda-packages\arcgis-api, last modified Mon Sep 19 14:51:09 2016
-# ------------------------------------------------
-
-package:
-    name: arcgis
-    version: '1.6.0'
-source:
-    path: ../../src
-build:
-    number: '1'
-requirements:
-    build:
-        - python
-        - setuptools
-        - six
-        - notebook
-        - jupyterlab
-        - ipywidgets >=7
-        - widgetsnbextension >=3
-        - pandas >=0.23
-        - numpy
-        - pyshp
-        - matplotlib
-        - keyring
-        - pytest
-        - winkerberos      [win]
-    run:
-        - python
-        - six
-        - notebook
-        - jupyterlab
-        - ipywidgets >=7
-        - widgetsnbextension >=3
-        - pandas >=0.23
-        - numpy
-        - pyshp
-        - matplotlib
-        - keyring
-        - winkerberos      [win]
-test:
-    imports:
-        - arcgis.gis
 about:
-    home: https://developers.arcgis.com/python
-    license: Esri Master License Agreement (MLA)
-    summary: ArcGIS API for Python
+  home: https://developers.arcgis.com/python
+  license: Esri Master License Agreement (MLA)
+  summary: ArcGIS API for Python
+build:
+  number: '0'
+package:
+  name: arcgis
+  version: 1.7.0
+requirements:
+  build:
+  - python
+  - setuptools
+  - six
+  - notebook
+  - ipywidgets >=7
+  - widgetsnbextension >=3
+  - pandas >=0.23
+  - numpy
+  - pyshp
+  - matplotlib
+  - keyring
+  - pytest
+  - pyshp <2
+  - winkerberos      [win]
+  run:
+  - python
+  - six
+  - notebook
+  - ipywidgets >=7
+  - widgetsnbextension >=3
+  - pandas >=0.23
+  - numpy
+  - pyshp
+  - matplotlib
+  - keyring
+  - pyshp <2
+  - winkerberos      [win]
+source:
+  path: ../../src
+test:
+  imports:
+  - arcgis.gis

@@ -3,8 +3,8 @@
 # Purpose:     Sanity tests for ArcGIS Python API
 #-------------------------------------------------------------------------------
 import unittest
-from dino_utils.dino_precondition_checks import PreconditionChecks
-from dino_utils.dino_configs import DinoConfigs
+from integration.dino_utils.dino_precondition_checks import PreconditionChecks
+from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
 import collections

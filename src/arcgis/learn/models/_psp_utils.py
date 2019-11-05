@@ -1,0 +1,234 @@
+# MIT License
+
+# Copyright (c) 2019 Hengshuang Zhao
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# Based on https://github.com/hszhao/semseg
+
+import torch
+import warnings
+import PIL
+import numpy as np
+
+from pdb import set_trace
+import torch.nn.functional as F
+import torch.nn as nn
+import torch
+from torchvision import models
+
+import math
+from fastai.callbacks.hooks import hook_output
+from fastai.vision.learner import create_body
+from fastai.callbacks.hooks import model_sizes
+
+def initialize_weights(*models):
+    for model in models:
+        for module in model.modules():
+            if isinstance(module, nn.Conv2d) or isinstance(module, nn.Linear):
+                nn.init.kaiming_normal_(module.weight)
+                if module.bias is not None:
+                    module.bias.data.zero_()
+            elif isinstance(module, nn.BatchNorm2d):
+                module.weight.data.fill_(1)
+                module.bias.data.zero_()
+
+
+class _PyramidPoolingModule(nn.Module):
+    """
+    Creates the pyramid pooling module as in https://arxiv.org/abs/1612.01105
+    Takes a feature map from the backbone and pools it at different scales
+    according to the given pyramid sizes and upsamples it to original feature
+    map size and concatenates it with the feature map. 
+    Code from https://github.com/hszhao/semseg.
+    """
+    def __init__(self, in_dim, reduction_dim, setting):
+        super(_PyramidPoolingModule, self).__init__()
+        self.features = []
+
+        ## Creating modules for different pyramid sizes
+        for s in setting:
+            self.features.append(nn.Sequential(
+                nn.AdaptiveAvgPool2d(s),
+                nn.Conv2d(in_dim, reduction_dim, kernel_size=1, bias=False),
+                nn.BatchNorm2d(reduction_dim, momentum=.95),
+                nn.ReLU(inplace=True)
+            ))
+        self.features = nn.ModuleList(self.features)
+
+    def forward(self, x):
+        x_size = x.size()
+        out = [x]
+        for f in self.features:
+            ## Pass through the module which reduces its spatial size and then upsamples it.
+            out.append(F.interpolate(f(x), x_size[2:], mode='bilinear', align_corners=True))
+        out = torch.cat(out, 1)
+        return out
+
+
+def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True):
+    """
+    Function which returns PPM module attached to backbone which is then used to form the Unet.
+    """  
+    backbone = create_body(backbone_fn, pretrained=pretrained)
+    
+    backbone_name = backbone_fn.__name__
+
+    ## Support for different backbones
+    if "densenet" in backbone_name or "vgg" in backbone_name:
+        hookable_modules = list(backbone.children())[0]
+    else:
+        hookable_modules = list(backbone.children())
+    
+    if "vgg" in backbone_name:
+        modify_dilation_index = -5
+    else:
+        modify_dilation_index = -2
+        
+    if backbone_name == 'resnet18' or backbone_name == 'resnet34':
+        module_to_check = 'conv' 
+    else:
+        module_to_check = 'conv2'
+    
+    custom_idx = 0
+    for i, module in enumerate(hookable_modules[modify_dilation_index:]): 
+        dilation = 2 * (i + 1)
+        padding = 2 * (i + 1)
+        # padding = 1
+        for n, m in module.named_modules():
+            if module_to_check in n:
+                m.dilation, m.padding, m.stride = (dilation, dilation), (padding, padding), (1, 1)
+            elif 'downsample.0' in n:
+                m.stride = (1, 1)                    
+                
+        if "vgg" in backbone_fn.__name__:
+            if isinstance(module, nn.Conv2d):
+                dilation = 2 * (custom_idx + 1)
+                padding = 2 * (custom_idx + 1)
+                module.dilation, module.padding, module.stride = (dilation, dilation), (padding, padding), (1, 1)
+                custom_idx += 1
+    
+    ## returns the size of various activations
+    feature_sizes = model_sizes(backbone, size=(chip_size, chip_size))
+
+    ## Get number of channels in the last layer
+    num_channels = feature_sizes[-1][1]
+
+    penultimate_channels = num_channels / len(pyramid_sizes)
+    ppm = _PyramidPoolingModule(num_channels, int(penultimate_channels), pyramid_sizes)
+
+    in_final = int(penultimate_channels) * len(pyramid_sizes) + num_channels
+
+    # Reduce channel size after pyramid pooling module to avoid CUDA OOM error.
+    final_conv = nn.Conv2d(in_channels=in_final, out_channels=512, kernel_size=3, padding=1)
+
+    ## To make Dynamic Unet work as it expects a backbone which can be indexed.
+    if "densenet" in backbone_name or "vgg" in backbone_name:
+        backbone = backbone[0]
+    layers = [*backbone, ppm, final_conv]
+    return nn.Sequential(*layers)
+
+
+
+class PSPNet(nn.Module):
+    def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True):
+        super(PSPNet, self).__init__()        
+        
+        self.backbone = create_body(backbone_fn, pretrained=pretrained)
+        
+        backbone_name = backbone_fn.__name__
+
+        ## Support for different backbones
+        if "densenet" in backbone_name or "vgg" in backbone_name:
+            hookable_modules = list(self.backbone.children())[0]
+        else:
+            hookable_modules = list(self.backbone.children())
+        
+        if "vgg" in backbone_name:
+            modify_dilation_index = -5
+        else:
+            modify_dilation_index = -2
+            
+        if backbone_name == 'resnet18' or backbone_name == 'resnet34':
+            module_to_check = 'conv' 
+        else:
+            module_to_check = 'conv2'
+        
+        ## Hook at the index where we need to get the auxillary logits out
+        self.hook = hook_output(hookable_modules[modify_dilation_index])
+        
+        custom_idx = 0
+        for i, module in enumerate(hookable_modules[modify_dilation_index:]): 
+            dilation = 2 * (i + 1)
+            padding = 2 * (i + 1)
+            for n, m in module.named_modules():
+                if module_to_check in n:
+                    m.dilation, m.padding, m.stride = (dilation, dilation), (padding, padding), (1, 1)
+                elif 'downsample.0' in n:
+                    m.stride = (1, 1)                    
+                    
+            if "vgg" in backbone_fn.__name__:
+                if isinstance(module, nn.Conv2d):
+                    dilation = 2 * (custom_idx + 1)
+                    padding = 2 * (custom_idx + 1)
+                    module.dilation, module.padding, module.stride = (dilation, dilation), (padding, padding), (1, 1)
+                    custom_idx += 1
+        
+        ## returns the size of various activations
+        feature_sizes = model_sizes(self.backbone, size=(chip_size, chip_size))
+
+        ## Geting the stored parameters inside of the hook
+        aux_in_channels = self.hook.stored.shape[1]
+
+        ## Get number of channels in the last layer
+        num_channels = feature_sizes[-1][1]
+
+        penultimate_channels = num_channels / len(pyramid_sizes)
+        self.ppm = _PyramidPoolingModule(num_channels, int(penultimate_channels), pyramid_sizes)
+        
+        
+        self.final = nn.Sequential(
+            ## To handle case when the length of pyramid_sizes is odd
+            nn.Conv2d(int(penultimate_channels) * len(pyramid_sizes) + num_channels, math.ceil(penultimate_channels), kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(math.ceil(penultimate_channels)),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.1),
+            nn.Conv2d(math.ceil(penultimate_channels), num_classes, kernel_size=1)
+        )
+        
+        
+        self.aux_logits = nn.Conv2d(aux_in_channels, num_classes, kernel_size=1)
+        
+        initialize_weights(self.aux_logits)
+        initialize_weights(self.ppm, self.final)
+
+    def forward(self, x):
+        x_size = x.size()
+        x = self.backbone(x)
+        if self.training:
+            aux_l = self.aux_logits(self.hook.stored)
+        
+        ## Remove hook to free up memory.
+        self.hook.remove()
+        x = self.ppm(x)
+        x = self.final(x)
+        if self.training:
+            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True), F.interpolate(aux_l, x_size[2:], mode='bilinear', align_corners=True)
+        else:
+            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True) 

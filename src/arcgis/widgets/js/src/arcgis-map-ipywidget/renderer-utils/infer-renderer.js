@@ -22,14 +22,16 @@ var inferRenderer = function(renderer, rendererOptions, widget){
                                 "esri/renderers/SimpleRenderer",
                                 "esri/renderers/UniqueValueRenderer",
                                 "esri/renderers/ClassBreaksRenderer",
-                                "esri/renderers/HeatmapRenderer"],
+                                "esri/renderers/HeatmapRenderer",
+                                "esri/renderers/DotDensityRenderer"],
         options).then(([sizeRendererCreator,
                         colorRendererCreator,
                         locationRendererCreator,
                         SimpleRenderer,
                         UniqueValueRenderer,
                         ClassBreaksRenderer,
-                        HeatmapRenderer]) => {
+                        HeatmapRenderer,
+                        DotDensityRenderer]) => {
             if(rendererTypesUtil.isClassedSizeRenderer(renderer)){
                 console.log("Using classedSizeRenderer...");
                 var prop = getColorOrSizeProp(rendererOptions);
@@ -50,7 +52,6 @@ var inferRenderer = function(renderer, rendererOptions, widget){
                     reject(err);
                 });
             } else if (rendererTypesUtil.isHeatMapRenderer(renderer)){
-                //TODO: remove reference of widget passed in for previous err msg needed
                 console.log("Using heatmap renderer...");
                 resolve(HeatmapRenderer.fromJSON(rendererOptions));
            } else if (rendererTypesUtil.isSimpleRenderer(renderer)){
@@ -62,6 +63,9 @@ var inferRenderer = function(renderer, rendererOptions, widget){
             } else if (rendererTypesUtil.isClassBreaksRenderer(renderer)){
                 console.log("Using classBreaksRenderer");
                 resolve(ClassBreaksRenderer.fromJSON(rendererOptions));
+            } else if (rendererTypesUtil.isDotDensityRenderer(renderer)){
+                console.log("Using Dot Density Renderer"); 
+                resolve(DotDensityRenderer.fromJSON(rendererOptions));
             } else if (rendererTypesUtil.userSpecifiedAutocastRenderer(renderer)){
                 console.log("Autocasting the renderer");
                 resolve(rendererOptions);

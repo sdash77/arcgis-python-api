@@ -14,7 +14,6 @@ _log = _logging.getLogger(__name__)
 
 _use_async = True
 
-
 def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
                                                'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
                                                'geometryType': 'esriGeometryPolyline',
@@ -26,33 +25,43 @@ def profile(input_line_features: FeatureSet = {'exceededTransferLimit': False,
             dem_resolution: str = None,
             maximum_sample_distance: float = None,
             maximum_sample_distance_units: str = """Meters""",
-            gis=None) -> FeatureSet:
+            gis=None,
+            future=False) -> FeatureSet:
     """
+    .. image:: _static/images/elevation_profile/elevation_profile.png
 
+    The profile method is used to create profiles along input lines from which a profile graph can be created.
 
-Returns elevation profiles for the input line features.
+    In asynchronous mode, the maximum number of input line features that can be accepted by the task for each request is 1000.
 
-Parameters:
+    =====================================    ===========================================================================
+    **Argument**                             **Description**
+    -------------------------------------    ---------------------------------------------------------------------------
+    input_line_features                      Required featureset. The line features that will be profiled over the surface.
+    -------------------------------------    ---------------------------------------------------------------------------
+    profile_id_field                         Optional string. A unique identifier to tie profiles to their corresponding input line features.
+    -------------------------------------    ---------------------------------------------------------------------------
+    dem_resolution                           Optional string. The approximate spatial resolution (cell size) of the source elevation data used for the calculation.
+                                             The resolution values are an approximation of the spatial resolution of the digital elevation model. While many elevation sources are distributed in units of arc seconds, the keyword is an approximation of those resolutions in meters for easier understanding.
+    -------------------------------------    ---------------------------------------------------------------------------
+    maximum_sample_distance                  Optional float. The maximum sampling distance along the line to sample elevation values.
+    -------------------------------------    ---------------------------------------------------------------------------
+    maximum_sample_distance_units            Optional string. The units for the MaximumSampleDistance.
 
-   input_line_features: Input Line Features (FeatureSet). Required parameter.  The line features that will be profiled over the surface inputs.
+                                             Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    -------------------------------------    ---------------------------------------------------------------------------
+    future                                   Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
+    =====================================    ===========================================================================
 
-   profile_id_field: Profile ID Field (str). Optional parameter.  A unique identifier to tie profiles to their corresponding input line features.
+    :Returns: Output Profile as a FeatureSet
 
-   dem_resolution: DEM Resolution (str). Optional parameter.  The approximate spatial resolution (cell size) of the source elevation data used for the calculation. The default is 90m.The resolution keyword is an approximation of the spatial resolution of the digital elevation model. Many elevation sources are distributed with units of arc seconds, the keyword is an approximation in meters for easier understanding.FINEST    The finest units available for the extent are used.10m    the elevation source resolution is 1/3 arc second, or approximately 10 meters.30m    the elevation source resolution is 1 arc second, or approximately 30 meters.90m    the elevation source resolution is 3 arc second, or approximately 90 meters.1000m    the elevation source resolution is 30 arc seconds, or approximately 1000 meters.
-      Choice list:[' ', 'FINEST', '1000m', '10m', '30m', '90m']
+    .. code-block:: python
 
-   maximum_sample_distance: Maximum Sample Distance (float). Optional parameter.  The maximum sample distance along the line to sample elevation values.
-
-   maximum_sample_distance_units: Maximum Sample Distance Units (str). Optional parameter.  The units for the Maximum Sample Distance parameter.The default is meters.Meters    The units are meters. This is the default.Kilometers    The units are kilometers.Feet    The units are feet.Yards    The units are yards.Miles    The units are miles.
-      Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
-
-gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-Returns:
-   output_profile - Output Profile as a FeatureSet
-
-See http://ec2-35-161-157-22.us-west-2.compute.amazonaws.com:6080/arcgis/rest/directories/arcgisoutput/Tools/Elevation_GPServer/Tools_Elevation/Profile.htm for additional help.
+        USAGE EXAMPLE: To create profile of mountains feature.
+        elevation = profile(input_line_features=mountain_fs,
+                            dem_resolution='FINEST',
+                            maximum_sample_distance=500,
+                            maximum_sample_distance_units='Meters')
     """
     kwargs = locals()
 
@@ -73,7 +82,7 @@ See http://ec2-35-161-157-22.us-west-2.compute.amazonaws.com:6080/arcgis/rest/di
 
     url = gis.properties.helperServices.elevation.url
 
-    return _execute_gp_tool(gis, "Profile", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(gis, "Profile", kwargs, param_db, return_values, _use_async, url, future=future)
 
 
 def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
@@ -92,43 +101,84 @@ def viewshed(input_points: FeatureSet = {'exceededTransferLimit': False,
              surface_offset: float = None,
              surface_offset_units: str = """Meters""",
              generalize_viewshed_polygons: bool = True,
-             gis=None) -> FeatureSet:
+             gis=None,
+             future=False) -> FeatureSet:
     """
+    .. image:: _static/images/elevation_viewshed/elevation_viewshed.png
 
+    The ``viewshed`` method is used to identify visible areas based on observer locations you provide as well as ArcGIS Online Elevation data.
 
-Returns polygons of visible areas for a given set of input observation points.
+    ===============================    =========================================================
+    **Parameter**                      **Description**
+    -------------------------------    ---------------------------------------------------------
+    input_points                       Required FeatureSet. The point features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------------    ---------------------------------------------------------
+    maximum_distance                   Optional float. This is a cutoff distance where the computation of visible areas stops.
+                                       Beyond this distance, it is unknown whether the analysis points and the other objects can see each other.
 
-Parameters:
+                                       It is useful for modeling current weather conditions or a given time of day, such as dusk. Large values increase computation time.
 
-   input_points: Input Point Features (FeatureSet). Required parameter.  The point features to use as the observer locations.
+                                       Unless specified, a default maximum distance will be computed based on the resolution and extent of the source DEM.
+                                       The allowed maximum value is 50 kilometers.
 
-   maximum_distance: Maximum Distance (float). Optional parameter.  The maximum distance to calculate the viewshed.
+                                       Use ``maximum_distance_units`` to set the units for ``maximum_distance``.
+    -------------------------------    ---------------------------------------------------------
+    maximum_distance_units             Optional string. The units for the ``maximum_distance`` parameter.
 
-   maximum_distance_units: Maximum Distance Units (str). Optional parameter.  The units for the Maximum Distance parameter. The default is meters.Meters    The units are meters. This is the default.Kilometers    The units are kilometers.Feet    The units are feet.Yards    The units are yards.Miles    The units are miles.
-      Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+                                       Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles'].
 
-   dem_resolution: DEM Resolution (str). Optional parameter.  The approximate spatial resolution (cell size) of the source elevation data used for the calculation. The default is 90m.The resolution keyword is an approximation of the spatial resolution of the digital elevation model. Many elevation sources are distributed with units of arc seconds, the keyword is an approximation in meters for easier understanding.FINEST    The finest units available for the extent are used.10m    the elevation source resolution is 1/3 arc second, or approximately 10 meters.30m    the elevation source resolution is 1 arc second, or approximately 30 meters.90m    the elevation source resolution is 3 arc second, or approximately 90 meters.
-      Choice list:[' ', 'FINEST', '10m', '30m', '90m']
+                                       The default is 'Meters'.
+    -------------------------------    ---------------------------------------------------------
+    dem_resolution                     Optional string. The approximate spatial resolution (cell size) of the source elevation data used for the calculation.
+                                       The resolution values are an approximation of the spatial resolution of the digital elevation model.
+                                       While many elevation sources are distributed in units of arc seconds, the keyword is an approximation of those resolutions in meters for easier understanding.
 
-   observer_height: Observer Height (float). Optional parameter.  The height above the surface of the observer. The default value of 1.75 meters is an average height of a person. If you are looking from an elevated location such as an observation tower or a tall building, use that height instead.
+                                       Choice list:[' ', 'FINEST', '10m', '30m', '90m'].
 
-   observer_height_units: Observer Height Units (str). Optional parameter.  The units for the Observer Height parameter. The default is meters.Meters    The units are meters. This is the default.Kilometers    The units are kilometers.Feet    The units are feet.Yards    The units are yards.Miles    The units are miles.
-      Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+                                       The default is 90m.
+    -------------------------------    ---------------------------------------------------------
+    observer_height                    Optional float. This is the height above the ground of the observer locations.
 
-   surface_offset: Surface Offset (float). Optional parameter.  The height above the surface of the object you are trying to see. The default value is 0. If you are trying to see buildings or wind turbines use their height here.
+                                       The default is 1.75 meters, which is approximately the average height of a person.
+                                       If you are looking from an elevated location, such as an observation tower or a tall building, use that height instead.
 
-   surface_offset_units: Surface Offset Units (str). Optional parameter.  The units for the Surface Offset parameter. The default is meters.Meters    The units are meters. This is the default.Kilometers    The units are kilometers.Feet    The units are feet.Yards   The units are yards.Miles    The units are miles.
-      Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+                                       Use ``observer_height_units`` to set the units for ``observer_height``.
+    -------------------------------    ---------------------------------------------------------
+    observer_height_units              Optional string. The units for the ``observer_height`` parameter.
 
-   generalize_viewshed_polygons: Generalize Viewshed Polygons (bool). Optional parameter.  Determine if the viewshed polygons are to be generalized or not.The viewshed calculation is based upon a raster elevation model which creates a result with stair-stepped edges. To create a more pleasing appearance and improve performance, the default behavior is to generalize the polygons. This generalization will not change the accuracy of the result for any location more than one half of the DEM's resolution.Checked    Generalizes the results. This is the default.Unchecked    No generalization of the output polygons will occur.
+                                       Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    -------------------------------    ---------------------------------------------------------
+    surface_offset                     Optional float. The height above the surface of the object you are trying to see.
 
-gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+                                       The default value is 0.0. If you are trying to see buildings or wind turbines, use their height here.
+    -------------------------------    ---------------------------------------------------------
+    surface_offset_units               Optional string. The units for the ``surface_offset`` parameter.
 
+                                       Choice list:['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
+    -------------------------------    ---------------------------------------------------------
+    generalize_viewshed_polygons       Optional boolean. Determines whether or not the viewshed polygons are to be generalized.
 
-Returns:
-   output_viewshed - Output Viewshed as a FeatureSet
+                                       The viewshed calculation is based on a raster elevation model that creates a result with
+                                       stair-stepped edges. To create a more pleasing appearance and improve performance, the
+                                       default behavior is to generalize the polygons. The generalization process smooths the
+                                       boundary of the visible areas and may remove some single-cell visible areas.
+    -------------------------------    ---------------------------------------------------------
+    future                             Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
+    ===============================    =========================================================
 
-See http://ec2-35-161-157-22.us-west-2.compute.amazonaws.com:6080/arcgis/rest/directories/arcgisoutput/Tools/Elevation_GPServer/Tools_Elevation/Viewshed.htm for additional help.
+    :returns: output_viewshed - Output Viewshed as a FeatureSet (polygons of visible areas for a given set of input observation points.)
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE: To identify visible areas from esri headquarter office.
+        visible_windfarms = viewshed(input_points=hq_fs,
+                                     maximum_distance=200,
+                                     maximum_distance_units='Meters',
+                                     observer_height=6,
+                                     observer_height_units='Feet',
+                                     surface_offset=100,
+                                     surface_offset_units='Meters',
+                                     generalize_viewshed_polygons=True)
     """
     kwargs = locals()
 
@@ -153,37 +203,50 @@ See http://ec2-35-161-157-22.us-west-2.compute.amazonaws.com:6080/arcgis/rest/di
 
     url = gis.properties.helperServices.elevation.url
 
-    return _execute_gp_tool(gis, "Viewshed", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(gis, "Viewshed", kwargs, param_db, return_values, _use_async, url, future=future)
 
 
 def summarize_elevation(input_features: FeatureSet = {},
                         feature_id_field: str = None,
                         dem_resolution: str = None,
                         include_slope_aspect: bool = False,
-                        gis=None) -> FeatureSet:
+                        gis=None,
+                        future=False) -> FeatureSet:
     """
+    .. image:: _static/images/summarize_elevation/summarize_elevation.png
 
+    The ``summarize_elevation`` method calculates summary statistics for features you provide based
+    on ArcGIS Online Elevation data. It accepts point, line, or polygon input and returns statistics
+    for the elevation, slope, and aspect of the features.
 
-Calculates summary statistics of elevation for each input feature.
+    =========================    =========================================================
+    **Parameter**                **Description**
+    -------------------------    ---------------------------------------------------------
+    input_features               Reqauired FeatureSet. Input features to summarize the elevation for. The features can be point, line, or area. See :ref:`Feature Input<FeatureInput>`.
+    -------------------------    ---------------------------------------------------------
+    feature_id_field             Optional string. The unique ID field to use for the input features.
+    -------------------------    ---------------------------------------------------------
+    dem_resolution               Optional string. The approximate spatial resolution (cell size) of the source elevation data used for the calculation.
 
-Parameters:
+                                 Choice list:[' ', 'FINEST', '10m', '30m', '90m']
 
-   input_features: Input Features (FeatureSet). Required parameter.  Input point, line, or area features to summarize the elevation for.
+                                 The default value is None.
+    -------------------------    ---------------------------------------------------------
+    include_slope_aspect         Optional boolean. Determines if slope and aspect for the input feature(s) will be included in the output. The slope and aspect values in the output are in degrees.
 
-   feature_id_field: Feature ID Field (str). Optional parameter.  The Unique ID field to use for the input features.
+                                 The default value is False.
+    -------------------------    ---------------------------------------------------------
+    future                       Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
+    =========================    =========================================================
 
-   dem_resolution: DEM Resolution (str). Optional parameter.  The approximate spatial resolution (cell size) of the source elevation data used for the calculation. The default is 90m.The resolution keyword is an approximation of the spatial resolution of the digital elevation model. Many elevation sources are distributed with units of arc seconds, the keyword is an approximation in meters for easier understanding.FINEST    The finest units available for the extent are used.10m    the elevation source resolution is 1/3 arc second, or approximately 10 meters.30m    the elevation source resolution is 1 arc second, or approximately 30 meters.90m    the elevation source resolution is 3 arc second, or approximately 90 meters.
-      Choice list:[' ', 'FINEST', '10m', '30m', '90m']
+    :returns: result_layer : Output Summary as a FeatureSet
 
-   include_slope_aspect: Include Slope and Aspect (bool). Optional parameter.  Determines if slope and aspect for the input feature(s) will be included in the output.Checked    Slope and aspect values will be included in the output.Unchecked    Only the elevation values will be included in the output.
+    .. code-block:: python
 
-gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-
-
-Returns:
-   output_summary - Output Summary as a FeatureSet
-
-See http://ec2-35-161-157-22.us-west-2.compute.amazonaws.com:6080/arcgis/rest/directories/arcgisoutput/Tools/Elevation_GPServer/Tools_Elevation/SummarizeElevation.htm for additional help.
+        # USAGE EXAMPLE: To calculate summary statistics for mountain polyline features.
+        summarize = summarize_elevation(input_features=mountain_fs,
+                           dem_resolution='FINEST',
+                           include_slope_aspect=True)
     """
     kwargs = locals()
 
@@ -203,6 +266,6 @@ See http://ec2-35-161-157-22.us-west-2.compute.amazonaws.com:6080/arcgis/rest/di
 
     url = gis.properties.helperServices.elevation.url
 
-    return _execute_gp_tool(gis, "SummarizeElevation", kwargs, param_db, return_values, _use_async, url)
+    return _execute_gp_tool(gis, "SummarizeElevation", kwargs, param_db, return_values, _use_async, url, future=future)
 
 

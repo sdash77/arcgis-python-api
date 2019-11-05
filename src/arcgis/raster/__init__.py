@@ -13,5 +13,3 @@ from ._layer import ImageryLayer, RasterManager, ImageryTileManager, RasterCatal
 from .analytics import *
 from .functions import *
 from .orthomapping import *
-
-

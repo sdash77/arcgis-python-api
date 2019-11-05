@@ -44,7 +44,7 @@ Try running these commands:
 
 ## Build the Documentation
 
-Go to the ```./docs``` folder, and run the following commands:
+Go to the ```./docs/api_ref``` folder, and run the following commands:
 
 Windows: ```.\make.bat html```
 OSX/Linux: ```make html```
