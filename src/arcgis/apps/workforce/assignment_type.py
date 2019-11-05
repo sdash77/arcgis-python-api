@@ -3,14 +3,13 @@ Defines the AssignmentType class.
 """
 from src.arcgis.apps.workforce._store.assignment_types_v2 import update_assignment_type_v2, delete_assignment_types_v2
 from .exceptions import ValidationError, WorkforceWarning
-from .model import Model
 from .feature_model import FeatureModel
 from ._store import *
 from warnings import warn
 from ._schemas import AssignmentTypesSchema
 
 
-class AssignmentType(Model):
+class AssignmentType(FeatureModel):
     """
     Defines the acceptable values for :class:`~arcgis.apps.workforce.Assignment` types.
 
@@ -31,14 +30,16 @@ class AssignmentType(Model):
 
     def __init__(self, project, feature=None, coded_value=None, name=None, description=None):
         self.project = project
-        super().__init__()
         if int(self.project.version.split(".")[0]) >= 2:
+            super().__init__(project=project, feature_layer=project.assignment_types_table, feature=feature)
+            self._schema = AssignmentTypesSchema(project.assignment_types_table)
             if not feature:
                 self.description = description
-                self._schema = AssignmentTypesSchema(project.assignment_types_table)
         elif coded_value:
+            super().__init__(project=project, feature_layer=None, feature=feature)
             self._coded_value = coded_value
         else:
+            super().__init__(project=project, feature_layer=None, feature=feature)
             self._coded_value = {'code': None, 'name': name}
 
     def __str__(self):
@@ -114,14 +115,14 @@ class AssignmentType(Model):
     def description(self):
         """Gets the name of the assignment type"""
         if int(self.project.version.split(".")[0]) >= 2:
-            return self.description
+            return self._feature.attributes['description']
         else:
             warn("This is a Version 1 Workforce Project", WorkforceWarning)
 
     @description.setter
     def description(self, value):
         if int(self.project.version.split(".")[0]) >= 2:
-            self.description = value
+            self._feature.attributes['description'] = value
         else:
             warn("This is a Version 1 Workforce Project", WorkforceWarning)
 
@@ -144,11 +145,15 @@ class AssignmentType(Model):
         if int(self.project.version.split(".")[0]) < 2:
             return super()._validate_for_update(**kwargs) + self._validate_code()
         else:
-            return super()._validate_for_update(**kwargs)
+            errors = []
+            errors += self._validate_description()
+            errors += self._validate_description_uniqueness(**kwargs)
+            errors += super()._validate_for_update(**kwargs)
+            return errors
 
     def _validate_for_remove(self, **kwargs):
-        assignments = kwargs['assignments']
         if int(self.project.version.split(".")[0]) < 2:
+            assignments = kwargs['assignments']
             errors = super()._validate_for_remove(**kwargs) + self._validate_code()
             if assignments is None:
                 schema = self.project._assignment_schema
@@ -157,6 +162,7 @@ class AssignmentType(Model):
             else:
                 assignments = [a for a in assignments if a.assignment_type.code == self.code]
         else:
+            assignments = self.project.assignments.search(where='1=1')
             errors = super()._validate_for_remove(**kwargs)
             assignments = [a for a in assignments if a.assignment_type.description == self.description]
 

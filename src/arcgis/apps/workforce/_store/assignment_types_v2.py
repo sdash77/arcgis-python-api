@@ -36,15 +36,12 @@ def add_assignment_type_v2(project, description):
     """
     Adds a new assignment type
     """
-    assignment_type = workforce.AssignmentType(project, description)
+    assignment_type = workforce.AssignmentType(project, description=description)
     return add_assignment_types_v2(project, [assignment_type])[0]
 
 
 def add_assignment_types_v2(project, assignment_types):
     """ Adds an AssignmentType to a project.
-
-        Side effect: Each AssignmentType in assignment_types will be assigned a unique code.
-
         :param project:
         :param assignment_types: list of AssignmentTypes
         :raises ValidationError: Indicates that one or more assignment types failed validation.
@@ -52,12 +49,12 @@ def add_assignment_types_v2(project, assignment_types):
     use_global_ids = True
     for assignment_type in assignment_types:
         assignment_type.project = project
-        validate(assignment_type)
+        validate(assignment_type._validate)
         if assignment_type.global_id is None:
             use_global_ids = False
 
     features = [assignment_type.feature for assignment_type in assignment_types]
-    add_features(project.assignments_type_table, features, use_global_ids)
+    add_features(project.assignment_types_table, features, use_global_ids)
     return assignment_types
 
 
@@ -71,7 +68,7 @@ def update_assignment_types_v2(project, assignment_types):
     for assignment_type in assignment_types:
         validate(assignment_type._validate_for_update)
     features = [assignment_type.feature for assignment_type in assignment_types]
-    update_features(project.assignments_type_table, features)
+    update_features(project.assignment_types_table, features)
     return assignment_types
 
 
