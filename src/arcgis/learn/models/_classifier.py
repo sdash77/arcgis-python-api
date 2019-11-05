@@ -79,7 +79,7 @@ class FeatureClassifier(ArcGISModel):
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False):
         
         super().__init__(data, backbone)
 
@@ -94,6 +94,10 @@ class FeatureClassifier(ArcGISModel):
 
         self._code = feature_classifier_prf
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+
+        # Add Mixup data augmentation
+        if mixup:
+            self.learn = self.learn.mixup()
 
         self.learn.model = self.learn.model.to(self._device)
 
