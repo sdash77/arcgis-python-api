@@ -73,7 +73,7 @@ def update_assignment_types_v2(project, assignment_types):
 
 
 def update_assignment_type_v2(project, assignment_type, description=None):
-    """Updates an assignment types description"""
+    """Updates an assignment type's description"""
     if description:
         assignment_type.description = description
     return update_assignment_types_v2(project, [assignment_type])[0]

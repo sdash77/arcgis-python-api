@@ -272,10 +272,9 @@ class Project:
         else:
             return FeatureLayer(self.dispatchers_layer_url, self.gis)
 
-
     @_lazy_property
     def assignment_types_table(self):
-        """The dispatchers :class:`~arcgis.features.Table`"""
+        """The assignment types :class:`~arcgis.features.Table`"""
         return Table(self.assignment_types_table_url, self.gis)
 
     @_lazy_property

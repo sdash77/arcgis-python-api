@@ -65,7 +65,7 @@ class AssignmentType(FeatureModel):
                                    The name of the assignment type
             ------------------     --------------------------------------------------------------------
             description            Optional :class:`String`.
-                                   The description of the assignment type
+                                   The description of the assignment type if project is Version 2
             ==================     ====================================================================
         """
         if int(self.project.version.split(".")[0]) >= 2:
@@ -113,7 +113,7 @@ class AssignmentType(FeatureModel):
 
     @property
     def description(self):
-        """Gets the name of the assignment type"""
+        """Gets the description of the assignment type"""
         if int(self.project.version.split(".")[0]) >= 2:
             return self._feature.attributes['description']
         else:
