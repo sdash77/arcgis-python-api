@@ -44,7 +44,7 @@ def run_notebook_tests(config, paths, output_dir,
         runner = XMLTestRunner(empty_temp_dir)
         runner.run(utest_test_suite)
         for temp_xml_path in glob(os.path.join(empty_temp_dir, "*.xml")):
-            os.rename(temp_xml_path, output_xml_path)
+            shutil.move(temp_xml_path, output_xml_path)
 
     if 'teardown_script' in config:
         run_shell_command(f"python {config['teardown_script']}")
