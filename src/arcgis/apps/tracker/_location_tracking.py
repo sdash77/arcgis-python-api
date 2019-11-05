@@ -173,9 +173,6 @@ class LocationTrackingManager:
                                         is_view_only=True,
                                         is_invitation_only=True,
                                         access="private")
-        if group.owner != self.item.owner:
-            group.reassign_to(self.item.owner)
-            group.remove_users([self._gis.users.me])
         group.protected = True
         item = self._gis.content.create_service(
             "{}_Track_View".format(group.id),
@@ -215,6 +212,9 @@ class LocationTrackingManager:
                 }
             )
         item.share(groups=[group])
+        if group.owner != self.item.owner:
+            group.reassign_to(self.item.owner)
+            group.remove_users([self._gis.users.me])
         return arcgis.apps.tracker.TrackView(item)
 
     @property
