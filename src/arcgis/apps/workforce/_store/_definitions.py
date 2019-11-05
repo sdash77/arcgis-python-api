@@ -587,776 +587,702 @@ assignment_layer_definition_v1 = json.loads(
 
 assignment_layer_definition_v2 = json.loads(
 """  
-    {
-        "currentVersion": 10.7,
-        "id": 0,
-        "name": "Assignments",
-        "type": "Feature Layer",
-        "displayField": "description",
-        "description": "",
-        "copyrightText": "",
-        "defaultVisibility": true,
-        "editFieldsInfo": {
-            "creationDateField": "CreationDate",
-            "creatorField": "Creator",
-            "editDateField": "EditDate",
-            "editorField": "Editor"
-        },
-        "relationships": [],
-        "isDataVersioned": false,
-        "supportsAppend": true,
-        "supportsCalculate": true,
-        "supportsASyncCalculate": true,
-        "supportsTruncate": false,
-        "supportsAttachmentsByUploadId": true,
-        "supportsAttachmentsResizing": true,
-        "supportsRollbackOnFailureParameter": true,
-        "supportsStatistics": true,
-        "supportsExceedsLimitStatistics": true,
-        "supportsAdvancedQueries": true,
-        "supportsValidateSql": true,
-        "supportsCoordinatesQuantization": true,
-        "supportsFieldDescriptionProperty": true,
-        "supportsQuantizationEditMode": true,
-        "supportsApplyEditsWithGlobalIds": true,
-        "supportsReturningQueryGeometry": true,
-        "advancedQueryCapabilities": {
-            "supportsPagination": true,
-            "supportsPaginationOnAggregatedQueries": true,
-            "supportsQueryRelatedPagination": true,
-            "supportsQueryWithDistance": true,
-            "supportsReturningQueryExtent": true,
-            "supportsStatistics": true,
-            "supportsOrderBy": true,
-            "supportsDistinct": true,
-            "supportsQueryWithResultType": true,
-            "supportsSqlExpression": true,
-            "supportsAdvancedQueryRelated": true,
-            "supportsCountDistinct": true,
-            "supportsPercentileStatistics": true,
-            "supportsQueryAttachments": true,
-            "supportsLod": true,
-            "supportsQueryWithLodSR": false,
-            "supportedLodTypes": [
-                "geohash"
-            ],
-            "supportsReturningGeometryCentroid": false,
-            "supportsQueryWithDatumTransformation": true,
-            "supportsHavingClause": true,
-            "supportsOutFieldSQLExpression": true,
-            "supportsMaxRecordCountFactor": true,
-            "supportsTopFeaturesQuery": true,
-            "supportsDisjointSpatialRel": true,
-            "supportsQueryWithCacheHint": true,
-            "supportsQueryAttachmentsWithReturnUrl": true
-        },
-        "useStandardizedQueries": true,
-        "geometryType": "esriGeometryPoint",
-        "minScale": 0,
-        "maxScale": 0,
-        "drawingInfo": {"renderer": {"type": "uniqueValue", "field1": "status", "uniqueValueInfos": [{"value": "0",
-                                                                                                      "symbol": {
-                                                                                                          "angle": 0,
-                                                                                                          "xoffset": 0,
-                                                                                                          "yoffset": 0,
-                                                                                                          "type": "esriPMS",
-                                                                                                          "url": "5bdad7c9-66bb-43a3-8050-41d29c44abeb",
-                                                                                                          "imageData": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6ODk5NTYzOUJBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODk5NTYzOUFBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+OeyIogAAAr1JREFUeNrEl02IEmEcxv+OK8igqTfxA2RlvXQx9SJdqkvQQToudOiw3lqIoOiwsYdlO1V06uZhO0R7DO9R1CEINS+BuLgXP/AgaH5huGj/Z3gHXgZ0sp2hBx4YX2ee38w778d/HHt7e/QX2mIn2VfZ19jb7LD4r80+Z/9g/2RXC4XChVmgwwTsYt9n32XfZKsmeVP2J/YH9lu+gfm/gNPsFwKoKRqNkt/vJ1VVye12a22z2Yym0ykNBgNqNpvy9biBJwwvbwJ+wH7O9nk8HkokEhQMBsnlcq193Pl8Tt1ul+r1Oo3HYzT9Yh8w/I3xXGcqlTK2HbBfst2RSISy2az2lE6n03Qg4Byfz0exWEzrheFwiG65UywWL3K53Ff5XMVw7T77GAeZTIbS6TQpikKbCtfgWmQIHefz+f1VYIzaIx0aDofpskKGBD9ieNIIxst7zQ7gZCugMlzkBcBguEsG32Pf8Hq9WhdZLWQiGwzB0sCYm7v4EY/HyeFwWA5GJrKFdvmpVYB32Fm0hEIhsktSNlg7AGM+XcHUMZunlxGywQALTEWMZgoEAmS3JEZSEQu+tgzaLYmxDbDW+fraa6ckRkih/ySAO/ouY7ckRkcRm7i2qNstiXEOcBVH/X7fdrDEqAJcYQ9brZa2n9olZIMBFpgAn7G/aR3f6dgGlrLBOlNEnXSKlkajQcvl0nIoMpEtdMoVyVSfTu/ZX0ajEZXLZcvByEQ26zP7nbwt/mY/xPtvt9sEWyUpDyPrkV55ygsIRvchDkqlkiVwZCBL6JCh1VXF3nc2ivFbGAyTyUSrLjfdoxeLBVUqFarVanrTM4a+MqsyUQ322NdRJeIGsKVhgTerNDFlcD7eaa/X08vbx0ao3QX9R/bTVQX91rrByL4tf8JwsGoIX/kJw8CC2cfY2t5jI+DE6o+2PwIMAEzRGFYssovaAAAAAElFTkSuQmCC",
-                                                                                                          "contentType": "image/png",
-                                                                                                          "width": 15,
-                                                                                                          "height": 15},
-                                                                                                      "label": "Unassigned"},
-                                                                                                     {"value": "1",
-                                                                                                      "symbol": {
-                                                                                                          "angle": 0,
-                                                                                                          "xoffset": 0,
-                                                                                                          "yoffset": 0,
-                                                                                                          "type": "esriPMS",
-                                                                                                          "url": "8f838b07-f1f9-43f1-b9d4-a9e494fd42f6",
-                                                                                                          "imageData": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MTFBQjVGQjZBQjI4MTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MTFBQjVGQjVBQjI4MTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+r7GfdQAAA6VJREFUeNrEV01IVFEUPjPj6Mwo5YD/IyJDrkKZcfzLJMxNMAsJXLaIVHRhEEE/C1tZripctdFRbBG5ipiFCyUKAtNRG0VaiCCizvgbWuCINkrnu7yRx3SfMy+NPvjgvvvOOd979917znmGlpYWSgIpTBfzMtPNdDIdyr0Qc5EZZH5jzvh8vmiigIYEwmbmbeZN5nWmLUG8CPMj8z3zNT/Ar78R9jCfK4ICtbW1VFRURFlZWWS328Xczs4ObW9v0/LyMo2Njan98QAPWXxaj3AHs5t5MS8vj7xeL7ndbrJarae+7v7+PgWDQRoeHqb19XVM/WB2svirZIQ7mc8wqK6upubmZjKZTKQHR0dHNDAwQBMTE7GpJyzerbYxlZeXq6/vMl9g0NbWRo2NjWQ0Gkkv4OPxeAirNT0tVrrB7/d/53iBExuVPXZtFwbt7e1UVVVFZwViIJaCrtbWVle8MHZvD9MO48rKSjovIJbyEtiNPSxujp1P4BazPj8/n/iGZpCDgwMKhUK0tbVFkUhEzNlsNsrOziaHw0FpaWlSP8RcWVmhtbW1ekVrEN8YZ/Mp81JTUxMVFxdLnTc2NsT3gvDe3h4dHh4KYowHwS7GQ2RkZPx5dAwGMpvNNDs7i0srf+93WOoS5hXMVFRUSEU3NzdpampKiGgB92ADWxlUsaFVAmFs6ws1NTXSc4rlnZubo+Pj44TfEzawhU88EBsa0IKmUdnNmku8urp68j2TAWzhI4NKw2VUEr7YIDIgHeqFlo9KwwnhAowyMzM130AvtHxUGgVG+k+AcBiD3d1dqQGOiF5o+ag0wkaliIuzKANKoF5o+ag0FiE8g9HS0pLUuLCwMGE5jH9b+Mig0piB8Ffmz/HxcVFP44E0WFZWllSVgk1paak0dSI2NKAFTURbYH7BDDKPDDk5OSLzpKena4riHmxgK4MqNrQWUpQ+aYh5Y3R0lOrq6kRujUdubq44DlpFAsubmpqqmdFGRkZil0PcFERi1ekt8044HL7W19cnmgAZsIROp1NQD1gIlQnDT8w36nqM5HoPvVsgEKDJyclzO6+IhZiIzbwf6zzVrQ+6M5QfL8of2hbU2LMAgr29vbHLRyzq1+q58Ghoxhsgjhrscrl0913RaJT6+/uJ66662Xt5WrMHfEaeZ17ljWTBbrRYLCIpoJgnam+xtHjL+fn5WHv7IF70Xzf0H5iP9Tb0Z/6F8WErJ/gZOw3YgQgweN4/bb8FGACBa4t7SuzqvgAAAABJRU5ErkJggg==",
-                                                                                                          "contentType": "image/png",
-                                                                                                          "width": 15,
-                                                                                                          "height": 15},
-                                                                                                      "label": "Assigned"},
-                                                                                                     {"value": "2",
-                                                                                                      "symbol": {
-                                                                                                          "angle": 0,
-                                                                                                          "xoffset": 0,
-                                                                                                          "yoffset": 0,
-                                                                                                          "type": "esriPMS",
-                                                                                                          "url": "ff54f463-9b9b-493c-9174-63bac7b0e04b",
-                                                                                                          "imageData": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6ODk5NTYzOUZBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODk5NTYzOUVBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+EdUIugAAA85JREFUeNrEV2lIVGEUPT41U0PLFh2n1bSIKKaCFm0xo4SgaINW6EfbjzYqI8jqR2VBtoAtRPWjBULBLBQijFZzKqOcCokyxjJHHSotS6lU6p7hPXjZe47TGJ3hDPd779573nK/77svoNfc6egAgoQ24XDhKGGc0KqecwmdwlJhmdDxPq+wxVvCAC/CwcLlwjnCqcIwL/mahLeEV4Tn5AKa/0Z4jDBTFfRgYfJ0jIyLR//oGFiienmO1dR9QKW7Fs+cr5Fz+7o+nhewVcQf+yK8VpghjEyw9sOGeYswc1wiIsLC273dhqZGXH1oR1ZeNspd73joszBdxI93RDhduJfG/EkpOLohDcGBQfAFza0tWJ91EJeKbmqHdoh4RnvC64RHaZzavB1zJybDH1y+dxurD+/ThutF/Jg2UHR+rNrdNE5vSfdblGAO5lKxu/e8Gba2wqzeI8IedJ6TNAWdBeZSb6IHNUQ8WJufxFJh8pC+/XFi4zbTJLVfP8Lueg6Huxw1YhOWbj1hi05AonUEYsQ2AnOWvXHiVVVlsqp1NjBs2GDOzT3C+J3LVsAWP+SPwJ/ys1c9x+GSbBRWlOBdgxv13754SPtRzQuUul+hZ2gk+kX0QYD89FAUBV2Du+Dao/schmbmXMjjo04QTuCRWYmTDK/4gasMBx9eRMWnatOnwXP0oa8RdLmplUDh0cKIBZNTDOepu7EOZxz5aPje6PV90oe+jGkL5qYGTWoqajVjVPxQw2TFVc/w5nNNh4uJvowxgk7DpqgLPgZEWwydWUi+wixGpxFH4VhaMVHGFalVry8wi9FpxCr4T6Cwp1Rr64yv0mIyN9uDWYxOo1pRN3G8dRsXEBcHX2EWo9NwUthBq/T1S0PnxL4jMTDS0mFR+iZJjBF0Gg4KP+EUzL1707Of/lEQ4VFYaZuNiJBwr6L0oW+0xBjt1dSgSU0Ks/Y9a1mBvcgw4XjrcKSNW4JB3WNNReO6Wz0+9DWCLje1yoPUPilbmHqy4BIWT0uFEvD7Wsu1l49vsCQ33STkfIzBnRItra04kZ+rDbNlX27SGoEQYaFwMrcwNgGdCTYDbAoE/JvBJlCbx9+FG4X1dLhSfKfTRJlLFa0XbtI6T/0CwureRWPVoQzN2e/Wh7lU7BJRhzbgfqz3LeErEaYU3C+Cs9qF1LHjEaj4tsD9aG7G2qxMHMg5r2/2Dul92goTLL8PwqQXlRVd8+13ER4a5umlQ2Qz99beXr53B2uO7Edx2VOtvU1rK/qvG/obwm2+NvR+f8KI4Bl/vp3+2UfbLwEGANeJh/hAHCeKAAAAAElFTkSuQmCC",
-                                                                                                          "contentType": "image/png",
-                                                                                                          "width": 15,
-                                                                                                          "height": 15},
-                                                                                                      "label": "In Progress"},
-                                                                                                     {"value": "3",
-                                                                                                      "symbol": {
-                                                                                                          "angle": 0,
-                                                                                                          "xoffset": 0,
-                                                                                                          "yoffset": 0,
-                                                                                                          "type": "esriPMS",
-                                                                                                          "url": "0686b93d-be21-4626-bd96-94b4c74d8a38",
-                                                                                                          "imageData": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QTIxNDBBQUVBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QTIxNDBBQURBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+6nUa3wAAAp5JREFUeNrEl01rE1EUhs+MmTSNzVexYqOJUAkobuIHijsVdK2uCi78ARbEhbiodFHalYgrd25ciF2Ja0EUN2LUmo0iBAomNlZbmjTR5tOm7zvclEtA05gZPfAkk8nMeWaGe+eca+y6eE62ER6QBIfBETAG9qr/FsECeA8+gPTy46fNbgmNLmILXAEXwBng75JvHTwHT8ADXEDjb8THwG0ltCOyPyiDYZ94d1piDXrsfY1KU+o/G1IpVqXwuaSfzwu4Afm7XsRXwSwIDQS8svvgsASjAdlhmX+83V+NDSnly/L906rUynXuWgOTkN/bjngSzHAjHA9K7PgeMUxDeonWRktyb5ekmN16Arcgn9WP6byFibY0fjIq8ROjPUvtu8E5PJc5VMyMXDo/8TsxR+10WxqOBaTfYA5NPg15slPM0XuX44cHOyHV5SpfhA7ILV18GZweCHolhkfkdDAnc9OhXLaYc3OcP0YSw2IYhuNi5mRuFeO4az/FCXCKe0L7AuJWaLnpSlB8FAQ5dbrN036Cuemgi05TjWbxR3zidmiOpKle+OIdslwXa44xiu2JZvk8ros1R9SU/xQU5+0qU226LtMceVMVcan/aLgu1hwLFKftCl6oui7WHGmK50GJJYz11K1gblUm+TFPcQa8sqv2l7JrYi03XRlT9Ulz3LOSKaCKOy9ttVqynFlt/5xDU7Denk6PwMtqqSbZVN5xcS71VWoluxV6AR7qZbEGroFCMVcW4lRo+fA45Xq789RfIBzdU9zIvs47ImcO5lIxBWl6q2j4Dx3Qj00BzvKza4tlqWHeBUeHeq7RdrP3Zkm+fVzRm707nSuEzmA3WOQ3hn+ogrn3r9pbpxr6Z+Bmrw1930sYCO/3s3ZybdG2KcAAzgkQPz13w6cAAAAASUVORK5CYII=",
-                                                                                                          "contentType": "image/png",
-                                                                                                          "width": 15,
-                                                                                                          "height": 15},
-                                                                                                      "label": "Completed"},
-                                                                                                     {"value": "4",
-                                                                                                      "symbol": {
-                                                                                                          "angle": 0,
-                                                                                                          "xoffset": 0,
-                                                                                                          "yoffset": 0,
-                                                                                                          "type": "esriPMS",
-                                                                                                          "url": "b30b6e18-fe3d-499b-ace5-9ecd4daaf4ca",
-                                                                                                          "imageData": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MTFBQjVGQjJBQjI4MTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MTFBQjVGQjFBQjI4MTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+h4gfbQAAAqFJREFUeNq8lz9oE2EYxr+7XNpryJ/LJkm7VOriEo2LdLGOTo4FBzcdLIjgnyFOpU4iLjoILg5ix+Iuig6C2JpFEItdbEqHQmOapLa5JD7P5TvycWgvae7zgQcul+97f/f9u/c941omIwaQBRfg0/AZeBrOy/8q8Ab8Bf4Kl59Vq25YQCMEHIevwpfhOTgREq8Jv4VX4Bd4gNZxwEX4oQR6mhofF45liYRpChumfnc6oglXXVf8PDhQ+/MB7gC+Ogz4BvwAziRjMXFqYkKcGBsTccM4critbldsHx6K7/v7ot5u89YvuAT402Bb8y/9S/ATQicxwjnH8UYaBvXWBW2mZB/2ZQzGuu44pTDwArzEi3PJpCjCphhe7MO+jCG1BPjCv8DctYseNJUS+d4TjyTGYCypRcALQTB372M4y8Z5rGdUYiw5iCwZgMdV8BX4QgobqdifnsjEmIxNhmR5YJ7Nef44id1riOhlyNhS8xh1guAZ+Dzv5CKc4qCU2GTNEHwWTk8OeGSOK8aWRyxNpil3s8haltAthVEw5Qvfew3qlsKY5lWOV/Z/ACuMnH7aEW+3LT/L6JbC2DJlEvdSm24pjA2Cy7zadV3tYIVRJngNrm0iiTOf6hJjb/YKhRqZBK/DH72JRxLXJSU2WeumrJOWeecHKgcdY+7K2FLLqEia/nF6Bb/fQ7myWq9HDmbMvV4p9A5+qaZFTv5Nrn8F61CJcMoZq9Jb2134ll95xoq27bfZhhvwJa4H82d6xPc3gZ/7M3gX0Nf+DxVMfYK55y8S3sC5Y3U5bM7qYAevNRriW39d7wP6SG0TBFMf4B14ttZu23wAprQEZiA2QHnL9lzTnVbLL29vB6G6C/o38L1hC/qRP2EAfD7Kt5O2j7Y/AgwAIkECnmHeVUQAAAAASUVORK5CYII=",
-                                                                                                          "contentType": "image/png",
-                                                                                                          "width": 15,
-                                                                                                          "height": 15},
-                                                                                                      "label": "Declined"},
-                                                                                                     {"value": "5",
-                                                                                                      "symbol": {
-                                                                                                          "angle": 0,
-                                                                                                          "xoffset": 0,
-                                                                                                          "yoffset": 0,
-                                                                                                          "type": "esriPMS",
-                                                                                                          "url": "8929e02a-338d-48b0-8bcc-d6b826d6b1a3",
-                                                                                                          "imageData": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QTIxNDBBQUFBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODk5NTYzQTJBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+Y0l40QAAAr1JREFUeNq0l0toE1EUhk9mEhPTNjGKFuMLKvGBm0ZLRdyo4IO6cVlwIbq1IIKPRV2VdiXiyp0ILsQuRRCqRRRdSGO13fhqtOAjxVLbtNM2bcyj/v8wI5dATWNyD3wwczvzf5n03twznrNtG2QF5QXNYA+IgyawyflbCoyCIfAODN95NJ4vF+gpI/aBM+AUOAyCZfIy4Bl4AO7iA+T+R7wPXHeEdu3eFpD1a7wSqjOlfrVhj80tFMWaL8jEdF4+fF1U7+cHuAz5m0rE50EPCEcaTGnZFZTtUb+s8nn++bi/c0vyZSwrgx8zkp4tcGgGdEJ+ayXiTtDNg51b/XK0JSSGIRVVsSjSP2jJp29Zd+ga5D3qNaWRHa70xP6QHG+tXGqH4h7eywynus+dbOxYTsxZ2+VKd2zxS7XFDEXeBXlzqZiz9yaI8OJaSFW5kxehA3KfKj4NDq0NmXKsNSS1LmYymw7HZYu5Ntt5Eo8FxfDU3GtnMtupdjx1kOIYOMCR2Ga/6Colm64YxXtBiEun3DqtpphNB110Gs5slsaIT3SX4mg2nB98Cdeb2sWKo4niKI/qAoZ2seKI6rctN9PBGA/mF4vaZYpjzHA2cZmZK2gXK45Riod5NJ7OaRcrjmGK3wKLWxj3U13FbGebtOikOAlecST5I6tNrGTTlTScPqnXfv7kgixpeOgiMoeSGfe0F01Bxl1O98GLSSsvjxNWzcVPkDll2RPrObinbov8Hi6A9Mj3rJBalZKXBhfdztOMx+rca35yqYG2z6msRBq8si7srVraN/D3G7wC6UP3RBWzEoDN+BHKp7Humjb6xVPhplXAP7X/9awMvM+ozd4N9ZpSMesl+AUOTs4UApyN3NLC6KVNs3x7O4Lr+xKzkprIue3tpVKp7ob+KbhaaUNf9SsMhLereXfS9tL2R4ABAMvSDbwyRXPsAAAAAElFTkSuQmCC",
-                                                                                                          "contentType": "image/png",
-                                                                                                          "width": 15,
-                                                                                                          "height": 15},
-                                                                                                      "label": "Paused"},
-                                                                                                     {"value": "6",
-                                                                                                      "symbol": {
-                                                                                                          "angle": 0,
-                                                                                                          "xoffset": 0,
-                                                                                                          "yoffset": 0,
-                                                                                                          "type": "esriPMS",
-                                                                                                          "url": "7d420f65-891b-4f79-9d1a-511ea42ee64b",
-                                                                                                          "width": 15,
-                                                                                                          "height": 15,
-                                                                                                          "imageData": "iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDY3IDc5LjE1Nzc0NywgMjAxNS8wMy8zMC0yMzo0MDo0MiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6Nzc0NjQ1REE5OTI0MTFFNUEzNUM5NzQzODc1QTc2Q0MiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6Nzc0NjQ1RDk5OTI0MTFFNUEzNUM5NzQzODc1QTc2Q0MiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo3ZTc0NjJhYy1hMWY4LTQ5Y2YtOGFmNy1iNzdmOWM2OWU5NjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+0lZ3dQAAAvtJREFUeNq8l01IG0EUx182CaiHRKEFY6ERQT30kqbaL6HYQqHgwaIogdCvYCtSFTyUHlo8iDn1IGgihDZBW0PEL+pBKPTz0tpqa/cS8ANES2uEFprkYJGkad/bzsqytia77vbBH2Zn5r3fzuzOzBvDDasVcjATyoE6gjqKKkMdYm1fUKuoj6goig/E4+lsAQ1ZwGbUFdRF1FlUQZZ4W6iXqMeoYXyBlBrwMdQ9BhTspMsFhx0OOGC3Q6HNJtTFYzH4tr4On3ge3o6OSv3pBW4h/IMS8E2UF2UtrqiAC11d4Kirg3yLZc/h/kgmgZ+ZgSd9fbC5vExVCdQdlJ8e8CX2BFPHXiocb2qCq4ODYDSbQYn9TKVgqK0N5iYmxKq7NBAp2CTzaRehLcEgVDc2ghrjjEYw5+VJq3rZ6H07fSSN9Nf2UOF6KKQa+iuTgUednfB6ZETe1NNaWOiQg2ku+1BFBKxqaNAMetrthuo/8YqIgXCzdKrdqFpbZSV4AgFNoZcHBoS2z9EoxJaWahlriGNr00Udz7e3A2cyaQo1cJwQk2Izc+GoCwhcjjpFNc76es2hokliE6ucWpwoy4nm5qzrVC2UjGITg1jE5NjfDHanUzH0YUdHTlDRJAwHxzZ8OFhaqhj6JhzOGSpjlFGvEhD2xmJdoTJGCadmetVAd+1uqA1hN9/c1B0qYWxw7BCHr2truo9UwlglL55K6wsLuk+vhMGTJz0l342NCeepXlCKTQxiEZO8V1CzVLMwPa0LVBabWCscy5OEnOWZ3y8AtYZm0ml46ts5ikcxIdgST4QI6trG4uKZYEsLmPPzNYOShVpb6WSi4itUWJ760Nb5gp2bmkHfT03BfY+Hit9R53C0vDwDoYpuOfRSf79q6PzkpAgl6xahf8u56ENYxbwrtb0tfG/AHEqJpdFvGM/fufFxabLnk+9ccvOypC8xj1liT00NzEYiu5bav5YM9SUfBk2wWN7/mdA/R91WmtDv+wqDwAf7uTvpdmn7LcAAq9+ZUerP/SkAAAAASUVORK5CYII=",
-                                                                                                          "contentType": "image/png"},
-                                                                                                      "label": "Canceled"}]},
-                        "transparency": 0},
-        "allowGeometryUpdates": true,
-        "hasAttachments": true,
-
-        "attachmentProperties": [
-            {
-                "name": "name",
-                "isEnabled": true
-            },
-            {
-                "name": "size",
-                "isEnabled": true
-            },
-            {
-                "name": "contentType",
-                "isEnabled": true
-            },
-            {
-                "name": "keywords",
-                "isEnabled": true
-            },
-            {
-                "name": "exifInfo",
-                "isEnabled": true
-            }
-        ],
-        "htmlPopupType": "esriServerHTMLPopupTypeNone",
-        "hasM": false,
-        "hasZ": false,
-        "objectIdField": "OBJECTID",
-        "uniqueIdField":
-            {
-                "name": "OBJECTID",
-                "isSystemMaintained": true
-            },
-        "globalIdField": "GlobalID",
-        "typeIdField": "",
-        "fields": [
-            {
-                "name": "OBJECTID",
-                "type": "esriFieldTypeOID",
-                "alias": "OBJECTID",
-                "sqlType": "sqlTypeOther",
-                "nullable": false,
-                "editable": false,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "description",
-                "type": "esriFieldTypeString",
-                "alias": "Description",
-                "sqlType": "sqlTypeOther",
-                "length": 4000,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "status",
-                "type": "esriFieldTypeInteger",
-                "alias": "Status",
-                "sqlType": "sqlTypeOther",
-                "nullable": true,
-                "editable": true,
-                "domain":
-                    {
-                        "type": "codedValue",
-                        "name": "ASSIGN_STATUS",
-                        "codedValues": [
-                            {
-                                "name": "Unassigned",
-                                "code": 0
-                            },
-                            {
-                                "name": "Assigned",
-                                "code": 1
-                            },
-                            {
-                                "name": "In Progress",
-                                "code": 2
-                            },
-                            {
-                                "name": "Completed",
-                                "code": 3
-                            },
-                            {
-                                "name": "Declined",
-                                "code": 4
-                            },
-                            {
-                                "name": "Paused",
-                                "code": 5
-                            },
-                            {
-                                "name": "Canceled",
-                                "code": 6
-                            }
-                        ]
-                    },
-                "defaultValue": null
-            },
-            {
-                "name": "notes",
-                "type": "esriFieldTypeString",
-                "alias": "Notes",
-                "sqlType": "sqlTypeOther",
-                "length": 4000,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "priority",
-                "type": "esriFieldTypeInteger",
-                "alias": "Priority",
-                "sqlType": "sqlTypeOther",
-                "nullable": true,
-                "editable": true,
-                "domain":
-                    {
-                        "type": "codedValue",
-                        "name": "PRIORITY",
-                        "codedValues": [
-                            {
-                                "name": "None",
-                                "code": 0
-                            },
-                            {
-                                "name": "Low",
-                                "code": 1
-                            },
-                            {
-                                "name": "Medium",
-                                "code": 2
-                            },
-                            {
-                                "name": "High",
-                                "code": 3
-                            },
-                            {
-                                "name": "Critical",
-                                "code": 4
-                            }
-                        ]
-                    },
-                "defaultValue": null
-            },
-            {
-                "name": "assignmenttype",
-                "type": "esriFieldTypeGUID",
-                "alias": "Assignment Type",
-                "sqlType": "sqlTypeOther",
-                "length": 38,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "workorderid",
-                "type": "esriFieldTypeString",
-                "alias": "WorkOrder ID",
-                "sqlType": "sqlTypeOther",
-                "length": 255,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "duedate",
-                "type": "esriFieldTypeDate",
-                "alias": "Due Date",
-                "sqlType": "sqlTypeOther",
-                "length": 8,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "workerid",
-                "type": "esriFieldTypeGUID",
-                "alias": "WorkerID",
-                "sqlType": "sqlTypeOther",
-                "length": 38,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "GlobalID",
-                "type": "esriFieldTypeGlobalID",
-                "alias": "GlobalID",
-                "sqlType": "sqlTypeOther",
-                "length": 38,
-                "nullable": false,
-                "editable": false,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "location",
-                "type": "esriFieldTypeString",
-                "alias": "Location",
-                "sqlType": "sqlTypeOther",
-                "length": 255,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "declinedcomment",
-                "type": "esriFieldTypeString",
-                "alias": "Declined Comment",
-                "sqlType": "sqlTypeOther",
-                "length": 4000,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "assigneddate",
-                "type": "esriFieldTypeDate",
-                "alias": "Assigned on Date",
-                "sqlType": "sqlTypeOther",
-                "length": 8,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "inprogressdate",
-                "type": "esriFieldTypeDate",
-                "alias": "In Progress Date",
-                "sqlType": "sqlTypeOther",
-                "length": 8,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "completeddate",
-                "type": "esriFieldTypeDate",
-                "alias": "Completed on Date",
-                "sqlType": "sqlTypeOther",
-                "length": 8,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "declineddate",
-                "type": "esriFieldTypeDate",
-                "alias": "Declined on Date",
-                "sqlType": "sqlTypeOther",
-                "length": 8,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "pauseddate",
-                "type": "esriFieldTypeDate",
-                "alias": "Paused on Date",
-                "sqlType": "sqlTypeOther",
-                "length": 8,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "dispatcherid",
-                "type": "esriFieldTypeGUID",
-                "alias": "DispatcherID",
-                "sqlType": "sqlTypeOther",
-                "length": 38,
-                "nullable": true,
-                "editable": true,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "CreationDate",
-                "type": "esriFieldTypeDate",
-                "alias": "CreationDate",
-                "sqlType": "sqlTypeOther",
-                "length": 8,
-                "nullable": true,
-                "editable": false,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "Creator",
-                "type": "esriFieldTypeString",
-                "alias": "Creator",
-                "sqlType": "sqlTypeOther",
-                "length": 128,
-                "nullable": true,
-                "editable": false,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "EditDate",
-                "type": "esriFieldTypeDate",
-                "alias": "EditDate",
-                "sqlType": "sqlTypeOther",
-                "length": 8,
-                "nullable": true,
-                "editable": false,
-                "domain": null,
-                "defaultValue": null
-            },
-            {
-                "name": "Editor",
-                "type": "esriFieldTypeString",
-                "alias": "Editor",
-                "sqlType": "sqlTypeOther",
-                "length": 128,
-                "nullable": true,
-                "editable": false,
-                "domain": null,
-                "defaultValue": null
-            }
-        ],
-        "indexes": [
-            {
-                "name": "PK__workforc__F4B70D85C3D12E22",
-                "fields": "OBJECTID",
-                "isAscending": true,
-                "isUnique": true,
-                "description": "clustered, unique, primary key"
-            },
-            {
-                "name": "FDO_GlobalID",
-                "fields": "GlobalID",
-                "isAscending": true,
-                "isUnique": true,
-                "description": ""
-            },
-            {
-                "name": "workerIdIndex",
-                "fields": "workerid",
-                "isAscending": false,
-                "isUnique": false,
-                "description": "Worker ID index"
-            },
-            {
-                "name": "dispatcherIdIndex",
-                "fields": "dispatcherid",
-                "isAscending": false,
-                "isUnique": false,
-                "description": "Dispatcher ID index"
-            },
-            {
-                "name": "user_51.workforce_b78e7083b433474cbef3dbd07a11d99d_ASSIGNMENTS_Shape_sidx",
-                "fields": "Shape",
-                "isAscending": false,
-                "isUnique": false,
-                "description": "Shape Index"
-            },
-            {
-                "name": "CreationDateIndex",
-                "fields": "CreationDate",
-                "isAscending": true,
-                "isUnique": false,
-                "description": "CreationDate Field index"
-            },
-            {
-                "name": "CreatorIndex",
-                "fields": "Creator",
-                "isAscending": false,
-                "isUnique": false,
-                "description": "Creator Field index"
-            },
-            {
-                "name": "EditDateIndex",
-                "fields": "EditDate",
-                "isAscending": true,
-                "isUnique": false,
-                "description": "EditDate Field index"
-            },
-            {
-                "name": "EditorIndex",
-                "fields": "Editor",
-                "isAscending": false,
-                "isUnique": false,
-                "description": "Editor Field index"
-            }
-        ],
-        "types": [
-            {
-                "id": "0",
-                "name": "Unassigned",
-                "domains":
-                    {
-                    },
-                "templates": [
-                    {
-                        "name": "Unassigned",
-                        "description": "",
-                        "drawingTool": "esriFeatureEditToolNone",
-                        "prototype": {
-                            "attributes": {
-                                "status": "0",
-                                "description": null,
-                                "notes": null,
-                                "priority": null,
-                                "assignmenttype": null,
-                                "workorderid": null,
-                                "duedate": null,
-                                "workerid": null,
-                                "location": null,
-                                "declinedcomment": null,
-                                "assigneddate": null,
-                                "inprogressdate": null,
-                                "completeddate": null,
-                                "declineddate": null,
-                                "pauseddate": null,
-                                "dispatcherid": null
-                            }
-                        }
-                    }
-                ]
-            },
-            {
-                "id": "1",
-                "name": "Assigned",
-                "domains":
-                    {
-                    },
-                "templates": [
-                    {
-                        "name": "Assigned",
-                        "description": "",
-                        "drawingTool": "esriFeatureEditToolNone",
-                        "prototype": {
-                            "attributes": {
-                                "status": "1",
-                                "description": null,
-                                "notes": null,
-                                "priority": null,
-                                "assignmenttype": null,
-                                "workorderid": null,
-                                "duedate": null,
-                                "workerid": null,
-                                "location": null,
-                                "declinedcomment": null,
-                                "assigneddate": null,
-                                "inprogressdate": null,
-                                "completeddate": null,
-                                "declineddate": null,
-                                "pauseddate": null,
-                                "dispatcherid": null
-                            }
-                        }
-                    }
-                ]
-            },
-            {
-                "id": "2",
-                "name": "In Progress",
-                "domains":
-                    {
-                    },
-                "templates": [
-                    {
-                        "name": "In Progress",
-                        "description": "",
-                        "drawingTool": "esriFeatureEditToolNone",
-                        "prototype": {
-                            "attributes": {
-                                "status": "2",
-                                "description": null,
-                                "notes": null,
-                                "priority": null,
-                                "assignmenttype": null,
-                                "workorderid": null,
-                                "duedate": null,
-                                "workerid": null,
-                                "location": null,
-                                "declinedcomment": null,
-                                "assigneddate": null,
-                                "inprogressdate": null,
-                                "completeddate": null,
-                                "declineddate": null,
-                                "pauseddate": null,
-                                "dispatcherid": null
-                            }
-                        }
-                    }
-                ]
-            },
-            {
-                "id": "3",
-                "name": "Completed",
-                "domains":
-                    {
-                    },
-                "templates": [
-                    {
-                        "name": "Completed",
-                        "description": "",
-                        "drawingTool": "esriFeatureEditToolNone",
-                        "prototype": {
-                            "attributes": {
-                                "status": "3",
-                                "description": null,
-                                "notes": null,
-                                "priority": null,
-                                "assignmenttype": null,
-                                "workorderid": null,
-                                "duedate": null,
-                                "workerid": null,
-                                "location": null,
-                                "declinedcomment": null,
-                                "assigneddate": null,
-                                "inprogressdate": null,
-                                "completeddate": null,
-                                "declineddate": null,
-                                "pauseddate": null,
-                                "dispatcherid": null
-                            }
-                        }
-                    }
-                ]
-            },
-            {
-                "id": "4",
-                "name": "Declined",
-                "domains":
-                    {
-                    },
-                "templates": [
-                    {
-                        "name": "Declined",
-                        "description": "",
-                        "drawingTool": "esriFeatureEditToolNone",
-                        "prototype": {
-                            "attributes": {
-                                "status": "4",
-                                "description": null,
-                                "notes": null,
-                                "priority": null,
-                                "assignmenttype": null,
-                                "workorderid": null,
-                                "duedate": null,
-                                "workerid": null,
-                                "location": null,
-                                "declinedcomment": null,
-                                "assigneddate": null,
-                                "inprogressdate": null,
-                                "completeddate": null,
-                                "declineddate": null,
-                                "pauseddate": null,
-                                "dispatcherid": null
-                            }
-                        }
-                    }
-                ]
-            },
-            {
-                "id": "5",
-                "name": "Paused",
-                "domains":
-                    {
-                    },
-                "templates": [
-                    {
-                        "name": "Paused",
-                        "description": "",
-                        "drawingTool": "esriFeatureEditToolNone",
-                        "prototype": {
-                            "attributes": {
-                                "status": "5",
-                                "description": null,
-                                "notes": null,
-                                "priority": null,
-                                "assignmenttype": null,
-                                "workorderid": null,
-                                "duedate": null,
-                                "workerid": null,
-                                "location": null,
-                                "declinedcomment": null,
-                                "assigneddate": null,
-                                "inprogressdate": null,
-                                "completeddate": null,
-                                "declineddate": null,
-                                "pauseddate": null,
-                                "dispatcherid": null
-                            }
-                        }
-                    }
-                ]
-            }
-        ],
-        "templates": [],
-        "supportedQueryFormats": "JSON, geoJSON, PBF",
-        "hasStaticData": false,
-        "maxRecordCount": 1000,
-        "standardMaxRecordCount": 32000,
-        "standardMaxRecordCountNoGeometry": 32000,
-        "tileMaxRecordCount": 8000,
-        "maxRecordCountFactor": 1,
-        "capabilities": "Create,Delete,Query,Update,Editing,Sync"
+{
+  "currentVersion" : 10.7, 
+  "id" : 0, 
+  "name" : "Assignments", 
+  "type" : "Feature Layer", 
+  "displayField" : "description", 
+  "description" : "", 
+  "copyrightText" : "", 
+  "defaultVisibility" : true, 
+  "editFieldsInfo" : {
+    "creationDateField" : "CreationDate", 
+    "creatorField" : "Creator", 
+    "editDateField" : "EditDate", 
+    "editorField" : "Editor"
+  }, 
+  "relationships" : [], 
+  "isDataVersioned" : false, 
+  "supportsAppend" : true, 
+  "supportsCalculate" : true, 
+  "supportsASyncCalculate" : true, 
+  "supportsTruncate" : false, 
+  "supportsAttachmentsByUploadId" : true, 
+  "supportsAttachmentsResizing" : true, 
+  "supportsRollbackOnFailureParameter" : true, 
+  "supportsStatistics" : true, 
+  "supportsExceedsLimitStatistics" : true, 
+  "supportsAdvancedQueries" : true, 
+  "supportsValidateSql" : true, 
+  "supportsCoordinatesQuantization" : true, 
+  "supportsFieldDescriptionProperty" : true, 
+  "supportsQuantizationEditMode" : true, 
+  "supportsApplyEditsWithGlobalIds" : true, 
+  "supportsReturningQueryGeometry" : true, 
+  "advancedQueryCapabilities" : {
+    "supportsPagination" : true, 
+    "supportsPaginationOnAggregatedQueries" : true, 
+    "supportsQueryRelatedPagination" : true, 
+    "supportsQueryWithDistance" : true, 
+    "supportsReturningQueryExtent" : true, 
+    "supportsStatistics" : true, 
+    "supportsOrderBy" : true, 
+    "supportsDistinct" : true, 
+    "supportsQueryWithResultType" : true, 
+    "supportsSqlExpression" : true, 
+    "supportsAdvancedQueryRelated" : true, 
+    "supportsCountDistinct" : true, 
+    "supportsPercentileStatistics" : true, 
+    "supportsQueryAttachments" : true, 
+    "supportsLod" : true, 
+    "supportsQueryWithLodSR" : false, 
+    "supportedLodTypes" : [
+      "geohash"
+    ], 
+    "supportsReturningGeometryCentroid" : false, 
+    "supportsQueryWithDatumTransformation" : true, 
+    "supportsHavingClause" : true, 
+    "supportsOutFieldSQLExpression" : true, 
+    "supportsMaxRecordCountFactor" : true, 
+    "supportsTopFeaturesQuery" : true, 
+    "supportsDisjointSpatialRel" : true, 
+    "supportsQueryWithCacheHint" : true, 
+    "supportsQueryAttachmentsWithReturnUrl" : true
+  }, 
+  "useStandardizedQueries" : true, 
+  "geometryType" : "esriGeometryPoint", 
+  "minScale" : 0, 
+  "maxScale" : 0, 
+  "extent" : {
+    "xmin" : -16348803.964744022, 
+    "ymin" : 2000812.1785607955, 
+    "xmax" : -8015003.77241786, 
+    "ymax" : 8314629.614010402, 
+    "spatialReference" : {
+      "wkid" : 102100, 
+      "latestWkid" : 3857
     }
+  }, 
+  "drawingInfo":{"renderer":{"type":"uniqueValue","field1":"status","uniqueValueInfos":[{"value":"0","symbol":{"angle":0,"xoffset":0,"yoffset":0,"type":"esriPMS","url":"5bdad7c9-66bb-43a3-8050-41d29c44abeb","imageData":"iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6ODk5NTYzOUJBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODk5NTYzOUFBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+OeyIogAAAr1JREFUeNrEl02IEmEcxv+OK8igqTfxA2RlvXQx9SJdqkvQQToudOiw3lqIoOiwsYdlO1V06uZhO0R7DO9R1CEINS+BuLgXP/AgaH5huGj/Z3gHXgZ0sp2hBx4YX2ee38w778d/HHt7e/QX2mIn2VfZ19jb7LD4r80+Z/9g/2RXC4XChVmgwwTsYt9n32XfZKsmeVP2J/YH9lu+gfm/gNPsFwKoKRqNkt/vJ1VVye12a22z2Yym0ykNBgNqNpvy9biBJwwvbwJ+wH7O9nk8HkokEhQMBsnlcq193Pl8Tt1ul+r1Oo3HYzT9Yh8w/I3xXGcqlTK2HbBfst2RSISy2az2lE6n03Qg4Byfz0exWEzrheFwiG65UywWL3K53Ff5XMVw7T77GAeZTIbS6TQpikKbCtfgWmQIHefz+f1VYIzaIx0aDofpskKGBD9ieNIIxst7zQ7gZCugMlzkBcBguEsG32Pf8Hq9WhdZLWQiGwzB0sCYm7v4EY/HyeFwWA5GJrKFdvmpVYB32Fm0hEIhsktSNlg7AGM+XcHUMZunlxGywQALTEWMZgoEAmS3JEZSEQu+tgzaLYmxDbDW+fraa6ckRkih/ySAO/ouY7ckRkcRm7i2qNstiXEOcBVH/X7fdrDEqAJcYQ9brZa2n9olZIMBFpgAn7G/aR3f6dgGlrLBOlNEnXSKlkajQcvl0nIoMpEtdMoVyVSfTu/ZX0ajEZXLZcvByEQ26zP7nbwt/mY/xPtvt9sEWyUpDyPrkV55ygsIRvchDkqlkiVwZCBL6JCh1VXF3nc2ivFbGAyTyUSrLjfdoxeLBVUqFarVanrTM4a+MqsyUQ322NdRJeIGsKVhgTerNDFlcD7eaa/X08vbx0ao3QX9R/bTVQX91rrByL4tf8JwsGoIX/kJw8CC2cfY2t5jI+DE6o+2PwIMAEzRGFYssovaAAAAAElFTkSuQmCC","contentType":"image/png","width":15,"height":15},"label":"Unassigned"},{"value":"1","symbol":{"angle":0,"xoffset":0,"yoffset":0,"type":"esriPMS","url":"8f838b07-f1f9-43f1-b9d4-a9e494fd42f6","imageData":"iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MTFBQjVGQjZBQjI4MTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MTFBQjVGQjVBQjI4MTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+r7GfdQAAA6VJREFUeNrEV01IVFEUPjPj6Mwo5YD/IyJDrkKZcfzLJMxNMAsJXLaIVHRhEEE/C1tZripctdFRbBG5ipiFCyUKAtNRG0VaiCCizvgbWuCINkrnu7yRx3SfMy+NPvjgvvvOOd979917znmGlpYWSgIpTBfzMtPNdDIdyr0Qc5EZZH5jzvh8vmiigIYEwmbmbeZN5nWmLUG8CPMj8z3zNT/Ar78R9jCfK4ICtbW1VFRURFlZWWS328Xczs4ObW9v0/LyMo2Njan98QAPWXxaj3AHs5t5MS8vj7xeL7ndbrJarae+7v7+PgWDQRoeHqb19XVM/WB2svirZIQ7mc8wqK6upubmZjKZTKQHR0dHNDAwQBMTE7GpJyzerbYxlZeXq6/vMl9g0NbWRo2NjWQ0Gkkv4OPxeAirNT0tVrrB7/d/53iBExuVPXZtFwbt7e1UVVVFZwViIJaCrtbWVle8MHZvD9MO48rKSjovIJbyEtiNPSxujp1P4BazPj8/n/iGZpCDgwMKhUK0tbVFkUhEzNlsNsrOziaHw0FpaWlSP8RcWVmhtbW1ekVrEN8YZ/Mp81JTUxMVFxdLnTc2NsT3gvDe3h4dHh4KYowHwS7GQ2RkZPx5dAwGMpvNNDs7i0srf+93WOoS5hXMVFRUSEU3NzdpampKiGgB92ADWxlUsaFVAmFs6ws1NTXSc4rlnZubo+Pj44TfEzawhU88EBsa0IKmUdnNmku8urp68j2TAWzhI4NKw2VUEr7YIDIgHeqFlo9KwwnhAowyMzM130AvtHxUGgVG+k+AcBiD3d1dqQGOiF5o+ag0wkaliIuzKANKoF5o+ag0FiE8g9HS0pLUuLCwMGE5jH9b+Mig0piB8Ffmz/HxcVFP44E0WFZWllSVgk1paak0dSI2NKAFTURbYH7BDDKPDDk5OSLzpKena4riHmxgK4MqNrQWUpQ+aYh5Y3R0lOrq6kRujUdubq44DlpFAsubmpqqmdFGRkZil0PcFERi1ekt8044HL7W19cnmgAZsIROp1NQD1gIlQnDT8w36nqM5HoPvVsgEKDJyclzO6+IhZiIzbwf6zzVrQ+6M5QfL8of2hbU2LMAgr29vbHLRyzq1+q58Ghoxhsgjhrscrl0913RaJT6+/uJ66662Xt5WrMHfEaeZ17ljWTBbrRYLCIpoJgnam+xtHjL+fn5WHv7IF70Xzf0H5iP9Tb0Z/6F8WErJ/gZOw3YgQgweN4/bb8FGACBa4t7SuzqvgAAAABJRU5ErkJggg==","contentType":"image/png","width":15,"height":15},"label":"Assigned"},{"value":"2","symbol":{"angle":0,"xoffset":0,"yoffset":0,"type":"esriPMS","url":"ff54f463-9b9b-493c-9174-63bac7b0e04b","imageData":"iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6ODk5NTYzOUZBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODk5NTYzOUVBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+EdUIugAAA85JREFUeNrEV2lIVGEUPT41U0PLFh2n1bSIKKaCFm0xo4SgaINW6EfbjzYqI8jqR2VBtoAtRPWjBULBLBQijFZzKqOcCokyxjJHHSotS6lU6p7hPXjZe47TGJ3hDPd779573nK/77svoNfc6egAgoQ24XDhKGGc0KqecwmdwlJhmdDxPq+wxVvCAC/CwcLlwjnCqcIwL/mahLeEV4Tn5AKa/0Z4jDBTFfRgYfJ0jIyLR//oGFiienmO1dR9QKW7Fs+cr5Fz+7o+nhewVcQf+yK8VpghjEyw9sOGeYswc1wiIsLC273dhqZGXH1oR1ZeNspd73joszBdxI93RDhduJfG/EkpOLohDcGBQfAFza0tWJ91EJeKbmqHdoh4RnvC64RHaZzavB1zJybDH1y+dxurD+/ThutF/Jg2UHR+rNrdNE5vSfdblGAO5lKxu/e8Gba2wqzeI8IedJ6TNAWdBeZSb6IHNUQ8WJufxFJh8pC+/XFi4zbTJLVfP8Lueg6Huxw1YhOWbj1hi05AonUEYsQ2AnOWvXHiVVVlsqp1NjBs2GDOzT3C+J3LVsAWP+SPwJ/ys1c9x+GSbBRWlOBdgxv13754SPtRzQuUul+hZ2gk+kX0QYD89FAUBV2Du+Dao/schmbmXMjjo04QTuCRWYmTDK/4gasMBx9eRMWnatOnwXP0oa8RdLmplUDh0cKIBZNTDOepu7EOZxz5aPje6PV90oe+jGkL5qYGTWoqajVjVPxQw2TFVc/w5nNNh4uJvowxgk7DpqgLPgZEWwydWUi+wixGpxFH4VhaMVHGFalVry8wi9FpxCr4T6Cwp1Rr64yv0mIyN9uDWYxOo1pRN3G8dRsXEBcHX2EWo9NwUthBq/T1S0PnxL4jMTDS0mFR+iZJjBF0Gg4KP+EUzL1707Of/lEQ4VFYaZuNiJBwr6L0oW+0xBjt1dSgSU0Ks/Y9a1mBvcgw4XjrcKSNW4JB3WNNReO6Wz0+9DWCLje1yoPUPilbmHqy4BIWT0uFEvD7Wsu1l49vsCQ33STkfIzBnRItra04kZ+rDbNlX27SGoEQYaFwMrcwNgGdCTYDbAoE/JvBJlCbx9+FG4X1dLhSfKfTRJlLFa0XbtI6T/0CwureRWPVoQzN2e/Wh7lU7BJRhzbgfqz3LeErEaYU3C+Cs9qF1LHjEaj4tsD9aG7G2qxMHMg5r2/2Dul92goTLL8PwqQXlRVd8+13ER4a5umlQ2Qz99beXr53B2uO7Edx2VOtvU1rK/qvG/obwm2+NvR+f8KI4Bl/vp3+2UfbLwEGANeJh/hAHCeKAAAAAElFTkSuQmCC","contentType":"image/png","width":15,"height":15},"label":"In Progress"},{"value":"3","symbol":{"angle":0,"xoffset":0,"yoffset":0,"type":"esriPMS","url":"0686b93d-be21-4626-bd96-94b4c74d8a38","imageData":"iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QTIxNDBBQUVBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6QTIxNDBBQURBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+6nUa3wAAAp5JREFUeNrEl01rE1EUhs+MmTSNzVexYqOJUAkobuIHijsVdK2uCi78ARbEhbiodFHalYgrd25ciF2Ja0EUN2LUmo0iBAomNlZbmjTR5tOm7zvclEtA05gZPfAkk8nMeWaGe+eca+y6eE62ER6QBIfBETAG9qr/FsECeA8+gPTy46fNbgmNLmILXAEXwBng75JvHTwHT8ADXEDjb8THwG0ltCOyPyiDYZ94d1piDXrsfY1KU+o/G1IpVqXwuaSfzwu4Afm7XsRXwSwIDQS8svvgsASjAdlhmX+83V+NDSnly/L906rUynXuWgOTkN/bjngSzHAjHA9K7PgeMUxDeonWRktyb5ekmN16Arcgn9WP6byFibY0fjIq8ROjPUvtu8E5PJc5VMyMXDo/8TsxR+10WxqOBaTfYA5NPg15slPM0XuX44cHOyHV5SpfhA7ILV18GZweCHolhkfkdDAnc9OhXLaYc3OcP0YSw2IYhuNi5mRuFeO4az/FCXCKe0L7AuJWaLnpSlB8FAQ5dbrN036Cuemgi05TjWbxR3zidmiOpKle+OIdslwXa44xiu2JZvk8ros1R9SU/xQU5+0qU226LtMceVMVcan/aLgu1hwLFKftCl6oui7WHGmK50GJJYz11K1gblUm+TFPcQa8sqv2l7JrYi03XRlT9Ulz3LOSKaCKOy9ttVqynFlt/5xDU7Denk6PwMtqqSbZVN5xcS71VWoluxV6AR7qZbEGroFCMVcW4lRo+fA45Xq789RfIBzdU9zIvs47ImcO5lIxBWl6q2j4Dx3Qj00BzvKza4tlqWHeBUeHeq7RdrP3Zkm+fVzRm707nSuEzmA3WOQ3hn+ogrn3r9pbpxr6Z+Bmrw1930sYCO/3s3ZybdG2KcAAzgkQPz13w6cAAAAASUVORK5CYII=","contentType":"image/png","width":15,"height":15},"label":"Completed"},{"value":"4","symbol":{"angle":0,"xoffset":0,"yoffset":0,"type":"esriPMS","url":"b30b6e18-fe3d-499b-ace5-9ecd4daaf4ca","imageData":"iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6MTFBQjVGQjJBQjI4MTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6MTFBQjVGQjFBQjI4MTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+h4gfbQAAAqFJREFUeNq8lz9oE2EYxr+7XNpryJ/LJkm7VOriEo2LdLGOTo4FBzcdLIjgnyFOpU4iLjoILg5ix+Iuig6C2JpFEItdbEqHQmOapLa5JD7P5TvycWgvae7zgQcul+97f/f9u/c941omIwaQBRfg0/AZeBrOy/8q8Ab8Bf4Kl59Vq25YQCMEHIevwpfhOTgREq8Jv4VX4Bd4gNZxwEX4oQR6mhofF45liYRpChumfnc6oglXXVf8PDhQ+/MB7gC+Ogz4BvwAziRjMXFqYkKcGBsTccM4critbldsHx6K7/v7ot5u89YvuAT402Bb8y/9S/ATQicxwjnH8UYaBvXWBW2mZB/2ZQzGuu44pTDwArzEi3PJpCjCphhe7MO+jCG1BPjCv8DctYseNJUS+d4TjyTGYCypRcALQTB372M4y8Z5rGdUYiw5iCwZgMdV8BX4QgobqdifnsjEmIxNhmR5YJ7Nef44id1riOhlyNhS8xh1guAZ+Dzv5CKc4qCU2GTNEHwWTk8OeGSOK8aWRyxNpil3s8haltAthVEw5Qvfew3qlsKY5lWOV/Z/ACuMnH7aEW+3LT/L6JbC2DJlEvdSm24pjA2Cy7zadV3tYIVRJngNrm0iiTOf6hJjb/YKhRqZBK/DH72JRxLXJSU2WeumrJOWeecHKgcdY+7K2FLLqEia/nF6Bb/fQ7myWq9HDmbMvV4p9A5+qaZFTv5Nrn8F61CJcMoZq9Jb2134ll95xoq27bfZhhvwJa4H82d6xPc3gZ/7M3gX0Nf+DxVMfYK55y8S3sC5Y3U5bM7qYAevNRriW39d7wP6SG0TBFMf4B14ttZu23wAprQEZiA2QHnL9lzTnVbLL29vB6G6C/o38L1hC/qRP2EAfD7Kt5O2j7Y/AgwAIkECnmHeVUQAAAAASUVORK5CYII=","contentType":"image/png","width":15,"height":15},"label":"Declined"},{"value":"5","symbol":{"angle":0,"xoffset":0,"yoffset":0,"type":"esriPMS","url":"8929e02a-338d-48b0-8bcc-d6b826d6b1a3","imageData":"iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDE0IDc5LjE1Njc5NywgMjAxNC8wOC8yMC0wOTo1MzowMiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6QTIxNDBBQUFBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6ODk5NTYzQTJBQjJCMTFFNDgwMkQ4QzlCNDM4MjFFQjQiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+Y0l40QAAAr1JREFUeNq0l0toE1EUhk9mEhPTNjGKFuMLKvGBm0ZLRdyo4IO6cVlwIbq1IIKPRV2VdiXiyp0ILsQuRRCqRRRdSGO13fhqtOAjxVLbtNM2bcyj/v8wI5dATWNyD3wwczvzf5n03twznrNtG2QF5QXNYA+IgyawyflbCoyCIfAODN95NJ4vF+gpI/aBM+AUOAyCZfIy4Bl4AO7iA+T+R7wPXHeEdu3eFpD1a7wSqjOlfrVhj80tFMWaL8jEdF4+fF1U7+cHuAz5m0rE50EPCEcaTGnZFZTtUb+s8nn++bi/c0vyZSwrgx8zkp4tcGgGdEJ+ayXiTtDNg51b/XK0JSSGIRVVsSjSP2jJp29Zd+ga5D3qNaWRHa70xP6QHG+tXGqH4h7eywynus+dbOxYTsxZ2+VKd2zxS7XFDEXeBXlzqZiz9yaI8OJaSFW5kxehA3KfKj4NDq0NmXKsNSS1LmYymw7HZYu5Ntt5Eo8FxfDU3GtnMtupdjx1kOIYOMCR2Ga/6Colm64YxXtBiEun3DqtpphNB110Gs5slsaIT3SX4mg2nB98Cdeb2sWKo4niKI/qAoZ2seKI6rctN9PBGA/mF4vaZYpjzHA2cZmZK2gXK45Riod5NJ7OaRcrjmGK3wKLWxj3U13FbGebtOikOAlecST5I6tNrGTTlTScPqnXfv7kgixpeOgiMoeSGfe0F01Bxl1O98GLSSsvjxNWzcVPkDll2RPrObinbov8Hi6A9Mj3rJBalZKXBhfdztOMx+rca35yqYG2z6msRBq8si7srVraN/D3G7wC6UP3RBWzEoDN+BHKp7Humjb6xVPhplXAP7X/9awMvM+ozd4N9ZpSMesl+AUOTs4UApyN3NLC6KVNs3x7O4Lr+xKzkprIue3tpVKp7ob+KbhaaUNf9SsMhLereXfS9tL2R4ABAMvSDbwyRXPsAAAAAElFTkSuQmCC","contentType":"image/png","width":15,"height":15},"label":"Paused"},{"value":"6","symbol":{"angle":0,"xoffset":0,"yoffset":0,"type":"esriPMS","url":"7d420f65-891b-4f79-9d1a-511ea42ee64b","width":15,"height":15,"imageData":"iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA3hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMDY3IDc5LjE1Nzc0NywgMjAxNS8wMy8zMC0yMzo0MDo0MiAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo2OWQ2NDJkMi1jZTA0LTRlNWItYWY4My0yYzAzNGRlMTA5YjIiIHhtcE1NOkRvY3VtZW50SUQ9InhtcC5kaWQ6Nzc0NjQ1REE5OTI0MTFFNUEzNUM5NzQzODc1QTc2Q0MiIHhtcE1NOkluc3RhbmNlSUQ9InhtcC5paWQ6Nzc0NjQ1RDk5OTI0MTFFNUEzNUM5NzQzODc1QTc2Q0MiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKE1hY2ludG9zaCkiPiA8eG1wTU06RGVyaXZlZEZyb20gc3RSZWY6aW5zdGFuY2VJRD0ieG1wLmlpZDo3ZTc0NjJhYy1hMWY4LTQ5Y2YtOGFmNy1iNzdmOWM2OWU5NjIiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjlkNjQyZDItY2UwNC00ZTViLWFmODMtMmMwMzRkZTEwOWIyIi8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+0lZ3dQAAAvtJREFUeNq8l01IG0EUx182CaiHRKEFY6ERQT30kqbaL6HYQqHgwaIogdCvYCtSFTyUHlo8iDn1IGgihDZBW0PEL+pBKPTz0tpqa/cS8ANES2uEFprkYJGkad/bzsqytia77vbBH2Zn5r3fzuzOzBvDDasVcjATyoE6gjqKKkMdYm1fUKuoj6goig/E4+lsAQ1ZwGbUFdRF1FlUQZZ4W6iXqMeoYXyBlBrwMdQ9BhTspMsFhx0OOGC3Q6HNJtTFYzH4tr4On3ge3o6OSv3pBW4h/IMS8E2UF2UtrqiAC11d4Kirg3yLZc/h/kgmgZ+ZgSd9fbC5vExVCdQdlJ8e8CX2BFPHXiocb2qCq4ODYDSbQYn9TKVgqK0N5iYmxKq7NBAp2CTzaRehLcEgVDc2ghrjjEYw5+VJq3rZ6H07fSSN9Nf2UOF6KKQa+iuTgUednfB6ZETe1NNaWOiQg2ku+1BFBKxqaNAMetrthuo/8YqIgXCzdKrdqFpbZSV4AgFNoZcHBoS2z9EoxJaWahlriGNr00Udz7e3A2cyaQo1cJwQk2Izc+GoCwhcjjpFNc76es2hokliE6ucWpwoy4nm5qzrVC2UjGITg1jE5NjfDHanUzH0YUdHTlDRJAwHxzZ8OFhaqhj6JhzOGSpjlFGvEhD2xmJdoTJGCadmetVAd+1uqA1hN9/c1B0qYWxw7BCHr2truo9UwlglL55K6wsLuk+vhMGTJz0l342NCeepXlCKTQxiEZO8V1CzVLMwPa0LVBabWCscy5OEnOWZ3y8AtYZm0ml46ts5ikcxIdgST4QI6trG4uKZYEsLmPPzNYOShVpb6WSi4itUWJ760Nb5gp2bmkHfT03BfY+Hit9R53C0vDwDoYpuOfRSf79q6PzkpAgl6xahf8u56ENYxbwrtb0tfG/AHEqJpdFvGM/fufFxabLnk+9ccvOypC8xj1liT00NzEYiu5bav5YM9SUfBk2wWN7/mdA/R91WmtDv+wqDwAf7uTvpdmn7LcAAq9+ZUerP/SkAAAAASUVORK5CYII=","contentType":"image/png"},"label":"Canceled"}]},"transparency":0}, 
+  "allowGeometryUpdates" : true, 
+  "hasAttachments" : true, 
+  
+  "attachmentProperties" : [
+    {
+      "name" : "name", 
+      "isEnabled" : true
+    }, 
+    {
+      "name" : "size", 
+      "isEnabled" : true
+    }, 
+    {
+      "name" : "contentType", 
+      "isEnabled" : true
+    }, 
+    {
+      "name" : "keywords", 
+      "isEnabled" : true
+    }, 
+    {
+      "name" : "exifInfo", 
+      "isEnabled" : true
+    }
+  ], 
+  "htmlPopupType" : "esriServerHTMLPopupTypeNone", 
+  "hasM" : false, 
+  "hasZ" : false, 
+  "objectIdField" : "OBJECTID", 
+  "uniqueIdField" : 
+  {
+    "name" : "OBJECTID", 
+    "isSystemMaintained" : true
+  }, 
+  "globalIdField" : "GlobalID", 
+  "typeIdField" : "", 
+  "fields" : [
+    {
+      "name" : "OBJECTID", 
+      "type" : "esriFieldTypeOID", 
+      "alias" : "OBJECTID", 
+      "sqlType" : "sqlTypeOther", 
+      "nullable" : false, 
+      "editable" : false, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "description", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "Description", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 4000, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "status", 
+      "type" : "esriFieldTypeInteger", 
+      "alias" : "Status", 
+      "sqlType" : "sqlTypeOther", 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : 
+      {
+        "type" : "codedValue", 
+        "name" : "ASSIGN_STATUS", 
+        "codedValues" : [
+          {
+            "name" : "Unassigned", 
+            "code" : 0
+          }, 
+          {
+            "name" : "Assigned", 
+            "code" : 1
+          }, 
+          {
+            "name" : "In Progress", 
+            "code" : 2
+          }, 
+          {
+            "name" : "Completed", 
+            "code" : 3
+          }, 
+          {
+            "name" : "Declined", 
+            "code" : 4
+          }, 
+          {
+            "name" : "Paused", 
+            "code" : 5
+          }, 
+          {
+            "name" : "Canceled", 
+            "code" : 6
+          }
+        ]
+      }, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "notes", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "Notes", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 4000, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "priority", 
+      "type" : "esriFieldTypeInteger", 
+      "alias" : "Priority", 
+      "sqlType" : "sqlTypeOther", 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : 
+      {
+        "type" : "codedValue", 
+        "name" : "PRIORITY", 
+        "codedValues" : [
+          {
+            "name" : "None", 
+            "code" : 0
+          }, 
+          {
+            "name" : "Low", 
+            "code" : 1
+          }, 
+          {
+            "name" : "Medium", 
+            "code" : 2
+          }, 
+          {
+            "name" : "High", 
+            "code" : 3
+          }, 
+          {
+            "name" : "Critical", 
+            "code" : 4
+          }
+        ]
+      }, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "assignmenttype", 
+      "type" : "esriFieldTypeGUID", 
+      "alias" : "Assignment Type", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 38, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "workorderid", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "WorkOrder ID", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "duedate", 
+      "type" : "esriFieldTypeDate", 
+      "alias" : "Due Date", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 8, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "workerid", 
+      "type" : "esriFieldTypeGUID", 
+      "alias" : "WorkerID", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 38, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "GlobalID", 
+      "type" : "esriFieldTypeGlobalID", 
+      "alias" : "GlobalID", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 38, 
+      "nullable" : false, 
+      "editable" : false, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "location", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "Location", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 255, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "declinedcomment", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "Declined Comment", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 4000, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "assigneddate", 
+      "type" : "esriFieldTypeDate", 
+      "alias" : "Assigned on Date", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 8, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "inprogressdate", 
+      "type" : "esriFieldTypeDate", 
+      "alias" : "In Progress Date", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 8, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "completeddate", 
+      "type" : "esriFieldTypeDate", 
+      "alias" : "Completed on Date", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 8, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "declineddate", 
+      "type" : "esriFieldTypeDate", 
+      "alias" : "Declined on Date", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 8, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "pauseddate", 
+      "type" : "esriFieldTypeDate", 
+      "alias" : "Paused on Date", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 8, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "dispatcherid", 
+      "type" : "esriFieldTypeGUID", 
+      "alias" : "DispatcherID", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 38, 
+      "nullable" : true, 
+      "editable" : true, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "CreationDate", 
+      "type" : "esriFieldTypeDate", 
+      "alias" : "CreationDate", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 8, 
+      "nullable" : true, 
+      "editable" : false, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "Creator", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "Creator", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 128, 
+      "nullable" : true, 
+      "editable" : false, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "EditDate", 
+      "type" : "esriFieldTypeDate", 
+      "alias" : "EditDate", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 8, 
+      "nullable" : true, 
+      "editable" : false, 
+      "domain" : null, 
+      "defaultValue" : null
+    }, 
+    {
+      "name" : "Editor", 
+      "type" : "esriFieldTypeString", 
+      "alias" : "Editor", 
+      "sqlType" : "sqlTypeOther", 
+      "length" : 128, 
+      "nullable" : true, 
+      "editable" : false, 
+      "domain" : null, 
+      "defaultValue" : null
+    }
+  ], 
+  "indexes" : [
+    {
+      "name" : "PK__workforc__F4B70D855CF94234", 
+      "fields" : "OBJECTID", 
+      "isAscending" : true, 
+      "isUnique" : true, 
+      "description" : "clustered, unique, primary key"
+    }, 
+    {
+      "name" : "FDO_GlobalID", 
+      "fields" : "GlobalID", 
+      "isAscending" : true, 
+      "isUnique" : true, 
+      "description" : ""
+    }, 
+    {
+      "name" : "workerIdIndex", 
+      "fields" : "workerid", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "Worker ID index"
+    }, 
+    {
+      "name" : "dispatcherIdIndex", 
+      "fields" : "dispatcherid", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "Dispatcher ID index"
+    }, 
+    {
+      "name" : "user_51.workforce_a59c183b29d74bf7a202afa6e5cfd1f0_ASSIGNMENTS_Shape_sidx", 
+      "fields" : "Shape", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "Shape Index"
+    }, 
+    {
+      "name" : "CreationDateIndex", 
+      "fields" : "CreationDate", 
+      "isAscending" : true, 
+      "isUnique" : false, 
+      "description" : "CreationDate Field index"
+    }, 
+    {
+      "name" : "CreatorIndex", 
+      "fields" : "Creator", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "Creator Field index"
+    }, 
+    {
+      "name" : "EditDateIndex", 
+      "fields" : "EditDate", 
+      "isAscending" : true, 
+      "isUnique" : false, 
+      "description" : "EditDate Field index"
+    }, 
+    {
+      "name" : "EditorIndex", 
+      "fields" : "Editor", 
+      "isAscending" : false, 
+      "isUnique" : false, 
+      "description" : "Editor Field index"
+    }
+  ], 
+  "types" : [
+    {
+      "id" : "0", 
+      "name" : "Unassigned", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "Unassigned", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "status" : "0", 
+              "description" : null, 
+              "notes" : null, 
+              "priority" : null, 
+              "assignmenttype" : null, 
+              "workorderid" : null, 
+              "duedate" : null, 
+              "workerid" : null, 
+              "location" : null, 
+              "declinedcomment" : null, 
+              "assigneddate" : null, 
+              "inprogressdate" : null, 
+              "completeddate" : null, 
+              "declineddate" : null, 
+              "pauseddate" : null, 
+              "dispatcherid" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "1", 
+      "name" : "Assigned", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "Assigned", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "status" : "1", 
+              "description" : null, 
+              "notes" : null, 
+              "priority" : null, 
+              "assignmenttype" : null, 
+              "workorderid" : null, 
+              "duedate" : null, 
+              "workerid" : null, 
+              "location" : null, 
+              "declinedcomment" : null, 
+              "assigneddate" : null, 
+              "inprogressdate" : null, 
+              "completeddate" : null, 
+              "declineddate" : null, 
+              "pauseddate" : null, 
+              "dispatcherid" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "2", 
+      "name" : "In Progress", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "In Progress", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "status" : "2", 
+              "description" : null, 
+              "notes" : null, 
+              "priority" : null, 
+              "assignmenttype" : null, 
+              "workorderid" : null, 
+              "duedate" : null, 
+              "workerid" : null, 
+              "location" : null, 
+              "declinedcomment" : null, 
+              "assigneddate" : null, 
+              "inprogressdate" : null, 
+              "completeddate" : null, 
+              "declineddate" : null, 
+              "pauseddate" : null, 
+              "dispatcherid" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "3", 
+      "name" : "Completed", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "Completed", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "status" : "3", 
+              "description" : null, 
+              "notes" : null, 
+              "priority" : null, 
+              "assignmenttype" : null, 
+              "workorderid" : null, 
+              "duedate" : null, 
+              "workerid" : null, 
+              "location" : null, 
+              "declinedcomment" : null, 
+              "assigneddate" : null, 
+              "inprogressdate" : null, 
+              "completeddate" : null, 
+              "declineddate" : null, 
+              "pauseddate" : null, 
+              "dispatcherid" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "4", 
+      "name" : "Declined", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "Declined", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "status" : "4", 
+              "description" : null, 
+              "notes" : null, 
+              "priority" : null, 
+              "assignmenttype" : null, 
+              "workorderid" : null, 
+              "duedate" : null, 
+              "workerid" : null, 
+              "location" : null, 
+              "declinedcomment" : null, 
+              "assigneddate" : null, 
+              "inprogressdate" : null, 
+              "completeddate" : null, 
+              "declineddate" : null, 
+              "pauseddate" : null, 
+              "dispatcherid" : null
+            }
+          }
+        }
+      ]
+    }, 
+    {
+      "id" : "5", 
+      "name" : "Paused", 
+      "domains" : 
+      {
+      }, 
+      "templates" : [
+        {
+          "name" : "Paused", 
+          "description" : "", 
+          "drawingTool" : "esriFeatureEditToolNone", 
+          "prototype" : {
+            "attributes" : {
+              "status" : "5", 
+              "description" : null, 
+              "notes" : null, 
+              "priority" : null, 
+              "assignmenttype" : null, 
+              "workorderid" : null, 
+              "duedate" : null, 
+              "workerid" : null, 
+              "location" : null, 
+              "declinedcomment" : null, 
+              "assigneddate" : null, 
+              "inprogressdate" : null, 
+              "completeddate" : null, 
+              "declineddate" : null, 
+              "pauseddate" : null, 
+              "dispatcherid" : null
+            }
+          }
+        }
+      ]
+    }
+  ], 
+  "templates" : [], 
+  "supportedQueryFormats" : "JSON, geoJSON, PBF", 
+  "hasStaticData" : false, 
+  "maxRecordCount" : 1000, 
+  "standardMaxRecordCount" : 32000, 
+  "standardMaxRecordCountNoGeometry" : 32000, 
+  "tileMaxRecordCount" : 8000, 
+  "maxRecordCountFactor" : 1, 
+  "capabilities" : "Create,Delete,Query,Update,Editing,Sync"
+}
 """
 )
 
@@ -2908,14 +2834,14 @@ worker_layer_definition_v2 = json.loads(
       "description" : ""
     }, 
     {
-      "name" : "user_51.workforce_b78e7083b433474cbef3dbd07a11d99d_WORKERS_Shape_sidx", 
+      "name" : "user_51.workforce_a59c183b29d74bf7a202afa6e5cfd1f0_WORKERS_Shape_sidx", 
       "fields" : "Shape", 
       "isAscending" : false, 
       "isUnique" : false, 
       "description" : "Shape Index"
     }, 
     {
-      "name" : "PK__workforc__F4B70D85DED034F3", 
+      "name" : "PK__workforc__F4B70D85BFB1DD69", 
       "fields" : "OBJECTID", 
       "isAscending" : true, 
       "isUnique" : true, 
@@ -3278,8 +3204,8 @@ worker_layer_popup_definition_v2 = json.loads(
 """)
 
 assignment_type_table_definition_v2 = json.loads(
-    """
-    {
+"""
+{
   "currentVersion" : 10.7, 
   "id" : 3, 
   "name" : "Assignment Types", 
@@ -3432,14 +3358,14 @@ assignment_type_table_definition_v2 = json.loads(
   ], 
   "indexes" : [
     {
-      "name" : "PK__workforc__F4B70D85BFE1883A", 
+      "name" : "PK__workforc__F4B70D85729BDE38", 
       "fields" : "OBJECTID", 
       "isAscending" : true, 
       "isUnique" : true, 
       "description" : "clustered, unique, primary key"
     }, 
     {
-      "name" : "UK_workforce_b78e7083b433474cbef3dbd07a11d99d_ASSIGNMENT_TYPES_GlobalID", 
+      "name" : "UK_workforce_a59c183b29d74bf7a202afa6e5cfd1f0_ASSIGNMENT_TYPES_GlobalID", 
       "fields" : "GlobalID", 
       "isAscending" : false, 
       "isUnique" : true, 
@@ -3484,5 +3410,5 @@ assignment_type_table_definition_v2 = json.loads(
   "maxRecordCountFactor" : 1, 
   "capabilities" : "Create,Delete,Query,Update,Editing,Sync"
 }
-    """
+"""
 )
