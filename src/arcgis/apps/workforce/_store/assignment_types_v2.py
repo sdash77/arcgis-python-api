@@ -46,6 +46,7 @@ def add_assignment_types_v2(project, assignment_types):
         :param assignment_types: list of AssignmentTypes
         :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
+    project._update_cached_objects()
     use_global_ids = True
     for assignment_type in assignment_types:
         assignment_type.project = project
