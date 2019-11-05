@@ -115,7 +115,7 @@ def update_dispatchers(project, dispatchers):
         for dispatcher in dispatchers:
             validate(dispatcher._validate_for_update)
         features = [dispatcher.feature for dispatcher in dispatchers]
-        remove_features(project.dispatchers_layer, features)
+        update_features(project.dispatchers_layer, features)
     return dispatchers
 
 
