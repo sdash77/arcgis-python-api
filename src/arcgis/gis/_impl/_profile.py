@@ -4,12 +4,7 @@ import datetime as _datetime
 import platform
 import configparser
 
-import keyring
-
-
-
 _log = logging.getLogger(__name__)
-
 
 ###########################################################################
 class ProfileManager(object):
@@ -73,6 +68,7 @@ class ProfileManager(object):
 
         If keyring is not properly set up system-wide, raise a RuntimeError
         """
+        import keyring
         if self._current_keyring_is_recommended():
             return keyring.set_password("arcgis_python_api_profile_passwords",
                                         profile,
@@ -86,6 +82,7 @@ class ProfileManager(object):
         If keyring is not properly set up system-wide OR if a password is not
         found through keyring, log the respective warning and return 'None'
         """
+        import keyring
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
             password = keyring.get_password(
@@ -110,6 +107,7 @@ class ProfileManager(object):
 
         If keyring is not properly set up system-wide, log a warning
         """
+        import keyring
         if self._current_keyring_is_recommended():
             return keyring.delete_password(
                 "arcgis_python_api_profile_passwords", profile)
@@ -124,6 +122,7 @@ class ProfileManager(object):
         function. Return if the current keyring is a supported, properly
         configured backend
         """
+        import keyring
         supported_keyrings = [ keyring.backends.OS_X.Keyring,
                                keyring.backends.SecretService.Keyring,
                                keyring.backends.Windows.WinVaultKeyring,
@@ -134,6 +133,7 @@ class ProfileManager(object):
     #----------------------------------------------------------------------
     def _get_keyring_failure_message(self):
         """An informative failure msg about the backend keyring being used"""
+        import keyring
         return "Keyring backend being used ({}) either failed to install "\
                "or is not recommended by the keyring project (i.e. it is "\
                "not secure). This means you can not use stored passwords "\
@@ -209,7 +209,7 @@ class ProfileManager(object):
 
         :returns: Boolean
         """
-
+        import keyring
         profile_file = self._cfg_file_path
         if self._cfg_exists:
             profiles = self.list()

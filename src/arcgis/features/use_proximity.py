@@ -26,7 +26,8 @@ def connect_origins_to_destinations(origins_layer,
                                     point_barrier_layer=None,
                                     line_barrier_layer=None,
                                     polygon_barrier_layer=None,
-                                    future=False):
+                                    future=False,
+                                    route_shape='FollowStreets'):
     """
     .. image:: _static/images/connect_origins_to_destinations/connect_origins_to_destinations.png
     
@@ -177,6 +178,17 @@ def connect_origins_to_destinations(origins_layer,
                                            One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------    ---------------------------------------------------------
     future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    -----------------------------------    ---------------------------------------------------------
+    route_shape                            Optional String. Specify the shape of the route that connects each origin to it's destination when using a travel mode.
+
+                                           Values: FollowStreets or StraightLine
+
+                                           Default: FollowStreets
+
+                                              + FollowStreets - The shape is based on the underlying street network. This option is best when you want to generate the routes between origins and destinations. This is the default value when using a travel mode.
+                                              + StraightLine - The shape is a straight line connecting the origin-destination pair. This option is best when you want to generate spider diagrams or desire lines (for example, to show which stores customers are visiting). This is the default value when not using a travel mode.
+                                           
+                                           The best route between an origin and it's matched destination is always calculated based on the travel mode, regardless of which route shape is chosen.
     ===================================    =========================================================
 
 
@@ -194,17 +206,23 @@ def connect_origins_to_destinations(origins_layer,
 
         This example creates route between esri regional offices to esri headquarter.
 
-        import arcgis.network as network
-        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes']
-            if i['name'] == 'Rural Driving Distance'][0]
         routes =  connect_origins_to_destinations(origins_layer=esri_regional,
                                          destinations_layer=dest_layer,
-                                         measurement_type=travel_mode,
+                                         measurement_type='Rural Driving Distance',
                                          time_of_day=datetime(1990, 1, 4, 1, 3),
                                          output_name="routes_from_offices_to_hq")
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    
+    if isinstance(measurement_type, str):
+        route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+        travelmodes = route_service.retrieve_travel_modes()
+
+        for tm in travelmodes['supportedTravelModes']:
+            if tm['name'] == measurement_type:
+                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
+                measurement_type = tm
+
     return gis._tools.featureanalysis.connect_origins_to_destinations(
         origins_layer,
         destinations_layer,
@@ -215,7 +233,9 @@ def connect_origins_to_destinations(origins_layer,
         time_zone_for_time_of_day,
         output_name,
         context,
-        estimate=estimate, future=future)
+        estimate=estimate, 
+        route_shape=route_shape,
+        future=future)
 
 
 def create_buffers(
@@ -387,7 +407,7 @@ def create_buffers(
 def create_drive_time_areas(input_layer,
                             break_values=[5, 10, 15],
                             break_units="Minutes",
-                            travel_mode="Driving Time",
+                            travel_mode="Driving",
                             overlap_policy="Overlap",
                             time_of_day=None,
                             time_zone_for_time_of_day="GeoLocal",
@@ -398,7 +418,9 @@ def create_drive_time_areas(input_layer,
                             point_barrier_layer=None,
                             line_barrier_layer=None,
                             polygon_barrier_layer=None,
-                            future=False):
+                            future=False,
+                            travel_direction="AwayFromFacility",
+                            show_holes=False):
     """
     .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png
 
@@ -548,6 +570,14 @@ def create_drive_time_areas(input_layer,
                                  One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
     future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    -------------------------    ---------------------------------------------------------
+    travel_direction             Optiona String. Specify whether the direction of travel used to generate the travel areas is toward or away from the input locations.
+
+                                 Values: AwayFromFacility or TowardsFacility
+
+                                 The travel direction can influence how the areas are generated. CreateDriveTimeAreas will obey one-way streets, avoid illegal turns, and follow other rules based on the direction of travel. You should select the direction of travel based on the type of input locations and the context of your analysis. For example, the drive-time area for a pizza delivery store should be created away from the facility, whereas the drive-time area for a hospital should be created toward the facility.
+    -------------------------    ---------------------------------------------------------
+    show_holes                   Optional boolean. When set to true, the output areas will include holes if some streets couldn't be reached without exceeding the cutoff or due to travel restrictions imposed by the travel mode.
     =========================    =========================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -569,7 +599,11 @@ def create_drive_time_areas(input_layer,
     gis = _arcgis.env.active_gis if gis is None else gis
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+        travelmodes = route_service.retrieve_travel_modes()
+        for tm in travelmodes['supportedTravelModes']:
+            if tm['name'] == travel_mode:
+                tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+                travel_mode = tm
 
     return gis._tools.featureanalysis.create_drive_time_areas(
         input_layer,
@@ -584,7 +618,10 @@ def create_drive_time_areas(input_layer,
         estimate=estimate,
         point_barrier_layer=point_barrier_layer,
         line_barrier_layer=line_barrier_layer,
-        polygon_barrier_layer=polygon_barrier_layer, future=future)
+        polygon_barrier_layer=polygon_barrier_layer, future=future,
+        travel_direction=travel_direction, 
+        show_holes=show_holes)
+        
 
 
 def find_nearest(
@@ -634,7 +671,7 @@ def find_nearest(
 
                                  Choice list: ['StraightLine', 'Driving Distance', 'Driving Time ', 'Rural Driving Distance', 'Rural Driving Time', 'Trucking Distance', 'Trucking Time', 'Walking Distance', 'Walking Time']
 
-                                 The default is 'Driving Time'.
+                                 The default is 'StraightLine'.
     -------------------------    ---------------------------------------------------------
     max_count                    Optional string. The maximum number of nearest locations to find for each feature in ``analysis_layer``. The default is the maximum cutoff allowed by the service, which is 100.
 
@@ -762,12 +799,14 @@ def find_nearest(
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     if isinstance(measurement_type, str):
-        if measurement_type != 'StraightLine':
-            route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-            measurement_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
-        else:
-            pass
+          route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
+          travelmodes = route_service.retrieve_travel_modes()
 
+          for tm in travelmodes['supportedTravelModes']:
+            if tm['name'] == measurement_type:
+              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == measurement_type][0]
+              measurement_type = tm
+         
     return gis._tools.featureanalysis.find_nearest(
         analysis_layer,
         near_layer,
@@ -1070,8 +1109,11 @@ def plan_routes(
     gis = _arcgis.env.active_gis if gis is None else gis
     if isinstance(travel_mode, str):
         route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
-        travel_mode = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
-
+        travelmodes = route_service.retrieve_travel_modes()
+        for tm in travelmodes['supportedTravelModes']:
+            if tm['name'] == travel_mode:
+              tm = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == travel_mode][0]
+              travel_mode = tm
     return gis._tools.featureanalysis.plan_routes(
         stops_layer,
         route_count,

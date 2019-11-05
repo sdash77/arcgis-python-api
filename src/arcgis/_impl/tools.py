@@ -25,11 +25,17 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
 from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
-from arcgis.features import Feature, FeatureSet, FeatureCollection
+from arcgis.features import Feature, FeatureSet, FeatureCollection, FeatureLayer
 from six.moves.urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
+from arcgis.raster._util import _set_context as _set_raster_context
 _log = logging.getLogger(__name__)
 
+try:
+    import pandas as pd
+    _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer,FeatureCollection, pd.DataFrame)
+except ImportError:
+    _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer,FeatureCollection)
 
 __all__ = ['_GeoanalyticsTools', '_FeatureAnalysisTools', '_GeometryService', '_RasterAnalysisTools']
 #--------------------------------------------------------------------------
@@ -172,8 +178,12 @@ class BaseAnalytics(object):
             input_param = input_layer.layers[0]._lyr_dict
 
         elif isinstance(input_layer, arcgis.features.FeatureCollection):
-            input_param =  input_layer.properties
-
+            if 'layers' in input_layer.properties:
+                input_param = input_layer.properties["layers"][0]
+            elif hasattr(input_layer, '_lyr_dict'):
+                input_param = input_layer._lyr_dict
+            elif hasattr(input_layer, 'layer'):
+                input_param = input_layer.layer
         elif isinstance(input_layer, arcgis.gis.Layer):
             input_param = input_layer._lyr_dict
 
@@ -744,7 +754,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         ret = gpjob.result()
-        if 'aggregatedLayer' in ret and output_name:
+        if isinstance(ret, FeatureCollection):
+            return ret
+        elif 'aggregatedLayer' in ret and output_name:
             return ret['aggregatedLayer']
         return ret
     #----------------------------------------------------------------------
@@ -897,6 +909,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                         line_barrier_layer=None,
                                         polygon_barrier_layer=None,
                                         include_route_layer=False,
+                                        route_shape=None,
                                         future=False):
         """
         Calculates routes between pairs of points.
@@ -946,6 +959,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["originsLayer"] = origins_layer
             params["destinationsLayer"] = destinations_layer
             params["measurementType"] = measurement_type
+            if route_shape is not None:
+                params['routeShape'] = route_shape
             if origins_layer_route_id_field is not None:
                 params["originsLayerRouteIDField"] = origins_layer_route_id_field
             if destinations_layer_route_id_field is not None:
@@ -969,19 +984,21 @@ class _FeatureAnalysisTools(BaseAnalytics):
             return _estimate_credits(task=task,
                                          parameters=params)
         gpjob = self._tbx.connect_origins_to_destinations(origins_layer=origins_layer,
-                                                  destinations_layer=destinations_layer,
-                                                  measurement_type=measurement_type,
-                                                  origins_layer_route_id_field=origins_layer_route_id_field,
-                                                  destinations_layer_route_id_field=destinations_layer_route_id_field,
-                                                  time_of_day=time_of_day,
-                                                  time_zone_for_time_of_day=time_zone_for_time_of_day,
-                                                  output_name=output_name,
-                                                  context=context,
-                                                  include_route_layers=include_route_layer,
-                                                  point_barrier_layer=point_barrier_layer,
-                                                  line_barrier_layer=line_barrier_layer,
-                                                  polygon_barrier_layer=polygon_barrier_layer,
-                                                  gis=self._gis, future=True)
+                                                          destinations_layer=destinations_layer,
+                                                          measurement_type=measurement_type,
+                                                          origins_layer_route_id_field=origins_layer_route_id_field,
+                                                          destinations_layer_route_id_field=destinations_layer_route_id_field,
+                                                          time_of_day=time_of_day,
+                                                          time_zone_for_time_of_day=time_zone_for_time_of_day,
+                                                          output_name=output_name,
+                                                          context=context,
+                                                          include_route_layers=include_route_layer,
+                                                          point_barrier_layer=point_barrier_layer,
+                                                          line_barrier_layer=line_barrier_layer,
+                                                          polygon_barrier_layer=polygon_barrier_layer,
+                                                          route_shape=route_shape,
+                                                          gis=self._gis, 
+                                                          future=True)   
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -1004,7 +1021,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                 point_barrier_layer=None,
                                 line_barrier_layer=None,
                                 polygon_barrier_layer=None,
-                                future=False):
+                                future=False,
+                                travel_direction=False,
+                                show_holes=False,
+                                include_reachable_streets=False):
         """
 
 
@@ -1069,6 +1089,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
                 params["lineBarrierLayer"] = line_barrier_layer
             if polygon_barrier_layer is not None:
                 params["polygonBarrierLayer"] = polygon_barrier_layer
+            if travel_direction is not None:
+                params['travelDirection'] = travel_direction
+            if show_holes is not None:
+                params['showHoles'] = show_holes
+            if include_reachable_streets is not None:
+                params['includeReachableStreets'] = include_reachable_streets
 
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
@@ -1084,7 +1110,10 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                   context=context, point_barrier_layer=point_barrier_layer,
                                                   line_barrier_layer=line_barrier_layer,
                                                   polygon_barrier_layer=polygon_barrier_layer,
-                                                  gis=self._gis, future=True)
+                                                  gis=self._gis, future=True,
+                                                  travel_direction=travel_direction,
+                                                  show_holes=show_holes,
+                                                  include_reachable_streets=include_reachable_streets)
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -1137,11 +1166,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
         gpjob._is_fa = True
         if future:
             return gpjob
-        "routeLayers"
+        #"routeLayers"
         ret = gpjob.result()
-        if output_name is not None and \
-           "routeLayers" in ret:
-            return ret["routeLayers"]
         return ret
     #----------------------------------------------------------------------
     def create_buffers(self,
@@ -1334,6 +1360,15 @@ class _FeatureAnalysisTools(BaseAnalytics):
         ret = gpjob.result()
         if output_name is not None and 'resultLayer' in ret:
             return ret['resultLayer']
+        elif isinstance(ret, FeatureCollection):
+            return ret
+        elif isinstance(ret, Item):
+            return ret
+        else:
+            res = {}
+            for fld in ret._fields:
+                res[fld] = getattr(ret, fld)
+            return res
         return ret
     #----------------------------------------------------------------------
     def create_viewshed(self,
@@ -1602,7 +1637,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
 
         input_layer = self._feature_input(input_layer)
-        output_name = {"serviceProperties": {"name": output_name }}
+        if output_name:
+            output_name = {"serviceProperties": {"name": output_name }}
         if estimate:
             task ="DissolveBoundaries"
 
@@ -2081,7 +2117,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         result = gpjob.result()
-        if 'hot_spots_result_layer' in result:
+        if 'hot_spots_result_layer' in result and output_name:
             return result['hot_spots_result_layer']
         return result
     #----------------------------------------------------------------------
@@ -3419,6 +3455,250 @@ class _FeatureAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 ###########################################################################
+class _HydrologyTool():
+    """Exposes the Orthmapping Geoprocessing tools"""
+    _gptbx = None
+    _url = None
+    _gis = None
+    _properties = None
+    _return_item = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis, verbose=False):
+        """initializer"""
+        if gis is None:
+            gis = arcgis.env.active_gis
+        if url is None:
+            url = gis.properties.helperServices['hydrology']['url']
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+        self._verbose = verbose
+
+    #----------------------------------------------------------------------
+    def _refresh(self):
+        params = {"f": "json"}
+        try:
+            dictdata = self._con.post(self._url, params)
+        except:
+            dictdata = self._con.get(self._url, params)
+        self._properties = PropertyMap(dictdata)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the services properties"""
+        if self._properties is None:
+            self._refresh()
+        return self._properties
+    #----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx._is_ra = True
+        return self._gptbx
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def invoke(self, method, **kwargs):
+        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
+        url = self._url + "/" + method
+        params = { "f" : "json"}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+                del k,v
+        return self._con.post(path=url, postdata=params, token=self._con.token)
+    #----------------------------------------------------------------------
+    @property
+    def _tools(self):
+        return self.properties.tasks
+    #----------------------------------------------------------------------
+    def _evaluate_spatial_input(self, input_points):
+        """
+        Helper function to determine if the input is either a FeatureSet or Spatially Enabled DataFrame, and
+        output to FeatureSet for subsequent processing.
+        :param input_points: FeatureSet or Spatially Enabled DataFrame
+        :return: FeatureSet
+        """
+        from arcgis.features import FeatureSet
+        from arcgis.features.geo._accessor import _is_geoenabled
+        from pandas import DataFrame
+
+        if isinstance(input_points, FeatureSet):
+            return input_points
+
+        elif isinstance(input_points, DataFrame) and _is_geoenabled(input_points):
+            return input_points.spatial.to_featureset()
+
+        elif isinstance(input_points, DataFrame) and not _is_geoenabled(input_points):
+            raise Exception(('input_points is a DataFrame, but does not appear to be spatially enabled. '
+                             'Using the <df>.spatial.set_geometry(col, sr=None) may help. (https://esri.github.io/arcgis-p'
+                             'ython-api/apidoc/html/arcgis.features.toc.html#arcgis.features.GeoAccessor.set_geometry)'))
+
+        else:
+            raise Exception('input_points must be either a FeatureSet or Spatially Enabled DataFrame instead of {}'.format(type(input_points)))
+
+    #----------------------------------------------------------------------
+    def trace_downstream(self,
+                         input_points,
+                         point_id_field=None,
+                         data_source_resolution=None,
+                         generalize=False,
+                         gis=None,
+                         future=False):
+        """
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_points                                                                Required FeatureSet. The point features used for calculating watersheds. These are referred to as pour points, because it is the location at which water pours out of the watershed.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        point_id_field                                                              Optional String. The field used to identify to the input points.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        data_source_resolution                                                      Optional String. Keyword indicating the source data that will be used in the analysis.
+
+                                                                                    The keyword is an approximation of the spatial resolution of the digital
+                                                                                    elevation model used to build the foundation hydrologic database. Since many
+                                                                                    elevation sources are distributed with units of arc seconds, we provide an
+                                                                                    approximation in meters for easier understanding.
+
+                                                                                    Values : The values for this parameter are:
+
+                                                                                      - `None` : The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data. This is the default.
+                                                                                      - `Finest` : Finest resolution available at each location from all possible data sources.
+                                                                                      - `10m` : The hydrologic source was built from 1/3 arc second - approximately 10 meter resolution, elevation data.
+                                                                                      - `30m` : The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
+                                                                                      - `90m` : The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        generalize                                                                  Optional Boolean. Determines if the output watersheds will be smoothed into
+                                                                                    simpler shapes or conform to the cell edges of the original DEM.
+
+                                                                                      - `True` : The polygons will be smoothed into simpler shapes. This is the default.
+                                                                                      - `False` : The edge of the polygons will conform to the edges of the original DEM.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns:
+
+
+        """
+        tool = self._tbx.trace_downstream
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+        if point_id_field is None:
+            point_id_field = defaults['point_id_field']
+        if data_source_resolution is None:
+            data_source_resolution = defaults['data_source_resolution']
+        if generalize is None:
+            generalize = defaults['generalize']
+        input_points = self._evaluate_spatial_input(input_points=input_points)
+        job = tool(input_points=input_points,
+                   point_id_field=point_id_field,
+                   data_source_resolution=data_source_resolution,
+                   generalize=generalize,
+                   gis=gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
+    #----------------------------------------------------------------------
+    def watershed(self,
+                  input_points,
+                  point_id_field=None,
+                  snap_distance=None,
+                  snap_distance_units=None,
+                  data_source_resolution=None,
+                  generalize=False,
+                  return_snapped_points=True,
+                  gis=None,
+                  future=False):
+        """
+        The 'watershed' task is used to identify catchment areas based on a particular
+        location you provide and ArcGIS Online Elevation data.
+
+
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        input_points                                                                Required FeatureSet. The point features used for calculating watersheds. These are referred to as pour points, because it is the location at which water pours out of the watershed.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        point_id_field                                                              Optional String. The field used to identify to the input points.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        snap_distance                                                               Optional Double. The maximum distance to move the location of an input point.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        snap_distance_units                                                         Optional String. The linear units specified for the snap distance. The
+                                                                                    values for this parameter are: Meters, Kilometers, Feet, Yards, or Miles
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        data_source_resolution                                                      Optional String. Keyword indicating the source data that will be used in the analysis.
+
+                                                                                    The keyword is an approximation of the spatial resolution of the digital
+                                                                                    elevation model used to build the foundation hydrologic database. Since many
+                                                                                    elevation sources are distributed with units of arc seconds, we provide an
+                                                                                    approximation in meters for easier understanding.
+
+                                                                                    Values : The values for this parameter are:
+
+                                                                                      - `None` : The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data. This is the default.
+                                                                                      - `Finest` : Finest resolution available at each location from all possible data sources.
+                                                                                      - `10m` : The hydrologic source was built from 1/3 arc second - approximately 10 meter resolution, elevation data.
+                                                                                      - `30m` : The hydrologic source was built from 1 arc second - approximately 30 meter resolution, elevation data.
+                                                                                      - `90m` : The hydrologic source was built from 3 arc second - approximately 90 meter resolution, elevation data.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        generalize                                                                  Optional Boolean. Determines if the output watersheds will be smoothed into
+                                                                                    simpler shapes or conform to the cell edges of the original DEM.
+
+                                                                                      - `True` : The polygons will be smoothed into simpler shapes. This is the default.
+                                                                                      - `False` : The edge of the polygons will conform to the edges of the original DEM.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        return_snapped_points                                                       Optional Boolean. Determines if a point feature at the watershed's pour
+                                                                                    point will be returned. If snapping is enabled, this might not be the same
+                                                                                    as the input point.
+
+                                                                                      - `True` : A point feature will be returned. This is the default.
+                                                                                      - `False` : No point features will be returned.
+
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        gis                                                                         Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        future                                                                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        =========================================================================   ===========================================================================
+
+        :returns:
+
+        """
+        tool = self._tbx.watershed
+        defaults = dict(zip(tool.__annotations__.keys(),
+                            tool.__defaults__))
+        if data_source_resolution is None:
+            data_source_resolution = defaults['data_source_resolution']
+        if snap_distance_units is None:
+            snap_distance_units = defaults['snap_distance_units']
+        input_points = self._evaluate_spatial_input(input_points=input_points)
+        job = tool(input_points=input_points,
+                   point_id_field=point_id_field,
+                   snap_distance=snap_distance,
+                   snap_distance_units=snap_distance_units,
+                   data_source_resolution=data_source_resolution,
+                   generalize=generalize,
+                   return_snapped_points=return_snapped_points,
+                   gis=self._gis,
+                   future=True)
+        if future:
+            return job
+        return job.result()
+###########################################################################
 class _OrthoMappingTools():
     """Exposes the Orthmapping Geoprocessing tools"""
     _gptbx = None
@@ -4260,7 +4540,4101 @@ class _OrthoMappingTools():
             return job
         return job.result()
 ###########################################################################
-class _RasterAnalysisTools(_AsyncService):
+class _RasterAnalysisTools(BaseAnalytics):
+    """FA Tools"""
+    _gptbx = None
+    _url = None
+    _gis = None
+    _properties = None
+    _return_item = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis, verbose=False):
+        """initializer"""
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+        self._verbose = verbose
+
+    #----------------------------------------------------------------------
+    def _refresh(self):
+        params = {"f": "json"}
+        try:
+            dictdata = self._con.post(self._url, params)
+        except:
+            dictdata = self._con.get(self._url, params)
+        self._properties = PropertyMap(dictdata)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the services properties"""
+        if self._properties is None:
+            self._refresh()
+        return self._properties
+    #----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(url_or_item=self._url, gis=self._gis, verbose=self._verbose)
+            self._gptbx._is_ra = True
+        return self._gptbx
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def invoke(self, method, **kwargs):
+        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
+        url = self._url + "/" + method
+        params = { "f" : "json"}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+                del k,v
+        return self._con.post(path=url, postdata=params, token=self._con.token)
+    @property
+    def _tools(self):
+        return self.properties.tasks
+    #--Helper Method --------------------------------------------------------------------
+    def _create_output_feature_service(self, output_name, output_service_name='Analysis feature service', task='RasterAnalytics', folder=None):
+        gis = self._gis
+        ok = gis.content.is_service_name_available(output_name, 'Feature Service')
+        if not ok:
+            raise RuntimeError("A Feature Service by this name already exists: " + output_name)
+
+        createParameters = {
+                "currentVersion": 10.2,
+                "serviceDescription": "",
+                "hasVersionedData": False,
+                "supportsDisconnectedEditing": False,
+                "hasStaticData": True,
+                "maxRecordCount": 2000,
+                "supportedQueryFormats": "JSON",
+                "capabilities": "Query",
+                "description": "",
+                "copyrightText": "",
+                "allowGeometryUpdates": False,
+                "syncEnabled": False,
+                "editorTrackingInfo": {
+                    "enableEditorTracking": False,
+                    "enableOwnershipAccessControl": False,
+                    "allowOthersToUpdate": True,
+                    "allowOthersToDelete": True
+                },
+                "xssPreventionInfo": {
+                    "xssPreventionEnabled": True,
+                    "xssPreventionRule": "InputOnly",
+                    "xssInputRule": "rejectInvalid"
+                },
+                "tables": [],
+                "name": output_service_name.replace(' ', '_')
+            }
+
+        output_service = gis.content.create_service(output_name, create_params=createParameters, service_type="featureService", folder=folder)
+        description = "Feature Service generated from running the " + task + " tool."
+        item_properties = {
+                "description" : description,
+                "tags" : "Analysis Result, " + task,
+                "snippet": output_service_name
+                }
+        output_service.update(item_properties)
+        return output_service
+
+
+    def _layer_input(self, input_layer):
+        #Will be used exclusively by RA tools
+        input_param = input_layer
+
+        url = ""
+        if isinstance(input_layer, arcgis.gis.Item):
+            if input_layer.type == "Image Collection":
+                input_param = {"itemId": input_layer.itemid}
+            else:
+                if 'layers' in input_layer:
+                    input_param = input_layer.layers[0]._lyr_dict
+                else:
+                    raise TypeError("No layers in input layer Item")
+
+        elif isinstance(input_layer, arcgis.features.FeatureLayerCollection):
+            input_param = input_layer.layers[0]._lyr_dict
+
+        elif isinstance(input_layer, arcgis.features.FeatureCollection):
+            input_param = input_layer.properties
+
+        elif isinstance(input_layer, arcgis.gis.Layer):
+            input_param = input_layer._lyr_dict
+            from arcgis.raster import ImageryLayer
+            import json
+            if isinstance(input_layer, ImageryLayer):
+                if 'options' in input_layer._lyr_json:
+                    if isinstance(input_layer._lyr_json['options'], str): #sometimes the rendering info is a string
+                        #load json
+                        layer_options = json.loads(input_layer._lyr_json['options'])
+                    else:
+                        layer_options = input_layer._lyr_json['options']
+
+                    if 'imageServiceParameters' in layer_options:
+                        #get renderingRule and mosaicRule
+                        input_param.update(layer_options['imageServiceParameters'])
+
+        elif isinstance(input_layer, dict):
+            input_param = input_layer
+
+        elif isinstance(input_layer, str):
+            if 'http:' in input_layer or 'https:' in input_layer:
+                input_param = {"url": input_layer}
+            else:
+                input_param = {"uri": input_layer}
+
+        else:
+            raise Exception("Invalid format of input layer. url string, layer Item, layer instance or dict supported")
+
+
+        if "url" in input_param:
+            url = input_param["url"]
+            if "/RasterRendering/" in url:
+                url = input_layer._uri
+                input_param = {"uri":url}
+                return input_param
+        if "ImageServer" in url or "MapServer" in url:
+            if "serviceToken" in input_param:
+                url = url+"?token="+ input_param["serviceToken"]
+                input_param.update({"url":url})
+
+        return input_param
+    def _set_output_raster(self, output_name, task, output_properties=None):
+        gis = self._gis
+        output_service = None
+        output_raster = None
+
+        if task == "GenerateRaster":
+            task_name = "GeneratedRasterProduct"
+        else:
+            task_name = task
+
+        folder = None
+        folderId = None
+
+        if output_properties is not None:
+            if "folder" in output_properties:
+                folder = output_properties["folder"]
+        if folder is not None:
+            if isinstance(folder, dict):
+                if "id" in folder:
+                    folderId = folder["id"]
+                    folder=folder["title"]
+            else:
+                owner = gis.properties.user.username
+                folderId = gis._portal.get_folder_id(owner, folder)
+            if folderId is None:
+                folder_dict = gis.content.create_folder(folder, owner)
+                folder = folder_dict["title"]
+                folderId = folder_dict["id"]
+
+        if output_name is None:
+            output_name = str(task_name) + '_' + _id_generator()
+            output_service = self._create_output_image_service(output_name, task, folder=folder)
+            output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+        elif isinstance(output_name, str):
+            output_service = self._create_output_image_service(output_name, task, folder=folder)
+            output_raster = {"serviceProperties": {"name" : output_service.name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}}
+        elif isinstance(output_name, arcgis.gis.Item):
+            output_service = output_name
+            output_raster = {"itemProperties":{"itemId":output_service.itemid}}
+        else:
+            raise TypeError("output_raster should be a string (service name) or Item")
+
+        if folderId is not None:
+            output_raster["itemProperties"].update({"folderId":folderId})
+        output_raster = json.dumps(output_raster)
+        return output_raster, output_service
+
+    def _set_image_collection_param(self, image_collection):
+        if isinstance(image_collection, str):
+            #doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
+            #if doesnotexist:
+                #raise RuntimeError("The input image collection does not exist")
+            if 'http:' in image_collection or 'https:' in image_collection:
+                return  json.dumps({ 'url' : image_collection })
+            else:
+                return  json.dumps({ 'uri' : image_collection })
+        elif isinstance(image_collection, Item):
+            return json.dumps({ "itemId" : image_collection.itemid })
+        else:
+            raise TypeError("image_collection should be a string (url or uri) or Item")
+
+        return image_collection
+    def _create_output_image_service(self, output_name, task, folder=None):
+        gis = self._gis
+        ok = gis.content.is_service_name_available(output_name, "Image Service")
+        if not ok:
+            raise RuntimeError("An Image Service by this name already exists: " + output_name)
+
+        create_parameters = {
+            "name": output_name,
+            "description": "",
+            "capabilities": "Image, Metadata",
+            "properties": {
+                "path": "@",
+                "description": "",
+                "copyright": ""
+            }
+        }
+
+        output_service = gis.content.create_service(output_name, create_params=create_parameters,
+                                                          service_type="imageService", folder=folder)
+        description = "Image Service generated from running the " + task + " tool."
+        item_properties = {
+            "description": description,
+            "tags": "Analysis Result, " + task,
+            "snippet": "Analysis Image Service generated from " + task
+        }
+        output_service.update(item_properties)
+        return output_service
+
+
+    def _build_param_dictionary(self, input_rasters, raster_type_name, raster_type_params = None, image_collection_properties = None, use_input_rasters_by_ref = False):
+        gis = self._gis
+        input_raster_specified = False
+        input_rasters_dict={}
+        raster_type_dict={}
+        # input rasters
+        if isinstance(input_rasters, list):
+            # extract the IDs of all the input items
+            # and then convert the list to JSON
+            item_id_list = []
+            url_list = []
+            uri_list = []
+            for item in input_rasters:
+                if isinstance(item, Item):
+                    item_id_list.append(item.itemid)
+                elif isinstance(item, str):
+                    if 'http:' in item or 'https:' in item:
+                        url_list.append(item)
+                    else:
+                        uri_list.append(item)
+
+            if len(item_id_list) > 0:
+                input_rasters_dict = {"itemIds" : item_id_list }
+                input_raster_specified = True
+            elif len(url_list) > 0:
+                input_rasters_dict = {"urls" : url_list}
+                input_raster_specified = True
+            elif len(uri_list) > 0:
+                input_rasters_dict = {"uris" : uri_list}
+                input_raster_specified = True
+        elif isinstance(input_rasters, str):
+            # the input_rasters is a folder name; try and extract the folderID
+            owner = gis.properties.user.username
+            folderId = gis._portal.get_folder_id(owner, input_rasters)
+            if folderId is None:
+                if 'http:' in input_rasters or 'https:' in input_rasters:
+                    input_rasters_dict = {"url" : input_rasters}
+                else:
+                    input_rasters_dict = {"uri" : input_rasters}
+            else:
+                input_rasters_dict = {"folderId" : folderId}
+            input_raster_specified = True
+
+        if input_raster_specified is False:
+            raise RuntimeError("Input raster list to be added to the collection must be specified")
+        else:
+            if use_input_rasters_by_ref:
+                input_rasters_dict.update({"byref":True})
+
+        # raster_type
+        if not isinstance(raster_type_name, str):
+            raise RuntimeError("Invalid input raster_type parameter")
+
+        elevation_set = 0
+        if raster_type_params is not None:
+            for element in raster_type_params.keys():
+                if(element.lower() == "constantz"):
+                    value = raster_type_params[element]
+                    del raster_type_params[element]
+                    raster_type_params.update({"ConstantZ":value})
+
+                    elevation_set = 1
+                    break
+                elif(element.lower() == "averagezdem"):
+                    value = raster_type_params[element]
+                    del raster_type_params[element]
+                    raster_type_params.update({"averagezdem":value})
+                    elevation_set = 1
+                    break
+
+            if(elevation_set == 0):
+                if "orthomappingElevation" in gis.properties.helperServices.keys():
+                    raster_type_params["averagezdem"] = gis.properties.helperServices["orthomappingElevation"]
+                else:
+                    raster_type_params["averagezdem"] = {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}
+        else:
+            if "orthomappingElevation" in gis.properties.helperServices.keys():
+                raster_type_params = {"averagezdem" : gis.properties.helperServices["orthomappingElevation"]}
+            else:
+                raster_type_params = {"averagezdem": {"url":"https://elevation3d.arcgis.com/arcgis/rest/services/WorldElevation3D/Terrain3D/ImageServer"}}
+
+
+        raster_type_dict = { "rasterTypeName" : raster_type_name, "rasterTypeParameters" : raster_type_params }
+        if image_collection_properties is not None:
+            raster_type_dict.update({"imageCollectionProps":image_collection_properties})
+
+        raster_type_dict = json.dumps(raster_type_dict)
+        return input_rasters_dict, raster_type_dict
+
+    def _set_param(self, input_param):
+        gis = self._gis
+        param_value = None
+        if isinstance(input_param, str):
+            if 'http:' in input_param or 'https:' in input_param:
+                param_value = json.dumps({ 'url' : input_param })
+            else:
+                param_value = json.dumps({ 'uri' : input_param })
+
+        elif isinstance(input_param, arcgis.gis.Item):
+            param_value = json.dumps({ "itemId" : input_param.itemid })
+
+        elif isinstance(input_param, dict):
+            param_value =  input_param
+        elif isinstance(input_param, arcgis.learn.Model):
+            param_value = input_param._model
+        else:
+            raise TypeError(input_param+" should be a string (service url) or Item")
+
+        return param_value
+
+
+    #----------------------------------------------------------------------
+    def add_image(self,
+                  image_collection,
+                  input_rasters,
+                  raster_type_name=None,
+                  raster_type_params=None,
+                  context=None,
+                  future=False,
+                  **kwargs):
+
+        """
+        Add a collection of images to an existing image_collection. Provides provision to use input rasters by reference
+        and to specify image collection properties through context parameter.
+
+        It can be used when new data is available to be included in the same
+        orthomapping project. When new data is added to the image collection
+        the entire image collection must be reset to the original state.
+
+        ==================                   ====================================================================
+        **Argument**                         **Description**
+        ------------------                   --------------------------------------------------------------------
+        input_rasters                        Required, the list of input rasters to be added to
+                                             the image collection being created. This parameter can
+                                             be any one of the following:
+                                             - List of portal Items of the images
+                                             - An image service URL
+                                             - Shared data path (this path must be accessible by the server)
+                                             - Name of a folder on the portal
+        ------------------                   --------------------------------------------------------------------
+        image_collection                     Required, the item representing the image collection to add input_rasters to.
+
+                                             The image collection must be an existing image collection.
+                                             This is the output image collection (mosaic dataset) item or url or uri
+        ------------------                   --------------------------------------------------------------------
+        raster_type_name                     Required, the name of the raster type to use for adding data to
+                                             the image collection.
+        ------------------                   --------------------------------------------------------------------
+        raster_type_params                   Optional,  additional raster_type specific parameters.
+
+                                             The process of add rasters to the image collection can be
+                                             controlled by specifying additional raster type arguments.
+
+        ------------------                   --------------------------------------------------------------------
+        context                               Optional, The context parameter is used to provide additional input parameters
+                                                {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+
+                                                use image_collection_properties key to set value for imageCollectionType.
+                                                Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service.
+                                                Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment.
+                                                Therefore, if the image collection is created by reference, the requester should set this
+                                                property based on the type of images in the image collection using the following keywords.
+                                                If the imageCollectionType is not set, it defaults to "UAV/UAS"
+
+                                                If byref is set to True, the data will not be uploaded. If it is not set, the default is False
+        ------------------                   --------------------------------------------------------------------
+        gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------                   --------------------------------------------------------------------
+        future                               Optional Boolean.  If True, the job will return a RAJob.
+        ==================                   ====================================================================
+
+        :return:
+             The imagery layer item
+
+        """
+        task = "AddImage"
+        gis = self._gis
+
+        image_collection = self._set_image_collection_param(image_collection)
+        image_collection_properties = None
+        use_input_rasters_by_ref = None
+
+        folderId = None
+        folder = None
+
+        if context is not None:
+            if "image_collection_properties" in context:
+                image_collection_properties = context["image_collection_properties"]
+                del context["image_collection_properties"]
+            if "byref" in context:
+                use_input_rasters_by_ref = context["byref"]
+                del context["byref"]
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_rasters, raster_type = self._build_param_dictionary(input_rasters=input_rasters,
+                                                                  raster_type_name=raster_type_name,
+                                                                  raster_type_params=raster_type_params,
+                                                                  image_collection_properties=image_collection_properties,
+                                                                  use_input_rasters_by_ref=use_input_rasters_by_ref)
+
+
+        gpjob = self._tbx.add_image(input_rasters=input_rasters,
+                                    image_collection=image_collection,
+                                    raster_type=raster_type,
+                                    context=context,
+                                    gis=self._gis,
+                                    future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def build_footprints(self,
+                         image_collection=None,
+                         computation_method="RADIOMETRY",
+                         value_range=None,
+                         context=None,
+                         future=False,
+                         **kwargs):
+        """
+        Computes the extent of every raster in a mosaic dataset.
+
+        Parameters
+        ----------
+        image_collection : Required. The input image collection.The image_collection can be a
+                           portal Item or an image service URL or a URI.
+                           The image_collection must exist.
+
+        computation_method : Optional. Refine the footprints using one of the following methods:
+                             RADIOMETRY, GEOMETRY
+                             Default: RADIOMETRY
+
+        value_range: Optional. Parameter to specify the value range.
+
+        context : Optional dictionary. Can be used to specify values for keys like:
+                  whereClause, minValue, maxValue, numVertices, shrinkDistance, maintainEdge,
+                  skipDerivedImages, updateBoundary, requestSize, minRegionSize, simplification,
+                  edgeTorelance, maxSliverSize, minThinnessRatio
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "BuildFootprints"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        image_collection = self._set_image_collection_param(image_collection)
+
+        computation_method_values = ["RADIOMETRY","GEOMETRY"]
+        if not computation_method.upper() in computation_method_values:
+            raise RuntimeError("computation_method can only be one of the following: RADIOMETRY, GEOMETRY")
+
+        gpjob = self._tbx.build_footprints(image_collection=image_collection,
+                                           computation_method=computation_method,
+                                           value_range=value_range,
+                                           context=context,
+                                           gis=self._gis,
+                                           future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def build_overview(self,
+                       image_collection,
+                       cell_size=None,
+                       context=None,
+                       future=False,
+                       **kwargs):
+        """
+
+        Parameters
+        ----------
+        image_collection : Required. The input image collection.The image_collection can be a
+                           portal Item or an image service URL or a URI.
+                           The image_collection must exist.
+
+        cell_size : optional float or int, to set the cell size for overview.
+
+        context : optional dictionary
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "BuildOverview"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        image_collection = self._set_image_collection_param(image_collection)
+
+        gpjob = self._tbx.build_overview(image_collection=image_collection,
+                                         cell_size=cell_size,
+                                         context=context,
+                                         gis=self._gis,
+                                         future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def calculate_density(self,
+                          input_point_or_line_features,
+                          output_name=None,
+                          count_field=None,
+                          search_distance=None,
+                          output_area_units="SquareMiles",
+                          output_cell_size=None,
+                          context=None,
+                          future=False,
+                          **kwargs):
+
+        """
+        input_point_or_line_features: inputPointOrLineFeatures (FeatureSet). Required parameter.
+
+        output_name: outputName (str). Required parameter.
+
+        count_field: countField (str). Optional parameter.
+
+        search_distance: searchDistance (LinearUnit). Optional parameter.
+
+        output_area_units: outputAreaUnits (str). Optional parameter.
+
+        output_cell_size: outputCellSize (LinearUnit). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+	gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+	future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+        task = "CalculateDensity"
+        gis = self._gis
+
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_point_or_line_features = self._feature_input(input_point_or_line_features)
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.calculate_density(input_point_or_line_features=input_point_or_line_features,
+                                            output_name=output_raster,
+                                            count_field=count_field,
+                                            search_distance=search_distance,
+                                            output_area_units=output_area_units,
+                                            output_cell_size=output_cell_size,
+                                            context=context,
+                                            gis=self._gis,
+                                            future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def calculate_distance(self,
+                           input_source_raster_or_features, #
+                           output_distance_name=None,
+                           maximum_distance=None,
+                           output_cell_size=None,
+                           output_direction_name=None,
+                           output_allocation_name=None,
+                           allocation_field=None,
+                           distance_method='PLANAR',
+                           input_barrier_raster_or_features=None,
+                           output_back_direction_name=None,
+                           context=None,
+                           future=False,
+                           **kwargs):
+
+        """
+            input_source_raster_or_features: inputSourceRasterOrFeatures (str). Required parameter.
+
+            output_name: outputDistanceName (str). Required parameter.
+
+            maximum_distance: maximumDistance (LinearUnit). Optional parameter.
+
+            output_cell_size: outputCellSize (LinearUnit). Optional parameter.
+
+            output_direction_name: outputDirectionName (str). Optional parameter.
+
+            output_allocation_name: outputAllocationName (str). Optional parameter.
+
+            allocation_field: allocationField (str). Optional parameter.
+
+            context: context (str). Optional parameter.
+
+            gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+            future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+         Returns the following as a named tuple:
+            output_distance_raster - outputDistanceRaster as a str
+            output_direction_raster - outputDirectionRaster as a str
+            output_allocation_raster - outputAllocationRaster as a str
+        """
+        task = "CalculateDistance"
+        gis = self._gis
+
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
+            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+        elif isinstance(input_source_raster_or_features, Item):
+            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
+        else:
+            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+
+        if input_barrier_raster_or_features:
+            if isinstance(input_barrier_raster_or_features, _FEATURE_INPUTS):
+                input_barrier_raster_or_features = self._feature_input(input_barrier_raster_or_features)
+            elif isinstance(input_barrier_raster_or_features, Item):
+                input_barrier_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
+            else:
+                input_barrier_raster_or_features = self._layer_input(input_barrier_raster_or_features)
+
+
+        output_distance_raster, output_distance_service = self._set_output_raster(output_name=output_distance_name, task=task, output_properties=kwargs)
+        output_direction_raster=None
+        if output_direction_name is not None:
+            output_direction_raster, output_direction_service = self._set_output_raster(output_name=output_direction_name, task=task, output_properties=kwargs)
+
+        output_allocation_raster=None
+        if output_allocation_name is not None:
+            output_allocation_raster, out_allocation_service = self._set_output_raster(output_name=output_allocation_name, task=task,  output_properties=kwargs)
+
+        output_back_direction_raster=None
+        if output_back_direction_name is not None:
+            output_back_direction_raster, out_back_direction_service = self._set_output_raster(output_name=output_back_direction_name, task=task,  output_properties=kwargs)
+
+        
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features,
+                                                 output_distance_name=output_distance_raster,
+                                                 maximum_distance=maximum_distance,
+                                                 output_cell_size=output_cell_size,
+                                                 output_direction_name=output_direction_raster,
+                                                 output_allocation_name=output_allocation_raster,
+                                                 allocation_field=allocation_field,
+                                                 distance_method=distance_method,
+                                                 input_barrier_raster_or_features=input_barrier_raster_or_features,
+                                                 output_back_direction_name=output_back_direction_raster,
+                                                 context=context,
+                                                 gis=self._gis,
+                                                 future=True)
+        else:
+            gpjob = self._tbx.calculate_distance(input_source_raster_or_features=input_source_raster_or_features,
+                                        output_distance_name=output_distance_raster,
+                                        maximum_distance=maximum_distance,
+                                        output_cell_size=output_cell_size,
+                                        output_direction_name=output_direction_raster,
+                                        output_allocation_name=output_allocation_raster,
+                                        allocation_field=allocation_field,
+                                        context=context,
+                                        gis=self._gis,
+                                        future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def calculate_statistics(self,
+                             image_collection,
+                             skip_factors=None,
+                             context=None,
+                             future=False,
+                             **kwargs):
+
+        """
+        image_collection: imageCollection (str). Required parameter.
+
+        skipfactors: skipfactors (str). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+        Returns:
+           Image Layer
+        """
+        task = "CalculateStatistics"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        image_collection = self._set_image_collection_param(image_collection)
+        gpjob = self._tbx.calculate_statistics(image_collection=image_collection,
+                                               skipfactors=skip_factors,
+                                               context=context,
+                                               gis=self._gis,
+                                               future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs
+    def calculate_travel_cost(self,
+                              input_source_raster_or_features,
+                              output_name=None,
+                              input_cost_raster=None,
+                              input_surface_raster=None,
+                              maximum_distance=None,
+                              input_horizontal_raster=None,
+                              horizontal_factor=None,
+                              input_vertical_raster=None,
+                              vertical_factor=None,
+                              source_cost_multiplier=None,
+                              source_start_cost=None,
+                              source_resistance_rate=None,
+                              source_capacity=None,
+                              source_travel_direction=None,
+                              output_backlink_name=None,
+                              output_allocation_name=None,
+                              allocation_field=None,
+                              context=None,
+                              future=False,
+                              **kwargs):
+
+        """
+        """
+        task = "CalculateTravelCost"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        output_distance_raster, output_distance_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+
+        if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
+            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+        elif isinstance(input_source_raster_or_features, Item):
+            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
+        else:
+            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+
+        output_backlink_raster=None
+        if output_backlink_name is not None:
+            output_backlink_raster, output_backlink_service = self._set_output_raster(output_name=output_backlink_name, task=task, output_properties=kwargs)
+
+        output_allocation_raster=None
+        if output_allocation_name is not None:
+            output_allocation_raster, out_allocation_service = self._set_output_raster(output_name=output_allocation_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.calculate_travel_cost(input_source_raster_or_features=input_source_raster_or_features,
+                                                output_distance_name=output_distance_raster,
+                                                input_cost_raster=input_cost_raster,
+                                                input_surface_raster=input_surface_raster,
+                                                maximum_distance=maximum_distance,
+                                                input_horizontal_raster=input_horizontal_raster,
+                                                horizontal_factor=horizontal_factor,
+                                                input_vertical_raster=input_vertical_raster,
+                                                vertical_factor=vertical_factor,
+                                                source_cost_multiplier=source_cost_multiplier,
+                                                source_start_cost=source_start_cost,
+                                                source_resistance_rate=source_resistance_rate,
+                                                source_capacity=source_capacity,
+                                                source_travel_direction=source_travel_direction,
+                                                output_backlink_name=output_backlink_raster,
+                                                output_allocation_name=output_allocation_raster,
+                                                allocation_field=allocation_field,
+                                                context=context,
+                                                gis=self._gis,
+                                                future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #Done: Format Inputs/ Outputs
+    def classify(self,
+                 input_raster,
+                 input_classifier_definition,
+                 output_name=None,
+                 additional_input_raster=None,
+                 context=None,
+                 future=False,
+                 **kwargs):
+
+        """
+        ----------
+        input_raster : Required string
+
+        input_classifier_definition : Required string
+
+        additional_input_raster : Optional string
+
+        output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+            You can pass in an existing Image Service Item from your GIS to use that instead.
+            Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+            A RuntimeError is raised if a service by that name already exists
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+
+        task = "Classify"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster = self._layer_input(input_layer=input_raster)
+        if additional_input_raster is not None:
+            additional_input_raster = self._layer_input(input_layer=additional_input_raster)
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.classify(input_raster=input_raster,
+                                   input_classifier_definition=input_classifier_definition,
+                                   output_name=output_raster,
+                                   additional_input_raster=additional_input_raster,
+                                   context=context,
+                                   gis=self._gis,
+                                   future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs
+    def classify_pixels_using_deep_learning(self,
+                                            input_raster,
+                                            model,
+                                            model_arguments=None,
+                                            output_classified_raster=None,
+                                            process_all_raster_items=False,
+                                            context=None,
+                                            future=False,
+                                            **kwargs):
+
+        """
+        Function to classify input imagery data using a deep learning model.
+        Note that the deep learning library needs to be installed separately,
+        in addition to the server's built in Python 3.x library.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_raster                             Required. raster layer that needs to be classified
+        ------------------------------------     --------------------------------------------------------------------
+        model                                    Required model object.
+        ------------------------------------     --------------------------------------------------------------------
+        model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+
+                                                 eg: {"name1":"value1", "name2": "value2"}
+
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              Optional. If not provided, an imagery layer is created by the method and used as the output .
+                                                 You can pass in an existing Image Service Item from your GIS to use that instead.
+                                                 Alternatively, you can pass in the name of the output Image Service that should be created by this method
+                                                 to be used as the output for the tool.
+                                                 A RuntimeError is raised if a service by that name already exists
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                                   Dictionary can contain value for following keys:
+
+                                                   - outSR - (Output Spatial Reference) Saves the result in the specified spatial reference
+
+                                                   - snapRaster - Function will adjust the extent of output rasters so that they 
+                                                     match the cell alignment of the specified snap raster.
+
+                                                   - cellSize - Set the output raster cell size, or resolution
+
+                                                   - extent - Sets the processing extent used by the function
+
+                                                   - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                                   - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                                   Eg: {"outSR" : {spatial reference}}
+
+                                                   Setting context parameter will override the values set using arcgis.env 
+                                                   variable for this particular function.
+        ------------------------------------     --------------------------------------------------------------------
+        process_all_raster_items                 Optional bool. Specifies how all raster items in a mosaic dataset or an image service will be processed.
+
+                                                  - False : all raster items in the mosaic dataset or image service will be mosaicked together and processed. This is the default.
+
+                                                  - True : all raster items in the mosaic dataset or image service will be processed as separate images.
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ====================================     ====================================================================
+
+        :return:
+            The classified imagery layer item
+
+        """
+        task = "ClassifyPixelsUsingDeepLearning"
+        gis = self._gis
+
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        if model is None:
+            raise RuntimeError('model cannot be None')
+        else:
+            model_value = self._set_param(model)
+
+        model_arguments_value = None
+        if model_arguments:
+            try:
+                model_arguments_value = dict((str(k),str(v)) for k, v in model_arguments.items())
+            except:
+                model_arguments_value = model_arguments
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        output_raster, output_service = self._set_output_raster(output_name=output_classified_raster, task=task, output_properties=kwargs)
+
+        
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.classify_pixels_using_deep_learning(input_raster=input_raster,
+                                                                  output_classified_raster=output_raster,
+                                                                  model=model_value,
+                                                                  model_arguments=model_arguments_value,
+                                                                  process_all_raster_items=process_all_raster_items,
+                                                                  context=context,
+                                                                  gis=self._gis,
+                                                                  future=True)
+        else:
+            gpjob = self._tbx.classify_pixels_using_deep_learning(input_raster=input_raster,
+                                                                  output_classified_raster=output_raster,
+                                                                  model=model_value,
+                                                                  model_arguments=model_arguments_value,
+                                                                  context=context,
+                                                                  gis=self._gis,
+                                                                  future=True)
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def convert_feature_to_raster(self,
+                                  input_feature,
+                                  output_cell_size,
+                                  output_name=None,
+                                  value_field=None,
+                                  context=None,
+                                  future=False,
+                                  **kwargs):
+
+        """
+        Parameters:
+
+        input_feature: inputFeature (str). Required parameter.
+
+        output_name: outputName (str). Required parameter.
+
+        output_cell_size: outputCellSize (LinearUnit). Required parameter.
+
+        value_field: valueField (str). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+        Returns:
+             output_raster - outputRaster as a str
+
+        """
+        task = "ConvertFeatureToRaster"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        #output_raster = {"itemProperties":{ "itemId": output_service.itemid}}
+        input_feature = self._feature_input(input_layer=input_feature)
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.convert_feature_to_raster(input_feature=input_feature,
+                                                    output_name=output_raster,
+                                                    output_cell_size=output_cell_size,
+                                                    value_field=value_field,
+                                                    context=context,
+                                                    gis=self._gis,
+                                                    future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def convert_raster_to_feature(self,
+                                  input_raster,
+                                  output_name=None,
+                                  field="Value",
+                                  output_type="Point",
+                                  simplify_lines_or_polygons=True,
+                                  context=None,
+                                  future=False,
+                                  **kwargs):
+        """
+        This service tool converts imagery data to feature class vector data.
+
+        Parameters
+        ----------
+        input_raster : Required. The input raster that will be converted to a feature dataset.
+
+        field : Optional string - field that specifies which value will be used for the conversion.
+            It can be any integer or a string field.
+            A field containing floating-point values can only be used if the output is to a point dataset.
+            Default is "Value"
+
+        output_type : Optional string
+            One of the following: ['Point', 'Line', 'Polygon']
+
+        simplify : Optional bool, This option that specifies how the features should be smoothed. It is
+                   only available for line and polygon output.
+                   True, then the features will be smoothed out. This is the default.
+                   if False, then The features will follow exactly the cell boundaries of the raster dataset.
+
+        output_name : Optional. If not provided, an Feature layer is created by the method and used as the output .
+            You can pass in an existing Feature Service Item from your GIS to use that instead.
+            Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+            to be used as the output for the tool.
+            A RuntimeError is raised if a service by that name already exists
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        Returns
+        -------
+        output_features : Image layer item
+        """
+        task = "ConvertRasterToFeature"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster = self._layer_input(input_raster)
+
+        if output_name is None:
+            output_service_name = 'RasterToFeature_' + _id_generator()
+            output_name = output_service_name.replace(' ', '_')
+        else:
+            output_service_name = output_name.replace(' ', '_')
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+        output_service = self._create_output_feature_service(output_name=output_name,
+                                                             output_service_name=output_name,
+                                                             task=task,
+                                                             folder=folder)
+        if folderId is not None:
+            output_name = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                           "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+        else:
+            output_name = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                           "itemProperties": {"itemId": output_service.itemid}})
+        gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
+                                                    output_name=output_name,
+                                                    field=field,
+                                                    output_type=output_type,
+                                                    simplify_lines_or_polygons=simplify_lines_or_polygons,
+                                                    context=context,
+                                                    gis=self._gis,
+                                                    future=True)
+        gpjob._is_ra = True
+        gpjob._return_item = output_service
+        gpjob._item_properties = True
+
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #Done: Format Inputs/ Outputs
+    def create_image_collection(self,
+                                image_collection,
+                                input_rasters,
+                                raster_type_name,
+                                raster_type_params = None,
+                                out_sr = None,
+                                context=None,
+                                future=False,
+                                **kwargs):
+
+        """
+        Create a collection of images that will participate in the ortho-mapping project.
+        Provides provision to use input rasters by reference
+        and to specify image collection properties through context parameter.
+
+        ==================                   ====================================================================
+        **Argument**                         **Description**
+        ------------------                   --------------------------------------------------------------------
+        image_collection                     Required, the name of the image collection to create.
+
+                                             The image collection can be an existing image service, in
+                                             which the function will create a mosaic dataset and the existing
+                                             hosted image service will then point to the new mosaic dataset.
+
+                                             If the image collection does not exist, a new multi-tenant
+                                             service will be created.
+
+                                             This parameter can be the Item representing an existing image_collection
+                                             or it can be a string representing the name of the image_collection
+                                             (either existing or to be created.)
+        ------------------                   --------------------------------------------------------------------
+        input_rasters                        Required, the list of input rasters to be added to
+                                             the image collection being created. This parameter can
+                                             be any one of the following:
+                                             - List of portal Items of the images
+                                             - An image service URL
+                                             - Shared data path (this path must be accessible by the server)
+                                             - Name of a folder on the portal
+        ------------------                   --------------------------------------------------------------------
+        raster_type_name                     Required, the name of the raster type to use for adding data to
+                                             the image collection.
+        ------------------                   --------------------------------------------------------------------
+        raster_type_params                   Optional,  additional raster_type specific parameters.
+
+                                             The process of add rasters to the image collection can be
+                                             controlled by specifying additional raster type arguments.
+
+                                             The raster type parameters argument is a dictionary.
+        ------------------                   --------------------------------------------------------------------
+        out_sr                               Optional, additional parameters of the service.
+
+                                             The following additional parameters can be specified:
+                                             - Spatial reference of the image_collection; The well-known ID of
+                                             the spatial reference or a spatial reference dictionary object for the
+                                             input geometries.
+                                             If the raster type name is set to "UAV/UAS", the spatial reference of the
+                                             output image collection will be determined by the raster type parameters defined.
+        ------------------                   --------------------------------------------------------------------
+        context                               Optional, The context parameter is used to provide additional input parameters
+                                                {"image_collection_properties": {"imageCollectionType":"Satellite"},"byref":True}
+
+                                                use image_collection_properties key to set value for imageCollectionType.
+                                                Note: the "imageCollectionType" property is important for image collection that will later on be adjusted by orthomapping system service.
+                                                Based on the image collection type, the orthomapping system service will choose different algorithm for adjustment.
+                                                Therefore, if the image collection is created by reference, the requester should set this
+                                                property based on the type of images in the image collection using the following keywords.
+                                                If the imageCollectionType is not set, it defaults to "UAV/UAS"
+
+                                                If byref is set to True, the data will not be uploaded. If it is not set, the default is False
+        ------------------                   --------------------------------------------------------------------
+        gis                                  Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================                   ====================================================================
+
+        :return:
+            The imagery layer item
+
+        """
+        task = "CreateImageCollection"
+        gis = self._gis
+
+        image_collection_properties = None
+        use_input_rasters_by_ref = None
+        folder = None
+        folderId = None
+
+        if context is not None:
+            if "image_collection_properties" in context:
+                image_collection_properties = context["image_collection_properties"]
+                del context["image_collection_properties"]
+            if "byref" in context:
+                use_input_rasters_by_ref = context["byref"]
+                del context["byref"]
+
+
+        if isinstance(image_collection, Item):
+            image_collection = json.dumps({"itemId": image_collection.itemid})
+        elif isinstance(image_collection, str):
+            if ("/") in image_collection or ("\\") in image_collection:
+                if 'http:' in image_collection or 'https:' in image_collection:
+                    image_collection= json.dumps({ 'url' : image_collection })
+                else:
+                    image_collection = json.dumps({ 'uri' : image_collection })
+            else:
+                result = gis.content.search("title:"+str(image_collection), item_type = "Imagery Layer")
+                image_collection_result = None
+                for element in result:
+                    if str(image_collection) == element.title:
+                        image_collection_result = element
+                if image_collection_result is not None:
+                    image_collection = json.dumps({"itemId": image_collection_result.itemid})
+                else:
+                    doesnotexist = gis.content.is_service_name_available(image_collection, "Image Service")
+                    if doesnotexist:
+                        if kwargs is not None:
+                            if "folder" in kwargs:
+                                folder = kwargs["folder"]
+                        if folder is not None:
+                            if isinstance(folder, dict):
+                                if "id" in folder:
+                                    folderId = folder["id"]
+                                    folder=folder["title"]
+                            else:
+                                owner = gis.properties.user.username
+                                folderId = gis._portal.get_folder_id(owner, folder)
+                            if folderId is None:
+                                folder_dict = gis.content.create_folder(folder, owner)
+                                folder = folder_dict["title"]
+                                folderId = folder_dict["id"]
+                            image_collection =  json.dumps({"serviceProperties": {"name" : image_collection}, "itemProperties": {"folderId" : folderId}})
+                        else:
+                            image_collection = json.dumps({"serviceProperties": {"name" : image_collection}})
+
+        if out_sr is not None:
+            if isinstance(out_sr, int):
+                if context is not None:
+                    context.update({'outSR':{'wkid': out_sr}})
+                else:
+                    context = {}
+                    context["outSR"]={'wkid': out_sr}
+            else:
+                if context is not None:
+                    context.update({'outSR':out_sr})
+                else:
+                    context = {}
+                    context["outSR"]=out_sr
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_rasters, raster_type = self._build_param_dictionary(input_rasters=input_rasters,
+                                                                raster_type_name=raster_type_name,
+                                                                raster_type_params=raster_type_params,
+                                                                image_collection_properties=image_collection_properties,
+                                                                use_input_rasters_by_ref=use_input_rasters_by_ref)
+
+        gpjob = self._tbx.create_image_collection(input_rasters=input_rasters,
+                                                  image_collection=image_collection,
+                                                  raster_type=raster_type,
+                                                  context=context,
+                                                  gis=self._gis,
+                                                  future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs
+    def create_viewshed(self,
+                        input_elevation_surface,
+                        input_observer_features,
+                        output_name=None,
+                        optimize_for=None,
+                        maximum_viewing_distance=None,
+                        maximum_viewing_distance_field=None,
+                        minimum_viewing_distance=None,
+                        minimum_viewing_distance_field=None,
+                        viewing_distance_is3D=None,
+                        observers_elevation=None,
+                        observers_elevation_field=None,
+                        observers_height=None,
+                        observers_height_field=None,
+                        target_height=None,
+                        target_height_field=None,
+                        above_ground_level_output_name=None,
+                        context=None,
+                        future=False,
+                        **kwargs):
+
+        """
+        """
+        task = "CreateViewshed"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_elevation_surface = self._layer_input(input_elevation_surface)
+        input_observer_features = self._layer_input(input_observer_features)
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        above_ground_level_raster=None
+        if above_ground_level_output_name is not None:
+         above_ground_level_raster, above_ground_level_service = self._set_output_raster(output_name=above_ground_level_output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.create_viewshed(input_elevation_surface=input_elevation_surface,
+                                          input_observer_features=input_observer_features,
+                                          output_name=output_raster,
+                                          optimize_for=optimize_for,
+                                          maximum_viewing_distance=maximum_viewing_distance,
+                                          maximum_viewing_distance_field=maximum_viewing_distance_field,
+                                          minimum_viewing_distance=minimum_viewing_distance,
+                                          minimum_viewing_distance_field=minimum_viewing_distance_field,
+                                          viewing_distance_is3_d=viewing_distance_is3D,
+                                          observers_elevation=observers_elevation,
+                                          observers_elevation_field=observers_elevation_field,
+                                          observers_height=observers_height,
+                                          observers_height_field=observers_height_field,
+                                          target_height=target_height,
+                                          target_height_field=target_height_field,
+                                          above_ground_level_output_name=above_ground_level_raster,
+                                          context=context,
+                                          gis=self._gis,
+                                          future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def delete_image(self,
+                     image_collection,
+                     where,
+                     future=False,
+                     **kwargs):
+        """
+        delete_image allows users to remove existing images from the image collection (mosaic dataset).
+        The function will only delete the raster item in the mosaic dataset and will not remove the
+        source image.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        image_collection       Required, the input image collection from which to delete images
+                               This can be the 'itemID' of an exisiting portal item or a url
+                               to an Image Service or a uri
+        ------------------     --------------------------------------------------------------------
+        where                  Required string,  a SQL 'where' clause for selecting the images
+                               to be deleted from the image collection
+        ------------------     --------------------------------------------------------------------
+        gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================     ====================================================================
+
+        :return:
+            The imagery layer url
+
+        """
+        task = "DeleteImage"
+        gis = self._gis
+
+
+        image_collection  = self._set_image_collection_param(image_collection)
+        gpjob = self._tbx.delete_image(image_collection=image_collection,
+                                       where=where,
+                                       gis=self._gis,
+                                       future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #Done: Format Inputs/ Outputs, doc
+    def delete_image_collection(self, image_collection, future=False, **kwargs):
+        '''
+        Delete the image collection. This service tool will delete the image collection
+        image service, that is, the portal-hosted image layer item. It will not delete
+        the source images that the image collection references.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        image_collection       Required, the input image collection to delete.
+
+                               The image_collection can be a portal Item or an image service URL or a URI.
+
+                               The image_collection must exist.
+        ------------------     --------------------------------------------------------------------
+        gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================     ====================================================================
+
+        :return:
+            Boolean value indicating whether the deletion was successful or not
+
+        '''
+        task = "DeleteImageCollection"
+
+        gis = self._gis
+        image_collection  = self._set_image_collection_param(image_collection)
+        gpjob = self._tbx.delete_image_collection(image_collection=image_collection,
+                                                  gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = False
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #Done: Format Inputs/ Outputs, doc
+    def detect_objects_using_deep_learning(self, input_raster, model, output_objects=None, model_arguments=None,
+                                           run_nms=False, confidence_score_field=None, class_value_field=None,
+                                           max_overlap_ratio=None, process_all_raster_items=False, context=None, future=False, **kwargs):
+        """
+        Function can be used to generate feature service that contains polygons on detected objects
+        found in the imagery data using the designated deep learning model. Note that the deep learning
+        library needs to be installed separately, in addition to the server's built in Python 3.x library.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_raster                             Required. raster layer that contains objects that needs to be detected.
+        ------------------------------------     --------------------------------------------------------------------
+        model                                    Required model object.
+        ------------------------------------     --------------------------------------------------------------------
+        model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+
+                                                 eg: {"name1":"value1", "name2": "value2"}
+        ------------------------------------     --------------------------------------------------------------------
+        output_objects                           Optional. If not provided, a Feature layer is created by the method and used as the output .
+                                                 You can pass in an existing Feature Service Item from your GIS to use that instead.
+                                                 Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+                                                 to be used as the output for the tool.
+                                                 A RuntimeError is raised if a service by that name already exists
+        ------------------------------------     --------------------------------------------------------------------
+        run_nms                                  Optional bool. Default value is False. If set to True, runs the Non Maximum Suppression tool.
+        ------------------------------------     --------------------------------------------------------------------
+        confidence_score_field                   Optional string. The field in the feature class that contains the confidence scores as output by the object detection method.
+                                                 This parameter is required when you set the run_nms to True
+        ------------------------------------     --------------------------------------------------------------------
+        class_value_field                        Optional string. The class value field in the input feature class.
+                                                 If not specified, the function will use the standard class value fields
+                                                 Classvalue and Value. If these fields do not exist, all features will
+                                                 be treated as the same object class.
+                                                 Set only if run_nms  is set to True
+        ------------------------------------     --------------------------------------------------------------------
+        max_overlap_ratio                        Optional integer. The maximum overlap ratio for two overlapping features.
+                                                 Defined as the ratio of intersection area over union area.
+                                                 Set only if run_nms  is set to True
+        ------------------------------------     --------------------------------------------------------------------
+        process_all_raster_items                 Optional bool. Specifies how all raster items in a mosaic dataset or an image service will be processed.
+
+                                                  - False : all raster items in the mosaic dataset or image service will be mosaicked together and processed. This is the default.
+
+                                                  - True : all raster items in the mosaic dataset or image service will be processed as separate images.
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                                 Dictionary can contain value for following keys:
+
+                                                 - cellSize - Set the output raster cell size, or resolution
+
+                                                 - extent - Sets the processing extent used by the function
+
+                                                 - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                                 - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                                 Eg: {"processorType" : "CPU"}
+
+                                                 Setting context parameter will override the values set using arcgis.env
+                                                 variable for this particular function.
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ====================================     ====================================================================
+
+        :return:
+            The output feature layer item containing the detected objects
+
+        """
+        task = "DetectObjectsUsingDeepLearning"
+        gis = self._gis
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        if model is None:
+            raise RuntimeError('model cannot be None')
+        else:
+            model_value = self._set_param(model)
+
+        model_arguments_value = None
+        if model_arguments:
+            try:
+                model_arguments_value = dict((str(k),str(v)) for k, v in model_arguments.items())
+            except:
+                model_arguments_value = model_arguments
+
+        if isinstance(run_nms, bool):
+            if run_nms is False:
+                confidence_score_field = None
+                class_value_field = None
+                max_overlap_ratio = None
+        else:
+            raise RuntimeError("run_nms value should be an instance of bool")
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if output_objects is None:
+            output_service_name = 'DetectObjectsUsingDeepLearning_' + _id_generator()
+            output_objects = output_service_name.replace(' ', '_')
+        else:
+            output_service_name = output_objects.replace(' ', '_')
+
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+        output_service = self._create_output_feature_service(output_name=output_objects,
+                                                             output_service_name=output_service_name,
+                                                             task='Detect Objects',
+                                                             folder=folder)
+        if folderId is not None:
+            output_objects = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                           "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+        else:
+            output_objects= json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                           "itemProperties": {"itemId": output_service.itemid}})
+
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.detect_objects_using_deep_learning(input_raster=input_raster,
+                                                                 output_objects=output_objects,
+                                                                 model=model_value,
+                                                                 model_arguments=model_arguments_value,
+                                                                 run_nms=run_nms,
+                                                                 confidence_score_field=confidence_score_field,
+                                                                 class_value_field=class_value_field,
+                                                                 max_overlap_ratio=max_overlap_ratio,
+                                                                 process_all_raster_items=process_all_raster_items,
+                                                                 context=context, 
+                                                                 gis=self._gis,
+                                                                 future=True)
+        else:
+            gpjob = self._tbx.detect_objects_using_deep_learning(input_raster=input_raster,
+                                                            output_objects=output_objects,
+                                                            model=model_value,
+                                                            model_arguments=model_arguments_value,
+                                                            run_nms=run_nms,
+                                                            confidence_score_field=confidence_score_field,
+                                                            class_value_field=class_value_field,
+                                                            max_overlap_ratio=max_overlap_ratio,
+                                                            context=context, gis=self._gis,
+                                                            future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        gpjob._return_item = output_service
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def determine_optimum_travel_cost_network(self, input_regions_raster_or_features,
+                                              input_cost_raster=None,
+                                              output_optimum_network_name=None,
+                                              output_neighbor_network_name=None,
+                                              context=None,
+                                              future=False,
+                                              **kwargs):
+        """
+        calculates the optimum cost network from a set of input regions.
+
+        Parameters
+        ----------
+        input_regions_raster : The layer that defines the regions to find the optimum travel cost netork for.
+                               The layer can be raster or feature.
+
+        input_cost_raster  : A raster defining the impedance or cost to move planimetrically through each cell.
+
+        output_optimum_network_name : Optional. If not provided, a feature layer is created by the method and used as the output.
+            You can pass in an existing feature layer Item from your GIS to use that instead.
+            Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
+            A RuntimeError is raised if a service by that name already exists
+
+        output_neighbor_network_name : Optional. This is the name of the output neighbour network feature layer that will be created.
+
+        context: Context contains additional settings that affect task execution.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "DetermineOptimumTravelCostNetwork"
+        gis =  self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_regions_raster_or_features = self._layer_input(input_regions_raster_or_features)
+
+        if input_cost_raster is not None:
+            input_cost_raster = self._layer_input(input_cost_raster)
+
+        if output_optimum_network_name is None:
+            output_optimum_network_service_name = 'Optimum Network Raster_' + _id_generator()
+            output_optimum_network_name = output_optimum_network_service_name.replace(' ', '_')
+        else:
+            output_optimum_network_service_name = output_optimum_network_name.replace(' ', '_')
+
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+
+        output_optimum_network_service = self._create_output_feature_service(output_name=output_optimum_network_name,
+                                                             output_service_name=output_optimum_network_service_name,
+                                                             task='DetermineOptimumTravelCostNetwork',
+                                                             folder=folder)
+        if folderId is not None:
+            output_optimum_network_name = json.dumps({"serviceProperties": {"name": output_optimum_network_service_name, "serviceUrl": output_optimum_network_service.url},
+                                           "itemProperties": {"itemId": output_optimum_network_service.itemid}, "folderId":folderId})
+        else:
+            output_optimum_network_name = json.dumps({"serviceProperties": {"name": output_optimum_network_service_name, "serviceUrl": output_optimum_network_service.url},
+                                           "itemProperties": {"itemId": output_optimum_network_service.itemid}})
+
+
+        if output_neighbor_network_name is None:
+            output_neighbor_network_service_name = 'Neighbor Network Raster_' + _id_generator()
+            output_neighbor_network_name = output_neighbor_network_service_name.replace(' ', '_')
+        else:
+            output_neighbor_network_service_name = output_neighbor_network_name.replace(' ', '_')
+
+
+        output_neighbor_network_service = self._create_output_feature_service(output_name=output_neighbor_network_name,
+                                                             output_service_name=output_neighbor_network_service_name,
+                                                             task='DetermineOptimumTravelCostNetwork',
+                                                             folder=folder)
+        if folderId is not None:
+            output_neighbor_network_name = json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, "serviceUrl": output_neighbor_network_service.url},
+                                           "itemProperties": {"itemId": output_neighbor_network_service.itemid}, "folderId":folderId})
+        else:
+            output_neighbor_network_name = json.dumps({"serviceProperties": {"name": output_neighbor_network_service_name, "serviceUrl": output_neighbor_network_service.url},
+                                           "itemProperties": {"itemId": output_neighbor_network_service.itemid}})
+
+        gpjob = self._tbx.determine_optimum_travel_cost_network(input_regions_raster_or_features=input_regions_raster_or_features,
+                                                                input_cost_raster=input_cost_raster,
+                                                                output_optimum_network_name=output_optimum_network_name,
+                                                                output_neighbor_network_name=output_neighbor_network_name,
+                                                                context=context, gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def determine_travel_cost_paths_to_destinations(self, input_destination_raster_or_features,
+                                                    input_cost_distance_raster=None,
+                                                    input_cost_backlink_raster=None,
+                                                    output_name=None,
+                                                    destination_field=None,
+                                                    path_type=None,
+                                                    context=None,
+                                                    future=False, **kwargs):
+        """DetermineTravelCostPathsToDestinations GPtool"""
+        task = "DetermineTravelCostPathsToDestinations"
+        gis = self._gis
+        if context is None:
+            context = {}
+            _set_raster_context(params=context)
+        gpjob = self._tbx.determine_travel_cost_paths_to_destinations(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                                      input_cost_distance_raster=input_cost_distance_raster,
+                                                                      input_cost_backlink_raster=input_cost_backlink_raster,
+                                                                      output_name=output_name,
+                                                                      destination_field=destination_field,
+                                                                      path_type=path_type,
+                                                                      context=context, gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def determine_travel_costpath_as_polyline(self, input_source_raster_or_features, input_cost_raster,
+                                               input_destination_raster_or_features=None, output_polyline_name=None,
+                                               path_type=None, destination_field=None, context=None, future=False, **kwargs):
+        '''
+        Calculates the least cost polyline path between sources and known destinations.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_source_raster_or_features                        The layer that identifies the cells to determine the least
+                                                 costly path from. This parameter can have either a raster input or
+                                                 a feature input.
+        ------------------------------------     --------------------------------------------------------------------
+        input_cost_raster                        A raster defining the impedance or cost to move planimetrically through
+                                                 each cell.
+
+                                                 The value at each cell location represents the cost-per-unit distance for
+                                                 moving through the cell. Each cell location value is multiplied by the
+                                                 cell resolution while also compensating for diagonal movement to
+                                                 obtain the total cost of passing through the cell.
+
+                                                 The values of the cost raster can be an integer or a floating point, but they
+                                                 cannot be negative or zero as you cannot have a negative or zero cost.
+        ------------------------------------     --------------------------------------------------------------------
+        input_destination_raster_or_features     The layer that defines the destinations used to calculate the distance.
+                                                 This parameter can have either a raster input or a feature input.
+        ------------------------------------     --------------------------------------------------------------------
+        path_type                                A keyword defining the manner in which the values and zones on the
+                                                 input destination data will be interpreted in the cost path calculations.
+
+                                                 A string describing the path type, which can either be BEST_SINGLE,
+                                                 EACH_CELL, or EACH_ZONE.
+
+                                                 BEST_SINGLE: For all cells on the input destination data, the
+                                                 least-cost path is derived from the cell with the minimum of
+                                                 the least-cost paths to source cells. This is the default.
+
+                                                 EACH_CELL: For each cell with valid values on the input
+                                                 destination data, at least-cost path is determined and saved
+                                                 on the output raster. With this option, each cell of the input
+                                                 destination data is treated separately, and a least-cost path
+                                                 is determined for each from cell.
+
+                                                 EACH_ZONE: For each zone on the input destination data,
+                                                 a least-cost path is determined and saved on the output raster.
+                                                 With this option, the least-cost path for each zone begins at
+                                                 the cell with the lowest cost distance weighting in the zone.
+        ------------------------------------     --------------------------------------------------------------------
+        output_polyline_name                     Optional. If not provided, a feature layer is created by the method
+                                                 and used as the output.
+
+                                                 You can pass in an existing feature layer Item from your GIS to use
+                                                 that instead.
+
+                                                 Alternatively, you can pass in the name of the output feature layer  that should be created by this method to be used as the output for the tool.
+                                                 A RuntimeError is raised if a service by that name already exists
+        ------------------------------------     --------------------------------------------------------------------
+        destination_field                         The field used to obtain values for the destination locations.
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
+        ====================================     ====================================================================
+
+        :return:
+            The imagery layer url
+
+        '''
+        task = "DetermineTravelCostPathAsPolyline"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if isinstance(input_source_raster_or_features, _FEATURE_INPUTS):
+            input_source_raster_or_features = self._feature_input(input_source_raster_or_features)
+        elif isinstance(input_source_raster_or_features, Item):
+            input_source_raster_or_features = {"itemId": input_source_raster_or_features.itemid }
+        else:
+            input_source_raster_or_features = self._layer_input(input_source_raster_or_features)
+
+        input_cost_raster = self._layer_input(input_cost_raster)
+
+        if isinstance(input_destination_raster_or_features, _FEATURE_INPUTS):
+            input_destination_raster_or_features = self._feature_input(input_destination_raster_or_features)
+        elif isinstance(input_destination_raster_or_features, Item):
+            input_destination_raster_or_features = {"itemId": input_destination_raster_or_features.itemid }
+        else:
+            input_destination_raster_or_features = self._layer_input(input_destination_raster_or_features)
+
+        if output_polyline_name is None:
+            output_polyline_service_name = 'Output Polyline_' + _id_generator()
+            output_polyline_name = output_polyline_service_name.replace(' ', '_')
+        else:
+            output_polyline_service_name = output_polyline_name.replace(' ', '_')
+
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+
+        output_polyline_service = self._create_output_feature_service(output_name=output_polyline_name,
+                                                             output_service_name=output_polyline_service_name,
+                                                             task='DetermineTravelCostPathAsPolyline',
+                                                             folder=folder)
+        if folderId is not None:
+            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name, "serviceUrl": output_polyline_service.url},
+                                           "itemProperties": {"itemId": output_polyline_service.itemid}, "folderId":folderId})
+        else:
+            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name, "serviceUrl": output_polyline_service.url},
+                                           "itemProperties": {"itemId": output_polyline_service.itemid}})
+
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.determine_travel_cost_path_as_polyline(input_source_raster_or_features=input_source_raster_or_features,
+                                                                     input_cost_raster=input_cost_raster,
+                                                                     input_destination_raster_or_features=input_destination_raster_or_features,
+                                                                     output_polyline_name=output_polyline_name,
+                                                                     path_type=path_type, destination_field=destination_field,
+                                                                     context=context,
+                                                                     gis=self._gis, future=True)
+        else:
+            gpjob = self._tbx.determine_travel_cost_path_as_polyline(input_source_raster_or_features=input_source_raster_or_features,
+                                                            input_cost_raster=input_cost_raster,
+                                                            input_destination_raster_or_features=input_destination_raster_or_features,
+                                                            output_polyline_name=output_polyline_name,
+                                                            path_type=path_type,
+                                                            context=context,
+                                                            gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #Done: Format Inputs/ Outputs, doc
+    def export_training_data_for_deep_learning(self, input_raster, output_location,
+                                              input_class_data=None, chip_format='TIFF',
+                                              tile_size=None, stride_size=None,
+                                              metadata_format='KITTI_rectangles', class_value_field=None,
+                                              buffer_radius=0, input_mask_polygons=None,
+                                              rotation_angle=0, reference_system="MAP_SPACE",
+                                              process_all_raster_items=False, blacken_around_feature= False,
+                                              fix_chip_size=True, context=None, future=False, **kwargs):
+        """
+        Function is designed to generate training sample image chips from the input imagery data with
+        labeled vector data or classified images. The output of this service tool is the data store string
+        where the output image chips, labels and metadata files are going to be stored.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_raster                             Required. Raster layer that needs to be exported for training
+        ------------------------------------     --------------------------------------------------------------------
+        input_class_data                         Labeled data, either a feature layer or image layer.
+                                                 Vector inputs should follow a training sample format as
+                                                 generated by the ArcGIS Pro Training Sample Manager.
+                                                 Raster inputs should follow a classified raster format as generated by the Classify Raster tool.
+        ------------------------------------     --------------------------------------------------------------------
+        chip_format                              Optional string. The raster format for the image chip outputs.
+
+                                                    - TIFF: TIFF format
+
+                                                    - PNG: PNG format
+
+                                                    - JPEG: JPEG format
+
+                                                    - MRF: MRF (Meta Raster Format)
+        ------------------------------------     --------------------------------------------------------------------
+        tile_size                                Optional dictionary. The size of the image chips.
+
+                                                    Example: {"x": 256, "y": 256}
+        ------------------------------------     --------------------------------------------------------------------
+        stride_size                              Optional dictionary. The distance to move in the X and Y when creating
+                                                 the next image chip.
+                                                 When stride is equal to the tile size, there will be no overlap.
+                                                 When stride is equal to half of the tile size, there will be 50% overlap.
+
+                                                   Example: {"x": 128, "y": 128}
+        ------------------------------------     --------------------------------------------------------------------
+        metadata_format                          Optional string. The format of the output metadata labels. There are 4 options for output metadata labels for the training data,
+                                                   KITTI Rectangles, PASCAL VOCrectangles, Classified Tiles (a class map) and RCNN_Masks. If your input training sample data
+                                                   is a feature class layer such as building layer or standard classification training sample file,
+                                                   use the KITTI or PASCAL VOC rectangle option.
+
+                                                   The output metadata is a .txt file or .xml file containing the training sample data contained
+                                                   in the minimum bounding rectangle. The name of the metadata file matches the input source image
+                                                   name. If your input training sample data is a class map, use the Classified Tiles as your output metadata format option.
+
+                                                   - KITTI_rectangles: The metadata follows the same format as the Karlsruhe Institute of Technology and Toyota
+                                                     Technological Institute (KITTI) Object Detection Evaluation dataset. The KITTI dataset is a vision benchmark suite.
+                                                     This is the default.The label files are plain text files. All values, both numerical or strings, are separated by
+                                                     spaces, and each row corresponds to one object.
+
+                                                   - PASCAL_VOC_rectangles: The metadata follows the same format as the Pattern Analysis, Statistical Modeling and
+                                                     Computational Learning, Visual Object Classes (PASCAL_VOC) dataset. The PASCAL VOC dataset is a standardized
+                                                     image data set for object class recognition.The label files are XML files and contain information about image name,
+                                                     class value, and bounding box(es).
+
+                                                   - Classified_Tiles: This option will output one classified image chip per input image chip.
+                                                     No other meta data for each image chip. Only the statistics output has more information on the
+                                                     classes such as class names, class values, and output statistics.
+
+                                                   - RCNN_Masks: This option will output image chips that have a mask on the areas where the sample exists.
+                                                     The model generates bounding boxes and segmentation masks for each instance of an object in the image.
+                                                     It's based on Feature Pyramid Network (FPN) and a ResNet101 backbone.
+
+                                                   - Labeled_Tiles : This option will label each output tile with a specific class.
+        ------------------------------------     --------------------------------------------------------------------
+        classvalue_field                          Optional string. Specifies the field which contains the class values. If no field is specified,
+                                                  the system will look for a 'value' or 'classvalue' field. If this feature does
+                                                  not contain a class field, the system will presume all records belong the 1 class.
+        ------------------------------------     --------------------------------------------------------------------
+        buffer_radius                            Optional integer. Specifies a radius for point feature classes to specify training sample area.
+        ------------------------------------     --------------------------------------------------------------------
+        output_location                          This is the output location for training sample data.
+                                                   It can be the server data store path or a shared file system path.
+
+                                                   Example:
+
+                                                   Server datastore path -
+                                                    ``/fileShares/deeplearning/rooftoptrainingsamples``
+                                                    ``/rasterStores/rasterstorename/rooftoptrainingsamples``
+                                                    ``/cloudStores/cloudstorename/rooftoptrainingsamples``
+
+                                                   File share path -
+                                                    ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                                    Dictionary can contain value for following keys:
+
+                                                    - exportAllTiles - Choose if the image chips with overlapped labeled data will be exported.
+                                                        True - Export all the image chips, including those that do not overlap labeled data.
+                                                        False - Export only the image chips that overlap the labelled data. This is the default.
+
+                                                    - startIndex - Allows you to set the start index for the sequence of image chips.
+                                                        This lets you append more image chips to an existing sequence. The default value is 0.
+
+                                                    - cellSize - cell size can be set using this key in context parameter
+
+                                                    - extent - Sets the processing extent used by the function
+
+                                                    Setting context parameter will override the values set using arcgis.env
+                                                    variable for this particular function.(cellSize, extent)
+
+                                                    eg: {"exportAllTiles" : False, "startIndex": 0 }
+        ------------------------------------     --------------------------------------------------------------------
+        input_mask_polygons                       Optional feature layer. The feature layer that delineates the area where
+                                                    image chips will be created.
+                                                    Only image chips that fall completely within the polygons will be created.
+        ------------------------------------     --------------------------------------------------------------------
+        rotation_angle                           Optional float. The rotation angle that will be used to generate additional
+                                                    image chips.
+
+                                                    An image chip will be generated with a rotation angle of 0, which
+                                                    means no rotation. It will then be rotated at the specified angle to
+                                                    create an additional image chip. The same training samples will be
+                                                    captured at multiple angles in multiple image chips for data augmentation.
+                                                    The default rotation angle is 0.
+        ------------------------------------     --------------------------------------------------------------------
+        reference_system                         Optional string. Specifies the type of reference system to be used to interpret 
+                                                    the input image. The reference system specified should match the reference system 
+                                                    used to train the deep learning model. 
+
+                                                    - MAP_SPACE : The input image is in a map-based coordinate system. This is the default.
+
+                                                    - IMAGE_SPACE : The input image is in image space, viewed from the direction of the sensor 
+                                                    that captured the image, and rotated such that the tops of buildings and trees point upward in the image.
+
+                                                    - PIXEL_SPACE : The input image is in image space, with no rotation and no distortion. 
+        ------------------------------------     --------------------------------------------------------------------
+        process_all_raster_items                 Optional bool. Specifies how all raster items in a mosaic dataset or an image service will be processed.
+
+                                                    - False : all raster items in the mosaic dataset or image service will be mosaicked together and processed. This is the default.
+
+                                                    - True : all raster items in the mosaic dataset or image service will be processed as separate images.
+        ------------------------------------     --------------------------------------------------------------------
+        blacken_around_feature                   Optional bool. 
+                                             
+                                                    Specifies whether to blacken the pixels around each object or feature in each image tile.
+
+                                                    This parameter only applies when the metadata format is set to Labeled_Tiles and an input feature class or classified raster has been specified.
+
+                                                    - False : Pixels surrounding objects or features will not be blackened. This is the default.
+
+                                                    - True : Pixels surrounding objects or features will be blackened.
+
+        ------------------------------------     --------------------------------------------------------------------
+        fix_chip_size                            Optional bool. Specifies whether to crop the exported tiles such that they are all the same size.
+
+                                                    This parameter only applies when the metadata format is set to Labeled_Tiles and an input feature class or classified raster has been specified.
+
+                                                    - True : Exported tiles will be the same size and will center on the feature. This is the default.
+
+                                                    - False : Exported tiles will be cropped such that the bounding geometry surrounds only the feature in the tile.
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ====================================     ====================================================================
+
+        :return:
+            Output string containing the location of the exported training data
+
+        """
+        task = "ExportTrainingDataforDeepLearning"
+        gis = self._gis
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        if input_class_data is not None:
+            input_class_data = self._layer_input(input_layer=input_class_data)
+
+        if chip_format is not None:
+            chipFormatAllowedValues = ['TIFF', 'PNG', 'JPEG','MRF']
+            if not chip_format in chipFormatAllowedValues:
+                raise RuntimeError('chip_format can only be one of the following: '+ str(chipFormatAllowedValues))
+
+        if metadata_format is not None:
+            metadataFormatAllowedValues = ['KITTI_rectangles', 'PASCAL_VOC_rectangles', 'Classified_Tiles', 'RCNN_Masks', 'Labeled_Tiles']
+            if not metadata_format in metadataFormatAllowedValues:
+                raise RuntimeError('metadata_format can only be one of the following: '+ str(metadataFormatAllowedValues))
+
+        if reference_system is not None:
+            reference_system_allowed_values = ['MAP_SPACE', 'IMAGE_SPACE', 'PIXEL_SPACE']
+            if not reference_system in reference_system_allowed_values:
+                raise RuntimeError('reference_system can only be one of the following: '+ str(reference_system_allowed_values))
+
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]>=10.8):
+            gpjob = self._tbx.export_training_datafor_deep_learning(input_raster=input_raster,
+                                                                output_location=output_location,
+                                                                input_class_data=input_class_data,
+                                                                chip_format=chip_format,
+                                                                tile_size=tile_size,
+                                                                stride_size=stride_size,
+                                                                metadata_format=metadata_format,
+                                                                class_value_field=class_value_field,
+                                                                buffer_radius=buffer_radius,
+                                                                input_mask_polygons=input_mask_polygons,
+                                                                rotation_angle=rotation_angle, 
+                                                                reference_system=reference_system,
+                                                                process_all_raster_items=process_all_raster_items,
+                                                                blacken_around_feature=blacken_around_feature,
+                                                                fix_chip_size=fix_chip_size,
+                                                                context=context,
+                                                                gis=self._gis, future=True)
+        else:
+            gpjob = self._tbx.export_training_datafor_deep_learning(input_raster=input_raster,
+                                                        output_location=output_location,
+                                                        input_class_data=input_class_data,
+                                                        chip_format=chip_format,
+                                                        tile_size=tile_size,
+                                                        stride_size=stride_size,
+                                                        metadata_format=metadata_format,
+                                                        class_value_field=class_value_field,
+                                                        buffer_radius=buffer_radius,
+                                                        context=context,
+                                                        gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def fill(self, input_surface_raster, output_name=None,
+             z_limit=None , context=None,
+             gis=None, future=False):
+        """Fill GPtool"""
+        task = "Fill"
+        if context is None:
+            context = {}
+            _set_raster_context(params=context)
+        gpjob = self._tbx.fill(input_surface_raster=input_surface_raster,
+                               output_name=output_name,
+                               z_limit=z_limit,
+                               context=context,
+                               gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def flow_accumulation(self, input_flow_direction_raster,
+                          output_name=None,
+                          input_weight_raster=None,
+                          data_type='float',
+                          flow_direction_type='D8',
+                          context=None,
+                          gis=None, future=False):
+        """flow accumulation GPtool"""
+        task = "FlowAccumulation"
+        if context is None:
+            context = {}
+            _set_raster_context(params=context)
+        gpjob = self._tbx.flow_accumulation(input_flow_direction_raster=input_flow_direction_raster,
+                                            output_name=output_name,
+                                            input_weight_raster=input_weight_raster,
+                                            data_type=data_type,
+                                            flow_direction_type=flow_direction_type,
+                                            context=context,
+                                            gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def flow_direction(self, input_surface_raster,
+                       output_flow_direction_name=None,
+                       force_flow=False,
+                       flow_direction_type='D8',
+                       output_drop_name=None,
+                       context=None,
+                       future=False,
+                       **kwargs):
+        """
+        Replaces cells of a raster corresponding to a mask
+        with the values of the nearest neighbors.
+
+        Parameters
+        ----------
+        input_surface_raster : The input raster representing a continuous surface.
+
+        force_flow  : Boolean, Specifies if edge cells will always flow outward or follow normal flow rules.
+
+        flow_direction_type : Specifies which flow direction type to use.
+						      D8 - Use the D8 method. This is the default.
+						      MFD - Use the Multi Flow Direction (MFD) method.
+						      DINF - Use the D-Infinity method.
+
+        output_drop_name : An optional output drop raster .
+					       The drop raster returns the ratio of the maximum change in elevation from each cell
+					       along the direction of flow to the path length between centers of cells, expressed in percentages.
+
+        output_flow_direction_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+            You can pass in an existing Image Service Item from your GIS to use that instead.
+            Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+            A RuntimeError is raised if a service by that name already exists
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "FlowDirection"
+
+        gis = self._gis
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_surface_raster = self._layer_input(input_layer=input_surface_raster)
+
+        if force_flow is not None:
+            if isinstance(force_flow, bool):
+                force_flow = force_flow
+            elif isinstance(force_flow, str):
+                if force_flow == "NORMAL":
+                    force_flow = False
+                elif force_flow == "FORCE":
+                    force_flow = True
+
+        flow_direction_type_AllowedValues= {"D8", "MFD", "DINF"}
+
+        if not flow_direction_type in flow_direction_type_AllowedValues:
+                raise RuntimeError('flow_direction_type can only be one of the following: '.join(flow_direction_type_AllowedValues))
+
+        output_flow_direction_raster, output_flow_direction_service = self._set_output_raster(output_name=output_flow_direction_name, task=task, output_properties=kwargs)
+
+        output_drop_raster=None
+        if output_drop_name is not None:
+            output_drop_raster, output_drop_service = self._set_output_raster(output_name=output_drop_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.flow_direction(input_surface_raster=input_surface_raster,
+                                            output_flow_direction_name=output_flow_direction_raster, force_flow=force_flow,
+                                            flow_direction_type=flow_direction_type, output_drop_name=output_drop_raster,
+                                            context=context,
+                                            gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def flow_distance(self, input_stream_raster, input_surface_raster, output_name=None,
+                      input_flow_direction_raster=None, distance_type='VERTICAL',
+                      flow_direction_type='D8', statistics_type='MINIMUM',
+                      context=None, gis=None, future=False):
+        """flow distance GPtool"""
+        task = "FlowDistance"
+        if context is None:
+            context = {}
+            _set_raster_context(params=context)
+        gpjob = self._tbx.flow_distance(input_stream_raster, input_surface_raster, output_name=output_name,
+                                        input_flow_direction_raster=input_flow_direction_raster, distance_type=distance_type,
+                                        flow_direction_type=flow_direction_type, statistics_type=statistics_type,
+                                        context=context, gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def generate_raster(self,
+                        raster_function,
+                        function_arguments=None,
+                        output_raster_properties=None,
+                        output_name=None,
+                        context=None,
+                        future=False,
+                        **kwargs):
+        """
+
+        Parameters
+        ----------
+        raster_function : Required, see http://resources.arcgis.com/en/help/rest/apiref/israsterfunctions.html
+
+        function_arguments : Optional,  for specifying input Raster alone, portal Item can be passed
+
+        output_raster_properties : Optional
+
+        output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+            You can pass in an existing Image Service Item from your GIS to use that instead.
+
+            Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
+            used as the output for the tool.
+
+            A RuntimeError is raised if a service by that name already exists
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        Returns
+        -------
+        output_raster : Image layer item
+
+        """
+        task = "GenerateRaster"
+        gis= self._gis
+
+
+        if isinstance(function_arguments, arcgis.gis.Item):
+            if function_arguments.type.lower() == 'image service':
+                function_arguments = {"Raster": {"itemId": function_arguments.itemid}}
+            else:
+                raise TypeError("The item type of function_arguments must be an image service")
+        function_arguments = json.dumps(function_arguments)
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.generate_raster(raster_function=raster_function, output_name=output_raster,
+                                          function_arguments=function_arguments,
+                                          output_raster_properties=output_raster_properties,
+                                          context=context, gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def generate_raster_collection(self, output_collection_name,
+                                   collection_builder=None, collection_builder_arguments=None,
+                                   raster_function=None, raster_function_arguments=None,
+                                   collection_properties=None,
+                                   generate_rasters='True', output_basename=None,
+                                   gis=None, future=False):
+        """Generate Raster Collection GPtool"""
+        task = "GenerateRasterCollection"
+        gpjob = self._tbx.generate_raster_collection(output_collection_name=output_collection_name,
+                                                     collection_builder=collection_builder,
+                                                     collection_builder_arguments=collection_builder_arguments,
+                                                     raster_function=raster_function,
+                                                     raster_function_arguments=raster_function_arguments,
+                                                     collection_properties=collection_properties,
+                                                     generate_rasters=generate_rasters,
+                                                     output_basename=output_basename,
+                                                     gis=self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def generate_table(self, raster_function, output_table_name=None,
+                       function_arguments=None, context=None, gis=None, future=False):
+        """Generate Raster Collection GPtool"""
+        task = "GenerateTable"
+        if context is None:
+            context = {}
+            params = {'context' : context}
+            _set_raster_context(params)
+            context.update(params['context'])
+        gpjob = self._tbx.generate_table(raster_function=raster_function, output_table_name=output_table_name,
+                                         function_arguments=function_arguments,
+                                         context=context, gis=gis or self._gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def install_deep_learning_model(self, model_package, future=False, **kwargs):
+        """
+        Function is used to install the uploaded model package (*.dlpk). Optionally after inferencing
+        the necessary information using the model, the model can be uninstalled by uninstall_model()
+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        model_package           item id in the form {"itemId":"<id>"}
+        ------------------     --------------------------------------------------------------------
+        gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================     ====================================================================
+
+        :return:
+            Path where model is installed
+
+        """
+        task = "InstallDeepLearningModel"
+        gis = self._gis
+        gpjob = self._tbx.install_deep_learning_model(model_package=model_package,
+                                                      gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = False
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def interpolate_points(self, input_point_features,
+                           interpolate_field=None, output_name=None,
+                           optimize_for='BALANCE', transform_data=False,
+                           size_of_local_models=None, number_of_neighbors=None,
+                           output_cell_size=None, output_prediction_error=False,
+                           context=None, future=False, **kwargs):
+        """
+            This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
+            takes point data with values at each point and returns a raster of predicted values:
+
+            * An air quality management district has sensors that measure pollution levels. Interpolate Points can be used to
+                predict pollution levels at locations that don't have sensors, such as locations with at-risk populations-
+                schools or hospitals, for example.
+            * Predict heavy metal concentrations in crops based on samples taken from individual plants.
+            * Predict soil nutrient levels (nitrogen, phosphorus, potassium, and so on) and other indicators (such as electrical
+                conductivity) in order to study their relationships to crop yield and prescribe precise amounts of fertilizer
+                for each location in the field.
+            * Meteorological applications include prediction of temperatures, rainfall, and associated variables (such as acid
+                rain).
+
+            Parameters
+            ----------
+            input_point_features : Required point layer containing locations with known values
+                The point layer that contains the points where the values have been measured.
+
+            interpolate_field : Required string -  field to interpolate
+                Choose the field whose values you wish to interpolate. The field must be numeric.
+
+            optimize_for : Optional string - Choose your preference for speed versus accuracy.
+                More accurate predictions take longer to calculate. This parameter alters the default values of several other
+                parameters of Interpolate Points in order to optimize speed of calculation, accuracy of results, or a balance of
+                the two. By default, the tool will optimize for balance.
+                One of the following: ['SPEED', 'BALANCE', 'ACCURACY']
+
+            transform_data : Optional bool - Choose whether to transform your data to the normal distribution.
+                Interpolation is most accurate for data that follows a normal (bell-shaped) distribution. If your data does not
+                appear to be normally distributed, you should perform a transformation.
+
+            size_of_local_models : Optional int - Size of local models
+                Interpolate Points works by building local interpolation models that are mixed together to create the final
+                prediction map. This parameter controls how many points will be contained in each local model. Smaller values
+                will make results more local and can reveal small-scale effects, but it may introduce some instability in the
+                calculations. Larger values will be more stable, but some local effects may be missed.
+                The value can range from 30 to 500, but typical values are between 50 and 200.
+
+            number_of_neighbors : Optional int - Number of Neighbors
+                Predictions are calculated based on neighboring points. This parameter controls how many points will be used in
+                the calculation. Using a larger number of neighbors will generally produce more accurate results, but the
+                results take longer to calculate.
+                This value can range from 1 to 64, but typical values are between 5 and 15.
+
+            output_cell_size : Optional LinearUnit - Output cell size
+                Enter the cell size and unit for the output rasters.
+                The available units are Feet, Miles, Meters, and Kilometers.
+
+            output_prediction_error : Optional bool - Output prediction error
+                Choose whether you want to create a raster of standard errors for the predicted values.
+                Standard errors are useful because they provide information about the reliability of the predicted values.
+                A simple rule of thumb is that the true value will fall within two standard errors of the predicted value 95
+                percent of the time. For example, suppose a new location gets a predicted value of 50 with a standard error of
+                5. This means that this tool's best guess is that the true value at that location is 50, but it reasonably could
+                be as low as 40 or as high as 60. To calculate this range of reasonable values, multiply the standard error by
+                2, add this value to the predicted value to get the upper end of the range, and subtract it from the predicted
+                value to get the lower end of the range.
+
+            output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+                You can pass in an existing Image Service Item from your GIS to use that instead.
+                Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+                A RuntimeError is raised if a service by that name already exists
+
+            gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+            Returns
+            -------
+            named tuple with name values being :
+
+             - output_raster (the output_raster item description is updated with the process_info),
+
+             - process_info (if run in a non-Jupyter environment, use process_info.data to get the HTML data) and
+
+             - output_error_raster (if output_prediction_error is set to True).
+
+        """
+        task = "InterpolatePoints"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_point_features = self._layer_input(input_point_features)
+
+        output_raster, output_service = self._set_output_raster(output_name, task, kwargs)
+
+
+        gpjob = self._tbx.interpolate_points(input_point_features=input_point_features,
+                                             interpolate_field=interpolate_field,
+                                             output_name=output_raster,
+                                             optimize_for=optimize_for,
+                                             transform_data=transform_data,
+                                             size_of_local_models=size_of_local_models,
+                                             number_of_neighbors=number_of_neighbors,
+                                             output_cell_size=output_cell_size,
+                                             output_prediction_error=output_prediction_error,
+                                             context=context,
+                                             gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def list_datastore_content(self, data_store_name=None,
+                               filter=None,
+                               future=False,
+                               **kwargs):
+        """
+        List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        datastore              Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed.
+                               It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
+                               "/rasterStores/rasterstore"
+                               or it can be a Datastore object containing a fileshare, rasterstore  or a cloudstore path.
+                               eg:
+                               ds=analytics.get_datastores()
+                               ds_items =ds.search()
+                               ds_items[1]
+                               ds_items[1] may be specified as input for datastore
+        ------------------     --------------------------------------------------------------------
+        filter                 Optional. To filter out the raster contents to be displayed
+        ------------------     --------------------------------------------------------------------
+        gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================     ====================================================================
+
+        :return:
+            List of contents in the datastore
+        """
+
+        task = "ListDatastoreContent"
+        gis = self._gis
+
+        if isinstance(data_store_name, arcgis.gis.Datastore):
+            data_store_name = data_store_name.datapath
+
+        elif isinstance(data_store_name,list):
+            for i,datastore_item in enumerate(data_store_name):
+                if isinstance(datastore_item,arcgis.gis.Datastore):
+                    data_store_name[i] = datastore_item.datapath
+
+        gpjob = self._tbx.list_datastore_content(data_store_name=data_store_name, filter=filter,
+                                                 gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = False
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def list_deep_learning_models(self, future=False, **kwargs):
+        """
+        Lists the deep learning models registered with the site
+
+        :returns: List
+
+        """
+        task = "ListDeepLearningModels"
+        gis = self._gis
+        gpjob = self._tbx.list_deep_learning_models(gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = False
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def nibble(self, input_raster, input_mask_raster,
+               output_name=None, nibble_values=None,
+               nibble_nodata=None, input_zone_raster=None,
+               context=None, gis=None, future=False):
+        """Nibble GP Tool"""
+        task = "Nibble"
+        gis = gis or self._gis
+        if context is None:
+            context = {}
+            params = {'context' : context}
+            _set_raster_context(params)
+            context.update(params['context'])
+        gpjob = self._tbx.nibble(input_raster=input_raster,
+                                 input_mask_raster=input_mask_raster,
+                                 output_name=output_name,
+                                 nibble_values=nibble_values,
+                                 nibble_nodata=nibble_nodata,
+                                 input_zone_raster=input_zone_raster,
+                                 context=context,
+                                 gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def query_deep_learning_model_info(self, model,
+                                       future=False, **kwargs):
+        """
+        Function is used to extract the deep learning model specific settings from the model package item or model definition file.
+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        model           item id in the form {"itemId":"<id>"}
+        ------------------     --------------------------------------------------------------------
+        gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================     ====================================================================
+
+        :return:
+            Path where model is installed
+
+        """
+        task = "QueryDeepLearningModelInfo"
+        gis = self._gis
+        gpjob = self._tbx.query_deep_learning_model_info(model=model, gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = False
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #Done: Format Inputs/ Outputs, doc
+    def segment(self, input_raster,
+                output_name=None, spectral_detail='15.5',
+                spatial_detail='15', minimum_segment_size_in_pixels='20',
+                band_indexes='0,1,2',
+                remove_tiling_artifacts=False, context=None,
+                future=False, **kwargs):
+        """
+        Groups together adjacent pixels having similar spectral and spatial characteristics into
+        segments, known as objects.
+
+        ================================     ====================================================================
+        **Argument**                         **Description**
+        --------------------------------     --------------------------------------------------------------------
+        input_raster                         Required ImageryLayer object
+        --------------------------------     --------------------------------------------------------------------
+        spectral_detail                      Optional float. Default is 15.5.
+                                             Set the level of importance given to the spectral differences of
+                                             features in your imagery. Valid values range from 1.0 to 20.0. A high
+                                             value is appropriate when you have features you want to classify
+                                             separately but have somewhat similar spectral characteristics.
+                                             Smaller values create spectrally smoother outputs.
+
+                                             For example, setting a higher spectral detail value for a forested
+                                             scene, will preserve greater discrimination between the different tree
+                                             species, resulting in more segments.
+        --------------------------------     --------------------------------------------------------------------
+        spatial_detail                       Optional float. Default is 15.
+                                             Set the level of importance given to the proximity between features
+                                             in your imagery. Valid values range from 1 to 20. A high value is
+                                             appropriate for a scene where your features of interest are small
+                                             and clustered together. Smaller values create spatially smoother
+                                             outputs.
+
+                                             For example, in an urban scene, you could classify an impervious
+                                             surface using a smaller spatial detail, or you could classify
+                                             buildings and roads as separate classes using a higher spatial detail.
+        --------------------------------     --------------------------------------------------------------------
+        minimum_segment_size_in_pixels       Optional float. Default is 20.
+                                             Merge segments smaller than this size with their best fitting
+                                             neighbor segment. This is related to the minimum mapping unit for a
+                                             mapping project. Units are in pixels.
+        --------------------------------     --------------------------------------------------------------------
+        band_indexes                         Optional List of integers. Default is [0,1,2]
+                                             Define which 3 bands are used in segmentation. Choose the bands that
+                                             visually discriminate your features of interest best.
+        --------------------------------     --------------------------------------------------------------------
+        remove_tiling_artifacts              Optional Bool. Default is False.
+                                             If False, the tool will not run to remove tiling artifacts after
+                                             segmentation. The result may seem blocky at some tiling boundaries.
+        --------------------------------     --------------------------------------------------------------------
+        output_name                          Optional String. If specified, an Imagery Layer of given name is
+                                             created. Else, an Image Service is created by the method and used
+                                             as the output raster. You can pass in an existing Image Service Item
+                                             from your GIS to use that instead. Alternatively, you can pass in
+                                             the name of the output Image Service that should be created by this
+                                             method to be used as the output for the tool. A RuntimeError is raised
+                                             if a service by that name already exists
+        --------------------------------     --------------------------------------------------------------------
+        gis                                  Optional GIS object. If not speficied, the currently active connection
+                                             is used.
+        ================================     ====================================================================
+
+        :return:
+           output_raster : Imagery Layer item
+        """
+        task = "Segment"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster=self._layer_input(input_raster)
+
+        if isinstance(spectral_detail, (float, int)):
+            spectral_detail = str(spectral_detail)
+
+        if isinstance(spatial_detail, (float,int)):
+            spatial_detail = str(spatial_detail)
+
+        if isinstance(minimum_segment_size_in_pixels, (float, int)):
+            minimum_segment_size_in_pixels = str(minimum_segment_size_in_pixels)
+
+        if isinstance(band_indexes, (list, tuple)):
+            band_indexes = ','.join(str(e) for e in band_indexes)
+
+        if isinstance(remove_tiling_artifacts, bool):
+            remove_tiling_artifacts = str(remove_tiling_artifacts).lower()
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.segment(input_raster=input_raster,
+                                  output_name=output_raster,
+                                  spectral_detail=spectral_detail,
+                                  spatial_detail=spatial_detail,
+                                  minimum_segment_size_in_pixels=minimum_segment_size_in_pixels,
+                                  band_indexes=band_indexes,
+                                  remove_tiling_artifacts=remove_tiling_artifacts,
+                                  context=context, gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def stream_link(self, input_stream_raster,
+                    input_flow_direction_raster,
+                    output_name=None,
+                    context=None,
+                    gis=None,
+                    future=False):
+        """Stream Link GP Tool"""
+        task = "StreamLink"
+        gis = gis or self._gis
+        if context is None:
+            context = {}
+            params = {'context' : context}
+            _set_raster_context(params)
+            context.update(params['context'])
+        gpjob = self._tbx.stream_link(input_stream_raster=input_stream_raster,
+                                      input_flow_direction_raster=input_flow_direction_raster,
+                                      output_name=output_name,
+                                      context=context,
+                                      gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def summarize_raster_within(self,
+                                input_zone_layer,
+                                input_raster_layer_to_summarize,
+                                zone_field='Value',
+                                output_name=None,
+                                statistic_type='Mean',
+                                ignore_missing_values=True,
+                                context=None,
+                                future=False,
+                                **kwargs):
+        """
+        Parameters
+        ----------
+        input_zone_layer : Required layer - area layer to summarize a raster layer within defined boundaries.
+            The layer that defines the boundaries of the areas, or zones, that will be summarized.
+            The layer can be a raster or feature data. For rasters, the zones are defined by all locations in the input that
+            have the same cell value. The areas do not have to be contiguous.
+
+        input_raster_layer_to_summarize : Required  - raster layer to summarize.
+            The raster cells in this layer will be summarized by the areas (zones) that they fall within.
+
+        zone_field : Required string -  field to define the boundaries. This is the attribute of the layer that will be used
+            to define the boundaries of the areas. For example, suppose the first input layer defines the management unit
+            boundaries, with attributes that define the region, the district, and the parcel ID of each unit. You also have
+            a raster layer defining a biodiversity index for each location. With the field you select, you can decide to
+            calculate the average biodiversity at local, district, or regional levels.
+
+        statistic_type : Optional string - statistic to calculate.
+            You can calculate statistics of any numerical attribute of the points, lines, or areas within the input area
+            layer. The available statistics types when the selected field is integer are
+            Mean, Maximum, Median, Minimum, Minority, Range, Standard deviation(STD), Sum, and Variety. If the field is
+            floating point, the options are Mean, Maximum, Minimum, Range, Standard deviation, and Sum.
+            One of the following:
+            ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety']
+
+        ignore_missing_values : Optional bool.
+            If you choose to ignore missing values, only the cells that have a value in the layer to be summarized will be
+            used in determining the output value for that area. Otherwise, if there are missing values anywhere in an area,
+            it is deemed that there is insufficient information to perform statistical calculations for all the cells in
+            that zone, and that area will receive a null (NoData) value in the output.
+
+        output_name : Optional. If not provided, an Image Service is created by the method and used as the output raster.
+            You can pass in an existing Image Service Item from your GIS to use that instead.
+            Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
+            A RuntimeError is raised if a service by that name already exists
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        future: Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "SummarizeRasterWithin"
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+
+        input_zone_layer = self._layer_input(input_zone_layer)
+        input_raster_layer_to_summarize = self._layer_input(input_raster_layer_to_summarize)
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.summarize_raster_within(input_zone_layer=input_zone_layer,
+                                                  zone_field=zone_field,
+                                                  input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                                                  output_name=output_raster,
+                                                  statistic_type=statistic_type,
+                                                  ignore_missing_values=ignore_missing_values,
+                                                  context=context, gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def train_classifier(self,
+                         input_raster,
+                         input_training_sample_json,
+                         classifier_parameters,
+                         segmented_raster=None,
+                         segment_attributes='COLOR;MEAN',
+                         future=False,
+                         **kwargs):
+        """
+
+
+        Parameters
+        ----------
+        input_raster : Required string
+
+        input_training_sample_json : Required string
+
+        segmented_raster : Optional string
+
+        classifier_parameters : Required string
+
+        segment_attributes : Required string
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        Returns
+        -------
+        output_classifier_definition
+        """
+
+        task = "TrainClassifier"
+        gis = self._gis
+
+
+        input_raster = self._layer_input(input_raster)
+
+        if segmented_raster is not None:
+            segmented_raster = self._layer_input(segmented_raster)
+
+        gpjob = self._tbx.train_classifier(input_raster=input_raster,
+                                           input_training_sample_json=input_training_sample_json,
+                                           classifier_parameters=classifier_parameters,
+                                           segmented_raster=segmented_raster,
+                                           segment_attributes=segment_attributes, gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = False
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def transfer_files(self,
+                       input_files,
+                       output_datastore,
+                       tf_filter=None,
+                       context=None,
+                       future=False):
+        """Transfer Files GP Tool"""
+        task = "TransferFiles"
+        gis = gis or self._gis
+        if context is None:
+            context = {}
+            params = {'context' : context}
+            _set_raster_context(params)
+            context.update(params['context'])
+        gpjob = self._tbx.transfer_files(input_files=input_files,
+                                         output_datastore=output_datastore,
+                                         filter=tf_filter,
+                                         context=context,
+                                         gis=gis,
+                                         future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = False
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def uninstall_deep_learning_model(self, model_item_id, future=False, **kwargs):
+
+        """
+        Function is used to uninstall the uploaded model package that was installed using the install_model()
+        This function will delete the named deep learning model from the server but not the portal item.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        model_item_id          item id in the form {"itemId":"<id>"}
+        ------------------     --------------------------------------------------------------------
+        gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ==================     ====================================================================
+
+        :return:
+            itemId of the uninstalled model package item
+
+        """
+        task = "UninstallDeepLearningModel"
+        gis = self._gis
+        gpjob = self._tbx.uninstall_deep_learning_model(model_item_id=model_item_id, gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = False
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    #TODO: Format Inputs/ Outputs, doc
+    def watershed(self,
+                  input_flow_direction_raster,
+                  in_pour_point_raster_or_features,
+                  output_name=None,
+                  pour_point_field=None,
+                  context=None,
+                  gis=None,
+                  future=False):
+        """Watershed GP Tool"""
+        task = "Watershed"
+        gis = gis or self._gis
+        if context is None:
+            context = {}
+            params = {'context' : context}
+            _set_raster_context(params)
+            context.update(params['context'])
+        gpjob = self._tbx.watershed(input_flow_direction_raster=input_flow_direction_raster,
+                                    in_pour_point_raster_or_features=in_pour_point_raster_or_features,
+                                    output_name=output_name,
+                                    pour_point_field=pour_point_field,
+                                    context=context, gis=gis, future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+    #----------------------------------------------------------------------
+    def copy_raster(self,
+                    input_raster=None,
+                    output_cellsize=None,
+                    resampling_method='NEAREST',
+                    clip_setting=None,
+                    output_name=None,
+                    context=None,
+                    future=False,
+                    **kwargs):
+        """
+        input_raster: inputRaster (str). Required parameter.
+
+       output_name: outputName (str). Required parameter.
+
+       output_cellsize: outputCellsize (str). Optional parameter.
+
+       resampling_method: resamplingMethod (str). Optional parameter.  Choice list:['NEAREST', 'BILINEAR', 'CUBIC', 'MAJORITY']
+
+       clip_setting: clipSetting (str). Optional parameter.
+
+       context: context (str). Optional parameter.
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+
+       Returns:
+           output_raster - outputRaster as a str
+
+        """
+
+        task = "CopyRaster"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+        gpjob = self._tbx.copy_raster(input_raster=input_raster,
+                                      output_name=output_raster,
+                                      output_cellsize=output_cellsize,
+                                      resampling_method=resampling_method,
+                                      clip_setting=clip_setting,
+                                      context=context,
+                                      gis=self._gis,
+                                      future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def aggregate_multidimensional_raster(self,
+                                        input_multidimensional_raster=None,
+                                        output_name=None,
+                                        dimension=None,
+                                        aggregation_method='MEAN',
+                                        variables=None,
+                                        aggregation_definition='ALL',
+                                        interval_keyword=None,
+                                        interval_value=None,
+                                        interval_unit=None,
+                                        interval_ranges=None,
+                                        aggregation_function=None,
+                                        ignore_nodata=True,
+                                        context=None,
+                                        future=False,
+                                        **kwargs):
+        """
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+        output_name: outputName (str). Required parameter.
+
+        dimension: dimension (str). Required parameter.
+
+        aggregation_method: aggregationMethod (str). Optional parameter.
+          Choice list:['MEAN', 'MAXIMUM', 'MAJORITY', 'MINIMUM', 'MINORITY', 'MEDIAN', 'RANGE', 'STD', 'SUM', 'VARIETY', 'CUSTOM']
+
+        variables: variables (str). Optional parameter.
+
+        aggregation_definition: aggregationDefinition (str). Optional parameter.
+          Choice list:['INTERVAL_KEYWORD', 'INTERVAL_VALUE', 'INTERVAL_RANGES', 'ALL']
+
+        interval_keyword: intervalKeyword (str). Optional parameter.
+          Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
+                       'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'DEKADLY', 'PENTADLY']
+
+        interval_value: intervalValue (str). Optional parameter.
+
+        interval_unit: intervalUnit (str). Optional parameter.
+
+        interval_ranges: intervalRanges (str). Optional parameter.
+
+        aggregation_function: aggregationFunction (str). Optional parameter.
+
+        ignore_nodata: ignoreNodata (bool). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "AggregateMultidimensionalRaster"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+        aggregation_method_val = aggregation_method
+        if aggregation_method is not None:
+            aggregation_method_allowed_values = ['MEAN', 'MAXIMUM', 'MAJORITY', 'MINIMUM', 'MINORITY', 'MEDIAN', 'RANGE', 'STD', 'SUM', 'VARIETY', 'CUSTOM']
+            if [element.lower() for element in aggregation_method_allowed_values].count(aggregation_method.lower()) <= 0 :
+                raise RuntimeError('aggregation_method can only be one of the following: '+str(aggregation_method_allowed_values))
+            for element in aggregation_method_allowed_values:
+                if aggregation_method.upper() == element:
+                    aggregation_method_val = element
+
+        aggregation_definition_val=aggregation_definition
+        if aggregation_definition is not None:
+            aggregation_def_allowed_values = ['INTERVAL_KEYWORD', 'INTERVAL_VALUE', 'INTERVAL_RANGES', 'ALL']
+
+            if [element.lower() for element in aggregation_def_allowed_values].count(aggregation_definition.lower()) <= 0 :
+                raise RuntimeError('aggregation_definition can only be one of the following: '+str(aggregation_def_allowed_values))
+            for element in aggregation_def_allowed_values:
+                if aggregation_definition.upper() == element:
+                    aggregation_definition_val = element
+
+        interval_keyword_val=interval_keyword
+        if interval_keyword is not None:
+            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY',
+                                               'RECURRING_MONTHLY', 'RECURRING_QUARTERLY', 'PENTADLY', 'DEKADLY']
+            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
+                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
+            interval_keyword_val=interval_keyword
+            for element in interval_keyword_allowed_values:
+                if interval_keyword.upper() == element:
+                    interval_keyword_val = element
+
+
+
+        if isinstance(aggregation_function, Item):
+            aggregation_function = {"itemId":aggregation_function.itemid}
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.aggregate_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                            output_name=output_raster,
+                                                            dimension=dimension,
+                                                            aggregation_method=aggregation_method_val,
+                                                            variables=variables,
+                                                            aggregation_definition=aggregation_definition_val,
+                                                            interval_keyword=interval_keyword_val,
+                                                            interval_value=interval_value,
+                                                            interval_unit=interval_unit,
+                                                            interval_ranges=interval_ranges,
+                                                            aggregation_function=aggregation_function,
+                                                            ignore_nodata=ignore_nodata,
+                                                            context=context,
+                                                            gis=self._gis,
+                                                            future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def generate_multidimensional_anomaly(self,
+                                          input_multidimensional_raster=None,
+                                          output_name=None,
+                                          variables=None,
+                                          method=None,
+                                          calculation_interval=None,
+                                          ignore_nodata=True,
+                                          context=None,
+                                          future=False,
+                                          **kwargs):
+        """
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+       output_name: outputName (str). Required parameter.
+
+       variables: variables (str). Optional parameter.
+
+       method: method (str). Optional parameter.
+          Choice list:['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN', 'Z_SCORE', 'DIFFERENCE_FROM_MEDIAN', 'PERCENT_DIFFERENCE_FROM_MEDIAN', 'PERCENT_OF_MEDIAN']
+
+       temporal_interval: temporalInterval (str). Optional parameter.
+          Choice list: ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
+
+       ignore_nodata: ignoreNodata (bool). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "GenerateMultidimensionalAnomaly"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+        method_val = method
+        if method is not None:
+            method_allowed_values = ['DIFFERENCE_FROM_MEAN', 'PERCENT_DIFFERENCE_FROM_MEAN', 'PERCENT_OF_MEAN', 'Z_SCORE', 'DIFFERENCE_FROM_MEDIAN', 'PERCENT_DIFFERENCE_FROM_MEDIAN', 'PERCENT_OF_MEDIAN']
+            if [element.lower() for element in method_allowed_values].count(method.lower()) <= 0 :
+                raise RuntimeError('method can only be one of the following: '+str(method_allowed_values))
+
+            for element in method_allowed_values:
+                if method.upper() == element:
+                    method_val = element
+
+        calculation_interval_val = calculation_interval
+        if calculation_interval is not None:
+            interval_keyword_allowed_values = ['ALL', 'HOURLY', 'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'YEARLY']
+            if [element.lower() for element in interval_keyword_allowed_values].count(calculation_interval.lower()) <= 0 :
+                raise RuntimeError('calculation_interval can only be one of the following: '+str(interval_keyword_allowed_values))
+
+            for element in interval_keyword_allowed_values:
+                if calculation_interval.upper() == element:
+                    calculation_interval_val = element
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.generate_multidimensional_anomaly(input_multidimensional_raster=input_multidimensional_raster,
+                                                            output_name=output_raster,
+                                                            variables=variables,
+                                                            method=method_val,
+                                                            calculation_interval=calculation_interval_val,
+                                                            ignore_nodata=ignore_nodata,
+                                                            context=context,
+                                                            gis=self._gis,
+                                                            future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def build_multidimensional_transpose(self,
+                                          input_multidimensional_raster=None,
+                                          context=None,
+                                          future=False,
+                                          **kwargs):
+        """
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "BuildMultidimensionalTranspose"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+
+        gpjob = self._tbx.build_multidimensional_transpose(input_multidimensional_raster=input_multidimensional_raster,
+                                                           context=context,
+                                                           gis=self._gis,
+                                                           future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def generate_trend_raster(self,
+                              input_multidimensional_raster=None,
+                              output_name=None,
+                              dimension=None,
+                              variables=None,
+                              trend_line_type='LINEAR',
+                              frequency=None,
+                              ignore_nodata=True,
+                              context=None,
+                              future=False,
+                              **kwargs):
+        """
+        input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+        output_name: outputName (str). Required parameter.
+
+        dimension: dimension (str). Required parameter.
+
+        variables: variables (str). Optional parameter.
+
+        trend_line_type: trendLineType (str). Optional parameter.
+            Choice list:['LINEAR', 'HARMONIC', 'POLYNOMIAL']
+
+        frequency: frequency (int). Optional parameter.
+
+        ignore_nodata: ignoreNodata (bool). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "GenerateTrendRaster"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+        trend_line_type_val = trend_line_type
+        if trend_line_type is not None:
+            trend_line_type_allowed_values = ['LINEAR', 'HARMONIC', 'POLYNOMIAL']
+            if [element.lower() for element in trend_line_type_allowed_values].count(trend_line_type.lower()) <= 0 :
+                raise RuntimeError('trend_line_type can only be one of the following: '+str(trend_line_type_allowed_values))
+
+            for element in trend_line_type_allowed_values:
+                if trend_line_type.upper() == element:
+                    trend_line_type_val = element
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.generate_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                output_name=output_raster,
+                                                dimension=dimension,
+                                                variables=variables,
+                                                trend_line_type=trend_line_type_val,
+                                                frequency=frequency,
+                                                ignore_nodata=ignore_nodata,
+                                                context=context,
+                                                gis=self._gis,
+                                                future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def predict_using_trend_raster(self,
+                                   input_multidimensional_raster=None,
+                                   output_name=None,
+                                   variables=None,
+                                   dimension_definition='BY_VALUE',
+                                   dimension_values=None,
+                                   start=None,
+                                   end=None,
+                                   interval_value=1,
+                                   interval_unit=None,
+                                   context=None,
+                                   future=False,
+                                   **kwargs):
+        """
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
+
+       output_name: outputName (str). Required parameter.
+
+       variables: variables (str). Optional parameter.
+
+       dimension_definition: dimensionDefinition (str). Optional parameter.
+          Choice list:['BY_VALUE', 'BY_INTERVAL']
+
+       dimension_values: dimensionValues (str). Optional parameter.
+
+       start: start (str). Optional parameter.
+
+       end: end (str). Optional parameter.
+
+       interval_value: intervalValue (float). Optional parameter.
+
+       interval_unit: intervalUnit (str). Optional parameter.
+          Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "PredictUsingTrendRaster"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+
+        dimension_definition_val = dimension_definition
+        if dimension_definition is not None:
+            dimension_definition_allowed_values = ['BY_VALUE', 'BY_INTERVAL']
+            if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
+                raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+
+            for element in dimension_definition_allowed_values:
+                if dimension_definition.upper() == element:
+                    dimension_definition_val = element
+
+        interval_unit_val = interval_unit
+        if interval_unit is not None:
+            interval_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
+            if [element.lower() for element in interval_unit_allowed_values].count(interval_unit.lower()) <= 0 :
+                raise RuntimeError('interval_unit can only be one of the following: '+str(interval_unit_allowed_values))
+
+            for element in interval_unit_allowed_values:
+                if interval_unit.upper() == element:
+                    interval_unit_val = element
+
+        values=None
+        if dimension_values is not None:
+            if isinstance(dimension_values, list):
+                values = ";".join(dimension_values)
+
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.predict_using_trend_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                     output_name=output_raster,
+                                                     variables=variables,
+                                                     dimension_definition=dimension_definition_val,
+                                                     dimension_values=values,
+                                                     start=start,
+                                                     end=end,
+                                                     interval_value=interval_value,
+                                                     interval_unit=interval_unit_val,
+                                                     context=context,
+                                                     gis=self._gis,
+                                                     future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def find_argument_statistics(self,
+                                 input_raster=None,
+                                 output_name=None,
+                                 dimension=None,
+                                 dimension_definition='ALL',
+                                 interval_keyword=None,
+                                 variables=None,
+                                 statistics_type='ARGUMENT_MIN',
+                                 min_value=None,
+                                 max_value=None,
+                                 multiple_occurrence_value=None,
+                                 ignore_nodata=True,
+                                 context=None,
+                                 future=False,
+                                 **kwargs):
+        """
+       input_raster: inputRaster (str). Required parameter.
+
+       output_name: outputName (str). Required parameter.
+
+       dimension: dimension (str). Optional parameter.
+
+       dimension_definition: dimensionDefinition (str). Optional parameter.  
+          Choice list:['ALL', 'INTERVAL_KEYWORD']
+
+       interval_keyword: intervalKeyword (str). Optional parameter.  
+          Choice list:['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 
+          'RECURRING_DAILY', 'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 'RECURRING_QUARTERLY']
+
+       variables: variables (str). Optional parameter.
+
+       statistics_type: statisticsType (str). Optional parameter.
+          Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
+
+       min_value: minValue (float). Optional parameter.
+
+       max_value: maxValue (float). Optional parameter.
+
+       multiple_occurrence_value: multipleOccurrenceValue (int). Optional parameter.  .
+
+       ignore_nodata: ignoreNodata (bool). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "FindArgumentStatistics"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        dimension_definition_val=dimension_definition
+        if dimension_definition is not None:
+            dimension_definition_allowed_values = ['ALL', 'INTERVAL_KEYWORD']
+
+            if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
+                raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+
+            for element in dimension_definition_allowed_values:
+                if dimension_definition.upper() == element:
+                    dimension_definition_val = element
+
+        interval_keyword_val=interval_keyword
+        if interval_keyword is not None:
+            interval_keyword_allowed_values = ['HOURLY', 'DAILY', 'WEEKLY', 'MONTHLY', 
+                                               'QUARTERLY', 'YEARLY', 'RECURRING_DAILY', 
+                                               'RECURRING_WEEKLY', 'RECURRING_MONTHLY', 
+                                               'RECURRING_QUARTERLY']
+
+            if [element.lower() for element in interval_keyword_allowed_values].count(interval_keyword.lower()) <= 0 :
+                raise RuntimeError('interval_keyword can only be one of the following: '+str(interval_keyword_allowed_values))
+
+            for element in interval_keyword_allowed_values:
+                if interval_keyword.upper() == element:
+                    interval_keyword_val = element
+
+        statistics_type_val=statistics_type
+        if statistics_type is not None:
+            statistics_type_allowed_values = ['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
+            if [element.lower() for element in statistics_type_allowed_values].count(statistics_type.lower()) <= 0 :
+                raise RuntimeError('statistics_type can only be one of the following: '+str(statistics_type_allowed_values))
+
+            for element in statistics_type_allowed_values:
+                if statistics_type.upper() == element:
+                    statistics_type_val = element
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.find_argument_statistics(input_raster=input_raster,
+                                                   output_name=output_raster,
+                                                   dimension=dimension,
+                                                   dimension_definition=dimension_definition_val,
+                                                   interval_keyword=interval_keyword_val,
+                                                   variables=variables,
+                                                   statistics_type=statistics_type_val,
+                                                   min_value=min_value,
+                                                   max_value=max_value,
+                                                   multiple_occurrence_value=multiple_occurrence_value,
+                                                   ignore_nodata=ignore_nodata,
+                                                   context=context,
+                                                   gis=self._gis,
+                                                   future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def linear_spectral_unmixing(self,
+                                 input_raster=None,
+                                 output_name=None,
+                                 input_spectral_profile=None,
+                                 value_option=[],
+                                 context=None,
+                                 future=False,
+                                  **kwargs):
+        """
+       input_raster: inputRaster (str). Required parameter.
+
+       output_name: outputName (str). Required parameter.
+
+       input_spectral_profile: inputSpectralProfile (str). Optional parameter.
+
+       value_option: valueOption (str). Optional parameter.
+          Choice list:['SUM_TO_ONE', 'NON_NEGATIVE']
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "LinearSpectralUnmixing"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        return_list = []
+        value_option_allowed_values = ['SUM_TO_ONE', 'NON_NEGATIVE']
+        for element in value_option_allowed_values:
+            for ele in value_option:
+                if ele.upper() == element:
+                    return_list.append(element)
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        if input_spectral_profile is not None:
+            if isinstance(input_spectral_profile, str):
+                input_spectral_profile = {"uri":input_spectral_profile}
+
+        gpjob = self._tbx.linear_spectral_unmixing(input_raster=input_raster,
+                                                   output_name=output_raster,
+                                                   input_spectral_profile=input_spectral_profile,
+                                                   value_option=return_list,
+                                                   context=context,
+                                                   gis=self._gis,
+                                                   future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+    def subset_multidimensional_raster(self,
+                                       input_multidimensional_raster=None,
+                                       output_name=None,
+                                       variables=None,
+                                       dimension_definition='BY_VALUE',
+                                       dimension_ranges=None,
+                                       dimension_values=None,
+                                       dimension=None,
+                                       start_of_first_iteration=None,
+                                       end_of_first_iteration=None,
+                                       iteration_step=None,
+                                       iteration_unit=None,
+                                       context=None,
+                                       future=False,
+                                       **kwargs):
+        """
+       input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.  
+
+       output_name: outputName (str). Required parameter.  
+
+       variables: variables (str). Optional parameter.  
+
+       dimension_definition: dimensionDefinition (str). Optional parameter.  
+          Choice list:['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
+
+       dimension_ranges: dimensionRanges (str). Optional parameter.  
+
+       dimension_values: dimensionValues (str). Optional parameter.  
+
+       dimension: dimension (str). Optional parameter.  
+
+       start_of_first_iteration: recurrenceFrom (str). Optional parameter.  
+
+       end_of_first_iteration: recurrenceTo (str). Optional parameter.  
+
+       iteration_step: recurrenceInterval (float). Optional parameter.  
+
+       iteration_unit: recurrenceUnit (str). Optional parameter.  
+          Choice list:['HOURS', 'DAYS', 'WEEKS', 'MONTHS', 'YEARS']
+
+       context: context (str). Optional parameter.
+
+       gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+       future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        task = "SubsetMultidimensionalRaster"
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_multidimensional_raster = self._layer_input(input_layer=input_multidimensional_raster)
+
+
+        dimension_definition_val = dimension_definition
+        if dimension_definition is not None:
+            dimension_definition_allowed_values = ['ALL', 'BY_VALUE', 'BY_RANGES', 'BY_ITERATION']
+            if [element.lower() for element in dimension_definition_allowed_values].count(dimension_definition.lower()) <= 0 :
+                raise RuntimeError('dimension_definition can only be one of the following: '+str(dimension_definition_allowed_values))
+
+            for element in dimension_definition_allowed_values:
+                if dimension_definition.upper() == element:
+                    dimension_definition_val = element
+
+        iteration_unit_val = iteration_unit
+        if iteration_unit is not None:
+            iteration_unit_allowed_values = ['HOURS','DAYS', 'DAILY', 'WEEKS', 'MONTHS', 'YEARS']
+            if [element.lower() for element in iteration_unit_allowed_values].count(iteration_unit.lower()) <= 0 :
+                raise RuntimeError('iteration_unit can only be one of the following: '+str(iteration_unit_allowed_values))
+
+            for element in iteration_unit_allowed_values:
+                if iteration_unit.upper() == element:
+                    iteration_unit_val = element
+
+        output_raster, output_service = self._set_output_raster(output_name=output_name, task=task, output_properties=kwargs)
+
+        gpjob = self._tbx.subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_raster,
+                                                         output_name=output_raster,
+                                                         variables=variables,
+                                                         dimension_definition=dimension_definition_val,
+                                                         dimension_ranges=dimension_ranges,
+                                                         dimension_values=dimension_values,
+                                                         dimension=dimension,
+                                                         start_of_first_iteration=start_of_first_iteration,
+                                                         end_of_first_iteration=end_of_first_iteration,
+                                                         iteration_step=iteration_step,
+                                                         iteration_unit=iteration_unit_val,
+                                                         context=context,
+                                                         gis=self._gis,
+                                                         future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+
+    def cost_path_as_polyline(self,
+                              input_destination_raster_or_features=None,
+                              input_cost_distance_raster=None,
+                              input_cost_backlink_raster=None,
+                              output_polyline_name=None,
+                              path_type=None,
+                              destination_field=None,
+                              context=None,
+                              future=False,
+                              **kwargs):
+        """
+
+        Parameters
+
+       input_destination_raster_or_features: inputDestinationRasterOrFeatures (str). Required parameter.
+
+       input_cost_distance_raster: inputCostDistanceRaster (str). Required parameter.
+
+       input_cost_backlink_raster: inputCostBacklinkRaster (str). Required parameter.
+
+       output_polyline_name: outputPolylineName (str). Required parameter.
+
+       path_type: pathType (str). Optional parameter.
+
+       destination_field: destinationField (str). Optional parameter.
+
+        context: Context contains additional settings that affect task execution.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "CostPathAsPolyline"
+        gis =  self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if isinstance(input_destination_raster_or_features, _FEATURE_INPUTS):
+            input_destination_raster_or_features = self._feature_input(input_destination_raster_or_features)
+        elif isinstance(input_destination_raster_or_features, Item):
+            input_destination_raster_or_features = {"itemId": input_destination_raster_or_features.itemid }
+        else:
+            input_destination_raster_or_features = self._layer_input(input_destination_raster_or_features)
+
+        input_cost_distance_raster = self._layer_input(input_layer=input_cost_distance_raster)
+
+        input_cost_backlink_raster = self._layer_input(input_layer=input_cost_backlink_raster)
+
+        path_type_allowed_values = ["BEST_SINGLE","EACH_CELL","EACH_ZONE"]
+        path_type_val = path_type
+        if path_type is not None:
+            if [element.lower() for element in path_type_allowed_values].count(path_type.lower()) <= 0 :
+                raise RuntimeError("path_type can only be one of the following: "+ str(path_type_allowed_values))
+            for element in path_type_allowed_values:
+                if path_type.lower() == element.lower():
+                    path_type_val = element
+
+
+        if output_polyline_name is None:
+            output_polyline_service_name  = 'Output Polyline_' + _id_generator()
+            output_polyline_name = output_polyline_service_name .replace(' ', '_')
+        else:
+            output_polyline_service_name  = output_polyline_name.replace(' ', '_')
+
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+
+        output_polyline_service  = self._create_output_feature_service(output_name=output_polyline_name,
+                                                             output_service_name=output_polyline_service_name ,
+                                                             task='CostPathAsPolyline',
+                                                             folder=folder)
+        if folderId is not None:
+            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
+                                           "itemProperties": {"itemId": output_polyline_service.itemid}, "folderId":folderId})
+        else:
+            output_polyline_name = json.dumps({"serviceProperties": {"name": output_polyline_service_name , "serviceUrl": output_polyline_service.url},
+                                           "itemProperties": {"itemId": output_polyline_service.itemid}})
+
+
+        gpjob = self._tbx.cost_path_as_polyline(input_destination_raster_or_features=input_destination_raster_or_features,
+                                                input_cost_distance_raster=input_cost_distance_raster,
+                                                input_cost_backlink_raster=input_cost_backlink_raster,
+                                                output_polyline_name=output_polyline_name,
+                                                path_type=path_type_val,
+                                                destination_field=destination_field,
+                                                context=context,
+                                                gis=self._gis,
+                                                future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
+
+    def classify_objects_using_deep_learning(self,
+                                             input_raster,
+                                             model,
+                                             model_arguments=None,
+                                             input_features=None,
+                                             class_label_field=None,
+                                             process_all_raster_items=None,
+                                             output_feature_class=None,
+                                             context=None, 
+                                             future=False, 
+                                             **kwargs):
+        """
+        Function can be used to output feature service with assigned class label for each feature based on
+        information from overlapped imagery data using the designated deep learning model. 
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        input_raster                             Required. raster layer that contains objects that needs to be classified.
+        ------------------------------------     --------------------------------------------------------------------
+        model                                    Required model object.
+        ------------------------------------     --------------------------------------------------------------------
+        model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
+                                             
+                                                 eg: {"name1":"value1", "name2": "value2"}
+        ------------------------------------     --------------------------------------------------------------------
+        input_features                           Optional feature layer.
+                                                 The point, line, or polygon input feature layer that identifies the location of each object to be 
+                                                 classified and labelled. Each row in the input feature layer represents a single object.
+
+                                                 If no input feature layer is specified, the function assumes that each input image contains a single object 
+                                                 to be classified. If the input image or images use a spatial reference, the output from the function is a 
+                                                 feature layer, where the extent of each image is used as the bounding geometry for each labelled 
+                                                 feature layer. If the input image or images are not spatially referenced, the output from the function 
+                                                 is a table containing the image ID values and the class labels for each image.
+        ------------------------------------     --------------------------------------------------------------------
+        class_label_field                        Optional str. The name of the field that will contain the classification label in the output feature layer.
+
+                                                 If no field name is specified, a new field called ClassLabel will be generated in the output feature layer.
+        ------------------------------------     --------------------------------------------------------------------
+        process_all_raster_items                 Optional bool. 
+
+                                                 If set to False, all raster items in the mosaic dataset or image service will be mosaicked together and processed. This is the default.
+
+                                                 If set to True, all raster items in the mosaic dataset or image service will be processed as separate images.
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              Optional. If not provided, a Feature layer is created by the method and used as the output .
+                                                 You can pass in an existing Feature Service Item from your GIS to use that instead.
+                                                 Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+                                                 to be used as the output for the tool.
+                                                 A RuntimeError is raised if a service by that name already exists
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Context contains additional settings that affect task execution.
+                                                 Dictionary can contain value for following keys:
+
+                                                 - cellSize - Set the output raster cell size, or resolution
+
+                                                 - extent - Sets the processing extent used by the function
+
+                                                 - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                                 - processorType - Sets the processor type. "CPU" or "GPU"
+
+                                                 Eg: {"processorType" : "CPU"}
+
+                                                 Setting context parameter will override the values set using arcgis.env 
+                                                 variable for this particular function.
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+        ====================================     ====================================================================
+
+        :return:
+            The output feature layer item containing the detected objects
+
+        """
+        task = "ClassifyObjectsUsingDeepLearning"
+        gis = self._gis
+
+        input_raster = self._layer_input(input_layer=input_raster)
+
+        if input_features is not None:
+            input_features = self._layer_input(input_layer=input_features)
+
+        if model is None:
+            raise RuntimeError('model cannot be None')
+        else:
+            model_value = self._set_param(model)
+
+        model_arguments_value = None
+        if model_arguments:
+            try:
+                model_arguments_value = dict((str(k),str(v)) for k, v in model_arguments.items())
+            except:
+                model_arguments_value = model_arguments
+
+        if not isinstance(process_all_raster_items, bool):
+            raise RuntimeError("process_all_raster_items value should be an instance of bool")
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        if output_feature_class is None:
+            output_service_name = 'ClassifyObjectsUsingDeepLearning_' + _id_generator()
+            output_feature_class = output_service_name.replace(' ', '_')
+        else:
+            output_service_name = output_feature_class.replace(' ', '_')
+
+        folderId = None
+        folder = None
+        if kwargs is not None:
+            if "folder" in kwargs:
+                    folder = kwargs["folder"]
+            if folder is not None:
+                if isinstance(folder, dict):
+                    if "id" in folder:
+                        folderId = folder["id"]
+                        folder=folder["title"]
+                else:
+                    owner = gis.properties.user.username
+                    folderId = gis._portal.get_folder_id(owner, folder)
+                if folderId is None:
+                    folder_dict = gis.content.create_folder(folder, owner)
+                    folder = folder_dict["title"]
+                    folderId = folder_dict["id"]
+        output_service = self._create_output_feature_service(output_name=output_feature_class,
+                                                             output_service_name=output_service_name,
+                                                             task='Classify Objects',
+                                                             folder=folder)
+        if folderId is not None:
+            output_feature_class = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                           "itemProperties": {"itemId": output_service.itemid}, "folderId":folderId})
+        else:
+            output_feature_class= json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
+                                           "itemProperties": {"itemId": output_service.itemid}})
+
+        gpjob = self._tbx.classify_objects_using_deep_learning(input_raster=input_raster,
+                                                               input_features=input_features,
+                                                               output_feature_class=output_feature_class,
+                                                               model=model_value,
+                                                               model_arguments=model_arguments_value,
+                                                               class_label_field=class_label_field,
+                                                               process_all_raster_items=process_all_raster_items,
+                                                               context=context, gis=self._gis,
+                                                               future=True)
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        gpjob._return_item = output_service
+        if future:
+            return gpjob
+        return gpjob.result()
+
+
+###########################################################################
+class _RasterAnalysisToolsOLD(_AsyncService):
     "Exposes the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
 
     def __init__(self, url, gis):
@@ -4790,8 +9164,8 @@ class _RasterAnalysisTools(_AsyncService):
                  input_raster,
                  input_classifier_definition,
                  output_raster,
-                       additional_input_raster=None,
-                       number_of_instances="4"):
+                 additional_input_raster=None,
+                 number_of_instances="4"):
         """
 
 
@@ -4937,8 +9311,8 @@ class _RasterAnalysisTools(_AsyncService):
                          input_raster,
                          input_training_sample_json,
                          segmented_raster,
-                       classifier_parameters,
-                       segment_attributes="COLOR;MEAN"):
+                         classifier_parameters,
+                         segment_attributes="COLOR;MEAN"):
         """
 
 
@@ -4976,118 +9350,6 @@ class _RasterAnalysisTools(_AsyncService):
         job_values = super()._analysis_job_results(task_url, job_info, job_id)
 
         return job_values['Output_Classifier_Definition']
-
-    def _create_output_feature_service(self, output_name, task):
-        ok = self._gis.content.is_service_name_available(output_name, "Feature Service")
-        if not ok:
-            raise RuntimeError("A Feature Service by this name already exists: " + output_name)
-
-        createParameters = {
-            "currentVersion": 10.2,
-            "serviceDescription": "",
-            "hasVersionedData": False,
-                "supportsDisconnectedEditing": False,
-                "hasStaticData": True,
-                "maxRecordCount": 2000,
-                "supportedQueryFormats": "JSON",
-                "capabilities": "Query",
-                "description": "",
-                "copyrightText": "",
-                "allowGeometryUpdates": False,
-                "syncEnabled": False,
-                "editorTrackingInfo": {
-                    "enableEditorTracking": False,
-                    "enableOwnershipAccessControl": False,
-                    "allowOthersToUpdate": True,
-                    "allowOthersToDelete": True
-                    },
-                "xssPreventionInfo": {
-                    "xssPreventionEnabled": True,
-                    "xssPreventionRule": "InputOnly",
-                    "xssInputRule": "rejectInvalid"
-                    },
-                "tables": [],
-                "name": output_name,
-                "options": {
-                    "dataSourceType": "spatiotemporal"
-                }
-        }
-
-        output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="featureService")
-        description = "Feature Service generated from running the " + task + " tool."
-        item_properties = {
-            "description" : description,
-            "tags" : "Analysis Result, " + task,
-            "snippet": "Analysis Feature Service generated from " + task
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def convert_raster_to_feature(self,
-                                  input_raster,
-                                  output_name,
-                                  field="Value",
-                       output_type="Point",
-                       simplify_lines_or_polygons=True,
-                       context=None):
-        """
-        This service tool converts imagery data to feature class vector data.
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        output_name : Required string
-
-        field : Optional string
-
-        output_type : Optional string
-            One of the following: ['Point', 'Line', 'Polygon']
-        simplify_lines_or_polygons : Optional bool
-
-        context : Optional string
-
-
-        Returns
-        -------
-        output_feature : layer (Feature Service item)
-        """
-
-        task ="Convert Raster To Feature"
-
-        params = {}
-
-        params["inputRaster"] = input_raster
-
-        output_service = self._create_output_feature_service(output_name, task)
-
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-        if field is not None:
-            params["field"] = field
-        if output_type is not None:
-            params["outputType"] = output_type
-        if simplify_lines_or_polygons is not None:
-            params["simplifyLinesOrPolygons"] = simplify_lines_or_polygons
-        if context is not None:
-            params["context"] = context
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):

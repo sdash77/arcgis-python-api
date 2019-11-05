@@ -142,8 +142,8 @@ class WebMap(collections.OrderedDict):
 
         else:
             #default spatial ref for current web map
-            self._default_spatial_reference = {'wkid': 4326,
-                                               'latestWkid': 4326}
+            self._default_spatial_reference = {'wkid': 102100,
+                                               'latestWkid': 3857}
 
             #pump in a simple, default webmap dict - no layers yet, just basemap
             self._basemap = {
@@ -461,7 +461,7 @@ class WebMap(collections.OrderedDict):
                                  "xoffset": 0,
                                  "yoffset": 12,
                                  "type": "esriPMS",
-                                 "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
+                                 "url": "https://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
                                  "contentType": "image/png",
                                  "width": 24,
                                  "height": 24}
@@ -2064,18 +2064,17 @@ class MapImageLayer(Layer):
     def _populate_layers(self):
         layers = []
         tables = []
-
-        for lyr in self.properties.layers:
-            if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
-                lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
-            else:
-                lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
-            layers.append(lyr)
-
-        for lyr in self.properties.tables:
-            lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, self)
-            tables.append(lyr)
-
+        if self.properties.layers:
+            for lyr in self.properties.layers:
+                if 'subLayerIds' in lyr and lyr.subLayerIds is not None: # Group Layer
+                    lyr = Layer(self.url + '/' + str(lyr.id), self._gis)
+                else:
+                    lyr = arcgis.features.FeatureLayer(self.url + '/' + str(lyr.id), self._gis, self)
+                layers.append(lyr)
+        if self.properties.tables:
+            for lyr in self.properties.tables:
+                lyr = arcgis.features.Table(self.url + '/' + str(lyr.id), self._gis, self)
+                tables.append(lyr)
         # fsurl = self.url + '/layers'
         # params = { "f" : "json" }
         # allayers = self._con.post(fsurl, params, token=self._token)
@@ -2091,9 +2090,9 @@ class MapImageLayer(Layer):
     def _str_replace(self, mystring, rd):
         """Replaces a value based on a key/value pair where the
         key is the text to replace and the value is the new value.
-    
+
         The find/replace is case insensitive.
-    
+
         """
         import re
         patternDict = {}
@@ -2104,7 +2103,7 @@ class MapImageLayer(Layer):
         for key in patternDict:
             regex_obj = patternDict[key]
             mystring = regex_obj.sub(key, mystring)
-        return mystring    
+        return mystring
 
     @property
     def manager(self):

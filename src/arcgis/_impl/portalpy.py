@@ -15,7 +15,7 @@ from .common._utils import _to_utf8
 from six.moves.urllib import request
 from six.moves.urllib_parse import urlparse
 
-__version__ = '1.0'
+__version__ = '1.7.0'
 
 _log = logging.getLogger(__name__)
 
@@ -1988,7 +1988,8 @@ class Portal(object):
     def update_group(self, group_id, title=None, tags=None, description=None,
                      snippet=None, access=None, is_invitation_only=None,
                      sort_field=None, sort_order=None, is_view_only=None,
-                     thumbnail=None, max_file_size=None, users_update_items=None):
+                     thumbnail=None, max_file_size=None, users_update_items=None,
+                     clear_empty_fields=False):
         """ Updates a group.
 
         .. note::
@@ -2066,8 +2067,10 @@ class Portal(object):
             properties['capabilities'] = ""
         else:
             properties['capabilities'] = "updateitemcontrol"
+        properties['clearEmptyFields'] = clear_empty_fields
         postdata.update(properties)
-
+        if True:
+            postdata['clearEmptyFields'] = True
         files = []
         if thumbnail:
             if _is_http_url(thumbnail):
@@ -2181,6 +2184,12 @@ class Portal(object):
                 files.append(('file', data, os.path.basename(data)))
             else:
                 postdata['text'] = data
+        if item_properties and \
+           item_properties.get('screenshots', None):
+            for screenshot in item_properties.get('screenshots', [])[0:4]:
+                files.append(('screenshot', screenshot, os.path.basename(screenshot)))
+            del item_properties['screenshots']
+
         if metadata:
             if _is_http_url(metadata):
                 metadata = request.urlretrieve(metadata)[0]

@@ -382,7 +382,10 @@ def _execute_gp_tool(gis, task_name, params, param_db, return_values, use_async,
         task_url = "{}/{}".format(url, task_name)
         submit_url = "{}/submitJob".format(task_url)
         if add_token and submit_url.lower().find("arcgis.com") == -1:
-            job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+            try:
+                job_info = gptool._con.post(submit_url, gp_params, token=gptool._token)
+            except:
+                job_info = gptool._con.post(submit_url, gp_params)
         else:
             job_info = gptool._con.post(submit_url, gp_params)
         job_id = job_info['jobId']

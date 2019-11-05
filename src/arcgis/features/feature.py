@@ -733,6 +733,8 @@ class FeatureSet(object):
         index = 0
         sr = None
         df = df.fillna('')
+        old_idx = df.index
+        df.reset_index(drop=True, inplace=True)
         if isinstance(df, SpatialDataFrame):
             df_rows = df.copy()
             del df_rows['SHAPE']
@@ -740,7 +742,9 @@ class FeatureSet(object):
             sr = df.sr
         elif isinstance(df, pd.DataFrame) and \
              not df.spatial.name is None:
-            return FeatureSet.from_dict(df.spatial.__feature_set__)
+            fs = FeatureSet.from_dict(df.spatial.__feature_set__)
+            df.set_index(old_idx,  inplace=True)
+            return fs
         elif isinstance(df, pd.DataFrame):
             geoms = []
             df_rows = df.copy()
@@ -773,7 +777,7 @@ class FeatureSet(object):
         fs._fields = fields
         if sr is not None:
             fs.spatial_reference = sr
-
+        df.set_index(old_idx,  inplace=True)
         return fs
     # ----------------------------------------------------------------------
     @staticmethod
@@ -1266,7 +1270,7 @@ class FeatureCollection(Layer):
                                "xoffset": 0,
                                "yoffset": 12,
                                "type": "esriPMS",
-                               "url": "http://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
+                               "url": "https://esri.github.io/arcgis-python-api/notebooks/nbimages/pink.png",
                                "contentType": "image/png",
                                "width": 24,
                                "height": 24}

@@ -439,6 +439,7 @@ def from_featureclass(filename, **kwargs):
             del geom
         sdf = pd.DataFrame(records)
         sdf.spatial.set_geometry('SHAPE')
+        sdf['OBJECTID'] = range(sdf.shape[0])
         sdf.reset_index(inplace=True)
         return sdf
     elif HASARCPY == False and \
@@ -538,6 +539,8 @@ def to_featureclass(geo,
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
+    old_idx = df.index
+    df.reset_index(drop=True, inplace=True)
     if geo.name is None:
         raise ValueError("DataFrame must have geometry set.")
     if validate and \
@@ -630,22 +633,28 @@ def to_featureclass(geo,
             df.loc[q, 'SHAPE'] = null_geom # set null values to proper JSON
             np.apply_along_axis(_insert_row, 1, df[dfcols].values)
             df.loc[q, 'SHAPE'] = None # reset null values
+        df.set_index(old_idx)
         return fc
     elif HASPYSHP:
         if fc_name.endswith('.shp') == False:
             fc_name = "%s.shp" % fc_name
         if SHPVERSION < [2]:
-            return _pyshp_to_shapefile(df=df,
+            res = _pyshp_to_shapefile(df=df,
                             out_path=out_location,
                             out_name=fc_name)
+            df.set_index(old_idx)
+            return res
         else:
-            return _pyshp2(df=df,
-                           out_path=out_location,
-                           out_name=fc_name)
+            res = _pyshp2(df=df,
+                          out_path=out_location,
+                          out_name=fc_name)
+            df.set_index(old_idx)
+            return res
     elif HASARCPY == False and HASPYSHP == False:
         raise Exception(("Cannot Export the data without ArcPy or PyShp modules."
                         " Please install them and try again."))
     else:
+        df.set_index(old_idx)
         return None
 #--------------------------------------------------------------------------
 def _pyshp_to_shapefile(df, out_path, out_name):

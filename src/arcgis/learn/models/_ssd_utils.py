@@ -255,10 +255,11 @@ def nms(boxes, scores, overlap=0.5, top_k=100):
         idx = idx[IoU.le(overlap)]
     return keep, count
 
-class SSDObjectCategoryList(ObjectCategoryList):
-    "`ItemList` for labelled bounding boxes detected using SSD."
-    def analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=False, device=torch.device('cpu')):
-        # def analyze_pred(pred, anchors, grid_sizes, thresh=0.5, nms_overlap=0.1, ssd=None):
+def _analyze_pred(pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu')):
+    from ._ssd import SingleShotDetector
+    from ._retinanet import RetinaNet
+
+    if type(ssd).__name__ == "SingleShotDetector": #isinstance(ssd, SingleShotDetector):
         b_clas, b_bb = pred
         a_ic = ssd._actn_to_bb(b_bb.to(device), ssd._anchors.to(device), ssd._grid_sizes.to(device))
         conf_scores, clas_ids = b_clas[:, 1:].max(1)
@@ -288,15 +289,45 @@ class SSDObjectCategoryList(ObjectCategoryList):
             return torch.cat(bbox_list, dim=0).to(device), torch.cat(class_list, dim=0).to(device), torch.cat(out1, dim=0).to(device)
         else:
             return torch.cat(bbox_list, dim=0), torch.cat(class_list, dim=0) # torch.cat(out1, dim=0), 
-
     
-    def reconstruct(self, t, x):
-        if t is None: return None
+    elif type(ssd).__name__ == "RetinaNet":
+        from ._retinanet_utils import get_predictions
+        bbox_pred, preds, scores =  get_predictions(pred, 0, crit=ssd._loss_f, detect_thresh=thresh, nms_overlap=nms_overlap)
+        return bbox_pred, preds, scores
+
+def _reconstruct(t, x, pad_idx, classes):
+    if t is None: return None
+
+    t = list(t)
+    if len(t[0]) == 0:
+        return None
+
+    if len(t) == 3:
+        bboxes, labels, scores = t
+        if len((labels - pad_idx).nonzero()) == 0: 
+            ret = ImageBBox.create(*x.size, bboxes, labels=labels, classes=classes, scale=False)
+            ret.scores = t[2]
+            return ret
+        i = (labels - pad_idx).nonzero().min()
+        bboxes,labels,scores = bboxes[i:],labels[i:], scores[i:]
+        ret = ImageBBox.create(*x.size, bboxes, labels=labels, classes=classes, scale=False)
+        ret.scores = t[2]
+        return ret
+    else:
         bboxes, labels = t
-        if len((labels - self.pad_idx).nonzero()) == 0: return ImageBBox.create(*x.size, bboxes, labels=labels, classes=self.classes, scale=False)
-        i = (labels - self.pad_idx).nonzero().min()
+        if len((labels - pad_idx).nonzero()) == 0: return ImageBBox.create(*x.size, bboxes, labels=labels, classes=classes, scale=False)
+        i = (labels - pad_idx).nonzero().min()
         bboxes,labels = bboxes[i:],labels[i:]
-        return ImageBBox.create(*x.size, bboxes, labels=labels, classes=self.classes, scale=False)
+        return ImageBBox.create(*x.size, bboxes, labels=labels, classes=classes, scale=False)    
+
+
+class SSDObjectCategoryList(ObjectCategoryList):
+    "`ItemList` for labelled bounding boxes detected using SSD."
+    def analyze_pred(self, pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu')):
+        return _analyze_pred(pred, thresh=thresh, nms_overlap=nms_overlap, ssd=ssd, ret_scores=ret_scores, device=device)
+
+    def reconstruct(self, t, x):
+        return _reconstruct(t, x, self.pad_idx, self.classes)
 
     
 class SSDObjectItemList(ObjectItemList):
@@ -313,11 +344,11 @@ def compute_ap(precision, recall):
     ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
     return ap
 
-def compute_class_AP(ssd, dl, n_classes, iou_thresh=0.5, detect_thresh=0.35, num_keep=100):
+def compute_class_AP(ssd, dl, n_classes, show_progress, iou_thresh=0.5, detect_thresh=0.35, num_keep=100):
     tps, clas, p_scores = [], [], []
     classes, n_gts = LongTensor(range(n_classes)),torch.zeros(n_classes).long()
     with torch.no_grad():
-        for input,target in progress_bar(dl, display=False):
+        for input,target in progress_bar(dl, display=show_progress):
             output = ssd.learn.pred_batch(batch=(input, target))#, reconstruct=True)
 
             for i in range(target[0].size(0)):

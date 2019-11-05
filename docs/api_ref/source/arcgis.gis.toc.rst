@@ -113,6 +113,19 @@ ProfileManager
     :undoc-members:
     :show-inheritance:
 
+InvitationManager
+---------------------------
+.. autoclass:: arcgis.gis._impl._invitations.InvitationManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+CertificateManager
+---------------------------
+.. autoclass:: arcgis.gis._impl.CertificateManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Submodules
 --------------

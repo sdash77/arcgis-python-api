@@ -5,11 +5,13 @@
 
 import unittest
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 HAS_DEPS = True
 try:
     import fastai
     import torch
     import torchvision
+    from torchvision import models
 except Exception:
     HAS_DEPS = False
 
@@ -19,7 +21,15 @@ if not HAS_DEPS:
     module_skip = True
 else:
     from arcgis.learn._data import prepare_data
-    from arcgis.learn import SingleShotDetector, UnetClassifier, FeatureClassifier
+    from arcgis.learn import SingleShotDetector, UnetClassifier, FeatureClassifier, PSPNetClassifier, RetinaNet
+
+    # Declare the family of backbones to be unpacked and used by different models as supported types
+    _vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__, 
+                        models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
+    _resnet_family = [models.resnet18.__name__, models.resnet34.__name__, models.resnet50.__name__, 
+                            models.resnet101.__name__, models.resnet152.__name__]
+    _densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__, 
+                                models.densenet201.__name__]
 
 #TestModule
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Prepare Data tests")
@@ -37,7 +47,9 @@ class Test_Data(unittest.TestCase):
         data_folder = os.path.join(os.path.dirname(__file__), 'data')
         cls.unet_data = os.path.join(data_folder, 'unet_naip_residential_tests_data')
         cls.ssd_data = os.path.join(data_folder, 'palm_tree_tests_data')
+        cls.ssd_img = os.path.join(cls.ssd_data, 'images/000000005.jpg')
         cls.ssd_pascal_voc_data = os.path.join(data_folder, 'trees_tests_data')
+        cls.ssd_pascal_voc_img = os.path.join(cls.ssd_pascal_voc_data,'images/000000005.tif')
         cls.feature_data = os.path.join(data_folder, 'damage_classifier_tests_data')
         cls.imagenet_data = ''
         #TODO - define data dictionary.
@@ -78,6 +90,7 @@ class Test_Data(unittest.TestCase):
         self.assertDictEqual(self.ssd_data_class_mapping, data_bunch.class_mapping)
         ssd = SingleShotDetector(data_bunch)
         ssd.fit(1)
+        ssd.show_results()
         ssd.save('test_e1')
         ssd.load('test_e1')
 
@@ -101,6 +114,7 @@ class Test_Data(unittest.TestCase):
         self.assertDictEqual(self.unet_class_mapping, data_bunch.class_mapping)
         unet = UnetClassifier(data_bunch)
         unet.fit(1)
+        unet.show_results()
         unet.save('test_e1')
         unet.load('test_e1')
 
@@ -111,6 +125,7 @@ class Test_Data(unittest.TestCase):
         self.assertDictEqual(self.feature_class_mapping, data_bunch.class_mapping)
         feature_classifier = FeatureClassifier(data_bunch)
         feature_classifier.fit(1)
+        feature_classifier.show_results()
         feature_classifier.save('test_e1')
         feature_classifier.load('test_e1')
 
@@ -125,6 +140,78 @@ class Test_Data(unittest.TestCase):
         self.assertEqual(data_bunch.batch_size, 2)
         self.assertEqual(data_bunch.chip_size, 300)
 
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    def test_retinanet_data_esri_format(self):
+        data_bunch = prepare_data(self.ssd_data, chip_size=300, batch_size=4)
+        self.assertEqual(data_bunch.batch_size, 4)
+        self.assertEqual(data_bunch.chip_size, 300)
+        self.assertDictEqual(self.ssd_data_class_mapping, data_bunch.class_mapping)
+
+        supported_backbones = [*_resnet_family]
+        for backbone in supported_backbones:
+            rn = RetinaNet(data_bunch, backbone=backbone)
+            rn.learn.pred_batch()
+
+        rn = RetinaNet(data_bunch)
+        rn.fit(1)
+        rn.save('test_e1')
+        rn.load('test_e1')
+        rn.show_results()
+        rn.average_precision_score()
+        rn.predict(self.ssd_img)
+
+
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    def test_retinanet_data_pascal_voc_format(self):
+        try:
+            prepare_data(self.ssd_pascal_voc_data, chip_size=200, batch_size=4)
+            self.assertTrue(False)
+        except Exception:
+            pass
+
+        data_bunch = prepare_data(self.ssd_pascal_voc_data, chip_size=200, batch_size=4, class_mapping=self.ssd_pascal_voc_data_class_mapping, dataset_type='PASCAL_VOC_rectangles')
+        self.assertEqual(data_bunch.batch_size, 4)
+        self.assertEqual(data_bunch.chip_size, 200)
+        self.assertDictEqual(data_bunch.class_mapping, self.ssd_pascal_voc_data_class_mapping)
+
+        supported_backbones = [*_resnet_family]
+        for backbone in supported_backbones:
+            rn = RetinaNet(data_bunch, backbone=backbone)
+            rn.learn.pred_batch()
+        
+        rn = RetinaNet(data_bunch)
+        rn.fit(1)
+        rn.save('test_e1')
+        rn.load('test_e1')
+        rn.show_results()
+        rn.average_precision_score()
+        rn.predict(self.ssd_pascal_voc_img)
+    
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    def test_psp_data(self):
+        data_bunch = prepare_data(self.unet_data, chip_size=300, batch_size=2)
+        self.assertEqual(data_bunch.batch_size, 2)
+        self.assertEqual(data_bunch.chip_size, 300)
+        self.assertDictEqual(self.unet_class_mapping, data_bunch.class_mapping)
+        psp = PSPNetClassifier(data_bunch, backbone='resnet34')
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, backbone='vgg16')
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, backbone='densenet121')
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch)
+        psp.fit(1)
+        psp = PSPNetClassifier(data_bunch, backbone='resnet34', use_unet=True)
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, backbone='vgg16', use_unet=True)
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, backbone='densenet121', use_unet=True)
+        psp.learn.pred_batch()
+        psp = PSPNetClassifier(data_bunch, use_unet=True)
+        psp.fit(1)
+        psp.show_results()
+        psp.save('test_e1')
+        psp.load('test_e1')
 
 #TestModule
 def tearDownModule():

@@ -308,7 +308,9 @@ class GIS(object):
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id,
                                            referer=self._referer)
-
+            if self._is_hosted_nb_home:
+                # For GIS("home") objects, force no referer passed in
+                self._portal.con._referer = ""
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
@@ -544,7 +546,6 @@ class GIS(object):
                 if "encryptedToken" in json_data:
                     from arcgis.gis._impl._decrypt_nbauth import get_token
                     self._utoken = get_token(nb_auth_file_path)
-                self._referer = json_data["referer"]
 
         # Catch errors and re-throw in with more human readable messages
         except json.JSONDecodeError as e:
@@ -2122,6 +2123,23 @@ class UserManager(object):
             return res['success']
         return False
 
+    @property
+    def invitations(self):
+        """
+        Provides access to invitations sent to users using the `invite` method
+
+        **Note** : this is only supported by ArcGIS Online
+
+        :returns: InvitationManager
+
+        """
+
+        if self._gis._portal.is_arcgisonline == False:
+            raise Exception("This property is only for ArcGIS Online.")
+        from ._impl._invitations import InvitationManager
+        url = self._portal.resturl + "portals/self/invitations"
+        return InvitationManager(url, gis=self._gis)
+
     def signup(self, username, password, fullname, email):
         """
         Signs up a user to an instance of Portal for ArcGIS.
@@ -2313,8 +2331,8 @@ class UserManager(object):
         user_type         Optional String. This parameters allows for the filtering
                           of the users by their assigned type.
         ----------------  --------------------------------------------------------
-        role              Optional String.  This parameter allows for the filting
-                          of the users based on a role.
+        role              Optional String.  Specify the roleId. This parameter
+                          allows for the filting of the users based on a roleId.
         ================  ========================================================
 
         :return:
@@ -2508,16 +2526,16 @@ class RoleManager(object):
 
     def get_role(self, role_id):
         """
-        Retrieves the role with the specified role ID.
+        Retrieves the role with the specified custom roleId.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_id                Required string. The role ID of the role to get.
+        role_id                Required string. The role ID of the custom role to get.
         ==================     ====================================================================
 
         :return:
-           The role associated with the specified role ID
+           The Role object associated with the specified role ID
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
@@ -4381,8 +4399,11 @@ class ContentManager(object):
             del i
         return results
     #----------------------------------------------------------------------
-
-    def replace_service(self, replace_item, new_item, replaced_service_name=None):
+    def replace_service(self,
+                        replace_item,
+                        new_item,
+                        replaced_service_name=None,
+                        replace_metadata=False):
         """
         The replace_service operation allows you to replace your production vector tile layers with staging ones. This
         operation allows you to perform quality control on a staging tile layer and to then replace the production tile
@@ -4421,13 +4442,18 @@ class ContentManager(object):
         new_item                Required Item or Item's Id as string. The replacement service.
         ----------------------  ----------------------------------------------------------------------
         replaced_service_name   Optional string. The name of the replacement service.
+        ----------------------  ----------------------------------------------------------------------
+        replace_metadata        Optional Boolean. When set to `True`, the item info {"thumbnail", "tag",
+                                "description", "summary"} of the current service is updated to that of
+                                the replacement service. The Credits, Terms of use, and Created from
+                                details will not be replaced. This option is set to `False` by default.
+
         ======================  ======================================================================
 
         :returns: boolean
         """
         user = self._gis.users.me
         if 'id' in user:
-            #user = user.id
             user = user.username
         else:
             user = user.username
@@ -4439,9 +4465,15 @@ class ContentManager(object):
         if isinstance(new_item, Item):
             new_item = new_item.itemid
 
+        create_new_item = False
+        if replaced_service_name:
+            create_new_item = True
+
         params = {
             'toReplaceItemId': replace_item,
             'replacementItemId': new_item,
+            'replaceMetadata' : replace_metadata,
+            'createNewItem': create_new_item,
             'f': 'json'
         }
         if replaced_service_name is not None:
@@ -5506,7 +5538,7 @@ class Group(dict):
 
     def update(self, title=None, tags=None, description=None, snippet=None, access=None,
                is_invitation_only=None, sort_field=None, sort_order=None, is_view_only=None,
-               thumbnail=None, max_file_size=None, users_update_items=False):
+               thumbnail=None, max_file_size=None, users_update_items=False, clear_empty_fields=False):
         """
         Updates this group with only values supplied for particular arguments.
 
@@ -5548,6 +5580,9 @@ class Group(dict):
                             item's description, tags, metadata, as well as content.
                             This option can't be disabled once the group has
                             been created. Default is False.
+        ------------------  ---------------------------------------------------------
+        clear_empty_fields  Optional Boolean. If True, the user can set values to
+                            empty string, else, None values will be ignored.
         ==================  =========================================================
 
 
@@ -5566,7 +5601,8 @@ class Group(dict):
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
                                          sort_order, is_view_only, thumbnail,
-                                         max_file_size, users_update_items)
+                                         max_file_size, users_update_items,
+                                         clear_empty_fields=clear_empty_fields)
         if resp:
             self._hydrate()
         return resp
@@ -5828,9 +5864,13 @@ class User(dict):
             if 'role' in userdict and \
                'roleId' not in userdict:
                 userdict['roleId'] = userdict['role']
-            elif 'roleId' in userdict and \
-                 'role' not in userdict:
-                userdict['role'] = userdict['roleId']
+            elif 'roleId' in userdict and 'role' not in userdict:
+                # try getting role name - only needed for custom roles
+                try:
+                    role_obj = self._gis.users.roles.get_role(userdict['roleId'])
+                    userdict['role'] = role_obj.name
+                except Exception as ex:
+                    userdict['role'] = userdict['roleId']
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
         if hasattr(self, 'id') and \
@@ -6079,7 +6119,29 @@ class User(dict):
             return all(status)
         return res
     #----------------------------------------------------------------------
-    def reset(self, password, new_password=None, new_security_question=None, new_security_answer=None):
+    def delete_thumbnail(self):
+        """
+        Removes the thumbnail from the user's profile.
+        
+        :returns: Boolean
+        
+        """
+        if self._gis.version >= [7,3]:
+            url = self._gis._portal.resturl + "community/users/%s/deleteThumbnail" % self.username
+            params = {'f' : 'json'}
+            res = self._gis._con.post(url, params)
+            if 'success' in res:
+                return res['success']
+            return res
+        else:
+            raise Exception("The operation delete_thumbnail is not supported on this portal.")
+    #----------------------------------------------------------------------
+    def reset(self,
+              password=None,
+              new_password=None,
+              new_security_question=None,
+              new_security_answer=None,
+              reset_by_email=False):
         """ Resets a user's password, security question, and/or security answer.
 
         .. note::
@@ -6089,6 +6151,10 @@ class User(dict):
 
             If a new security question is specified, a new security answer should
             be provided.
+
+        .. note::
+            To reset the password by email, set `reset_by_email` to True and `password`
+            to `None`.
 
         =====================  =========================================================
         **Argument**           **Description**
@@ -6100,14 +6166,32 @@ class User(dict):
         new_security_question  Optional string. The new security question if desired.
         ---------------------  ---------------------------------------------------------
         new_security_answer    Optional string. The new security question answer if desired.
+        ---------------------  ---------------------------------------------------------
+        reset_by_email         Optional Boolean.  If True, the `user` will be reset by email. The default is False.
         =====================  =========================================================
 
         :return:
             A boolean indicating success (True) or failure (False).
 
         """
-        return self._portal.reset_user(self._user_id, password, new_password,
-                                       new_security_question, new_security_answer)
+        postdata = {'f' : 'json'}
+        if password:
+            postdata['password'] = password
+        if new_password:
+            postdata['newPassword'] = new_password
+        if new_security_question:
+            postdata['newSecurityQuestionIdx'] = new_security_question
+        if new_security_answer:
+            postdata['newSecurityAnswer'] = new_security_answer
+        if reset_by_email:
+            postdata["email"] = reset_by_email
+        url = self._gis._portal.resturl + 'community/users/' + self.username + '/reset'
+        resp = self._gis._con.post(url,
+                                   postdata,
+                                   ssl=True)
+        if resp:
+            return resp.get('success')
+        return False
 
     def update(self, access=None, preferred_view=None, description=None, tags=None,
                thumbnail=None, fullname=None, email=None, culture=None, region=None,
@@ -7702,7 +7786,7 @@ class Item(dict):
         except:
             folder = None
 
-        #get list of group IDs
+        # get list of group IDs
         group_ids = ''
         if isinstance(groups, list):
             for group in groups:
@@ -7710,12 +7794,12 @@ class Item(dict):
                     group_ids = group_ids + "," + group.id
 
                 elif isinstance(group, str):
-                    #search for group using title
-                    search_result = self._gis.groups.search(query='title:' + group, max_groups=1)
-                    if len(search_result) >0:
+                    # search for group using id
+                    search_result = self._gis.groups.search(query='id:' + group, max_groups=1)
+                    if len(search_result) > 0:
                         group_ids = group_ids + "," + search_result[0].id
                     else:
-                        raise Exception("Cannot find: " + group)
+                        raise Exception("Cannot find group with id: " + group)
                 else:
                     raise Exception("Invalid group(s)")
 
@@ -7780,12 +7864,12 @@ class Item(dict):
                     group_ids = group_ids + "," + group.id
 
                 elif isinstance(group, str):
-                    # search for group using title
-                    search_result = self._gis.groups.search(query='title:' + group, max_groups=1)
+                    # search for group using id
+                    search_result = self._gis.groups.search(query='id:' + group, max_groups=1)
                     if len(search_result) > 0:
                         group_ids = group_ids + "," + search_result[0].id
                     else:
-                        raise Exception("Cannot find: " + group)
+                        raise Exception("Cannot find group with id: " + group)
                 else:
                     raise Exception("Invalid group(s)")
 
@@ -8165,7 +8249,10 @@ class Item(dict):
         from datetime import timedelta
         if self.type == 'Feature Service':
             params['stype'] = 'features'
-            params['name'] = os.path.basename(os.path.dirname(self.layers[0].container._url))
+            if not self.layers[0].container:
+                params['name'] = os.path.basename(os.path.abspath(os.path.join(self.layers[0]._url, ".." + os.sep + "..")))
+            else:
+                params['name'] = os.path.basename(os.path.dirname(self.layers[0].container._url))
         if date_range.lower() in ['24h', '1d']:
             params['period'] = '1h'
             params['startTime'] = int((end_date - timedelta(days=1)).timestamp() * 1000)
@@ -8190,7 +8277,10 @@ class Item(dict):
                 "4" : [sd + timedelta(days=181), end_date + timedelta(days=1)]
             }
             params['period'] = '1d'
-            url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+            if self._gis._portal.is_logged_in:
+                url = "%s/portals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+            else:
+                url = "%s/portals/%s/usage" % (self._portal.resturl, "self")
             results = []
             for k,v in ranges.items():
                 sd = int(v[0].timestamp() * 1000)
@@ -8272,8 +8362,11 @@ class Item(dict):
                 return results
         else:
             raise ValueError("Invalid date range.")
+        if self._gis._portal.is_logged_in:
+            url = "%sportals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
+        else:
+            url = "%sportals/%s/usage" % (self._portal.resturl, "self")
 
-        url = "%sportals/%s/usage" % (self._portal.resturl, self._gis.properties.id)
         try:
             res = self._portal.con.post(url, params)
             if as_df:
@@ -8535,6 +8628,8 @@ class Item(dict):
         if file_type is None:
             if self['type'] == "GeoPackage":
                 fileType = "gpkg"
+            elif self['type'] == 'Compact Tile Package':
+                fileType = 'compactTilePackage'
             elif self['type'] == 'Service Definition':
                 fileType = 'serviceDefinition'
             elif self['type'] == 'Microsoft Excel':
@@ -8730,7 +8825,7 @@ class Item(dict):
 
         if buildInitialCache and \
            self._gis._portal.is_arcgisonline and \
-           fileType.lower() == 'tilepackage':
+           fileType.lower() in  ['tilepackage', 'compacttilepackage']:
             from ..mapping._types import MapImageLayer
             from ..raster._layer import ImageryLayer
             if len(ret) > 0 and \
@@ -9729,7 +9824,6 @@ def rot13(s, b64=False, of=False):
     else:
         return result
 
-
 class _GISResource(object):
     """ a GIS service
     """
@@ -9745,9 +9839,6 @@ class _GISResource(object):
             gis = GIS(set_active=False)
             self._gis = gis
             self._con = gis._con
-        #elif isinstance(gis, (ServerConnection, _ArcGISConnection)):
-            #self._gis = GIS(set_active=False)
-            #self._con = gis
         else:
             self._gis = gis
             if isinstance(gis, (ServerConnection, _ArcGISConnection)):
@@ -9764,21 +9855,24 @@ class _GISResource(object):
     def _refresh(self):
         params = {"f": "json"}
         if type(self).__name__ == 'ImageryLayer':
+            if hasattr(self, "_uri"):
+                if self._uri:
+                    params["Raster"] = self._uri
             if self._fn is not None:
                 params['renderingRule'] = self._fn
-            if hasattr(self, "_uri"):
-                if isinstance(self._uri, bytes):
-                    if 'renderingRule' in params.keys():
-                        del params['renderingRule']
-                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
             dictdata = self._con.get(self.url, params, token=self._lazy_token)
+        elif type(self).__name__ == 'ImageryLayer':
+            dictdata = self._con.post(self.url, params, token=self._lazy_token)
         else:
             try:
                 dictdata = self._con.post(self.url, params, token=self._lazy_token)
-            except:
-                dictdata = self._con.get(self.url, params, token=self._lazy_token)
+            except Exception as e:
+                if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
+                    dictdata = self._con.get(self.url, params, token=self._lazy_token)
+                else:
+                    raise e
 
         self._lazy_properties = PropertyMap(dictdata)
 
@@ -9860,7 +9954,6 @@ class _GISResource(object):
                 params[k] = v
                 del k,v
         return self._con.post(path=url, postdata=params, token=self._token)
-
 
 class Layer(_GISResource):
     """

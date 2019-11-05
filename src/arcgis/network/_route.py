@@ -747,32 +747,35 @@ def find_routes(stops,
     """
 
 
-    if stops is None:
-        stops = default_stops
-
-    if point_barriers is None:
-        point_barriers = default_point_barriers
-
-    if line_barriers is None:
-        line_barriers = default_line_barriers
-
-    if polygon_barriers is None:
-        polygon_barriers = default_polygon_barriers
-
-    if restrictions is None:
-        restrictions = default_restrictions
-
-    if attribute_parameter_values is None:
-        attribute_parameter_values = default_attributes
-
-    if route_line_simplification_tolerance is None:
-        route_line_simplification_tolerance = default_tolerance
-
 
     if gis is None:
         gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncRoute.url
     tbx = import_toolbox(url, gis=gis)
+    defaults = dict(zip(tbx.find_routes.__annotations__.keys(),
+                        tbx.find_routes.__defaults__))
+    if stops is None:
+        stops = default_stops
+
+    if point_barriers is None:
+        point_barriers = defaults['point_barriers']
+
+    if line_barriers is None:
+        line_barriers = defaults['line_barriers']
+
+    if polygon_barriers is None:
+        polygon_barriers = defaults['polygon_barriers']
+
+    if restrictions is None:
+        restrictions = defaults['restrictions']
+
+    if attribute_parameter_values is None:
+        attribute_parameter_values = defaults['attribute_parameter_values']
+
+    if route_line_simplification_tolerance is None:
+        route_line_simplification_tolerance = defaults['route_line_simplification_tolerance']
+
+
     job = tbx.find_routes(stops=stops,
                           measurement_units=measurement_units,
                           analysis_region=analysis_region,

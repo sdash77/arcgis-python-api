@@ -31,6 +31,7 @@ class AGOLAdminManager(object):
     _license = None
     _usage = None
     _category_schema = None
+    _certificates = None
     #----------------------------------------------------------------------
     def __init__(self,
                  gis,
@@ -250,5 +251,14 @@ class AGOLAdminManager(object):
         return self._gis._con.post(url, params,
                                    file_name="history.csv",
                                    out_folder=save_folder)
-
+    #----------------------------------------------------------------------
+    @property
+    def certificates(self):
+        """
+        Provides access to managing the organization's certificates.
+        """
+        if self._certificates is None:
+            from .._impl import CertificateManager
+            self._certificates = CertificateManager(gis=self._gis)
+        return self._certificates
 

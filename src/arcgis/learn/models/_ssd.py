@@ -5,39 +5,56 @@ import json
 from ._codetemplate import code
 import logging
 logger = logging.getLogger() 
+import os, csv
+import warnings
+from warnings import warn
+from . import _tracker_util
+
+HAS_OPENCV = True
+HAS_FASTAI = True
+HAS_ARCPY = True
 
 try:
     import torch
+    import numpy as np
+    from fastprogress import progress_bar
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
-    from fastai.vision.image import open_image
+    from fastai.vision.data import ImageDataBunch
+    from fastai.vision import ImageList
+    from fastai.vision import imagenet_stats, normalize
+    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from torchvision.models import resnet34
     from torchvision.models import mobilenet_v2
     from torchvision import models
-    import numpy as np
-    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms, compute_class_AP, SSDHeadv2, kmeans, avg_iou
+    from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
+    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     from ._unet_utils import is_no_color
     from torch.nn import Module as NnModule
-    HAS_FASTAI = True
+    import PIL
+    from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
+    from .._video_utils import VideoUtils
 except Exception as e:
     class NnModule():
         pass
     HAS_FASTAI = False
 
+try:
+    import cv2
+except Exception:
+    HAS_OPENCV = False
+
+try:
+    import arcpy
+except Exception:
+    HAS_ARCPY = False
+
 
 def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
-
-class _EmptyData():
-    def __init__(self, path, c, loss_func, chip_size):
-        self.path = path
-        self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-        self.c = c
-        self.loss_func = loss_func
-        self.chip_size = chip_size
 
 
 class SingleShotDetector(ArcGISModel):
@@ -45,7 +62,7 @@ class SingleShotDetector(ArcGISModel):
     """
     Creates a Single Shot Detector with the specified grid sizes, zoom scales
     and aspect  ratios. Based on Fast.ai MOOC Version2 Lesson 9.
-
+    
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
@@ -80,8 +97,10 @@ class SingleShotDetector(ArcGISModel):
                             location and classification loss. This factor
                             adjusts the focus of model on the location of 
                             bounding box.
+    ---------------------   -------------------------------------------
+    ssd_version             Optional int within [1,2]. Use version=1 for arcgis v1.6.2 or earlier
     =====================   ===========================================
-
+    
     :returns: `SingleShotDetector` Object
     """
 
@@ -91,6 +110,9 @@ class SingleShotDetector(ArcGISModel):
         super().__init__(data, backbone)
 
         # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
+        if not ssd_version in [1, 2]:
+            raise Exception("ssd_version can be only [1,2]")
+
         if location_loss_factor is not None:
             if not ((location_loss_factor > 0) and (location_loss_factor < 1)):
                 raise Exception('`location_loss_factor` should be greater than 0 and less than 1')
@@ -109,6 +131,9 @@ class SingleShotDetector(ArcGISModel):
             self._backbone = backbone
             backbone_name = 'custom'
 
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+
         backbone_cut = None
         backbone_split = None
 
@@ -117,7 +142,9 @@ class SingleShotDetector(ArcGISModel):
             backbone_split = _mobilenet_split
 
         if ssd_version == 1:
-
+            if grids == None:
+                grids =[4,2,1]
+                
             self._create_anchors(grids, zooms, ratios)
 
             feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
@@ -172,7 +199,6 @@ class SingleShotDetector(ArcGISModel):
             raise Exception('SSDVersion can only be 1 or 2')
 
         self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
-
         self.learn.model = self.learn.model.to(self._device)
 
         if focal_loss:
@@ -185,12 +211,40 @@ class SingleShotDetector(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)        
 
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
+
+    @property
+    def supported_backbones(self):
+        return [*self._resnet_family, *self._densenet_family, *self._vgg_family, models.mobilenet_v2.__name__]
+
     @classmethod
     def from_model(cls, emd_path, data=None):
+
+        """
+        Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+        
+        :returns: `SingleShotDetector` Object
+        """
         return cls.from_emd(data, emd_path)
 
     @classmethod
     def from_emd(cls, data, emd_path):
+
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
 
@@ -204,7 +258,7 @@ class SingleShotDetector(ArcGISModel):
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
-
+        
         :returns: `SingleShotDetector` Object
         """
         emd_path = Path(emd_path)
@@ -212,18 +266,44 @@ class SingleShotDetector(ArcGISModel):
         model_file = Path(emd['ModelFile'])
         backbone = emd.get('backbone', 'resnet34')
         ssd_version = int(emd.get('SSDVersion', 1))
+        chip_size = emd["ImageWidth"]
 
         if not model_file.is_absolute():
             model_file = emd_path.parent / model_file
 
-        class_mapping = {i['Value'] : i['Name'] for i in emd['Classes']}
+        class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+        
         resize_to = emd.get('resize_to')
+        if isinstance(resize_to, list):
+            resize_to = (resize_to[0], resize_to[1])
 
+        data_passed = True
+        # Create an image databunch for when loading the model using emd (without training data)
         if data is None:
-            data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            data_passed = False
+            train_tfms = []
+            val_tfms = []
+            ds_tfms = (train_tfms, val_tfms)
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                
+                sd = ImageList([], path=tempfile.TemporaryDirectory().name).split_by_idx([])
+                tempdata = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+                tempdata.chip_size = chip_size
+                tempdata.class_mapping = class_mapping
+                tempdata.classes = ['background'] + list(class_mapping.values())
+                data = tempdata
+                data.c += 1 # Add 1 for background class
 
         data.resize_to = resize_to
-        return cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
+        ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
+
+        if not data_passed:
+            ssd.learn.data.single_ds.classes = ssd._data.classes
+            ssd.learn.data.single_ds.y.classes = ssd._data.classes
+        
+        return ssd
 
     def _create_anchors(self, anc_grids, anc_zooms, anc_ratios):
 
@@ -326,19 +406,10 @@ class SingleShotDetector(ArcGISModel):
     def _normalize_bbox(self, bbox):
         return (bbox+1.)/2.
 
-    def _html_metrics(self):
-        import pandas as pd
-        html_model = f"""
-        <p><b>Single Shot Detector</b></p>
-        """
-        ap_score = self.average_precision_score()
-        ap_df = pd.DataFrame(list(ap_score.items()), columns=['Class', 'Score'])
-        html_string = f""" 
-        <p><b>Mean average precision score: </b></p>
-        {ap_df.to_html()} 
-        """
-        return html_model, html_string
-        
+    @property
+    def _model_metrics(self):
+        return {'average_precision_score': self.average_precision_score(show_progress=False)}
+
     def _create_emd(self, path):
         import random
         super()._create_emd(path)
@@ -348,6 +419,7 @@ class SingleShotDetector(ArcGISModel):
         self._emd_template["ModelConfiguration"] = "_DynamicSSD"
         self._emd_template["ModelType"] = "ObjectDetection"
         self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['backbone'] = self._backbone.__name__
         self._emd_template['Grids'] = self.grids
         self._emd_template['Zooms'] = self.zooms
         self._emd_template['Ratios'] = self.ratios
@@ -367,7 +439,38 @@ class SingleShotDetector(ArcGISModel):
 
         return path.stem
 
+    def _create_tfonnx_emd(self, saved_path, batch_size):
+        import random
+        super()._create_emd(saved_path)
+
+        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        self._emd_template["ModelConfiguration"] = "_SSDTensorflow"
+        self._emd_template["ModelType"] = "ObjectDetection"
+        self._emd_template["ExtractBands"] = [0, 1, 2]
+        self._emd_template['backbone'] = self._backbone.__name__
+        self._emd_template['Grids'] = self.grids
+        self._emd_template['Zooms'] = self.zooms
+        self._emd_template['Ratios'] = self.ratios
+        self._emd_template['SSDVersion'] = self.ssd_version
+        self._emd_template['Classes'] = []
+        self._emd_template['BatchSize'] = batch_size
+
+        class_data = {}
+        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
+            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
+            class_data["Value"] = inverse_class_mapping[class_name]
+            class_data["Name"] = class_name
+            color = [random.choice(range(256)) for i in range(3)]
+            class_data["Color"] = color
+            self._emd_template['Classes'].append(class_data.copy())
+
+        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
+
+        return saved_path.stem
+    
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
+
         """
         Displays the results of a trained model on a part of the validation set.
         """ 
@@ -375,20 +478,240 @@ class SingleShotDetector(ArcGISModel):
             rows = self._data.batch_size      
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
 
-    def predict(self, image_path, threshold=0.5, nms_overlap=0.1, return_scores=False, visualize=False):
-        image = open_image(image_path).apply_tfms(self._data.valid_ds.tfms)
+    def predict_video(
+        self,
+        input_video_path,
+        metadata_file,
+        threshold=0.5,
+        nms_overlap=0.1,
+        track=False,
+        visualize=False,
+        output_file_path=None,
+        multiplex=False,
+        multiplex_file_path=None,
+        tracker_options={
+            'assignment_iou_thrd': 0.3,
+            'vanish_frames': 40,
+            'detect_frames': 10
+        },
+        visual_options={
+            'show_scores': True,
+            'show_labels': True,
+            'thickness': 2,
+            'fontface': 0,
+            'color': (255, 255, 255)
+        }
+    ):
+
+        """
+        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        input_video_path        Required. Path to the video file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        metadata_file           Required. Path to the metadata csv file where
+                                the predictions will be saved in VMTI format.
+        ---------------------   -------------------------------------------
+        threshold               Optional float. The probability above which
+                                a detection will be considered.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        track                   Optional bool. Set this parameter as True to
+                                enable object tracking. 
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. If True a video is saved
+                                with prediction results.
+        ---------------------   -------------------------------------------
+        output_file_path        Optional path. Path of the final video to be saved.
+                                If not supplied, video will be saved at path input_video_path
+                                appended with _prediction.
+        ---------------------   -------------------------------------------
+        multiplex               Optional boolean. Runs Multiplex using the VMTI detections.
+        ---------------------   -------------------------------------------
+        multiplex_file_path     Optional path. Path of the multiplexed video to be saved.
+                                By default a new file with _multiplex.MOV extension is saved
+                                in the same folder.
+        ---------------------   -------------------------------------------
+        tracking_options        Optional dictionary. Set different parameters for
+                                object tracking. assignment_iou_thrd parameter is used
+                                to assign threshold for assignment of trackers, 
+                                vanish_frames is the number of frames the object should
+                                be absent to consider it as vanished, detect_frames 
+                                is the number of frames an object should be detected
+                                to track it.
+        ---------------------   -------------------------------------------
+        visual_options          Optional dictionary. Set different parameters for
+                                visualization.
+                                show_scores boolean, to view scores on predictions,
+                                show_labels boolean, to view labels on predictions,
+                                thickness integer, to set the thickness level of box,
+                                fontface integer, fontface value from opencv values,
+                                color tuple (B, G, R), tuple containing values between
+                                0-255.
+        =====================   ===========================================
+        
+        """
+
+        VideoUtils.predict_video(
+            self,
+            input_video_path,
+            metadata_file,
+            threshold,
+            nms_overlap,
+            track, visualize,
+            output_file_path,
+            multiplex,
+            multiplex_file_path,
+            tracker_options,
+            visual_options
+        )
+
+    def predict(
+        self,
+        image_path,
+        threshold=0.5,
+        nms_overlap=0.1,
+        return_scores=False,
+        visualize=False
+    ):
+
+        """
+        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        image_path              Required. Path to the image file to make the
+                                predictions on.
+        ---------------------   -------------------------------------------
+        threshold               Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        return_scores           Optional boolean. Will return the probability
+                                scores of the bounding box predictions if True.
+        ---------------------   -------------------------------------------
+        visualize               Optional boolean. Displays the image with
+                                predicted bounding boxes if True.
+        =====================   ===========================================
+        
+        :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
+        """
+        if not HAS_OPENCV:
+            raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
+
+        if isinstance(image_path, str):
+            image = cv2.imread(image_path)
+        else:
+            image = image_path
+
+        orig_height, orig_width, _ = image.shape
+        orig_frame = image.copy()
 
         if self._data.resize_to is not None:
-            image = image.resize(size=self._data.resize_to)
+            if isinstance(self._data.resize_to, tuple):
+                image = cv2.resize(image, self._data.resize_to)
+            else:
+                image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
-        bbox = self.learn.predict(image, thresh=threshold, nms_overlap=nms_overlap, ret_scores=return_scores, ssd=self)[0]
+        height, width, _ = image.shape
+
+        if self._data.chip_size is not None:
+            chips = _get_image_chips(image, self._data.chip_size)
+        else:
+            chips = [{'width': width, 'height': height, 'xmin': 0, 'ymin': 0, 'chip': image, 'predictions': []}]
+
+        valid_tfms = self._data.valid_ds.tfms
+        self._data.valid_ds.tfms = []
+
+        for chip in chips:
+            frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
+            bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
+            if bbox:
+                scores = bbox.scores
+                bboxes, lbls = bbox._compute_boxes()
+                bboxes.add_(1).mul_(torch.tensor([chip['height'] / 2, chip['width'] / 2, chip['height'] / 2, chip['width'] / 2])).long()
+                for index, bbox in enumerate(bboxes):
+                    if lbls is not None:
+                        label = lbls[index]
+                    else:
+                        label = 'Default'
+
+                    data = bb2hw(bbox)
+                    if not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                        chip['predictions'].append({
+                            'xmin': data[0],
+                            'ymin': data[1],
+                            'width': data[2],
+                            'height': data[3],
+                            'score': float(scores[index]),
+                            'label': label
+                        })
+
+        self._data.valid_ds.tfms = valid_tfms
+
+        predictions, labels, scores = _get_transformed_predictions(chips)
+
+        y_ratio = orig_height/height
+        x_ratio = orig_width/width
+
+        for index, prediction in enumerate(predictions):
+            prediction[0] = prediction[0]*x_ratio
+            prediction[1] = prediction[1]*y_ratio
+            prediction[2] = prediction[2]*x_ratio
+            prediction[3] = prediction[3]*y_ratio
+
+            # Clip xmin
+            if prediction[0] < 0: 
+                prediction[2] = prediction[2] + prediction[0]
+                prediction[0] = 1
+
+            # Clip width when xmax greater than original width
+            if prediction[0] + prediction[2] > orig_width:
+                prediction[2] = (prediction[0] + prediction[2]) - orig_width
+
+            # Clip ymin
+            if prediction[1] < 0:
+                prediction[3] = prediction[3] + prediction[1]
+                prediction[1] = 1
+
+            # Clip height when ymax greater than original height
+            if prediction[1] + prediction[3] > orig_height:
+                prediction[3] = (prediction[1] + prediction[3]) - orig_height
+
+            predictions[index] = [
+                prediction[0],
+                prediction[1],
+                prediction[2],
+                prediction[3]
+            ]      
 
         if visualize:
-            image.show(y=bbox)
+            image = _draw_predictions(orig_frame, predictions, labels)
+            import matplotlib.pyplot as plt
+            plt.xticks([])
+            plt.yticks([])
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            plt.imshow(PIL.Image.fromarray(image))
 
-        return None if bbox is None else bbox.data
+        if return_scores:
+            return predictions, labels, scores
+        else:
+            return predictions, labels
 
-    def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False):
+    def average_precision_score(self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True):
+
         """
         Computes average precision on the validation set for each class.
 
@@ -408,21 +731,12 @@ class SingleShotDetector(ArcGISModel):
                                 average precision otherwise returns mean
                                 average precision.                        
         =====================   ===========================================
-
+        
         :returns: `dict` if mean is False otherwise `float`
         """        
-        aps = compute_class_AP(self, self._data.valid_dl, n_classes=(self._data.c - 1), detect_thresh=detect_thresh, iou_thresh=iou_thresh)
+        aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
         if mean:
             import statistics
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
-
-    def _get_model_metrics(self, **kwargs):
-        kwargs_metrics = {
-            'detect_thresh': 0.5,
-            'iou_thresh': 0.5,
-            'mean': True
-        }
-
-        return self.average_precision_score(**kwargs_metrics)

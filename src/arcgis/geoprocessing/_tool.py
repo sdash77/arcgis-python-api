@@ -152,7 +152,10 @@ def _generate_fn(task, tbx):
 
 
     taskurl = tbx.url + "/" + task
-    taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+    try:
+        taskprops = tbx._con.post(taskurl, {"f": "json"}, token=tbx._token)
+    except:
+        taskprops = tbx._con.post(taskurl, {"f": "json"})
 
     # execution_type = taskprops['executionType']
     #

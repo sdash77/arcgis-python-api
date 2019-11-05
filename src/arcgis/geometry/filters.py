@@ -44,7 +44,7 @@ def intersects(geometry, sr=None):
         freeway feature, United States Interstate 15.
 
         from arcgis.geometry import Geometry
-        from arcgis.features.filters import intersects
+        from arcgis.geometry.filters import intersects
 
         # select a filter feature to construct its geometry
         rte15_fset = freeway_lyr.query(where="ROUTE_NUM = 'I15'")

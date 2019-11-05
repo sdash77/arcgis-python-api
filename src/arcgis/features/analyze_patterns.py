@@ -391,7 +391,7 @@ def find_hot_spots(
     future                                                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
     ===================================================================    =========================================================
 
-    :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
+    :returns: result_layer : feature layer Item if output_name is specified, else a dictionary with a Feature Collection and processing messages.
 
     .. code-block:: python
 

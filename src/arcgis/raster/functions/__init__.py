@@ -14,7 +14,8 @@ Functions can be applied to various rasters (or images), including the following
 # Mosaic datasets
 # Rasters within mosaic datasets
 from .._layer import ImageryLayer
-from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra
+from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra, \
+                     _pixel_type_string_to_long
 from arcgis.gis import Item
 import copy
 import numbers
@@ -90,6 +91,7 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
+    newlyr._raster_info = layer._raster_info
 
     newlyr._lazy_token = layer._token
     newlyr._refresh()
@@ -131,6 +133,7 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
     newlyr._filtered = layer._filtered
     newlyr._extent = layer._extent
     newlyr._uses_gbl_function = layer._uses_gbl_function
+    newlyr._raster_info = layer._raster_info
 
     newlyr._lazy_token = layer._token
     newlyr._refresh()
@@ -1283,7 +1286,7 @@ def hillshade(dem, azimuth=215.0, altitude=75.0, z_factor=0.3, slope_type=1, ps_
     return _clone_layer(layer, template_dict, raster_ra)
 
 
-def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", astype=None, process_as_multiband=None):
     """
     The local function allows you to perform bitwise, conditional, logical, mathematical, and statistical operations on
     a pixel-by-pixel basis. For more information, see
@@ -1300,6 +1303,8 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
+                                 Applicable for operations - Majority, Maximum, Mean, Median, Minimum, Minority, Range, Standard Deviation, Sum, and Variety.
     :return: the output raster
 
     """
@@ -1344,6 +1349,13 @@ def local(rasters, operation, extent_type="FirstOf", cellsize_type="FirstOf", as
         template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
     if cellsize_type is not None:
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
+
+    if process_as_multiband is not None:
+        if isinstance(process_as_multiband, bool):
+            template_dict["rasterFunctionArguments"]["ProcessAsMultiband"] = process_as_multiband
+        else:
+            raise RuntimeError('process_as_multiband should be an instance of bool')
+
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name='Rasters')
 
@@ -1942,7 +1954,7 @@ def log2(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 37, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Majority operation
 
@@ -1953,14 +1965,15 @@ def majority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nod
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 66 if ignore_nodata else 38
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband= process_as_multiband)
 
 
-def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Max operation
 
@@ -1970,14 +1983,15 @@ def max(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 67 if ignore_nodata else 39
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Mean operation
 
@@ -1988,14 +2002,15 @@ def mean(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 68 if ignore_nodata else 40
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Med operation
 
@@ -2006,14 +2021,15 @@ def med(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 69 if ignore_nodata else 41
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Min operation
 
@@ -2024,14 +2040,15 @@ def min(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: Set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 70 if ignore_nodata else 42
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Minority operation
 
@@ -2042,11 +2059,12 @@ def minority(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nod
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 71 if ignore_nodata else 43
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def mod(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2097,7 +2115,7 @@ def not_equal(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=No
     return local(rasters, 46, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Range operation
 
@@ -2108,11 +2126,12 @@ def cellstats_range(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ign
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 72 if ignore_nodata else 47
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def round_down(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2211,7 +2230,7 @@ def square(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None)
     return local(rasters, 53, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Std operation
 
@@ -2222,14 +2241,15 @@ def std(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 73 if ignore_nodata else 54
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
-def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False,  astype=None):
+def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False,  astype=None, process_as_multiband=None):
     """
     The Sum operation
 
@@ -2240,11 +2260,12 @@ def sum(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=F
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 74 if ignore_nodata else 55
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def tan(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2279,7 +2300,7 @@ def tanh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     return local(rasters, 57, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 
-def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None):
+def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_nodata=False, astype=None, process_as_multiband=None):
     """
     The Variety operation
 
@@ -2290,11 +2311,12 @@ def variety(rasters, extent_type="FirstOf", cellsize_type="FirstOf", ignore_noda
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param ignore_nodata: True or False, set to True to ignore NoData values
     :param astype: output pixel type
+    :param process_as_multiband: True or False, set to True to process as multiband. 
     :return: the output raster
 
     """
     opnum = 75 if ignore_nodata else 58
-    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+    return local(rasters, opnum, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype, process_as_multiband=process_as_multiband)
 
 
 def acosh(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
@@ -2401,9 +2423,21 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     The arguments for the mask function are as follows:
 
     :param raster: input raster
-    :param no_data_values: array of string ["band0_val","band1_val",...]
-    :param included_ranges: array of double [band0_lowerbound,band0_upperbound,band1...],
-    :param no_data_interpretation: int 0=MatchAny, 1=MatchAll
+    :param no_data_values: list of strings ["band0_val","band1_val",...]. The NoData values can be specified 
+                           for each band. The index of each element in no_data_values list 
+                           represents the no data value in the corresponding band.
+
+                           You can specify more than one value by entering a space-delimited string for each index.
+                           e.g., ["band0_val1 band0_val2", "band1_val1 band1_val2",...]
+    :param included_ranges: list of floats [band0_lowerbound,band0_upperbound,band1_lowerbound,band1_upperbound, band2_.....], 
+                            The included ranges can be specified for each band by specifying a minimum and maximum value.
+    :param no_data_interpretation: int 0=MatchAny, 1=MatchAll. This parameter refers to how the NoData 
+                                   values will impact the output image.
+
+                                   - 0 (MatchAny) : If the NoData value you specify occurs for a cell in a
+                                     specified band, then that cell in the output image will be NoData.
+                                   - 1 (MatchAll) :  The NoData values you specify for each band must occur 
+                                     in the same cell for the output image to contain the NoData cell.
     :param astype: output pixel type
     :return: the output raster
 
@@ -2808,36 +2842,36 @@ def focal_statistics(raster, kernel_columns=None, kernel_rows=None, stat_type=No
     <a href="http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-function.htm">statistics function</a>.
     The arguments for the statistics function are as follows:
 
-    
-    The focal_statistics() is different from focal_stats() in the following aspects:
-
-    focal_statistics() supports  Minimum, Maximum, Mean and Standard Deviation.
-    while focal_stats() supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, Variety
-
-    focal_statistics() supports only Rectangle,
-    while focal_stats() supports Rectangle, Circle, Annulus, Wedge, Irregular, Weight neighbourhoods, 
-
-    Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
-    This option is not present in focal_stats()    
-
-    Option to determine whether NoData values are ignored or not is available in focal_stats() by setting bool value for ignore_no_data param.
-    This option is not present in focal_statistics()
-
     :param raster: input raster
     :param kernel_columns: int (e.g. 3)
     :param kernel_rows: int (e.g. 3)
-    :param stat_type: int or string 
-					  There are four types of focal statistical functions:
-					  1=Min, 2=Max, 3=Mean, 4=StandardDeviation
-					  -Min-Calculates the minimum value of the pixels within the neighborhood
-				      -Max-Calculates the maximum value of the pixels within the neighborhood
-				      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
-				      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
+    :param stat_type: int or string.
+                      There are four types of focal statistical functions:
+                      1=Min, 2=Max, 3=Mean, 4=StandardDeviation
+                      -Min-Calculates the minimum value of the pixels within the neighborhood
+                      -Max-Calculates the maximum value of the pixels within the neighborhood
+                      -Mean-Calculates the average value of the pixels within the neighborhood. This is the default.
+                      -StandardDeviation-Calculates the standard deviation value of the pixels within the neighborhood
     :param columns: int (e.g. 3). The number of pixel rows to use in your focal neighborhood dimension.
     :param rows: int (e.g. 3). The number of pixel columns to use in your focal neighborhood dimension.
     :param fill_no_data_only: bool
     :param astype: output pixel type
     :return: the output raster
+
+    .. note::
+        The focal_statistics() function is different from the focal_stats() function in the following aspects:
+
+        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation.
+        The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
+
+        The focal_statistics() function supports only Rectangle.
+        The focal_stats() function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods.
+
+        The option to determine if NoData pixels are to be processed out is available in the focal_statistics() function by setting a bool value for fill_no_data_only param.
+        This option is not present in the focal_stats() function.
+
+        The option to determine whether NoData values are ignored or not is available in the focal_stats() function by setting a bool value for ignore_no_data param.
+        This option is not present in the focal_statistics() function.
 
     """
 
@@ -3793,20 +3827,6 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
     For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
 
-    The focal_stats() is different from focal_statistics() in the following aspects:
-
-    focal_stats() supports Mean, Majority, Maximum, Median, Minimum, Minority, Percentile, Range, Standard deviation, Sum, Variety,
-    while the focal_statistics() supports only Minimum, Maximum, Mean and Standard Deviation.
-
-    focal_stats() supports Rectangle, Circle, Annulus, Wedge, Irregular, Weight neighbourhoods, focal_statistics() supports only Rectangle.
-
-    Option to determine whether NoData values are ignored or not is available in focal_stats() by setting bool value for ignore_no_data param.
-    This option is not present in focal_statistics()
-
-    Option to determine if NoData pixels are to be processed out is available in focal_statistics() by setting bool value for fill_no_data_only.
-    This option is not present in focal_stats()
-
-
     :param raster: input raster
     :param neighborhood_type: int, default is 1. The shape of the area around each cell used to calculate the statistic.
                                1 = Rectangle
@@ -3816,45 +3836,73 @@ def focal_stats(raster, neighborhood_type=1 , width=3, height=3,
                                5 = Irregular
                                6 = Weight
                                
-    :param width: int, default is 3 - specified when neighborhood_type is Rectangle
-    :param height: int, default is 3 - specified when neighborhood_type is Rectangle
-    :param inner_radius: int, default is 1 - specified when neighborhood_type is Annulus
-    :param outer_radius: int, default is 3 - specified when neighborhood_type is Annulus
-    :param radius: int default is 3 - specified when neighborhood_type is Circle or Wedge
-    :param start_angle: float, default is 0
-    :param end_angle: float, default is 90
-    :param neighborhood_values: - specified when neighborhood_type is Irregular or Weight.
-                                  It can be a list of list, in which the width and height will be automatically set from the columns and rows 
-                                  respectively of the two dimensional list.
-                                  or a one dimensional list obtained from flattening a two dimensional list. In this case 
-                                  the dimensions needs to be specified explicitly in width and height parameters
-    :param stat_type: int
-                      There are 11 types of focal statistical functions:
+    :param width: int, default is 3. Specified when neighborhood_type is Rectangle
+    :param height: int, default is 3. Specified when neighborhood_type is Rectangle
+    :param inner_radius: int, default is 1. Specified when neighborhood_type is Annulus
+    :param outer_radius: int, default is 3. Specified when neighborhood_type is Annulus
+    :param radius: int, default is 3. Specified when neighborhood_type is Circle or Wedge
+    :param start_angle: float, default is 0. Specified when neighborhood_type is Wedge
+    :param end_angle: float, default is 90. Specified when neighborhood_type is Wedge
+    :param neighborhood_values: Specified when neighborhood_type is Irregular or Weight.
+                                It can be a list of lists, in which the width and height will be automatically set from the columns and rows 
+                                of the two dimensional list, respectively. 
+                                Alternatively, it can be a one dimensional list obtained from flattening a two dimensional list. In this case, 
+                                the dimensions need to be specified explicitly with the width and height parameters.
+    :param stat_type: int, default is 3(Mean)
+
+                      There are 11 types of statistics available:
                       1=Majority, 2=Maximum, 3=Mean , 4=Median, 5= Minimum, 6 = Minority,
                       7=Range, 8=Standard deviation, 9=Sum, 10=Variety, 12=Percentile
-                      Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
-                      Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
-                      Mean = Calculates the mean (average value) of the cells in the neighborhood.
-                      Median = Calculates the median of the cells in the neighborhood.
-                      Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
-                      Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
-                      Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
-                      Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
-                      Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
-                      Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
-                      Percentile = Calculates a specified percentile of the cells in the neighborhood.
 
-                      Default is 3(Mean)
-    :param ignore_no_data: boolean
-                           True. Specifies that if a NoData value exists within a neighborhood, 
-                           the NoData value will be ignored. Only cells within the neighborhood 
-                           that have data values will be used in determining the output value. 
-                           This is the default.
-                           False - Specifies that if any cell in a neighborhood has a value of 
-                           NoData, the output for the processing cell will be NoData
-    :param percentile_value: float, default is 90. 
+                          Majority = Calculates the majority (value that occurs most often) of the cells in the neighborhood.
+
+                          Maximum = Calculates the maximum (largest value) of the cells in the neighborhood.
+
+                          Mean = Calculates the mean (average value) of the cells in the neighborhood.
+
+                          Median = Calculates the median of the cells in the neighborhood.
+
+                          Minimum = Calculates the minimum (smallest value) of the cells in the neighborhood.
+
+                          Minority = Calculates the minority (value that occurs least often) of the cells in the neighborhood.
+
+                          Range = Calculates the range (difference between largest and smallest value) of the cells in the neighborhood.
+
+                          Standard deviation =  Calculates the standard deviation of the cells in the neighborhood.
+
+                          Sum = Calculates the sum (total of all values) of the cells in the neighborhood.
+
+                          Variety = Calculates the variety (the number of unique values) of the cells in the neighborhood.
+
+                          Percentile = Calculates a specified percentile of the cells in the neighborhood.
+
+    :param ignore_no_data: boolean, default is True.
+
+                        True - Specifies that if a NoData value exists within a neighborhood, 
+                        the NoData value will be ignored. Only cells within the neighborhood 
+                        that have data values will be used in determining the output value. 
+                        This is the default.
+
+                        False - Specifies that if any cell in a neighborhood has a value of 
+                        NoData, the output for the processing cell will be NoData.
+    :param percentile_value: float, default is 90. Denotes which percentile to calculate when the stat_type is Percentile.   
+                             The value can range from 0 to 100.
 
     :return: the output raster
+
+    .. note::
+        The focal_stats() function is different from the focal_statistics() function in the following aspects:
+
+        The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Percentile, Range, Standard deviation, Sum, and Variety.
+        The focal_statistics() function supports only Minimum, Maximum, Mean, and Standard Deviation.
+
+        The focal_stats() function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods. The focal_statistics() function supports only Rectangle.
+
+        The option to determine whether NoData values are ignored or not is available in the focal_stats() function by setting a bool value for ignore_no_data param.
+        This option is not present in the focal_statistics() function.
+
+        The option to determine if NoData pixels are to be processed out is available in the focal_statistics() function by setting a bool value for fill_no_data_only param.
+        This option is not present in the focal_stats() function.
 
     """
 
@@ -4050,6 +4098,259 @@ def monitor_vegetation(raster, method='NDVI', band_indexes=None, astype=None):
             return band_arithmetic(raster, band_indexes, astype, 19)
 
     return band_arithmetic(raster, band_indexes, astype, method)
+
+def constant_raster(constant, raster_info, gis=None):
+    """
+    Creates a virtual raster with a single pixel value.
+
+    :param constant: Required list. The value of the constant to be added to the virtual raster.
+    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+                        Example for RasterInfo dict - 
+                        {'bandCount': 3, 
+
+                         'extent': {"xmin": 4488761.95,
+                                     "ymin": 5478609.805,
+                                     "xmax": 4489727.05,
+                                     "ymax": 5479555.305,
+                                     "spatialReference": {
+
+                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+
+                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+
+                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+
+                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+
+                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+
+                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+
+                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+
+                                     }}, 
+                         'pixelSizeX': 0.0999999999999614, 
+
+                         'pixelSizeY': 0.1, 
+
+                         'pixelType': 'U8'}
+
+
+    :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
+                If not provided, active gis will be used to do this.
+                If gis parameter is not specified the output of constant_raster() cannot be displayed. 
+
+    :return: output raster 
+    """
+
+    template_dict = {
+        "rasterFunction" : "Constant",
+        "rasterFunctionArguments": {
+        }
+    }
+
+    if constant is not None:
+        template_dict["rasterFunctionArguments"]["Constant"] = constant
+
+    if raster_info is not None:
+        layer_raster_info = {}
+        if isinstance(raster_info, ImageryLayer):
+            layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        else:
+            layer_raster_info = copy.deepcopy(raster_info)
+        if "pixelType" in layer_raster_info.keys():
+            if isinstance(layer_raster_info["pixelType"], str):
+                layer_raster_info["pixelType"] = _pixel_type_string_to_long(layer_raster_info["pixelType"])
+        layer_raster_info.update({'type': 'RasterInfo'})
+        template_dict["rasterFunctionArguments"]['RasterInfo'] = layer_raster_info
+    else:
+        raise RuntimeError('raster_info cannot be None')
+
+    if gis is not None:
+        newlyr = ImageryLayer(template_dict, gis)
+    else:
+        newlyr = ImageryLayer(template_dict,None)
+    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    return newlyr
+
+def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0, min_integer=1, 
+                  max_integer=10, normal_mean=0.0, std_dev=1.0, exp_mean=1.0, poisson_mean= 1.0,
+                  alpha=1.0, beta=1.0, N=10, r=10, probability=0.5, seed=1, generator_type=2, 
+                  gis=None):
+    """
+    Creates a virtual raster with random values for each cell.
+
+    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+                        if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+
+                        Example for RasterInfo dict - 
+                        {'bandCount': 3, 
+
+                         'extent': {"xmin": 4488761.95,
+                                     "ymin": 5478609.805,
+                                     "xmax": 4489727.05,
+                                     "ymax": 5479555.305,
+                                     "spatialReference": {
+
+                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+
+                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+
+                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+
+                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+
+                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+
+                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+
+                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+
+                                     }}, 
+                         'pixelSizeX': 0.0999999999999614, 
+
+                         'pixelSizeY': 0.1, 
+
+                         'pixelType': 'U8'}
+
+    :param distribution: Optional int. Specify the random value distribution method to use.
+     Default 1. i,e; Uniform
+                         Choice list:
+                           Uniform = 1
+                           UniformInteger = 2
+                           Normal = 3
+                           Exponential = 4
+                           Poisson = 5
+                           Gamma = 6
+                           Binomial = 7
+                           Geometric = 8
+                           NegativeBinomial = 9
+
+                        Uniform - A uniform distribution with the defined range.
+
+                        UniformInteger - An integer distribution with the defined range.
+
+                        Normal - A normal distribution with a defined {normal_mean} and {std_dev}. 
+
+                        Exponential - An exponential distribution with a defined {exp_mean}.
+
+                        Poisson - A Poisson distribution with a defined {Mean}.
+
+                        Gamma - A gamma distribution with a defined {alpha} and {beta}.
+                                
+                        Binomial - A binomial distribution with a defined {N} and {probability}.
+
+                        Geometric - A geometric distribution with a defined {probability}. 
+
+                        NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
+
+    :param min_uniform: Optional float. The default values is 0.0
+    :param max_uniform: Optional float. The default values is 1.0
+    :param min_integer: Optional int. The default values is 1
+    :param max_integer: Optional int. The default values is 10
+    :param normal_mean: Optional float. The default values is 0.0
+    :param std_dev: Optional float. The default values is 1.0
+    :param exp_mean: Optional float. The default values is 1.0
+    :param poisson_mean: Optional float. The default values is 1.0
+    :param alpha: Optional float. The default values is 1.0
+    :param beta: Optional float. The default values is 1.0
+    :param N: Optional int. The default values is 0.0
+    :param r: Optional int. The default values is 0.0
+    :param probability: Optional float. The default values is 0.5
+    :param seed: Optional int. The default values is 0.0
+    :param generator_type: Optional int. Default 2. i.e; MersenneTwister
+                           Choice list:
+                           Standard C Rand = 0
+                           ACM collected algorithm 599 = 1
+                           MersenneTwister = 2
+
+    :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
+                If not provided, active gis will be used to do this.
+                If gis parameter is not specified the output of constant_raster() cannot be displayed. 
+
+    :return: output raster 
+    """
+
+    template_dict = {
+        "rasterFunction" : "Random",
+        "rasterFunctionArguments": {
+        }
+    }
+
+    if distribution is not None:
+        template_dict["rasterFunctionArguments"]["Distribution"] = distribution
+
+    if min_uniform is not None:
+        template_dict["rasterFunctionArguments"]["MinimumUniform"] = min_uniform
+
+    if max_uniform is not None:
+        template_dict["rasterFunctionArguments"]["MaximumUniform"] = max_uniform
+
+    if min_integer is not None:
+        template_dict["rasterFunctionArguments"]["MinimumInteger"] = min_integer
+
+    if max_integer is not None:
+        template_dict["rasterFunctionArguments"]["MaximumInteger"] = max_integer
+
+    if normal_mean is not None:
+        template_dict["rasterFunctionArguments"]["NormalMean"] = normal_mean
+
+    if std_dev is not None:
+        template_dict["rasterFunctionArguments"]["StandardDeviation"] = std_dev
+
+    if exp_mean is not None:
+        template_dict["rasterFunctionArguments"]["ExponentialMean"] = exp_mean
+
+    if poisson_mean is not None:
+        template_dict["rasterFunctionArguments"]["ExponentialMean"] = poisson_mean
+
+    if alpha is not None:
+        template_dict["rasterFunctionArguments"]["Alpha"] = alpha
+
+    if beta is not None:
+        template_dict["rasterFunctionArguments"]["Beta"] = beta
+
+    if N is not None:
+        template_dict["rasterFunctionArguments"]["N"] = N
+
+    if r is not None:
+        template_dict["rasterFunctionArguments"]["r"] = r
+
+    if probability is not None:
+        template_dict["rasterFunctionArguments"]["Probability"] = probability
+
+    if seed is not None:
+        template_dict["rasterFunctionArguments"]["Seed"] = seed
+
+    if generator_type is not None:
+        template_dict["rasterFunctionArguments"]["GeneratorType"] = generator_type
+
+    if raster_info is not None:
+        layer_raster_info = {}
+        if isinstance(raster_info, ImageryLayer):
+            layer_raster_info = copy.deepcopy(raster_info.raster_info)
+        else:
+            layer_raster_info = copy.deepcopy(raster_info)
+        if "pixelType" in layer_raster_info.keys():
+            if isinstance(layer_raster_info["pixelType"], str):
+                layer_raster_info["pixelType"] = _pixel_type_string_to_long(layer_raster_info["pixelType"])
+        layer_raster_info.update({'type': 'RasterInfo'})
+        template_dict["rasterFunctionArguments"]['RasterInfo'] = layer_raster_info
+    else:
+        raise RuntimeError('raster_info cannot be None')
+
+    if gis is not None:
+        newlyr = ImageryLayer(template_dict, gis)
+    else:
+        newlyr = ImageryLayer(template_dict,None)
+    #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
+    newlyr._fn = template_dict
+    newlyr._fnra = template_dict
+    return newlyr
+
 
 class RFT:
     def __init__(self, raster_function_template,gis=None):
@@ -4745,4 +5046,3 @@ class RFT:
         graph=self.draw_graph()
         svg_graph=graph.pipe().decode('utf-8')
         return svg_graph
-

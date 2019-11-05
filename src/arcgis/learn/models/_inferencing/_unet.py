@@ -4,19 +4,18 @@ try:
     import torch
     import torch.nn as nn
     import math
+    from . import util
     HAS_TORCH = True
-
-    prf_root_dir = os.path.join(os.path.dirname(__file__), os.pardir)
-    sys.path.append(prf_root_dir)
-
-    sys.path.append(os.path.dirname(__file__))
-
-    import util
 except Exception as e:
     HAS_TORCH = False
-    
+
+import arcgis
 from arcgis.learn import UnetClassifier
 
+try:
+    import arcpy
+except:
+    pass
 
 def calculate_rectangle_size_from_batch_size(batch_size):
     '''
@@ -111,10 +110,12 @@ class ChildImageClassifier:
         if not HAS_TORCH:
             raise Exception('PyTorch is not installed. Install it using conda install -c pytorch pytorch torchvision')
 
-        if torch.cuda.is_available():
+        if arcpy.env.processorType == "GPU" and torch.cuda.is_available():
             self.device = torch.device('cuda')
+            arcgis.env._processorType = "GPU"
         else:
             self.device = torch.device('cpu')
+            arcgis.env._processorType = "CPU"
 
         if model_as_file:
             with open(model, 'r') as f:
@@ -149,6 +150,14 @@ class ChildImageClassifier:
                     'value': 4,
                     'displayName': 'Batch Size',
                     'description': 'Batch Size'
+                },
+                {
+                    'name': 'predict_background',
+                    'dataType': 'string',
+                    'required': False,
+                    'value': 'True',
+                    'displayName': 'Predict Background',
+                    'description': 'If False, will never predict the background/NoData Class.'
                 }
             ]
         )
@@ -157,6 +166,7 @@ class ChildImageClassifier:
     def getConfiguration(self, **scalars):
         self.padding = int(scalars['padding'])
         self.batch_size = int(scalars['batch_size'])
+        self.predict_background = scalars['predict_background'].lower() in ['true', '1', 't', 'y', 'yes']
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
@@ -180,8 +190,9 @@ class ChildImageClassifier:
                                     fixed_tile_size=True,
                                     batch_height=self.rectangle_height,
                                     batch_width=self.rectangle_width)
-
-        semantic_predictions = util.pixel_classify_image(self.model, batch, self.device, classes=[clas['Name'] for clas in self.json_info['Classes']])
+        
+        normalization_stats = self.json_info.get("NormalizationStats", None)
+        semantic_predictions = util.pixel_classify_image(self.model, batch, self.device, classes=[clas['Name'] for clas in self.json_info['Classes']], predict_bg=self.predict_background, normalization_stats=normalization_stats)
         semantic_predictions = batch_to_tile(semantic_predictions.unsqueeze(dim=1).cpu().numpy(), batch_height, batch_width)
         return semantic_predictions
 

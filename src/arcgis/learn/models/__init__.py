@@ -1,5 +1,8 @@
 from ._ssd import SingleShotDetector
 from ._inferencing import _DynamicSSD
 from ._unet import UnetClassifier
-
+from ._retinanet import RetinaNet
+from ._ner import EntityRecognizer
 from ._classifier import FeatureClassifier
+from ._pspnet import PSPNetClassifier
+from ._maskrcnn import MaskRCNN
