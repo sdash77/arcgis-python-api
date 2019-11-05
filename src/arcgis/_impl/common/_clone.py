@@ -167,7 +167,7 @@ class _DeepCloner():
             group_id = item['id']
 
             search_query = 'group:{0}'.format(group_id)
-            group_items = source.content.search(search_query, max_items=1000, outside_org=True)
+            group_items = source.content.search(search_query, max_items=100, outside_org=True)
             for group_item in group_items:
                 item_definition2 = self._get_item_definitions(group_item)         
                 if item_definition2 is not None:
@@ -227,7 +227,6 @@ class _DeepCloner():
                 except RuntimeError:
                     raise
                 item_definition.add_child(self._get_item_definitions(item))
-
 
         # If the item is a web map find all the feature service layers and tables that make up the map
         elif item['type'] == 'Web Map':
@@ -475,49 +474,49 @@ class _DeepCloner():
         elif item['type'] == 'Project Package':
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
+            if 'copy-only' not in item['tags']:    
+                try:
+                    import arcpy
+                    ppkx = item_definition.data
+                    extract_dir = os.path.join(os.path.dirname(ppkx), 'extract')
+                    if not os.path.exists(extract_dir):
+                        os.makedirs(extract_dir)
 
-            try:
-                import arcpy
-                ppkx = item_definition.data
-                extract_dir = os.path.join(os.path.dirname(ppkx), 'extract')
-                if not os.path.exists(extract_dir):
-                    os.makedirs(extract_dir)
+                    arcpy.ExtractPackage_management(ppkx, extract_dir, False)
 
-                arcpy.ExtractPackage_management(ppkx, extract_dir)
+                    # 1.x versions of Pro use a different folder name
+                    project_folder = 'p20'
+                    version = arcpy.GetInstallInfo()['Version']
+                    if version.startswith('1'):
+                        project_folder = 'p12'
 
-                # 1.x versions of Pro use a different folder name
-                project_folder = 'p20'
-                version = arcpy.GetInstallInfo()['Version']
-                if version.startswith('1'):
-                    project_folder = 'p12'
-
-                project_dir = os.path.join(extract_dir, project_folder)
-                if os.path.exists(project_dir):
-                    aprx_files = [f for f in os.listdir(project_dir) if f.endswith('.aprx')]
-                    if len(aprx_files) == 1:
-                        aprx_file = os.path.join(project_dir, aprx_files[0])
-                        aprx = arcpy.mp.ArcGISProject(aprx_file)
-                        maps = aprx.listMaps()
-                        for map in maps:
-                            layers = [l for l in map.listLayers() if l.supports('connectionProperties')]
-                            layers.extend(map.listTables())
-                            for lyr in layers:
-                                connection_properties = lyr.connectionProperties
-                                workspace_factory = _deep_get(connection_properties, 'workspace_factory')
-                                service_url = _deep_get(connection_properties, 'connection_info', 'url')
-                                if workspace_factory == 'FeatureService' and service_url is not None:
-                                    feature_service = next((definition for definition in self._graph.values() if
-                                                            'url' in definition.info and _compare_url(
-                                                                definition.info['url'], service_url)), None)
-                                    if not feature_service:
-                                        feature_service = _get_feature_service_related_item(service_url, source)
-                                        if feature_service:
-                                            fs_definition = self._get_item_definitions(feature_service)
-                                            item_definition.add_child(fs_definition)
+                    project_dir = os.path.join(extract_dir, project_folder)
+                    if os.path.exists(project_dir):
+                        aprx_files = [f for f in os.listdir(project_dir) if f.endswith('.aprx')]
+                        if len(aprx_files) == 1:
+                            aprx_file = os.path.join(project_dir, aprx_files[0])
+                            aprx = arcpy.mp.ArcGISProject(aprx_file)
+                            maps = aprx.listMaps()
+                            for map in maps:
+                                layers = [l for l in map.listLayers() if l.supports('connectionProperties')]
+                                layers.extend(map.listTables())
+                                for lyr in layers:
+                                    connection_properties = lyr.connectionProperties
+                                    workspace_factory = _deep_get(connection_properties, 'workspace_factory')
+                                    service_url = _deep_get(connection_properties, 'connection_info', 'url')
+                                    if workspace_factory == 'FeatureService' and service_url is not None:
+                                        feature_service = next((definition for definition in self._graph.values() if
+                                                                'url' in definition.info and _compare_url(
+                                                                    definition.info['url'], service_url)), None)
+                                        if not feature_service:
+                                            feature_service = _get_feature_service_related_item(service_url, source)
+                                            if feature_service:
+                                                fs_definition = self._get_item_definitions(feature_service)
+                                                item_definition.add_child(fs_definition)
 
 
-            except ImportError:
-                pass
+                except ImportError:
+                    pass
 
         # If the item is a code attachment ignore it
         elif item['type'] == 'Code Attachment':
@@ -571,7 +570,6 @@ class _DeepCloner():
                                                                                     'layer_id_mapping' : layer_id_mapping, 'relationship_field_mapping' : relationship_field_mapping}
             elif new_item.type == 'Geoprocessing Service':
                 self._clone_mapping['Web Tools'][original_item['url'].rstrip('/')] = new_item['url'].rstrip('/')
-
 
     def _clone_synchronous(self):
         """
@@ -1427,6 +1425,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     if key in service_definition:
                         del service_definition[key]
 
+                # Determine if service allows schema changes
+                source_schema_changes_allowed = True
+                if 'sourceSchemaChangesAllowed' in service_definition:
+                    source_schema_changes_allowed = service_definition['sourceSchemaChangesAllowed']
+
                 # Set the extent and spatial reference of the service
                 if 'spatialReference' in service_definition:
                     new_extent = _deep_get(service_definition, 'initialExtent')
@@ -1727,7 +1730,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                     if len(del_fields) > 0 or layer_id in layer_field_mapping:
                         # Delete the old editor tracking fields from the layer
-                        if len(del_fields) > 0:
+                        if len(del_fields) > 0 and source_schema_changes_allowed == True:
                             layer_admin = new_layer.manager
                             delete_definition_fields = []
                             for field in del_fields:
@@ -1776,12 +1779,20 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                         if source_field_name in layer_field_mapping[layer_id]:
                                             field_name = layer_field_mapping[layer_id][source_field_name]
 
-                                    field_update = {}
-                                    if source_field_name in view_fields:
-                                        field_update = copy.deepcopy(view_fields[source_field_name])
-                                    field_update['name'] = field_name
-                                    field_update['visible'] = visible
-                                    field_updates.append(field_update)
+                                    field_update = {'name' : field_name, 'visible' : visible}
+
+                                    # Update domain of a view if it is different from the source feature service
+                                    new_field_names = {f['name']: f for f in new_fields}
+                                    if source_field_name in view_fields and field_name in new_field_names:
+                                        new_domain = _deep_get(view_fields, source_field_name, "domain") 
+                                        original_domain = _deep_get(new_field_names, field_name, "domain")
+                                        if original_domain != new_domain:
+                                            if _deep_get(new_domain, 'codedValues') != _deep_get(original_domain, 'codedValues') or _deep_get(new_domain, 'range') != _deep_get(original_domain, 'range'):
+                                                field_update['domain'] = new_domain
+                                                field_update['visible'] = visible
+                                                field_updates.append(field_update)
+                                    elif not visible:
+                                        field_updates.append(field_update)
                                 update_definition['fields'] = field_updates
 
                         # Reapply the renderer and feature templates for views created in Portal
@@ -1864,8 +1875,6 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         for key, value in layer_id_mapping.items():
                             if key in relationships_copy:
                                 relationships_definition['layers'].append({'id' : value, 'relationships' : relationships_copy[key]})
-                            else:
-                                relationships_definition['layers'].append({'id' : value, 'relationships' : []})
                         feature_service_admin.add_to_definition(relationships_definition)
 
                 # Get the item properties from the original item
@@ -2906,79 +2915,80 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                 new_item = _search_org_for_existing_item(self.target, self.portal_item)
 
             if not new_item:
-                try:
-                    import arcpy
+                if 'copy-only' not in original_item['tags']: 
+                    try:
+                        import arcpy
 
-                    extract_dir = os.path.join(os.path.dirname(ppkx), 'extract')
-                    if not os.path.exists(extract_dir):
-                        os.makedirs(extract_dir)
-                        arcpy.ExtractPackage_management(ppkx, extract_dir)
+                        extract_dir = os.path.join(os.path.dirname(ppkx), 'extract')
+                        if not os.path.exists(extract_dir):
+                            os.makedirs(extract_dir)
+                            arcpy.ExtractPackage_management(ppkx, extract_dir, False)
 
-                    # 1.x versions of Pro use a different folder name
-                    project_folder = 'p20'
-                    version = arcpy.GetInstallInfo()['Version']
-                    if version.startswith('1'):
-                        project_folder = 'p12'
+                        # 1.x versions of Pro use a different folder name
+                        project_folder = 'p20'
+                        version = arcpy.GetInstallInfo()['Version']
+                        if version.startswith('1'):
+                            project_folder = 'p12'
 
-                    project_dir = os.path.join(extract_dir, project_folder)
-                    if os.path.exists(project_dir):
-                        aprx_files = [f for f in os.listdir(project_dir) if f.endswith('.aprx')]
-                        if len(aprx_files) == 1:
-                            service_version_infos = {}
-                            aprx_file = os.path.join(project_dir, aprx_files[0])
-                            aprx = arcpy.mp.ArcGISProject(aprx_file)
-                            maps = aprx.listMaps()
-                            for map in maps:
-                                layers = [l for l in map.listLayers() if l.supports('connectionProperties')]
-                                layers.extend(map.listTables())
-                                for lyr in layers:
-                                    connection_properties = lyr.connectionProperties
-                                    workspace_factory = _deep_get(connection_properties, 'workspace_factory')
-                                    service_url = _deep_get(connection_properties, 'connection_info', 'url')
-                                    if workspace_factory == 'FeatureService' and service_url is not None:
-                                        for original_url in self._clone_mapping['Services']:
-                                            if _compare_url(service_url, original_url):
-                                                new_service = self._clone_mapping['Services'][original_url]
-                                                layer_id = int(connection_properties['dataset'])
-                                                new_id = new_service['layer_id_mapping'][layer_id]
-                                                new_connection_properties = copy.deepcopy(connection_properties)
-                                                new_connection_properties['connection_info']['url'] = new_service['url']
-                                                new_connection_properties['dataset'] = str(new_id)
+                        project_dir = os.path.join(extract_dir, project_folder)
+                        if os.path.exists(project_dir):
+                            aprx_files = [f for f in os.listdir(project_dir) if f.endswith('.aprx')]
+                            if len(aprx_files) == 1:
+                                service_version_infos = {}
+                                aprx_file = os.path.join(project_dir, aprx_files[0])
+                                aprx = arcpy.mp.ArcGISProject(aprx_file)
+                                maps = aprx.listMaps()
+                                for map in maps:
+                                    layers = [l for l in map.listLayers() if l.supports('connectionProperties')]
+                                    layers.extend(map.listTables())
+                                    for lyr in layers:
+                                        connection_properties = lyr.connectionProperties
+                                        workspace_factory = _deep_get(connection_properties, 'workspace_factory')
+                                        service_url = _deep_get(connection_properties, 'connection_info', 'url')
+                                        if workspace_factory == 'FeatureService' and service_url is not None:
+                                            for original_url in self._clone_mapping['Services']:
+                                                if _compare_url(service_url, original_url):
+                                                    new_service = self._clone_mapping['Services'][original_url]
+                                                    layer_id = int(connection_properties['dataset'])
+                                                    new_id = new_service['layer_id_mapping'][layer_id]
+                                                    new_connection_properties = copy.deepcopy(connection_properties)
+                                                    new_connection_properties['connection_info']['url'] = new_service['url']
+                                                    new_connection_properties['dataset'] = str(new_id)
 
-                                                if new_service['url'] not in service_version_infos:
-                                                    try:
-                                                        service_version_infos[new_service['url']] = _get_version_management_server(self.target, new_service['url'])
-                                                    except:
-                                                        service_version_infos[new_service['url']] = {}
-                                                version_info = service_version_infos[new_service['url']]
-                                                for key, value in {'defaultVersionName' : 'version', 'defaultVersionGuid': 'versionguid'}.items():
-                                                    if key in version_info:
-                                                        new_connection_properties['connection_info'][value] = version_info[key]
-                                                    elif value in new_connection_properties['connection_info']:
-                                                        del new_connection_properties['connection_info'][value]
+                                                    if new_service['url'] not in service_version_infos:
+                                                        try:
+                                                            service_version_infos[new_service['url']] = _get_version_management_server(self.target, new_service['url'])
+                                                        except:
+                                                            service_version_infos[new_service['url']] = {}
+                                                    version_info = service_version_infos[new_service['url']]
+                                                    for key, value in {'defaultVersionName' : 'version', 'defaultVersionGuid': 'versionguid'}.items():
+                                                        if key in version_info:
+                                                            new_connection_properties['connection_info'][value] = version_info[key]
+                                                        elif value in new_connection_properties['connection_info']:
+                                                            del new_connection_properties['connection_info'][value]
 
-                                                lyr.updateConnectionProperties(connection_properties, new_connection_properties, validate=False)
+                                                    lyr.updateConnectionProperties(connection_properties, new_connection_properties, validate=False)
 
-                            aprx.save()
+                                aprx.save()
 
-                            additional_files = None
-                            user_data = os.path.join(os.path.dirname(ppkx), 'extract', 'commondata', 'userdata')
-                            if os.path.exists(user_data):
-                                additional_files = [os.path.join(user_data, f) for f in os.listdir(user_data)]
+                                additional_files = None
+                                user_data = os.path.join(os.path.dirname(ppkx), 'extract', 'commondata', 'userdata')
+                                if os.path.exists(user_data):
+                                    additional_files = [os.path.join(user_data, f) for f in os.listdir(user_data)]
 
-                            new_package_dir = os.path.join(os.path.dirname(ppkx), 'new_package')
-                            os.makedirs(new_package_dir)
-                            new_package = os.path.join(new_package_dir, os.path.basename(ppkx))
-                            item_properties = self._get_item_properties(self.item_extent)
-                            description = original_item['title']
-                            if item_properties['snippet'] is not None:
-                                description = item_properties['snippet']
+                                new_package_dir = os.path.join(os.path.dirname(ppkx), 'new_package')
+                                os.makedirs(new_package_dir)
+                                new_package = os.path.join(new_package_dir, os.path.basename(ppkx))
+                                item_properties = self._get_item_properties(self.item_extent)
+                                description = original_item['title']
+                                if item_properties['snippet'] is not None:
+                                    description = item_properties['snippet']
 
-                            arcpy.management.PackageProject(aprx_file, new_package, "INTERNAL", "PROJECT_PACKAGE", "DEFAULT", "ALL", additional_files, description, item_properties['tags'], "ALL")
-                            self._data = new_package
+                                arcpy.management.PackageProject(aprx_file, new_package, "INTERNAL", "PROJECT_PACKAGE", "DEFAULT", "ALL", additional_files, description, item_properties['tags'], "CURRENT")
+                                self._data = new_package
 
-                except ImportError:
-                    pass
+                    except ImportError:
+                        pass
 
                 new_item = super().clone()
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
