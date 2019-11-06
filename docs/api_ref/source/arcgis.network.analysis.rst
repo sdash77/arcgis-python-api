@@ -14,7 +14,7 @@ solve_vehicle_routing_problem
 find_closest_facilities
 --------------
 .. autofunction:: arcgis.network.analysis.find_closest_facilities
-
+.. _FindClosestFacilities: http://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/ClosestFacility_GPServer/World_ClosestFacility/FindClosestFacilities.htm
 
 solve_location_allocation
 ---------------
