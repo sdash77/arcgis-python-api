@@ -6879,7 +6879,7 @@ class Item(dict):
 
     def _populate_layers(self):
         from arcgis.features import FeatureLayer, FeatureCollection, FeatureLayerCollection, Table
-        from arcgis.mapping import VectorTileLayer, MapImageLayer
+        from arcgis.mapping import VectorTileLayer, MapImageLayer, SceneLayer
         from arcgis.network import NetworkDataset
         from arcgis.raster import ImageryLayer
 
@@ -6942,9 +6942,10 @@ class Item(dict):
                     for lyr in svc.properties.layers:
                         if self.type == 'Scene Service':
                             lyr_url = svc.url + '/layers/' + str(lyr.id)
+                            lyr = SceneLayer(lyr_url, self._gis)
                         else:
                             lyr_url = svc.url+'/'+str(lyr.id)
-                        lyr = Layer(lyr_url, self._gis)
+                            lyr = Layer(lyr_url, self._gis)
                         layers.append(lyr)
                     try:
                         for lyr in svc.properties.tables:
