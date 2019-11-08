@@ -157,8 +157,12 @@ class ProfileManager(object):
         elif self._cfg_exists and as_df:
             import pandas as pd
             all_profiles = []
+
             for p in self.list():
-                all_profiles.append(self.get(p))
+                p_dict = self.get(p)
+                p_dict['profile'] = p  # add a new column to DF that lists the profile name
+                all_profiles.append(p_dict)
+
             return pd.DataFrame(data=all_profiles)
         return []
     #--------------------------------------------------------------------------
