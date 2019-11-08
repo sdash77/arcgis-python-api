@@ -24,7 +24,7 @@ solve_location_allocation
 generate_origin_destination_cost_matrix
 ------------------
 .. autofunction:: arcgis.network.analysis.generate_origin_destination_cost_matrix
-
+.. _generateOriginDestinationCostMatrix: https://logistics.arcgis.com:443/arcgis/rest/directories/arcgisoutput/World/OriginDestinationCostMatrix_GPServer/World_OriginDestinationCostMatrix/GenerateOriginDestinationCostMatrix.htm
 
 find_routes
 ---------------
