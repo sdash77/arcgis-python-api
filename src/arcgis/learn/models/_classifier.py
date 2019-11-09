@@ -119,8 +119,10 @@ class FeatureClassifier(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
         """
-        if rows > self._data.batch_size:
-            rows = self._data.batch_size
+        import math
+        if (rows ** 2) > len(self._data.valid_ds):
+            rows = math.floor(math.sqrt(len(self._data.valid_ds)))
+
         self.learn.show_results(rows=rows, **kwargs)
 
     def predict(self, img_path):
