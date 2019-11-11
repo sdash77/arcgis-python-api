@@ -155,9 +155,8 @@ class _DeepCloner():
         source = item._gis
 
         # Check if the item definition has already been added to the collection of item definitions
-        item_definition = next((i for i in self._graph.values() if i.info['id'] == item.id), None)
-        if item_definition:
-            return item_definition
+        if item.id in self._graph:
+            return self._graph[item.id]
 
         # if the item is a group find all the web maps that are shared with the group
         if isinstance(item, gis.Group):
@@ -444,6 +443,23 @@ class _DeepCloner():
                         feature_service = source.content.get(datasource['featureServiceItemId'])
                         if feature_service is not None:
                             item_definition.add_child(self._get_item_definitions(feature_service))
+
+        # If the item is a python notebook find the referenced items from the same org
+        elif item['type'] == 'Notebook':
+            item_definition = self._get_item_definition(item)
+            self._graph[item.id] = item_definition
+            
+            notebook = item_definition.data
+            with open(notebook, 'r') as file:
+                notebook_json = file.read()
+                item_ids = set(re.findall('[0-9A-F]{32}', notebook_json, re.IGNORECASE))
+                for id in item_ids:
+                    if id not in self._graph:
+                        notebook_item = source.content.get(id)
+                        if notebook_item is not None:
+                            item_definition.add_child(self._get_item_definitions(notebook_item))
+                    else:
+                        item_definition.add_child(self._graph[id])
 
         # If the item is a pro map find the feature services that supports it
         elif item['type'] == 'Pro Map':
@@ -782,6 +798,15 @@ class _DeepCloner():
         # If the item is a quick capture project get the QuickCaptureDefinition
         elif item['type'] == 'QuickCapture Project':
             return _QuickCaptureDefinition(self.target, self._clone_mapping, dict(item), data=None, thumbnail=None, portal_item=item, folder=self.folder, item_extent=self._item_extent, search_existing=self._search_existing_items, owner=self.owner)
+
+        # If the item is a python notebook get the NotebookDefinition
+        elif item['type'] == 'Notebook':
+            temp_dir = os.path.join(self._temp_dir.name, item['id'])
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
+            notebook = item.download(temp_dir)
+            source_url = _get_org_url(item._gis)
+            return _NotebookDefinition(self.target, self._clone_mapping, dict(item), source_url, data=notebook, thumbnail=None, portal_item=item, folder=self.folder, item_extent=self._item_extent, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a feature service get the FeatureServiceDefintion
         elif item['type'] == 'Feature Service':
@@ -2736,7 +2761,7 @@ class _FormDefinition(_ItemDefinition):
 
 class _QuickCaptureDefinition(_ItemDefinition):
     """
-    Represents the definition of an quick capture project within ArcGIS Online or Portal.
+    Represents the definition of a quick capture project within ArcGIS Online or Portal.
     """
     def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True, owner=None):
         super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
@@ -2810,6 +2835,59 @@ class _QuickCaptureDefinition(_ItemDefinition):
                     file.write(json.dumps(qc_json))
 
                 new_item.resources.update(qc_json_file, None, "qc.project.json")
+
+            _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
+            self.resolved = True
+            self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
+            return new_item
+
+        except Exception as ex:
+            raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
+
+
+class _NotebookDefinition(_ItemDefinition):
+    """
+    Represents the definition of a python notebook within ArcGIS Online or Portal.
+    """
+    def __init__(self, target, clone_mapping, info, source_url, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
+        self._source_url = source_url
+
+    def clone(self):
+        """Clone the python notebook in the target organization.
+        """
+        try:
+            new_item = None
+            original_item = self.info
+            if self._search_existing:
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
+            if not new_item:
+
+                # Get the item properties from the original item to be applied when the new item is created
+                item_properties = self._get_item_properties(self.item_extent)
+                
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
+
+                # Find and replace all item and group id references
+                notebook = self.data
+                notebook_json = ""
+
+                with open(notebook, 'r') as file:
+                    notebook_json = file.read()
+
+                for key, value in self._clone_mapping['Item IDs'].items():
+                    notebook_json = re.sub(key, value, notebook_json, 0, re.IGNORECASE)
+                for key, value in self._clone_mapping['Group IDs'].items():
+                    notebook_json = re.sub(key, value, notebook_json, 0, re.IGNORECASE)
+                notebook_json = re.sub(self._source_url, _get_org_url(self.target), notebook_json, 0, re.IGNORECASE)
+
+                new_notebook = os.path.join(os.path.dirname(notebook), '{0}.ipynb'.format(new_item.id))
+                with open(new_notebook, 'w') as file:
+                    file.write(notebook_json)
+
+                # Update python notebook
+                new_item.update(data=new_notebook)
 
             _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
             self.resolved = True
