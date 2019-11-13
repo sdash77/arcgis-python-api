@@ -134,14 +134,17 @@ class VersionManager(object):
         return False
     #----------------------------------------------------------------------
     @property
-    def _locks(self):
+    def locks(self):
         """
         For the specified feature service, return the locks for the
         administrator or the owner of the versions that have locks.
         """
-        params = {'f' : 'json'}
-        url = "%s/lockInfos" % self._url
-        return self._con.post(url, params)['lockInfos']
+        try:    
+            params = {'f' : 'json'}
+            url = "%s/locks" % self._url
+            return self._con.post(url, params)['lockInfos']
+        except:
+            return []
     #----------------------------------------------------------------------
     @property
     def all(self):
