@@ -136,15 +136,16 @@ class VersionManager(object):
     @property
     def locks(self):
         """
-        For the specified feature service, return the locks for the
-        administrator or the owner of the versions that have locks.
+        For the specified feature service, return the versions which are locked.
+        
+        :return: List of locked versions
+        
         """
         try:    
-            params = {'f' : 'json'}
-            url = "%s/locks" % self._url
-            return self._con.post(url, params)['lockInfos']
+            return [v for v in self.all if v.properties.isLocked]
         except:
             return []
+        return []
     #----------------------------------------------------------------------
     @property
     def all(self):
