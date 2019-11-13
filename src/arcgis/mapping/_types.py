@@ -142,8 +142,8 @@ class WebMap(collections.OrderedDict):
 
         else:
             #default spatial ref for current web map
-            self._default_spatial_reference = {'wkid': 4326,
-                                               'latestWkid': 4326}
+            self._default_spatial_reference = {'wkid': 102100,
+                                               'latestWkid': 3857}
 
             #pump in a simple, default webmap dict - no layers yet, just basemap
             self._basemap = {

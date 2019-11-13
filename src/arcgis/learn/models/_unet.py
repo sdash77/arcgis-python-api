@@ -336,8 +336,8 @@ class UnetClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
         """
         self.learn.callbacks = [x for x in self.learn.callbacks if not isinstance(x, LabelCallback)]
-        if rows > self._data.batch_size:
-            rows = self._data.batch_size
+        if rows > len(self._data.valid_ds):
+            rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, **kwargs)
 
     def _get_model_metrics(self, **kwargs):

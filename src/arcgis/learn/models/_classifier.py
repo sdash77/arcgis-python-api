@@ -79,7 +79,7 @@ class FeatureClassifier(ArcGISModel):
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False):
         
         super().__init__(data, backbone)
 
@@ -94,6 +94,10 @@ class FeatureClassifier(ArcGISModel):
 
         self._code = feature_classifier_prf
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+
+        # Add Mixup data augmentation
+        if mixup:
+            self.learn = self.learn.mixup()
 
         self.learn.model = self.learn.model.to(self._device)
 
@@ -115,8 +119,10 @@ class FeatureClassifier(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
         """
-        if rows > self._data.batch_size:
-            rows = self._data.batch_size
+        import math
+        if (rows ** 2) > len(self._data.valid_ds):
+            rows = math.floor(math.sqrt(len(self._data.valid_ds)))
+
         self.learn.show_results(rows=rows, **kwargs)
 
     def predict(self, img_path):

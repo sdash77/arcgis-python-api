@@ -247,12 +247,12 @@ class RetinaNet(ArcGISModel):
                                 score will be considered a true positive.
         =====================   ===========================================
         
-        """ 
+        """
 
-        if rows > self._data.batch_size:
-            rows = self._data.batch_size      
+        if rows > len(self._data.valid_ds):
+            rows = len(self._data.valid_ds)
+
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
-
 
     def predict_video(
         self,

@@ -83,7 +83,7 @@ class NotebookManager(object):
         return res
     #----------------------------------------------------------------------
     def execute_notebook(self,
-                         itemid,
+                         item,
                          update_portal_item=True,
                          parameters=None,
                          save_parameters=False):
@@ -114,7 +114,7 @@ class NotebookManager(object):
         ====================     ====================================================================
         **Argument**           **Description**
         --------------------     --------------------------------------------------------------------
-        itemid                   Required String. Opens an existing portal item.
+        item                     Required Item. Opens an existing portal item.
         --------------------     --------------------------------------------------------------------
         update_portal_item       Optional Boolean. Specifies whether you want to update the notebook's portal item after execution. The default is true. You may want to specify true when the notebook you're executing contains information that needs to be updated, such as a workflow that collects the most recent version of a dataset. It may not be important to update the portal item if the notebook won't store any new information after executing, such as an administrative notebook that emails reminders to inactive users.
         --------------------     --------------------------------------------------------------------
@@ -126,7 +126,13 @@ class NotebookManager(object):
         :returns: Boolean
         
         """
+        from arcgis.gis import Item
         url = self._url + "/executeNotebook"
+        itemid = None
+        if isinstance(item, str):
+            itemid = item
+        elif isinstance(item, Item):
+            itemid = item.itemid
         params = {
             'f' : 'json',
             'itemId' : itemid,

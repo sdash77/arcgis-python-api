@@ -2423,9 +2423,21 @@ def mask(raster, no_data_values=None, included_ranges=None, no_data_interpretati
     The arguments for the mask function are as follows:
 
     :param raster: input raster
-    :param no_data_values: array of string ["band0_val","band1_val",...]
-    :param included_ranges: array of double [band0_lowerbound,band0_upperbound,band1...],
-    :param no_data_interpretation: int 0=MatchAny, 1=MatchAll
+    :param no_data_values: list of strings ["band0_val","band1_val",...]. The NoData values can be specified 
+                           for each band. The index of each element in no_data_values list 
+                           represents the no data value in the corresponding band.
+
+                           You can specify more than one value by entering a space-delimited string for each index.
+                           e.g., ["band0_val1 band0_val2", "band1_val1 band1_val2",...]
+    :param included_ranges: list of floats [band0_lowerbound,band0_upperbound,band1_lowerbound,band1_upperbound, band2_.....], 
+                            The included ranges can be specified for each band by specifying a minimum and maximum value.
+    :param no_data_interpretation: int 0=MatchAny, 1=MatchAll. This parameter refers to how the NoData 
+                                   values will impact the output image.
+
+                                   - 0 (MatchAny) : If the NoData value you specify occurs for a cell in a
+                                     specified band, then that cell in the output image will be NoData.
+                                   - 1 (MatchAll) :  The NoData values you specify for each band must occur 
+                                     in the same cell for the output image to contain the NoData cell.
     :param astype: output pixel type
     :return: the output raster
 
