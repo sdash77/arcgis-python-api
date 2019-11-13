@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
@@ -103,7 +104,7 @@ class VersionManager(object):
         else:
             return res
     #----------------------------------------------------------------------
-    def purge(self, version, owner):
+    def purge(self, version, owner=None):
         """
         Removes a lock from a version
 
@@ -113,18 +114,19 @@ class VersionManager(object):
         ---------------     --------------------------------------------------------------------
         version             Required String. The name of the version that is locked.
         ---------------     --------------------------------------------------------------------
-        owner               Required String. The owner of the lock.
+        owner               Required String. The owner of the lock. (Deprecated)
         ===============     ====================================================================
 
 
         :return: Boolean
 
         """
+        if isinstance(version, Version):
+            version = version.properties.versionName
         url = "%s/purgeLock" % self._url
         params = {
             'f': 'json',
-            'version' : version,
-            'lockOwner' : owner
+            "versionName": version
         }
         res = self._con.post(url, params)
         if 'success' in res:
@@ -134,12 +136,16 @@ class VersionManager(object):
     @property
     def locks(self):
         """
-        For the specified feature service, return the locks for the
-        administrator or the owner of the versions that have locks.
+        For the specified feature service, return the versions which are locked.
+        
+        :return: List of locked versions
+        
         """
-        params = {'f' : 'json'}
-        url = "%s/lockInfos" % self._url
-        return self._con.post(url, params)['lockInfos']
+        try:    
+            return [v for v in self.all if v.properties.isLocked]
+        except:
+            return []
+        return []
     #----------------------------------------------------------------------
     @property
     def all(self):
@@ -209,9 +215,8 @@ class VersionManager(object):
 
 
         """
-        for v in self.versions:
+        for v in self.all:
             if version.lower() == v.properties['versionName'].lower():
-                v.mode = mode
                 return v
         return
 ########################################################################
@@ -259,7 +264,8 @@ class Version(object):
                  session_guid=None,
                  mode=None):
         """Constructor"""
-        self._mode = mode
+        if mode:
+            self.mode = mode
         self._url = url
         self._save = False
         if gis is None:
@@ -338,6 +344,17 @@ class Version(object):
 
 
         """
+        if self.properties.isBeingEdited and \
+           self.properties.isBeingRead:
+            self._mode = 'edit'
+            return 'edit'
+        elif self.properties.isBeingEdited == False and \
+             self.properties.isBeingRead:
+            self._mode = 'read'
+            return 'read'
+        else:
+            self._mode = None
+            return None
         return self._mode
     #----------------------------------------------------------------------
     @mode.setter
@@ -354,21 +371,36 @@ class Version(object):
 
 
         """
-        if value != self._mode:
-            if str(value).lower() == 'edit':
-                if self._mode == 'read':
+        # edit means reading is started and edit is started
+        # read means reading is start edit is stopped
+        # None means reading is stopped and edit is stopped.
+        value = str(value).lower()
+        if value != str(self.mode).lower():
+            if value == 'edit':
+                if self.properties.isBeingRead == False:
+                    self._mode = None
+                    self.start_reading()
+                    self._properties = None
+                if self.start_editing():
+                    self._mode = 'edit'
+            elif value == 'read':
+                if self.properties.isBeingEdited:
+                    self.stop_editing(save=self.save_edits)
+                    self._properties = None
+                if self.start_reading():
+                    self._mode = value
+            elif value in [None, 'none']:
+                if self.properties.isBeingEdited:
+                    self.stop_editing(save=self.save_edits)
+                    self._properties = None
+                if self.properties.isBeingRead:
+                    self._properties = None
                     self.stop_reading()
-                self._mode = 'edit'
-                self.start_editing()
-            elif str(value).lower() == 'read':
-                if self._mode == "edit":
-                    self.stop_editing(save=False)
-                    self._mode = "read"
-            elif value is None:
-                if self._mode == 'edit':
-                    self.stop_editing(save=False)
-                elif self._mode == 'read':
+                    self._properties = None
                     self.stop_reading()
+                    self._properties = None
+                self._mode = None
+            self._properties = None
     #----------------------------------------------------------------------
     def delete(self):
         """
@@ -377,13 +409,17 @@ class Version(object):
         :return: Boolean
 
         """
-        url = "%s/delete" % os.path.dirname(self._url)
+        url = "%s/delete" % os.path.dirname(os.path.dirname(self._url))
         params = {
             'f' : 'json',
             'versionName' : self.properties.versionName,
             'sessionID' : self._guid
         }
-        res = self._con.post(url, params)
+        try:
+            res = self._con.post(url, params)
+        except:
+            params.pop("sessionID")
+            res = self._con.post(url, params)
         if 'success' in res:
             return res['success']
         return res
@@ -413,15 +449,23 @@ class Version(object):
 
         :returns: boolean
         """
-        if self._mode is None:
-            self._mode = 'edit'
+        if self.properties.isBeingEdited == False:
+            if self.properties.isBeingRead == False:
+                self.start_reading()
+                self._properties = None
             params = {
             'f' : 'json',
             'sessionID' : self._guid
             }
             url = "%s/startEditing" % self._url
             res = self._con.post(url, params)
+            if res['success']:
+                self._mode = 'edit'
+                self._properties = None
+            self._properties = None
             return res['success']
+        elif self.properties.isBeingEdited:
+            return True
         return False
     #----------------------------------------------------------------------
     def stop_editing(self, save=None):
@@ -439,7 +483,8 @@ class Version(object):
         :returns: boolean
 
         """
-        if self._mode == 'edit':
+        self._properties = None
+        if self.properties.isBeingEdited:
             self._mode = None
             if save is None:
                 save = self.save_edits
@@ -450,7 +495,12 @@ class Version(object):
             }
             url = "%s/stopEditing" % self._url
             res = self._con.post(url, params)
+            if res['success']:
+                self._mode = 'read'
+            self._properties = None
             return res['success']
+        elif self.properties.isBeingEdited == False:
+            return True
         return False
     #----------------------------------------------------------------------
     def start_reading(self):
@@ -462,14 +512,19 @@ class Version(object):
         :returns: Boolean
 
         """
-        if self._mode is None:
-            self._mode = 'read'
+        self._properties = None
+        if self.properties.isBeingRead:
+            return True
+        elif self.properties.isBeingRead == False:
             params = {
             'f' : 'json',
             'sessionID' : self._guid
             }
             url = "%s/startReading" % self._url
             res = self._con.post(url, params)
+            if res['success']:
+                self._mode = 'read'
+                self._properties = None
             return res['success']
         return False
     #----------------------------------------------------------------------
@@ -480,15 +535,21 @@ class Version(object):
         :returns: Boolean
 
         """
-        if self._mode == 'read':
-            self._mode = None
+        self._properties = None
+        if self.properties.isBeingRead:
+
             params = {
             'f' : 'json',
             'sessionID' : self._guid
             }
             url = "%s/stopReading" % self._url
             res = self._con.post(url, params)
+            if res['success']:
+                self._mode = None
+            self._properties = None
             return res['success']
+        elif self.properties.isBeingRead == False:
+            return True
         return False
     #----------------------------------------------------------------------
     def delete_forward_edits(self, moment):
@@ -552,7 +613,8 @@ class Version(object):
         if self._mode == 'edit':
             params = {
                'f' : 'json',
-               'abortIfConflict' : end_with_conflict,
+               "sessionID" : self._guid,
+               'abortIfConflicts' : end_with_conflict,
                'withPost' : with_post
             }
             url = "%s/reconcile" % self._url
@@ -730,6 +792,16 @@ class Version(object):
         return self
     #----------------------------------------------------------------------
     def __exit__(self, type, value, traceback):
+        self._properties = None
+        if self.properties.isLocked:
+            if self.properties.isBeingEdited:
+                if self._mode != "edit":
+                    self._mode = "edit"
+                self.stop_editing(self.save_edits)
+            if self.properties.isBeingRead:
+                if self._mode != "read":
+                    self._mode = 'read'
+                self.stop_reading()
         if self._mode == 'edit':
             self.stop_editing(save=self.save_edits)
         elif self._mode == 'read':
