@@ -276,6 +276,7 @@ class ProfileManager(object):
                client_id=None):
         """
         Adds a new entry into the Profile Store.
+
         ================  ====================================================================
         **Parameter**     **Description**
         ----------------  --------------------------------------------------------------------
@@ -323,6 +324,7 @@ class ProfileManager(object):
     def save_as(self, profile, gis):
         """
         Saves and adds the provided `GIS` to the profile.
+        
         ================  ====================================================================
         **Parameter**     **Description**
         ----------------  --------------------------------------------------------------------
