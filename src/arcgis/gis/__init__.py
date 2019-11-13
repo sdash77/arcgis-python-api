@@ -5801,7 +5801,7 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     favGroupId               The user's favorites group and is created automatically for each user.
     ---------------------    ---------------------------------------------------------
-    lastLogin                The last login date of the user as a UNIX timestamp.
+    lastLogin                The last login date of the user in milliseconds since the Unix epoch.
     ---------------------    ---------------------------------------------------------
     mfaEnabled               Indicates if the user's account has multifactor authentication set up.
     ---------------------    ---------------------------------------------------------
@@ -5835,9 +5835,9 @@ class User(dict):
     ---------------------    ---------------------------------------------------------
     thumbnail                The file name of the thumbnail used for the user.
     ---------------------    ---------------------------------------------------------
-    created                  The date the user was created. Shown in UNIX time.
+    created                  The date the user was created. Shown in milliseconds since the Unix epoch.
     ---------------------    ---------------------------------------------------------
-    modified                 The date the user was last modified. Shown in UNIX time.
+    modified                 The date the user was last modified. Shown in milliseconds since the Unix epoch.
     ---------------------    ---------------------------------------------------------
     groups                   A JSON array of groups the user belongs to. See Group for properties of a group.
     ---------------------    ---------------------------------------------------------
