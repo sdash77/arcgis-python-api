@@ -133,7 +133,7 @@ def _add_to_suite_if_notebook_test(suite, test):
         selenium_dir = os.path.join(NOTEBOOK_TESTS_DIR, "selenium")
         if selenium_dir in test:
             suite['selenium_notebook_tests_to_run']['paths'].append(test)
-        if nbconvert_dir in test:
+        else:
             suite['nbconvert_notebook_tests_to_run']['paths'].append(test)
 
 def _add_to_suite_if_widget_test(suite, test):

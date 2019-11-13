@@ -308,7 +308,9 @@ class GIS(object):
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id,
                                            referer=self._referer)
-
+            if self._is_hosted_nb_home:
+                # For GIS("home") objects, force no referer passed in
+                self._portal.con._referer = ""
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
@@ -544,7 +546,6 @@ class GIS(object):
                 if "encryptedToken" in json_data:
                     from arcgis.gis._impl._decrypt_nbauth import get_token
                     self._utoken = get_token(nb_auth_file_path)
-                self._referer = json_data["publicPortalUrl"]
 
         # Catch errors and re-throw in with more human readable messages
         except json.JSONDecodeError as e:
@@ -2330,8 +2331,8 @@ class UserManager(object):
         user_type         Optional String. This parameters allows for the filtering
                           of the users by their assigned type.
         ----------------  --------------------------------------------------------
-        role              Optional String.  This parameter allows for the filting
-                          of the users based on a role.
+        role              Optional String.  Specify the roleId. This parameter
+                          allows for the filting of the users based on a roleId.
         ================  ========================================================
 
         :return:
@@ -2525,16 +2526,16 @@ class RoleManager(object):
 
     def get_role(self, role_id):
         """
-        Retrieves the role with the specified role ID.
+        Retrieves the role with the specified custom roleId.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        role_id                Required string. The role ID of the role to get.
+        role_id                Required string. The role ID of the custom role to get.
         ==================     ====================================================================
 
         :return:
-           The role associated with the specified role ID
+           The Role object associated with the specified role ID
         """
         role = self._portal.con.post('portals/self/roles/' + role_id, self._portal._postdata())
         return Role(self._gis, role['id'], role)
@@ -5863,9 +5864,13 @@ class User(dict):
             if 'role' in userdict and \
                'roleId' not in userdict:
                 userdict['roleId'] = userdict['role']
-            elif 'roleId' in userdict and \
-                 'role' not in userdict:
-                userdict['role'] = userdict['roleId']
+            elif 'roleId' in userdict and 'role' not in userdict:
+                # try getting role name - only needed for custom roles
+                try:
+                    role_obj = self._gis.users.roles.get_role(userdict['roleId'])
+                    userdict['role'] = role_obj.name
+                except Exception as ex:
+                    userdict['role'] = userdict['roleId']
             self.__dict__.update(userdict)
             super(User, self).update(userdict)
         if hasattr(self, 'id') and \
@@ -6874,7 +6879,7 @@ class Item(dict):
 
     def _populate_layers(self):
         from arcgis.features import FeatureLayer, FeatureCollection, FeatureLayerCollection, Table
-        from arcgis.mapping import VectorTileLayer, MapImageLayer
+        from arcgis.mapping import VectorTileLayer, MapImageLayer, SceneLayer
         from arcgis.network import NetworkDataset
         from arcgis.raster import ImageryLayer
 
@@ -6937,9 +6942,10 @@ class Item(dict):
                     for lyr in svc.properties.layers:
                         if self.type == 'Scene Service':
                             lyr_url = svc.url + '/layers/' + str(lyr.id)
+                            lyr = SceneLayer(lyr_url, self._gis)
                         else:
                             lyr_url = svc.url+'/'+str(lyr.id)
-                        lyr = Layer(lyr_url, self._gis)
+                            lyr = Layer(lyr_url, self._gis)
                         layers.append(lyr)
                     try:
                         for lyr in svc.properties.tables:

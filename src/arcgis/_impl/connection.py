@@ -841,8 +841,9 @@ class _ArcGISConnection(object):
                     self._useragent = 'geosaurus/' + __version__
                 headers = [('User-Agent', self._useragent)]
             else:
-                headers = [('Referer', self._referer),
-                           ('User-Agent', self._useragent)]
+                headers = [('User-Agent', self._useragent)]
+                if self._referer is not None and len(self._referer) > 0:
+                    headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
             if self._handlers is None or self._auth in ('BASIC', 'DIGEST', 'IWA'):
@@ -1090,7 +1091,7 @@ class _ArcGISConnection(object):
             headers = [('User-Agent', self._useragent),
                        ('Content-type', mpf.get_content_type()),
                        ('Content-length', len(body))]
-            if self._referer:
+            if self._referer is not None and len(self._referer) > 0:
                 headers.append(('Referer', self._referer))
             if isinstance(add_headers, list):
                 for ah in add_headers:
@@ -1114,11 +1115,9 @@ class _ArcGISConnection(object):
             if postdata:
                 postdata = {k: jsonize_dict(v) for k, v in postdata.items()}
                 encoded_postdata = urlencode(postdata)
-            if self._referer:
-                headers = [('Referer', self._referer),
-                           ('User-Agent', self._useragent)]
-            else:
-                headers = [('User-Agent', self._useragent)]
+            headers = [('User-Agent', self._useragent)]
+            if self._referer is not None and len(self._referer) > 0:
+                headers.append(('Referer', self._referer))
             if compress:
                 headers.append(('Accept-encoding', 'gzip'))
 
