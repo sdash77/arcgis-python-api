@@ -7545,6 +7545,8 @@ class Item(dict):
             icon = "websceneglobal16.png"
         elif self.type.lower() == "pro map":
             icon = "mapsgray16.png"
+        elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
+            icon = "table16.png"
         elif self.type.lower() == "feature service":
             icon = "featureshosted16.png"
         elif self.type.lower() == "map service":
@@ -7585,6 +7587,8 @@ class Item(dict):
         item_type= self.type
         if self.type == 'Geoprocessing Service':
             item_type = 'Geoprocessing Toolbox'
+        elif self.type.lower() == 'feature service' and 'Table' in self.typeKeywords:
+            item_type = 'Table Layer'
         elif self.type.lower() == 'feature service':
             item_type = 'Feature Layer Collection'
         elif self.type.lower() == 'map service':
