@@ -3530,7 +3530,7 @@ class ContentManager(object):
                                              service_type,
                                              create_params,
                                              owner, folder, item_properties, is_view)
-        if itemid is not None:
+        if itemid is not None and item_properties is not None:
             item = Item(self._gis, itemid)
             item.update(item_properties=item_properties)
             if 'access' in item_properties.keys():
