@@ -3408,8 +3408,7 @@ class ContentManager(object):
         gis = self._gis
         params['analyzeParameters'] = json.dumps(params['analyzeParameters'])
         return gis._con.post(path=surl, postdata=params, files=files)
-
-
+    #----------------------------------------------------------------------
     def create_service(self, name,
                        service_description="",
                        has_static_data=False,
@@ -3530,20 +3529,20 @@ class ContentManager(object):
                                              service_type,
                                              create_params,
                                              owner, folder, item_properties, is_view)
-        if itemid is not None and item_properties is not None:
+        if itemid is not None:
             item = Item(self._gis, itemid)
-            item.update(item_properties=item_properties)
+            if item_properties is None:
+                item_properties = {}
+            else:
+                item.update(item_properties=item_properties)
             if 'access' in item_properties.keys():
                 if item_properties['access'] == 'public':
                     item.share(everyone=True)
                 elif item_properties['access'] == 'org':
                     item.share(org=True)
-                else:
-                    pass
             return item
         else:
             return None
-
     #----------------------------------------------------------------------
     @property
     def categories(self):
@@ -3553,8 +3552,7 @@ class ContentManager(object):
 
         base_url = "{base}portals/self".format(base=self._gis._portal.resturl)
         return CategorySchemaManager(base_url=base_url, gis=self._gis)
-
-
+    #----------------------------------------------------------------------
     def get(self, itemid):
         """ Returns the item object for the specified itemid.
 
