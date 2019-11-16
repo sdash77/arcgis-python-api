@@ -638,7 +638,7 @@ class PortalLicense(BasePortalAdmin):
     #----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
-        super(License, self).__init__(url=url,
+        super().__init__(url=url,
                                      gis=gis,
                                      **kwargs)
         initialize = kwargs.pop("initialize", False)
