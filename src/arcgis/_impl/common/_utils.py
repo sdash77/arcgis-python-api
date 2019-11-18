@@ -36,6 +36,7 @@ def create_uid():
 #----------------------------------------------------------------------
 def _date_handler(obj):
     import numpy
+    from ._mixins import PropertyMap
     if type(obj) is datetime.date:
         import datetime as _dt
         obj = _dt.datetime.combine(obj.today(), _dt.datetime.min.time())
@@ -54,6 +55,8 @@ def _date_handler(obj):
         return float(obj)
     elif isinstance(obj, numpy.ndarray):
         return obj.tolist()
+    elif isinstance(obj, PropertyMap):
+        return dict(obj)
     else:
         return obj
 #----------------------------------------------------------------------

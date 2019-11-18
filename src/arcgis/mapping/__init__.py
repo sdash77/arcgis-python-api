@@ -5,7 +5,7 @@ mapping and visualization in the GIS. This module also includes mapping layers l
 MapImageLayer, SceneLayer and VectorTileLayer.
 """
 
-from ._types import WebMap, WebScene, MapImageLayer, MapImageLayerManager, VectorTileLayer, OfflineMapAreaManager
+from ._types import WebMap, WebScene, MapImageLayer, MapImageLayerManager, VectorTileLayer, OfflineMapAreaManager, PackagingJob
 from ._types import SceneLayer
 from ._utils import export_map, get_layout_templates
 from .symbol import create_symbol, display_colormaps, show_styles
