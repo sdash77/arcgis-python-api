@@ -66,9 +66,14 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         _conf_reader = ConfigParser()
         _conf_reader.read(DinoConfigs.portal_list_file, 'UTF-8')
 
+        # cls.portal_url = _conf_reader['arcgiscom']['url']
+        # cls.portal_username = _conf_reader['arcgiscom']['admin_user']
+        # cls.portal_password = _conf_reader['arcgiscom']['admin_password']
+
+        # trying if tests need to be owners of items
         cls.portal_url = _conf_reader['arcgiscom']['url']
-        cls.portal_username = _conf_reader['arcgiscom']['admin_user']
-        cls.portal_password = _conf_reader['arcgiscom']['admin_password']
+        cls.portal_username = _conf_reader['arcgiscom']['apidataowner_user']
+        cls.portal_password = _conf_reader['arcgiscom']['apidataowner_password']
 
         # temporary until tool gets released on production
         # cls.portal_url = "https://devext.arcgis.com"
@@ -134,7 +139,8 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     def test_create_OfflineMapAreaManager(self):
         try:
             # wmitem = self.gis.content.get('33c139234203473aa49a959dbf27cfb3')  # old, while in dev cloud.
-            wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
+            # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
+            wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
             wm = WebMap(wmitem)
             oma_manager = wm.offline_areas
 
@@ -155,7 +161,8 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     def test_list_offline_areas(self):
         try:
             # wmitem = self.gis.content.get('33c139234203473aa49a959dbf27cfb3')  # old, while in dev cloud.
-            wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
+            # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
+            wmitem = self.gis.content.get('7cb38a3325564607a81c0da5733bfbfc')
             wm = WebMap(wmitem)
 
             offline_areas = wm.offline_areas.list()
@@ -181,7 +188,9 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         """
         try:
             # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
-            wmitem = self.gis.content.get('220075cffbcd4d61a0e2231fe53aac0e')
+            # wmitem = self.gis.content.get('220075cffbcd4d61a0e2231fe53aac0e')
+            wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
+
             wm = WebMap(wmitem)
 
             bookmark1 = wm.definition.bookmarks[-1]['name']
@@ -224,7 +233,9 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         """
         try:
             # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
-            wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
+            # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
+            # wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
+            wmitem = self.gis.content.get('7cb38a3325564607a81c0da5733bfbfc')
             wm = WebMap(wmitem)
 
             oma_item = wm.offline_areas.list()[0]
@@ -255,7 +266,9 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         """
         try:
             # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
-            wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
+            # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
+            # wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
+            wmitem = self.gis.content.get('7cb38a3325564607a81c0da5733bfbfc')
             wm = WebMap(wmitem)
 
             import arcgis
@@ -284,7 +297,8 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         """
         try:
             # wmitem = self.gis.content.get('3d7e3508ccc14d03b9b1b4be134c7a8a')  # old, while in dev cloud.
-            wmitem = self.gis.content.get('3e7159ee4c6c4e6faf2ca2bd066ee972')
+            # wmitem = self.gis.content.get('3e7159ee4c6c4e6faf2ca2bd066ee972')
+            wmitem = self.gis.content.get('2051a50d9370428297dc08a87db4a43f')
             wm = WebMap(wmitem)
 
             bookmark1 = wm.definition.bookmarks[-1]['name']
