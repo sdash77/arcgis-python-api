@@ -186,6 +186,35 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+    @unittest.skipIf(class_skip, "Test preconditions not met, skipping")
+    def test_create_service_test2(self):
+        """
+        Access test for create service
+        :return:
+        """
+    
+
+        try:
+            import uuid
+            from arcgis.gis import GIS, Item
+            name = "a" + uuid.uuid4().hex[:5] + "z" 
+            test = self.gis.content.create_service(name=name)
+            assert isinstance(test, Item)
+            assert test.delete()                    
+            name = "a" + uuid.uuid4().hex[:5] + "z" 
+            test = self.gis.content.create_service(name=name, item_properties={'access' : 'org'})
+            assert isinstance(test, Item)
+            assert test.delete()                                
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
 
 class Test_ContentManager_ago_builtin(unittest.TestCase):
     """
