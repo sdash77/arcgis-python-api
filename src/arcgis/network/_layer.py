@@ -6,7 +6,13 @@ from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
 
 from arcgis.mapping import MapImageLayer
-import pandas as pd
+try:
+    
+    import pandas as pd
+    from arcgis.features.geo import _is_geoenabled
+    HASPANDAS = True
+except ImportError:
+    HASPANDAS = False
 from arcgis.gis import Item
 
 _log = logging.getLogger(__name__)
@@ -18,7 +24,6 @@ def _handle_spatial_inputs(data,
     """
     Handles the various supported inputs types
     """
-    from arcgis.features.geo import _is_geoenabled
     template = {
         'type' : 'features',
         'doNotLocateOnRestrictedElements' : do_not_locate,
@@ -27,7 +32,8 @@ def _handle_spatial_inputs(data,
     if isinstance(data, Item) and \
        data.type in ["Feature Layer", 'Feature Service']:
         return _handle_spatial_inputs(data.layers[0])
-    if isinstance(data, pd.DataFrame) and \
+    if HASPANDAS and \
+       isinstance(data, pd.DataFrame) and \
        _is_geoenabled(df=data):
         return data.spatial.__feature_set__
     elif isinstance(data, FeatureSet):
