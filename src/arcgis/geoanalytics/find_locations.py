@@ -417,6 +417,202 @@ def detect_incidents(input_layer,
 
     return
 
+def find_dwell_locations(input_layer,
+                         track_fields,
+                         distance_tolerance,
+                         distance_unit,
+                         time_tolerance,
+                         time_unit,
+                         summary_fields=None,
+                         method='Planar',
+                         dwell_type='DwellMeanCenters',
+                         output_name=None,
+                         gis=None,
+                         context=None,
+                         future=False):
+    """
+    
+    .. image:: _static/images/find_similar_locations/find_similar_locations.png 
+
+    The ``find_dwell_locations`` works with time-enabled points of type instant 
+    to find where points dwell within a specific distance and duration.
+
+    Dwell locations are determined using both time (`time_tolerance`) and distance 
+    (`distance_tolerance`) values. First, the tool assigns features to a track using 
+    a unique identifier. Track order is determined by the time of features. Next, 
+    the distance between the first observation in a track and the next is 
+    calculated. Features are considered to be part of a dwell if two temporally 
+    consecutive points stay within the given distance for at least the given 
+    duration. When two features are found to be part of a dwell, the first 
+    feature in the dwell is used as a reference point, and the tool finds 
+    consecutive features that are within the specified distance of the reference
+    point in the dwell. Once all features within the specified distance are 
+    found, the tool collects the dwell features and calculates their mean 
+    center. Features before and after the current dwell are added to the dwell 
+    if they are within the given distance of the dwell location's mean center. 
+    This process continues until the end of the track.
+
+    For example, ecologists and conservation workers can use the Find Dwell 
+    Locations tool to improve the safety of elk during migratory seasons. Leverage
+    the results to implement or improve protected areas in locations where the 
+    animals are spending the most time.
+
+    For another example, let's say you work with the Department of Transportation 
+    and you want to improve traffic congestion on highways near exits. Using the 
+    Find Dwell Locations tool, you can isolate areas experiencing congestion by 
+    identifying vehicle tracks that stay within a certain distance for a certain 
+    amount of time.
+    
+    
+    ==========================   ===============================================================
+    **Argument**                 **Description**
+    --------------------------   ---------------------------------------------------------------
+    input_layer                  Required layer. The ``input_layer`` is a time-enabled point 
+                                 features from which dwell locations will be found.
+    --------------------------   ---------------------------------------------------------------  
+    track_fields                 Required String. The fields used to identify distinct tracks.
+    --------------------------   ---------------------------------------------------------------  
+    distance_tolerance           Required Float.  The dwell distance tolerance is the maximum 
+                                 distance between points to be considered in a single dwell 
+                                 location.  Dwell locations are determined using both distance 
+                                 and time.
+    --------------------------   ---------------------------------------------------------------  
+    distance_unit                Required String. The unit value.
+    --------------------------   ---------------------------------------------------------------  
+    time_tolerance               Required Integer.  The dwell time tolerance is the minimum time
+                                 duration of a dwell to be considered in a single dwell 
+                                 location.  Dwell locations are determined using both distance 
+                                 and time.
+    --------------------------   ---------------------------------------------------------------  
+    time_unit                    Required String.  The time units.
+    --------------------------   ---------------------------------------------------------------  
+    summary_fields               Optional List.  A list of field names and statistical summary 
+                                 types you want to calculate. Note that the count of points in a
+                                 dwell is always returned.
+
+                                 By default, all statistics are returned if the `dwell_type` 
+                                 specified is DwellMeanCenters (this is the default) or 
+                                 DwellConvexHulls.
+
+                                 Only the count is returned if the `dwell_type` specified is 
+                                 DwellFeatures or AllFeatures.
+
+                                 onStatisticField specifies the name of the fields in the target layer. statisticType is one of the following:
+
+                                 -  Count - For numeric fields, this totals the number of values for all the points in each dwell. For string fields, this totals the number of strings for all the points in each dwell.
+                                 -  Sum - Adds the total value of all the points in each dwell. For numeric fields.
+                                 -  Mean - Calculates the average of all the points in each dwell. For numeric fields.
+                                 -  Max - Calculates the largest value of all the points in each dwell. For numeric fields.
+                                 -  Range - Finds the difference between the Min and Max values. For numeric fields.
+                                 -  Stddev - Finds the standard deviation of all the points in each dwell. For numeric fields.
+                                 -  Var - Finds the variance of all the points in each dwell. For numeric fields.
+                                 -  Any - Returns a sample string of a point in each dwell. For string and numeric fields.
+                                 
+                                 Example:
+                                 
+                                 ```python
+                                 
+                                 [{"statisticType": "Mean", "onStatisticField": "Annual_Sales"},
+                                  {"statisticType": "Sum", "onStatisticField": "Annual_Sales"}]
+
+                                 ```
+                                 
+    --------------------------   ---------------------------------------------------------------  
+    dwell_type                   Optional String. Determines which features are returned and the 
+                                 format. Four types are available:
+
+                                   -  DwellMeanCenters - A point representing the centroid of each discovered dwell location. This is the default.
+                                   -  DwellConvexHulls - Polygons representing the convex hull of each dwell group.
+                                   -  DwellFeatures - All of the input point features determined to belong to a dwell are returned.
+                                   -  AllFeatures - All of the input point features are returned.
+                                
+    --------------------------   ---------------------------------------------------------------  
+    method                       Optional String. The method used to calculate distances between 
+                                 points. There are two methods from which to choose: Planar and 
+                                 Geodesic. The Planar method joins points using a planar method 
+                                 and will not cross the international date line. This method is 
+                                 appropriate for local analysis on projected data. This is the 
+                                 default. The Geodesic method joins points geodesically and will
+                                 allow tracks to cross the international date line. This method 
+                                 is appropriate for large areas and geographic coordinate 
+                                 systems.
+    --------------------------   ---------------------------------------------------------------  
+    output_name                  Optional string. The task will create a feature service of the results. 
+                                 You define the name of the service.
+    --------------------------   ---------------------------------------------------------------      
+    gis                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    --------------------------   ---------------------------------------------------------------      
+    context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+    --------------------------   ---------------------------------------------------------------      
+    future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+
+                                 The default value is 'False'.
+    ==========================   ===============================================================
+    
+    :returns: Output Service if future is False and GAJob if future is True
+    
+    """
+    kwargs = locals()
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+
+    params = {}
+    for key, value in kwargs.items():
+        if value is not None:
+            params[key] = value
+
+    if output_name is None:
+        output_service_name = 'Dwell Locations_' + _id_generator()
+        output_name = output_service_name.replace(' ', '_')
+    else:
+        output_service_name = output_name.replace(' ', '_')
+
+    output_service = _create_output_service(gis, output_name, output_service_name, 'Find Dwell Locations')
+
+    params['output_name'] = _json.dumps({
+        "serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url},
+        "itemProperties": {"itemId" : output_service.itemid}})
+
+    if context is not None:
+        params["context"] = context
+    else:
+        _set_context(params)   
+
+    param_db = {
+        "input_layer": (_FeatureSet, "inputLayer"),
+        "track_fields": (str, "trackFields"),
+        "dwell_type" : (str, "outputType"),
+        "distance_tolerance": (float, "distanceTolerance"),
+        "distance_unit": (str, "distanceToleranceUnit"),
+        "time_tolerance": (int, "timeTolerance"),
+        "time_unit": (str, "timeToleranceUnit"),
+        "method": (str, "distanceMethod"),
+        "summary_fields": (list, "summaryFields"),
+        "output_name": (str, "outputName"),
+        "context": (str, "context"),
+        "output": (_FeatureSet, "Output Features"),
+    }
+    return_values = [
+        {"name": "output", "display_name": "Output Features", "type": _FeatureSet},
+        #{"name": "process_info", "display_name": "Process Information", "type": list}
+    ]
+    try:
+        if future:
+            gpjob = _execute_gp_tool(gis, "FindDwellLocations", params, param_db, return_values, _use_async, url, True, future=future)
+            return GAJob(gpjob=gpjob, return_service=output_service)
+        res = _execute_gp_tool(gis, "FindDwellLocations", params, param_db, return_values, _use_async, url, True, future=future)
+
+        
+        return output_service   
+    except:
+        output_service.delete()
+        raise     
 
 def find_similar_locations(
                            input_layer,
