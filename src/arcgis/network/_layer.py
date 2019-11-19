@@ -1,7 +1,179 @@
+import logging
+import datetime
 from arcgis.gis import Layer, _GISResource
+# Supported Data Types
 from arcgis.features import Feature, FeatureSet
+from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
+from arcgis.features.geo import _is_geoenabled
+from arcgis.mapping import MapImageLayer
+import pandas as pd
+from arcgis.gis import Item
 
+_log = logging.getLogger(__name__)
+###########################################################################
+def _handle_spatial_inputs(data, 
+                           do_not_locate=True,
+                           has_z=False, 
+                           where=None):
+    """
+    Handles the various supported inputs types
+    """
+    template = {
+        'type' : 'features',
+        'doNotLocateOnRestrictedElements' : do_not_locate,
+        'hasZ' : has_z
+    }
+    if isinstance(data, Item) and \
+       data.type in ["Feature Layer", 'Feature Service']:
+        return _handle_spatial_inputs(data.layers[0])
+    if isinstance(data, pd.DataFrame) and \
+       _is_geoenabled(df=data):
+        return data.spatial.__feature_set__
+    elif isinstance(data, FeatureSet):
+        return data.sdf.spatial.__feature_set__
+    elif isinstance(data, list):
+        stops_dict = []
+        for stop in data:
+            if isinstance(stop, Feature):
+                stops_dict.append(stop.as_dict)
+            else:
+                stops_dict.append(stop)
+        template['features'] = stops_dict
+        return template
+    elif isinstance(data, (FeatureLayer, Table)):
+        from urllib.parse import quote
+        import json
+        query = data.filter
+        url = data._url
+        if query and \
+           len(str(query)) > 0:
+            query = quote(query)
+            url += "/query?where=%s&outFields=*&f=json" % query
+            if data._gis._con.token:
+                url += "&token=%s" % data._gis._con.token
+        else:
+            query = quote("1=1")
+            url += "/query?where=%s&outFields=*&f=json" % query
+            if data._gis._con.token:
+                url += "&token=%s" % data._gis._con.token            
+        template['url'] = url
+        return template
+    else:
+        return data  
+    return data
+###########################################################################
+class NAJob(object):
+    """Represents a Future Job for Network Analyst Jobs"""
+    _future = None
+    _gis = None
+    _start_time = None
+    _end_time = None
 
+    #----------------------------------------------------------------------
+    def __init__(self, future, notify=False):
+        """
+        initializer
+        """
+        self._future = future
+        self._start_time = datetime.datetime.now()
+        if notify:
+            self._future.add_done_callback(self._notify)
+        self._future.add_done_callback(self._set_end_time)
+    #----------------------------------------------------------------------
+    @property
+    def ellapse_time(self):
+        """
+        Returns the Ellapse Time for the Job
+        """
+        if self._end_time:
+            return self._end_time - self._start_time
+        else:
+            return datetime.datetime.now() - self._start_time
+    #----------------------------------------------------------------------
+    def _set_end_time(self, future):
+        """sets the finish time"""
+        self._end_time = datetime.datetime.now()
+    #----------------------------------------------------------------------
+    def _notify(self, future):
+        """prints finished method"""
+        jobid = str(self).replace("<", "").replace(">", "")
+        try:
+            res = future.result()
+            infomsg = '{jobid} finished successfully.'.format(jobid=jobid)
+            _log.info(infomsg)
+            print(infomsg)
+        except Exception as e:
+            msg = str(e)
+            msg = '{jobid} failed: {msg}'.format(jobid=jobid, msg=msg)
+            _log.info(msg)
+            print(msg)
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return "<Packaging Job>" 
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return "<Packaging Job>" 
+    #----------------------------------------------------------------------
+    @property
+    def status(self):
+        """
+        returns the GP status
+
+        :returns: String
+        """
+        return self._future.done()
+    #----------------------------------------------------------------------
+    def cancel(self):
+        """
+        Attempt to cancel the call. If the call is currently being executed
+        or finished running and cannot be cancelled then the method will
+        return False, otherwise the call will be cancelled and the method
+        will return True.
+
+        :returns: boolean
+        """
+        
+        if self.done():
+            return False
+        if self.cancelled():
+            return False
+        return True
+    #----------------------------------------------------------------------
+    def cancelled(self):
+        """
+        Return True if the call was successfully cancelled.
+
+        :returns: boolean
+        """
+        return self._future.cancelled()
+    #----------------------------------------------------------------------
+    def running(self):
+        """
+        Return True if the call is currently being executed and cannot be cancelled.
+
+        :returns: boolean
+        """
+        return self._future.running()
+    #----------------------------------------------------------------------
+    def done(self):
+        """
+        Return True if the call was successfully cancelled or finished running.
+
+        :returns: boolean
+        """
+        return self._future.done()
+    #----------------------------------------------------------------------
+    def result(self):
+        """
+        Return the value returned by the call. If the call hasn't yet completed
+        then this method will wait.
+
+        :returns: object
+        """
+        if self.cancelled():
+            return None
+        return self._future.result()        
+###########################################################################
 class NetworkLayer(Layer):
     """
     NetworkLayer represents a single network layer. It provides basic
@@ -12,6 +184,15 @@ class NetworkLayer(Layer):
     It is a base class for RouteLayer, ServiceAreaLayer, and
     ClosestFacilityLayer.
     """
+    #----------------------------------------------------------------------
+    def _run_async(self, fn, **inputs):
+        """runs the inputs asynchronously"""
+        import concurrent.futures
+        tp = concurrent.futures.ThreadPoolExecutor(1)
+        future = tp.submit(fn=fn, **inputs)
+        tp.shutdown(False)
+        return future        
+    #----------------------------------------------------------------------
     def retrieve_travel_modes(self):
         """identify all the valid travel modes that have been defined on the
         network dataset or in the portal if the GIS server is federated"""
@@ -21,6 +202,7 @@ class NetworkLayer(Layer):
                          params=params, token=self._token)
 
 
+###########################################################################
 class RouteLayer(NetworkLayer):
     """
     The Route Layer which has common properties of Network Layer
@@ -60,8 +242,9 @@ class RouteLayer(NetworkLayer):
               directions_time_attribute_name=None,
               output_geometry_precision=None,
               output_geometry_precision_units=None,
-              return_z=False
-              ):
+              return_z=False,
+              overrides=None,
+              future=False):
         """
         The solve operation is performed on a network layer resource.
         The solve operation is supported on a network layer whose layerType
@@ -216,6 +399,11 @@ class RouteLayer(NetworkLayer):
         return_z                                Optional boolean. If true, Z values will be included in the returned
                                                 routes and compressed geometry if the network dataset is Z-aware.
                                                 The default is false.
+        -----------------------------------     --------------------------------------------------------------------
+        overrides                               Optional dictionary. Specify additional settings that can influence 
+                                                the behavior of the solver.  A list of supported override settings 
+                                                for each solver and their acceptable values can be obtained by 
+                                                contacting Esri Technical Support.
         ===================================     ====================================================================
 
 
@@ -251,26 +439,16 @@ class RouteLayer(NetworkLayer):
         params = {
             "f": "json",
         }
-
-        if isinstance(stops, FeatureSet):
-            params['stops'] = stops.to_dict()
-        elif isinstance(stops, list):
-            stops_dict = []
-            for stop in stops:
-                if isinstance(stop, Feature):
-                    stops_dict.append(stop.as_dict)
-                else:
-                    stops_dict.append(stop)
-            params['stops'] = {'features': stops_dict}
-        else:
-            params['stops'] = stops
-
+        stops = _handle_spatial_inputs(data=stops)
+        params['stops'] = stops
+        if directions_output_type is None:
+            directions_output_type = "esriDOTInstructionsOnly"
         if not barriers is None:
-            params['barriers'] = barriers
+            params['barriers'] = _handle_spatial_inputs(data=barriers)
         if not polyline_barriers is None:
-            params['polylineBarriers'] = polyline_barriers
+            params['polylineBarriers'] = _handle_spatial_inputs(data=polyline_barriers)
         if not polygon_barriers is None:
-            params['polygonBarriers'] = polygon_barriers
+            params['polygonBarriers'] = _handle_spatial_inputs(data=polygon_barriers)
         if not travel_mode is None:
             params['travelMode'] = travel_mode
         if not attribute_parameter_values is None:
@@ -331,11 +509,14 @@ class RouteLayer(NetworkLayer):
             params['outputGeometryPrecisionUnits'] = output_geometry_precision_units
         if not return_z is None:
             params['returnZ'] = return_z
-
+        if not overrides is None:
+            params['overrides'] = overrides
         return self._con.post(path=url,
-                              postdata=params, token=self._token)
+                              postdata=params, 
+                              token=self._token)
 
 
+###########################################################################
 class ServiceAreaLayer(NetworkLayer):
     """
     The Service Area Layer which has common properties of Network
@@ -375,7 +556,8 @@ class ServiceAreaLayer(NetworkLayer):
                            time_of_day=None,
                            time_of_day_is_utc=None,
                            travel_direction=None,
-                           return_z=False):
+                           return_z=False,
+                           overrides=None):
         """ The solve service area operation is performed on a network layer
         resource of type service area (layerType is esriNAServerServiceArea).
         You can provide arguments to the solve service area operation as
@@ -513,6 +695,10 @@ class ServiceAreaLayer(NetworkLayer):
                               default is defined in the network analysis layer.
             returnZ - If true, Z values will be included in saPolygons and saPolylines
                       geometry if the network dataset is Z-aware.
+            overrides - Optional dictionary. Specify additional settings that can 
+                        influence the behavior of the solver.  A list of supported 
+                        override settings for each solver and their acceptable values 
+                        can be obtained by contacting Esri Technical Support.
     """
         if not self.properties.layerType == "esriNAServerServiceAreaLayer":
             raise TypeError("The solveServiceArea operation is supported on a network "
@@ -521,15 +707,15 @@ class ServiceAreaLayer(NetworkLayer):
         url = self._url + "/solveServiceArea"
         params = {
                 "f" : "json",
-                "facilities": facilities
+                "facilities": _handle_spatial_inputs(facilities)
                 }
 
         if not barriers is None:
-            params['barriers'] = barriers
+            params['barriers'] = _handle_spatial_inputs(barriers)
         if not polyline_barriers is None:
-            params['polylineBarriers'] = polyline_barriers
+            params['polylineBarriers'] = _handle_spatial_inputs(polyline_barriers)
         if not polygon_barriers is None:
-            params['polygonBarriers'] = polygon_barriers
+            params['polygonBarriers'] = _handle_spatial_inputs(polygon_barriers)
         if not travel_mode is None:
             params['travelMode'] = travel_mode
         if not attribute_parameter_values is None:
@@ -590,11 +776,13 @@ class ServiceAreaLayer(NetworkLayer):
             params['travelDirection'] = travel_direction
         if not return_z is None:
             params['returnZ'] = return_z
-
+        if not overrides is None:
+            params['overrides'] = overrides
         return self._con.post(path=url,
                               postdata=params, token=self._token)
 
 
+###########################################################################
 class ClosestFacilityLayer(NetworkLayer):
     """
     The Closest Facility Network Layer which has common properties of Network
@@ -633,7 +821,8 @@ class ClosestFacilityLayer(NetworkLayer):
                                time_of_day=None,
                                time_of_day_is_utc=None,
                                time_of_day_usage=None,
-                               return_z=False):
+                               return_z=False,
+                               overrides=None):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
         You can provide arguments to the solve route operation as query
@@ -778,6 +967,11 @@ class ClosestFacilityLayer(NetworkLayer):
             returnZ - If true, Z values will be included in the returned routes and
                        compressed geometry if the network dataset is Z-aware.
                        The default is false.
+            overrides - Optional dictionary. Specify additional settings that can influence 
+                        the behavior of the solver.  A list of supported override settings 
+                        for each solver and their acceptable values can be obtained by 
+                        contacting Esri Technical Support.
+                        
     """
 
         if not self.properties.layerType == "esriNAServerClosestFacilityLayer":
@@ -787,16 +981,16 @@ class ClosestFacilityLayer(NetworkLayer):
         url = self._url + "/solveClosestFacility"
         params = {
                 "f" : "json",
-                "facilities": facilities,
-                "incidents": incidents
+                "facilities": _handle_spatial_inputs(facilities),
+                "incidents": _handle_spatial_inputs(incidents)
                 }
 
         if not barriers is None:
-            params['barriers'] = barriers
+            params['barriers'] = _handle_spatial_inputs(barriers)
         if not polyline_barriers is None:
-            params['polylineBarriers'] = polyline_barriers
+            params['polylineBarriers'] = _handle_spatial_inputs(polyline_barriers)
         if not polygon_barriers is None:
-            params['polygonBarriers'] = polygon_barriers
+            params['polygonBarriers'] = _handle_spatial_inputs(polygon_barriers)
         if not travel_mode is None:
             params['travelMode'] = travel_mode
         if not attribute_parameter_values is None:
@@ -855,10 +1049,12 @@ class ClosestFacilityLayer(NetworkLayer):
             params['timeOfDayUsage'] = time_of_day_usage
         if not return_z is None:
             params['returnZ'] = return_z
-
+        if not overrides is None:
+            params['overrides'] = overrides
         return self._con.post(path=url, postdata=params, token=self._token)
 
 
+###########################################################################
 class NetworkDataset(_GISResource):
     """
     A network dataset containing a collection of network layers including route layers,
