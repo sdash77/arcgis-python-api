@@ -2280,6 +2280,81 @@ class UserManager(object):
                 raise ValueError('Invalid input: must be of type list.')
         return False
 
+    def advanced_search(self, query, 
+                        return_count=False, max_users=10, 
+                        start=1, sort_field="username", 
+                        sort_order="asc", as_dict=False):
+        """
+        
+        """
+        from arcgis.gis._impl import _search
+        stype = "users"
+        max_items = max_users
+        group_id = None
+        if max_items == -1:
+            max_items = _search(gis=self._gis, query=query, stype=stype,
+                          max_items=0, start=start, sort_field=sort_field,
+                          sort_order=sort_order, group_id=group_id, as_dict=as_dict)['total']
+        so = {
+            'asc' : 'asc',
+            'desc' : 'desc',
+            'ascending' : 'asc',
+            'descending' : 'desc'
+        }
+        if sort_order:
+            sort_order = so[sort_order]
+
+        if return_count:
+            max_items = 0
+        if max_items <= 10:
+            res = _search(gis=self._gis, query=query, stype=stype,
+                          max_items=max_items, 
+                          start=start, sort_field=sort_field,
+                          sort_order=sort_order, group_id=group_id, as_dict=as_dict)
+            if 'total' in res and \
+               return_count:
+                return res['total']
+            elif 'aggregations' in res:
+                return res['aggregations']
+            return res
+        else:
+            allowed_keys = [ 'query', 'return_count', 'max_users', 
+                             'bbox','categories', 'category_filter',
+                             'start', 'sort_field', 'sort_order', 
+                             'count_fields','count_size', 'as_dict']
+            inputs = locals()
+            kwargs = {}
+            for k,v in inputs.items():
+                if k in allowed_keys:
+                    kwargs[k] = v
+            import concurrent.futures
+            import math, copy
+            num = 10
+            steps = range(math.ceil(max_items / num))
+            params = [ ]
+            for step in steps:
+                new_start = start + num*step
+                kwargs['max_users'] = num
+                kwargs['start'] = new_start
+                params.append(copy.deepcopy(kwargs))
+            items = {
+                'results' : [],
+                'start' : start,
+                'num' : 10,
+                'total' : max_items
+            }
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_url = {executor.submit(self.advanced_search, **param): param for param in params}
+                for future in concurrent.futures.as_completed(future_to_url):
+                    result = future_to_url[future]
+                    data = future.result()
+                    if 'results' in data:
+                        items['results'].extend(data['results'])
+            if len(items['results']) > max_items:
+                items['results'] = items['results'][:max_items]
+            return items       
+        return None
+    #----------------------------------------------------------------------
     def search(self, query=None, sort_field='username', sort_order='asc',
                max_users=100, outside_org=False, exclude_system=False,
                user_type=None, role=None):
