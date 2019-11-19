@@ -4,7 +4,7 @@ from arcgis.gis import Layer, _GISResource
 # Supported Data Types
 from arcgis.features import Feature, FeatureSet
 from arcgis.features import FeatureLayer, FeatureLayerCollection, Table
-from arcgis.features.geo import _is_geoenabled
+
 from arcgis.mapping import MapImageLayer
 import pandas as pd
 from arcgis.gis import Item
@@ -18,6 +18,7 @@ def _handle_spatial_inputs(data,
     """
     Handles the various supported inputs types
     """
+    from arcgis.features.geo import _is_geoenabled
     template = {
         'type' : 'features',
         'doNotLocateOnRestrictedElements' : do_not_locate,
