@@ -13,6 +13,8 @@ try:
     HASPANDAS = True
 except ImportError:
     HASPANDAS = False
+    def _is_geoenabled(df):
+        return False
 from arcgis.gis import Item
 
 _log = logging.getLogger(__name__)
@@ -77,10 +79,14 @@ class NAJob(object):
     _end_time = None
 
     #----------------------------------------------------------------------
-    def __init__(self, future, notify=False):
+    def __init__(self, future, task=None, notify=False):
         """
         initializer
         """
+        if task is None:
+            self._task = "Network Task"
+        else:
+            self._task = task
         self._future = future
         self._start_time = datetime.datetime.now()
         if notify:
@@ -116,10 +122,11 @@ class NAJob(object):
             print(msg)
     #----------------------------------------------------------------------
     def __str__(self):
-        return "<Packaging Job>" 
+        task = self._task
+        return f"<{task} Job>" 
     #----------------------------------------------------------------------
     def __repr__(self):
-        return "<Packaging Job>" 
+        return self.__str__()
     #----------------------------------------------------------------------
     @property
     def status(self):
@@ -251,6 +258,7 @@ class RouteLayer(NetworkLayer):
               output_geometry_precision_units=None,
               return_z=False,
               overrides=None,
+              preserve_objectid=False,
               future=False):
         """
         The solve operation is performed on a network layer resource.
@@ -411,6 +419,12 @@ class RouteLayer(NetworkLayer):
                                                 the behavior of the solver.  A list of supported override settings 
                                                 for each solver and their acceptable values can be obtained by 
                                                 contacting Esri Technical Support.
+        -----------------------------------     --------------------------------------------------------------------
+        preserve_objectid                       Optional Boolean.  If True, all objectid values are maintained.  The 
+                                                default is False.
+        -----------------------------------     --------------------------------------------------------------------
+        future                                  Optional Boolean.  If True, the process is run asynchronously. The 
+                                                default is False.
         ===================================     ====================================================================
 
 
@@ -518,10 +532,14 @@ class RouteLayer(NetworkLayer):
             params['returnZ'] = return_z
         if not overrides is None:
             params['overrides'] = overrides
+        if preserve_objectid:
+            params['preserveObjectID'] = preserve_objectid
+        if future:
+            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._token})
+            return NAJob(future=f, task="RouteLayer Solve")
         return self._con.post(path=url,
                               postdata=params, 
                               token=self._token)
-
 
 ###########################################################################
 class ServiceAreaLayer(NetworkLayer):
@@ -564,7 +582,9 @@ class ServiceAreaLayer(NetworkLayer):
                            time_of_day_is_utc=None,
                            travel_direction=None,
                            return_z=False,
-                           overrides=None):
+                           overrides=None,
+                           preserve_objectid=False,
+                           future=False):
         """ The solve service area operation is performed on a network layer
         resource of type service area (layerType is esriNAServerServiceArea).
         You can provide arguments to the solve service area operation as
@@ -706,6 +726,14 @@ class ServiceAreaLayer(NetworkLayer):
                         influence the behavior of the solver.  A list of supported 
                         override settings for each solver and their acceptable values 
                         can be obtained by contacting Esri Technical Support.
+            preserve_objectid - Optional Boolean.  If True, all objectid values are 
+                                maintained.  The default is False.
+        
+            future - Optional Boolean.  If True, the process is run asynchronously. 
+                     The default is False. If True, a NAJob is returned instead of the 
+                     results.
+            
+            
     """
         if not self.properties.layerType == "esriNAServerServiceAreaLayer":
             raise TypeError("The solveServiceArea operation is supported on a network "
@@ -785,8 +813,14 @@ class ServiceAreaLayer(NetworkLayer):
             params['returnZ'] = return_z
         if not overrides is None:
             params['overrides'] = overrides
+        if preserve_objectid:
+            params['preserveObjectID'] = preserve_objectid
+        if future:
+            f = self._run_async(self._con.post, **{'path' : url, 'postdata' : params, 'token' : self._token})
+            return NAJob(future=f, task='Solve Service Area')
         return self._con.post(path=url,
-                              postdata=params, token=self._token)
+                              postdata=params, 
+                              token=self._token)
 
 
 ###########################################################################
@@ -829,7 +863,9 @@ class ClosestFacilityLayer(NetworkLayer):
                                time_of_day_is_utc=None,
                                time_of_day_usage=None,
                                return_z=False,
-                               overrides=None):
+                               overrides=None,
+                               preserve_objectid=False,
+                               future=False):
         """The solve operation is performed on a network layer resource of
         type closest facility (layerType is esriNAServerClosestFacilityLayer).
         You can provide arguments to the solve route operation as query
@@ -978,6 +1014,11 @@ class ClosestFacilityLayer(NetworkLayer):
                         the behavior of the solver.  A list of supported override settings 
                         for each solver and their acceptable values can be obtained by 
                         contacting Esri Technical Support.
+            preserve_objectid - Optional Boolean.  If True, all objectid values are 
+                                maintained.  The default is False.
+            future - Optional Boolean.  If True, the process is run asynchronously. 
+                     The default is False. If True, a NAJob is returned instead of the 
+                     results.
                         
     """
 
@@ -1058,9 +1099,16 @@ class ClosestFacilityLayer(NetworkLayer):
             params['returnZ'] = return_z
         if not overrides is None:
             params['overrides'] = overrides
-        return self._con.post(path=url, postdata=params, token=self._token)
-
-
+        if preserve_objectid:
+            params['preserveObjectID'] = preserve_objectid
+        if future:
+            f = self._run_async(self._con.post, **{'path' : url, 
+                                                   'postdata' : params, 
+                                                   'token' : self._token})
+            return NAJob(future=f, task="Solve Closest Facility")
+        return self._con.post(path=url,
+                              postdata=params, 
+                              token=self._token)
 ###########################################################################
 class NetworkDataset(_GISResource):
     """
