@@ -45,21 +45,21 @@ def test_from_layer():
     #assert all((df.SHAPE.geom.area > 0).tolist())
     #assert df.spatial.area > 0
     #assert df.SHAPE.geom.centroid.name == 'centroid'
-#--------------------------------------------------------------------------
-def test_to_layer():
-    """ tests the to_layer operation"""
-    from arcgis.features import FeatureLayer
-    gis = GIS(verify_cert=False)
-    lyr = gis.content.get('6996f03a1b364dbab4008d99380370ed').layers[0]
-    where = """CNTRY_NAME = 'San Marino'"""
-    df = from_layer(lyr, where)
-    df['FIPS_CNTRY'] = "QM"
-    layer = to_layer(df, layer=lyr, update_existing=True)
-    assert isinstance(layer, FeatureLayer)
-    assert layer.query(where).sdf['FIPS_CNTRY'][0] == 'QM'
-    df['FIPS_CNTRY'] = "SM"
-    layer = to_layer(df, layer=lyr, update_existing=True)
-    assert layer.query(where).sdf['FIPS_CNTRY'][0] == 'SM'
+##--------------------------------------------------------------------------
+#def test_to_layer():
+    #""" tests the to_layer operation"""
+    #from arcgis.features import FeatureLayer
+    #gis = GIS(verify_cert=False)
+    #lyr = gis.content.get('6996f03a1b364dbab4008d99380370ed').layers[0]
+    #where = """CNTRY_NAME = 'San Marino'"""
+    #df = from_layer(lyr, where)
+    #df['FIPS_CNTRY'] = "QM"
+    #layer = to_layer(df, layer=lyr, update_existing=True)
+    #assert isinstance(layer, FeatureLayer)
+    #assert layer.query(where).sdf['FIPS_CNTRY'][0] == 'QM'
+    #df['FIPS_CNTRY'] = "SM"
+    #layer = to_layer(df, layer=lyr, update_existing=True)
+    #assert layer.query(where).sdf['FIPS_CNTRY'][0] == 'SM'
 #--------------------------------------------------------------------------
 
 if __name__ == "__main__":

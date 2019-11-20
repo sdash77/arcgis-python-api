@@ -632,6 +632,10 @@ class SingleShotDetector(ArcGISModel):
         else:
             chips = [{'width': width, 'height': height, 'xmin': 0, 'ymin': 0, 'chip': image, 'predictions': []}]
 
+        include_pad_detections = False
+        if len(chips) == 1:
+            include_pad_detections = True
+
         valid_tfms = self._data.valid_ds.tfms
         self._data.valid_ds.tfms = []
 
@@ -649,7 +653,7 @@ class SingleShotDetector(ArcGISModel):
                         label = 'Default'
 
                     data = bb2hw(bbox)
-                    if not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                    if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
                         chip['predictions'].append({
                             'xmin': data[0],
                             'ymin': data[1],

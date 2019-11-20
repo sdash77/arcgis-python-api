@@ -56,18 +56,11 @@ class VideoUtils():
         tracker_list = []
         tracker_ind = 0
 
-        thickness = None
-        fontface = None
-        show_labels = None
-        color = None
-        show_scores = True
-
-        if visualize:
-            thickness = visual_options.get('thickness', 2)
-            fontface = visual_options.get('fontface', 0)
-            show_labels = visual_options.get('show_labels', True)
-            color = visual_options.get('color', (255, 255, 255))
-            show_scores = visual_options.get('show_scores', True)
+        thickness = visual_options.get('thickness', 2)
+        fontface = visual_options.get('fontface', 0)
+        show_labels = visual_options.get('show_labels', True)
+        color = visual_options.get('color', (255, 255, 255))
+        show_scores = visual_options.get('show_scores', True)
 
         for pb in progress_bar(range(total_frames)):
             success, frame = video_read.read()

@@ -37,6 +37,11 @@ except Exception as e:
         pass
     HAS_FASTAI = False
 
+HAS_ARCPY = True
+try: 
+    import arcpy 
+except Exception: 
+    HAS_ARCPY = False
 
 def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
 
@@ -236,7 +241,7 @@ class FeatureClassifier(ArcGISModel):
                     ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
                 tempdata.chip_size = chip_size
                 tempdata.class_mapping = class_mapping
-                tempdata.classes = list(class_mapping.keys())
+                tempdata.classes = list(class_mapping.values())
                 data = tempdata
 
         resize_to = emd.get('resize_to')
@@ -625,7 +630,10 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite
     ):  
-        #
+        # class values
+        class_values = list(self._data.class_mapping.keys())
+
+        # normalization stats
         norm_mean = torch.tensor(imagenet_stats[0])
         norm_std = torch.tensor(imagenet_stats[1])
 
@@ -708,19 +716,19 @@ class FeatureClassifier(ArcGISModel):
         update_store = {}
 
         if raster is not None:
-            import arcpy
+            if not HAS_ARCPY:
+                raise Exception("This function requires arcpy.")
 
             #Arcpy Environment to export data
             arcpy.env.cellSize = cell_size
-            arcpy.env.outputCoordinateSystem = coordinate_system
-            arcpy.env.cartographicCoordinateSystem = coordinate_system
+            if coordinate_system is not None:
+                arcpy.env.outputCoordinateSystem = coordinate_system
+                arcpy.env.cartographicCoordinateSystem = coordinate_system
 
             feature_layer_url = feature_layer.url
 
             if feature_layer._token is not None:
                 feature_layer_url = feature_layer_url + f"?token={feature_layer._token}"
-
-            
             
             # Create Temporary ID field
             tempid_field = _tempid_field = 'f_fcuid'
@@ -728,9 +736,21 @@ class FeatureClassifier(ArcGISModel):
             while tempid_field in feature_layer_fields:
                 tempid_field = _tempid_field + str(i)
                 i+=1
-            arcpy.AddField_management(feature_layer_url, tempid_field, "LONG")
-            #feature_layer.manager.add_to_definition({'fields': [tempid_field_template]})
-            arcpy.CalculateField_management(feature_layer_url, tempid_field, f"{oid_field}", "SQL")
+            #arcpy.AddField_management(feature_layer_url, tempid_field, "LONG")
+            tempid_field_template = {
+                "name": tempid_field,
+                "type": "esriFieldTypeInteger",
+                "alias": tempid_field,
+                "sqlType": "sqlTypeOther",
+                "nullable": True,
+                "editable": True,
+                "visible": True,
+                "domain": None,
+                "defaultValue": -999
+            }
+            feature_layer.manager.add_to_definition({'fields': [tempid_field_template]})
+            #arcpy.CalculateField_management(feature_layer_url, tempid_field, f"{oid_field}", "SQL")
+            feature_layer.calculate(where='1=1', calc_expression={"field": tempid_field, "sqlExpression": f"{oid_field}"})
 
             temp_folder = arcpy.env.scratchFolder
             temp_datafldr = os.path.join(temp_folder, 'categorize_features_'+str(int(time.time())))
@@ -752,7 +772,8 @@ class FeatureClassifier(ArcGISModel):
                 rotation_angle=0
             )
             # cleanup
-            arcpy.DeleteField_management(feature_layer_url, [ tempid_field ])
+            #arcpy.DeleteField_management(feature_layer_url, [ tempid_field ])
+            feature_layer.manager.delete_from_definition({'fields': [tempid_field_template]})
 
             image_list = ImageList.from_folder(os.path.join(temp_datafldr, 'images'))
             def get_id(imagepath):
@@ -772,7 +793,7 @@ class FeatureClassifier(ArcGISModel):
                 
                 # push prediction to store
                 for ui, oid in enumerate(tempids):
-                    classvalue = self._data.classes[predicted_classes[ui]]
+                    classvalue = class_values[predicted_classes[ui]]
                     update_store[oid] = {
                         oid_field: oid,
                         class_value_field: classvalue,
@@ -819,7 +840,7 @@ class FeatureClassifier(ArcGISModel):
             for oid in update_store_scratch:
                 max_prediction_class, max_prediction_value = predict_function(update_store_scratch[oid])
                 if max_prediction_class is not None:
-                    classvalue = self._data.classes[max_prediction_class]
+                    classvalue = class_values[max_prediction_class]
                     classname = self._data.class_mapping[classvalue]
                 else:
                     classvalue = None
@@ -849,6 +870,7 @@ class FeatureClassifier(ArcGISModel):
                     continue
                 warnings.warn(f"Something went wrong for data {resp}")
             time.sleep(2)
+        return True
 
 
     def _categorize_feature_class(
@@ -864,7 +886,12 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite
     ):
-        import arcpy
+        
+        # class values
+        class_values = list(self._data.class_mapping.keys())
+
+        if not HAS_ARCPY:
+            raise Exception("This function requires arcpy to access feature class.")
         arcpy.env.overwriteOutput = overwrite
 
         if batch_size is None:
@@ -911,8 +938,9 @@ class FeatureClassifier(ArcGISModel):
         if raster is not None:
             #Arcpy Environment to export data
             arcpy.env.cellSize = cell_size
-            arcpy.env.outputCoordinateSystem = coordinate_system
-            arcpy.env.cartographicCoordinateSystem = coordinate_system
+            if coordinate_system is not None:
+                arcpy.env.outputCoordinateSystem = coordinate_system
+                arcpy.env.cartographicCoordinateSystem = coordinate_system
 
             tempid_field = _tempid_field = 'f_fcuid'
             i = 1
@@ -969,7 +997,7 @@ class FeatureClassifier(ArcGISModel):
                 for row in update_cursor:
                     row_tempid = row.getValue(oid_field)
                     ui = tempids.index(row_tempid)
-                    classvalue = self._data.classes[predicted_classes[ui]]
+                    classvalue = class_values[predicted_classes[ui]]
                     row.setValue(class_value_field, classvalue)
                     row.setValue(class_name_field, self._data.class_mapping[classvalue])
                     if confidence_field is not None:
@@ -1022,7 +1050,7 @@ class FeatureClassifier(ArcGISModel):
                 row_oid = row.getValue(oid_field)
                 max_prediction_class, max_prediction_value = predict_function(store[row_oid])
                 if max_prediction_class is not None:
-                    classvalue = self._data.classes[max_prediction_class]
+                    classvalue = class_values[max_prediction_class]
                     classname = self._data.class_mapping[classvalue]
                 else:
                     classvalue = None
@@ -1046,7 +1074,7 @@ class FeatureClassifier(ArcGISModel):
         class_name_field='prediction',
         confidence_field="confidence",
         cell_size=1,
-        coordinate_system=3857,
+        coordinate_system=None,
         predict_function=None,
         batch_size=64,
         overwrite=False 
@@ -1096,6 +1124,10 @@ class FeatureClassifier(ArcGISModel):
         from arcgis.raster import ImageryLayer
         from arcgis.gis import Item
         
+        class_value_field = class_value_field.lower()
+        class_name_field = class_name_field.lower()
+        confidence_field = confidence_field.lower()
+
         if predict_function is None:
             predict_function = _prediction_function
 
