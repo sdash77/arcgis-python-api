@@ -2285,7 +2285,43 @@ class UserManager(object):
                         start=1, sort_field="username", 
                         sort_order="asc", as_dict=False):
         """
+        The advanced search method allows for the full control of the query operations
+        by any given user.  The searches are performed against a high performance 
+        index that indexes the most popular fields of an user. See the Search 
+        reference page for information on the fields and the syntax of the query.
+
+        The search index is updated whenever users is added, updated, or deleted. There 
+        can be a lag between the time that the user is updated and the time when it's 
+        reflected in the search results.
+
+        The results of a search only contain items that the user has permission to access.
         
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        query                  Required String.  The search query.
+        ------------------     --------------------------------------------------------------------
+        return_count           Optional Boolean.  If True, the number of users found by the query 
+                               string is returned.
+        ------------------     --------------------------------------------------------------------
+        max_users              Optional Integer. Limits the total number of users returned in a 
+                               a query.  The default is `10` users.  If all users is needed, `-1` 
+                               should be used.
+        ------------------     --------------------------------------------------------------------
+        start                  Optional Int. The starting position to search from.  This is
+                               only required if paging is needed.
+        ------------------     --------------------------------------------------------------------
+        sort_field             Optional String. Responses from the `search` operation can be
+                               sorted on various fields. `avgrating` is the default.
+        ------------------     --------------------------------------------------------------------
+        sort_order             Optional String. The sequence into which a collection of
+                               records are arranged after they have been sorted. The allowed
+                               values are: asc for ascending and desc for descending.
+        ------------------     --------------------------------------------------------------------
+        as_dict                Required Boolean. If True, the response comes back as a dictionary.
+        ==================     ====================================================================
+
+        :returns: dictionary if `return_count` is False, else an integer
         """
         from arcgis.gis._impl import _search
         stype = "users"
