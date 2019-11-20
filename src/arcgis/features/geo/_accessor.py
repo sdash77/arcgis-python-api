@@ -2794,6 +2794,12 @@ class GeoAccessor(object):
         if isinstance(sr, list) and \
            len(sr) > 0:
             sr = sr[0]
+        if xmin == xmax:
+            xmin -= .001
+            xmax += .001
+        if ymin == ymax:
+            ymin -= .001
+            ymax += .001            
         return Geometry(
             {'rings' : [[[xmin,ymin], [xmin, ymax],
                          [xmax, ymax], [xmax, ymin],
