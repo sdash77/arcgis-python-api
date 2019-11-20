@@ -1045,7 +1045,8 @@ class _ItemDefinition(CloneNode):
 
         item_properties = {}
         for property_name in self._item_property_names:
-            item_properties[property_name] = self.info[property_name]
+            if property_name in self.info and self.info[property_name] is not None:
+                item_properties[property_name] = self.info[property_name]
 
         type_keywords = item_properties['typeKeywords']
         for keyword in list(type_keywords):
