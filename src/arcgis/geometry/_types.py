@@ -399,7 +399,13 @@ class Geometry(BaseGeometry):
             xmin, ymin, xmax, ymax = self.extent
             if xmin == xmax and ymin == ymax:
                 # This is a point; buffer using an arbitrary size
-                xmin, ymin, xmax, ymax = self.buffer(1).extent
+                try:                
+                    xmin, ymin, xmax, ymax = self.buffer(1).extent
+                except:
+                    xmin -= expand_amount
+                    ymin -= expand_amount
+                    xmax += expand_amount
+                    ymax += expand_amount
             else:
                 # Expand bounds by a fraction of the data ranges
                 expand = 0.04  # or 4%, same as R plots
