@@ -146,42 +146,44 @@ def _reproject_extent(extents, target_sr={'wkid': 102100, 'latestWkid': 3857}):
     if not type(extents) == list:
         extents = [extents]
 
-    geometry_batches = {}
+    extents_to_reproject = {}
     for i, extent in enumerate(extents):
-        if not extent['spatialReference']['wkid'] in geometry_batches:
-            geometry_batches[extent['spatialReference']['wkid']] = {}
-            geometry_batches[extent['spatialReference']['wkid']]['spatialReference'] = extent['spatialReference']
-            geometry_batches[extent['spatialReference']['wkid']]['extents'] = []
-            geometry_batches[extent['spatialReference']['wkid']]['indexes'] = []
-        geometry_batches[extent['spatialReference']['wkid']]['extents'].extend(
-            [
-                {
-                    'x': extent['xmin'], 
-                    'y': extent['ymin']
-                },
-                {
-                    'x': extent['xmax'], 
-                    'y': extent['ymax']
-                }
-            ]
-        )
-        geometry_batches[extent['spatialReference']['wkid']]['indexes'].append(i)
+        if not extent['spatialReference'] == target_sr:
+            in_sr_str = str(extent['spatialReference'])
+            if not in_sr_str in extents_to_reproject:
+                extents_to_reproject[in_sr_str] = {}
+                extents_to_reproject[in_sr_str]['spatialReference'] = extent['spatialReference']
+                extents_to_reproject[in_sr_str]['extents'] = []
+                extents_to_reproject[in_sr_str]['indexes'] = []
+            extents_to_reproject[in_sr_str]['extents'].extend(
+                [
+                    {
+                        'x': extent['xmin'], 
+                        'y': extent['ymin']
+                    },
+                    {
+                        'x': extent['xmax'], 
+                        'y': extent['ymax']
+                    }
+                ]
+            )
+            extents_to_reproject[in_sr_str]['indexes'].append(i)
 
-    for wkid in geometry_batches: # Reproject now
-        geometries = arcgis.geometry.project(geometry_batches[wkid]['extents'], in_sr=geometry_batches[wkid]['spatialReference'], out_sr=target_sr)
-        for i in range(0, len(geometries), 2):
-            extents[geometry_batches[wkid]['indexes'][int(i/2)]] = {
-                "xmin": geometries[i]['x'],
-                "ymin": geometries[i]['y'],
-                "xmax": geometries[i+1]['x'],
-                "ymax": geometries[i+1]['y'],
+    for in_sr_str in extents_to_reproject: # Reproject now
+        reprojected_extents = arcgis.geometry.project(extents_to_reproject[in_sr_str]['extents'], in_sr=extents_to_reproject[in_sr_str]['spatialReference'], out_sr=target_sr)
+        for i in range(0, len(reprojected_extents), 2):
+            source_idx = extents_to_reproject[in_sr_str]['indexes'][int(i/2)]
+            extents[source_idx] = {
+                "xmin": reprojected_extents[i]['x'],
+                "ymin": reprojected_extents[i]['y'],
+                "xmax": reprojected_extents[i+1]['x'],
+                "ymax": reprojected_extents[i+1]['y'],
                 "spatialReference": target_sr
             }
-    
+
     if len(extents) == 1:
         return extents[0]
     return extents
-
 
 @widgets.register
 class MapView(widgets.DOMWidget):
@@ -1740,6 +1742,9 @@ class MapView(widgets.DOMWidget):
                 target_extent = _get_master_extent(target_extent, self.extent['spatialReference'])
             else:
                 target_extent = target_extent[0]
+        if not (target_extent['spatialReference'] == self.extent['spatialReference']):
+            target_extent = _reproject_extent(target_extent, self.extent['spatialReference'])
+        self.extent = self.extent # Sometimes setting extent will not work for the same target extent if we do it multiple times, doing this fixes that issue.
         self.extent = target_extent
 
     # Start section of no longer supported areas
