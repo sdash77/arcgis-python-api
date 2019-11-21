@@ -301,7 +301,7 @@ class ParcelFabricManager(object):
 
                                  * to set subtype, include subtype value in this list.
         --------------------     --------------------------------------------------------------------
-        child_name               Optional String. A descript of the child layer.
+        child_name               Optional String. A descript of the child layer. **DEPRECATED**
         --------------------     --------------------------------------------------------------------
         default_area_unit        Optional String. The area units of the child parcel.
         --------------------     --------------------------------------------------------------------
@@ -340,16 +340,16 @@ class ParcelFabricManager(object):
         session_id = self._version._guid
         url = "{base}/merge".format(base=self._url)
         params = {
-            "gdbVersion" : gdb_version,
-            "sessionId" : session_id,
-            "parentParcels" : parent_parcels,
-            "record" : merge_record,
-            "moment" : moment,
-            "targetParcelType" : target_parcel_type,
-            "mergeInto" : merge_into,
-            "childName" : child_name,
-            "defaultAreaUnit" : default_area_unit,
-            "attributeOverrides" : attribute_overrides,
+            "gdbVersion" : gdb_version, #
+            "sessionId" : session_id, #
+            "parentParcels" : parent_parcels, #
+            "record" : merge_record, #
+            "moment" : moment, #
+            "targetParcelType" : target_parcel_type,#
+            "mergeInto" : merge_into, #
+            #"childName" : child_name,
+            "defaultAreaUnit" : default_area_unit,#
+            "attributeOverrides" : attribute_overrides,#
             "f": "json"
         }
         return self._con.post(url, params)
