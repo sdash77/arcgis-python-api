@@ -18,6 +18,7 @@ except ImportError:
 from arcgis.gis import Item
 
 _log = logging.getLogger(__name__)
+
 ###########################################################################
 def _handle_spatial_inputs(data, 
                            do_not_locate=True,
@@ -501,6 +502,9 @@ class RouteLayer(NetworkLayer):
         if not use_time_windows is None:
             params['useTimeWindows'] = use_time_windows
         if not start_time is None:
+            if isinstance(start_time, datetime.datetime):
+                from arcgis._impl.common._utils import local_time_to_online
+                start_time = local_time_to_online(dt=start_time)            
             params['startTime'] = start_time
         if not start_time_is_utc is None:
             params['startTimeIsUTC'] = start_time_is_utc
