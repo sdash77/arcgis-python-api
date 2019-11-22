@@ -608,7 +608,7 @@ class ParcelFabricManager(object):
         
         """
         from arcgis.geometry import Envelope
-        if isinstance(extent (dict, Envelope)):
+        if isinstance(extent, (dict, Envelope)):
             extent = dict(extent)
         elif extent is None:
             pass
