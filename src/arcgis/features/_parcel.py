@@ -624,7 +624,7 @@ class ParcelFabricManager(object):
             "sessionId": session_id,
             "moment" : moment,
             'record' : record,
-            'moment' : moment,
+            'extent' : extent,
             "f": "json"
         }
         return self._con.post(url, params)
