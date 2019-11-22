@@ -44,8 +44,9 @@ class Mode(BaseServer):
             self._init(gis)
     #----------------------------------------------------------------------
     def update(self,
-               siteMode,
-               runAsync=False):
+               site_mode,
+               run_async=False,
+               allow_editing=True):
         """
         The update operation is used to move between the two types of site
         modes. Switching to READ_ONLY mode will restart all your services
@@ -55,18 +56,22 @@ class Mode(BaseServer):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        siteMode:           Required string. The mode you will set your site to. Values:
+        site_mode           Required string. The mode you will set your site to. Values:
                             READ_ONLY or EDITABLE.
         ---------------     --------------------------------------------------------------------
-        runAsync            Optional boolean. Determines if this operation must run asynchronously.
+        run_async           Optional boolean. Determines if this operation must run asynchronously.
+        ---------------     --------------------------------------------------------------------
+        allow_editing       Optional boolean. Specifies if edits to feature services are allowed 
+                            while a Server is in read-only mode. The default value is true.
         ===============     ====================================================================
 
 
         :return: boolean
 
         """
-        params = {"siteMode" : siteMode,
-                  "runAsync" : runAsync,
+        params = {"siteMode" : site_mode,
+                  "runAsync" : run_async,
+                  "allowEditingViaServices" : allow_editing,
                   "f" : "json"}
         url = self._url + "/update"
         res = self._con.post(path=url,
