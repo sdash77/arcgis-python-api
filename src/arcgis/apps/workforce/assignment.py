@@ -269,11 +269,12 @@ class Assignment(FeatureModel):
             else:
                 raise ValidationError("Invalid Assignment Type", self)
         elif isinstance(value, str):
+            exists = False
             for at in self.project._cached_assignment_types.values():
                 if at.name.lower() == value.lower():
                     self._assignment_type = at
-                    return
-            else:
+                    exists = True
+            if not exists:
                 raise ValidationError("Invalid Assignment Type", self)
         else:
             raise ValidationError("Invalid Assignment Type", self)
