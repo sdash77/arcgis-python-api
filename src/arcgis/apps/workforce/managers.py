@@ -197,6 +197,7 @@ class AssignmentTypeManager:
 
     def __init__(self, project):
         self.project = project
+        self.version = self.project.version
 
     def get(self, code=None, name=None):
         """
@@ -213,7 +214,10 @@ class AssignmentTypeManager:
 
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
-        return get_assignment_type(self.project, code, name)
+        if int(self.project.version[0]) < 2:
+            return get_assignment_type(self.project, code, name)
+        else:
+            return get_assignment_type_v2(self.project, code, name)
 
     def search(self):
         """
@@ -221,7 +225,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
          """
-        return get_assignment_types(self.project)
+        if int(self.project.version[0]) < 2:
+            return get_assignment_types(self.project)
+        else:
+            return get_assignment_types_v2(self.project)
 
     def add(self, coded_value=None, name=None):
         """
@@ -231,14 +238,17 @@ class AssignmentTypeManager:
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         coded_value            Optional :class:`dict`. The dictionary storing the code and
-                               name of the type.
+                               name of the type. Only works for v1 projects.
         ------------------     --------------------------------------------------------------------
         name                   Optional :class:`String`. The name of the assignment type.
         ==================     ====================================================================
 
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
-        return add_assignment_type(self.project, coded_value, name)
+        if int(self.project.version[0]) < 2:
+            return add_assignment_type(self.project, coded_value, name)
+        else:
+            return add_assignment_type_v2(self.project, name=name)
 
     def batch_add(self, assignment_types):
         """
@@ -253,7 +263,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`
          """
-        return add_assignment_types(self.project, assignment_types)
+        if int(self.project.version[0]) < 2:
+            return add_assignment_types(self.project, assignment_types)
+        else:
+            return add_assignment_types_v2(self.project, assignment_types)
 
     def batch_update(self, assignment_types):
         """
@@ -269,7 +282,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
          """
-        return update_assignment_types(self.project, assignment_types)
+        if int(self.project.version[0]) < 2:
+            return update_assignment_types(self.project, assignment_types)
+        else:
+            return update_assignment_types_v2(self.project, assignment_types)
 
     def batch_delete(self, assignment_types):
         """
@@ -283,107 +299,10 @@ class AssignmentTypeManager:
                                 The list of assignment types to remove.
          ==================     ====================================================================
          """
-        return delete_assignment_types(self.project, assignment_types)
-
-
-class AssignmentTypeV2Manager:
-    """
-    This manages the assignment types for a Version 2 project.
-    It can be accessed from the project as :py:attr:`~arcgis.apps.workforce.Project.assignment_types`
-
-    ==================     ====================================================================
-    **Argument**           **Description**
-    ------------------     --------------------------------------------------------------------
-    project                Required :class:`~arcgis.apps.workforce.Project`. The project to
-                           manage.
-    ==================     ====================================================================
-
-    """
-
-    def __init__(self, project):
-        self.project = project
-
-    def get(self, description):
-        """
-        Gets the identified assignment type by description.
-
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        description             Optional :class:`string` Descrption of the assignment type.
-        ==================     ====================================================================
-
-        :return: :class:`~arcgis.apps.workforce.AssignmentType`
-        """
-        return get_assignment_type_v2(self.project, description)
-
-    def search(self):
-        """
-         Gets all of the assignment types in the project.
-
-         :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
-         """
-        return get_assignment_types_v2(self.project)
-
-    def add(self, description):
-        """
-        Adds an assignment type to the project.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        description             Optional :class:`string` Descrption of the assignment type.
-        ==================     ====================================================================
-
-        :return: :class:`~arcgis.apps.workforce.AssignmentType`
-        """
-        return add_assignment_type_v2(self.project, description)
-
-    def batch_add(self, assignment_types):
-        """
-         Adds the list of assignment types to the project.
-
-         ==================     ====================================================================
-         **Argument**           **Description**
-         ------------------     --------------------------------------------------------------------
-         assignment_types       Required :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`.
-                                The list of assignment types to add.
-         ==================     ====================================================================
-
-         :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`
-         """
-        return add_assignment_types_v2(self.project, assignment_types)
-
-    def batch_update(self, assignment_types):
-        """
-         Updates the list of assignment types to the project.
-
-
-         ==================     ====================================================================
-         **Argument**           **Description**
-         ------------------     --------------------------------------------------------------------
-         assignment_types       Required :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`.
-                                The list of assignment types to update.
-         ==================     ====================================================================
-
-         :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
-         """
-        return update_assignment_types_v2(self.project, assignment_types)
-
-    def batch_delete(self, assignment_types):
-        """
-         Removes the list of assignment types to the project.
-
-
-         ==================     ====================================================================
-         **Argument**           **Description**
-         ------------------     --------------------------------------------------------------------
-         assignment_types       Required :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`.
-                                The list of assignment types to remove.
-         ==================     ====================================================================
-         """
-        return delete_assignment_types_v2(self.project, assignment_types)
+        if int(self.project.version[0]) < 2:
+            return delete_assignment_types(self.project, assignment_types)
+        else:
+            return delete_assignment_types_v2(self.project, assignment_types)
 
 
 class AssignmentAttachmentManager(object):

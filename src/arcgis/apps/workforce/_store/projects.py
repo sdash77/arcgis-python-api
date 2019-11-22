@@ -158,6 +158,7 @@ def _v2_create_project(gis, summary, title):
                                        )
     future_folder.result()
     group = future_group.result()
+    group.protected = True
     folder_name = title
     group_id = group.id
     workforce_service_name = "workforce_{}".format(group_id)
@@ -831,7 +832,9 @@ def _v1_create_service_with_location_tracking_layer(gis, folder_name, service_na
                 "timeOffsetUnits": 'esriTimeUnitsCenturies'
             },
             "hasLiveData": True
-        }
+        },
+        "capabilities": "Query,Editing,Create,Update,Delete",
+        "syncEnabled": False
     })
     item.update({
         "tags": "workforce, Location Tracking",

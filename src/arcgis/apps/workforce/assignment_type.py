@@ -1,10 +1,10 @@
 """
 Defines the AssignmentType class.
 """
-from src.arcgis.apps.workforce._store.assignment_types_v2 import update_assignment_type_v2, delete_assignment_types_v2
 from .exceptions import ValidationError, WorkforceWarning
 from .feature_model import FeatureModel
 from ._store import *
+from ._store.assignment_types_v2 import *
 from warnings import warn
 from ._schemas import AssignmentTypesSchema
 
@@ -20,41 +20,35 @@ class AssignmentType(FeatureModel):
                            this assignment belongs to.
     ------------------     --------------------------------------------------------------------
     coded_value            Optional :class:`dict`. The dictionary storing the code and
-                           name of the type. Version 1 Project Only.
+                           name of the type. Only works for v1 projects.
     ------------------     --------------------------------------------------------------------
-    name                   Optional :class:`String`. The name of the assignment type. Version 1
-                           Project only
+    name                   Optional :class:`String`. The name of the assignment type.
     ==================     ====================================================================
 
     """
 
-    def __init__(self, project, feature=None, coded_value=None, name=None, description=None):
-        self.project = project
-        if int(self.project.version.split(".")[0]) >= 2:
+    def __init__(self, project, feature=None, coded_value=None, name=None):
+        if int(project.version[0]) >= 2:
             super().__init__(project=project, feature_layer=project.assignment_types_table, feature=feature)
             self._schema = AssignmentTypesSchema(project.assignment_types_table)
+            self._coded_value = None
             if not feature:
-                self.description = description
-        elif coded_value:
-            super().__init__(project=project, feature_layer=None, feature=feature)
-            self._coded_value = coded_value
+                self.name = name
         else:
             super().__init__(project=project, feature_layer=None, feature=feature)
-            self._coded_value = {'code': None, 'name': name}
+            if coded_value:
+                self._coded_value = coded_value
+            else:
+                self._coded_value = {'code': None, 'name': name}
+        self.project = project
 
     def __str__(self):
-        if int(self.project.version.split(".")[0]) >= 2:
-            return self.description
-        else:
-            return self.name
+        return self.name
 
     def __repr__(self):
-        if int(self.project.version.split(".")[0]) >= 2:
-            return "<AssignmentType {}>".format(self.description)
-        else:
-            return "<AssignmentType {}>".format(self.code)
+        return "<AssignmentType {}>".format(self.name)
 
-    def update(self, name=None, description=None):
+    def update(self, name=None):
         """
             Updates the assignment type on the server
 
@@ -63,19 +57,16 @@ class AssignmentType(FeatureModel):
             ------------------     --------------------------------------------------------------------
             name                   Optional :class:`String`.
                                    The name of the assignment type
-            ------------------     --------------------------------------------------------------------
-            description            Optional :class:`String`.
-                                   The description of the assignment type if project is Version 2
             ==================     ====================================================================
         """
-        if int(self.project.version.split(".")[0]) >= 2:
-            update_assignment_type_v2(self.project, self, description)
+        if int(self.project.version[0]) >= 2:
+            update_assignment_type_v2(self.project, self, name)
         else:
             update_assignment_type(self.project, self, name)
 
     def delete(self):
         """Deletes the assignment type from the server"""
-        if int(self.project.version.split(".")[0]) >= 2:
+        if int(self.project.version[0]) >= 2:
             delete_assignment_types_v2(self.project, [self])
         else:
             delete_assignment_types(self.project, [self])
@@ -83,48 +74,30 @@ class AssignmentType(FeatureModel):
     @property
     def id(self):
         """Gets the id of the assignment type"""
-        if int(self.project.version.split(".")[0]) < 2:
-            return self.code
-        else:
-            warn("This is a Version 2 Workforce Project", WorkforceWarning)
+        return self.code
 
     @property
     def code(self):
         """Gets the internal code that uniquely identifies the assignment type"""
-        if int(self.project.version.split(".")[0]) < 2:
+        if int(self.project.version[0]) < 2:
             return self._coded_value['code']
         else:
-            warn("This is a Version 2 Workforce Project", WorkforceWarning)
+            return self._feature.attributes.get(self._schema.global_id)
 
     @property
     def name(self):
         """Gets/Sets The name of the assignment type"""
-        if int(self.project.version.split(".")[0]) < 2:
-            return self.name
+        if int(self.project.version[0]) < 2:
+            return self._coded_value['name']
         else:
-            warn("This is a Version 2 Workforce Project", WorkforceWarning)
+            return self._feature.attributes.get(self._schema.description)
 
     @name.setter
     def name(self, value):
-        if int(self.project.version.split(".")[0]) < 2:
+        if int(self.project.version[0]) < 2:
             self._coded_value['name'] = value
         else:
-            warn("This is a Version 2 Workforce Project", WorkforceWarning)
-
-    @property
-    def description(self):
-        """Gets the description of the assignment type"""
-        if int(self.project.version.split(".")[0]) >= 2:
-            return self._feature.attributes['description']
-        else:
-            warn("This is a Version 1 Workforce Project", WorkforceWarning)
-
-    @description.setter
-    def description(self, value):
-        if int(self.project.version.split(".")[0]) >= 2:
-            self._feature.attributes['description'] = value
-        else:
-            warn("This is a Version 1 Workforce Project", WorkforceWarning)
+            self._feature.attributes[self._schema.description] = value
 
     @property
     def coded_value(self):
@@ -133,26 +106,18 @@ class AssignmentType(FeatureModel):
 
     def _validate(self, **kwargs):
         errors = super()._validate(**kwargs)
-        if int(self.project.version.split(".")[0]) < 2:
-            errors += self._validate_name()
-            errors += self._validate_name_uniqueness(**kwargs)
-        else:
-            errors += self._validate_description()
-            errors += self._validate_description_uniqueness(**kwargs)
+        errors += self._validate_name()
+        errors += self._validate_name_uniqueness(**kwargs)
         return errors
 
     def _validate_for_update(self, **kwargs):
-        if int(self.project.version.split(".")[0]) < 2:
+        if int(self.project.version[0]) < 2:
             return super()._validate_for_update(**kwargs) + self._validate_code()
         else:
-            errors = []
-            errors += self._validate_description()
-            errors += self._validate_description_uniqueness(**kwargs)
-            errors += super()._validate_for_update(**kwargs)
-            return errors
+            return super()._validate_for_update(**kwargs)
 
     def _validate_for_remove(self, **kwargs):
-        if int(self.project.version.split(".")[0]) < 2:
+        if int(self.project.version[0]) < 2:
             assignments = kwargs['assignments']
             errors = super()._validate_for_remove(**kwargs) + self._validate_code()
             if assignments is None:
@@ -164,7 +129,7 @@ class AssignmentType(FeatureModel):
         else:
             assignments = self.project.assignments.search(where='1=1')
             errors = super()._validate_for_remove(**kwargs)
-            assignments = [a for a in assignments if a.assignment_type.description == self.description]
+            assignments = [a for a in assignments if a.assignment_type.code == self.code]
 
         if assignments:
             errors.append(ValidationError("Cannot remove an in-use AssignmentType", self))
@@ -187,25 +152,9 @@ class AssignmentType(FeatureModel):
                 errors.append(ValidationError("AssignmentType name must be unique", self))
         return errors
 
-    def _validate_description(self):
-        errors = []
-        if self.description is None or self.description.isspace():
-            errors.append(ValidationError("AssignmentType must have a name", self))
-        elif '>' in self.description or '<' in self.description or '%' in self.description:
-            errors.append(ValidationError("AssignmentType name contains invalid characters", self))
-        return errors
-
-    def _validate_description_uniqueness(self, assignment_types=None):
-        errors = []
-        if assignment_types is None:
-            assignment_types = self.project.assignment_types.search()
-        for assignment_type in assignment_types:
-            if (assignment_type.description == self.description):
-                errors.append(ValidationError("AssignmentType description must be unique", self))
-        return errors
-
     def _validate_code(self):
         errors = []
         if not isinstance(self.code, int):
             errors.append(ValidationError("Code must be a unique integer", self))
         return errors
+

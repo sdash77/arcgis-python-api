@@ -50,7 +50,7 @@ class Project:
         else:
             self._track_schema = None
         self._worker_schema = WorkerSchema(self.workers_layer)
-        if int(self.version.split(".")[0]) >= 2:
+        if int(self.version[0]) >= 2:
             self._assignment_types = AssignmentTypesSchema(self.assignment_types_table)
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         self._update_cached_objects()
@@ -59,10 +59,7 @@ class Project:
         """
             Updates the cached assignment types
         """
-        if int(self.version.split(".")[0]) >= 2:
-            self._cached_assignment_types = {a.description: a for a in self.assignment_types.search()}
-        else:
-            self._cached_assignment_types = {a.code: a for a in self.assignment_types.search()}
+        self._cached_assignment_types = {a.code: a for a in self.assignment_types.search()}
 
     def _update_cached_objects(self):
         """
@@ -100,7 +97,7 @@ class Project:
         self.workers_item.delete()
         self.dispatchers_item.protect(False)
         self.dispatchers_item.delete()
-        if int(self.version.split(".")[0]) >= 2:
+        if int(self.version[0]) >= 2:
             self.assignment_types_item.protect(False)
             self.assignment_types_item.delete()
         self.dispatcher_webmap.item.protect(False)
@@ -192,7 +189,7 @@ class Project:
     @property
     def version(self):
         """The version of the project"""
-        return self._item_data['version']
+        return self._item_data['version'].split(".")
 
     @_lazy_property
     def assignments_item(self):
@@ -206,7 +203,7 @@ class Project:
 
     @_lazy_property
     def assignment_types_item(self):
-        """The assignments :class:`~arcgis.gis.Item`"""
+        """The assignment types :class:`~arcgis.gis.Item`"""
         return self.gis.content.get(self._item_data['assignmentTypes']['serviceItemId'])
 
     @property
@@ -273,7 +270,7 @@ class Project:
     @_lazy_property
     def dispatchers_layer(self):
         """The dispatchers :class:`~arcgis.features.FeatureLayer`"""
-        if int(self.version.split(".")[0]) >= 2:
+        if int(self.version[0]) >= 2:
             return Table(self.dispatchers_layer_url, self.gis)
         else:
             return FeatureLayer(self.dispatchers_layer_url, self.gis)
@@ -342,7 +339,5 @@ class Project:
     @property
     def assignment_types(self):
         """The :class:`~arcgis.apps.workforce.managers.AssignmentTypeManager` for the project"""
-        if int(self.version.split(".")[0]) < 2:
-            return AssignmentTypeManager(self)
-        else:
-            return AssignmentTypeV2Manager(self)
+        return AssignmentTypeManager(self)
+

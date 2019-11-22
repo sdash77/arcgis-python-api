@@ -5,13 +5,17 @@ from ... import workforce
 from .utils import validate, add_features, update_features, remove_features
 
 
-def get_assignment_type_v2(project, description):
+def get_assignment_type_v2(project, code, name):
     """ Gets the identified AssignmentType. Exactly one form of identification should be provided.
         :param project:
-        :param description: The AssignmentType description.
+        :param name: The AssignmentType name.
     """
     assignment_types = get_assignment_types_v2(project)
-    return next((at for at in assignment_types if at.description == description), None)
+    if code:
+        return next((at for at in assignment_types if at.code == code), None)
+    elif name:
+        return next((at for at in assignment_types if at.name == name), None)
+    return None
 
 
 def get_assignment_types_v2(project):
@@ -32,11 +36,11 @@ def query_assignment_types(project, where='1=1'):
     return [workforce.AssignmentType(project, feature) for feature in assignment_type_features]
 
 
-def add_assignment_type_v2(project, description):
+def add_assignment_type_v2(project, name):
     """
     Adds a new assignment type
     """
-    assignment_type = workforce.AssignmentType(project, description=description)
+    assignment_type = workforce.AssignmentType(project, name=name)
     return add_assignment_types_v2(project, [assignment_type])[0]
 
 
@@ -73,10 +77,10 @@ def update_assignment_types_v2(project, assignment_types):
     return assignment_types
 
 
-def update_assignment_type_v2(project, assignment_type, description=None):
-    """Updates an assignment type's description"""
-    if description:
-        assignment_type.description = description
+def update_assignment_type_v2(project, assignment_type, name=None):
+    """Updates an assignment type's name"""
+    if name:
+        assignment_type.name = name
     return update_assignment_types_v2(project, [assignment_type])[0]
 
 
