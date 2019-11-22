@@ -334,7 +334,10 @@ class Assignment(FeatureModel):
             self._dispatcher = value
         else:
             self._dispatcher = self.project._cached_dispatcher
-        self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.object_id
+        if int(self.project.version[0]) >= 2:
+            self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.global_id
+        else:
+            self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.object_id
 
     @property
     def due_date(self):
@@ -495,7 +498,12 @@ class Assignment(FeatureModel):
     @worker.setter
     def worker(self, value):
         self._worker = value
-        self._feature.attributes[self._schema.worker_id] = value.object_id if value is not None else None
+        if value is None:
+            self._feature.attributes[self._schema.worker_id] = None
+        elif int(self.project.version[0]) >= 2:
+            self._feature.attributes[self._schema.worker_id] = self._worker.global_id
+        else:
+            self._feature.attributes[self._schema.worker_id] = self._worker.object_id
 
     def _validate(self, **kwargs):
         errors = super()._validate(**kwargs)

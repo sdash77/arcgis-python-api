@@ -43,7 +43,10 @@ class Dispatcher(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        return "<Dispatcher {}>".format(self.object_id)
+        if int(self.project.version[0]) >= 2:
+            return "<Dispatcher {}>".format(self.global_id)
+        else:
+            return "<Dispatcher {}>".format(self.object_id)
 
     def update(self, contact_number=None, name=None, user_id=None):
         """
