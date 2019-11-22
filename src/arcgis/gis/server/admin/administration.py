@@ -13,8 +13,7 @@ from . import _system
 from . import _uploads, _usagereports
 from . import _mode
 from .. import  ServicesDirectory
-from arcgis._impl.connection import _ArcGISConnection
-from .._common import ServerConnection
+from arcgis.gis._impl._con import Connection
 ########################################################################
 class Server(BaseServer):
     """
@@ -102,7 +101,7 @@ class Server(BaseServer):
         if gis is None and len(kwargs) > 0:
             if 'baseurl' not in kwargs:
                 kwargs['baseurl'] = url
-            gis = ServerConnection(**kwargs)
+            gis = Connection(**kwargs)
         initialize = kwargs.pop('initialize', False)
         super(Server, self).__init__(gis=gis,
                                      url=url,
@@ -120,8 +119,7 @@ class Server(BaseServer):
             self._con = gis._con
         elif hasattr(gis, '_portal'):
             self._con = gis._portal._con
-        elif isinstance(gis, (_ArcGISConnection,
-                              ServerConnection)):
+        elif isinstance(gis, Connection):
             self._con = gis
         else:
             raise ValueError("Invalid gis Type: Must be GIS/ServicesDirectory Object")
@@ -292,7 +290,7 @@ class Server(BaseServer):
             "logSettings" : logs_settings,
             "runAsync" : run_async
         }
-        con = ServerConnection(**kwargs)
+        con = Connection(**kwargs)
         return con.post(path=url,
                         postdata=params)
     #----------------------------------------------------------------------

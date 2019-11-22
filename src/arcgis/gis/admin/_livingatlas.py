@@ -1,7 +1,7 @@
 """
 class to work with the living atlas
 """
-from ..._impl.connection import _ArcGISConnection
+from arcgis.gis._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
 from ...gis import GIS
 from ...gis import Group, GroupManager
@@ -78,14 +78,14 @@ class LivingAtlas(BasePortalAdmin):
 
         super(LivingAtlas, self).__init__(url=url, gis=gis)
         self._url = url.replace("http://", "https://")
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+                "connection must be of type GIS or Connection")
 
         self._init()
     #----------------------------------------------------------------------
