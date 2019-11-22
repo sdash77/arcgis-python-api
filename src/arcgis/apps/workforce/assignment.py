@@ -272,7 +272,7 @@ class Assignment(FeatureModel):
             for at in self.project._cached_assignment_types.values():
                 if at.name.lower() == value.lower():
                     self._assignment_type = at
-                    break
+                    return
             else:
                 raise ValidationError("Invalid Assignment Type", self)
         else:
