@@ -118,7 +118,7 @@ class Dispatcher(FeatureModel):
             id = self.global_id
         else:
             id = self.object_id
-        where = "{} = {}".format(self.project._assignment_schema.dispatcher_id,id)
+        where = "{} = '{}'".format(self.project._assignment_schema.dispatcher_id,id)
         assignments = workforce._store.query_assignments(self.project, where=where)
         if assignments:
             errors.append(ValidationError("Cannot remove a Dispatcher that has assignments", self))
