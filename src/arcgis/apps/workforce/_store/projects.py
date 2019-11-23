@@ -632,11 +632,10 @@ def _v1_create_project(gis, summary, title):
     for i in project_items:
         i.share(groups=[group])
         i.protect()
-    # set thumbnail
-    # https://stackoverflow.com/questions/6028000/how-to-read-a-static-file-from-inside-a-python-package
-    resource_package = __name__
+
     resource_path = '/'.join(('resources', 'default-project-thumbnail.png'))
-    thumbnail = pkg_resources.resource_filename(resource_package, resource_path)
+    my_path = os.path.abspath(os.path.dirname(__file__))
+    thumbnail = os.path.join(my_path, resource_path)
     project_item.update(thumbnail=thumbnail)
 
     # manually add the owner as the first dispatcher
