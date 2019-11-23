@@ -6,7 +6,7 @@ from arcgis.apps import workforce
 from arcgis.apps.workforce._store._definitions import *
 from arcgis.apps.workforce.exceptions import WorkforceError
 import concurrent.futures
-import pkg_resources
+import os
 
 
 def get_project(project_id, gis):
@@ -211,9 +211,9 @@ def _v2_create_project(gis, summary, title):
 
     # set thumbnail
     # https://stackoverflow.com/questions/6028000/how-to-read-a-static-file-from-inside-a-python-package
-    resource_package = __name__
     resource_path = '/'.join(('resources', 'default-project-thumbnail.png'))
-    thumbnail = pkg_resources.resource_filename(resource_package, resource_path)
+    my_path = os.path.abspath(os.path.dirname(__file__))
+    thumbnail = os.path.join(my_path, resource_path)
     project_item.update(thumbnail=thumbnail)
 
     # manually add the owner as the first dispatcher

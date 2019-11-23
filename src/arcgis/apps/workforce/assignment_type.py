@@ -11,7 +11,7 @@ from ._schemas import AssignmentTypesSchema
 
 class AssignmentType(FeatureModel):
     """
-    Defines the acceptable values for :class:`~arcgis.apps.workforce.Assignment` types.
+    Defines the acceptable values for :class:`~arcgis.apps.workforce.AssignmentType` types.
 
     ==================     ====================================================================
     **Argument**           **Description**

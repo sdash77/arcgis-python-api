@@ -1,7 +1,6 @@
 import os
 
-from src.arcgis.apps.workforce._store.assignment_types_v2 import get_assignment_type_v2, get_assignment_types_v2, \
-    add_assignment_type_v2, update_assignment_types_v2, delete_assignment_types_v2, add_assignment_types_v2
+from ._store.assignment_types_v2 import get_assignment_type_v2, get_assignment_types_v2, add_assignment_type_v2, update_assignment_types_v2, delete_assignment_types_v2, add_assignment_types_v2
 from ._store import *
 from .exceptions import *
 
