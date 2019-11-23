@@ -114,7 +114,11 @@ class Dispatcher(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        where = "{} = {}".format(self.project._assignment_schema.dispatcher_id,self.object_id)
+        if int(self.project.version[0]) >= 2:
+            id = self.global_id
+        else:
+            id = self.object_id
+        where = "{} = {}".format(self.project._assignment_schema.dispatcher_id,id)
         assignments = workforce._store.query_assignments(self.project, where=where)
         if assignments:
             errors.append(ValidationError("Cannot remove a Dispatcher that has assignments", self))
