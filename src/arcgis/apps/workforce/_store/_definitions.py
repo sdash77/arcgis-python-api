@@ -700,7 +700,7 @@ assignment_layer_definition_v2 = json.loads(
     "isSystemMaintained" : true
   }, 
   "globalIdField" : "GlobalID", 
-  "typeIdField" : "", 
+  "typeIdField" : "status", 
   "fields" : [
     {
       "name" : "OBJECTID", 
@@ -728,7 +728,7 @@ assignment_layer_definition_v2 = json.loads(
       "type" : "esriFieldTypeInteger", 
       "alias" : "Status", 
       "sqlType" : "sqlTypeOther", 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : 
       {
@@ -783,7 +783,7 @@ assignment_layer_definition_v2 = json.loads(
       "type" : "esriFieldTypeInteger", 
       "alias" : "Priority", 
       "sqlType" : "sqlTypeOther", 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : 
       {
@@ -820,7 +820,7 @@ assignment_layer_definition_v2 = json.loads(
       "alias" : "Assignment Type", 
       "sqlType" : "sqlTypeOther", 
       "length" : 38, 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : null, 
       "defaultValue" : null
@@ -875,7 +875,7 @@ assignment_layer_definition_v2 = json.loads(
       "alias" : "Location", 
       "sqlType" : "sqlTypeOther", 
       "length" : 255, 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : null, 
       "defaultValue" : null
@@ -1084,7 +1084,7 @@ assignment_layer_definition_v2 = json.loads(
               "status" : "0", 
               "description" : null, 
               "notes" : null, 
-              "priority" : null, 
+              "priority" : "0", 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1118,7 +1118,7 @@ assignment_layer_definition_v2 = json.loads(
               "status" : "1", 
               "description" : null, 
               "notes" : null, 
-              "priority" : null, 
+              "priority" : "0", 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1152,7 +1152,7 @@ assignment_layer_definition_v2 = json.loads(
               "status" : "2", 
               "description" : null, 
               "notes" : null, 
-              "priority" : null, 
+              "priority" : "0", 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1186,7 +1186,7 @@ assignment_layer_definition_v2 = json.loads(
               "status" : "3", 
               "description" : null, 
               "notes" : null, 
-              "priority" : null, 
+              "priority" : "0", 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1220,7 +1220,7 @@ assignment_layer_definition_v2 = json.loads(
               "status" : "4", 
               "description" : null, 
               "notes" : null, 
-              "priority" : null, 
+              "priority" : "0", 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1254,7 +1254,7 @@ assignment_layer_definition_v2 = json.loads(
               "status" : "5", 
               "description" : null, 
               "notes" : null, 
-              "priority" : null, 
+              "priority" : "0", 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -2021,7 +2021,7 @@ dispatcher_table_definition_v2 = json.loads(
       "alias" : "name", 
       "sqlType" : "sqlTypeVarchar", 
       "length" : 255, 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : null, 
       "defaultValue" : null
@@ -2043,7 +2043,7 @@ dispatcher_table_definition_v2 = json.loads(
       "alias" : "userid", 
       "sqlType" : "sqlTypeVarchar", 
       "length" : 128, 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : null, 
       "defaultValue" : null
@@ -2663,7 +2663,7 @@ worker_layer_definition_v2 = json.loads(
     "isSystemMaintained" : true
   }, 
   "globalIdField" : "GlobalID", 
-  "typeIdField" : "", 
+  "typeIdField" : "status", 
   "fields" : [
     {
       "name" : "OBJECTID", 
@@ -2681,7 +2681,7 @@ worker_layer_definition_v2 = json.loads(
       "alias" : "Name", 
       "sqlType" : "sqlTypeOther", 
       "length" : 255, 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : null, 
       "defaultValue" : null
@@ -2691,7 +2691,7 @@ worker_layer_definition_v2 = json.loads(
       "type" : "esriFieldTypeInteger", 
       "alias" : "Status", 
       "sqlType" : "sqlTypeOther", 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : 
       {
@@ -2742,7 +2742,7 @@ worker_layer_definition_v2 = json.loads(
       "alias" : "UserID", 
       "sqlType" : "sqlTypeOther", 
       "length" : 128, 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : null, 
       "defaultValue" : null
@@ -3295,7 +3295,7 @@ assignment_type_table_definition_v2 = json.loads(
       "alias" : "description", 
       "sqlType" : "sqlTypeVarchar", 
       "length" : 255, 
-      "nullable" : true, 
+      "nullable" : false, 
       "editable" : true, 
       "domain" : null, 
       "defaultValue" : null
