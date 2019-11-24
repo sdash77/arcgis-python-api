@@ -43,7 +43,7 @@ class Dispatcher(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        if int(self.project.version[0]) >= 2:
+        if self.project._is_v2_project:
             return "<Dispatcher {}>".format(self.global_id)
         else:
             return "<Dispatcher {}>".format(self.object_id)
@@ -114,7 +114,7 @@ class Dispatcher(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        if int(self.project.version[0]) >= 2:
+        if self.project._is_v2_project:
             id = self.global_id
         else:
             id = self.object_id

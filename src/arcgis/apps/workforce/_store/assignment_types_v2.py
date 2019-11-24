@@ -5,9 +5,10 @@ from ... import workforce
 from .utils import validate, add_features, update_features, remove_features
 
 
-def get_assignment_type_v2(project, code, name):
+def get_assignment_type_v2(project, code=None, name=None):
     """ Gets the identified AssignmentType. Exactly one form of identification should be provided.
         :param project:
+        :param code: The AssignmentType GlobalID.
         :param name: The AssignmentType name.
     """
     assignment_types = get_assignment_types_v2(project)
@@ -50,13 +51,10 @@ def add_assignment_types_v2(project, assignment_types):
         :param assignment_types: list of AssignmentTypes
         :raises ValidationError: Indicates that one or more assignment types failed validation.
     """
-    use_global_ids = True
     for assignment_type in assignment_types:
-        assignment_type.project = project
         validate(assignment_type._validate)
-        if assignment_type.global_id is None:
-            use_global_ids = False
 
+    use_global_ids = False
     features = [assignment_type.feature for assignment_type in assignment_types]
     add_features(project.assignment_types_table, features, use_global_ids)
     project._update_cached_assignment_types()

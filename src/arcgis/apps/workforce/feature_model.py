@@ -27,7 +27,7 @@ class FeatureModel(Model):
     @property
     def id(self):
         """The object or global id of the feature"""
-        if int(self.project.version[0]) >= 2:
+        if self.project._is_v2_project:
             return self.global_id
         else:
             return self.object_id

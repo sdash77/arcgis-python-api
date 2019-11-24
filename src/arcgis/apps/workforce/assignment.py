@@ -247,7 +247,7 @@ class Assignment(FeatureModel):
     def assignment_read(self, value):
         if self._supports_assignment_read_field:
             self._feature.attributes[self._schema.assignment_read] = 1 if value else 0
-        elif value is not None:
+        else:
             warn("This Workforce Project does not support the assignment_read field.", WorkforceWarning)
 
     @property
@@ -269,12 +269,11 @@ class Assignment(FeatureModel):
             else:
                 raise ValidationError("Invalid Assignment Type", self)
         elif isinstance(value, str):
-            exists = False
             for at in self.project._cached_assignment_types.values():
                 if at.name.lower() == value.lower():
                     self._assignment_type = at
-                    exists = True
-            if not exists:
+                    break
+            else:
                 raise ValidationError("Invalid Assignment Type", self)
         else:
             raise ValidationError("Invalid Assignment Type", self)
@@ -335,7 +334,7 @@ class Assignment(FeatureModel):
             self._dispatcher = value
         else:
             self._dispatcher = self.project._cached_dispatcher
-        if int(self.project.version[0]) >= 2:
+        if self.project._is_v2_project:
             self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.global_id
         else:
             self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.object_id
@@ -501,7 +500,7 @@ class Assignment(FeatureModel):
         self._worker = value
         if value is None:
             self._feature.attributes[self._schema.worker_id] = None
-        elif int(self.project.version[0]) >= 2:
+        elif self.project._is_v2_project:
             self._feature.attributes[self._schema.worker_id] = self._worker.global_id
         else:
             self._feature.attributes[self._schema.worker_id] = self._worker.object_id

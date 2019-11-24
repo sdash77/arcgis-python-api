@@ -28,7 +28,7 @@ class AssignmentType(FeatureModel):
     """
 
     def __init__(self, project, feature=None, coded_value=None, name=None):
-        if int(project.version[0]) >= 2:
+        if project._is_v2_project:
             super().__init__(project=project, feature_layer=project.assignment_types_table, feature=feature)
             self._schema = AssignmentTypesSchema(project.assignment_types_table)
             self._coded_value = None
@@ -59,14 +59,14 @@ class AssignmentType(FeatureModel):
                                    The name of the assignment type
             ==================     ====================================================================
         """
-        if int(self.project.version[0]) >= 2:
+        if self.project._is_v2_project:
             update_assignment_type_v2(self.project, self, name)
         else:
             update_assignment_type(self.project, self, name)
 
     def delete(self):
         """Deletes the assignment type from the server"""
-        if int(self.project.version[0]) >= 2:
+        if self.project._is_v2_project:
             delete_assignment_types_v2(self.project, [self])
         else:
             delete_assignment_types(self.project, [self])
@@ -79,7 +79,7 @@ class AssignmentType(FeatureModel):
     @property
     def code(self):
         """Gets the internal code that uniquely identifies the assignment type"""
-        if int(self.project.version[0]) < 2:
+        if not self.project._is_v2_project:
             return self._coded_value['code']
         else:
             return self._feature.attributes.get(self._schema.global_id)
@@ -87,14 +87,14 @@ class AssignmentType(FeatureModel):
     @property
     def name(self):
         """Gets/Sets The name of the assignment type"""
-        if int(self.project.version[0]) < 2:
+        if not self.project._is_v2_project:
             return self._coded_value['name']
         else:
             return self._feature.attributes.get(self._schema.description)
 
     @name.setter
     def name(self, value):
-        if int(self.project.version[0]) < 2:
+        if not self.project._is_v2_project:
             self._coded_value['name'] = value
         else:
             self._feature.attributes[self._schema.description] = value
@@ -111,13 +111,13 @@ class AssignmentType(FeatureModel):
         return errors
 
     def _validate_for_update(self, **kwargs):
-        if int(self.project.version[0]) < 2:
+        if not self.project._is_v2_project:
             return super()._validate_for_update(**kwargs) + self._validate_code()
         else:
             return super()._validate_for_update(**kwargs)
 
     def _validate_for_remove(self, **kwargs):
-        if int(self.project.version[0]) < 2:
+        if not self.project._is_v2_project:
             assignments = kwargs['assignments']
             errors = super()._validate_for_remove(**kwargs) + self._validate_code()
             if assignments is None:

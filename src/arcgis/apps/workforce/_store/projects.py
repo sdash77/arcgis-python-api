@@ -210,10 +210,8 @@ def _v2_create_project(gis, summary, title):
         i.protect()
 
     # set thumbnail
-    # https://stackoverflow.com/questions/6028000/how-to-read-a-static-file-from-inside-a-python-package
-    resource_path = '/'.join(('resources', 'default-project-thumbnail.png'))
     my_path = os.path.abspath(os.path.dirname(__file__))
-    thumbnail = os.path.join(my_path, resource_path)
+    thumbnail = os.path.join(my_path, '/'.join(('resources', 'default-project-thumbnail.png')))
     project_item.update(thumbnail=thumbnail)
 
     # manually add the owner as the first dispatcher
@@ -277,7 +275,7 @@ def _v2_create_project_item(gis, folder_name, workforce_service_item, dispatcher
                 "urlTemplate": "arcgis-navigator://?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=arcgis-workforce://&callbackprompt=Workforce",
             }
         ],
-        "version": "2.0.0",
+        "version": "2.0.0-beta",
         "assignmentTypes": {
             "serviceItemId": workforce_service_item.id,
             "url": workforce_service_item.tables[1].url
@@ -342,7 +340,7 @@ def _v1_create_project_item(gis, folder_name, assignments_item, dispatchers_item
                 "urlTemplate": "arcgis-navigator://?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=arcgis-workforce://&callbackprompt=Workforce",
             }
         ],
-        "version": "1.2.0",
+        "version": "1.3.0",
         "groupId": group_id,
         "folderId": folder_id
     }
@@ -633,9 +631,8 @@ def _v1_create_project(gis, summary, title):
         i.share(groups=[group])
         i.protect()
 
-    resource_path = '/'.join(('resources', 'default-project-thumbnail.png'))
     my_path = os.path.abspath(os.path.dirname(__file__))
-    thumbnail = os.path.join(my_path, resource_path)
+    thumbnail = os.path.join(my_path, '/'.join(('resources', 'default-project-thumbnail.png')))
     project_item.update(thumbnail=thumbnail)
 
     # manually add the owner as the first dispatcher

@@ -58,7 +58,7 @@ class Worker(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        if int(self.project.version[0]) >= 2:
+        if self.project._is_v2_project:
             return "<Worker {}>".format(self.global_id)
         else:
             return "<Worker {}>".format(self.object_id)

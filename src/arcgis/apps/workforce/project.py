@@ -45,6 +45,7 @@ class Project:
         self._item = item
         self._item_data = item.get_data()
         self._assignment_schema = AssignmentSchema(self.assignments_layer)
+        self._is_v2_project = False
         if self._supports_tracks:
             self._track_schema = TrackSchema(self.tracks_layer)
         else:
@@ -52,6 +53,7 @@ class Project:
         self._worker_schema = WorkerSchema(self.workers_layer)
         if int(self.version[0]) >= 2:
             self._assignment_types = AssignmentTypesSchema(self.assignment_types_table)
+            self._is_v2_project = True
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         self._update_cached_objects()
 
@@ -97,7 +99,7 @@ class Project:
         self.workers_item.delete()
         self.dispatchers_item.protect(False)
         self.dispatchers_item.delete()
-        if int(self.version[0]) >= 2:
+        if self._is_v2_project:
             self.assignment_types_item.protect(False)
             self.assignment_types_item.delete()
         self.dispatcher_webmap.item.protect(False)
@@ -189,7 +191,7 @@ class Project:
     @property
     def version(self):
         """The version of the project"""
-        return self._item_data['version'].split(".")
+        return self._item_data['version']
 
     @_lazy_property
     def assignments_item(self):
@@ -204,12 +206,18 @@ class Project:
     @_lazy_property
     def assignment_types_item(self):
         """The assignment types :class:`~arcgis.gis.Item`"""
-        return self.gis.content.get(self._item_data['assignmentTypes']['serviceItemId'])
+        if self._is_v2_project:
+            return self.gis.content.get(self._item_data['assignmentTypes']['serviceItemId'])
+        else:
+            warn("This Workforce Project does not have an assignment types item", WorkforceWarning)
 
     @property
     def assignment_types_table_url(self):
         """The assignment types table url"""
-        return self._item_data['assignmentTypes']['url']
+        if self._is_v2_project:
+            return self._item_data['assignmentTypes']['url']
+        else:
+            warn("This Workforce Project does not have an assignment types table", WorkforceWarning)
 
     @_lazy_property
     def dispatchers_item(self):
@@ -270,7 +278,7 @@ class Project:
     @_lazy_property
     def dispatchers_layer(self):
         """The dispatchers :class:`~arcgis.features.FeatureLayer`"""
-        if int(self.version[0]) >= 2:
+        if self._is_v2_project:
             return Table(self.dispatchers_layer_url, self.gis)
         else:
             return FeatureLayer(self.dispatchers_layer_url, self.gis)
@@ -278,7 +286,10 @@ class Project:
     @_lazy_property
     def assignment_types_table(self):
         """The assignment types :class:`~arcgis.features.Table`"""
-        return Table(self.assignment_types_table_url, self.gis)
+        if self._is_v2_project:
+            return Table(self.assignment_types_table_url, self.gis)
+        else:
+            warn("This Workforce Project does not have an assignment types table", WorkforceWarning)
 
     @_lazy_property
     def tracks_layer(self):
@@ -331,7 +342,7 @@ class Project:
     @property
     def tracks(self):
         """The :class:`~arcgis.apps.workforce.managers.TrackManager` for the project"""
-        if self._item_data.get("tracks", None) is not None:
+        if self._supports_tracks:
             return TrackManager(self)
         else:
             warn("This Workforce Project does not support tracks.", WorkforceWarning)

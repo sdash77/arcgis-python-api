@@ -196,7 +196,6 @@ class AssignmentTypeManager:
 
     def __init__(self, project):
         self.project = project
-        self.version = self.project.version
 
     def get(self, code=None, name=None):
         """
@@ -213,7 +212,7 @@ class AssignmentTypeManager:
 
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
-        if int(self.project.version[0]) < 2:
+        if self.project._is_v2_project:
             return get_assignment_type(self.project, code, name)
         else:
             return get_assignment_type_v2(self.project, code, name)
@@ -224,7 +223,7 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
          """
-        if int(self.project.version[0]) < 2:
+        if self.project._is_v2_project:
             return get_assignment_types(self.project)
         else:
             return get_assignment_types_v2(self.project)
@@ -244,7 +243,7 @@ class AssignmentTypeManager:
 
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
-        if int(self.project.version[0]) < 2:
+        if self.project._is_v2_project:
             return add_assignment_type(self.project, coded_value, name)
         else:
             return add_assignment_type_v2(self.project, name=name)
@@ -262,7 +261,7 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`
          """
-        if int(self.project.version[0]) < 2:
+        if self.project._is_v2_project:
             return add_assignment_types(self.project, assignment_types)
         else:
             return add_assignment_types_v2(self.project, assignment_types)
@@ -281,7 +280,7 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
          """
-        if int(self.project.version[0]) < 2:
+        if self.project._is_v2_project:
             return update_assignment_types(self.project, assignment_types)
         else:
             return update_assignment_types_v2(self.project, assignment_types)
@@ -298,7 +297,7 @@ class AssignmentTypeManager:
                                 The list of assignment types to remove.
          ==================     ====================================================================
          """
-        if int(self.project.version[0]) < 2:
+        if self.project._is_v2_project:
             return delete_assignment_types(self.project, assignment_types)
         else:
             return delete_assignment_types_v2(self.project, assignment_types)
