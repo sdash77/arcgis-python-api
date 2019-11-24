@@ -64,7 +64,6 @@ def add_assignments(project, assignments):
     project._update_cached_objects()
     use_global_ids = True
     for assignment in assignments:
-        assignment.project = project
         validate(assignment._validate_for_add)
         if assignment.global_id is None:
             use_global_ids = False

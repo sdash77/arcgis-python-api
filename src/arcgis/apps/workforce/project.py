@@ -51,7 +51,7 @@ class Project:
         else:
             self._track_schema = None
         self._worker_schema = WorkerSchema(self.workers_layer)
-        if int(self.version[0]) >= 2:
+        if int(self.version.split(".")[0]) >= 2:
             self._assignment_types = AssignmentTypesSchema(self.assignment_types_table)
             self._is_v2_project = True
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)

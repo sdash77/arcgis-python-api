@@ -181,7 +181,7 @@ class AssignmentTypesSchema(FeatureSchema):
 
     @property
     def description(self):
-        """Gets the accuracy field name"""
+        """Gets the assignment type field name"""
         return self._field_called('description')['name']
 
 

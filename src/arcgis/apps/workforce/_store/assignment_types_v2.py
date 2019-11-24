@@ -1,4 +1,4 @@
-""" Defines store functions for working with AssignmentTypes.
+""" Defines store functions for working with AssignmentTypes in Version 2 projects.
 """
 
 from ... import workforce
