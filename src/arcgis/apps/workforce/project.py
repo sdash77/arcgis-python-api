@@ -45,15 +45,13 @@ class Project:
         self._item = item
         self._item_data = item.get_data()
         self._assignment_schema = AssignmentSchema(self.assignments_layer)
-        self._is_v2_project = False
         if self._supports_tracks:
             self._track_schema = TrackSchema(self.tracks_layer)
         else:
             self._track_schema = None
         self._worker_schema = WorkerSchema(self.workers_layer)
-        if int(self.version.split(".")[0]) >= 2:
+        if self._is_v2_project:
             self._assignment_types = AssignmentTypesSchema(self.assignment_types_table)
-            self._is_v2_project = True
         self._dispatcher_schema = DispatcherSchema(self.dispatchers_layer)
         self._update_cached_objects()
 
@@ -136,6 +134,17 @@ class Project:
     @property
     def _supports_tracks(self):
         return bool(self._item_data.get("tracks", None) is not None)
+
+    @property
+    def _is_v2_project(self):
+        v2 = False
+        version = self._item_data['version']
+        try:
+            if int(version.split(".")[0]) >= 2:
+                v2 = True
+        except Exception:
+            pass
+        return v2
 
     @property
     def _tracking_enabled(self):
