@@ -137,14 +137,10 @@ class Project:
 
     @property
     def _is_v2_project(self):
-        v2 = False
-        version = self._item_data['version']
         try:
-            if int(version.split(".")[0]) >= 2:
-                v2 = True
-        except Exception:
-            pass
-        return v2
+            return self._item_data['version'].split(".")[0] >= 2
+        except:
+            return False
 
     @property
     def _tracking_enabled(self):
