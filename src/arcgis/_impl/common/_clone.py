@@ -155,9 +155,8 @@ class _DeepCloner():
         source = item._gis
 
         # Check if the item definition has already been added to the collection of item definitions
-        item_definition = next((i for i in self._graph.values() if i.info['id'] == item.id), None)
-        if item_definition:
-            return item_definition
+        if item.id in self._graph:
+            return self._graph[item.id]
 
         # if the item is a group find all the web maps that are shared with the group
         if isinstance(item, gis.Group):
@@ -431,6 +430,36 @@ class _DeepCloner():
             for related_item in item_definition.related_items:
                 item_def = self._get_item_definitions(source.content.get(related_item['id']))
                 item_definition.add_child(item_def)
+
+        # If the item is a quick capture project find the feature services that supports it
+        elif item['type'] == 'QuickCapture Project':
+            item_definition = self._get_item_definition(item)
+            self._graph[item.id] = item_definition
+
+            qc_json = item.resources.get("qc.project.json", try_json=True)
+            if 'dataSources' in qc_json and qc_json['dataSources'] is not None:
+                for datasource in qc_json['dataSources']:
+                    if 'featureServiceItemId' in datasource and datasource['featureServiceItemId'] is not None:
+                        feature_service = source.content.get(datasource['featureServiceItemId'])
+                        if feature_service is not None:
+                            item_definition.add_child(self._get_item_definitions(feature_service))
+
+        # If the item is a python notebook find the referenced items from the same org
+        elif item['type'] == 'Notebook':
+            item_definition = self._get_item_definition(item)
+            self._graph[item.id] = item_definition
+            
+            notebook = item_definition.data
+            with open(notebook, 'r') as file:
+                notebook_json = file.read()
+                item_ids = set(re.findall('[0-9A-F]{32}', notebook_json, re.IGNORECASE))
+                for id in item_ids:
+                    if id not in self._graph:
+                        notebook_item = source.content.get(id)
+                        if notebook_item is not None:
+                            item_definition.add_child(self._get_item_definitions(notebook_item))
+                    else:
+                        item_definition.add_child(self._graph[id])
 
         # If the item is a pro map find the feature services that supports it
         elif item['type'] == 'Pro Map':
@@ -761,10 +790,23 @@ class _DeepCloner():
             workforce_json = item.get_data()
             return _WorkforceProjectDefinition(self.target, self._clone_mapping, dict(item), data=workforce_json, thumbnail=None, portal_item=item, folder=self.folder, search_existing=self._search_existing_items, owner=self.owner)
 
-        # If the item is a workforce project get the WorkforceProjectDefintion
+        # If the item is a survey get the FormDefintion
         elif item['type'] == 'Form':
             related_items = item.related_items('Survey2Service', 'forward')
             return _FormDefinition(self.target, self._clone_mapping, dict(item), related_items, data=None, thumbnail=None, portal_item=item, folder=self.folder, item_extent=self._item_extent, search_existing=self._search_existing_items, owner=self.owner)
+
+        # If the item is a quick capture project get the QuickCaptureDefinition
+        elif item['type'] == 'QuickCapture Project':
+            return _QuickCaptureDefinition(self.target, self._clone_mapping, dict(item), data=None, thumbnail=None, portal_item=item, folder=self.folder, item_extent=self._item_extent, search_existing=self._search_existing_items, owner=self.owner)
+
+        # If the item is a python notebook get the NotebookDefinition
+        elif item['type'] == 'Notebook':
+            temp_dir = os.path.join(self._temp_dir.name, item['id'])
+            if not os.path.exists(temp_dir):
+                os.makedirs(temp_dir)
+            notebook = item.download(temp_dir)
+            source_url = _get_org_url(item._gis)
+            return _NotebookDefinition(self.target, self._clone_mapping, dict(item), source_url, data=notebook, thumbnail=None, portal_item=item, folder=self.folder, item_extent=self._item_extent, search_existing=self._search_existing_items, owner=self.owner)
 
         # If the item is a feature service get the FeatureServiceDefintion
         elif item['type'] == 'Feature Service':
@@ -1003,7 +1045,8 @@ class _ItemDefinition(CloneNode):
 
         item_properties = {}
         for property_name in self._item_property_names:
-            item_properties[property_name] = self.info[property_name]
+            if property_name in self.info and self.info[property_name] is not None:
+                item_properties[property_name] = self.info[property_name]
 
         type_keywords = item_properties['typeKeywords']
         for keyword in list(type_keywords):
@@ -1021,6 +1064,26 @@ class _ItemDefinition(CloneNode):
 
         return item_properties
 
+    def _get_item_data(self):
+        temp_dir = os.path.join(self._temp_dir.name, self.info['id'])
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
+        data = self.data
+        if not data and self.portal_item:
+            data = self.portal_item.download(temp_dir)
+
+        # The item's name will default to the name of the data, if it already exists in the folder we need to rename it to something unique
+        name = os.path.basename(data)
+        item = next((item for item in self.target.users.get(self.owner).items(folder=self.folder) if item['name'] == name), None)
+        if item:
+            new_name = "{0}_{1}{2}".format(os.path.splitext(name)[0], str(uuid.uuid4()).replace('-', ''), os.path.splitext(name)[1])
+            new_path = os.path.join(temp_dir, new_name)
+            os.rename(data, new_path)
+            data = new_path
+
+        return data
+
     def clone(self):
         """Clone the item in the target organization.
         Keyword arguments:
@@ -1035,23 +1098,7 @@ class _ItemDefinition(CloneNode):
 
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
-
-                temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
-                if not os.path.exists(temp_dir):
-                    os.makedirs(temp_dir)
-
-                data = self.data
-                if not data and self.portal_item:
-                    data = self.portal_item.download(temp_dir)
-
-                # The item's name will default to the name of the data, if it already exists in the folder we need to rename it to something unique
-                name = os.path.basename(data)
-                item = next((item for item in self.target.users.get(self.owner).items(folder=self.folder) if item['name'] == name), None)
-                if item:
-                    new_name = "{0}_{1}{2}".format(os.path.splitext(name)[0], str(uuid.uuid4()).replace('-', ''), os.path.splitext(name)[1])
-                    new_path = os.path.join(temp_dir, new_name)
-                    os.rename(data, new_path)
-                    data = new_path
+                data = self._get_item_data()
 
                 # Add the new item
                 new_item = self._add_new_item(item_properties, data)
@@ -2711,6 +2758,145 @@ class _FormDefinition(_ItemDefinition):
             raise Exception("Failed to update {0} {1}: {2}".format(new_item['type'], new_item['title'], str(ex)))
         finally:
             zip_file.close()
+
+
+class _QuickCaptureDefinition(_ItemDefinition):
+    """
+    Represents the definition of a quick capture project within ArcGIS Online or Portal.
+    """
+    def __init__(self, target, clone_mapping, info, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
+
+
+    def clone(self):
+        """Clone the quick capture project in the target organization.
+        """
+        try:
+            new_item = None
+            original_item = self.info
+            if self._search_existing:
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
+            if not new_item:
+
+                # Get the item properties from the original item to be applied when the new item is created
+                item_properties = self._get_item_properties(self.item_extent)
+                data = self._get_item_data()
+
+                # Add the new item
+                new_item = self._add_new_item(item_properties, data)
+                          
+                # Get the Quick Capture json resource
+                qc_json = new_item.resources.get("qc.project.json", try_json=True)
+                qc_json["itemId"] = new_item['id']
+
+                # Update the datasources in the quick capture project
+                datasourceid_field_mapping = {}
+                if 'dataSources' in qc_json and qc_json['dataSources'] is not None:
+                    for datasource in qc_json['dataSources']:
+                        if 'featureServiceItemId' in datasource and datasource['featureServiceItemId'] is not None:
+                            feature_service_item_id = datasource['featureServiceItemId']
+                            if feature_service_item_id in self._clone_mapping['Item IDs']:
+                                datasource['featureServiceItemId'] = self._clone_mapping['Item IDs'][feature_service_item_id]
+                        if 'url' in datasource and datasource['url'] is not None:
+                            feature_service_url = os.path.dirname(datasource['url'])
+                            for original_url, new_service in self._clone_mapping['Services'].items():
+                                if _compare_url(feature_service_url, original_url):
+                                    layer_id = int(os.path.basename(datasource['url']))
+                                    new_id = new_service['layer_id_mapping'][layer_id]
+                                    datasource['url'] = "{0}/{1}".format(new_service['url'], new_id)
+                                    if 'dataSourceId' in datasource and datasource['dataSourceId'] is not None and layer_id in new_service['layer_field_mapping']:
+                                        datasourceid_field_mapping[datasource['dataSourceId']] = new_service['layer_field_mapping'][layer_id]
+                                    break
+                
+                # Update any field names that may have changed in the service
+                if 'templateGroups' in qc_json and qc_json['templateGroups'] is not None:
+                    for template_group in qc_json['templateGroups']:
+                        if 'templates' in template_group and template_group['templates'] is not None:
+                            for template in template_group['templates']:
+                                datasourceid = _deep_get(template, 'captureInfo', 'dataSourceId')
+                                if datasourceid is not None and datasourceid in datasourceid_field_mapping:
+                                    if 'fieldInfos' in template and template['fieldInfos'] is not None:
+                                        for fieldinfo in template['fieldInfos']:
+                                            fieldname = _deep_get(fieldinfo, "fieldName")
+                                            if fieldname is not None and fieldname in datasourceid_field_mapping[datasourceid]:
+                                                fieldinfo["fieldName"] = datasourceid_field_mapping[datasourceid][fieldname]
+                
+                # Set the admin email
+                admin_email = _deep_get(qc_json, 'preferences', 'adminEmail')
+                if admin_email is not None:
+                    qc_json['preferences']['adminEmail'] = self.target.users.get(self.owner).email
+
+                # Update the Quick Capture json resource
+                temp_dir = os.path.join(self._temp_dir.name, original_item['id'])
+                if not os.path.exists(temp_dir):
+                    os.makedirs(temp_dir)
+
+                qc_json_file = os.path.join(temp_dir, "qc.project.json")
+                with open(qc_json_file, 'w') as file:
+                    file.write(json.dumps(qc_json))
+
+                new_item.resources.update(qc_json_file, None, "qc.project.json")
+
+            _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
+            self.resolved = True
+            self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
+            return new_item
+
+        except Exception as ex:
+            raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
+
+
+class _NotebookDefinition(_ItemDefinition):
+    """
+    Represents the definition of a python notebook within ArcGIS Online or Portal.
+    """
+    def __init__(self, target, clone_mapping, info, source_url, data=None, sharing=None, thumbnail=None, portal_item=None, folder=None, item_extent=None, search_existing=True, owner=None):
+        super().__init__(target, clone_mapping, info, data, sharing, thumbnail, portal_item, folder, item_extent, search_existing, owner)
+        self._source_url = source_url
+
+    def clone(self):
+        """Clone the python notebook in the target organization.
+        """
+        try:
+            new_item = None
+            original_item = self.info
+            if self._search_existing:
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
+            if not new_item:
+
+                # Get the item properties from the original item to be applied when the new item is created
+                item_properties = self._get_item_properties(self.item_extent)
+                
+                # Add the new item
+                new_item = self._add_new_item(item_properties)
+
+                # Find and replace all item and group id references
+                notebook = self.data
+                notebook_json = ""
+
+                with open(notebook, 'r') as file:
+                    notebook_json = file.read()
+
+                for key, value in self._clone_mapping['Item IDs'].items():
+                    notebook_json = re.sub(key, value, notebook_json, 0, re.IGNORECASE)
+                for key, value in self._clone_mapping['Group IDs'].items():
+                    notebook_json = re.sub(key, value, notebook_json, 0, re.IGNORECASE)
+                notebook_json = re.sub(self._source_url, _get_org_url(self.target), notebook_json, 0, re.IGNORECASE)
+
+                new_notebook = os.path.join(os.path.dirname(notebook), '{0}.ipynb'.format(new_item.id))
+                with open(new_notebook, 'w') as file:
+                    file.write(notebook_json)
+
+                # Update python notebook
+                new_item.update(data=new_notebook)
+
+            _share_item_with_groups(new_item, self.sharing, self._clone_mapping["Group IDs"])
+            self.resolved = True
+            self._clone_mapping['Item IDs'][original_item['id']] = new_item['id']
+            return new_item
+
+        except Exception as ex:
+            raise _ItemCreateException("Failed to create {0} {1}: {2}".format(original_item['type'], original_item['title'], str(ex)), new_item)
 
 
 class _WorkforceProjectDefinition(_TextItemDefinition):
