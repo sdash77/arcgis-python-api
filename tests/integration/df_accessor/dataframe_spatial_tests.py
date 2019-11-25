@@ -308,11 +308,9 @@ def test_bbox():
     df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
     df.spatial.set_geometry(g)
     bbox = df.spatial.bbox
-    try:
-        assert bbox._repr_svg_()
-    except:
-        pass
+    assert bbox._repr_svg_()
     assert isinstance(bbox, Geometry)
+    
 def test_geometry_type():
     g = geoms
     data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
