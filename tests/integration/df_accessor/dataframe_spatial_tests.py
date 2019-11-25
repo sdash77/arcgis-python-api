@@ -1,5 +1,5 @@
 import os, sys
-#sys.path.append(r"C:\SVN\achapkowski_geosaurus_fork\src")
+
 import shutil, datetime
 import tempfile
 from arcgis.features.geo._array import GeoArray, GeoType
@@ -310,6 +310,7 @@ def test_bbox():
     bbox = df.spatial.bbox
     assert bbox._repr_svg_()
     assert isinstance(bbox, Geometry)
+    
 def test_geometry_type():
     g = geoms
     data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
@@ -364,6 +365,8 @@ def test_from_fc_pyshp():
     """tests reading a SHP from arcpy"""
     fc = r"./world30.shp"
     if _io.fileops.HASPYSHP == False:
+        return
+    if os.path.isfile(fc) == False:
         return
     oval_fiona = copy.copy(_io.fileops.HASFIONA)
     oval_arcpy = copy.copy(_io.fileops.HASARCPY)
