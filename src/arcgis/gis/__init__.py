@@ -4546,7 +4546,7 @@ class ContentManager(object):
                     sitems.append(i.itemid)
                 else:
                     sitems.append(i)
-            #items = sitems
+            items = [Item(gis=self._gis, itemid=i) for i in items]
         params['items'] = ",".join(sitems)
         params['everyone'] = everyone
         params['org'] = org
