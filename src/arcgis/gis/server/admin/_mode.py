@@ -9,6 +9,7 @@ site are still available in READ_ONLY mode.
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
+from arcgis._impl.common._deprecate import deprecated
 
 ###########################################################################
 class Mode(BaseServer):
@@ -43,6 +44,10 @@ class Mode(BaseServer):
         if initialize:
             self._init(gis)
     #----------------------------------------------------------------------
+    @deprecated(deprecated_in="1.7.1", 
+                removed_in=None,
+                current_version="1.7.1",
+                details="Use `Mode.update_mode` instead.")    
     def update(self,
                siteMode,
                runAsync=False):
@@ -67,6 +72,44 @@ class Mode(BaseServer):
         """
         params = {"siteMode" : siteMode,
                   "runAsync" : runAsync,
+                  "f" : "json"}
+        url = self._url + "/update"
+        res = self._con.post(path=url,
+                             postdata=params)
+        if 'status' in res:
+            return res['status'] == 'success'
+        return res
+
+    #----------------------------------------------------------------------
+    def update_mode(self,
+               site_mode,
+               run_async=False,
+               allow_editing=True):
+        """
+        The update operation is used to move between the two types of site
+        modes. Switching to READ_ONLY mode will restart all your services
+        as the default behavior. Moving to EDITABLE mode will not restart
+        services.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        site_mode           Required string. The mode you will set your site to. Values:
+                            READ_ONLY or EDITABLE.
+        ---------------     --------------------------------------------------------------------
+        run_async           Optional boolean. Determines if this operation must run asynchronously.
+        ---------------     --------------------------------------------------------------------
+        allow_editing       Optional boolean. Specifies if edits to feature services are allowed 
+                            while a Server is in read-only mode. The default value is true.
+        ===============     ====================================================================
+
+
+        :return: boolean
+
+        """
+        params = {"siteMode" : site_mode,
+                  "runAsync" : run_async,
+                  "allowEditingViaServices" : allow_editing,
                   "f" : "json"}
         url = self._url + "/update"
         res = self._con.post(path=url,
