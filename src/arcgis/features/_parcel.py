@@ -629,9 +629,12 @@ class ParcelFabricManager(object):
         }
         return self._con.post(url, params)
     #----------------------------------------------------------------------
-    def duplicate(self, parcels, 
-                  parcel_type, parcel_subtype, 
-                  record, moment=None):
+    def duplicate(self, 
+                  parcels, 
+                  parcel_type, 
+                  record, 
+                  parcel_subtype=None, 
+                  moment=None):
         """
         `duplicate` allows for the cloning of parcels from a specific record. 
         
@@ -657,10 +660,10 @@ class ParcelFabricManager(object):
         -----------------------     --------------------------------------------------------------------
         parcel_type                 Required Integer. The target parcel type.
         -----------------------     --------------------------------------------------------------------
-        parcel_subtype              Required Integer. The target parcel subtype.
-        -----------------------     --------------------------------------------------------------------
         record                      Required String. A **GUID** representing the record that will be 
                                     assigned to the features set as current or historic.
+        -----------------------     --------------------------------------------------------------------
+        parcel_subtype              Optional Integer. The target parcel subtype.  The default is 0.
         -----------------------     --------------------------------------------------------------------
         moment                      Optional String. This parameter represents the session moment (the
                                     default is the version current moment). This should only be
@@ -671,6 +674,8 @@ class ParcelFabricManager(object):
         :returns: Dictionary        
         
         """
+        if parcel_type is None:
+            parcel_subtype = 0
         if moment is None:
             moment = int(time.time())        
         gdb_version = self._version.properties.versionName
