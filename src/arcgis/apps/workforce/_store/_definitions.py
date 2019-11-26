@@ -370,10 +370,10 @@ assignment_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "0",
+              "status" : 0,
               "description" : null,
               "notes" : null,
-              "priority" : null,
+              "priority" : 0,
               "assignmentType" : null,
               "workOrderId" : null,
               "dueDate" : null,
@@ -405,10 +405,10 @@ assignment_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "1",
+              "status" : 1,
               "description" : null,
               "notes" : null,
-              "priority" : null,
+              "priority" : 0,
               "assignmentType" : null,
               "workOrderId" : null,
               "dueDate" : null,
@@ -440,10 +440,10 @@ assignment_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "2",
+              "status" : 2,
               "description" : null,
               "notes" : null,
-              "priority" : null,
+              "priority" : 0,
               "assignmentType" : null,
               "workOrderId" : null,
               "dueDate" : null,
@@ -475,10 +475,10 @@ assignment_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "3",
+              "status" : 3,
               "description" : null,
               "notes" : null,
-              "priority" : null,
+              "priority" : 0,
               "assignmentType" : null,
               "workOrderId" : null,
               "dueDate" : null,
@@ -510,10 +510,10 @@ assignment_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "4",
+              "status" : 4,
               "description" : null,
               "notes" : null,
-              "priority" : null,
+              "priority" : 0,
               "assignmentType" : null,
               "workOrderId" : null,
               "dueDate" : null,
@@ -545,10 +545,10 @@ assignment_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "5",
+              "status" : 5,
               "description" : null,
               "notes" : null,
-              "priority" : null,
+              "priority" : 0,
               "assignmentType" : null,
               "workOrderId" : null,
               "dueDate" : null,
@@ -1081,10 +1081,10 @@ assignment_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "0", 
+              "status" : 0, 
               "description" : null, 
               "notes" : null, 
-              "priority" : "0", 
+              "priority" : 0, 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1115,10 +1115,10 @@ assignment_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "1", 
+              "status" : 1, 
               "description" : null, 
               "notes" : null, 
-              "priority" : "0", 
+              "priority" : 0, 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1149,10 +1149,10 @@ assignment_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "2", 
+              "status" : 2, 
               "description" : null, 
               "notes" : null, 
-              "priority" : "0", 
+              "priority" : 0, 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1183,10 +1183,10 @@ assignment_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "3", 
+              "status" : 3, 
               "description" : null, 
               "notes" : null, 
-              "priority" : "0", 
+              "priority" : 0, 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1217,10 +1217,10 @@ assignment_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "4", 
+              "status" : 4, 
               "description" : null, 
               "notes" : null, 
-              "priority" : "0", 
+              "priority" : 0, 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
@@ -1251,10 +1251,10 @@ assignment_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "5", 
+              "status" : 5, 
               "description" : null, 
               "notes" : null, 
-              "priority" : "0", 
+              "priority" : 0, 
               "assignmenttype" : null, 
               "workorderid" : null, 
               "duedate" : null, 
