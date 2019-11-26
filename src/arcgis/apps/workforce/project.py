@@ -138,7 +138,7 @@ class Project:
     @property
     def _is_v2_project(self):
         try:
-            return self._item_data['version'].split(".")[0] >= 2
+            return int(self._item_data['version'].split(".")[0]) >= 2
         except:
             return False
 
