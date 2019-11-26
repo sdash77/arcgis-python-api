@@ -616,15 +616,73 @@ class SyncManager(object):
                                         return_attachments=return_attachments,
                                         return_attachments_data_by_url=return_attachments_databy_url,
                                         asynchronous=asynchronous,
-                                        sync_direction=sync_direction, # MISSING PARAMETER
-                                        target_type=target_type, # Missing Parameter
+                                        sync_direction=sync_direction, 
+                                        target_type=target_type, 
                                         attachments_sync_direction=attachments_sync_direction,
                                         sync_model=sync_model,
                                         data_format=data_format,
                                         replica_options=replica_options,
                                         wait=wait,
                                         out_path=out_path)
+    # ----------------------------------------------------------------------
+    def cleanup_change_tracking(self, 
+                                layers,
+                                retention_period,
+                                period_unit='days',
+                                min_server_gen=None,
+                                replica_id=None,
+                                future=False):
+        """
+        
+        Change tracking information stored in each feature service layer 
+        (enabled for Change Tracking) might grow very large. The change 
+        tracking info used by the feature service to determine the change 
+        generation number and the features that have changed for a 
+        particular generation. Clients can purge the change tracking 
+        content if the changes are already synced-up to all clients and the
+        changes are no longer needed.
 
+        The change tracking cleaned only supported on the feature service 
+        admin API. Only the owner or the organization administrator can 
+        cleanup change tracking information.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        layers                 Required list. A list of layers and tables to include in the replica.
+        ------------------     --------------------------------------------------------------------
+        retention_period       Optional Integer. The retention period to use when cleaning up the 
+                               change tracking information. Change tracking information will be 
+                               cleaned up if they are older than the retention period.
+        ------------------     --------------------------------------------------------------------
+        period_unit            Optional String.  The units of the retention period.  
+        
+                               Values: `days`, `seconds`, `minutes`, or `hours`
+                               
+        ------------------     --------------------------------------------------------------------
+        min_server_gen         Optional String.  In addition to the retention period, the change 
+                               tracking can be cleaned by its generation numbers. Older tracking 
+                               information that has older generation number than the 
+                               `min_server_gen` will be cleaned.
+        ------------------     --------------------------------------------------------------------
+        replica_id             Optional String.  The change tracking can also be cleaned by the 
+                               `replica_id` in addition to the `retention_period` and the 
+                               `min_server_gen`.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional Boolean.  Support options for asynchronous processing. The 
+                               default format is false.
+        ==================     ====================================================================
+        
+        
+        :returns: Boolean when future is False and Future object when future is True
+        
+        """
+        return self._fs._cleanup_change_tracking(layers=layers,
+                                                 retention_period=retention_period,
+                                                 period_unit=period_unit,
+                                                 min_server_gen=min_server_gen,
+                                                 replica_id=replica_id,
+                                                 future=future)    
     # ----------------------------------------------------------------------
     def synchronize(self,
                     replica_id,
