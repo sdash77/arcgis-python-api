@@ -365,7 +365,7 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
     array_extent = [[extent['xmin'], extent['ymin']], [extent['xmax'], extent['ymax']]]
     item_properties = {
         "title": "{} Worker Map".format(title),
-        "tags": "workforce-workers",
+        "tags": "workforce-worker",
         "extent": array_extent,
         "type": 'Web Map',
         "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Project,Data Editing'
@@ -672,7 +672,7 @@ def _v1_create_worker_webmap(gis, folder_name, assignments_item, workers_item, t
     array_extent = [[extent['xmin'], extent['ymin']], [extent['xmax'], extent['ymax']]]
     item_properties = {
         "title": "{}_workers".format(title),
-        "tags": "workforce-workers",
+        "tags": "workforce-worker",
         "extent": array_extent,
         "type": 'Web Map',
         "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Project'
