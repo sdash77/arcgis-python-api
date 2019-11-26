@@ -9,6 +9,7 @@ import json
 import os
 from re import search
 import time
+import concurrent.futures
 import six
 from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
@@ -1690,7 +1691,8 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def calculate(self, where, calc_expression,
                   sql_format="standard", version=None,
-                  sessionid=None, return_edit_moment=None):
+                  sessionid=None, return_edit_moment=None, 
+                  future=False):
         """
         The calculate operation is performed on a feature layer
         resource. It updates the values of one or more fields in an
@@ -1746,6 +1748,13 @@ class FeatureLayer(Layer):
                                 key. This parameter applies only if the
                                 `isDataBranchVersioned` property of the layer is
                                 true.
+        ---------------------   ----------------------------------------------------
+        future                  Optional Boolean.  If True, the result is returned
+                                as a future object and the results are obtained in 
+                                an asynchronous fashion.  False is the default.
+                                
+                                **This applies to 10.8+ only**
+                                
         =====================   ====================================================
 
         .. code-block:: python
@@ -1786,7 +1795,16 @@ class FeatureLayer(Layer):
             params['sessionID'] = sessionid
         if isinstance(return_edit_moment, bool):
             params['returnEditMoment'] = return_edit_moment
-
+        if "supportsASyncCalculate" in self.properties and \
+           self.properties.supportsASyncCalculate and \
+           future:
+            params['async'] = True
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            res = self._con.post(path=url,
+                                 postdata=params, token=self._token)
+            future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+            executor.shutdown(False)
+            return future            
         return self._con.post(path=url,
                               postdata=params, token=self._token)
 
