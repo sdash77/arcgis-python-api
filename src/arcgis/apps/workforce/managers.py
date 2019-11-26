@@ -213,9 +213,9 @@ class AssignmentTypeManager:
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
         if not self.project._is_v2_project:
-            return get_assignment_type(self.project, code, name)
+            return get_assignment_type(self.project, code=code, name=name)
         else:
-            return get_assignment_type_v2(self.project, code, name)
+            return get_assignment_type_v2(self.project, code=code, name=name)
 
     def search(self):
         """
@@ -244,7 +244,7 @@ class AssignmentTypeManager:
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
         if not self.project._is_v2_project:
-            return add_assignment_type(self.project, coded_value, name)
+            return add_assignment_type(self.project, coded_value=coded_value, name=name)
         else:
             return add_assignment_type_v2(self.project, name=name)
 

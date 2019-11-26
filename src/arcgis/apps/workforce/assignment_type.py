@@ -35,7 +35,7 @@ class AssignmentType(FeatureModel):
             if not feature:
                 self.name = name
         else:
-            super().__init__(project=project, feature_layer=None, feature=feature)
+            super().__init__()
             if coded_value:
                 self._coded_value = coded_value
             else:
@@ -46,7 +46,7 @@ class AssignmentType(FeatureModel):
         return self.name
 
     def __repr__(self):
-        return "<AssignmentType {}>".format(self.name)
+        return "<AssignmentType {}>".format(self.code)
 
     def update(self, name=None):
         """

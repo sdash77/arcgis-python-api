@@ -8,7 +8,8 @@ from .exceptions import WorkforceError
 
 
 class Track(FeatureModel):
-    """ Represents a track feature, which describes the historical location of a worker.
+    """ Represents a track feature, which describes the historical location of a worker. V1 Projects
+        only.
 
         ==================     ====================================================================
         **Argument**           **Description**

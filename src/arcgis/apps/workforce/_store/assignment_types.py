@@ -32,7 +32,7 @@ def add_assignment_type(project, coded_value=None, name=None):
     """
     Adds a new assignment type
     """
-    assignment_type = workforce.AssignmentType(project, coded_value, name)
+    assignment_type = workforce.AssignmentType(project, coded_value=coded_value, name=name)
     return add_assignment_types(project, [assignment_type])[0]
 
 
@@ -120,6 +120,6 @@ def get_assignment_type_field(project, feature_layer):
 def coded_values_to_assignment_types(project, coded_values):
     assignment_types = []
     for assignment_type_json in coded_values:
-        assignment_type = workforce.AssignmentType(project, assignment_type_json)
+        assignment_type = workforce.AssignmentType(project, coded_value=assignment_type_json)
         assignment_types.append(assignment_type)
     return assignment_types
