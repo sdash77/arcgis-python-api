@@ -2496,7 +2496,7 @@ worker_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "0",
+              "status" : 0,
               "name" : null,
               "title" : null,
               "contactNumber" : null,
@@ -2520,7 +2520,7 @@ worker_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "2",
+              "status" : 2,
               "name" : null,
               "title" : null,
               "contactNumber" : null,
@@ -2544,7 +2544,7 @@ worker_layer_definition_v1 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone",
           "prototype" : {
             "attributes" : {
-              "status" : "1",
+              "status" : 1,
               "name" : null,
               "title" : null,
               "contactNumber" : null,
@@ -2890,7 +2890,7 @@ worker_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "0", 
+              "status" : 0, 
               "name" : null, 
               "title" : null, 
               "contactnumber" : null, 
@@ -2914,7 +2914,7 @@ worker_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "2", 
+              "status" : 2, 
               "name" : null, 
               "title" : null, 
               "contactnumber" : null, 
@@ -2938,7 +2938,7 @@ worker_layer_definition_v2 = json.loads(
           "drawingTool" : "esriFeatureEditToolNone", 
           "prototype" : {
             "attributes" : {
-              "status" : "1", 
+              "status" : 1, 
               "name" : null, 
               "title" : null, 
               "contactnumber" : null, 
