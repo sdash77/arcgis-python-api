@@ -675,7 +675,7 @@ def _v1_create_worker_webmap(gis, folder_name, assignments_item, workers_item, t
         "tags": "workforce-worker",
         "extent": array_extent,
         "type": 'Web Map',
-        "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Offline,Online Map,Web Map,Workforce Project'
+        "typeKeywords": 'ArcGIS Online,Explorer Web Map,Map,Online Map,Web Map,Workforce Project'
     }
 
     webmap_data = {
