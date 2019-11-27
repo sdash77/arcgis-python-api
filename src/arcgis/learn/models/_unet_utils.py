@@ -110,10 +110,9 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
-    def __init__(self, x, cmap=None, norm=None):
+    def __init__(self, x, color_mapping=None):
         super(ArcGISImageSegment, self).__init__(x)
-        self.cmap = cmap
-        self.mplnorm = norm
+        self.color_mapping = color_mapping
 
     def lighting(self, func, *args, **kwargs):
         return self
@@ -128,10 +127,17 @@ class ArcGISImageSegment(Image):
         return self.px.long()
 
     def show(self, ax=None, figsize:tuple=(3,3), title=None, hide_axis:bool=True,
-        cmap='tab20', alpha:float=0.5, **kwargs):
+        cmap=None, alpha:float=0.5, **kwargs):
         "Show the `ImageSegment` on `ax`."
-        ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap=self.cmap, figsize=figsize,
-                        interpolation='nearest', alpha=alpha, vmin=0, norm=self.mplnorm, **kwargs)
+        if is_no_color(self.color_mapping):
+            ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap='tab20', figsize=figsize,
+                        interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
+        else:                
+            color_mapping = torch.tensor(list(self.color_mapping.values()))
+            color_mapping = torch.cat((color_mapping.float()/255, torch.tensor([float(alpha)] * len(color_mapping)).view(-1, 1)), dim=1)
+            color_mapping = torch.cat((torch.tensor([0., 0., 0., 0.]).view(1, -1), color_mapping), dim=0)
+            ax = show_image(color_mapping[self.data[0]].permute(2, 0, 1), ax=ax, hide_axis=hide_axis, cmap=cmap, figsize=figsize,
+                            interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
         if title: ax.set_title(title)
 
 class ArcGISMultispectralImageSegment():
@@ -153,25 +159,6 @@ class ArcGISSegmentationLabelList(ImageList):
         self.color_mapping = color_mapping
         self.copy_new.append('classes')
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
-
-        if is_no_color(list(color_mapping.values())):
-            self.cmap = 'tab20'  ## compute cmap from palette
-            import matplotlib as mpl
-            bounds = list(color_mapping.keys())
-            if len(bounds) < 3: # Two handle two classes i am adding one number to the classes which is not already in bounds
-                bounds = bounds + [max(bounds)+1]
-            self.mplnorm = mpl.colors.BoundaryNorm(bounds, len(bounds))
-        else:
-            import matplotlib as mpl
-            bounds = list(color_mapping.keys())
-            if len(bounds) < 3: # Two handle two classes i am adding one number to the classes which is not already in bounds
-                bounds = bounds + [max(bounds)+1]
-            self.cmap = mpl.colors.ListedColormap(np.array(list(color_mapping.values()))/255)
-            self.mplnorm = mpl.colors.BoundaryNorm(bounds, self.cmap.N)
-
-        if len(color_mapping.keys()) == 1:
-            self.cmap = 'tab20'
-            self.mplnorm = None
         
 
     def open(self, fn):
@@ -184,7 +171,7 @@ class ArcGISSegmentationLabelList(ImageList):
                 x = x.convert('L')
             x = pil2tensor(x, np.float32)
 
-        return ArcGISImageSegment(x, cmap=self.cmap, norm=self.mplnorm)
+        return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
     def analyze_pred(self, pred, thresh:float=0.5): 
         label_mapping = {(idx + 1):value for idx, value in enumerate(self.class_mapping.keys())}
@@ -195,7 +182,7 @@ class ArcGISSegmentationLabelList(ImageList):
         return predictions
 
     def reconstruct(self, t): 
-        return ArcGISImageSegment(t, cmap=self.cmap, norm=self.mplnorm)
+        return ArcGISImageSegment(t, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
@@ -207,7 +194,7 @@ class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
         path = str(os.path.abspath(fn))
         x = gdal.Open(path).ReadAsArray()
         x = torch.tensor(x.astype(np.long))[None]
-        return ArcGISImageSegment(x, cmap=self.cmap, norm=self.mplnorm)
+        return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationMSItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
