@@ -4,8 +4,9 @@ Contains the base class that all server object inherit from.
 from __future__ import absolute_import
 import json
 from collections import OrderedDict
+from ._connection import ServerConnection
 from urllib.request import HTTPError
-from arcgis.gis._impl._con import Connection
+from arcgis._impl.connection import _ArcGISConnection
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 ###########################################################################
@@ -29,7 +30,7 @@ class BaseServer(object):
            isinstance(gis, GIS):
             gis = gis._portal.con
 
-        if isinstance(gis, Connection):
+        if isinstance(gis, (ServerConnection, _ArcGISConnection)):
             self._con = gis
         elif hasattr(gis, '_con'):
             self._gis = gis._con

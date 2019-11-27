@@ -8,8 +8,7 @@ import imghdr
 import logging
 import os
 import tempfile
-from arcgis.gis._impl._con import Connection
-from .connection import _normalize_url
+from .connection import _ArcGISConnection, _normalize_url
 from .connection import _is_http_url
 from .connection import _parse_hostname, _unpack
 from .common._utils import _to_utf8
@@ -136,32 +135,32 @@ class Portal(object):
         if not connection:
             _log.debug('Connecting to portal: ' + self.hostname)
             if self._is_arcpy:
-                self.con = Connection(baseurl="pro",
-                                      tokenurl=tokenurl,
-                                      username=username,
-                                      password=password,
-                                      key_file=key_file,
-                                      cert_file=cert_file,
-                                      expiration=expiration,
-                                      all_ssl=True,
-                                      referer=referer,
-                                      proxy_host=proxy_host,
-                                      proxy_port=proxy_port,
-                                      verify_cert=verify_cert)
+                self.con = _ArcGISConnection(baseurl="pro",
+                                             tokenurl=tokenurl,
+                                             username=username,
+                                             password=password,
+                                             key_file=key_file,
+                                             cert_file=cert_file,
+                                             expiration=expiration,
+                                             all_ssl=True,
+                                             referer=referer,
+                                             proxy_host=proxy_host,
+                                             proxy_port=proxy_port,
+                                             verify_cert=verify_cert)
             else:
-                self.con = Connection(baseurl=self.resturl,
-                                      tokenurl=tokenurl,
-                                      username=username,
-                                      password=password,
-                                      key_file=key_file,
-                                      cert_file=cert_file,
-                                      expiration=expiration,
-                                      all_ssl=True,
-                                      referer=referer,
-                                      proxy_host=proxy_host,
-                                      proxy_port=proxy_port,
-                                      verify_cert=verify_cert,
-                                      client_id=client_id)
+                self.con = _ArcGISConnection(baseurl=self.resturl,
+                                             tokenurl=tokenurl,
+                                             username=username,
+                                             password=password,
+                                             key_file=key_file,
+                                             cert_file=cert_file,
+                                             expiration=expiration,
+                                             all_ssl=True,
+                                             referer=referer,
+                                             proxy_host=proxy_host,
+                                             proxy_port=proxy_port,
+                                             verify_cert=verify_cert,
+                                             client_id=client_id)
         #self.get_version(True)
         self.get_properties(True)
 

@@ -347,7 +347,7 @@ class DataStoreManager(BaseServer):
 
         """
         if str(sde).lower().endswith('.sde'):
-            from arcgis.gis._impl._con import Connection
+            from arcgis.gis.server._common import ServerConnection
             from arcgis.gis.server.catalog import ServicesDirectory
             from arcgis.gis.server import Uploads
 
@@ -357,7 +357,7 @@ class DataStoreManager(BaseServer):
             if self._con.portal_connection:
                 d = ServicesDirectory(url=self._con.baseurl,
                                       portal_connection=self._con.portal_connection)
-            elif isinstance(self._con, Connection):
+            elif isinstance(self._con, ServerConnection):
                 d = ServicesDirectory(url=self._con.baseurl)
                 d._con = self._con
 

@@ -1,8 +1,8 @@
 """
 Entry point to working with local enterprise GIS functions
 """
-from arcgis.gis._impl._con import Connection
-from arcgis.gis import GIS
+from ..._impl.connection import _ArcGISConnection
+from ...gis import GIS
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
@@ -50,14 +50,14 @@ class PortalAdminManager(BasePortalAdmin):
                                                      gis=gis,
                                                      **kwargs)
             initialize = kwargs.pop("initialize", False)
-            if isinstance(gis, Connection):
+            if isinstance(gis, _ArcGISConnection):
                 self._con = gis
             elif isinstance(gis, GIS):
                 self._gis = gis
                 self._con = gis._con
             else:
                 raise ValueError(
-                    "connection must be of type GIS or Connection")
+                    "connection must be of type GIS or _ArcGISConnection")
             try:
                 self.resources = PortalResourceManager(gis=self._gis)
             except:
@@ -69,7 +69,7 @@ class PortalAdminManager(BasePortalAdmin):
                                                      gis=gis,
                                                      is_admin=False,
                                                      initialize=False)
-            if isinstance(gis, Connection):
+            if isinstance(gis, _ArcGISConnection):
                 self._con = gis
             elif isinstance(gis, GIS):
                 self._gis = gis

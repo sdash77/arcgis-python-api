@@ -9840,7 +9840,9 @@ class _GISResource(object):
     """ a GIS service
     """
     def __init__(self, url, gis=None):
-        from ._impl._con import Connection
+
+        from .server._common import ServerConnection
+        from .._impl.connection import _ArcGISConnection
         self._hydrated = False
         self.url = url
         self._url = url
@@ -9851,7 +9853,7 @@ class _GISResource(object):
             self._con = gis._con
         else:
             self._gis = gis
-            if isinstance(gis, Connection):
+            if isinstance(gis, (ServerConnection, _ArcGISConnection)):
                 self._con = gis
             else:
                 self._con = gis._con
@@ -9910,7 +9912,7 @@ class _GISResource(object):
                 if self._con._token is None:
                     self._lazy_token = None
                 else:
-                    if isinstance(self._con, Connection):
+                    if isinstance(self._con, arcgis._impl._ArcGISConnection):
                         self._lazy_token = self._con.generate_portal_server_token(self._url)
                     else:
                         self._lazy_token = self._con.token

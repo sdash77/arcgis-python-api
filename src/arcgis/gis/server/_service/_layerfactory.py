@@ -18,7 +18,7 @@ from arcgis.mapping import MapImageLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
 from arcgis.mapping._types import SceneLayer
-from arcgis.gis._impl._con import Connection
+from .._common import ServerConnection
 from ._geodataservice import GeoData
 #from .
 class ServiceFactory(type):
@@ -40,7 +40,7 @@ class ServiceFactory(type):
         elif url is None and item is not None:
             url = item.url
 
-        if isinstance(server, Connection) or \
+        if isinstance(server, ServerConnection) or \
            hasattr(server, 'token'):
             connection = server
         elif isinstance(server, (GIS,  ServicesDirectory)):
@@ -51,13 +51,13 @@ class ServiceFactory(type):
                 site_url = "{scheme}://{nl}/{wa}".format(scheme=parsed.scheme,
                                                          nl=parsed.netloc,
                                                          wa=parsed.path[1:].split('/')[0])
-                connection = Connection(baseurl=site_url) # anonymous connection
+                connection = ServerConnection(baseurl=site_url) # anonymous connection
                 server =  ServicesDirectory(url=site_url)
             except:
                 parsed = urlparse(url)
                 site_url = "https://{nl}/rest/services".format(scheme=parsed.scheme,
                                                                   nl=parsed.netloc)
-                connection = Connection(baseurl=site_url, all_ssl=parsed.scheme == "https") # anonymous connection
+                connection = ServerConnection(baseurl=site_url, all_ssl=parsed.scheme == "https") # anonymous connection
                 server =  ServicesDirectory(url=site_url)
         base_name = os.path.basename(url)
         if base_name.isdigit():

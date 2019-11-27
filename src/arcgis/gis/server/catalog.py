@@ -3,7 +3,7 @@ import ssl
 import logging
 from six.moves.urllib_parse import urlparse
 from ._common import BaseServer
-from arcgis.gis._impl._con import Connection
+from ._common import ServerConnection
 from ._service import Service
 from arcgis.gis import GIS
 
@@ -140,7 +140,7 @@ class ServicesDirectory(BaseServer):
         elif con:
             self._con = con
         else:
-            self._con = Connection(baseurl=url,
+            self._con = ServerConnection(baseurl=url,
                                          username=username,
                                          password=password,
                                          key_file=key_file,
