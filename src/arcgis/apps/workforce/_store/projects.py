@@ -115,7 +115,7 @@ def _create_application_properties():
     }
 
 
-def _build_operational_layers(item, popup_def=None, visibility=True, layer_index=0, editable=False):
+def _build_operational_layers(item, popup_def=None, visibility=True, layer_index=0, capabilities=None):
     """
     Helper method to build operational layers
     :param item: The item containing the layer (at index 0)
@@ -133,8 +133,8 @@ def _build_operational_layers(item, popup_def=None, visibility=True, layer_index
         "url": layer.url,
         "visibility": visibility
     }
-    if not editable:
-        op_layer["capabilities"] = "Query,Sync"
+    if capabilities:
+        op_layer["capabilities"] = capabilities
     if popup_def:
         op_layer["popupInfo"] = popup_def
     return op_layer
@@ -400,8 +400,8 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
         },
         "version": "2.11"
     }
-    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, assignments_popup_def, layer_index=0, editable=True))
-    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1, editable=True))
+    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, assignments_popup_def, layer_index=0))
+    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1))
     item_properties["text"] = json.dumps(webmap_data)
 
     item = gis.content.add(item_properties, folder=folder_name)
@@ -441,8 +441,8 @@ def _v2_create_dispatcher_webmap(gis, folder_name, workforce_service_item, assig
         "authoringAppVersion": str(arcgis.__version__),
         "version": "2.11"
     }
-    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, assignments_popup_def, layer_index=0))
-    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1))
+    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, assignments_popup_def, layer_index=0, capabilities="Query,Sync"))
+    webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1, capabilities="Query,Sync"))
     item_properties["text"] = json.dumps(webmap_data)
     item = gis.content.add(item_properties, folder=folder_name)
     return item
@@ -708,9 +708,9 @@ def _v1_create_worker_webmap(gis, folder_name, assignments_item, workers_item, t
         "version": "2.11"
     }
 
-    webmap_data["operationalLayers"].append(_build_operational_layers(tracking_item, visibility=False))
-    webmap_data["operationalLayers"].append(_build_operational_layers(assignments_item, assignments_popup_def))
-    webmap_data["operationalLayers"].append(_build_operational_layers(workers_item, workers_popup_def))
+    webmap_data["operationalLayers"].append(_build_operational_layers(tracking_item, visibility=False, capabilities="Query"))
+    webmap_data["operationalLayers"].append(_build_operational_layers(assignments_item, assignments_popup_def, capabilities="Query,Sync"))
+    webmap_data["operationalLayers"].append(_build_operational_layers(workers_item, workers_popup_def, capabilities="Query,Sync"))
     item_properties["text"] = json.dumps(webmap_data)
 
     item = gis.content.add(item_properties, folder=folder_name)
@@ -751,14 +751,14 @@ def _v1_create_dispatcher_webmap(gis, folder_name, assignments_item, workers_ite
         "authoringAppVersion": str(arcgis.__version__),
         "version": "2.11"
     }
-    webmap_data["operationalLayers"].append(_build_operational_layers(assignments_item, assignments_popup_def))
-    webmap_data["operationalLayers"].append(_build_operational_layers(workers_item, workers_popup_def))
+    webmap_data["operationalLayers"].append(_build_operational_layers(assignments_item, assignments_popup_def, capabilities="Query,Sync"))
+    webmap_data["operationalLayers"].append(_build_operational_layers(workers_item, workers_popup_def, capabilities="Query,Sync"))
     item_properties["text"] = json.dumps(webmap_data)
     item = gis.content.add(item_properties, folder=folder_name)
     return item
 
 
-def _v1_create_service_with_layer(gis, folder_name, service_name, layer_definition, attachments=False):
+def _v1_create_service_with_layer(gis, folder_name, service_name, layer_definition, attachments=False, sync=True):
     """
     Creates a service, adds, and layer and optionally enables attachments
     :param gis: An authenticated GIS
@@ -772,7 +772,7 @@ def _v1_create_service_with_layer(gis, folder_name, service_name, layer_definiti
     spatial_reference = default_extent["spatialReference"]
     layer_definition["extent"] = default_extent
     if gis.content.is_service_name_available(service_name, "featureService"):
-        item = _v1_create_service(gis, service_name, folder_name, spatial_reference)
+        item = _v1_create_service(gis, service_name, folder_name, spatial_reference, sync=sync)
         item.update({
             "tags": "workforce"
         })
@@ -812,7 +812,7 @@ def _v1_create_service_with_location_tracking_layer(gis, folder_name, service_na
     :param layer_definition: The definition of the layer (dictionary)
     :return: The location tracking item
     """
-    item = _v1_create_service_with_layer(gis, folder_name, service_name, layer_definition)
+    item = _v1_create_service_with_layer(gis, folder_name, service_name, layer_definition, sync=False)
     item.layers[0].manager.update_definition({
         "timeInfo": {
             "startTimeField": item.layers[0].properties['editFieldsInfo']['creationDateField'],
@@ -828,9 +828,7 @@ def _v1_create_service_with_location_tracking_layer(gis, folder_name, service_na
                 "timeOffsetUnits": 'esriTimeUnitsCenturies'
             },
             "hasLiveData": True
-        },
-        "capabilities": "Query,Editing,Create,Update,Delete",
-        "syncEnabled": False
+        }
     })
     item.update({
         "tags": "workforce, Location Tracking",
@@ -839,7 +837,7 @@ def _v1_create_service_with_location_tracking_layer(gis, folder_name, service_na
     return item
 
 
-def _v1_create_service(gis, service_name, folder_name, spatial_ref):
+def _v1_create_service(gis, service_name, folder_name, spatial_ref, sync=True):
     """
     Helper method that creates a workforce service
     :param gis: An authenticated GIS
@@ -850,11 +848,14 @@ def _v1_create_service(gis, service_name, folder_name, spatial_ref):
     """
     create_params = {
         "name": service_name,
-        "capabilities": 'Query,Editing,Create,Update,Delete,Sync',
         "allowGeometryUpdates": True,
         "units": 'esriMeters',
-        "syncEnabled": True,
-        "syncCapabilities": {
+        "spatialReference": spatial_ref,
+        "capabilities": 'Query,Editing,Create,Update,Delete'
+    }
+    if sync:
+        create_params["syncEnabled"] = True
+        create_params["syncCapabilities"] = {
             "supportsAsync": True,
             "supportsRegisteringExistingData": True,
             "supportsSyncDirectionControl": True,
@@ -862,9 +863,8 @@ def _v1_create_service(gis, service_name, folder_name, spatial_ref):
             "supportsPerReplicaSync": True,
             "supportsSyncModelNone": True,
             "supportsRollbackOnFailure": True
-        },
-        "spatialReference": spatial_ref
-    }
+        }
+        create_params["capabilities"] = 'Query,Editing,Create,Update,Delete,Sync'
 
     return gis.content.create_service(
         service_name,
