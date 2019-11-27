@@ -24,8 +24,8 @@ import requests
 from requests import Session
 from requests_toolbelt.downloadutils import stream
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from arcgis.gis._impl._con._helpers import _filename_from_headers, _filename_from_url
-from arcgis.gis._impl._con._authguess import GuessAuth
+from ._helpers import _filename_from_headers, _filename_from_url
+from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 
 __version__ = "2.0.0"
@@ -124,9 +124,9 @@ class Connection(object):
         self._client_secret = kwargs.pop('client_secret', None)
         self._token_url = kwargs.pop('token_url', None)
 
-        if not (username and password and self._portal_connection):
+        if username is None and password is None and self._portal_connection is None:
             self._auth = "ANON"
-        elif (username and password and self._portal_connection):
+        elif ((not username is None and not password is None) or self._portal_connection):
             self._auth = "BUILTIN"
         if (username and password) and \
            self._client_id is None and \
@@ -227,16 +227,16 @@ class Connection(object):
             self._session.auth = GuessAuth(None, None)
         else:
             try:
-                from requests_negotiate_sspi import HttpNegotiateAuth
+                from .include.requests_negotiate_sspi import HttpNegotiateAuth
                 HAS_KERBEROS = True
             except:
                 HAS_KERBEROS = False
             if HAS_KERBEROS:
-                self._session.auth = HttpNegotiateAuth()
+                self._session.auth = None#HttpNegotiateAuth()
             else:
                 try:
-                    from requests_kerberos import HTTPKerberosAuth
-                    self._session.auth = HTTPKerberosAuth()
+                    from requests_kerberos import HTTPKerberosAuth, DISABLED
+                    self._session.auth = HTTPKerberosAuth(DISABLED)
                 except ImportError:
                     pass
                 except Exception as e:
@@ -286,6 +286,8 @@ class Connection(object):
                                       add a token to any token based security.
         ===========================   =====================================================
         """
+        if self._baseurl.endswith('/') == False:
+            self._baseurl += "/"
         url = path
         token_as_header = kwargs.pop('token_as_header', True)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
@@ -480,12 +482,17 @@ class Connection(object):
         force_bytes                   optional boolean.  Deprecated.
         ---------------------------   -----------------------------------------------------
         add_headers                   optional dict.  If provided, additional headers will be given for a single call.
+        ---------------------------   -----------------------------------------------------
+        post_json                     optional bool. If True, the data is pushed in the request's json parameter.  This is an edge case for Workflow Manager. The default is `False`.
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
 
         """
+        if self._baseurl.endswith("/") == False:
+            self._baseurl += "/"
         url = path
+        post_json = kwargs.pop("post_json", False)
         token_as_header = kwargs.pop('token_as_header', True)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
         if self._auth == "IWA":
@@ -545,10 +552,16 @@ class Connection(object):
                     params[k] = json.dumps(v)
                 elif isinstance(v, PropertyMap):
                     params[k] = json.dumps(dict(v))
-            resp = self._session.post(url=url,
-                                      data=params,
-                                      cert=cert,
-                                      files=files)
+            if post_json:  # edge case workflow
+                resp = self._session.post(url=url,
+                                          json=json.dumps(params),
+                                          cert=cert,
+                                          files=files)                
+            else:
+                resp = self._session.post(url=url,
+                                          data=params,
+                                          cert=cert,
+                                          files=files)
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err)
