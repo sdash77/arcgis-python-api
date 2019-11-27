@@ -109,7 +109,8 @@ class Assignment(FeatureModel):
         else:
             self.geometry = geometry
             self.assigned_date = assigned_date
-            self.assignment_read = assignment_read
+            if not project._is_v2_project:
+                self.assignment_read = assignment_read
             self.completed_date = completed_date
             self.declined_comment = declined_comment
             self.declined_date = declined_date
