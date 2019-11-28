@@ -833,12 +833,13 @@ def generate_origin_destination_cost_matrix(origins,
     ======================================  ==========================================================================================================================================
     
     :: returns the following as a named tuple:
+
         * solve_succeeded - Solve Succeeded as a bool
         * output_origin_destination_lines - Output Origin Destination Lines as a FeatureSet
         * output_origins - Output Origins as a FeatureSet
         * output_destinations - Output Destinations as a FeatureSet
 
-    Click `generateOriginDestinationCostMatrix`_ for additional help.
+    Click `GenerateOriginDestinationCostMatrix`_ for additional help.
     """
 
     if gis is None:
