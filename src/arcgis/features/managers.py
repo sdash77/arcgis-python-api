@@ -642,9 +642,8 @@ class SyncManager(object):
         content if the changes are already synced-up to all clients and the
         changes are no longer needed.
 
-        The change tracking cleaned only supported on the feature service 
-        admin API. Only the owner or the organization administrator can 
-        cleanup change tracking information.
+        Only the owner or the organization administrator can cleanup change 
+        tracking information.
         
         ==================     ====================================================================
         **Argument**           **Description**
