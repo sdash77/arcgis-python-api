@@ -240,7 +240,7 @@ def _tensor_scaler(tensor_batch, min_values, max_values, mode='minmax', create_v
         min_values = min_values.view(view_shape)
     if mode=='minmax':
         # new_value = (((old_value - old_min) / (old_max-old_min))*(new_max-new_min))+new_min
-        scaled_tensor_batch = (tensor_batch - min_values) / (max_values - min_values)
+        scaled_tensor_batch = (tensor_batch - min_values) / ( (max_values - min_values) + 1e-05)
     return scaled_tensor_batch
 
 def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
@@ -434,7 +434,7 @@ def prepare_data(path,
         norm_pct= kwargs.get('norm_pct')
         norm_pct = min(max(0, norm_pct), 1)
     else:
-        norm_pct = .1
+        norm_pct = .3
 
     if dataset_type == 'RCNN_Masks':
 
@@ -629,6 +629,10 @@ def prepare_data(path,
         data._scaled_max_values = batch_stats['scaled_max_values']
         data._scaled_mean_values = batch_stats['scaled_mean_values']
         data._scaled_std_values = batch_stats['scaled_std_values']
+
+        # Prevent Divide by zeros
+        data._band_max_values[data._band_min_values == data._band_max_values]+=1
+        data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
         
         # Scaling
         if kwargs.get('do_scale', None) is not None:
@@ -684,6 +688,14 @@ def prepare_data(path,
             for i, c in enumerate(data._multispectral_color_mapping):
                 if -1 in data._multispectral_color_mapping[c]:
                     data._multispectral_color_mapping[c] = random_color_list[i]
+
+        # prepare color array
+        alpha = kwargs.get('alpha', 0.7)
+        color_array = torch.tensor( list(data.color_mapping.values()) ).float() / 255
+        alpha_tensor = torch.tensor( [alpha]*len(color_array) ).view(-1, 1).float()
+        color_array = torch.cat( [ color_array, alpha_tensor ], dim=-1)
+        background_color = torch.tensor( [[0, 0, 0, 0]] ).float()
+        data._multispectral_color_array = torch.cat( [background_color, color_array] )
 
         # Prepare unknown bands list if bands data is missing
         if data._bands is None:

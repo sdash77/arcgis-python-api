@@ -229,14 +229,16 @@ class UnetClassifier(ArcGISModel):
         nrows = rows
         ncols=2
 
-        ds = self._data.valid_ds
-        if kwargs.get('type_ds', None) is not None:
-            type_ds = kwargs.get('type_ds')
-            if hasattr(self._data, type_ds):
-                ds = getattr(self._data, type_ds)
-            else:
-                e = Exception(f'could not find {str(type_ds)} in data.')
-                raise(e)
+        type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
+        if type_data_loader == 'training':
+            data_loader = self._data.train_dl
+        elif type_data_loader == 'validation':
+            data_loader = self._data.valid_dl
+        elif type_data_loader == 'testing':
+            data_loader = self._data.test_dl
+        else:
+            e = Exception(f'could not find {type_data_loader} in data.')
+            raise(e)
 
         rgb_bands = self._data._symbology_rgb_bands
         if kwargs.get('rgb_bands', None) is not None:
@@ -253,16 +255,6 @@ class UnetClassifier(ArcGISModel):
         imsize = 5
         if kwargs.get('imsize', None) is not None:
             imsize = kwargs.get('imsize')
-
-        do_scale = True
-        if kwargs.get('do_scale', None) is not None:
-            do_scale = kwargs.get('do_scale')  
-
-        do_normalize = True
-        if hasattr(self._data, '_do_normalize'):
-            do_normalize = getattr(self._data, '_do_normalize', True)
-        if kwargs.get('do_normalize', None) is not None:
-            do_normalize = kwargs.get('do_normalize')  
 
         title_font_size = 16
         if kwargs.get('top', None) is not None:
@@ -287,46 +279,48 @@ class UnetClassifier(ArcGISModel):
 
         # Get Batch
         x_batch, y_batch = [], []
-        for i in range(index, index+nrows):
-            x_batch.append(ds.x[i].data)
-            y_batch.append(ds.y[i].data[0])
-        x_batch = torch.stack(x_batch)
-
-        # Scaling and normalization
-        if do_scale:
-            x_batch = _tensor_scaler(x_batch, self._data._band_min_values, self._data._band_max_values, mode='minmax')
-        symbology_x_batch = x_batch[:, symbology_bands].cpu().numpy() # Scaled Images 0-1 for plotting
-        if do_normalize:
-            x_batch = ( x_batch - self._data._scaled_mean_values.view(1, -1, 1, 1) ) / self._data._scaled_std_values.view(1, -1, 1, 1)
-
-        # Extract Bands
-        if hasattr(self._data, '_extract_bands_tfm'):
-            x_batch = self._data._extract_bands_tfm((x_batch, None))[0]
+        i = 0
+        dl_iterater = iter(data_loader)
+        while i < nrows:
+            x, y = next(dl_iterater)
+            x_batch.append(x)
+            y_batch.append(y)
+            i+=self._data.batch_size
+        x_batch = torch.cat(x_batch)
+        # Denormalize X
+        y_batch = torch.cat(y_batch).cpu().numpy()
 
         # Get Predictions
         predictions = []
         for i in range(0, x_batch.shape[0], self._data.batch_size):
             predictions.append(self._predict_batch(x_batch[i:i+self._data.batch_size]))
+        predictions = torch.cat(predictions)
 
+        # Denormalize X
+        x_batch = (self._data._scaled_std_values.view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values.view(1, -1, 1, 1).to(x_batch)
+        
+        # Extract RGB Bands
+        symbology_x_batch = x_batch[:, symbology_bands]
+        
         # Channel first to channel last for plotting
-        symbology_x_batch = np.rollaxis(symbology_x_batch, 1, 4)
+        symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1).cpu().numpy()
         if symbology_x_batch.max() < 1.5:
             symbology_x_batch = symbology_x_batch.clip(0, 1)
-        y_batch = torch.stack(y_batch).cpu().numpy()
-        predictions = torch.cat(predictions).cpu().numpy()
 
-        #return x_batch, y_batch, predictions
-        
+        # Get color Array
+        color_array = self._data._multispectral_color_array
+        color_array[1:, 3] = alpha
+
         # Size for plotting
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
         fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
         for r in range(nrows):
             ax[r][0].imshow(symbology_x_batch[r])
-            y_rgb = _class_array_to_rbg(y_batch[r], self._data._multispectral_color_mapping, nodata)
+            y_rgb = color_array[y_batch[r][0]].cpu().numpy()
             ax[r][0].imshow(y_rgb, alpha=alpha)
             ax[r][0].axis('off')
             ax[r][1].imshow(symbology_x_batch[r])
-            p_rgb = _class_array_to_rbg(predictions[r], self._data._multispectral_color_mapping, nodata)
+            p_rgb = color_array[predictions[r]].cpu().numpy()
             ax[r][1].imshow(p_rgb, alpha=alpha)
             ax[r][1].axis('off')
             plt.subplots_adjust(top=top)

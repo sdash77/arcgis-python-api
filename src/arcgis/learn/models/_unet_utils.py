@@ -34,14 +34,16 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     if kwargs.get('n_items', None) is not None:
         n_items = kwargs.get('n_items')
 
-    ds = self.train_ds
-    if kwargs.get('type_ds', None) is not None:
-        type_ds = kwargs.get('type_ds')
-        if getattr(self, type_ds, None) is not None:
-            ds = getattr(self, type_ds)
-        else:
-            e = Exception(f'could not find {str(type_ds)} in data.')
-            raise(e)
+    type_data_loader = kwargs.get('data_loader', 'training') # options : traininig, validation, testing
+    if type_data_loader == 'training':
+        data_loader = self.train_dl
+    elif type_data_loader == 'validation':
+        data_loader = self.valid_dl
+    elif type_data_loader == 'testing':
+        data_loader = self.test_dl
+    else:
+        e = Exception(f'could not find {type_data_loader} in data.')
+        raise(e)
 
     rgb_bands = self._symbology_rgb_bands
     if kwargs.get('rgb_bands', None) is not None:
@@ -82,16 +84,29 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     n_items = min(n_items, len(self.x))
 
     x_batch, y_batch = [], []
-    for i in range(index, index+n_items):
-        x_batch.append(ds.x[i].data)
-        y_batch.append(ds.y[i].data[0])
-    x_batch = self._min_max_scaler(torch.stack(x_batch))
-    symbology_x_batch = x_batch[:, symbology_bands].cpu().numpy()
+    i = 0
+    dl_iterater = iter(data_loader)
+    while i < n_items:
+        x, y = next(dl_iterater)
+        x_batch.append(x)
+        y_batch.append(y)
+        i+=self.batch_size
+    x_batch = torch.cat(x_batch)
+    # Denormalize X
+    x_batch = (self._scaled_std_values.view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values.view(1, -1, 1, 1).to(x_batch)
+    y_batch = torch.cat(y_batch).cpu().numpy()
+
+    # Extract RGB Bands
+    symbology_x_batch = x_batch[:, symbology_bands]
 
     # Channel first to channel last for plotting
-    symbology_x_batch = np.rollaxis(symbology_x_batch, 1, 4)
+    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1).cpu().numpy()
     if symbology_x_batch.max() < 1.5:
         symbology_x_batch = symbology_x_batch.clip(0, 1)
+
+    # Get color Array
+    color_array = self._multispectral_color_array
+    color_array[1:, 3] = alpha
 
     # Size for plotting
     fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
@@ -101,7 +116,8 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
             if idx < symbology_x_batch.shape[0]:
                 axi  = ax[r][c]
                 axi.imshow(symbology_x_batch[idx])
-                y_rgb = _class_array_to_rbg(y_batch[idx], self._multispectral_color_mapping, nodata)
+                y_rgb = color_array[y_batch[idx][0]]#.cpu().numpy()
+                #y_rgb = _class_array_to_rbg(y_batch[idx][0], self._multispectral_color_mapping, nodata)
                 axi.imshow(y_rgb, alpha=alpha)
                 axi.axis('off')
             else:
