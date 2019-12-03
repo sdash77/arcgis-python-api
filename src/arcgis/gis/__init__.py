@@ -1727,17 +1727,14 @@ class UserManager(object):
             The user if successfully created, None if unsuccessful.
 
         """
-        #kwargs = locals()
         kwargs = list(locals())
         if self._gis.version >= [6,4]:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
                             'email', 'description', 'role', 'provider', 'idp_username',
                             'user_type', 'thumbnail', 'credits', 'groups', 'level'}
             params = {}
-            #for k,v in kwargs.items():
             for k in kwargs:
                 if k in allowed_keys:
-                    #params[k] = v
                     params[k] = locals()[k]
             return self._create64plus(**params)
         else:
@@ -2020,10 +2017,11 @@ class UserManager(object):
                     userDefaultSettings = self._portal.con.post('portals/self/userDefaultSettings',
                                                             {'f': 'json'},
                                                             ssl=True)
-                    if userDefaultSettings['userType'] == 'both':
-                        params['invitationList']['invitations'][0]['userType'] = 'both'
-                    else:
-                        params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
+                    for k in [udef for udef in userDefaultSettings.keys() if userDefaultSettings[udef]]:
+                        if not k in params['invitationList']['invitations'][0].keys():
+                            params['invitationList']['invitations'][0][k] = userDefaultSettings[k]
+                        if k == 'groups':
+                            params['invitationList']['invitations'][0][k] = userDefaultSettings[k]
                 except Exception as e:
                     params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
             if idp_username is not None:
@@ -2041,7 +2039,11 @@ class UserManager(object):
                     _log.error('Unable to create ' + username)
                     return None
                 else:
-                    return self.get(username)
+                    new_user = self.get(username)
+                    if params['invitationList']['invitations'][0]['groups']:
+                        for grp in params['invitationList']['invitations'][0]['groups']:
+                            self._gis.groups.get(grp).add_users([new_user])
+                    return new_user
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             params = {
