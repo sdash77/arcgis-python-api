@@ -1727,15 +1727,18 @@ class UserManager(object):
             The user if successfully created, None if unsuccessful.
 
         """
-        kwargs = locals()
+        #kwargs = locals()
+        kwargs = list(locals())
         if self._gis.version >= [6,4]:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
                             'email', 'description', 'role', 'provider', 'idp_username',
                             'user_type', 'thumbnail', 'credits', 'groups', 'level'}
             params = {}
-            for k,v in kwargs.items():
+            #for k,v in kwargs.items():
+            for k in kwargs:
                 if k in allowed_keys:
-                    params[k] = v
+                    #params[k] = v
+                    params[k] = locals()[k]
             return self._create64plus(**params)
         else:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
@@ -2013,7 +2016,16 @@ class UserManager(object):
                 #'message' : email_text
             }
             if self._gis._portal.is_arcgisonline:
-                params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
+                try:
+                    userDefaultSettings = self._portal.con.post('portals/self/userDefaultSettings',
+                                                            {'f': 'json'},
+                                                            ssl=True)
+                    if userDefaultSettings['userType'] == 'both':
+                        params['invitationList']['invitations'][0]['userType'] = 'both'
+                    else:
+                        params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
+                except Exception as e:
+                    params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
             if idp_username is not None:
                 if provider is None:
                     provider = 'enterprise'
