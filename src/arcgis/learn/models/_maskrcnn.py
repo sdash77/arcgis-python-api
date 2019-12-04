@@ -79,6 +79,7 @@ class MaskRCNN(ArcGISModel):
         self.learn = Learner(data, model, loss_func = mask_rcnn_loss)
         self.learn.callbacks.append(train_callback(self.learn))
         self.learn.model = self.learn.model.to(self._device)
+        self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
         self.learn.layer_groups = split_model_idx(self.learn.model, [28])

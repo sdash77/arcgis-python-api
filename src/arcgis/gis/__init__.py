@@ -2946,7 +2946,7 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def _add_by_part(self, file_path, itemid, item_properties, size=1e7):
+    def _add_by_part(self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None):
         """
         Performs a special add operation that chunks up a file and loads it piece by piece.
         This is an internal method used by `add`
@@ -2965,6 +2965,10 @@ class ContentManager(object):
         ---------------     --------------------------------------------------------------------
         multipart           Optional Boolean.  Loads a file by chunks to the Enterprise. The
                             default is False.
+        ---------------     --------------------------------------------------------------------
+        owner               Optional string. Defaults to the logged in user.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Name of the folder where placing item.
         ===============     ====================================================================
 
 
@@ -2978,9 +2982,23 @@ class ContentManager(object):
                 if not data:
                     break
                 yield data
-        user = self._gis.users.me.username
-        url = "{base}content/users/{user}/items/{itemid}/addPart".format(base=self._gis._portal.resturl,
-                                                                          user=user,
+
+        owner_name = owner
+        if isinstance(owner, User):
+            owner_name = owner.username
+
+        # If owner isn't specified, use the logged in user
+        if not owner_name:
+            owner_name = self._gis.users.me.username
+        
+        # Setup the item path, including the folder
+        path = 'content/users/' + owner_name
+        if folder and folder != '/':
+            folder_id = self._portal.get_folder_id(owner_name, folder)
+            path += '/' + folder_id
+
+        url = "{base}{path}/items/{itemid}/addPart".format(base=self._gis._portal.resturl,
+                                                                          path=path,
                                                                           itemid=itemid)
         file = {'file': None}
         params = {
@@ -3030,8 +3048,8 @@ class ContentManager(object):
 
         if all(messages):
             # commit the addition
-            url = "{base}content/users/{user}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
-                                                                             user=user,
+            url = "{base}{path}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
+                                                                             path=path,
                                                                              itemid=itemid)
             params = {
                 'f' : "json",
@@ -3042,8 +3060,8 @@ class ContentManager(object):
             params.update(item_properties)
             res = self._gis._con.post(url, params)
             if 'success' in res:
-                url = "{base}content/users/{user}/items/{itemid}/status".format(base=self._gis._portal.resturl,
-                                                                                user=user,
+                url = "{base}{path}/items/{itemid}/status".format(base=self._gis._portal.resturl,
+                                                                                path=path,
                                                                                 itemid=itemid)
                 import time
                 params = {'f' : 'json'}
@@ -3289,9 +3307,13 @@ class ContentManager(object):
                 file_path=data,
                 itemid=itemid,
                 item_properties=item_properties,
-                size=1e7)
-            # return the item
+                size=1e7,
+                owner=owner_name,
+                folder=folder)
+
+            # Update the thumbnail and return the item
             item = Item(gis=self._gis, itemid=itemid)
+            item.update(thumbnail=thumbnail)
             return item
         else:
             if filetype:

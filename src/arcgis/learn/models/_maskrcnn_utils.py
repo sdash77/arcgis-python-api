@@ -134,60 +134,63 @@ def mask_rcnn_loss(loss_value, *args):
             
     return final_loss
 
+def mask_to_dict(last_target, device):
+    target_list = []
+    for i in range(len(last_target)):
+
+        boxes =  []
+        masks = np.zeros((1, last_target[i].shape[1], last_target[i].shape[2]))
+        labels = []
+        for j in range(last_target[i].shape[0]):
+
+            mask = np.array(last_target[i].data[j])
+            obj_ids = np.unique(mask)
+
+            if len(obj_ids)==1:
+                continue
+
+            obj_ids = obj_ids[1:]
+            mask_j = mask == obj_ids[:, None, None]
+            num_objs = len(obj_ids)
+            for k in range(num_objs):
+                pos = np.where(mask_j[k])
+                xmin = np.min(pos[1])
+                xmax = np.max(pos[1])
+                ymin = np.min(pos[0])
+                ymax = np.max(pos[0])
+                boxes.append([xmin, ymin, xmax, ymax])
+
+            masks = np.append(masks, mask_j, axis = 0)
+            labels_j = torch.ones((num_objs,), dtype=torch.int64)
+            labels_j = labels_j*(j+1)
+            labels.append(labels_j)
+        
+        if(masks.shape[0]==1): # if no object in image
+            masks[0,50:51,50:51] = 1
+            labels = torch.tensor([0])
+            boxes = torch.tensor([[50.,50.,51.,51.]])
+        else:
+            labels = torch.cat(labels)
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+            masks = masks[1:,:,:]
+        masks = torch.as_tensor(masks, dtype=torch.uint8)
+        target = {}
+        target["boxes"] = boxes.to(device)
+        target["labels"] = labels.to(device)
+        target["masks"] = masks.to(device)
+        target_list.append(target)
+
+    return target_list
+
 class train_callback(LearnerCallback):
 
     def __init__(self, learn):
         super().__init__(learn)
    
     def on_batch_begin(self, last_input, last_target, **kwargs):
-        "Handle new batch `xb`,`yb` in `train` or validation."
-
-        target_list = []
-        for i in range(len(last_target)):
-
-            boxes =  []
-            masks = np.zeros((1, last_target[i].shape[1], last_target[i].shape[2]))
-            labels = []
-            for j in range(last_target[i].shape[0]):
-
-                mask = np.array(last_target[i].data[j])
-                obj_ids = np.unique(mask)
-
-                if len(obj_ids)==1:
-                    continue
-
-                obj_ids = obj_ids[1:]
-                mask_j = mask == obj_ids[:, None, None]
-                num_objs = len(obj_ids)
-                for k in range(num_objs):
-                    pos = np.where(mask_j[k])
-                    xmin = np.min(pos[1])
-                    xmax = np.max(pos[1])
-                    ymin = np.min(pos[0])
-                    ymax = np.max(pos[0])
-                    boxes.append([xmin, ymin, xmax, ymax])
-
-                masks = np.append(masks, mask_j, axis = 0)
-                labels_j = torch.ones((num_objs,), dtype=torch.int64)
-                labels_j = labels_j*(j+1)
-                labels.append(labels_j)
-            
-            if(masks.shape[0]==1): # if no object in image
-                masks[0,50:51,50:51] = 1
-                labels = torch.tensor([0])
-                boxes = torch.tensor([[50.,50.,51.,51.]])
-            else:
-                labels = torch.cat(labels)
-                boxes = torch.as_tensor(boxes, dtype=torch.float32)
-                masks = masks[1:,:,:]
-            masks = torch.as_tensor(masks, dtype=torch.uint8)
-            target = {}
-            target["boxes"] = boxes.cuda()
-            target["labels"] = labels.cuda()
-            target["masks"] = masks.cuda()
-            target_list.append(target)
-
+        "Handle new batch `xb`,`yb` in `train` or validation."        
+        target_list = mask_to_dict(last_target, self.c_device)
         self.learn.model.train()
-        last_input = [last_input, target_list]
+        last_input = [last_input.to(self.c_device), target_list]
         last_target = [torch.tensor([1]) for i in last_target]
         return {'last_input':last_input, 'last_target':last_target}            
