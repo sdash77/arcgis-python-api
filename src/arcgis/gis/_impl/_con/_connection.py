@@ -232,7 +232,7 @@ class Connection(object):
             except:
                 HAS_KERBEROS = False
             if HAS_KERBEROS:
-                self._session.auth = None#HttpNegotiateAuth()
+                self._session.auth = HttpNegotiateAuth()
             else:
                 try:
                     from requests_kerberos import HTTPKerberosAuth, DISABLED
@@ -292,7 +292,8 @@ class Connection(object):
         token_as_header = kwargs.pop('token_as_header', True)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
         if url.find('://') == -1:
-            if url.startswith('/') == False:
+            if url.startswith('/') == False and \
+               self._baseurl.endswith('/') == False:
                 url = "/" + url
             url = self._baseurl + url
         if kwargs.pop("ssl", False) or self._all_ssl:
