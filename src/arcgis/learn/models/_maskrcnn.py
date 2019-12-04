@@ -24,10 +24,12 @@ try:
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
     from fastai.basic_train import Learner
-    from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback
+    from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback, compute_class_AP
     from fastai.torch_core import split_model_idx
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
+    from fastai.basic_data import DatasetType
+    from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 
     HAS_FASTAI = True
 except Exception as e:
@@ -60,14 +62,27 @@ class MaskRCNN(ArcGISModel):
 
         super().__init__(data, backbone)
     
-        self._backbone = models.resnet50
+        if backbone is None:
+            self._backbone = models.resnet50
+        elif type(backbone) is str:
+            self._backbone = getattr(models, backbone)
+        else:
+            self._backbone = backbone
 
-        #if not self._check_backbone_support(self._backbone):
-        #    raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         self._code = instance_detector_prf
-
-        model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = data.chip_size)
+        
+        if self._backbone.__name__ is 'resnet50':
+            model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+        elif self._backbone.__name__ in ['resnet18','resnet34']:
+            backbone_small = create_body(self._backbone)
+            backbone_small.out_channels = 512
+            model = models.detection.MaskRCNN(backbone_small, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+        else:
+            backbone_fpn = resnet_fpn_backbone(self._backbone.__name__, True)
+            model = models.detection.MaskRCNN(backbone_fpn, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
         in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
@@ -79,13 +94,18 @@ class MaskRCNN(ArcGISModel):
         self.learn = Learner(data, model, loss_func = mask_rcnn_loss)
         self.learn.callbacks.append(train_callback(self.learn))
         self.learn.model = self.learn.model.to(self._device)
+        self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
         self.learn.layer_groups = split_model_idx(self.learn.model, [28])
         self.learn.create_opt(lr=3e-3)
 
         if pretrained_path is not None:
-            self.load(pretrained_path)           
+            self.load(pretrained_path)
+             
+    def unfreeze(self):
+        for _, param in self.learn.model.named_parameters():
+            param.requires_grad = True
 
     def __str__(self):
         return self.__repr__()
@@ -95,7 +115,7 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        return [models.detection.maskrcnn_resnet50_fpn.__name__]
+        return [*self._resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -168,12 +188,12 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {}
+        return {'average_precision_score': self.average_precision_score(show_progress=False)}
 
     def _predict_results(self, xb):
 
         self.learn.model.eval()
-        predictions = self.learn.model(xb.cuda())
+        predictions = self.learn.model(list(xb.to(self._device)))
         predictionsf =[]
         for i in range(len(predictions)):
             predictionsf.append({})
@@ -186,7 +206,8 @@ class MaskRCNN(ArcGISModel):
             del predictions[i]['labels']
             del predictions[i]['scores']
         del xb
-        torch.cuda.empty_cache()      
+        if self._device == torch.device('cuda'):
+            torch.cuda.empty_cache()
 
         return predictionsf
 
@@ -203,13 +224,11 @@ class MaskRCNN(ArcGISModel):
                 if len(out.shape) == 2: # for out dimension hxw (in case of only one predicted mask)
                     out = out[None]
                 ymask = np.where(out[0]> threshold, 1, 0)
-                #if torch.max(out[0]) > threshold:
                 if predictions[i]['scores'][0] > box_threshold:
                     pred_box[i].append(predictions[i]['boxes'][0])
                 for j in range(1,out.shape[0]):
                     ym1 = np.where(out[j]> threshold, j+1, 0)
                     ymask += ym1
-                    #if torch.max(out[j]) > threshold:
                     if predictions[i]['scores'][j] > box_threshold:
                         pred_box[i].append(predictions[i]['boxes'][j])
             else:
@@ -249,7 +268,7 @@ class MaskRCNN(ArcGISModel):
         ncols=2
     
         # Get Batch
-        xb,yb = self._data.one_batch('DatasetType.Valid')
+        xb,yb = self._data.one_batch(DatasetType.Valid)
         
         predictions = self._predict_results(xb)
 
@@ -280,4 +299,36 @@ class MaskRCNN(ArcGISModel):
                         ax[i][1].add_patch(rect)
             ax[i][1].axis('off')
         plt.subplots_adjust(top=0.95)
-        torch.cuda.empty_cache()
+        if self._device == torch.device('cuda'):
+            torch.cuda.empty_cache()
+
+    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.5, mean=False, show_progress=True):
+
+        """
+        Computes average precision on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        detect_thresh           Optional float. The probabilty above which
+                                a detection will be considered for computing
+                                average precision.
+        ---------------------   -------------------------------------------                        
+        iou_thresh              Optional float. The intersection over union
+                                threshold with the ground truth mask, above
+                                which a predicted mask will be
+                                considered a true positive.
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                average precision otherwise returns mean
+                                average precision.
+        =====================   ===========================================
+        :returns: `dict` if mean is False otherwise `float`
+        """
+
+        if mean:
+            aps = compute_class_AP(self, self._data.valid_dl, 1, show_progress, detect_thresh, iou_thresh, mean)
+            return aps
+        else:
+            aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh, iou_thresh)
+            return dict(zip(self._data.classes[1:], aps))

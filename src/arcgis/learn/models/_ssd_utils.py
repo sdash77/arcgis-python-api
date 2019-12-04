@@ -355,7 +355,6 @@ def compute_class_AP(ssd, dl, n_classes, show_progress, iou_thresh=0.5, detect_t
                 op = ssd._data.y.analyze_pred((output[0][i], output[1][i]), thresh=detect_thresh, nms_overlap=iou_thresh, ssd=ssd, ret_scores=True, device=ssd._device)
                 tgt_bbox, tgt_clas = ssd._get_y(target[0][i], target[1][i])
                 
-
                 try:
                     bbox_pred, preds, scores = op
                     if len(bbox_pred) != 0 and len(tgt_bbox) != 0:

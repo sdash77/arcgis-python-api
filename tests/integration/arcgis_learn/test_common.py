@@ -297,7 +297,7 @@ class Test_Common(unittest.TestCase):
         )
 
         object_detection_inferencing(
-            os.path.join(self.obj_detection_data2, 'models/post_fit_maskrcnn/post_fit_maskrcnn.emd'),
+            os.path.join(self.maskrcnn_data1, 'models/post_fit_maskrcnn/post_fit_maskrcnn.emd'),
             self.obj_detection_inference_data1,
             os.environ["object_detection_inferencing_result_maskrcnn"]
         )

@@ -2627,8 +2627,8 @@ def solve_vehicle_routing_problem(
                                             not the underlying streets that are searched when finding the
                                             route.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    route_line_simplif                      Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for 
-    ication_tolerance                       routes and directions. The value you provide for this parameter is ignored unless Travel Mode is set to 
+    route_line_simplifi cation_tolerance    Optional LinearUnit. Specify by how much you want to simplify the geometry of the output lines for 
+                                            routes and directions. The value you provide for this parameter is ignored unless Travel Mode is set to 
                                             Custom, which is the default value. The tool also ignores this parameter if the ``populate_route_lines`` parameter 
                                             is unchecked (False).
                                             Simplification maintains critical
@@ -2706,8 +2706,8 @@ def solve_vehicle_routing_problem(
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    time_zone_usage_for                     Optional string. Specifies the time zone for the input date-time fields supported by the tool. This 
-    _time_fields                            parameter specifies the time zone for the following fields: ``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``, 
+    time_zone_usage_ for_time_fields        Optional string. Specifies the time zone for the input date-time fields supported by the tool. This 
+                                            parameter specifies the time zone for the following fields: ``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``, 
                                             ``TimeWindowEnd2``, ``InboundArriveTime``, and ``OutboundDepartTime`` on orders. ``TimeWindowStart1``, ``TimeWindowEnd1``, 
                                             ``TimeWindowStart2``, and ``TimeWindowEnd2`` on depots. ``EarliestStartTime`` and ``LatestStartTime`` on routes. 
                                             ``TimeWindowStart`` and ``TimeWindowEnd`` on breaks. 

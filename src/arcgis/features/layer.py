@@ -9,6 +9,7 @@ import json
 import os
 from re import search
 import time
+import concurrent.futures
 import six
 from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
@@ -1690,7 +1691,8 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def calculate(self, where, calc_expression,
                   sql_format="standard", version=None,
-                  sessionid=None, return_edit_moment=None):
+                  sessionid=None, return_edit_moment=None, 
+                  future=False):
         """
         The calculate operation is performed on a feature layer
         resource. It updates the values of one or more fields in an
@@ -1746,6 +1748,13 @@ class FeatureLayer(Layer):
                                 key. This parameter applies only if the
                                 `isDataBranchVersioned` property of the layer is
                                 true.
+        ---------------------   ----------------------------------------------------
+        future                  Optional Boolean.  If True, the result is returned
+                                as a future object and the results are obtained in 
+                                an asynchronous fashion.  False is the default.
+                                
+                                **This applies to 10.8+ only**
+                                
         =====================   ====================================================
 
         .. code-block:: python
@@ -1786,7 +1795,16 @@ class FeatureLayer(Layer):
             params['sessionID'] = sessionid
         if isinstance(return_edit_moment, bool):
             params['returnEditMoment'] = return_edit_moment
-
+        if "supportsASyncCalculate" in self.properties and \
+           self.properties.supportsASyncCalculate and \
+           future:
+            params['async'] = True
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            res = self._con.post(path=url,
+                                 postdata=params, token=self._token)
+            future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+            executor.shutdown(False)
+            return future            
         return self._con.post(path=url,
                               postdata=params, token=self._token)
 
@@ -2716,7 +2734,69 @@ class FeatureLayerCollection(_GISResource):
         elif res is not None:
             return res
         return None
-
+    # ----------------------------------------------------------------------
+    def _cleanup_change_tracking(self, 
+                                 layers,
+                                 retention_period,
+                                 period_unit='days',
+                                 min_server_gen=None,
+                                 replica_id=None,
+                                 future=False):
+        """
+        
+        
+        
+        :returns: Boolean
+        
+        """
+        url = "{url}/cleanupChangeTracking".format(url=self._url)
+        params = {
+            "f": "json",
+            'layers' : layers,
+            'retentionPeriod' : retention_period,
+            'retentionPeriodUnits' : period_unit
+        }
+        if min_server_gen:
+            params['minServerGen'] = min_server_gen
+        if replica_id:
+            params['replicaId'] = replica_id
+        if future:
+            params['async'] = future
+            res = self._con.post(url, params)
+            if "statusUrl" in res:
+                import concurrent.futures
+                executor =  concurrent.futures.ThreadPoolExecutor(1)
+                res = self._con.post(path=url, postdata=params, token=self._token)
+                future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+                executor.shutdown(False)
+                return future                
+            return res
+        else:
+            res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    # ----------------------------------------------------------------------
+    def _status_via_url(self, con, url, params):
+        """
+        performs the asynchronous check to see if the operation finishes
+        """
+        status_allowed = ['Pending', 'InProgress', 'Completed', 'Failed ImportChanges',
+                          'ExportChanges', 'ExportingData', 'ExportingSnapshot',
+                          'ExportAttachments', 'ImportAttachments', 'ProvisioningReplica',
+                          'UnRegisteringReplica', 'CompletedWithErrors']
+        status = con.get(url, params)
+        while not status['status'] in status_allowed:
+            if status['status'] == 'Completed':
+                return status
+            elif status['status'] == 'CompletedWithErrors':
+                break
+            elif 'fail' in status['status'].lower():
+                break
+            elif 'error' in status['status'].lower():
+                break
+            status = con.get(url, params)
+        return status    
     # ----------------------------------------------------------------------
     def _synchronize_replica(self,
                              replica_id,

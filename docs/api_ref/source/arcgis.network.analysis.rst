@@ -24,17 +24,17 @@ solve_location_allocation
 generate_origin_destination_cost_matrix
 ------------------
 .. autofunction:: arcgis.network.analysis.generate_origin_destination_cost_matrix
-.. _generateOriginDestinationCostMatrix: https://logistics.arcgis.com:443/arcgis/rest/directories/arcgisoutput/World/OriginDestinationCostMatrix_GPServer/World_OriginDestinationCostMatrix/GenerateOriginDestinationCostMatrix.htm
+.. _GenerateOriginDestinationCostMatrix: https://logistics.arcgis.com:443/arcgis/rest/directories/arcgisoutput/World/OriginDestinationCostMatrix_GPServer/World_OriginDestinationCostMatrix/GenerateOriginDestinationCostMatrix.htm
 
 find_routes
 ---------------
 .. autofunction:: arcgis.network.analysis.find_routes
-.. _FindRoutes: https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/ServiceAreas_GPServer/World_ServiceAreas/GenerateServiceAreas.htm
+.. _FindRoutes: https://developers.arcgis.com/rest/network/api-reference/route-asynchronous-service.htm
 
 generate_service_areas
 -----------------------
 .. autofunction:: arcgis.network.analysis.generate_service_areas
-
+.. _GenerateServiceAreas: https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/ServiceAreas_GPServer/World_ServiceAreas/GenerateServiceAreas.htm
 
 get_travel_modes
 -----------------------
