@@ -2015,13 +2015,14 @@ class UserManager(object):
             if self._gis._portal.is_arcgisonline:
                 try:
                     userDefaultSettings = self._portal.con.post('portals/self/userDefaultSettings',
-                                                            {'f': 'json'},
-                                                            ssl=True)
+                                                                {'f': 'json'},
+                                                                 ssl=True)
                     for k in [udef for udef in userDefaultSettings.keys() if userDefaultSettings[udef]]:
                         if not k in params['invitationList']['invitations'][0].keys():
                             params['invitationList']['invitations'][0][k] = userDefaultSettings[k]
-                        if k == 'groups':
-                            params['invitationList']['invitations'][0][k] = userDefaultSettings[k]
+                        if k == 'groups' and not params['invitationList']['invitations'][0].get(k):
+                            #params['invitationList']['invitations'][0][k] = ",".join(self._gis.groups.get(userDefaultSettings[k][0]).id)
+                            params['invitationList']['invitations'][0][k] = ",".join(userDefaultSettings[k])
                 except Exception as e:
                     params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
             if idp_username is not None:
@@ -2039,11 +2040,11 @@ class UserManager(object):
                     _log.error('Unable to create ' + username)
                     return None
                 else:
-                    new_user = self.get(username)
-                    if params['invitationList']['invitations'][0]['groups']:
-                        for grp in params['invitationList']['invitations'][0]['groups']:
-                            self._gis.groups.get(grp).add_users([new_user])
-                    return new_user
+                    return self.get(username)
+                    # if params['invitationList']['invitations'][0]['groups']:
+                    #     for grp in params['invitationList']['invitations'][0]['groups']:
+                    #         self._gis.groups.get(grp).add_users([new_user])
+                    # return new_user
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             params = {
