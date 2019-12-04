@@ -1727,15 +1727,15 @@ class UserManager(object):
             The user if successfully created, None if unsuccessful.
 
         """
-        kwargs = list(locals())
+        kwargs = locals()
         if self._gis.version >= [6,4]:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
                             'email', 'description', 'role', 'provider', 'idp_username',
                             'user_type', 'thumbnail', 'credits', 'groups', 'level'}
             params = {}
-            for k in kwargs:
+            for k,v in kwargs.items():
                 if k in allowed_keys:
-                    params[k] = locals()[k]
+                    params[k] = v
             return self._create64plus(**params)
         else:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
