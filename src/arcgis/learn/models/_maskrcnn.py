@@ -28,6 +28,8 @@ try:
     from fastai.torch_core import split_model_idx
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
+    from fastai.basic_data import DatasetType
+    from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 
     HAS_FASTAI = True
 except Exception as e:
@@ -60,14 +62,27 @@ class MaskRCNN(ArcGISModel):
 
         super().__init__(data, backbone)
     
-        self._backbone = models.resnet50
+        if backbone is None:
+            self._backbone = models.resnet50
+        elif type(backbone) is str:
+            self._backbone = getattr(models, backbone)
+        else:
+            self._backbone = backbone
 
-        #if not self._check_backbone_support(self._backbone):
-        #    raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         self._code = instance_detector_prf
-
-        model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = data.chip_size)
+        
+        if self._backbone.__name__ is 'resnet50':
+            model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+        elif self._backbone.__name__ in ['resnet18','resnet34']:
+            backbone_small = create_body(self._backbone)
+            backbone_small.out_channels = 512
+            model = models.detection.MaskRCNN(backbone_small, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+        else:
+            backbone_fpn = resnet_fpn_backbone(self._backbone.__name__, True)
+            model = models.detection.MaskRCNN(backbone_fpn, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
         in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
@@ -86,7 +101,11 @@ class MaskRCNN(ArcGISModel):
         self.learn.create_opt(lr=3e-3)
 
         if pretrained_path is not None:
-            self.load(pretrained_path)           
+            self.load(pretrained_path)
+             
+    def unfreeze(self):
+        for _, param in self.learn.model.named_parameters():
+            param.requires_grad = True
 
     def __str__(self):
         return self.__repr__()
@@ -96,7 +115,7 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        return [models.detection.maskrcnn_resnet50_fpn.__name__]
+        return [*self._resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
