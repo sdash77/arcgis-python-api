@@ -728,6 +728,66 @@ class GIS(object):
         self._product_version = [int(i) for i in self._portal.get_version().split('.')]
         return self._product_version
     #----------------------------------------------------------------------
+    @property
+    def org_settings(self):
+        """
+        The portal settings resource is used to return a view of the 
+        portal's configuration as seen by the current users, either 
+        anonymous or logged in. Information returned by this resource 
+        includes helper services, allowed redirect URIs, and the current 
+        configuration for any access notices or information banners.
+        
+        :returns: Dictionary
+        
+        """
+        if self.version >= [7,4]:
+            url = "portals/self/settings"
+            params = {'f' : 'json'}
+            return self._con.post(url, params)
+        return    
+    #----------------------------------------------------------------------
+    @org_settings.setter
+    def org_settings(self, settings):
+        """
+        This operation allows you to enable and customize an access notice 
+        and informational banner for your organization. The access notice, 
+        for authenticated and anonymous access, acts as a terms of service 
+        that users must agree to before being able to access the portal 
+        site. The informational banner allows you to alert members of your 
+        organization about your site's current status and content, such as 
+        a notice that the site is currently in read-only mode or 
+        containing content of a specific classification level. 
+        
+        ======================     ===============================================================
+        **Parameters**             **Description**
+        ----------------------     ---------------------------------------------------------------
+        settings                   Required Dict.  A dictionary of the settings
+        
+                                    ==========================    =============================================
+                                    **Fields**                    **Description**
+                                    --------------------------    ---------------------------------------------
+                                    anonymousAccessNotice         Dict. A JSON object representing a notice that is shown to your organization's anonymous users.
+                                                                  Ex: {'title': 'Anonymous Access Notice Title', 'text': 'Anonymous Access Notice Text', 'buttons': 'acceptAndDecline', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    authenticatedAccessNotice     Dict. A JSON object representing a notice that is shown to your organization's authenticated users.
+                                                                  Ex: {'title': 'Authenticated Access Notice Title', 'text': 'Authenticated Access Notice Text', 'buttons': 'okOnly', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    informationalBanner           Dict. A JSON object representing the informational banner that is shown at the top of your organization's page.
+                                                                  Ex: {'text': 'Header Text', 'bgColor': 'grey', 'fontColor': 'blue', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    clearEmptyFields              Bool.  If True, any empty dictionary will be set to null.
+                                    ==========================    =============================================
+                                    
+        ======================     ===============================================================
+        
+        """
+        if self.version >= [7,4] and \
+           isinstance(settings, dict):
+            url = "portals/self/settings/update"
+            params = {'f' : 'json'}
+            params.update(settings)
+            self._con.post(url, params)
+    #----------------------------------------------------------------------
     def __str__(self):
         return 'GIS @ {url} version:{version}'.format(url=self.url,
                                     version=".".join([str(i) for i in self._product_version]))
