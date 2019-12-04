@@ -2040,7 +2040,6 @@ class UserManager(object):
                     return None
                 else:
                     return self.get(username)
-                
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             params = {
