@@ -192,9 +192,8 @@ class SingleShotDetector(ArcGISModel):
                 num_features = feature_sizes[-2][-1]
                 num_channels = feature_sizes[-2][1]
                 backbone_cut = -3
-                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
-            else:
-                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+            ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+
         else:
             raise Exception('SSDVersion can only be 1 or 2')
 

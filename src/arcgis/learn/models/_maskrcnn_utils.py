@@ -9,6 +9,8 @@ import PIL
 import numpy as np
 from skimage import io
 import matplotlib.pyplot as plt
+from fastprogress import progress_bar
+from torch import LongTensor
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
@@ -191,6 +193,124 @@ class train_callback(LearnerCallback):
         "Handle new batch `xb`,`yb` in `train` or validation."        
         target_list = mask_to_dict(last_target, self.c_device)
         self.learn.model.train()
-        last_input = [last_input.to(self.c_device), target_list]
+        last_input = [list(last_input.to(self.c_device)), target_list]
         last_target = [torch.tensor([1]) for i in last_target]
-        return {'last_input':last_input, 'last_target':last_target}            
+        return {'last_input':last_input, 'last_target':last_target}
+
+def masks_iou(masks1, masks2):
+
+    if masks1.shape[0] == 0 or masks2.shape[0] == 0:
+        return torch.zeros((masks1.shape[0], masks2.shape[0]))
+    masks1 = masks1.permute(1,2,0)
+    masks2 = masks2.permute(1,2,0)
+    masks1 = torch.reshape(masks1 > .5, (-1, masks1.shape[-1])).type(torch.float64)
+    masks2 = torch.reshape(masks2 > .5, (-1, masks2.shape[-1])).type(torch.float64)
+    area1 = torch.sum(masks1, dim=0)
+    area2 = torch.sum(masks2, dim=0)
+
+    intersections = torch.mm(masks1.transpose(1,0), masks2)
+    union = area1[:, None] + area2[None, :] - intersections
+    overlaps = intersections / union
+    return overlaps
+
+def compute_matches(gt_class_ids, gt_masks,
+                    pred_class_ids, pred_scores, pred_masks,
+                    iou_threshold=0.5, detect_threshold=0.5):
+
+    indices = torch.argsort(pred_scores, descending=True)
+    pred_class_ids = pred_class_ids[indices]
+    pred_scores = pred_scores[indices]
+    pred_masks = pred_masks[indices]
+
+    ious_mask = masks_iou(pred_masks, gt_masks)
+
+    pred_match = -1 * torch.ones([pred_masks.shape[0]])
+    if 0 not in ious_mask.shape:
+        max_iou, matches = ious_mask.max(1)
+        detected = []
+        for i in range(len(pred_class_ids)):
+            if max_iou[i] >= iou_threshold and pred_scores[i] >= detect_threshold and matches[i] not in detected and gt_class_ids[matches[i]] == pred_class_ids[i]:
+                detected.append(matches[i])
+                pred_match[i] = pred_class_ids[i]
+
+    return pred_match
+
+def compute_ap(gt_class_ids, gt_masks,
+               pred_class_ids, pred_scores, pred_masks,
+               iou_threshold=0.5, detect_threshold=0.5):
+
+    pred_match = compute_matches(
+        gt_class_ids, gt_masks,
+        pred_class_ids, pred_scores, pred_masks,
+        iou_threshold, detect_threshold)
+
+    precisions = torch.cumsum(pred_match > -1, dim=0) / (torch.arange(len(pred_match)) + 1)
+    recalls = torch.cumsum(pred_match > -1, dim=0).type(torch.float64) / len(gt_class_ids)
+
+    precisions = torch.cat([torch.tensor([0]), precisions, torch.tensor([0])]).type(torch.float64)
+    recalls = torch.cat([torch.tensor([0],dtype=torch.float64), recalls, torch.tensor([1], dtype=torch.float64)])
+
+    for i in range(len(precisions) - 2, -1, -1):
+        precisions[i] = torch.max(precisions[i], precisions[i + 1])
+
+    indices = np.where(recalls[:-1] != recalls[1:])[0] + 1
+    mAP = torch.sum((recalls[indices] - recalls[indices - 1]) *
+                precisions[indices])
+
+    return mAP
+
+def compute_class_AP(model, dl, n_classes, show_progress, detect_thresh=0.5, iou_thresh=0.5, mean=False):
+
+    model.learn.model.eval()
+    if mean:
+        aps = []
+    else:
+        aps = [[] for _ in range(n_classes)]
+    with torch.no_grad():
+        for input,target in progress_bar(dl, display=show_progress):
+            predictions = model.learn.model(list(input))
+            ground_truth = mask_to_dict(target, model._device)
+            for i in range(len(predictions)):
+
+                predictions[i]["masks"] = predictions[i]["masks"].squeeze()
+                if predictions[i]["masks"].shape[0] == 0:
+                    continue
+                if len(predictions[i]["masks"].shape) == 2:
+                    predictions[i]["masks"] = predictions[i]["masks"][None]
+                if mean:
+                    ap = compute_ap(ground_truth[i]["labels"],
+                                    ground_truth[i]["masks"],
+                                    predictions[i]["labels"],
+                                    predictions[i]["scores"],
+                                    predictions[i]["masks"],
+                                    iou_thresh,
+                                    detect_thresh)
+                    aps.append(ap)
+                else:
+                    for k in range(1, n_classes+1):
+                        gt_labels_index = (ground_truth[i]["labels"]== k).nonzero().reshape(-1)
+                        gt_labels = ground_truth[i]["labels"][gt_labels_index]
+                        gt_masks = ground_truth[i]["masks"][gt_labels_index]
+                        pred_labels_index = (predictions[i]["labels"]== k).nonzero().reshape(-1)
+                        pred_labels = predictions[i]["labels"][pred_labels_index]
+                        pred_masks = predictions[i]["masks"][pred_labels_index]
+                        pred_scores = predictions[i]["scores"][pred_labels_index]
+                        if len(gt_labels):
+                            ap = compute_ap(gt_labels,
+                                            gt_masks,
+                                            pred_labels,
+                                            pred_scores,
+                                            pred_masks,
+                                            iou_thresh,
+                                            detect_thresh)
+                            if not(torch.isnan(ap) or torch.isinf(ap)):
+                                aps[k-1].append(ap)
+    if mean:
+        aps = np.mean(aps, axis=0)
+    else:
+        for i in range(n_classes):
+            aps[i] = np.mean(aps[i])
+    if model._device == torch.device('cuda'):
+        torch.cuda.empty_cache()
+    return aps
+    

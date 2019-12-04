@@ -24,7 +24,7 @@ try:
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
     from fastai.basic_train import Learner
-    from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback
+    from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback, compute_class_AP
     from fastai.torch_core import split_model_idx
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
@@ -188,12 +188,12 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {}
+        return {'average_precision_score': self.average_precision_score(show_progress=False)}
 
     def _predict_results(self, xb):
 
         self.learn.model.eval()
-        predictions = self.learn.model(xb.cuda())
+        predictions = self.learn.model(list(xb.to(self._device)))
         predictionsf =[]
         for i in range(len(predictions)):
             predictionsf.append({})
@@ -206,7 +206,8 @@ class MaskRCNN(ArcGISModel):
             del predictions[i]['labels']
             del predictions[i]['scores']
         del xb
-        torch.cuda.empty_cache()      
+        if self._device == torch.device('cuda'):
+            torch.cuda.empty_cache()
 
         return predictionsf
 
@@ -223,13 +224,11 @@ class MaskRCNN(ArcGISModel):
                 if len(out.shape) == 2: # for out dimension hxw (in case of only one predicted mask)
                     out = out[None]
                 ymask = np.where(out[0]> threshold, 1, 0)
-                #if torch.max(out[0]) > threshold:
                 if predictions[i]['scores'][0] > box_threshold:
                     pred_box[i].append(predictions[i]['boxes'][0])
                 for j in range(1,out.shape[0]):
                     ym1 = np.where(out[j]> threshold, j+1, 0)
                     ymask += ym1
-                    #if torch.max(out[j]) > threshold:
                     if predictions[i]['scores'][j] > box_threshold:
                         pred_box[i].append(predictions[i]['boxes'][j])
             else:
@@ -269,7 +268,7 @@ class MaskRCNN(ArcGISModel):
         ncols=2
     
         # Get Batch
-        xb,yb = self._data.one_batch('DatasetType.Valid')
+        xb,yb = self._data.one_batch(DatasetType.Valid)
         
         predictions = self._predict_results(xb)
 
@@ -300,4 +299,36 @@ class MaskRCNN(ArcGISModel):
                         ax[i][1].add_patch(rect)
             ax[i][1].axis('off')
         plt.subplots_adjust(top=0.95)
-        torch.cuda.empty_cache()
+        if self._device == torch.device('cuda'):
+            torch.cuda.empty_cache()
+
+    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.5, mean=False, show_progress=True):
+
+        """
+        Computes average precision on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        detect_thresh           Optional float. The probabilty above which
+                                a detection will be considered for computing
+                                average precision.
+        ---------------------   -------------------------------------------                        
+        iou_thresh              Optional float. The intersection over union
+                                threshold with the ground truth mask, above
+                                which a predicted mask will be
+                                considered a true positive.
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                average precision otherwise returns mean
+                                average precision.
+        =====================   ===========================================
+        :returns: `dict` if mean is False otherwise `float`
+        """
+
+        if mean:
+            aps = compute_class_AP(self, self._data.valid_dl, 1, show_progress, detect_thresh, iou_thresh, mean)
+            return aps
+        else:
+            aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh, iou_thresh)
+            return dict(zip(self._data.classes[1:], aps))
