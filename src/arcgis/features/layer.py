@@ -683,6 +683,7 @@ class FeatureLayer(Layer):
               return_true_curves=False,
               return_exceeded_limit_features=None,
               as_df=False,
+              datum_transformation=None,
               **kwargs):
         """
         Queries a feature layer based on a sql statement
@@ -866,6 +867,31 @@ class FeatureLayer(Layer):
         as_df                               Optional boolean.  If True, the results are returned as a DataFrame
                                             instead of a FeatureSet.
         -------------------------------     --------------------------------------------------------------------
+        datum_transformation                Optional Integer/Dictionary.  This parameter applies a datum transformation while 
+                                            projecting geometries in the results when out_sr is different than the layer's spatial
+                                            reference. When specifying transformations, you need to think about which datum 
+                                            transformation best projects the layer (not the feature service) to the `outSR` and 
+                                            `sourceSpatialReference` property in the layer properties. For a list of valid datum 
+                                            transformation ID values ad well-known text strings, see `Coordinate systems and 
+                                            transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_. 
+                                            For more information on datum transformations, please see the transformation 
+                                            parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
+                                            
+                                            **Examples**
+            
+            
+                                                ===========     ===================================
+                                                Inputs          Description
+                                                -----------     -----------------------------------
+                                                WKID            Integer. Ex: datum_transformation=4326
+                                                -----------     -----------------------------------
+                                                WKT             Dict. Ex: datum_transformation={"wkt": "<WKT>"}
+                                                -----------     -----------------------------------
+                                                Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
+                                                ===========     ===================================
+                                            
+                                            
+        -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
                                             explicitly implemented on the function. A complete list of functions
@@ -902,7 +928,9 @@ class FeatureLayer(Layer):
         params['returnIdsOnly'] = return_ids_only
         params['returnZ'] = return_z
         params['returnM'] = return_m
-
+        if not datum_transformation is None:
+            params['datumTransformation'] = datum_transformation
+            
         # convert out_fields to a comma separated string
         if isinstance(out_fields, (list, tuple)):
             out_fields = ','.join(out_fields)
