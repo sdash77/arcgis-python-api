@@ -7013,7 +7013,8 @@ class Item(dict):
                 try:
                     with _DisableLogger():
                         self._populate_layers()
-                except:
+                except Exception as e:
+                    print(e)
                     pass
                 return self['layers']
         elif name == 'tables':
@@ -9863,8 +9864,7 @@ class _GISResource(object):
     """
     def __init__(self, url, gis=None):
 
-        from .server._common import ServerConnection
-        from .._impl.connection import _ArcGISConnection
+        from ._impl._con import Connection
         self._hydrated = False
         self.url = url
         self._url = url
@@ -9875,7 +9875,7 @@ class _GISResource(object):
             self._con = gis._con
         else:
             self._gis = gis
-            if isinstance(gis, (ServerConnection, _ArcGISConnection)):
+            if isinstance(gis, Connection):
                 self._con = gis
             else:
                 self._con = gis._con
@@ -9934,8 +9934,9 @@ class _GISResource(object):
                 if self._con._token is None:
                     self._lazy_token = None
                 else:
-                    if isinstance(self._con, arcgis._impl._ArcGISConnection):
-                        self._lazy_token = self._con.generate_portal_server_token(self._url)
+                    from ._impl._con import Connection
+                    if isinstance(self._con, Connection):
+                        self._lazy_token = self._con.token#generate_portal_server_token(self._url)
                     else:
                         self._lazy_token = self._con.token
 

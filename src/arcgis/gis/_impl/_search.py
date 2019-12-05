@@ -170,6 +170,7 @@ def _handle_response(res, stype, gis, as_dict):
     :returns: List
 
     """
+    from arcgis.gis import GIS, Item, User, Group
     if as_dict:
         return res['results']
     elif str(stype).lower() in {"content", "item", "items", "group_content"}:
