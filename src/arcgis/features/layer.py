@@ -1582,43 +1582,118 @@ class FeatureLayer(Layer):
                       deletes=None,
                       gdb_version=None,
                       use_global_ids=False,
-                      rollback_on_failure=True):
+                      rollback_on_failure=True,
+                      return_edit_moment=False,
+                      attachments=None,
+                      true_curve_client=False,
+                      session_id=None,
+                      use_previous_moment=False,
+                      datum_transformation=None):
         """
-           This operation adds, updates, and deletes features to the
-           associated feature layer or table in a single call.
+        This operation adds, updates, and deletes features to the
+        associated feature layer or table in a single call.
 
-           =====================   ===========================================
-           **Inputs**              **Description**
-           ---------------------   -------------------------------------------
-           adds                    Optional FeatureSet/List. The array of
-                                   features to be added.
-           ---------------------   -------------------------------------------
-           updates                 Optional FeatureSet/List. The array of
-                                   features to be updated.
-           ---------------------   -------------------------------------------
-           deletes                 Optional FeatureSet/List. string of OIDs to
-                                   remove from service
-           ---------------------   -------------------------------------------
-           use_global_ids          Optional boolean. Instead of referencing
-                                   the default Object ID field, the service
-                                   will look at a GUID field to track changes.
-                                   This means the GUIDs will be passed instead
-                                   of OIDs for delete, update or add features.
-           ---------------------   -------------------------------------------
-           gdb_version             Optional boolean. Geodatabase version to
-                                   apply the edits.
-           ---------------------   -------------------------------------------
-           rollback_on_failure     Optional boolean. Optional parameter to
-                                   specify if the edits should be applied only
-                                   if all submitted edits succeed. If false, the
-                                   server will apply the edits that succeed
-                                   even if some of the submitted edits fail.
-                                   If true, the server will apply the edits
-                                   only if all edits succeed. The default
-                                   value is true.
-           =====================   ===========================================
+        =====================   ======================================================================================
+        **Inputs**              **Description**
+        ---------------------   --------------------------------------------------------------------------------------
+        adds                    Optional FeatureSet/List. The array of features to be added.
+        ---------------------   --------------------------------------------------------------------------------------
+        updates                 Optional FeatureSet/List. The array of features to be updated.
+        ---------------------   --------------------------------------------------------------------------------------
+        deletes                 Optional FeatureSet/List. string of OIDs to remove from service
+        ---------------------   --------------------------------------------------------------------------------------
+        use_global_ids          Optional boolean. Instead of referencing the default Object ID field, the service
+                                will look at a GUID field to track changes. This means the GUIDs will be passed 
+                                instead of OIDs for delete, update or add features.
+        ---------------------   --------------------------------------------------------------------------------------
+        gdb_version             Optional boolean. Geodatabase version to apply the edits.
+        ---------------------   --------------------------------------------------------------------------------------
+        rollback_on_failure     Optional boolean. Optional parameter to specify if the edits should be applied only
+                                if all submitted edits succeed. If false, the server will apply the edits that succeed
+                                even if some of the submitted edits fail. If true, the server will apply the edits
+                                only if all edits succeed. The default value is true.
+        ---------------------   --------------------------------------------------------------------------------------
+        return_edit_moment      Optional boolean. Introduced at 10.5, only applicable with ArcGIS Server services 
+                                only. Specifies whether the response will report the time edits were applied. If set 
+                                to true, the server will return the time in the response's editMoment key. The default 
+                                value is false.
+        ---------------------   --------------------------------------------------------------------------------------
+        attachments             Optional Dict. This parameter adds, updates, or deletes attachments. It applies only 
+                                when the `use_global_ids` parameter is set to true. For adds, the globalIds of the 
+                                attachments provided by the client are preserved. When useGlobalIds is true, updates 
+                                and deletes are identified by each feature or attachment globalId, rather than their 
+                                objectId or attachmentId. This parameter requires the layer's 
+                                supportsApplyEditsWithGlobalIds property to be true.
+        
+                                Attachments to be added or updated can use either pre-uploaded data or base 64 
+                                encoded data.
+                                
+                                **Inputs**
 
-           Output: dictionary
+                                    ========     ================================
+                                    Inputs       Description
+                                    --------     --------------------------------
+                                    adds         List of attachments to add. 
+                                    --------     --------------------------------
+                                    updates      List of attachements to update
+                                    --------     --------------------------------
+                                    deletes      List of attachments to delete
+                                    ========     ================================
+                                
+                                Additional attachment information `here <https://developers.arcgis.com/rest/services-reference/apply-edits-feature-service-layer-.htm>`_.
+                                
+        ---------------------   --------------------------------------------------------------------------------------
+        true_curve_client       Optional boolean. Introduced at 10.5. Indicates to the server whether the client is 
+                                true curve capable. When set to true, this indicates to the server that true curve 
+                                geometries should be downloaded and that geometries containing true curves should be 
+                                consumed by the map service without densifying it. When set to false, this indicates 
+                                to the server that the client is not true curves capable. The default value is false.
+        ---------------------   --------------------------------------------------------------------------------------
+        session_id              Optional String. Introduced at 10.6. The `session_id` is a GUID value that clients 
+                                establish at the beginning and use throughout the edit session. The sessonID ensures 
+                                isolation during the edit session. The `session_id` parameter is set by a client 
+                                during long transaction editing on a branch version.
+        ---------------------   --------------------------------------------------------------------------------------
+        use_previous_moment     Optional Boolean. Introduced at 10.6. The `use_previous_moment` parameter is used to 
+                                apply the edits with the same edit moment as the previous set of edits. This allows an
+                                editor to apply single block of edits partially, complete another task and then 
+                                complete the block of edits. This parameter is set by a client during long transaction 
+                                editing on a branch version.
+        
+                                When set to true, the edits are applied with the same edit moment as the previous set 
+                                of edits. When set to false or not set (default) the edits are applied with a new 
+                                edit moment.
+                                
+        ---------------------   --------------------------------------------------------------------------------------
+        datum_transformation    Optional Integer/Dictionary.  This parameter applies a datum transformation while 
+                                projecting geometries in the results when out_sr is different than the layer's spatial
+                                reference. When specifying transformations, you need to think about which datum 
+                                transformation best projects the layer (not the feature service) to the `outSR` and 
+                                `sourceSpatialReference` property in the layer properties. For a list of valid datum 
+                                transformation ID values ad well-known text strings, see `Coordinate systems and 
+                                transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_. 
+                                For more information on datum transformations, please see the transformation 
+                                parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
+                                            
+                                **Examples**
+
+
+                                    ===========     ===================================
+                                    Inputs          Description
+                                    -----------     -----------------------------------
+                                    WKID            Integer. Ex: datum_transformation=4326
+                                    -----------     -----------------------------------
+                                    WKT             Dict. Ex: datum_transformation={"wkt": "<WKT>"}
+                                    -----------     -----------------------------------
+                                    Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
+                                    ===========     ===================================
+
+                                
+        =====================   ======================================================================================
+
+        Output: dictionary
+        
+        
         """
         if adds is None:
             adds = []
@@ -1682,7 +1757,18 @@ class FeatureLayer(Layer):
 
             if field_name:
                 params['deletes'] = ",".join([str(feat.get_value(field_name=field_name)) for feat in deletes.features])
-
+        if not return_edit_moment is None:
+            params['returnEditMoment'] = return_edit_moment
+        if not attachments is None and isinstance(attachments, dict):
+            params['attachments'] = attachments
+        if not true_curve_client is None:
+            params['trueCurveClient'] = true_curve_client
+        if not use_previous_moment is None:
+            params['usePreviousEditMoment'] = use_previous_moment
+        if not datum_transformation is None:
+            params['datumTransformation'] = datum_transformation
+        if session_id and isinstance(session_id, str):
+            params['sessionID'] = session_id
         if 'deletes' not in params and 'updates' not in params and 'adds' not in params:
             print("Parameters not valid for edit_features")
             return None
