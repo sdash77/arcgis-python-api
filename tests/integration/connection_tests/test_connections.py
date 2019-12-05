@@ -4,7 +4,7 @@ sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_requests_take2\src")
 import json
 import pytest
 import unittest
-from arcgis.gis._impl._con._connection import Connection
+from arcgis.gis._impl._con import Connection
 
 
 config_file = './connection.json'

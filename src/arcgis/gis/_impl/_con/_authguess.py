@@ -2,13 +2,6 @@
 Modified from requests_toolbelt's GuesAuth to handle NTLM and Kerbos
 
 """
-
-#HTTP/1.1 401 Unauthorized
-#WWW-Authenticate: NTLM
-#Connection: close
-
-# -*- coding: utf-8 -*-
-"""The module containing the code for GuessAuth."""
 from requests import auth
 from requests import cookies
 try:
