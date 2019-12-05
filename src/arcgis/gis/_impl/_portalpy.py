@@ -1,4 +1,4 @@
-﻿""" The portalpy module for working with the ArcGIS Online and Portal APIs."""
+""" The portalpy module for working with the ArcGIS Online and Portal APIs."""
 
 
 from __future__ import absolute_import
@@ -8,12 +8,11 @@ import imghdr
 import logging
 import os
 import tempfile
-from .connection import _ArcGISConnection, _normalize_url
-from .connection import _is_http_url
-from .connection import _parse_hostname, _unpack
-from .common._utils import _to_utf8
-from six.moves.urllib import request
-from six.moves.urllib_parse import urlparse
+from ._con import Connection
+from ._con import _normalize_url, _is_http_url, _parse_hostname, _unpack
+from ..._impl.common._utils import _to_utf8
+from urllib import request
+from urllib.parse import urlparse
 
 __version__ = '1.7.0'
 
@@ -135,32 +134,32 @@ class Portal(object):
         if not connection:
             _log.debug('Connecting to portal: ' + self.hostname)
             if self._is_arcpy:
-                self.con = _ArcGISConnection(baseurl="pro",
-                                             tokenurl=tokenurl,
-                                             username=username,
-                                             password=password,
-                                             key_file=key_file,
-                                             cert_file=cert_file,
-                                             expiration=expiration,
-                                             all_ssl=True,
-                                             referer=referer,
-                                             proxy_host=proxy_host,
-                                             proxy_port=proxy_port,
-                                             verify_cert=verify_cert)
+                self.con = Connection(baseurl="pro",
+                                      tokenurl=tokenurl,
+                                      username=username,
+                                      password=password,
+                                      key_file=key_file,
+                                      cert_file=cert_file,
+                                      expiration=expiration,
+                                      all_ssl=True,
+                                      referer=referer,
+                                      proxy_host=proxy_host,
+                                      proxy_port=proxy_port,
+                                      verify_cert=verify_cert)
             else:
-                self.con = _ArcGISConnection(baseurl=self.resturl,
-                                             tokenurl=tokenurl,
-                                             username=username,
-                                             password=password,
-                                             key_file=key_file,
-                                             cert_file=cert_file,
-                                             expiration=expiration,
-                                             all_ssl=True,
-                                             referer=referer,
-                                             proxy_host=proxy_host,
-                                             proxy_port=proxy_port,
-                                             verify_cert=verify_cert,
-                                             client_id=client_id)
+                self.con = Connection(baseurl=self.resturl,
+                                      tokenurl=tokenurl,
+                                      username=username,
+                                      password=password,
+                                      key_file=key_file,
+                                      cert_file=cert_file,
+                                      expiration=expiration,
+                                      all_ssl=True,
+                                      referer=referer,
+                                      proxy_host=proxy_host,
+                                      proxy_port=proxy_port,
+                                      verify_cert=verify_cert,
+                                      client_id=client_id)
         #self.get_version(True)
         self.get_properties(True)
 

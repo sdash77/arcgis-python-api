@@ -23,11 +23,11 @@ import logging
 
 from urllib.error import  HTTPError
 
-import arcgis._impl.portalpy as portalpy
+#from ._impl import _portalpy as portalpy#import arcgis.gis._impl._portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
-from arcgis._impl.connection import _is_http_url
+from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
 _log = logging.getLogger(__name__)
 
@@ -298,7 +298,7 @@ class GIS(object):
         if self._url.lower() == "home":
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
-
+        from ._impl import _portalpy as portalpy
         try:
             self._portal = portalpy.Portal(self._url, self._username,
                                            self._password, self._key_file,

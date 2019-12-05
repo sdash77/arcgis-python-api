@@ -1,7 +1,7 @@
 import sys
 import copy
 import json
-from arcgis.gis import GIS, Item, User, Group
+
 #--------------------------------------------------------------------------
 def _search(gis, query, stype="content",
             max_items=100, bbox=None,
@@ -70,6 +70,7 @@ def _search(gis, query, stype="content",
     ================    ===============================================================
 
     """
+    from arcgis.gis import GIS, Item, User, Group
     if gis is None:
         import arcgis
         gis = arcgis.env.active_gis
