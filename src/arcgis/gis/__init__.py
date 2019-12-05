@@ -4568,7 +4568,8 @@ class ContentManager(object):
                     sitems.append(i.itemid)
                 else:
                     sitems.append(i)
-            #items = sitems
+            if not isinstance(sitems[0], Item):
+                items = [Item(gis=self._gis, itemid=i) for i in sitems]
         params['items'] = ",".join(sitems)
         params['everyone'] = everyone
         params['org'] = org
@@ -4643,19 +4644,35 @@ class ContentManager(object):
         if everyone is not None and \
             org is not None:
             for item in items:
-                item.share(everyone=everyone, org=org)
+                if isinstance(item, Item):
+                    item.share(everyone=everyone, org=org)
+                elif isinstance(item, str):
+                    Item(gis=self._gis, itemid=item).share(everyone=everyone, org=org)
         elif everyone is not None and \
             org is None:
             for item in items:
-                org = item.shared_with['org']
-                item.share(everyone=everyone, org=org)
+                if isinstance(item, Item):
+                    org = item.shared_with['org']
+                    item.share(everyone=everyone, org=org)
+                if isinstance(item, str):
+                    usitem = Item(gis=self._gis, itemid=item)
+                    org = usitem.shared_with['org']
+                    usitem.share(everyone=everyone, org=org)
         elif everyone is None and \
             org is not None:
             for item in items:
-                everyone = item.shared_with['everyone']
-                item.share(everyone=everyone, org=org)
+                if isinstance(item, Item):
+                    everyone = item.shared_with['everyone']
+                    item.share(everyone=everyone, org=org)
+                if isinstance(item, str):
+                    usitem = Item(gis=self._gis, itemid=item)
+                    everyone = usitem.shared_with['everyone']
+                    usitem.share(everyone=everyone, org=org)
         for item in items:
-            item._hydrated = False
+            if isinstance(item, Item):
+                item._hydrated = False
+            if isinstance(item, str):
+                Item(gis=self._gis, itemid=item)._hydrated = False
         return res
 
 ########################################################################
