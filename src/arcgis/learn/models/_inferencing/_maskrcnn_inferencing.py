@@ -246,7 +246,7 @@ def predict_mask_rcnn(model, images, device, chip_size, threshold=0.5):
     
     model = model.to(device)
     normed_batch_tensor = torch.tensor(images).to(device)
-    predictions = model(normed_batch_tensor)
+    predictions = model(list(normed_batch_tensor))
     
     return predictions
     
