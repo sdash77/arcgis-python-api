@@ -292,7 +292,7 @@ class MaskRCNN(ArcGISModel):
             ax[i][1].axis('off')
             if mode in ['mask', 'bbox_mask']:
                 ax[i][1].imshow(pred_mask[i], cmap=cmap, alpha = alpha)
-            if mode in ['bbox','bbox']:
+            if mode in ['bbox_mask','bbox']:
                 if pred_box[i] != []:
                     for num_boxes in pred_box[i]:
                         rect = patches.Rectangle((num_boxes[0], num_boxes[1]), num_boxes[2]-num_boxes[0], num_boxes[3]-num_boxes[1], linewidth=1, edgecolor='r', facecolor='none')
