@@ -326,7 +326,7 @@ class GIS(object):
             if url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in and \
                self._portal.con._auth.lower() == 'oauth':
-                from six.moves.urllib_parse import urlparse
+                from urllib.parse import urlparse
                 props = self._portal.get_properties(force=False)
                 url = "%s://%s.%s" % (urlparse(self._url).scheme,
                                       props['urlKey'],
@@ -340,7 +340,7 @@ class GIS(object):
                     self._portal.con._token = None
             elif url.lower().find("arcgis.com") > -1 and \
                  self._portal.is_logged_in:
-                from six.moves.urllib_parse import urlparse
+                from urllib.parse import urlparse
                 props = self._portal.get_properties(force=False)
                 url = "%s://%s.%s" % (urlparse(self._url).scheme,
                                       props['urlKey'],

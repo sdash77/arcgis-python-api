@@ -641,7 +641,7 @@ class SSLCertificates(BasePortalAdmin):
 
         """
 
-        from six.moves.urllib.error import HTTPError
+        from urllib.error import HTTPError
 
         self._certs = None
         params = {

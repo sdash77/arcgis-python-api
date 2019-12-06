@@ -1,7 +1,7 @@
 import os
 import ssl
 import logging
-from six.moves.urllib_parse import urlparse
+from urllib.parse import urlparse
 from ._common import BaseServer
 from ._common import ServerConnection
 from ._service import Service
