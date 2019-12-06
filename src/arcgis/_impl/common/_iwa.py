@@ -1,7 +1,7 @@
-import six.moves.urllib
-from six.moves.urllib.request import BaseHandler
-from six.moves.urllib.response import addinfourl
-from six.moves.http_client import HTTPConnection, HTTPSConnection
+import urllib
+from urllib.request import BaseHandler
+from urllib.response import addinfourl
+from http.client import HTTPConnection, HTTPSConnection
 import base64
 import sys
 

@@ -4,8 +4,7 @@ Generates Layer Types from the given inputs.
 """
 from __future__ import absolute_import
 import os
-from six import add_metaclass
-from six.moves.urllib_parse import urlparse
+from urllib.parse import urlparse
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geocoding import Geocoder
@@ -22,6 +21,23 @@ from .._common import ServerConnection
 from ._geodataservice import GeoData
 from ._layerfactory import Service
 from ..admin._services import Service as AdminService
+
+def add_metaclass(metaclass):
+    """Class decorator for creating a class with a metaclass."""
+    def wrapper(cls):
+        orig_vars = cls.__dict__.copy()
+        slots = orig_vars.get('__slots__')
+        if slots is not None:
+            if isinstance(slots, str):
+                slots = [slots]
+            for slots_var in slots:
+                orig_vars.pop(slots_var)
+        orig_vars.pop('__dict__', None)
+        orig_vars.pop('__weakref__', None)
+        if hasattr(cls, '__qualname__'):
+            orig_vars['__qualname__'] = cls.__qualname__
+        return metaclass(cls.__name__, cls.__bases__, orig_vars)
+    return wrapper
 
 def _str_replace(mystring, rd):
     """replaces a value based on a key/value pair where the
