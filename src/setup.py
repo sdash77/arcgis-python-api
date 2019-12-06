@@ -53,6 +53,11 @@ else:
         'keyring',
         'jupyterlab',
         'pyshp >=1.2.11,<2',
+        'requests',
+        'requests-oauthlib',
+        'requests_toolbelt',
+        'requests_ntlm',
+        'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"' ]
 
 def _post_install():

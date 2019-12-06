@@ -22,6 +22,11 @@ requirements:
   - keyring
   - pytest
   - pyshp <2
+  - requests
+  - requests-toolbelt
+  - requests-kerberos
+  - requests-oauthlib
+  - requests_ntlm
   - winkerberos      [win]
   run:
   - python
