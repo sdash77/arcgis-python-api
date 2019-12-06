@@ -9,21 +9,20 @@ from .index.rtree import Rtree
 from datetime import datetime
 import pandas as pd
 import numpy as np
-from six import string_types, integer_types
 
 DATETIME_TYPES = (datetime,
                   np.datetime64,
                   pd.datetime,
                   pd.DatetimeIndex)
 
-NUMERIC_TYPES = tuple(list(integer_types) + [
+NUMERIC_TYPES = tuple([int] + [
     np.int, np.int16,
     np.int32, np.integer,
     np.float, np.float32,
     np.float64, np.int8,
     np.int64, np.short])
 
-STRING_TYPES = tuple(list(string_types) + \
+STRING_TYPES = tuple([str] + \
     [str, np.str, np.unicode, chr])
 
 # --------------------------------------------------------------------------
@@ -53,7 +52,7 @@ def sanitize_field_name(s, length=None, sub_value=None):
     if sub_value is None:
         sub_value = ""
     s = re.sub('\W+', sub_value, s)
-    if isinstance(length, integer_types) and \
+    if isinstance(length, int) and \
        length > 0 and \
        len(s) > length:
         s = s[:length]

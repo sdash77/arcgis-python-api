@@ -26,7 +26,7 @@ from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
 from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
 from arcgis.features import Feature, FeatureSet, FeatureCollection, FeatureLayer
-from six.moves.urllib.error import HTTPError
+from urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
 from arcgis.raster._util import _set_context as _set_raster_context
 _log = logging.getLogger(__name__)
