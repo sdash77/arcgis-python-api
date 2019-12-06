@@ -2284,7 +2284,7 @@ class UserManager(object):
                         start=1, sort_field="username", 
                         sort_order="asc", as_dict=False):
         """
-        The advanced search method allows for the full control of the query operations
+        The `advanced_search` method allows for the full control of the query operations
         by any given user.  The searches are performed against a high performance 
         index that indexes the most popular fields of an user. See the Search 
         reference page for information on the fields and the syntax of the query.
@@ -2317,7 +2317,7 @@ class UserManager(object):
                                records are arranged after they have been sorted. The allowed
                                values are: asc for ascending and desc for descending.
         ------------------     --------------------------------------------------------------------
-        as_dict                Required Boolean. If True, the response comes back as a dictionary.
+        as_dict                Required Boolean. If True, the response comes back as a dictionary. 
         ==================     ====================================================================
 
         :returns: dictionary if `return_count` is False, else an integer
