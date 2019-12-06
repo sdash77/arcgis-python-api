@@ -9,7 +9,6 @@ from __future__ import absolute_import
 import base64
 import json
 import locale
-
 import sys
 import os
 import re
