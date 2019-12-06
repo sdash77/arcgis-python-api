@@ -1017,6 +1017,7 @@ class ServerProperties(BaseServer):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         properties             Required string. A Python dictionary of server properties to be updated.
+                               To reset the properties, pass in `None`.
         ==================     ====================================================================
 
         :return:
@@ -1024,6 +1025,8 @@ class ServerProperties(BaseServer):
 
         """
         url = self._url + "/update"
+        if properties is None:
+            properties = {}
         params = {
             "f" : "json",
             "properties" : properties

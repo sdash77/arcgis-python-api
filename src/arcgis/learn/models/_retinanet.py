@@ -404,6 +404,10 @@ class RetinaNet(ArcGISModel):
         valid_tfms = self._data.valid_ds.tfms
         self._data.valid_ds.tfms = []
 
+        include_pad_detections = False
+        if len(chips) == 1:
+            include_pad_detections = True
+
         for chip in chips:
             frame = Image(pil2tensor(PIL.Image.fromarray(cv2.cvtColor(chip['chip'], cv2.COLOR_BGR2RGB)), dtype=np.float32).div_(255))
             bbox = self.learn.predict(frame, thresh=threshold, nms_overlap=nms_overlap, ret_scores=True, ssd=self)[0]
@@ -419,7 +423,7 @@ class RetinaNet(ArcGISModel):
                         label = 'Default'
 
                     data = bb2hw(bbox)
-                    if not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                    if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
                         chip['predictions'].append({
                             'xmin': data[0],
                             'ymin': data[1],

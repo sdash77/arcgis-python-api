@@ -47,7 +47,7 @@ model_characteristics_folder = 'ModelCharacteristics'
 @contextlib.contextmanager
 def nostdout():
     save_stdout = sys.stdout
-    sys.stdout = io.BytesIO()
+    sys.stdout = io.StringIO()
     yield
     sys.stdout = save_stdout
     
@@ -652,10 +652,10 @@ class ArcGISModel(object):
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
                                 model. (Only supported by ``SingleShotDetector``, currently.)
-                                If framework used is ``TF-ONNX``, ``batch_size`` is required
-                                to be passed as keyword arguments. 
+                                If framework used is ``TF-ONNX``, ``batch_size`` can be
+                                passed as an optional keyword argument. 
                                 
-                                Choice list: ['PyTorch', 'TF-ONNX']
+                                Framework choice: 'PyTorch' and 'TF-ONNX'
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------

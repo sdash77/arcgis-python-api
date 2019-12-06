@@ -23,15 +23,15 @@ def _get_image_chips(image, chip_dim):
     chips_data = []
     stride = chip_dim // 2
 
-    # Add zero-padding to enable prediction on all parts of the image
-    padded_image = _pad_image(image, stride)
-    img_h, img_w, _ = padded_image.shape
-
     start_x = 0
     start_y = 0
 
     if chip_dim >= img_w or chip_dim >= img_h:
         return [{'height': img_h, 'width': img_w, 'chip': image, 'xmin': start_x, 'ymin': start_y, 'predictions': []}]
+
+    # Add zero-padding to enable prediction on all parts of the image
+    padded_image = _pad_image(image, stride)
+    img_h, img_w, _ = padded_image.shape
 
     while start_x + chip_dim <= img_w:
         start_y = 0

@@ -192,9 +192,8 @@ class SingleShotDetector(ArcGISModel):
                 num_features = feature_sizes[-2][-1]
                 num_channels = feature_sizes[-2][1]
                 backbone_cut = -3
-                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
-            else:
-                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+            ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+
         else:
             raise Exception('SSDVersion can only be 1 or 2')
 
@@ -632,6 +631,10 @@ class SingleShotDetector(ArcGISModel):
         else:
             chips = [{'width': width, 'height': height, 'xmin': 0, 'ymin': 0, 'chip': image, 'predictions': []}]
 
+        include_pad_detections = False
+        if len(chips) == 1:
+            include_pad_detections = True
+
         valid_tfms = self._data.valid_ds.tfms
         self._data.valid_ds.tfms = []
 
@@ -649,7 +652,7 @@ class SingleShotDetector(ArcGISModel):
                         label = 'Default'
 
                     data = bb2hw(bbox)
-                    if not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
+                    if include_pad_detections or not _exclude_detection((data[0], data[1], data[2], data[3]), chip['width'], chip['height']):
                         chip['predictions'].append({
                             'xmin': data[0],
                             'ymin': data[1],
