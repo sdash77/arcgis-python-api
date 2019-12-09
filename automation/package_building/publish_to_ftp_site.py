@@ -11,7 +11,7 @@ import requests
 from automation._common import *
 
 FTP_SITE = "zion"
-ESRI_CHANNEL_DEV = "zion/conda/esri_channel_dev/"
+ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev/"
 NUM_BUILDS_TO_KEEP = 100
 
 def publish_to_ftp_site(username, password, automation_type, build_number,
