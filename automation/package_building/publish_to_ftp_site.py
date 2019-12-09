@@ -96,6 +96,7 @@ def _copy_esri_channel_dev_to(ftp, build_number=None, ftp_folder_name=None):
                 os.mkdir(arch_dir)
             urllib.request.urlretrieve(file_url, download_file_dst)
 
+        run_shell_command(f"conda index {src_dir_path}")
         _upload_directory_recursive(ftp = ftp,
                                     src_dir_path = src_dir_path,
                                     dst_dir_path = dst_dir_path)
