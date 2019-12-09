@@ -99,7 +99,11 @@ class Assignment(FeatureModel):
             else:
                 self.worker = None
             if feature.attributes[project._assignment_schema.dispatcher_id]:
-                self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id]]
+                # in case dispatcher for an existing assignment has been deleted
+                try:
+                    self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id]]
+                except Exception as e:
+                    self.dispatcher = None
             else:
                 self.dispatcher = None
             if feature.attributes[project._assignment_schema.assignment_type]:
