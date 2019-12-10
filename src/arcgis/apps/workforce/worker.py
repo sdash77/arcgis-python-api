@@ -199,7 +199,11 @@ class Worker(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        assignments = _store.query_assignments(self.project, "{} = {}".format(self.project._assignment_schema.worker_id, self.object_id))
+        if self.project._is_v2_project:
+            id = self.global_id
+        else:
+            id = self.object_id
+        assignments = _store.query_assignments(self.project, "{} = '{}'".format(self.project._assignment_schema.worker_id, id))
         if assignments:
             errors.append(ValidationError("Cannot remove a Worker that has assignments", self))
         return errors

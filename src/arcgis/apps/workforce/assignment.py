@@ -102,7 +102,7 @@ class Assignment(FeatureModel):
                 # in case dispatcher for an existing assignment has been deleted
                 try:
                     self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id]]
-                except Exception:
+                except KeyError:
                     self.dispatcher = None
             else:
                 self.dispatcher = None
