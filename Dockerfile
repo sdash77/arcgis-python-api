@@ -17,6 +17,7 @@ RUN conda install --quiet --yes \
 
 # Install dependencies for Python API
 RUN conda install -y unzip \
+					 xlrd \
                      pandas \
                      lxml \
                      html5lib \
