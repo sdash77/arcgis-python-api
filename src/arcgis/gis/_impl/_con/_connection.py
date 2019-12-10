@@ -289,7 +289,7 @@ class Connection(object):
         if self._baseurl.endswith('/') == False:
             self._baseurl += "/"
         url = path
-        token_as_header = kwargs.pop('token_as_header', True)
+        token_as_header = kwargs.pop('token_as_header', False)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
         if url.find('://') == -1:
             if url.startswith('/') == False and \
@@ -494,7 +494,7 @@ class Connection(object):
             self._baseurl += "/"
         url = path
         post_json = kwargs.pop("post_json", False)
-        token_as_header = kwargs.pop('token_as_header', True)
+        token_as_header = kwargs.pop('token_as_header', False)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
         if self._auth == "IWA":
             self._session = None

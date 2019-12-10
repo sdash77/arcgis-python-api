@@ -4,7 +4,6 @@ Contains the base class that all server object inherit from.
 from __future__ import absolute_import
 import json
 from collections import OrderedDict
-from ._connection import ServerConnection
 from urllib.request import HTTPError
 from ..._impl._con import Connection
 from arcgis.gis import GIS

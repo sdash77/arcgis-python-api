@@ -10016,16 +10016,16 @@ class _GISResource(object):
     def _refresh(self):
         params = {"f": "json"}
         if type(self).__name__ == 'ImageryLayer':
-            if hasattr(self, "_uri"):
-                if self._uri:
-                    params["Raster"] = self._uri
             if self._fn is not None:
                 params['renderingRule'] = self._fn
+            if hasattr(self, "_uri"):
+                if isinstance(self._uri, bytes):
+                    if 'renderingRule' in params.keys():
+                        del params['renderingRule']
+                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
-            dictdata = self._con.get(self.url, params, token=self._lazy_token)
-        elif type(self).__name__ == 'ImageryLayer':
-            dictdata = self._con.post(self.url, params, token=self._lazy_token)
+            dictdata = self._con.get(self.url, params, token=self._lazy_token)        
         else:
             try:
                 dictdata = self._con.post(self.url, params, token=self._lazy_token)
@@ -10063,7 +10063,7 @@ class _GISResource(object):
                 else:
                     from ._impl._con import Connection
                     if isinstance(self._con, Connection):
-                        self._lazy_token = self._con.token#generate_portal_server_token(self._url)
+                        self._lazy_token = self._con.generate_portal_server_token(serverUrl=self._url)
                     else:
                         self._lazy_token = self._con.token
 
