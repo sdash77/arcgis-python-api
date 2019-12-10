@@ -10,3 +10,4 @@ from .project import Project
 from .track import Track
 from .worker import Worker
 from . import _store
+from ._store.projects import create_project

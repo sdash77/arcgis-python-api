@@ -1,4 +1,6 @@
 import os
+
+from ._store.assignment_types_v2 import get_assignment_type_v2, get_assignment_types_v2, add_assignment_type_v2, update_assignment_types_v2, delete_assignment_types_v2, add_assignment_types_v2
 from ._store import *
 from .exceptions import *
 
@@ -210,7 +212,10 @@ class AssignmentTypeManager:
 
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
-        return get_assignment_type(self.project, code, name)
+        if not self.project._is_v2_project:
+            return get_assignment_type(self.project, code=code, name=name)
+        else:
+            return get_assignment_type_v2(self.project, code=code, name=name)
 
     def search(self):
         """
@@ -218,7 +223,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
          """
-        return get_assignment_types(self.project)
+        if not self.project._is_v2_project:
+            return get_assignment_types(self.project)
+        else:
+            return get_assignment_types_v2(self.project)
 
     def add(self, coded_value=None, name=None):
         """
@@ -228,14 +236,17 @@ class AssignmentTypeManager:
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         coded_value            Optional :class:`dict`. The dictionary storing the code and
-                               name of the type.
+                               name of the type. Only works for v1 projects.
         ------------------     --------------------------------------------------------------------
         name                   Optional :class:`String`. The name of the assignment type.
         ==================     ====================================================================
 
         :return: :class:`~arcgis.apps.workforce.AssignmentType`
         """
-        return add_assignment_type(self.project, coded_value, name)
+        if not self.project._is_v2_project:
+            return add_assignment_type(self.project, coded_value=coded_value, name=name)
+        else:
+            return add_assignment_type_v2(self.project, name=name)
 
     def batch_add(self, assignment_types):
         """
@@ -250,7 +261,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentTypes`
          """
-        return add_assignment_types(self.project, assignment_types)
+        if not self.project._is_v2_project:
+            return add_assignment_types(self.project, assignment_types)
+        else:
+            return add_assignment_types_v2(self.project, assignment_types)
 
     def batch_update(self, assignment_types):
         """
@@ -266,7 +280,10 @@ class AssignmentTypeManager:
 
          :return: :class:`List` of :class:`~arcgis.apps.workforce.AssignmentType`
          """
-        return update_assignment_types(self.project, assignment_types)
+        if not self.project._is_v2_project:
+            return update_assignment_types(self.project, assignment_types)
+        else:
+            return update_assignment_types_v2(self.project, assignment_types)
 
     def batch_delete(self, assignment_types):
         """
@@ -280,7 +297,10 @@ class AssignmentTypeManager:
                                 The list of assignment types to remove.
          ==================     ====================================================================
          """
-        return delete_assignment_types(self.project, assignment_types)
+        if not self.project._is_v2_project:
+            return delete_assignment_types(self.project, assignment_types)
+        else:
+            return delete_assignment_types_v2(self.project, assignment_types)
 
 
 class AssignmentAttachmentManager(object):
@@ -493,6 +513,8 @@ class TrackManager:
      ==================     ====================================================================
     """
     def __init__(self, project):
+        if not project._supports_tracks:
+            raise WorkforceError("This Workforce Project does not support tracks.")
         self.project = project
 
     def get(self, object_id=None, global_id=None):

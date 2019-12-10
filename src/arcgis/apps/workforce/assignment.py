@@ -1,10 +1,11 @@
 """ Defines the Assignment object.
 """
-from .exceptions import ValidationError
 from .feature_model import FeatureModel
 from .managers import *
 from ._schemas import AssignmentSchema
 from .assignment_type import AssignmentType
+from .exceptions import WorkforceWarning, ValidationError
+from warnings import warn
 
 
 class Assignment(FeatureModel):
@@ -98,7 +99,11 @@ class Assignment(FeatureModel):
             else:
                 self.worker = None
             if feature.attributes[project._assignment_schema.dispatcher_id]:
-                self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id]]
+                # in case dispatcher for an existing assignment has been deleted
+                try:
+                    self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id]]
+                except Exception:
+                    self.dispatcher = None
             else:
                 self.dispatcher = None
             if feature.attributes[project._assignment_schema.assignment_type]:
@@ -108,7 +113,8 @@ class Assignment(FeatureModel):
         else:
             self.geometry = geometry
             self.assigned_date = assigned_date
-            self.assignment_read = assignment_read
+            if not project._is_v2_project:
+                self.assignment_read = assignment_read
             self.completed_date = completed_date
             self.declined_comment = declined_comment
             self.declined_date = declined_date
@@ -126,7 +132,10 @@ class Assignment(FeatureModel):
             self.worker = worker
 
     def __str__(self):
-        type_name = self.assignment_type.name if self.assignment_type is not None else "no type"
+        if self.assignment_type is None:
+            type_name = "no type"
+        else:
+            type_name = self.assignment_type.name
         location = self.location if self.location is not None else "no location"
         return "{} at {}".format(type_name, location)
 
@@ -214,6 +223,10 @@ class Assignment(FeatureModel):
         delete_assignments(self.project, [self])
 
     @property
+    def _supports_assignment_read_field(self):
+        return bool(self._schema.assignment_read)
+
+    @property
     def attachments(self):
         """Gets the :class:`~arcgis.apps.workforce.managers.AssignmentAttachmentManager` of the assignment"""
         return AssignmentAttachmentManager(self)
@@ -230,15 +243,20 @@ class Assignment(FeatureModel):
     @property
     def assignment_read(self):
         """Gets/Sets the assignment read field"""
-        return bool(self._feature.attributes.get(self._schema.assignment_read))
+        if self._supports_assignment_read_field:
+            return bool(self._feature.attributes.get(self._schema.assignment_read))
+        else:
+            warn("This Workforce Project does not support the assignment_read field.", WorkforceWarning)
 
     @assignment_read.setter
     def assignment_read(self, value):
-        self._feature.attributes[self._schema.assignment_read] = 1 if value else 0
+        if self._supports_assignment_read_field:
+            self._feature.attributes[self._schema.assignment_read] = 1 if value else 0
+        else:
+            warn("This Workforce Project does not support the assignment_read field.", WorkforceWarning)
 
     @property
     def assignment_type_code(self):
-        """Gets the assignment type code"""
         return self._feature.attributes.get(self._schema.assignment_type)
 
     @property
@@ -321,7 +339,10 @@ class Assignment(FeatureModel):
             self._dispatcher = value
         else:
             self._dispatcher = self.project._cached_dispatcher
-        self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.object_id
+        if self.project._is_v2_project:
+            self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.global_id
+        else:
+            self._feature.attributes[self._schema.dispatcher_id] = self._dispatcher.object_id
 
     @property
     def due_date(self):
@@ -482,7 +503,12 @@ class Assignment(FeatureModel):
     @worker.setter
     def worker(self, value):
         self._worker = value
-        self._feature.attributes[self._schema.worker_id] = value.object_id if value is not None else None
+        if value is None:
+            self._feature.attributes[self._schema.worker_id] = None
+        elif self.project._is_v2_project:
+            self._feature.attributes[self._schema.worker_id] = self._worker.global_id
+        else:
+            self._feature.attributes[self._schema.worker_id] = self._worker.object_id
 
     def _validate(self, **kwargs):
         errors = super()._validate(**kwargs)
@@ -512,8 +538,11 @@ class Assignment(FeatureModel):
         errors = []
         if self.assignment_type is None:
             errors.append(ValidationError("An assignment must have an assignment type", self))
-        elif self.assignment_type.code is None:
-            errors.append(ValidationError("Invalid assignment type code: cannot be None", self))
+        else:
+            if self.assignment_type.name is None:
+                errors.append(ValidationError("Invalid assignment type name: cannot be None", self))
+            if self.assignment_type.code is None:
+                errors.append(ValidationError("Invalid assignment type code: cannot be None", self))
         return errors
 
     def _validate_assignment_type_on_server(self):

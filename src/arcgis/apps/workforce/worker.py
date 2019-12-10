@@ -58,7 +58,10 @@ class Worker(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        return "<Worker {}>".format(self.object_id)
+        if self.project._is_v2_project:
+            return "<Worker {}>".format(self.global_id)
+        else:
+            return "<Worker {}>".format(self.object_id)
 
     def update(self, geometry=None, contact_number=None,
                  name=None, notes=None, status=None, title=None, user_id=None):

@@ -1,15 +1,17 @@
 """
 Defines the AssignmentType class.
 """
-
-from .exceptions import ValidationError
-from .model import Model
+from .exceptions import ValidationError, WorkforceWarning
+from .feature_model import FeatureModel
 from ._store import *
+from ._store.assignment_types_v2 import *
+from warnings import warn
+from ._schemas import AssignmentTypesSchema
 
 
-class AssignmentType(Model):
+class AssignmentType(FeatureModel):
     """
-    Defines the acceptable values for :class:`~arcgis.apps.workforce.Assignment` types.
+    Defines the acceptable values for :class:`~arcgis.apps.workforce.AssignmentType` types.
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -18,20 +20,27 @@ class AssignmentType(Model):
                            this assignment belongs to.
     ------------------     --------------------------------------------------------------------
     coded_value            Optional :class:`dict`. The dictionary storing the code and
-                           name of the type.
+                           name of the type. Only works for v1 projects.
     ------------------     --------------------------------------------------------------------
     name                   Optional :class:`String`. The name of the assignment type.
     ==================     ====================================================================
 
     """
 
-    def __init__(self, project, coded_value=None, name=None):
-        super().__init__()
-        self.project = project
-        if coded_value:
-            self._coded_value = coded_value
+    def __init__(self, project, feature=None, coded_value=None, name=None):
+        if project._is_v2_project:
+            super().__init__(project=project, feature_layer=project.assignment_types_table, feature=feature)
+            self._schema = AssignmentTypesSchema(project.assignment_types_table)
+            self._coded_value = None
+            if not feature:
+                self.name = name
         else:
-            self._coded_value = {'code': None, 'name': name}
+            super().__init__()
+            if coded_value:
+                self._coded_value = coded_value
+            else:
+                self._coded_value = {'code': None, 'name': name}
+        self.project = project
 
     def __str__(self):
         return self.name
@@ -50,11 +59,17 @@ class AssignmentType(Model):
                                    The name of the assignment type
             ==================     ====================================================================
         """
-        update_assignment_type(self.project, self, name)
+        if self.project._is_v2_project:
+            update_assignment_type_v2(self.project, self, name)
+        else:
+            update_assignment_type(self.project, self, name)
 
     def delete(self):
         """Deletes the assignment type from the server"""
-        delete_assignment_types(self.project, [self])
+        if self.project._is_v2_project:
+            delete_assignment_types_v2(self.project, [self])
+        else:
+            delete_assignment_types(self.project, [self])
 
     @property
     def id(self):
@@ -64,16 +79,25 @@ class AssignmentType(Model):
     @property
     def code(self):
         """Gets the internal code that uniquely identifies the assignment type"""
-        return self._coded_value['code']
+        if not self.project._is_v2_project:
+            return self._coded_value['code']
+        else:
+            return self._feature.attributes.get(self._schema.global_id)
 
     @property
     def name(self):
         """Gets/Sets The name of the assignment type"""
-        return self._coded_value['name']
+        if not self.project._is_v2_project:
+            return self._coded_value['name']
+        else:
+            return self._feature.attributes.get(self._schema.description)
 
     @name.setter
     def name(self, value):
-        self._coded_value['name'] = value
+        if not self.project._is_v2_project:
+            self._coded_value['name'] = value
+        else:
+            self._feature.attributes[self._schema.description] = value
 
     @property
     def coded_value(self):
@@ -87,17 +111,26 @@ class AssignmentType(Model):
         return errors
 
     def _validate_for_update(self, **kwargs):
-        return super()._validate_for_update(**kwargs) + self._validate_code()
+        if not self.project._is_v2_project:
+            return super()._validate_for_update(**kwargs) + self._validate_code()
+        else:
+            return super()._validate_for_update(**kwargs)
 
     def _validate_for_remove(self, **kwargs):
-        assignments = kwargs['assignments']
-        errors = super()._validate_for_remove(**kwargs) + self._validate_code()
-        if assignments is None:
-            schema = self.project._assignment_schema
-            where = "{}={}".format(schema.assignment_type, self.code)
-            assignments = self.project.assignments.search(where=where)
+        if not self.project._is_v2_project:
+            assignments = kwargs['assignments']
+            errors = super()._validate_for_remove(**kwargs) + self._validate_code()
+            if assignments is None:
+                schema = self.project._assignment_schema
+                where = "{}={}".format(schema.assignment_type, self.code)
+                assignments = self.project.assignments.search(where=where)
+            else:
+                assignments = [a for a in assignments if a.assignment_type.code == self.code]
         else:
+            assignments = self.project.assignments.search(where='1=1')
+            errors = super()._validate_for_remove(**kwargs)
             assignments = [a for a in assignments if a.assignment_type.code == self.code]
+
         if assignments:
             errors.append(ValidationError("Cannot remove an in-use AssignmentType", self))
         return errors
@@ -115,7 +148,7 @@ class AssignmentType(Model):
         if assignment_types is None:
             assignment_types = self.project.assignment_types.search()
         for assignment_type in assignment_types:
-            if assignment_type.name == self.name and assignment_type.code != self.code:
+            if (assignment_type.name == self.name and assignment_type.code != self.code):
                 errors.append(ValidationError("AssignmentType name must be unique", self))
         return errors
 
@@ -124,3 +157,4 @@ class AssignmentType(Model):
         if not isinstance(self.code, int):
             errors.append(ValidationError("Code must be a unique integer", self))
         return errors
+

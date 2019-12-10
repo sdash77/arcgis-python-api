@@ -71,7 +71,9 @@ class AssignmentSchema(FeatureSchema):
     @property
     def assignment_read(self):
         """Gets the assignment read field name"""
-        return self._field_called('assignmentRead')['name']
+        field = self._field_called('assignmentRead')
+        if field is not None:
+            return field['name']
 
     @property
     def assignment_type(self):
@@ -169,6 +171,18 @@ class DispatcherSchema(FeatureSchema):
     def user_id(self):
         """Gets the user id field name"""
         return self._field_called('userId')['name']
+
+
+class AssignmentTypesSchema(FeatureSchema):
+    """ Describes the schema for a track :py:attr:`~arcgis.apps.workforce.AssignmentType.schema`
+    This is useful for getting the field names, which may be different depending on if
+    Workforce for ArcGIS is hosted on ArcGIS Online or on an Enterprise Deployment.
+    """
+
+    @property
+    def description(self):
+        """Gets the assignment type field name"""
+        return self._field_called('description')['name']
 
 
 class TrackSchema(FeatureSchema):
