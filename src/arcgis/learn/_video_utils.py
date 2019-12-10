@@ -38,7 +38,8 @@ class VideoUtils():
         multiplex=False,
         multiplex_file_path=None,
         tracker_options={'assignment_iou_thrd': 0.3, 'vanish_frames': 40, 'detect_frames': 10},
-        visual_options={'show_scores': True, 'thickness': 2, 'fontface': 0, 'show_labels': True, 'color': (255, 255, 255)}
+        visual_options={'show_scores': True, 'thickness': 2, 'fontface': 0, 'show_labels': True, 'color': (255, 255, 255)},
+        resize=False
     ):
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
@@ -81,7 +82,7 @@ class VideoUtils():
                 video_obj = cv2.VideoWriter(output_file_path, cv2.VideoWriter_fourcc(*'DIVX'), fps, (width, height))
 
             predictions, labels, scores = model.predict(frame, threshold=threshold, nms_overlap=nms_overlap,
-                                                       return_scores=True)
+                                                       return_scores=True, resize=resize)
             vmti_detections = '\n'
 
             if predictions:

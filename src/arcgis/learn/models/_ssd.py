@@ -499,7 +499,8 @@ class SingleShotDetector(ArcGISModel):
             'thickness': 2,
             'fontface': 0,
             'color': (255, 255, 255)
-        }
+        },
+        resize=False
     ):
 
         """
@@ -554,6 +555,16 @@ class SingleShotDetector(ArcGISModel):
                                 fontface integer, fontface value from opencv values,
                                 color tuple (B, G, R), tuple containing values between
                                 0-255.
+        ---------------------   -------------------------------------------
+        resize                  Optional boolean. Resizes the video frames to the same size
+                                (chip_size parameter in prepare_data) that the model was trained on,
+                                before detecting objects.
+                                Note that if resize_to parameter was used in prepare_data,
+                                the video frames are resized to that size instead.
+
+                                By default, this parameter is false and the detections are run
+                                in a sliding window fashion by applying the model on cropped sections
+                                of the frame (of the same size as the model was trained on).
         =====================   ===========================================
         
         """
@@ -569,7 +580,8 @@ class SingleShotDetector(ArcGISModel):
             multiplex,
             multiplex_file_path,
             tracker_options,
-            visual_options
+            visual_options,
+            resize
         )
 
     def predict(
@@ -578,7 +590,8 @@ class SingleShotDetector(ArcGISModel):
         threshold=0.5,
         nms_overlap=0.1,
         return_scores=False,
-        visualize=False
+        visualize=False,
+        resize=False
     ):
 
         """
@@ -603,6 +616,16 @@ class SingleShotDetector(ArcGISModel):
         ---------------------   -------------------------------------------
         visualize               Optional boolean. Displays the image with
                                 predicted bounding boxes if True.
+        ---------------------   -------------------------------------------
+        resize                  Optional boolean. Resizes the image to the same size
+                                (chip_size parameter in prepare_data) that the model was trained on,
+                                before detecting objects.
+                                Note that if resize_to parameter was used in prepare_data,
+                                the image is resized to that size instead.
+
+                                By default, this parameter is false and the detections are run
+                                in a sliding window fashion by applying the model on cropped sections
+                                of the image (of the same size as the model was trained on).
         =====================   ===========================================
         
         :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
@@ -617,6 +640,10 @@ class SingleShotDetector(ArcGISModel):
 
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
+
+        if resize and self._data.resize_to is None\
+                and self._data.chip_size is not None:
+            image = cv2.resize(image, (self._data.chip_size, self._data.chip_size))
 
         if self._data.resize_to is not None:
             if isinstance(self._data.resize_to, tuple):
