@@ -164,6 +164,10 @@ class ParcelFabricManager(object):
         --------------------     --------------------------------------------------------------------
         return_errors            Optional Boolean. If True, a verbose response will be given if errors
                                  occured.  The default is False.  **Deprecated**
+        --------------------     --------------------------------------------------------------------
+        record                   Optional String. Represents the record identifier (guid).  If a 
+                                 record guid is provided, only parcels associated to the record are 
+                                 built, regardless of the build extent.
         ====================     ====================================================================
 
 
