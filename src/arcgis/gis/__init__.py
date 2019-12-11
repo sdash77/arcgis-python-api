@@ -10086,6 +10086,20 @@ class _GISResource(object):
                         # try token in the provided gis
                         self._lazy_token = self._con.token
                         self._refresh()
+            except:
+                try:
+                    # try as a public server
+                    self._lazy_token = None
+                    self._refresh()
+            
+                except HTTPError as httperror:
+                    _log.error(httperror)
+                    err = httperror
+                except RuntimeError as e:
+                    if 'Token Required' in e.args[0]:
+                        # try token in the provided gis
+                        self._lazy_token = self._con.token
+                        self._refresh()                
 
         if err is not None:
             raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)

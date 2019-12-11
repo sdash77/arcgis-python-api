@@ -309,10 +309,14 @@ class Connection(object):
         add_token = kwargs.pop('add_token', True)
         if add_token and \
            str(self._auth).upper() in ['BUILTIN', 'OAUTH', 'PRO']:
-            if token_as_header == False:
+            if token_as_header == False and not 'token' in kwargs:
                 params['token'] = self.token
-            elif token_as_header and token_header:
-                self._session.headers.update({token_header: "Bearer %s" % self.token})
+            elif token_as_header == False and 'token' in kwargs:
+                params['token'] = kwargs['token']
+            elif token_as_header and 'token' in kwargs:
+                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            
+            elif token_as_header and token_header and self.token:
+                self._session.headers.update({token_header: "Bearer %s" % self.token})            
         if try_json:
             params['f'] = 'json'
         if params == {}:
@@ -511,9 +515,13 @@ class Connection(object):
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
         if add_token:
-            if token_as_header == False:
+            if token_as_header == False and not 'token' in kwargs: #as ?token=
                 params['token'] = self.token
-            elif token_as_header and token_header and self.token:
+            elif token_as_header == False and 'token' in kwargs: #as ?token= and user provides the token
+                params['token'] = kwargs['token']
+            elif token_as_header and 'token' in kwargs: # as X-Esri-Auth header with given token
+                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            
+            elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
         if try_json:
             params['f'] = 'json'
@@ -651,9 +659,13 @@ class Connection(object):
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
         if add_token:
-            if token_as_header == False:
+            if token_as_header == False and not 'token' in kwargs: #as ?token=
                 params['token'] = self.token
-            elif token_as_header and token_header:
+            elif token_as_header == False and 'token' in kwargs: #as ?token= and user provides the token
+                params['token'] = kwargs['token']
+            elif token_as_header and 'token' in kwargs: # as X-Esri-Auth header with given token
+                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            
+            elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
 
         if try_json:
@@ -736,9 +748,13 @@ class Connection(object):
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
         if add_token:
-            if token_as_header == False:
+            if token_as_header == False and not 'token' in kwargs: #as ?token=
                 params['token'] = self.token
-            elif token_as_header and token_header:
+            elif token_as_header == False and 'token' in kwargs: #as ?token= and user provides the token
+                params['token'] = kwargs['token']
+            elif token_as_header and 'token' in kwargs: # as X-Esri-Auth header with given token
+                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            
+            elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
 
         if try_json:
@@ -750,6 +766,61 @@ class Connection(object):
                                      file_name=file_name,
                                      try_json=try_json,
                                      force_bytes=kwargs.pop('force_bytes', False))
+    #----------------------------------------------------------------------
+    def streaming_method(self, url, callback, 
+                         data=None, json_data=None, verb="GET", 
+                         **kwargs):
+        """
+        Performs streaming web requests. 
+        
+        =======================     ===========================================================
+        **Parameters**              **Description**
+        -----------------------     -----------------------------------------------------------
+        url                         Required String. The web resource location.
+        -----------------------     -----------------------------------------------------------
+        callback                    Required Method.  The callback function to handle the response from the streaming request.
+        
+                                    **Example**
+                                    ```
+                                    def hook(r, *args, **kwargs):
+                                        print('called a hook')
+                                        return r
+                                    ```
+                                    See: https://requests.kennethreitz.org/en/master/user/advanced/#event-hooks
+                                    
+                                    
+        -----------------------     -----------------------------------------------------------
+        data                        Optional Dict. The parameters to pass to the method.
+        -----------------------     -----------------------------------------------------------
+        json_data                   Optional Dict. The parameters to pass to the method. This applies to POST only
+        -----------------------     -----------------------------------------------------------
+        verb                        Optional String.  The default is GET.  The allowed values are POST, GET, or PUT.
+        -----------------------     -----------------------------------------------------------
+        kwargs                      Optional Dict.  See https://requests.readthedocs.io/en/master/user/advanced/#request-and-response-objects
+        =======================     ===========================================================
+        
+        """
+        verbs = ['post', 'put', 'get']
+        if verb.lower() in verbs:
+            hooks = {'response' : callback}
+            fn = getattr(self._session, verb.lower())
+            if verb.lower() == "post":
+                return fn(url=url, 
+                          data=data, 
+                          json_data=json, 
+                          hooks=hooks,
+                          stream=True,
+                          **kwargs) 
+            else:
+                return fn(url=url, 
+                          data=data, 
+                          hooks=hooks,
+                          stream=True,
+                          **kwargs)                 
+        else:
+            allowed_verb = ",".join(verbs)
+            raise ValueError(f"Invalid web method only {allowed_verb} as allowed")
+        self._session.post(url=url, data=data, json_data=json, stream=True)
     #----------------------------------------------------------------------
     def login(self, username, password, expiration=None):
         """allows a user to login to a site with different credentials"""
@@ -1048,6 +1119,41 @@ class Connection(object):
 
             return self._token
         return None
+    #----------------------------------------------------------------------
+    def generate_portal_server_token(self, serverUrl, expiration=1440):
+        """generates a server token using Portal token"""
+        if self._auth.lower() == "pki":
+            from urllib.parse import unquote
+            cookies = self._session.cookies.get_dict()            
+            for key, cookie in cookies.items():
+                if key.lower() == "esri_auth":
+                    auth = json.loads(unquote(cookie))
+                    if 'token' in auth:
+                        token = auth['token']
+                        break
+                del cookie
+        else:
+            token = self.token
+        postdata = {'serverURL':serverUrl,
+                    'token': token,
+                    'expiration':str(expiration),
+                    'f': 'json',
+                    'request':'getToken',
+                    'referer':self._referer}
+        if self._token_url is None:
+            if self.baseurl.endswith('/'):
+                resp = self.post('generateToken', postdata,
+                                 ssl=True, add_token=False)
+            else:
+                resp = self.post('/generateToken', postdata,
+                                 ssl=True, add_token=False)
+        else:
+            resp = self.post(path=self._token_url, postdata=postdata,
+                             ssl=True, add_token=False)
+        if isinstance(resp, dict) and resp:
+            return resp.get('token')
+        else:
+            raise Exception(f"Could not generate the token for the service. \n Error Message: \n {resp}")
     #----------------------------------------------------------------------
     def _oauth_authenticate(self):
         """performs oauth check when only client_id is provided"""
