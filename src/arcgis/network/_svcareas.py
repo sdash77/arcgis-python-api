@@ -1036,7 +1036,7 @@ def generate_service_areas(
         * service_areas - Service Areas as a FeatureSet
         * solve_succeeded - Solve Succeeded as a boolean
 
-    Click `FindRoutes`_ for additional help.
+    Click `GenerateServiceAreas`_ for additional help.
 
     .. code-block:: python
 

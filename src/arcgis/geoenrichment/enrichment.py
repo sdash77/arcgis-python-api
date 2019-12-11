@@ -590,13 +590,6 @@ def enrich(study_areas,
            add_derivative_variables=None,
            intersecting_geographies=None,
            return_geometry=True,
-           # options=None, # can be specified in study_areas
-           # use_data=None, # is only a 'performance hint'
-           # in_sr=4326, # will use the sr from the geometry
-           # out_sr=4326, # will use arcgis.env.out_sr
-           # suppress_nulls=False, # never
-           # for_storage=True, # undocumented, not required
-           # as_featureset=True, # always return df
            gis=None):
     """
     Returns demographic and other requested information for the specified study areas.
@@ -769,41 +762,45 @@ def enrich(study_areas,
 
     # chunking if len > 100
     if isinstance(areas, (SpatialDataFrame, pd.DataFrame, list)) and len(areas) > 100:
+        import concurrent.futures
         parts = []
-        for chunk in _chunks(l=areas, n=100):
-            parts.append(ge.enrich(study_areas=chunk.copy(),
-                                   data_collections=data_collections,
-                                   analysis_variables=analysis_variables,
-                                   add_derivative_variables=add_derivative_variables,
-                                   #options=options,
-                                   #use_data=use_data,
-                                   intersecting_geographies=intersecting_geographies,
-                                   return_geometry=return_geometry,
-                                   #in_sr=in_sr,
-                                   out_sr=env.out_spatial_reference,
-                                   #suppress_nulls=suppress_nulls,
-                                   #for_storage=for_storage,
-                                   as_featureset=False))
-            del chunk
-
-        df = pd.concat(parts)
-        df.reset_index(inplace=True, drop=True)
+        concurrent_parts = {}#[]
+        with concurrent.futures.ThreadPoolExecutor(max_workers=15) as executor:
+            for idx, chunk in enumerate(_chunks(l=areas, n=100)):
+                f = executor.submit(fn=ge.enrich, **{"study_areas": chunk.copy(),
+                                                     "data_collections": data_collections,
+                                                     "analysis_variables" : analysis_variables,
+                                                     "add_derivative_variables" : add_derivative_variables,
+                                                     "intersecting_geographies" : intersecting_geographies,
+                                                     "return_geometry" : return_geometry,
+                                                     "out_sr" : env.out_spatial_reference,
+                                                     "as_featureset" : False})
+                
+                concurrent_parts[idx] = f#.append(f)
+                del chunk
+        futures = concurrent.futures.wait(list(concurrent_parts.values()))
+        exceptions = [f.exception() is None for f in futures.done]
+        results = [result.result() for result in concurrent_parts.values()]
+        if all(exceptions) == False:
+            import json
+            exceptions = [f.exception() for f in futures.done if not f.exception() is None]
+            raise Exception(json.dumps(exceptions))
+        if isinstance(areas, (SpatialDataFrame, pd.DataFrame)):
+            df = (pd.concat(results)
+                  .set_index(keys=areas.index, drop=True, 
+                             append=False, inplace=False, 
+                             verify_integrity=False))
+        else:
+            df = pd.concat(results)
         return df
     # no chunking, len < 100, or FeatureSet
     return ge.enrich(study_areas=areas,
                       data_collections=data_collections,
                      analysis_variables=analysis_variables,
                      add_derivative_variables=add_derivative_variables,
-                     #options=options,
-                     #use_data=use_data,
                      intersecting_geographies=intersecting_geographies,
                      return_geometry=return_geometry,
-                     #in_sr=in_sr,
-                     out_sr=env.out_spatial_reference,
-                     #suppress_nulls=suppress_nulls,
-                     #for_storage=for_storage,
-                     #as_featureset=as_featureset
-                     )
+                     out_sr=env.out_spatial_reference)
 #----------------------------------------------------------------------
 def _find_report(country, gis=None):
     """

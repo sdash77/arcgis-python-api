@@ -2930,19 +2930,19 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                 # Update the service references
                 services = ['dispatchers', 'assignments', 'workers', 'tracks']
                 for service in services:
-                    service_definiton = _deep_get(workforce_json, service)
-                    if service_definiton is not None:
-                        layer_url = _deep_get(service_definiton, 'url')
+                    service_definition = _deep_get(workforce_json, service)
+                    if service_definition is not None:
+                        layer_url = _deep_get(service_definition, 'url')
                         feature_service_url = os.path.dirname(layer_url)
                         for key, value in self._clone_mapping['Services'].items():
                             if _compare_url(feature_service_url, key):
                                 layer_id = int(os.path.basename(layer_url))
                                 new_id = value['layer_id_mapping'][layer_id]
-                                service_definiton['url'] = "{0}/{1}".format(value['url'], new_id)
-                                service_definiton['serviceItemId'] = value['id']
+                                service_definition['url'] = "{0}/{1}".format(value['url'], new_id)
+                                service_definition['serviceItemId'] = value['id']
 
                                 if service == 'dispatchers':
-                                    feature_layer = FeatureLayer(service_definiton['url'], self.target)
+                                    feature_layer = FeatureLayer(service_definition['url'], self.target)
                                     features = feature_layer.query("userId = '{0}'".format(user.username)).features
                                     if len(features) == 0:
                                         features = [{"attributes" : {"name" : user.fullName, "userId" : user.username}}]

@@ -9,7 +9,6 @@ from __future__ import absolute_import
 import base64
 import json
 import locale
-
 import sys
 import os
 import re
@@ -2280,6 +2279,117 @@ class UserManager(object):
                 raise ValueError('Invalid input: must be of type list.')
         return False
 
+    def advanced_search(self, query, 
+                        return_count=False, max_users=10, 
+                        start=1, sort_field="username", 
+                        sort_order="asc", as_dict=False):
+        """
+        The `advanced_search` method allows for the full control of the query operations
+        by any given user.  The searches are performed against a high performance 
+        index that indexes the most popular fields of an user. See the Search 
+        reference page for information on the fields and the syntax of the query.
+
+        The search index is updated whenever users is added, updated, or deleted. There 
+        can be a lag between the time that the user is updated and the time when it's 
+        reflected in the search results.
+
+        The results of a search only contain items that the user has permission to access.
+        
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        query                  Required String.  The search query.
+        ------------------     --------------------------------------------------------------------
+        return_count           Optional Boolean.  If True, the number of users found by the query 
+                               string is returned.
+        ------------------     --------------------------------------------------------------------
+        max_users              Optional Integer. Limits the total number of users returned in a 
+                               a query.  The default is `10` users.  If all users is needed, `-1` 
+                               should be used.
+        ------------------     --------------------------------------------------------------------
+        start                  Optional Int. The starting position to search from.  This is
+                               only required if paging is needed.
+        ------------------     --------------------------------------------------------------------
+        sort_field             Optional String. Responses from the `search` operation can be
+                               sorted on various fields. `avgrating` is the default.
+        ------------------     --------------------------------------------------------------------
+        sort_order             Optional String. The sequence into which a collection of
+                               records are arranged after they have been sorted. The allowed
+                               values are: asc for ascending and desc for descending.
+        ------------------     --------------------------------------------------------------------
+        as_dict                Required Boolean. If True, the response comes back as a dictionary. 
+        ==================     ====================================================================
+
+        :returns: dictionary if `return_count` is False, else an integer
+        """
+        from arcgis.gis._impl import _search
+        stype = "users"
+        max_items = max_users
+        group_id = None
+        if max_items == -1:
+            max_items = _search(gis=self._gis, query=query, stype=stype,
+                          max_items=0, start=start, sort_field=sort_field,
+                          sort_order=sort_order, group_id=group_id, as_dict=as_dict)['total']
+        so = {
+            'asc' : 'asc',
+            'desc' : 'desc',
+            'ascending' : 'asc',
+            'descending' : 'desc'
+        }
+        if sort_order:
+            sort_order = so[sort_order]
+
+        if return_count:
+            max_items = 0
+        if max_items <= 10:
+            res = _search(gis=self._gis, query=query, stype=stype,
+                          max_items=max_items, 
+                          start=start, sort_field=sort_field,
+                          sort_order=sort_order, group_id=group_id, as_dict=as_dict)
+            if 'total' in res and \
+               return_count:
+                return res['total']
+            elif 'aggregations' in res:
+                return res['aggregations']
+            return res
+        else:
+            allowed_keys = [ 'query', 'return_count', 'max_users', 
+                             'bbox','categories', 'category_filter',
+                             'start', 'sort_field', 'sort_order', 
+                             'count_fields','count_size', 'as_dict']
+            inputs = locals()
+            kwargs = {}
+            for k,v in inputs.items():
+                if k in allowed_keys:
+                    kwargs[k] = v
+            import concurrent.futures
+            import math, copy
+            num = 10
+            steps = range(math.ceil(max_items / num))
+            params = [ ]
+            for step in steps:
+                new_start = start + num*step
+                kwargs['max_users'] = num
+                kwargs['start'] = new_start
+                params.append(copy.deepcopy(kwargs))
+            items = {
+                'results' : [],
+                'start' : start,
+                'num' : 10,
+                'total' : max_items
+            }
+            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                future_to_url = {executor.submit(self.advanced_search, **param): param for param in params}
+                for future in concurrent.futures.as_completed(future_to_url):
+                    result = future_to_url[future]
+                    data = future.result()
+                    if 'results' in data:
+                        items['results'].extend(data['results'])
+            if len(items['results']) > max_items:
+                items['results'] = items['results'][:max_items]
+            return items       
+        return None
+    #----------------------------------------------------------------------
     def search(self, query=None, sort_field='username', sort_order='asc',
                max_users=100, outside_org=False, exclude_system=False,
                user_type=None, role=None):
@@ -2946,7 +3056,7 @@ class ContentManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def _add_by_part(self, file_path, itemid, item_properties, size=1e7):
+    def _add_by_part(self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None):
         """
         Performs a special add operation that chunks up a file and loads it piece by piece.
         This is an internal method used by `add`
@@ -2965,6 +3075,10 @@ class ContentManager(object):
         ---------------     --------------------------------------------------------------------
         multipart           Optional Boolean.  Loads a file by chunks to the Enterprise. The
                             default is False.
+        ---------------     --------------------------------------------------------------------
+        owner               Optional string. Defaults to the logged in user.
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. Name of the folder where placing item.
         ===============     ====================================================================
 
 
@@ -2978,9 +3092,23 @@ class ContentManager(object):
                 if not data:
                     break
                 yield data
-        user = self._gis.users.me.username
-        url = "{base}content/users/{user}/items/{itemid}/addPart".format(base=self._gis._portal.resturl,
-                                                                          user=user,
+
+        owner_name = owner
+        if isinstance(owner, User):
+            owner_name = owner.username
+
+        # If owner isn't specified, use the logged in user
+        if not owner_name:
+            owner_name = self._gis.users.me.username
+        
+        # Setup the item path, including the folder
+        path = 'content/users/' + owner_name
+        if folder and folder != '/':
+            folder_id = self._portal.get_folder_id(owner_name, folder)
+            path += '/' + folder_id
+
+        url = "{base}{path}/items/{itemid}/addPart".format(base=self._gis._portal.resturl,
+                                                                          path=path,
                                                                           itemid=itemid)
         file = {'file': None}
         params = {
@@ -3030,8 +3158,8 @@ class ContentManager(object):
 
         if all(messages):
             # commit the addition
-            url = "{base}content/users/{user}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
-                                                                             user=user,
+            url = "{base}{path}/items/{itemid}/commit".format(base=self._gis._portal.resturl,
+                                                                             path=path,
                                                                              itemid=itemid)
             params = {
                 'f' : "json",
@@ -3042,8 +3170,8 @@ class ContentManager(object):
             params.update(item_properties)
             res = self._gis._con.post(url, params)
             if 'success' in res:
-                url = "{base}content/users/{user}/items/{itemid}/status".format(base=self._gis._portal.resturl,
-                                                                                user=user,
+                url = "{base}{path}/items/{itemid}/status".format(base=self._gis._portal.resturl,
+                                                                                path=path,
                                                                                 itemid=itemid)
                 import time
                 params = {'f' : 'json'}
@@ -3289,9 +3417,13 @@ class ContentManager(object):
                 file_path=data,
                 itemid=itemid,
                 item_properties=item_properties,
-                size=1e7)
-            # return the item
+                size=1e7,
+                owner=owner_name,
+                folder=folder)
+
+            # Update the thumbnail and return the item
             item = Item(gis=self._gis, itemid=itemid)
+            item.update(thumbnail=thumbnail)
             return item
         else:
             if filetype:
@@ -4546,7 +4678,8 @@ class ContentManager(object):
                     sitems.append(i.itemid)
                 else:
                     sitems.append(i)
-            #items = sitems
+            if not isinstance(sitems[0], Item):
+                items = [Item(gis=self._gis, itemid=i) for i in sitems]
         params['items'] = ",".join(sitems)
         params['everyone'] = everyone
         params['org'] = org
@@ -4621,19 +4754,35 @@ class ContentManager(object):
         if everyone is not None and \
             org is not None:
             for item in items:
-                item.share(everyone=everyone, org=org)
+                if isinstance(item, Item):
+                    item.share(everyone=everyone, org=org)
+                elif isinstance(item, str):
+                    Item(gis=self._gis, itemid=item).share(everyone=everyone, org=org)
         elif everyone is not None and \
             org is None:
             for item in items:
-                org = item.shared_with['org']
-                item.share(everyone=everyone, org=org)
+                if isinstance(item, Item):
+                    org = item.shared_with['org']
+                    item.share(everyone=everyone, org=org)
+                if isinstance(item, str):
+                    usitem = Item(gis=self._gis, itemid=item)
+                    org = usitem.shared_with['org']
+                    usitem.share(everyone=everyone, org=org)
         elif everyone is None and \
             org is not None:
             for item in items:
-                everyone = item.shared_with['everyone']
-                item.share(everyone=everyone, org=org)
+                if isinstance(item, Item):
+                    everyone = item.shared_with['everyone']
+                    item.share(everyone=everyone, org=org)
+                if isinstance(item, str):
+                    usitem = Item(gis=self._gis, itemid=item)
+                    everyone = usitem.shared_with['everyone']
+                    usitem.share(everyone=everyone, org=org)
         for item in items:
-            item._hydrated = False
+            if isinstance(item, Item):
+                item._hydrated = False
+            if isinstance(item, str):
+                Item(gis=self._gis, itemid=item)._hydrated = False
         return res
 
 ########################################################################
