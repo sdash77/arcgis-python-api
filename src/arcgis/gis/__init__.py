@@ -737,6 +737,28 @@ class GIS(object):
         includes helper services, allowed redirect URIs, and the current 
         configuration for any access notices or information banners.
         
+        ======================     ===============================================================
+        **Parameters**             **Description**
+        ----------------------     ---------------------------------------------------------------
+        settings                   Required Dict.  A dictionary of the settings
+        
+                                    ==========================    =============================================
+                                    **Fields**                    **Description**
+                                    --------------------------    ---------------------------------------------
+                                    anonymousAccessNotice         Dict. A JSON object representing a notice that is shown to your organization's anonymous users.
+                                                                  Ex: {'title': 'Anonymous Access Notice Title', 'text': 'Anonymous Access Notice Text', 'buttons': 'acceptAndDecline', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    authenticatedAccessNotice     Dict. A JSON object representing a notice that is shown to your organization's authenticated users.
+                                                                  Ex: {'title': 'Authenticated Access Notice Title', 'text': 'Authenticated Access Notice Text', 'buttons': 'okOnly', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    informationalBanner           Dict. A JSON object representing the informational banner that is shown at the top of your organization's page.
+                                                                  Ex: {'text': 'Header Text', 'bgColor': 'grey', 'fontColor': 'blue', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    clearEmptyFields              Bool.  If True, any empty dictionary will be set to null.
+                                    ==========================    =============================================
+                                    
+        ======================     ===============================================================
+        
         :returns: Dictionary
         
         """
