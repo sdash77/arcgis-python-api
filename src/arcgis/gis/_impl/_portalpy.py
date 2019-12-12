@@ -1071,6 +1071,7 @@ class Portal(object):
         # forcing a check of the server, then check the server
         if not self._properties or force:
             path = 'accounts/self' if self._is_pre_162 else 'portals/self'
+            resp = None
             try:
                 resp = self.con.post(path, self._postdata(), ssl=True)
             except Exception as e:
@@ -1083,6 +1084,8 @@ class Portal(object):
                     resp = self.con.post(path, self._postdata(), ssl=True)
                 if self.con._auth == "PKI":
                     resp = self.con.get(path, ssl=True) # issue seen with key, cert auth
+                if not resp:
+                    raise e
 
             if resp:
                 self._properties = resp
