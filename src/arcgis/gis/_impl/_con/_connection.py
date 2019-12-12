@@ -515,9 +515,9 @@ class Connection(object):
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
         if add_token:
-            if token_as_header == False and not 'token' in kwargs: #as ?token=
+            if token_as_header == False and (not 'token' in kwargs or kwargs['token'] is None): #as ?token=
                 params['token'] = self.token
-            elif token_as_header == False and 'token' in kwargs: #as ?token= and user provides the token
+            elif token_as_header == False and 'token' in kwargs and kwargs['token']: #as ?token= and user provides the token
                 params['token'] = kwargs['token']
             elif token_as_header and 'token' in kwargs: # as X-Esri-Auth header with given token
                 self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            

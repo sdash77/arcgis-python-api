@@ -28,6 +28,7 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
 from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
+from ._impl import _portalpy
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -297,9 +298,9 @@ class GIS(object):
         if self._url.lower() == "home":
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
-        from ._impl import _portalpy as portalpy
+        #from ._impl import _portalpy as portalpy
         try:
-            self._portal = portalpy.Portal(self._url, self._username,
+            self._portal = _portalpy.Portal(self._url, self._username,
                                            self._password, self._key_file,
                                            self._cert_file,
                                            proxy_host=self._proxy_host,
@@ -346,7 +347,7 @@ class GIS(object):
                                       props['urlKey'],
                                       props['customBaseUrl'])
                 self._url = url
-                pp =  portalpy.Portal(url,
+                pp =  _portalpy.Portal(url,
                                       self._username,
                                       self._password,
                                       self._key_file,
@@ -5752,7 +5753,6 @@ class Group(dict):
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
-        isinstance(self._portal, portalpy.Portal)
         resp = self._portal.update_group(self.groupid, title, tags,
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
@@ -8219,7 +8219,7 @@ class Item(dict):
             print()
         else:
             return None
-        if isinstance(self._gis._portal, portalpy.Portal) and \
+        if isinstance(self._gis._portal, _portalpy.Portal) and \
            self._gis._portal.is_arcgisonline:
             tbx = Toolbox(url=gp_url)
         else:
@@ -10058,8 +10058,8 @@ class _GISResource(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                if self._con._token is None:
-                    self._lazy_token = None
+                if self._con.token is None:
+                    self._lazy_token = self._lazy_token = self._con.generate_portal_server_token(serverUrl=self.url)
                 else:
                     from ._impl._con import Connection
                     if isinstance(self._con, Connection):
