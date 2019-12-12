@@ -1490,16 +1490,195 @@ class UserManager(object):
     Users call methods on this 'users' object to manipulate (create, get, search, etc) users.
     """
     _me = None
+    #----------------------------------------------------------------------
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
-
+    #----------------------------------------------------------------------
     def __str__(self):
         return "<UserManager @ {url}>".format(url=self._gis._url)
-
+    #----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-
+    #----------------------------------------------------------------------
+    @property
+    def user_settings(self):
+        """
+        Gets/sets the user's settings
+        
+        The `user_settings` allows administrators to set, and edit, new 
+        member defaults. Members who create their own built-in accounts and
+        members added by an administrator or through automatic account 
+        creation will be automatically assigned the new member defaults. 
+        
+        Passing in `None` to the property will delete all the user settings.
+        
+        **Settings Key/Value Dictionary**
+        
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        role	          String/Role. The role ID. To assign a custom role as the new member default, 
+                          provide a Role object.  
+                          
+                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object 
+        ----------------  -------------------------------------------------------------------------------
+        userLicenseType   String. The ID of a user type licensed with your organization. To see which 
+                          user types are included with your organization's licensing, see the License 
+                          resource in the Portal Admin API.
+                          
+                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`, 
+                          `viewer`, or `fieldWorker`
+        ----------------  -------------------------------------------------------------------------------
+        groups            List of String/Groups. An array of group ID numbers or `Group` objects that 
+                          specify the groups new members will be added to.
+        ----------------  -------------------------------------------------------------------------------
+        userType          String.  This key only applies to `ArcGIS Online`. If new members will have 
+                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default 
+                          value is `arcgisonly`.
+                          
+                          Values: `arcgisonly` or `both`
+        ----------------  -------------------------------------------------------------------------------
+        apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
+                          Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
+        ----------------  -------------------------------------------------------------------------------
+        appBundles        List of dictionaries. An array of an app bundle's ID.
+        
+                          Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
+        ================  ===============================================================================
+        
+        :returns: Dictionary
+        
+        """
+        if self._gis.version >= [7,3]:
+            url = f"{self._gis._portal.resturl}portals/self/userDefaultSettings"
+            params = {'f' : 'json'}
+            return self._gis._con.get(url, params)
+        return None
+    #----------------------------------------------------------------------
+    @user_settings.setter
+    def user_settings(self, settings):
+        """
+        Gets/sets the user's settings
+        
+        The `user_settings` allows administrators to set, and edit, new 
+        member defaults. Members who create their own built-in accounts and
+        members added by an administrator or through automatic account 
+        creation will be automatically assigned the new member defaults. 
+        
+        Passing in `None` to the property will delete all the user settings.
+        
+        **Settings Key/Value Dictionary**
+        
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        role	          String/Role. The role ID. To assign a custom role as the new member default, 
+                          provide a Role object.  
+                          
+                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object 
+        ----------------  -------------------------------------------------------------------------------
+        userLicenseType   String. The ID of a user type licensed with your organization. To see which 
+                          user types are included with your organization's licensing, see the License 
+                          resource in the Portal Admin API.
+                          
+                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`, 
+                          `viewer`, or `fieldWorker`
+        ----------------  -------------------------------------------------------------------------------
+        groups            List of String/Groups. An array of group ID numbers or `Group` objects that 
+                          specify the groups new members will be added to.
+        ----------------  -------------------------------------------------------------------------------
+        userType          String.  This key only applies to `ArcGIS Online`. If new members will have 
+                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default 
+                          value is `arcgisonly`.
+                          
+                          Values: `arcgisonly` or `both`
+        ----------------  -------------------------------------------------------------------------------
+        apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
+                          Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
+        ----------------  -------------------------------------------------------------------------------
+        appBundles        List of dictionaries. An array of an app bundle's ID.
+        
+                          Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
+        ================  ===============================================================================
+        
+        :returns: Dictionary
+        
+        """
+        user_li_lu = {
+            "creatorUT" : "creatorUT",
+            "creator" : "creatorUT",
+            "editor" : "editorUT",
+            "editorUT" : "editorUT",
+            "GISProfessionalAdvUT" : "GISProfessionalAdvUT",
+            "Advanced GIS" : "GISProfessionalAdvUT",
+            "Basic GIS" : "GISProfessionalBasicUT",
+            "GISProfessionalBasicUT" : "GISProfessionalBasicUT",
+            "Standard GIS" : "GISProfessionalStdUT",
+            "GISProfessionalStdUT" : "GISProfessionalStdUT",
+            "viewer" : "viewerUT",
+            "viewerUT" : "viewerUT",
+            "fieldworker" : "fieldWorkerUT",
+            "fieldWorkerUT" : "fieldWorkerUT"
+        }
+        role_lu = {
+             "administrator" : "org_admin",
+             "org_admin" : "org_admin",
+             "publisher" : "org_publisher",
+             "org_publisher" : "org_publisher",
+             "user" : "org_user",
+             "iBBBBBBBBBBBBBBB" : "iBBBBBBBBBBBBBBB",
+             "editor" : "iBBBBBBBBBBBBBBB",
+             "viewer" : "iAAAAAAAAAAAAAAA",
+             "iAAAAAAAAAAAAAAA" : "iAAAAAAAAAAAAAAA"
+        }
+        if self._gis.version > [7, 3]:            
+            if settings is None or \
+               (isinstance(settings, dict) and \
+               len(settings) == 0):
+                cs = self.user_settings
+                if cs and len(cs) > 0:
+                    self._delete_user_settings()
+            else:
+                url = f"{self._gis._portal.resturl}portals/self/setUserDefaultSettings"
+                params = {'f' : 'json'}
+                if 'role' in settings:
+                    if settings['role'] in role_lu:
+                        settings['role'] = role_lu[settings['role'].lower()]
+                    elif isinstance(settings['role'], Role):
+                        settings['role'] = settings['role'].role_id
+                if 'userLicenseType' in settings:
+                    if settings['userLicenseType'].lower() in user_li_lu:
+                        settings['userLicenseType'] = user_li_lu[settings['userLicenseType'].lower()]
+                if 'userType' in settings and self._gis._portal.is_arcgisonline == False:
+                    del settings['userType']
+                if 'groups' in settings:
+                    settings['groups'] = [grp.groupid for grp in settings['groups'] if isinstance(grp, Group)] + \
+                        [grp for grp in settings['groups'] if isinstance(grp, str)]
+                params.update(settings)
+                res = self._gis._con.post(url, params)
+                if 'success' in res and res['success'] == False:
+                    raise Exception(res)
+    #----------------------------------------------------------------------
+    def _delete_user_settings(self):
+        """
+        This operation allows administrators to clear the previously 
+        configured new member defaults set either through the Set User 
+        Default Settings operation or from the New Member Defaults tab in 
+        the Organization Settings of the portal.
+        
+        :returns: Boolean
+        
+        """
+        if self._gis.version > [7, 3]:
+            url = f"{self._gis._portal.resturl}portals/self/userDefaultSettings/delete"
+            params = {'f' : 'json'}
+            res = self._portal.con.post(url, params)
+            if 'success' in res:
+                return res['success']
+            return res
+        return None
+    #----------------------------------------------------------------------
     @property
     def license_types(self):
         """
@@ -1530,7 +1709,7 @@ class UserManager(object):
             res = self._gis._con.get(url, params)
             results += res['userLicenseTypes']
         return results
-
+    #----------------------------------------------------------------------
     def counts(self, type='bundles', as_df=True):
         """
         This method returns a simple report on the number of licenses currently used
@@ -1604,7 +1783,7 @@ class UserManager(object):
             import pandas as pd
             return pd.DataFrame(data=results)
         return results
-
+    #----------------------------------------------------------------------
     def send_notification(self,
                           users,
                           subject,
@@ -1657,7 +1836,7 @@ class UserManager(object):
         else:
             raise NotImplementedError("The current version of the enterprise does not support `send_notification`")
         return False
-
+    #----------------------------------------------------------------------
     def create(self, username, password, firstname, lastname, email, description=None, role=None,
                provider='arcgis', idp_username=None, level=2, thumbnail=None, user_type=None, credits=-1,
                groups=None):
@@ -1747,7 +1926,7 @@ class UserManager(object):
                     params[k] = v
             return self._createPre64(**params)
         return None
-
+    #----------------------------------------------------------------------
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
                      provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
@@ -2122,7 +2301,7 @@ class UserManager(object):
         if 'success' in res:
             return res['success']
         return False
-
+    #----------------------------------------------------------------------
     @property
     def invitations(self):
         """
@@ -2139,7 +2318,7 @@ class UserManager(object):
         from ._impl._invitations import InvitationManager
         url = self._portal.resturl + "portals/self/invitations"
         return InvitationManager(url, gis=self._gis)
-
+    #----------------------------------------------------------------------
     def signup(self, username, password, fullname, email):
         """
         Signs up a user to an instance of Portal for ArcGIS.
@@ -2175,7 +2354,7 @@ class UserManager(object):
             return User(self._gis, username)
         else:
             return None
-
+    #----------------------------------------------------------------------
     def get(self, username):
         """
         Returns the user object for the specified username.
@@ -2203,7 +2382,7 @@ class UserManager(object):
         if user is not None:
             return User(self._gis, user['username'], user)
         return None
-
+    #----------------------------------------------------------------------
     def enable_users(self, users):
         """
         This is a bulk operation that allows administrators to quickly enable large number of users
@@ -2241,7 +2420,7 @@ class UserManager(object):
             else:
                 raise ValueError('Invalid input: must be of type list.')
         return False
-
+    #----------------------------------------------------------------------
     def disable_users(self, users):
         """
         This is a bulk disables user operation that allows administrators to quickly disable large
@@ -2279,7 +2458,7 @@ class UserManager(object):
             else:
                 raise ValueError('Invalid input: must be of type list.')
         return False
-
+    #----------------------------------------------------------------------
     def search(self, query=None, sort_field='username', sort_order='asc',
                max_users=100, outside_org=False, exclude_system=False,
                user_type=None, role=None):
@@ -2393,7 +2572,7 @@ class UserManager(object):
             else:
                 self._me = None
         return self._me
-
+    #----------------------------------------------------------------------
     @_lazy_property
     def roles(self):
         """Helper object to manage custom roles for users"""
