@@ -183,9 +183,7 @@ class SecurityManager(object):
         url = self._url + "/config/update"
         params = {'f' : 'json'}
         current = dict(self.configuration)
-        for k, v in settings.items():
-            if k in current:
-                params[k] = settings[k]
-                current.pop(k)
-        params.update(current)
-        return self._con.post(url, params)
+        assert isinstance(settings, (dict, PropertyMap))
+        params.update(current)  # Load the current settings
+        params.update(settings) # Load the user settings in from the dictionary
+        return self._con.post(url, params) # post the change.
