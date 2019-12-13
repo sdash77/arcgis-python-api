@@ -1959,18 +1959,28 @@ class FeatureLayer(Layer):
             else:
                 raise queryException
 
+        def is_true(x):
+            if isinstance(x, bool) and x:
+                return True
+            elif isinstance(x, str) and x.lower() == 'true':
+                return True
+            else:
+                return False
+
         if 'error' in result:
             raise ValueError(result)
-        if params['returnCountOnly']:
+        if 'returnCountOnly' in params and is_true(params['returnCountOnly']):
             return result['count']
-        elif params['returnIdsOnly']:
+        elif 'returnIdsOnly' in params and is_true(params['returnIdsOnly']):
             return result
         elif 'extent' in result:
             return result
-        elif raw:
+        elif is_true(raw):
             return result
         else:
             return FeatureSet.from_dict(result)
+
+    # ----------------------------------------------------------------------
     def _query_df(self, url, params):
         """ returns results of a query as a pd.DataFrame"""
         import pandas as pd
