@@ -497,7 +497,7 @@ class Test_geometry_functions_AGO(unittest.TestCase):
         """
         try:
             # construct polygon using WY state roads
-            # test data: https://www.arcgis.com/home/item.html?id=d11b7423108b49d19fd141ebccd4d803
+            # test data: https://geosaurus.maps.arcgis.com/home/item.html?id=e00f136db4024815abb310a772c426b1
             geom_dict = {'points': [[-624073.763310706, 4301213.06154505],
                                       [-623773.200685564, 4301513.04668796],
                                       [-623506.033907657, 4301742.85743129],
