@@ -74,6 +74,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
             b_index = b
         else:
             raise(e)
+        b_index = self._extract_bands.index(b_index)
         symbology_bands.append(b_index)
 
     # Get Batch
@@ -93,7 +94,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
         i+=self.batch_size
     x_batch = torch.cat(x_batch)
     # Denormalize X
-    x_batch = (self._scaled_std_values.view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values.view(1, -1, 1, 1).to(x_batch)
+    x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
     y_batch = torch.cat(y_batch).cpu().numpy()
 
     # Extract RGB Bands
