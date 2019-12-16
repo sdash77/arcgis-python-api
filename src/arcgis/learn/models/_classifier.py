@@ -1082,7 +1082,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, Please use arcgis.learn.classify_pixels() instead.
+        Deprecated, Please use arcgis.learn.classify_objects() instead.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
