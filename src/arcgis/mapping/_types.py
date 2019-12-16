@@ -1776,16 +1776,16 @@ class OfflineMapAreaManager(object):
                         
                         feature_services[os.path.dirname(l['url'])] = {
                             "url": os.path.dirname(l['url']),
-                            "layers": [os.path.basename(l['url'])],
-                            "returnAttachments": False,
-                            "attachmentsSyncDirection": "upload",
-                            "syncModel": "perLayer",
+                            "layers": [int(os.path.basename(l['url']))],
+                            #"returnAttachments": False,
+                            #"attachmentsSyncDirection": "upload",
+                            #"syncModel": "perLayer",
                             "createPkgDeltas": {
                                 "maxDeltaAge": 5
                             }
                         }
                     else:
-                        feature_services[os.path.dirname(l['url'])]['layers'].append(os.path.basename(l['url']))
+                        feature_services[os.path.dirname(l['url'])]['layers'].append(int(os.path.basename(l['url'])))
                 feature_services = list(feature_services.values())
         # region call the SetupMapArea tool
         #pkg_tb.setup_map_area(map_area_item_id, map_layers_to_ignore=None, tile_services=None, feature_services=None, gis=None, future=False)
