@@ -878,15 +878,14 @@ class MapView(widgets.DOMWidget):
 
         if isinstance(item, Item):
             try:
-                getattr(item, 'layers')
+                if hasattr(item, 'layers'):
+                    if item.layers is None:
+                        log.warning("Item.layers is a 'NoneType' object: nothing to be added to map")
+                    else:
+                        for layer in item.layers:
+                            self._add_layer_to_widget(layer, options)
             except KeyError:
                 log.warning("No 'layers' in Item: will not be added to map")
-            else:
-                if item.layers is None:
-                    log.warning("Item.layers is a 'NoneType' object: nothing to be added to map")
-                else:
-                    for layer in item.layers:
-                        self._add_layer_to_widget(layer, options)
         elif isinstance(item, Layer):
             self._add_layer_to_webmap(item, options)
             # TODO: Expand this to separate out Layer types on Python side
