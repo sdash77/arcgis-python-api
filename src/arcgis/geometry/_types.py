@@ -596,6 +596,18 @@ class Geometry(BaseGeometry):
                 return min(xs), min(ys), max(xs), max(ys)
         return None
     #----------------------------------------------------------------------
+
+    @property
+    def envelope(self):
+        """Returns the geoextent as an Envelope object"""
+        env_dict = {'xmin':self.geoextent[0],
+                    'ymin':self.geoextent[1],
+                    'xmax':self.geoextent[2],
+                    'ymax':self.geoextent[3],
+                    'spatialReference':self.spatial_reference}
+
+        return Envelope(env_dict)
+    # ----------------------------------------------------------------------
     def skew(self, x_angle=0,
              y_angle=0, inplace=False):
         """

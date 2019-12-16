@@ -9,6 +9,7 @@ from integration.dino_utils.dino_precondition_checks import PortalUtils
 from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
 import datetime
+from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Envelope
 
 #region PreCondition check
 test_skip = False
@@ -260,6 +261,275 @@ class Test_geometry_functions_AGO(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    def test_get_envelope_from_point(self):
+        """
+        Test to project an array of Points in Web Mercator to WGS84
+        :return:
+        """
+        try:
+            # construct Point obj - world points
+            # https://www.arcgis.com/home/item.html?id=6996f03a1b364dbab4008d99380370ed
+            geom_dict = {'x': 8327143.6735988045,'y': 4039683.818318914,
+                        'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
+            pt = Point(geom_dict)
+            pt_envelope = pt.envelope
+
+            # validate
+            self.assertIsInstance(pt_envelope, Envelope)
+
+            validation_envelope = {'xmin': 8327143.6735988045,
+                                    'ymin': 4039683.818318914,
+                                    'xmax': 8327143.6735988045,
+                                    'ymax': 4039683.818318914,
+                                    'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
+
+            self.assertEqual(pt_envelope, validation_envelope, 'Envelope value is wrong')
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_get_envelope_from_polygon(self):
+        """
+        Test to project an array of Points in Web Mercator to WGS84
+        :return:
+        """
+        try:
+            # construct polygon using WY state generalized
+            # test data: https://www.arcgis.com/home/item.html?id=99fd67933e754a1181cc755146be21ca
+            geom_dict = {'rings': [[[-11583195.4613893, 5115880.65321533],
+                       [-11583405.332516, 5095923.95353518],
+                       [-11583239.6754395, 5069753.85507592],
+                       [-11582982.8741001, 5012815.3403139],
+                       [-11681254.3184339, 5011499.35664859],
+                       [-11719582.1389181, 5011803.18277789],
+                       [-11822516.3691891, 5012354.20464557],
+                       [-11836504.1272539, 5012531.79292979],
+                       [-11896206.2317822, 5012114.13208203],
+                       [-11945032.320078, 5012361.32614766],
+                       [-12013451.5472541, 5012839.50262877],
+                       [-12139202.8628517, 5012110.59434358],
+                       [-12245385.0467543, 5011987.59951584],
+                       [-12252177.7884775, 5012030.72431897],
+                       [-12362143.2752906, 5011837.75682947],
+                       [-12362213.2496332, 5050534.40251984],
+                       [-12362148.4308092, 5098062.16439209],
+                       [-12361884.4498047, 5160410.73303324],
+                       [-12361671.0378632, 5236664.79349712],
+                       [-12361942.1466316, 5314998.74402037],
+                       [-12361750.9541678, 5355412.26842229],
+                       [-12361670.0229065, 5390772.62431019],
+                       [-12362074.5581102, 5462742.67850611],
+                       [-12362203.1750349, 5538984.61683881],
+                       [-12362209.3224429, 5568856.12604767],
+                       [-12362411.1200506, 5620843.85862798],
+                       [-12292972.3515932, 5620307.01483879],
+                       [-12288865.8195823, 5621305.0692689],
+                       [-12244646.3024643, 5621961.17806433],
+                       [-12222811.6721328, 5621446.36077655],
+                       [-12092108.2099098, 5621142.59288745],
+                       [-12051363.3047028, 5621539.61846176],
+                       [-12010746.8203494, 5621485.85755167],
+                       [-11828723.5674123, 5620917.36695399],
+                       [-11802220.5112139, 5621082.84850611],
+                       [-11698009.0329346, 5621492.69182435],
+                       [-11693199.2455165, 5621690.8635175],
+                       [-11583888.6652653, 5621102.15162291],
+                       [-11583846.6656661, 5554759.08169819],
+                       [-11584021.5611551, 5493623.31876695],
+                       [-11583876.3127812, 5488036.81548245],
+                       [-11583848.2573027, 5442707.28465346],
+                       [-11583673.9903948, 5388958.99682995],
+                       [-11583812.4224118, 5385187.61512451],
+                       [-11583483.0747373, 5312437.9728316],
+                       [-11583485.3583899, 5253503.35637487],
+                       [-11583184.1296287, 5160951.78944078],
+                       [-11583195.4613893, 5115880.65321533]]],
+                        'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
+            poly = Polygon(geom_dict)
+            poly_envelope = poly.envelope
+
+            # validate
+            self.assertIsInstance(poly_envelope, Envelope)
+
+            validation_envelope = {'xmin': -12362411.1200506,
+                                 'ymin': 5011499.35664859,
+                                 'xmax': -11582982.8741001,
+                                 'ymax': 5621961.17806433,
+                                 'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
+
+            self.assertEqual(poly_envelope, validation_envelope, 'Envelope value is wrong')
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_get_envelope_from_polyline(self):
+        """
+
+        :return:
+        """
+        try:
+            # construct polygon using WY state roads
+            # test data: https://www.arcgis.com/home/item.html?id=d11b7423108b49d19fd141ebccd4d803
+            geom_dict = {'paths': [[[-13056542.359378891, 5956294.671917407],
+                           [-13056510.92628676, 5956269.170305129],
+                           [-13056488.25263774, 5956246.728868729],
+                           [-13056471.679952063, 5956224.632435093],
+                           [-13056439.126734287, 5956165.8597936025],
+                           [-13056427.65395072, 5956113.790771523],
+                           [-13056370.91710755, 5955701.891733561],
+                           [-13056334.820333635, 5955462.875366966],
+                           [-13056315.103446797, 5955336.681452474],
+                           [-13056304.565984651, 5955290.301483862],
+                           [-13056293.080990499, 5955267.246760287],
+                           [-13056276.850659085, 5955246.334562887],
+                           [-13056219.86587405, 5955189.170347238],
+                           [-13056185.854935242, 5955147.600817096],
+                           [-13056153.939761175, 5955099.568547971],
+                           [-13056125.292645412, 5955059.45775094],
+                           [-13056113.15959663, 5955033.261854489],
+                           [-13056109.10981274, 5955018.299453008],
+                           [-13056107.337244384, 5954985.518578097],
+                           [-13056112.476785397, 5954954.578078192],
+                           [-13056119.071662718, 5954926.033511338],
+                           [-13056133.638101604, 5954892.363751332],
+                           [-13056152.174551776, 5954856.520219293],
+                           [-13056327.479093771, 5954630.843388319],
+                           [-13056449.652186418, 5954470.746412358],
+                           [-13056556.81495477, 5954355.202899523],
+                           [-13056746.200364634, 5954173.061181781],
+                           [-13056890.528928954, 5954029.147656736],
+                           [-13057400.388062697, 5953364.901232229],
+                           [-13057635.231158968, 5953047.45491706],
+                           [-13057786.000377946, 5952831.698450761],
+                           [-13057818.296004826, 5952781.6275281],
+                           [-13057850.025366662, 5952745.548054763],
+                           [-13057893.22000671, 5952713.8280958105],
+                           [-13057986.822717808, 5952663.916900921],
+                           [-13058066.037049621, 5952624.319495336],
+                           [-13058110.088810444, 5952609.7618821105],
+                           [-13058156.957100011, 5952602.325755464],
+                           [-13058196.663014347, 5952599.269401313],
+                           [-13058692.174532194, 5952589.62231467],
+                           [-13058887.814853264, 5952588.343186974],
+                           [-13059103.794202272, 5952583.953127489],
+                           [-13059250.492398698, 5952583.674515538],
+                           [-13059449.742873387, 5952584.6447654385],
+                           [-13059576.213740563, 5952589.869570046],
+                           [-13059864.773385346, 5952593.769821868],
+                           [-13060132.224806419, 5952601.477888801],
+                           [-13060170.317882402, 5952599.904412406],
+                           [-13060206.24255902, 5952594.350406604],
+                           [-13060231.350472523, 5952587.580265668],
+                           [-13060259.001548238, 5952575.4631915465],
+                           [-13060282.87187297, 5952560.857416728],
+                           [-13060298.931212984, 5952547.492985761],
+                           [-13060312.015960086, 5952530.894086425],
+                           [-13060318.189304486, 5952512.458765071],
+                           [-13060323.250307955, 5952483.078928343],
+                           [-13060333.44605389, 5952383.839066498],
+                           [-13060336.781467495, 5952320.135010657],
+                           [-13060334.579649808, 5952267.666957885],
+                           [-13060331.012024745, 5952231.929240825],
+                           [-13060310.33954422, 5952128.330370035],
+                           [-13060306.846065, 5952099.38452107],
+                           [-13060304.963460935, 5952063.47534552],
+                           [-13060314.14065801, 5952016.893032092],
+                           [-13060392.79690354, 5951756.43247975],
+                           [-13060415.54357814, 5951653.815612242],
+                           [-13060422.252473727, 5951602.708492483],
+                           [-13060429.060644334, 5951529.808856185],
+                           [-13060435.769372938, 5951478.702294195],
+                           [-13060443.777778614, 5951433.876177244],
+                           [-13060443.913819946, 5951391.845935519],
+                           [-13060439.77578181, 5951340.301809997],
+                           [-13060423.866273582, 5951272.7137213405],
+                           [-13060419.640488543, 5951204.041389953],
+                           [-13060417.375691943, 5951105.869157571],
+                           [-13060408.487295058, 5950979.407649905],
+                           [-13060410.590001462, 5950888.419959913],
+                           [-13060435.705412902, 5950514.25637434],
+                           [-13060432.643376887, 5950412.762245617],
+                           [-13060424.69760469, 5950324.671555702],
+                           [-13060415.232597092, 5950186.470369835]]],
+                        'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
+            poly = Polyline(geom_dict)
+            poly_envelope = poly.envelope
+
+            # validate
+            self.assertIsInstance(poly_envelope, Envelope)
+
+            validation_envelope = {'xmin': -13060443.913819946,
+                                     'ymin': 5950186.470369835,
+                                     'xmax': -13056107.337244384,
+                                     'ymax': 5956294.671917407,
+                                     'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
+
+            self.assertEqual(poly_envelope, validation_envelope, 'Envelope value is wrong')
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    def test_get_envelope_from_multipoint(self):
+        """
+
+        :return:
+        """
+        try:
+            # construct polygon using WY state roads
+            # test data: https://geosaurus.maps.arcgis.com/home/item.html?id=e00f136db4024815abb310a772c426b1
+            geom_dict = {'points': [[-624073.763310706, 4301213.06154505],
+                                      [-623773.200685564, 4301513.04668796],
+                                      [-623506.033907657, 4301742.85743129],
+                                      [-623679.692313299, 4301786.89357859],
+                                      [-623661.881194773, 4302011.2054781],
+                                      [-623873.388227278, 4301905.24161016],
+                                      [-623935.727142123, 4301795.15037611],
+                                      [-622472.989033097, 4300731.4513689]],
+                        'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
+            mpoints = MultiPoint(geom_dict)
+            mpoints_envelope = mpoints.envelope
+
+            # validate
+            self.assertIsInstance(mpoints_envelope, Envelope)
+
+            validation_envelope = {'xmin': -624073.763310706,
+                                 'ymin': 4300731.4513689,
+                                 'xmax': -622472.989033097,
+                                 'ymax': 4302011.2054781,
+                                 'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
+
+            self.assertEqual(mpoints_envelope, validation_envelope, 'Envelope value is wrong')
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
 #TestModule
 def tearDownModule():
     print("**End GIS module Tests**")

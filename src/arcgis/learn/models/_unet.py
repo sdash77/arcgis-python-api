@@ -275,6 +275,7 @@ class UnetClassifier(ArcGISModel):
                 b_index = b
             else:
                 raise(e)
+            b_index = self._data._extract_bands.index(b_index)
             symbology_bands.append(b_index)
 
         # Get Batch
@@ -297,7 +298,7 @@ class UnetClassifier(ArcGISModel):
         predictions = torch.cat(predictions)
 
         # Denormalize X
-        x_batch = (self._data._scaled_std_values.view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values.view(1, -1, 1, 1).to(x_batch)
+        x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
         
         # Extract RGB Bands
         symbology_x_batch = x_batch[:, symbology_bands]
