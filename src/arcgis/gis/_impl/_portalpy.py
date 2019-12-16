@@ -2179,7 +2179,7 @@ class Portal(object):
         files = []
         if data:
             if isinstance(data, dict):
-                postdata['text'] = json.dumps(data)
+                postdata['text'] = data#json.dumps(data)
             elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):

@@ -19,7 +19,7 @@ import uuid
 import datetime
 import mimetypes
 import tempfile
-from urllib.request import urlparse
+from urllib.request import urlparse, unquote
 import requests
 from requests import Session
 from requests_toolbelt.downloadutils import stream
@@ -338,6 +338,7 @@ class Connection(object):
                 cert = None
             if self._auth.lower() == 'pki':
                 self._session.cookies.clear()
+                params.pop('token', None)
             resp = self._session.get(url=url,
                                      params=params,
                                      cert=cert,
@@ -506,6 +507,8 @@ class Connection(object):
             params = kwargs.pop('postdata')
         if params is None:
             params = {}
+        if self._auth.lower() == "PKI":
+            self._session = None
         if self._session is None:
             self._create_session()
         try_json = kwargs.pop("try_json", True)
