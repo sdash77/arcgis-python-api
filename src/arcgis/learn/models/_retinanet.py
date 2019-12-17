@@ -1,14 +1,10 @@
 from ._arcgis_model import ArcGISModel
-import tempfile
 from pathlib import Path
 import json
 from ._codetemplate import code
 import random
-import os, csv
 import statistics
 import warnings
-from . import _tracker_util
-from warnings import warn
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -124,31 +120,17 @@ class RetinaNet(ArcGISModel):
     def supported_backbones(self):
         return [*self._resnet_family]
 
-    def _create_emd(self, path):
-        """
-        Creates an Esri Model Definition (EMD) file with the parameters and 
-        other information about the model.
-
-        =====================   ===========================================
-        **Argument**            **Description**
-        ---------------------   -------------------------------------------
-        path                    Required string. Path where the created 
-                                Esri Model Definition file will be saved.
-        =====================   ===========================================
-        
-        :returns: path of the saved EMD file
-        """
-
-        super()._create_emd(path)
-        
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
-        self._emd_template["ModelConfiguration"] = "_RetinaNet_Inference"
-        self._emd_template["ModelType"] = "ObjectDetection"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['ModelParameters']['scales'] = self._loss_f.scales #Scales and Ratios are attributes of RetinaNetFocalLoss object _loss_f
-        self._emd_template['ModelParameters']['ratios'] = self._loss_f.ratios
-        self._emd_template['Classes'] = []
+    def _get_emd_params(self):
+        _emd_template = {}
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        _emd_template["ModelConfiguration"] = "_RetinaNet_Inference"
+        _emd_template["ModelType"] = "ObjectDetection"
+        _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template['ModelParameters'] = {}
+        _emd_template['ModelParameters']['scales'] = self._loss_f.scales #Scales and Ratios are attributes of RetinaNetFocalLoss object _loss_f
+        _emd_template['ModelParameters']['ratios'] = self._loss_f.ratios
+        _emd_template['Classes'] = []
 
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
@@ -157,10 +139,9 @@ class RetinaNet(ArcGISModel):
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
+            _emd_template['Classes'].append(class_data.copy())
 
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
-        return path.stem
+        return _emd_template
 
     @property
     def _model_metrics(self):
@@ -210,13 +191,17 @@ class RetinaNet(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 
-                sd = ImageList([], path=tempfile.TemporaryDirectory().name).split_by_idx([])
-                tempdata = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
-                tempdata.chip_size = chip_size
-                tempdata.class_mapping = class_mapping
-                tempdata.classes = ['background'] + list(class_mapping.values())
-                data = tempdata
-                data.c += 1 # Add 1 for background class
+                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                data = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+
+            data.chip_size = chip_size
+            data.class_mapping = class_mapping
+            data.classes = ['background'] + list(class_mapping.values())
+            # Add 1 for background class
+            data.c += 1
+            data._is_empty = True
+            data.emd_path = emd_path
+            data.emd = emd
 
         data.resize_to = resize_to
         ret = cls(data, **emd['ModelParameters'], pretrained_path=model_file)
@@ -226,7 +211,6 @@ class RetinaNet(ArcGISModel):
             ret.learn.data.single_ds.y.classes = ret._data.classes
         
         return ret
-
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
         """
@@ -248,6 +232,7 @@ class RetinaNet(ArcGISModel):
         =====================   ===========================================
         
         """
+        self._check_requisites()
 
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
@@ -533,7 +518,7 @@ class RetinaNet(ArcGISModel):
         
         :returns: `dict` if mean is False otherwise `float`
         """
-
+        self._check_requisites()
         aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
         if mean:
             return statistics.mean(aps)

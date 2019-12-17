@@ -1,4 +1,4 @@
-import json, tempfile
+import json
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._arcgis_model import _EmptyData
@@ -25,6 +25,7 @@ def accuracy(input, target, void_code=0, class_mapping=None):
     target = target.squeeze(1)
     mask = target != void_code
     return (input.argmax(dim=1)[mask] == target[mask]).float().mean()
+
 
 class UnetClassifier(ArcGISModel):
     """
@@ -148,7 +149,7 @@ class UnetClassifier(ArcGISModel):
         resize_to = emd.get('resize_to')
 
         if data is None:
-            data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1,
+            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1,
                               chip_size=emd['ImageHeight'])
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
@@ -164,6 +165,8 @@ class UnetClassifier(ArcGISModel):
                         normalization_stats[_stat] = torch.tensor(normalization_stats[_stat])
                     setattr(data, ('_'+_stat), normalization_stats[_stat])
                 data._do_normalize = emd.get("DoNormalize")
+            data.emd_path = emd_path
+            data.emd = emd
 
         data.resize_to = resize_to        
 
@@ -172,53 +175,52 @@ class UnetClassifier(ArcGISModel):
     @property
     def _model_metrics(self):
         return {'accuracy': self._get_model_metrics()}
-    
-    def _create_emd(self, path):
+
+    def _get_emd_params(self):
         import random
-        super()._create_emd(path)
+        _emd_template = {}
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["ModelConfiguration"] = "_unet"
+        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        _emd_template["ExtractBands"] = [0, 1, 2]
 
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["ModelConfiguration"] = "_unet"
-        self._emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-
-        self._emd_template['Classes'] = []
+        _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
-            self._data.color_mapping[inverse_class_mapping[class_name]]
+                self._data.color_mapping[inverse_class_mapping[class_name]]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
+            _emd_template['Classes'].append(class_data.copy())
 
-        self._emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)
-        if self._emd_template["IsMultispectral"]:
-            self._emd_template["Bands"] = self._data._bands
-            self._emd_template["ImageryType"] = self._data._imagery_type
-            self._emd_template["ExtractBands"] = self._data._extract_bands
-            self._emd_template["NormalizationStats"] = {
-                "band_min_values": self._data._band_min_values, 
-                "band_max_values": self._data._band_max_values, 
-                "band_mean_values": self._data._band_mean_values, 
-                "band_std_values": self._data._band_std_values, 
-                "scaled_min_values": self._data._scaled_min_values, 
-                "scaled_max_values": self._data._scaled_max_values, 
-                "scaled_mean_values": self._data._scaled_mean_values, 
+        _emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)
+        if _emd_template["IsMultispectral"]:
+            _emd_template["Bands"] = self._data._bands
+            _emd_template["ImageryType"] = self._data._imagery_type
+            _emd_template["ExtractBands"] = self._data._extract_bands
+            _emd_template["NormalizationStats"] = {
+                "band_min_values": self._data._band_min_values,
+                "band_max_values": self._data._band_max_values,
+                "band_mean_values": self._data._band_mean_values,
+                "band_std_values": self._data._band_std_values,
+                "scaled_min_values": self._data._scaled_min_values,
+                "scaled_max_values": self._data._scaled_max_values,
+                "scaled_mean_values": self._data._scaled_mean_values,
                 "scaled_std_values": self._data._scaled_std_values
             }
-            for _stat in self._emd_template["NormalizationStats"]:
-                if self._emd_template["NormalizationStats"][_stat] is not None:
-                    self._emd_template["NormalizationStats"][_stat] = self._emd_template["NormalizationStats"][_stat].tolist()
-            self._emd_template["DoNormalize"] = self._data._do_normalize
+            for _stat in _emd_template["NormalizationStats"]:
+                if _emd_template["NormalizationStats"][_stat] is not None:
+                    _emd_template["NormalizationStats"][_stat] = _emd_template["NormalizationStats"][
+                        _stat].tolist()
+            _emd_template["DoNormalize"] = self._data._do_normalize
 
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
-        return path.stem
+        return _emd_template
 
     def _predict_batch(self, imagetensor_batch):
         predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach().cpu()
-        return  predictions.max(dim=1)[1]
+        return predictions.max(dim=1)[1]
 
     #def _show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters 
     def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
@@ -330,6 +332,7 @@ class UnetClassifier(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
         """
+        self._check_requisites()
         self.learn.callbacks = [x for x in self.learn.callbacks if not isinstance(x, LabelCallback)]
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)

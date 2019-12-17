@@ -1,8 +1,6 @@
-import os, json, tempfile
+import json
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
-from ._arcgis_model import _raise_fastai_import_error
-from functools import partial
 from ._arcgis_model import ArcGISModel
 
 try:
@@ -129,15 +127,14 @@ class PSPNetClassifier(ArcGISModel):
             class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
             color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
-        
         if data is None:
-            empty_data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
-            empty_data.class_mapping = class_mapping
-            empty_data.color_mapping = color_mapping
-            return cls(empty_data, **model_params, pretrained_path=str(model_file))
-        else:
-            return cls(data, **model_params, pretrained_path=str(model_file)) 
+            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            data.class_mapping = class_mapping
+            data.color_mapping = color_mapping
+            data.emd_path = emd_path
+            data.emd = emd
 
+        return cls(data, **model_params, pretrained_path=str(model_file))
 
     def accuracy(self, input, target, void_code=0, class_mapping=None): 
         if self.learn.model.training: # while training
@@ -183,18 +180,17 @@ class PSPNetClassifier(ArcGISModel):
         for _, param in self.learn.model.named_parameters():
             param.requires_grad = True
         
-    def _create_emd(self, path):
+    def _get_emd_params(self):
         import random
-        super()._create_emd(path)
-        
-        self._emd_template["ModelParameters"]["pyramid_sizes"] = self.pyramid_sizes
-        self._emd_template["ModelParameters"]["use_unet"] = self._use_unet
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["ModelConfiguration"] = "_psp"
-        self._emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template = {"ModelParameters" : {}}
+        _emd_template["ModelParameters"]["pyramid_sizes"] = self.pyramid_sizes
+        _emd_template["ModelParameters"]["use_unet"] = self._use_unet
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["ModelConfiguration"] = "_psp"
+        _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
+        _emd_template["ExtractBands"] = [0, 1, 2]
 
-        self._emd_template['Classes'] = []
+        _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
@@ -203,15 +199,15 @@ class PSPNetClassifier(ArcGISModel):
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
             self._data.color_mapping[inverse_class_mapping[class_name]]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
+            _emd_template['Classes'].append(class_data.copy())
 
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
-        return path.stem
+        return _emd_template
 
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
         """
+        self._check_requisites()
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, **kwargs)   
@@ -222,6 +218,9 @@ class PSPNetClassifier(ArcGISModel):
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get('checkpoint', True)
+        if not hasattr(self.learn, 'recorder'):
+            return 0.0
+
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
             model_accuracy = np.min(self.learn.recorder.metrics)             

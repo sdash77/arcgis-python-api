@@ -1,10 +1,7 @@
 from ._arcgis_model import ArcGISModel
-import tempfile
 from pathlib import Path
 import json
-from ._codetemplate import code
 from ._arcgis_model import _EmptyData
-import logging
 from ._codetemplate import instance_detector_prf
 
 try:
@@ -155,24 +152,25 @@ class MaskRCNN(ArcGISModel):
             class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
             color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
-        
         if data is None:
-            empty_data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
-            empty_data.class_mapping = class_mapping
-            empty_data.color_mapping = color_mapping
-            return cls(empty_data, **model_params, pretrained_path=str(model_file))
-        else:
-            return cls(data, **model_params, pretrained_path=str(model_file))        
+            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            data.class_mapping = class_mapping
+            data.color_mapping = color_mapping
+            data.emd_path = emd_path
+            data.emd = emd
 
-    def _create_emd(self, path):
+        return cls(data, **model_params, pretrained_path=str(model_file))
+
+    def _get_emd_params(self):
         import random
-        super()._create_emd(path)
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
 
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['Classes'] = []
+        _emd_template = {}
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
+        _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
+
+        _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
@@ -181,10 +179,9 @@ class MaskRCNN(ArcGISModel):
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
             self._data.color_mapping[inverse_class_mapping[class_name]]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
-            
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
-        return path.stem
+            _emd_template['Classes'].append(class_data.copy())
+
+        return _emd_template
 
     @property
     def _model_metrics(self):
@@ -194,7 +191,7 @@ class MaskRCNN(ArcGISModel):
 
         self.learn.model.eval()
         predictions = self.learn.model(list(xb.to(self._device)))
-        predictionsf =[]
+        predictionsf = []
         for i in range(len(predictions)):
             predictionsf.append({})
             predictionsf[i]['masks'] = predictions[i]['masks'].detach().cpu().numpy()
@@ -257,8 +254,8 @@ class MaskRCNN(ArcGISModel):
         nrows                   Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================
-        """ 
-
+        """
+        self._check_requisites()
         if mode not in ['bbox', 'mask', 'bbox_mask']:
             raise Exception("mode can be only ['bbox', 'mask', 'bbox_mask']")
 
@@ -325,7 +322,7 @@ class MaskRCNN(ArcGISModel):
         =====================   ===========================================
         :returns: `dict` if mean is False otherwise `float`
         """
-
+        self._check_requisites()
         if mean:
             aps = compute_class_AP(self, self._data.valid_dl, 1, show_progress, detect_thresh, iou_thresh, mean)
             return aps

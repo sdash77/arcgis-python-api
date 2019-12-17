@@ -44,6 +44,9 @@ class VideoUtils():
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
 
+        if not os.path.exists(input_video_path):
+            raise Exception("The input video path doesn't exist.")
+
         video_read = cv2.VideoCapture(input_video_path)
         fps = video_read.get(cv2.CAP_PROP_FPS)
         video_obj = None

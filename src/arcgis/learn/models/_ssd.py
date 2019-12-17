@@ -1,14 +1,11 @@
 from ._arcgis_model import ArcGISModel
-import tempfile
 from pathlib import Path
 import json
 from ._codetemplate import code
-import logging
-logger = logging.getLogger() 
-import os, csv
 import warnings
-from warnings import warn
-from . import _tracker_util
+
+import logging
+logger = logging.getLogger()
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -287,13 +284,17 @@ class SingleShotDetector(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 
-                sd = ImageList([], path=tempfile.TemporaryDirectory().name).split_by_idx([])
-                tempdata = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
-                tempdata.chip_size = chip_size
-                tempdata.class_mapping = class_mapping
-                tempdata.classes = ['background'] + list(class_mapping.values())
-                data = tempdata
-                data.c += 1 # Add 1 for background class
+                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                data = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+
+            data.chip_size = chip_size
+            data.class_mapping = class_mapping
+            data.classes = ['background'] + list(class_mapping.values())
+            data._is_empty = True
+            # Add 1 for background class
+            data.c += 1
+            data.emd_path = emd_path
+            data.emd = emd
 
         data.resize_to = resize_to
         ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
@@ -409,70 +410,45 @@ class SingleShotDetector(ArcGISModel):
     def _model_metrics(self):
         return {'average_precision_score': self.average_precision_score(show_progress=False)}
 
-    def _create_emd(self, path):
+    def _get_emd_params(self):
         import random
-        super()._create_emd(path)
-
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
-        self._emd_template["ModelConfiguration"] = "_DynamicSSD"
-        self._emd_template["ModelType"] = "ObjectDetection"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['backbone'] = self._backbone.__name__
-        self._emd_template['Grids'] = self.grids
-        self._emd_template['Zooms'] = self.zooms
-        self._emd_template['Ratios'] = self.ratios
-        self._emd_template['SSDVersion'] = self.ssd_version
-        self._emd_template['Classes'] = []
+        _emd_template = {}
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        _emd_template["ModelConfiguration"] = "_DynamicSSD"
+        _emd_template["ModelType"] = "ObjectDetection"
+        _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template['backbone'] = self._backbone.__name__
+        _emd_template['Grids'] = self.grids
+        _emd_template['Zooms'] = self.zooms
+        _emd_template['Ratios'] = self.ratios
+        _emd_template['SSDVersion'] = self.ssd_version
+        _emd_template['Classes'] = []
 
         class_data = {}
-        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
+        for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
+            _emd_template['Classes'].append(class_data.copy())
 
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
+        return _emd_template
 
-        return path.stem
+    def _get_tfonnx_emd_params(self):
+        _emd_template = self._get_emd_params()
 
-    def _create_tfonnx_emd(self, saved_path, batch_size):
-        import random
-        super()._create_emd(saved_path)
+        _emd_template["ModelConfiguration"] = "_SSDTensorflow"
 
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
-        self._emd_template["ModelConfiguration"] = "_SSDTensorflow"
-        self._emd_template["ModelType"] = "ObjectDetection"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['backbone'] = self._backbone.__name__
-        self._emd_template['Grids'] = self.grids
-        self._emd_template['Zooms'] = self.zooms
-        self._emd_template['Ratios'] = self.ratios
-        self._emd_template['SSDVersion'] = self.ssd_version
-        self._emd_template['Classes'] = []
-        self._emd_template['BatchSize'] = batch_size
+        return _emd_template
 
-        class_data = {}
-        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
-            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            class_data["Value"] = inverse_class_mapping[class_name]
-            class_data["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)]
-            class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
-
-        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
-
-        return saved_path.stem
-    
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
 
         """
         Displays the results of a trained model on a part of the validation set.
         """
+        self._check_requisites()
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
@@ -763,7 +739,9 @@ class SingleShotDetector(ArcGISModel):
         =====================   ===========================================
         
         :returns: `dict` if mean is False otherwise `float`
-        """        
+        """
+        self._check_requisites()
+
         aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
         if mean:
             import statistics

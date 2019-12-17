@@ -124,6 +124,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
         """
+        self._check_requisites()
         import math
         if (rows ** 2) > len(self._data.valid_ds):
             rows = math.floor(math.sqrt(len(self._data.valid_ds)))
@@ -155,17 +156,17 @@ class FeatureClassifier(ArcGISModel):
     @property
     def _model_metrics(self):
         return {}
-    
-    def _create_emd(self, path):
-        super()._create_emd(path)
-        self._emd_template["Framework"] = "PyTorch"
-        self._emd_template["ModelConfiguration"] = "FeatureClassifier"
-        self._emd_template["ModelType"] = "ObjectClassification"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['CropSizeFixed'] = 1  # hardcoded
-        self._emd_template['BlackenAroundFeature'] = 0 #hardcoded
-        self._emd_template['ImageSpaceUsed'] = "MAP_SPACE"
-        self._emd_template['Classes'] = []
+
+    def _get_emd_params(self):
+        _emd_template = {}
+        _emd_template["Framework"] = "PyTorch"
+        _emd_template["ModelConfiguration"] = "FeatureClassifier"
+        _emd_template["ModelType"] = "ObjectClassification"
+        _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template['CropSizeFixed'] = 1  # hardcoded
+        _emd_template['BlackenAroundFeature'] = 0  # hardcoded
+        _emd_template['ImageSpaceUsed'] = "MAP_SPACE"
+        _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes):
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
@@ -173,34 +174,9 @@ class FeatureClassifier(ArcGISModel):
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
+            _emd_template['Classes'].append(class_data.copy())
 
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
-
-        return path.stem
-
-    def _create_tf_emd(self, saved_path, onnx_path):
-        import random
-        super()._create_tf_emd(saved_path, onnx_path)
-
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
-        self._emd_template["ModelConfiguration"] = "_classifier"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['Classes'] = []
-
-        class_data = {}
-        for i, class_name in enumerate(self._data.classes):
-            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            class_data["Value"] = inverse_class_mapping[class_name]
-            class_data["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)]
-            class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
-
-        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
-
-        return saved_path.stem
+        return _emd_template
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -236,13 +212,16 @@ class FeatureClassifier(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
 
-                tempdata = ImageDataBunch.single_from_classes(
-                    tempfile.TemporaryDirectory().name, sorted(list(class_mapping.values())),
+                data = ImageDataBunch.single_from_classes(
+                    emd_path.parent.parent, sorted(list(class_mapping.values())),
                     ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
-                tempdata.chip_size = chip_size
-                tempdata.class_mapping = class_mapping
-                tempdata.classes = list(class_mapping.values())
-                data = tempdata
+
+            data.chip_size = chip_size
+            data.class_mapping = class_mapping
+            data.classes = list(class_mapping.values())
+            data._is_empty = True
+            data.emd_path = emd_path
+            data.emd = emd
 
         resize_to = emd.get('resize_to')
         data.resize_to = resize_to
@@ -253,6 +232,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Plots a confusion matrix of the model predictions to evaluate accuracy
         """
+        self._check_requisites()
         interp = ClassificationInterpretation.from_learner(self.learn)
         interp.plot_confusion_matrix()
 
@@ -267,6 +247,7 @@ class FeatureClassifier(ArcGISModel):
                                 ``prepare_data`` function.
         =====================   ===========================================
         """
+        self._check_requisites()
         interp = ClassificationInterpretation.from_learner(self.learn)
         interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=True)
 
@@ -1178,4 +1159,4 @@ class FeatureClassifier(ArcGISModel):
         else:
             e = Exception("Could not understand layer type")
             raise(e)
-            
+
