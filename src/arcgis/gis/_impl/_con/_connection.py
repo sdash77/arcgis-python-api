@@ -78,7 +78,7 @@ class Connection(object):
         product = "UNKNOWN", "PORTAL", "SERVER", "AGOL", "GEOEVENT"  # SHOULD BE SET BY GIS object, or Server Object, etc...
         token= None If token, _AUTH = BUILTIN
         token_url
-        AUTH keys = BUILTIN, PRO, ANON, PKI, HANDLER, UNKNOWN (Internal)
+        AUTH keys = HOME, BUILTIN, PRO, ANON, PKI, HANDLER, UNKNOWN (Internal)
         custom_auth = Requests authencation handler
         """
         from arcgis.gis import GIS
@@ -1049,13 +1049,6 @@ class Connection(object):
                 client_secret=self._client_secret,
                 include_client_id=True,
             )
-            #client = BackendApplicationClient(client_id=self._client_id)
-            #oauth = OAuth2Session(client=client)
-            #res = oauth.fetch_token(token_url=self._token_url,
-            #                        client_id=self._client_id,
-            #                        authorization_response='authorization_code',
-            #                        client_secret=self._client_secret,
-            #                        verify=self._verify_cert)
             if 'expires_in' in res:
                 self._create_time = datetime.datetime.fromtimestamp(res['expires_at']) - datetime.timedelta(seconds=7200)
                 self._expiration = res['expires_in'] / 60
