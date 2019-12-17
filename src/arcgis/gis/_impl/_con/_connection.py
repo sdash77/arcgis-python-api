@@ -151,6 +151,14 @@ class Connection(object):
             self._auth = "BUILTIN"
         elif self._client_id:
             self._product = self._check_product()
+            if self._product in ['PORTAL', "AGOL"]:
+                resp = self._session.post("/portals/self", {'f' : 'json'}, add_token=False)
+                issaml = resp.get("samlEnabled", False)
+                isoauth = resp.get("supportsOAuth", False)
+            else:
+                resp = None
+                issaml = False
+                isoauth = False
             self._auth = 'OAUTH'
             parsed = urlparse(self._baseurl)
             wa = parsed.path
@@ -220,6 +228,7 @@ class Connection(object):
         self._session.headers.update({'Referer': self._referer})
         if self._custom_auth:
             self._session.auth = self._custom_auth
+            self._auth = "CUSTOM"
         elif self._username and self._password:
             self._session.auth = GuessAuth(username=self._username,
                                            password=self._password)
@@ -896,12 +905,26 @@ class Connection(object):
             else:
                 self._create_time = None
                 return self.token
+        elif str(self._auth.lower()) in ['home']:
+            if self._create_time is None:
+                self._create_time = datetime.datetime.now()
+            if self._expiration is None:
+                self._expiration = 1440
+            if datetime.datetime.now() >= self._create_time + datetime.timedelta(minutes=self._expiration):
+                raise Exception("Token is Expired. Please relogin to portal")
+            return self._token
         elif str(self._auth).lower() == 'pro' or\
              self._baseurl.lower() == 'pro':
             self._create_time = datetime.datetime.now()
             self._token = self._pro_token()
             return self._token
         return None
+    #----------------------------------------------------------------------
+    @token.setter
+    def token(self, value):
+        """gets/sets the token"""
+        if self._token != value:
+            self._token = value
     #----------------------------------------------------------------------
     def _pro_token(self):
         """gets the token for various products"""

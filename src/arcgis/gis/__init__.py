@@ -229,7 +229,7 @@ class GIS(object):
         self._proxy_host = kwargs.pop('proxy_host', None)
         self._proxy_port = kwargs.pop('proxy_port', 80)
         self._referer = kwargs.pop('referer', None)
-
+        custom_auth = kwargs.pop('custom_auth', None)
         from arcgis._impl.tools import _Tools
         if profile is not None and \
            len(profile) == 0:
@@ -307,14 +307,15 @@ class GIS(object):
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id,
-                                           referer=self._referer)
+                                           referer=self._referer,
+                                           custom_auth=custom_auth)
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
-                self._portal.con._auth = "BUILTIN"
+                self._portal.con._auth = "HOME"
 
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -356,14 +357,17 @@ class GIS(object):
                                       client_id=self._client_id,
                                       proxy_port=self._proxy_port,
                                       proxy_host=self._proxy_host,
-                                      referer=self._referer)
+                                      referer=self._referer,
+                                      custom_auth=custom_auth)
                 self._portal = pp
         except: pass
 
         force_refresh = False
-        if not (self._utoken is None):
+        if not (self._utoken is None) and self._portal.con._auth != "HOME":
             self._portal.con._token = self._utoken
             self._portal.con._auth = "BUILTIN"
+            force_refresh = True
+        elif self._portal.con._auth == "HOME":
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
