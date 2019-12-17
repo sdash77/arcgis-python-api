@@ -317,7 +317,7 @@ class Connection(object):
         try_json = kwargs.pop("try_json", True)
         add_token = kwargs.pop('add_token', True)
         if add_token and \
-           str(self._auth).upper() in ['BUILTIN', 'OAUTH', 'PRO']:
+           str(self._auth).upper() in ['BUILTIN', 'OAUTH', 'PRO', 'HOME']:
             if token_as_header == False and not 'token' in kwargs:
                 params['token'] = self.token
             elif token_as_header == False and 'token' in kwargs:
