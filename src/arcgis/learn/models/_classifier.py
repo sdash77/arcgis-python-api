@@ -1,5 +1,6 @@
 import arcgis as _arcgis 
 from ._arcgis_model import ArcGISModel
+from ..._impl.common._deprecate import deprecated
 import random
 try:
     import pandas
@@ -1047,6 +1048,7 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
+    @deprecated(deprecated_in="1.7.1", details="Please use arcgis.learn.classify_objects() instead")
     def categorize_features(
         self,
         feature_layer,
@@ -1063,11 +1065,12 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
+        Deprecated, Please use arcgis.learn.classify_objects() instead.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Feature Layer or path of local feature class for classification with read, write, edit permissions.
+        feature_layer                            Required. Public Feature Layer or path of local feature class for classification with read, write, edit permissions.
         ------------------------------------     --------------------------------------------------------------------
         raster                                   Optional. Imagery layer or path of local raster to be used for exporting image chips. (Requires arcpy)
         ------------------------------------     --------------------------------------------------------------------
