@@ -276,7 +276,7 @@ def prepare_data(path,
     -For object detection, use Pascal_VOC_rectangles format.
     -For feature categorization use Labelled Tiles or ImageNet format.
     -For pixel classification, use Classified Tiles format.
-    -For entity extraction from text, use BIO, LBIOU or ner_json formats. 
+    -For entity extraction from text, use IOB, BILUO or ner_json formats. 
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -285,7 +285,7 @@ def prepare_data(path,
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
-                            For dataset_type=BIO, LBIOU or ner_json:
+                            For dataset_type=IOB, BILUO or ner_json:
                                 Provide address field as class mapping
                                 in below format:
                                 class_mapping={'address_tag':'address_field'}
@@ -569,7 +569,7 @@ def prepare_data(path,
             ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
-    elif dataset_type in ['ner_json','BIO','LBIOU']:
+    elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))

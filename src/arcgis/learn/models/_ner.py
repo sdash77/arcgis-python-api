@@ -15,7 +15,7 @@ from ._ner_utils import *
 from time import sleep
 
 def _raise_spacy_import_error():
-    return logging.warning('This module requires spacy version 2.1.8 and fastprogress. Install it using "pip install spacy==2.1.8 fastprogress pandas"')
+    return logging.warning('This module requires spacy version 2.1.8 or above and fastprogress. Install it using "pip install spacy==2.1.8 fastprogress pandas"')
 
 
 
@@ -23,29 +23,36 @@ def _raise_spacy_import_error():
 class EntityRecognizer(ArcGISModel):
     """
     Creates an entity recognition model to extract text entities from unstructured text documents.
+    Based on Spacy's `EntityRecognizer <https://spacy.io/api/entityrecognizer>`_
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Requires data object returned from
                             ``prepare_data`` function.
+    ---------------------   -------------------------------------------
+    lang                    Optional string. Language-specific code, 
+                            named according to the language’s `ISO code <https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes>`_
+                            The default value is 'en' for English.                       
     =====================   ===========================================
 
     :returns: ``EntityRecognizer`` Object
     """
     
-    def __init__(self, data=None):
+    def __init__(self, data=None,lang='en'):
         if not HAS_SPACY:
             _raise_spacy_import_error()
         super().__init__(data)
         self._code = entity_recognizer_placeholder
         self._emd_template = {}
-        self.model = None
+        self.model = spacy.blank(lang)
         self.model_dir=Path('Models')
+        self.ner=None
         self._address_tag = 'Address'  #Defines the default addres field
         self.entities = None #Stores all the entity names from the training data into a list
         self._has_address = False #Flag to identify if the training data has any address  
-        self.trained = False #Flag to check if model has been trained      
+        self.trained = False #Flag to check if model has been trained     
+        self.lang = lang
         if data:
             self._address_tag=data._address_tag
             self._has_address=data._has_address
@@ -56,6 +63,7 @@ class EntityRecognizer(ArcGISModel):
         else:
             self.train_ds = None
             self.val_ds = None
+            self.path = '.'
 
     def lr_find(self, allow_plot=True):
         """
@@ -95,17 +103,17 @@ class EntityRecognizer(ArcGISModel):
             return logging.warning('Cannot fit the model on empty data.')
         TRAIN_DATA = self.train_ds.data
         VAL_DATA = self.val_ds.data
-        nlp = spacy.blank('en') # create blank Language class
+        nlp = self.model # create blank Language class
         
         
         if 'ner' not in nlp.pipe_names: # create the built-in pipeline components and add them to the pipeline
             # spacy.require_gpu()
-            ner = nlp.create_pipe('ner') # nlp.create_pipe works for built-ins that are registered with spaCy
-            nlp.add_pipe(ner, last=True)
+            self.ner = nlp.create_pipe('ner') # nlp.create_pipe works for built-ins that are registered with spaCy
+            nlp.add_pipe(self.ner, last=True)
         i=0
         for _, annotations in TRAIN_DATA: # adding labels
             for ent in annotations.get('entities'):
-                ner.add_label(ent[2])
+                self.ner.add_label(ent[2])
             i+=1
 
         
@@ -151,12 +159,13 @@ class EntityRecognizer(ArcGISModel):
         self._emd_template["InferenceFunction"] = "EntityRecognizer.py"
         self._emd_template['ModelDir'] = str(Path(path))
         self._emd_template['Labels'] = self.model.entity.labels
+        self._emd_template['Lang'] = self.lang
         if self._has_address:
             self._emd_template['address_tag'] = self._address_tag
         json.dump(self._emd_template, open(path/Path(path.stem).with_suffix('.emd'), 'w'), indent=4)
         pathstr = path/Path(path.stem).with_suffix('.emd')
         print(f'Model has been saved to {path}')
-    
+  
     def save(self, name_or_path, **kwargs):
         """
         Saves the model weights, creates an Esri Model Definition.
@@ -229,7 +238,7 @@ class EntityRecognizer(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+        Creates an EntityRecognizer from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -265,18 +274,22 @@ class EntityRecognizer(ArcGISModel):
                  processed_df[col] = unprocessed_df[col] #copy to the processed df
         return processed_df
 
-    def _post_process_address_df(self, unprocessed_df):
+    def _post_process_address_df(self, unprocessed_df,drop):
         """
         This function post processes the output dataframe from extract_entities function and returns a processed dataframe with cleaned up missed detections.
         """
         address_tag = self._address_tag
-        processed_df = pd.DataFrame(columns = unprocessed_df.columns) #creating a empty processed dataframe
+        processed_df = pd.DataFrame(columns = unprocessed_df.columns) #creating an empty processed dataframe
         for i,adds in unprocessed_df[address_tag].iteritems(): #duplicating rows with multiple addresses to be one row per address
-            if len(adds)>0:
+            if len(adds)>0:#adding data for address documents
                 for j,add in enumerate(adds):
                     curr_index = len(processed_df)
                     processed_df.loc[curr_index] = unprocessed_df.loc[i]
                     processed_df.loc[curr_index][address_tag] = add
+            else: #adding data for non-address documents
+                curr_index = len(processed_df)
+                processed_df.loc[curr_index] = unprocessed_df.loc[i]
+                processed_df.loc[curr_index][address_tag] = ''
         drop_ids = []
 
         for i,add in processed_df[address_tag].iteritems():
@@ -284,7 +297,8 @@ class EntityRecognizer(ArcGISModel):
                 drop_ids.append(i)
         del unprocessed_df
 
-        processed_df.drop(drop_ids, inplace=True)        
+        if drop: #flag for dropping/not-dropping documents without address.
+            processed_df.drop(drop_ids, inplace=True)        
         cols = processed_df.columns
         processed_df.reset_index(drop=True, inplace=True)
 
@@ -293,7 +307,6 @@ class EntityRecognizer(ArcGISModel):
                 processed_df[col] = processed_df[col].apply(",".join)  #join the list to strind and copy to the processed df
             else:
                  processed_df[col] = processed_df[col] #copy to the processed df
-
         return processed_df
     
     def _extract_entities_text(self,text):
@@ -311,7 +324,7 @@ class EntityRecognizer(ArcGISModel):
         """
         return self.model(text)
     
-    def extract_entities(self, text_list):
+    def extract_entities(self, text_list,drop=True):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
         
@@ -321,13 +334,16 @@ class EntityRecognizer(ArcGISModel):
         text_list               Required string(path) or list(documents). 
                                 List of documents for entity extraction OR
                                 path to the documents.
+        drop                    Optional bool. 
+                                If documents without address needs to be 
+                                dropped from the results.                                
         =====================   ===========================================
 
         :returns: Pandas DataFrame
         """
 
         if self.trained:
-            df = pd.DataFrame(columns = ['TEXT']+self.entities)
+            df = pd.DataFrame(columns = ['TEXT','Filename']+self.entities)
 
             if isinstance(text_list, list):
                 item_list= pd.Series(text_list)
@@ -339,10 +355,10 @@ class EntityRecognizer(ArcGISModel):
 
                 for item_name in item_names:
                     try:
-                        with open(f'{text_list}/{item_name}', 'r', encoding='latin-1') as f:
+                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-8') as f:
                             item_list[item_name] = f.read()
                     except:
-                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-8') as f:
+                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-16',errors='coerce') as f:
                             item_list[item_name]=f.read()
     
             # if self._address_tag not in self.entities and self._has_address==True:
@@ -362,17 +378,18 @@ class EntityRecognizer(ArcGISModel):
                         tmp_ents[ent.label_].extend([ent.text])
 
                 df.loc[i]['TEXT'] = text
+                df.loc[i]['Filename'] = i
                 
                 for label in tmp_ents.keys():
                     df.loc[i][label] = tmp_ents[label]
             
             df.fillna('', inplace=True)
             if self._has_address:
-                df = self._post_process_address_df(df) #Post processing the dataframe
+                df = self._post_process_address_df(df,drop) #Post processing the dataframe
             else: 
                 df = self._post_process_non_address_df(df)  #Post processing the dataframe
             # df.to_csv(f'{output_path}/output.csv')
-            return df
+            return df.reset_index(drop='True')
         else:
              return logging.error("Model needs to be fitted, before extraction.")
 
