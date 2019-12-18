@@ -1,5 +1,6 @@
 import arcgis as _arcgis 
 from ._arcgis_model import ArcGISModel
+from ..._impl.common._deprecate import deprecated
 import random
 try:
     import pandas
@@ -1066,6 +1067,7 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
+    @deprecated(deprecated_in="1.7.1", details="Please use arcgis.learn.classify_objects() instead")
     def categorize_features(
         self,
         feature_layer,
