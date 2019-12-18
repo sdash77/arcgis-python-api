@@ -61,6 +61,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     if kwargs.get('imsize', None) is not None:
         imsize = kwargs.get('imsize')
 
+    statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
 
     e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
     symbology_bands = []
@@ -95,15 +96,21 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     x_batch = torch.cat(x_batch)
     # Denormalize X
     x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-    y_batch = torch.cat(y_batch).cpu().numpy()
+    y_batch = torch.cat(y_batch)
 
     # Extract RGB Bands
     symbology_x_batch = x_batch[:, symbology_bands]
+    if statistics_type == 'DRA':
+        shp = symbology_x_batch.shape
+        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
 
-    # Channel first to channel last for plotting
-    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1).cpu().numpy()
-    if symbology_x_batch.max() < 1.5:
-        symbology_x_batch = symbology_x_batch.clip(0, 1)
+    # Channel first to channel last and clamp float values to range 0 - 1 for plotting
+    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+    # Clamp float values to range 0 - 1
+    if symbology_x_batch.mean() < 1:
+        symbology_x_batch = symbology_x_batch.clamp(0, 1)
 
     # Get color Array
     color_array = self._multispectral_color_array
@@ -161,6 +168,7 @@ class ArcGISMultispectralImageSegment():
     def __init__(self, tensor):
         self.data = tensor
         self.size = tensor.shape
+        self.shape = tensor.shape
 
 def is_no_color(color_mapping):
     if isinstance(color_mapping, dict):

@@ -264,6 +264,8 @@ class UnetClassifier(ArcGISModel):
         else:
             top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
 
+        statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+
 
         e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
         symbology_bands = []
@@ -291,7 +293,7 @@ class UnetClassifier(ArcGISModel):
             i+=self._data.batch_size
         x_batch = torch.cat(x_batch)
         # Denormalize X
-        y_batch = torch.cat(y_batch).cpu().numpy()
+        y_batch = torch.cat(y_batch)
 
         # Get Predictions
         predictions = []
@@ -304,11 +306,17 @@ class UnetClassifier(ArcGISModel):
         
         # Extract RGB Bands
         symbology_x_batch = x_batch[:, symbology_bands]
+        if statistics_type == 'DRA':
+            shp = symbology_x_batch.shape
+            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
         
         # Channel first to channel last for plotting
-        symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1).cpu().numpy()
-        if symbology_x_batch.max() < 1.5:
-            symbology_x_batch = symbology_x_batch.clip(0, 1)
+        symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+        # Clamp float values to range 0 - 1
+        if symbology_x_batch.mean() < 1:
+            symbology_x_batch = symbology_x_batch.clamp(0, 1)
 
         # Get color Array
         color_array = self._data._multispectral_color_array
@@ -319,11 +327,11 @@ class UnetClassifier(ArcGISModel):
         fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
         for r in range(nrows):
             ax[r][0].imshow(symbology_x_batch[r])
-            y_rgb = color_array[y_batch[r][0]].cpu().numpy()
+            y_rgb = color_array[y_batch[r][0]]
             ax[r][0].imshow(y_rgb, alpha=alpha)
             ax[r][0].axis('off')
             ax[r][1].imshow(symbology_x_batch[r])
-            p_rgb = color_array[predictions[r]].cpu().numpy()
+            p_rgb = color_array[predictions[r]]
             ax[r][1].imshow(p_rgb, alpha=alpha)
             ax[r][1].axis('off')
             plt.subplots_adjust(top=top)

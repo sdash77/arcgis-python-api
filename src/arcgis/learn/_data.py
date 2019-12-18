@@ -19,6 +19,7 @@ try:
     from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList
     from .models._ner_utils import ner_prepare_data
+    from ._augmentation import ClassifiedTilesPipeline
     HAS_FASTAI = True
 except:
     HAS_FASTAI = False
@@ -436,6 +437,8 @@ def prepare_data(path,
     else:
         norm_pct = .3
 
+    lighting_transforms = kwargs.get('lighting_transforms', True)
+
     if dataset_type == 'RCNN_Masks':
 
         def get_labels(x, label_dirs, ext=right):
@@ -489,6 +492,15 @@ def prepare_data(path,
                 r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
                 return r
             databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
+            if transforms is not False:
+                if transforms is None:
+                    train_tfms = ClassifiedTilesPipeline(target_size=chip_size, type_transforms='training', lighting_transforms=lighting_transforms)
+                    valid_tfms = ClassifiedTilesPipeline(target_size=chip_size, type_transforms='validation')
+                else:                
+                    train_tfms = ClassifiedTilesPipeline(transforms=transforms[0], target_size=chip_size, type_transforms='training')
+                    valid_tfms = ClassifiedTilesPipeline(transforms=transforms[1], target_size=chip_size, type_transforms='validation')
+                transforms = (train_tfms, valid_tfms)
+
 
         else:
             data = ArcGISSegmentationItemList.from_folder(path/'images')\
@@ -499,16 +511,16 @@ def prepare_data(path,
                     color_mapping=color_mapping
                 )
 
-        if transforms is None:
-            transforms = get_transforms(
-                flip_vert=True,
-                max_rotate=90.,
-                max_zoom=3.0,
-                max_lighting=0.5
-            )
+            if transforms is None:
+                transforms = get_transforms(
+                    flip_vert=True,
+                    max_rotate=90.,
+                    max_zoom=3.0,
+                    max_lighting=0.5
+                )
 
-        kwargs_transforms['tfm_y'] = True
-        kwargs_transforms['size'] = chip_size
+            kwargs_transforms['tfm_y'] = True
+            kwargs_transforms['size'] = chip_size
     elif dataset_type == 'PASCAL_VOC_rectangles':
         not_label_count = [0]
         get_y_func = partial(
@@ -644,6 +656,11 @@ def prepare_data(path,
         if data._do_scale:
             data._min_max_scaler_tfm = partial(_tensor_scaler_tfm, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
             data.add_tfm(data._min_max_scaler_tfm)
+        
+        # Transforms
+        if transforms is not None and transforms is not False:
+            data.train_dl.add_tfm(transforms[0])
+            data.valid_dl.add_tfm(transforms[1])
         
         # Normalize
         if kwargs.get('do_normalize', None) is not None:

@@ -150,8 +150,7 @@ def _get_tail(model):
         pass
     return first_layer, index_order
 
-
-def _get_ms_tail(tail, data, type_init='average'):
+def _get_ms_tail(tail, data, type_init='random'):
     new_tail = tail.__class__(
         in_channels=len(data._extract_bands), 
         out_channels=tail.out_channels,
@@ -163,19 +162,20 @@ def _get_ms_tail(tail, data, type_init='average'):
         bias=tail.bias is not None,
         padding_mode=tail.padding_mode,
     )
-    if type_init == 'average':
-        rgb_weights = tail.weight.data
-        avg_weights = tail.weight.data.mean(dim=1)
-        rgb_map = {'r':0, 'g':1, 'b': 2}
-        for i, j in enumerate(data._extract_bands):
-            band = str(data._bands[j]).lower()
-            b = rgb_map.get(band, None)
-            #print(b)
-            if b is not None:
-                new_tail.weight.data[:, i] = tail.weight.data[:, b]
-            else:
-                #print('unknown band')
-                new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Wieghts for all other band weights
+    avg_weights = tail.weight.data.mean(dim=1)
+    rgb_map = {'r':0, 'g':1, 'b': 2}
+    for i, j in enumerate(data._extract_bands):
+        band = str(data._bands[j]).lower()
+        b = rgb_map.get(band, None)
+        if b is not None:
+            new_tail.weight.data[:, i] = tail.weight.data[:, b]
+        else:
+            if type_init == 'red_band':
+                new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Weights for all other band weights
+            elif type_init == 'average':
+                new_tail.weight.data[:, i] = avg_weights # Average Weights for all other band weights
+            elif type_init == 'random':
+                new_tail.weight.data[:, i] = torch.rand((new_tail.weight.data[:, i].shape)) # Random Weights for all other band weights
     return new_tail
 
 
@@ -200,7 +200,8 @@ def _set_tail(model, new_tail, index_order=0, inplace=True):
 
 def _change_tail(model, bands):
         tail, index_order = _get_tail(model)
-        new_tail = _get_ms_tail(tail, bands)
+        type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random') 
+        new_tail = _get_ms_tail(tail, bands, type_init=type_init)
         _set_tail(
             model, 
             new_tail, 
