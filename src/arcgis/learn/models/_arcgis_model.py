@@ -505,7 +505,7 @@ class ArcGISModel(object):
 
         emd_template = json.load(open(emd_path, 'r'))
 
-        encoded_losses = """"""
+        encoded_losses = ""
         if encoded_losses_img:
             encoded_losses = f"""
                 <p><b>Training and Validation loss</b></p>

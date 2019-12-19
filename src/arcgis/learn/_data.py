@@ -336,6 +336,9 @@ def prepare_data(path,
     if not HAS_FASTAI:
         _raise_fastai_import_error()
 
+    if isinstance(path, str) and not os.path.exists(path):
+        raise Exception("Invalid input path.")
+
     if type(path) is str:
         path = Path(path)
 

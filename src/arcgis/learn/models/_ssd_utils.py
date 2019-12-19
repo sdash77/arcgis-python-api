@@ -370,8 +370,11 @@ def compute_class_AP(ssd, dl, n_classes, show_progress, iou_thresh=0.5, detect_t
                         p_scores.append(scores.cpu())
                 except Exception as e:
                     pass
-                n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)               
-    
+                n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)
+
+    # If no true positives are found return an average precision score of 0.
+    if len(tps) == 0: return [0. for cls in range(1, n_classes + 1)]
+
     tps, p_scores, clas = torch.tensor(tps), torch.cat(p_scores,0), torch.cat(clas,0)
     fps = 1-tps
     idx = p_scores.argsort(descending=True)

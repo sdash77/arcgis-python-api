@@ -83,6 +83,8 @@ class VideoUtils():
                         os.path.basename(input_video_path).split('.')[0] + '_predictions.avi'
                     )
                 video_obj = cv2.VideoWriter(output_file_path, cv2.VideoWriter_fourcc(*'DIVX'), fps, (width, height))
+                if not video_obj.isOpened():
+                    raise Exception("Unable to write to output file path.")
 
             predictions, labels, scores = model.predict(frame, threshold=threshold, nms_overlap=nms_overlap,
                                                        return_scores=True, resize=resize)
