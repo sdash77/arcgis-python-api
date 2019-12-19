@@ -434,10 +434,22 @@ class Connection(object):
             return fp
 
         if try_json:
-            resp = resp.json()
-            if 'error' in resp:
-                raise Exception(resp['error'])
-            return resp
+            if 'Transfer-Encoding' in resp.headers and \
+               resp.headers['Transfer-Encoding'].lower() == 'chunked':  
+                data = None
+                for it in resp.iter_lines(chunk_size=None, decode_unicode=True, delimiter=None):
+                    if data is None:
+                        data = it
+                    else:
+                        data += it
+                data = json.loads(data)
+                if 'error' in data:
+                    raise Exception(resp['error'])                
+            else:
+                data = resp.json()
+            if 'error' in data:
+                raise Exception(data['error'])
+            return data
         else:
             return resp.text
     #----------------------------------------------------------------------
