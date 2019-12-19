@@ -83,3 +83,10 @@ MaskRCNN
     :members:
     :inherited-members:
     :undoc-members:
+
+DeepLab
+------------------
+.. autoclass:: arcgis.learn.DeepLab
+    :members:
+    :inherited-members:
+    :undoc-members:

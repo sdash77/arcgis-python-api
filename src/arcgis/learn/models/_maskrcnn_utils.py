@@ -198,6 +198,31 @@ class train_callback(LearnerCallback):
         return {'last_input':last_input, 'last_target':last_target}
 
 def masks_iou(masks1, masks2):
+    # Mask R-CNN
+
+    # The MIT License (MIT)
+
+    # Copyright (c) 2017 Matterport, Inc.
+
+    # Permission is hereby granted, free of charge, to any person obtaining a copy
+    # of this software and associated documentation files (the "Software"), to deal
+    # in the Software without restriction, including without limitation the rights
+    # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    # copies of the Software, and to permit persons to whom the Software is
+    # furnished to do so, subject to the following conditions:
+
+    # The above copyright notice and this permission notice shall be included in
+    # all copies or substantial portions of the Software.
+
+    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    # THE SOFTWARE.
+
+    #Method is based on https://github.com/matterport/Mask_RCNN
 
     if masks1.shape[0] == 0 or masks2.shape[0] == 0:
         return torch.zeros((masks1.shape[0], masks2.shape[0]))
@@ -217,6 +242,7 @@ def compute_matches(gt_class_ids, gt_masks,
                     pred_class_ids, pred_scores, pred_masks,
                     iou_threshold=0.5, detect_threshold=0.5):
 
+    #Method is based on https://github.com/matterport/Mask_RCNN
     indices = torch.argsort(pred_scores, descending=True)
     pred_class_ids = pred_class_ids[indices]
     pred_scores = pred_scores[indices]
@@ -239,6 +265,7 @@ def compute_ap(gt_class_ids, gt_masks,
                pred_class_ids, pred_scores, pred_masks,
                iou_threshold=0.5, detect_threshold=0.5):
 
+    #Method is based on https://github.com/matterport/Mask_RCNN
     pred_match = compute_matches(
         gt_class_ids, gt_masks,
         pred_class_ids, pred_scores, pred_masks,
