@@ -769,4 +769,9 @@ def prepare_data(path,
             _train_tail = False
         data._train_tail = kwargs.get('train_tail', _train_tail)
 
+    if has_esri_files:
+        data._image_space_used = emd.get('ImageSpaceUsed', 'MAP_SPACE')
+    else:
+        data._image_space_used = 'PIXEL_SPACE'
+
     return data

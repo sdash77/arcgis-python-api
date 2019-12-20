@@ -446,7 +446,7 @@ class ArcGISModel(object):
         self._emd_template["ModelFile"] = path.name
         self._emd_template["ImageHeight"] = self._data.chip_size
         self._emd_template["ImageWidth"] = self._data.chip_size
-
+        self._emd_template["ImageSpaceUsed"] = self._data._image_space_used
         self._emd_template["LearningRate"] = str(self._learning_rate)
         self._emd_template["ModelName"] = type(self).__name__
 

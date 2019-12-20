@@ -200,10 +200,10 @@ class ChildInstanceDetector:
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.padding = int(scalars['padding'])
-        self.batch_size = int(math.sqrt(int(scalars['batch_size']))) ** 2
-        self.threshold = float(scalars['threshold'])
-        self.return_bboxes = eval(scalars['return_bboxes'])
+        self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
+        self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size        
+        self.threshold = float(scalars.get('threshold', 0.9)) ## Default 0.9 threshold.
+        self.return_bboxes = eval(scalars.get('return_bboxes', 'False'))
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],

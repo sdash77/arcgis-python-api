@@ -245,12 +245,12 @@ class ChildObjectDetector:
         )
         return required_parameters
 
-    def getConfiguration(self, **scalars):
-        self.padding = int(scalars['padding'])
-        self.nms_overlap = float(scalars['nms_overlap'])
-        self.thres = float(scalars['threshold'])
-        self.batch_size = int(math.sqrt(int(scalars['batch_size']))) ** 2
-        self.filter_outer_padding_detections = scalars['exclude_pad_detections'].lower() in ['true', '1', 't', 'y', 'yes']
+    def getConfiguration(self, **scalars):        
+        self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
+        self.nms_overlap = float(scalars.get('nms_overlap', 0.1))  ## Default 0.1 NMS Overlap.
+        self.thres = float(scalars.get('threshold', 0.5)) ## Default 0.5 threshold.
+        self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 64)))) ** 2  ## Default 64 batch_size
+        self.filter_outer_padding_detections = scalars.get('exclude_pad_detections', 'True').lower() in ['true', '1', 't', 'y', 'yes'] ## Default value True 
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
