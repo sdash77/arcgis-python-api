@@ -215,6 +215,9 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def supported_backbones(self):
+        """
+        Supported torchvision backbones for this model.
+        """        
         return [*self._resnet_family, *self._densenet_family, *self._vgg_family, models.mobilenet_v2.__name__]
 
     @classmethod
@@ -571,7 +574,7 @@ class SingleShotDetector(ArcGISModel):
     ):
 
         """
-        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+        Runs prediction on an Image.
 
         =====================   ===========================================
         **Argument**            **Description**

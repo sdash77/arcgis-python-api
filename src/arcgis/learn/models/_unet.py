@@ -14,17 +14,12 @@ try:
     from ._unet_utils import is_no_color, LabelCallback, _class_array_to_rbg
     from fastai.callbacks import EarlyStoppingCallback
     from torch.nn import Module as NnModule
+    from ._psp_utils import accuracy
     HAS_FASTAI = True
 except Exception as e:
     class NnModule():
         pass
     HAS_FASTAI = False
-
-
-def accuracy(input, target, void_code=0, class_mapping=None):  
-    target = target.squeeze(1)
-    mask = target != void_code
-    return (input.argmax(dim=1)[mask] == target[mask]).float().mean()
 
 
 class UnetClassifier(ArcGISModel):
@@ -69,8 +64,7 @@ class UnetClassifier(ArcGISModel):
             backbone_cut = _backbone_meta['cut']
             backbone_split = _backbone_meta['split']
 
-        acc_metric = partial(accuracy, void_code=0, class_mapping=data.class_mapping) 
-        self.learn = unet_learner(data, arch=self._backbone, metrics=acc_metric, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+        self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
         self._arcgis_init_callback() # make first conv weights learnable
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
 
@@ -88,6 +82,9 @@ class UnetClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
+        """
+        Supported torchvision backbones for this model.
+        """        
         return [*self._resnet_family]
 
     @classmethod
@@ -345,6 +342,9 @@ class UnetClassifier(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, **kwargs)
+
+    def accuracy(self):
+        return self.learn.validate()[-1].tolist()     
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get('checkpoint', True)

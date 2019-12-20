@@ -112,6 +112,9 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def supported_backbones(self):
+        """
+        Supported torchvision backbones for this model.
+        """        
         return [*self._resnet_family]
 
     @classmethod

@@ -118,6 +118,9 @@ class RetinaNet(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
+        """
+        Supported torchvision backbones for this model.
+        """        
         return [*self._resnet_family]
 
     def _get_emd_params(self):

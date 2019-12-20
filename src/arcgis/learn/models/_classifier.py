@@ -119,6 +119,9 @@ class FeatureClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
+        """
+        Supported torchvision backbones for this model.
+        """
         return [*self._resnet_family, models.mobilenet_v2.__name__]
 
     def show_results(self, rows=5, **kwargs):
@@ -133,6 +136,18 @@ class FeatureClassifier(ArcGISModel):
         self.learn.show_results(rows=rows, **kwargs)
 
     def predict(self, img_path):
+        """
+        Runs prediction on an Image.
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        image_path              Required. Path to the image file to make the
+                                predictions on.
+        =====================   ===========================================
+        
+        :returns: prediciton label and confidence        
+        """
+        
         img = open_image(img_path)
         return self.learn.predict(img)
 
@@ -181,6 +196,22 @@ class FeatureClassifier(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
+        """
+        Creates a Feature classifier from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+
+        :returns: `FeatureClassifier` Object
+        """
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)

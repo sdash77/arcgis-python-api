@@ -175,6 +175,9 @@ class DeepLab(ArcGISModel):
 
         return _emd_template
 
+    def accuracy(self):
+        return self.learn.validate()[-1].tolist()
+
     @property
     def _model_metrics(self):
         return {'accuracy': self._get_model_metrics()}

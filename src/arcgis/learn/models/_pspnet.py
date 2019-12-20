@@ -14,8 +14,7 @@ try:
     from ._unet_utils import LabelCallback
     from ._arcgis_model import _EmptyData
     from fastai.vision import to_device
-    from ._psp_utils import PSPNet, _pspnet_unet
-    from fastai.vision.models import unet
+    from ._psp_utils import PSPNet, _pspnet_learner, _pspnet_learner_with_unet, accuracy
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
@@ -23,19 +22,6 @@ try:
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
-
-def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, **kwargs):
-    "Build psp_net learner from `data` and `arch`."
-    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained), data.device)
-    learn = Learner(data, model, **kwargs)
-    return learn
-
-def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, **kwargs):
-    "Build psp_net learner from `data` and `arch`."
-    model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
-    learn = Learner(data, model, **kwargs)
-    return learn
-
 
 class PSPNetClassifier(ArcGISModel):
 
@@ -65,12 +51,17 @@ class PSPNetClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained PSPNet model is
                             saved.
+    ---------------------   -------------------------------------------
+    unet_aux_loss           Optional. Bool If True will use auxillary loss for PSUnet.
+                            Default set to False. This flag is applicable only when
+                            use_unet is True.                            
     =====================   ===========================================
 
     :returns: `PSPNetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None):
+    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False):
+
         # Set default backbone to be 'resnet50'
         if backbone is None: 
             backbone = models.resnet50
@@ -84,15 +75,27 @@ class PSPNetClassifier(ArcGISModel):
         self._code = image_classifier_prf
         self.pyramid_sizes = pyramid_sizes
         self._use_unet = use_unet
+        self._unet_aux_loss = unet_aux_loss
+
         if use_unet:
-            self.learn = _pspnet_learner_with_unet(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=True, metrics=self.accuracy)
+            self.learn = _pspnet_learner_with_unet(data,
+                                                   backbone=self._backbone,
+                                                   chip_size=self._data.chip_size, 
+                                                   pyramid_sizes=pyramid_sizes, 
+                                                   pretrained=True, 
+                                                   metrics=accuracy, 
+                                                   unet_aux_loss=unet_aux_loss)
+            if unet_aux_loss:
+               self.learn.loss_func = self._psp_loss 
         else:
-            self.learn = _pspnet_learner(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=True, metrics=self.accuracy)
+            self.learn = _pspnet_learner(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=True, metrics=accuracy)
             self.learn.loss_func = self._psp_loss
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
         if pretrained_path is not None:
             self.load(pretrained_path)
+
+        self.learn.model = self.learn.model.to(self._device)
         
         self.freeze()
 
@@ -105,10 +108,29 @@ class PSPNetClassifier(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
+        """
+        Supported torchvision backbones for this model.
+        """        
         return [*self._resnet_family, *self._densenet_family, *self._vgg_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
+        """
+        Creates a PSPNet classifier from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+
+        :returns: `PSPNetClassifier` Object
+        """
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
@@ -136,16 +158,8 @@ class PSPNetClassifier(ArcGISModel):
 
         return cls(data, **model_params, pretrained_path=str(model_file))
 
-    def accuracy(self, input, target, void_code=0, class_mapping=None): 
-        if self.learn.model.training: # while training
-            input = input[0]
-
-        target = target.squeeze(1)
-        mask = target != void_code
-        return (input.argmax(dim=1)[mask] == target[mask]).float().mean()
-
     def _psp_loss(self, outputs, targets):
-        targets = targets.squeeze().detach()
+        targets = targets.squeeze(1).detach()
         criterion = nn.CrossEntropyLoss().cuda()
 
         if self.learn.model.training: # returns a tuple of aux_logits and main_logits while training
@@ -158,7 +172,7 @@ class PSPNetClassifier(ArcGISModel):
 
         if self.learn.model.training:
             aux_loss = criterion(aux, targets)
-            total_loss = main_loss + 0.4 * aux_loss
+            total_loss = main_loss + 0.4 * aux_loss  ## weight out the auxillary loss.
             return total_loss
         else:
             return main_loss
@@ -177,14 +191,25 @@ class PSPNetClassifier(ArcGISModel):
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.      
   
     def unfreeze(self):
+        """
+        Unfreezes the earlier layers of the model for fine-tuning.
+        """
         for _, param in self.learn.model.named_parameters():
             param.requires_grad = True
+
+    def accuracy(self, input=None, target=None, void_code=0, class_mapping=None):
+        if input is not None or target is not None:
+            accuracy(input, target)
+        else:
+            return self.learn.validate()[-1].tolist()
+
         
     def _get_emd_params(self):
         import random
         _emd_template = {"ModelParameters" : {}}
         _emd_template["ModelParameters"]["pyramid_sizes"] = self.pyramid_sizes
         _emd_template["ModelParameters"]["use_unet"] = self._use_unet
+        _emd_template["ModelParameters"]["unet_aux_loss"] = self._unet_aux_loss
         _emd_template["Framework"] = "arcgis.learn.models._inferencing"
         _emd_template["ModelConfiguration"] = "_psp"
         _emd_template["InferenceFunction"] = "ArcGISImageClassifier.py"
