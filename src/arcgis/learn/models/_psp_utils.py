@@ -40,6 +40,7 @@ from fastai.callbacks.hooks import model_sizes
 from fastai.vision import flatten_model
 from fastai.vision.models import unet
 from fastai.basic_train import Learner
+from fastai.vision import to_device
 
 def initialize_weights(*models):
     for model in models:

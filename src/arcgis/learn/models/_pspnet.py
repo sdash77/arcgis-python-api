@@ -13,7 +13,6 @@ try:
     from torchvision import models
     from ._unet_utils import LabelCallback
     from ._arcgis_model import _EmptyData
-    from fastai.vision import to_device
     from ._psp_utils import PSPNet, _pspnet_learner, _pspnet_learner_with_unet, accuracy
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
