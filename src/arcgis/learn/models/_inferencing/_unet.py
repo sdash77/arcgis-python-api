@@ -174,7 +174,7 @@ class ChildImageClassifier:
 
         return {
             'extractBands': tuple(self.json_info['ExtractBands']),
-            'padding': int(scalars['padding']),
+            'padding': self.padding,
             'tx': tx,
             'ty': ty,
             'fixedTileSize': 1

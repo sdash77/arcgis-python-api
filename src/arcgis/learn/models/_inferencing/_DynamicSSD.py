@@ -258,7 +258,7 @@ class ChildObjectDetector:
 
         return {
             'extractBands': tuple(self.json_info['ExtractBands']),
-            'padding': int(scalars['padding']),
+            'padding': self.padding,
             'threshold': self.thres,
             'nms_overlap': self.nms_overlap,
             'tx': tx,
