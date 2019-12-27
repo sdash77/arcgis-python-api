@@ -154,9 +154,10 @@ class ArcGISImageSegment(Image):
         cmap=None, alpha:float=0.5, **kwargs):
         "Show the `ImageSegment` on `ax`."
         if is_no_color(self.color_mapping):
-            ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap='tab20', figsize=figsize,
+            ## This condition will not be true.
+            ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap="tab20", figsize=figsize,
                         interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
-        else:                
+        else:     
             color_mapping = torch.tensor(list(self.color_mapping.values()))
             color_mapping = torch.cat((color_mapping.float()/255, torch.tensor([float(alpha)] * len(color_mapping)).view(-1, 1)), dim=1)
             color_mapping = torch.cat((torch.tensor([0., 0., 0., 0.]).view(1, -1), color_mapping), dim=0)
@@ -175,6 +176,19 @@ def is_no_color(color_mapping):
         color_mapping = list(color_mapping.values())
     return (np.array(color_mapping) == [-1., -1., -1.]).any()
 
+def is_contigous(class_values):
+    flag = True
+    for i in range(len(class_values) - 1):
+        if class_values[i] + 1 != class_values[i+1]:
+            flag = False
+    return flag
+
+def map_to_contigous(tensor, mapping):
+    modified_tensor = torch.zeros_like(tensor)
+    for i, value in enumerate(mapping):
+        modified_tensor[tensor == value] = i
+    return modified_tensor
+
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
     _processor = SegmentationProcessor
@@ -184,7 +198,9 @@ class ArcGISSegmentationLabelList(ImageList):
         self.color_mapping = color_mapping
         self.copy_new.append('classes')
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
-        
+        self.is_contigous = is_contigous([0] + list(self.class_mapping.keys()))
+        if not self.is_contigous:
+            self.pixel_mapping = [0] + list(self.class_mapping.keys())
 
     def open(self, fn):
         with warnings.catch_warnings():
@@ -196,15 +212,12 @@ class ArcGISSegmentationLabelList(ImageList):
                 x = x.convert('L')
             x = pil2tensor(x, np.float32)
 
+        if not self.is_contigous:
+            x = map_to_contigous(x, self.pixel_mapping)
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
     def analyze_pred(self, pred, thresh:float=0.5): 
-        label_mapping = {(idx + 1):value for idx, value in enumerate(self.class_mapping.keys())}
-        out = pred.argmax(dim=0)[None]
-        predictions = torch.zeros_like(out)
-        for key, value in label_mapping.items():
-            predictions[out==key] = value
-        return predictions
+        return pred.argmax(dim=0)[None]
 
     def reconstruct(self, t): 
         return ArcGISImageSegment(t, color_mapping=self.color_mapping)

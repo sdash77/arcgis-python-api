@@ -16,10 +16,11 @@ try:
     from fastai.torch_core import data_collate
     import torch
     from .models._ssd_utils import SSDObjectItemList
-    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral
+    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList
     from .models._ner_utils import ner_prepare_data
     from ._augmentation import ClassifiedTilesPipeline
+    import random
     HAS_FASTAI = True
 except:
     HAS_FASTAI = False
@@ -478,6 +479,9 @@ def prepare_data(path,
         if color_mapping.get(0):
             del color_mapping[0]
 
+        if is_no_color(color_mapping):
+            color_mapping = {j:[random.choice(range(256)) for i in range(3)] for j in class_mapping.keys()}
+            
         # TODO : Handle NoData case
 
         # Handle Multispectral
