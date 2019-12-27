@@ -1224,7 +1224,7 @@ class EnterpriseUsers(BasePortalAdmin):
             "username" : username,
             "idpUsername" : idp_username
         }
-        res = self._con.get(path=url, params=params)
+        res = self._con.post(path=url, postdata=params)
         if 'status' in res:
             return res['status'] == 'success'
         return res
