@@ -13,6 +13,7 @@ from pathlib import Path
 import random,os
 from ._ner_utils import *
 from time import sleep
+from collections.abc import Iterable
 
 def _raise_spacy_import_error():
     return logging.warning('This module requires spacy version 2.1.8 or above and fastprogress. Install it using "pip install spacy==2.1.8 fastprogress pandas"')
@@ -103,7 +104,7 @@ class EntityRecognizer(ArcGISModel):
             return logging.warning('Cannot fit the model on empty data.')
         TRAIN_DATA = self.train_ds.data
         VAL_DATA = self.val_ds.data
-        nlp = self.model # create blank Language class
+        nlp = self.model 
         
         
         if 'ner' not in nlp.pipe_names: # create the built-in pipeline components and add them to the pipeline
@@ -113,7 +114,8 @@ class EntityRecognizer(ArcGISModel):
         i=0
         for _, annotations in TRAIN_DATA: # adding labels
             for ent in annotations.get('entities'):
-                self.ner.add_label(ent[2])
+                if (ent[2] not in self.ner.labels):
+                    self.ner.add_label(ent[2])
             i+=1
 
         
@@ -231,6 +233,7 @@ class EntityRecognizer(ArcGISModel):
             self._has_address=True
             self._address_tag=address_tag
         self.model = spacy.load(name_or_path)
+        self.ner = self.model.get_pipe('ner')
         self.trained = True
         self.entities = list({item[2:] for item in self.model.entity.move_names if item !='O'})
         print(self.model)
@@ -378,7 +381,10 @@ class EntityRecognizer(ArcGISModel):
                         tmp_ents[ent.label_].extend([ent.text])
 
                 df.loc[i]['TEXT'] = text
-                df.loc[i]['Filename'] = i
+                if isinstance(i,Iterable): #For test documents
+                    df.loc[i]['Filename'] = i
+                else: #for show_results()
+                    df.loc[i]['Filename'] = 'Example_'+str(i)
                 
                 for label in tmp_ents.keys():
                     df.loc[i][label] = tmp_ents[label]

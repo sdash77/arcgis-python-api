@@ -152,14 +152,30 @@ def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
         tokens_collection = []
         tags_df = pd.read_csv(path/'tags.csv')
         tokens_df = pd.read_csv(path/'tokens.csv')
-        
+        train_data = []
+
         for i,tags in tags_df.iterrows():
             tags_collection.append(list(tags.dropna()))
         
         for i,tokens in tokens_df.iterrows():
             tokens_collection.append(list(tokens.dropna()))
-        train_data = _offsets_from_biluo_tags(tags=tags_collection, tokens=tokens_collection)
-    # return train_data
+    
+        nlp=spacy.blank('en')
+        train_data = [] 
+        for tags, tokens in zip(tags_collection, tokens_collection):
+            try:
+                tags = _iob_to_biluo(tags)
+
+                doc = spacy.tokens.doc.Doc(
+                nlp.vocab, words = tokens, spaces = [True]*(len(tokens)-1)+[False])
+                # run the standard pipeline against it
+                for name, proc in nlp.pipeline:
+                    doc = proc(doc) 
+                text=' '.join(tokens)
+                tags = _offsets_from_biluo_tags(doc, tags)
+                train_data.append((text,{'entities':tags}))
+            except:
+                pass        
     data=DatabunchNER(train_data, val_split_pct=val_split_pct, address_tag=address_tag, test_ds=None)
     data.path=path
     return data
