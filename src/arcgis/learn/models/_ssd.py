@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 from ._codetemplate import code
 import warnings
+from .._data import _raise_fastai_import_error
 
 import logging
 logger = logging.getLogger()
@@ -27,7 +28,6 @@ try:
     from torchvision import models
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
     from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou
-    from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     from ._unet_utils import is_no_color
@@ -260,6 +260,9 @@ class SingleShotDetector(ArcGISModel):
         
         :returns: `SingleShotDetector` Object
         """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error()
+            
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])

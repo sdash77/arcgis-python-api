@@ -5,6 +5,7 @@ from ._codetemplate import code
 import random
 import statistics
 import warnings
+from .._data import _raise_fastai_import_error
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -26,10 +27,8 @@ try:
     from torchvision import models
     from ._ssd_utils import SSDObjectCategoryList
     from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP
-    from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
-    from .._data import _raise_fastai_import_error
     from ._arcgis_model import SaveModelCallback
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
@@ -168,7 +167,9 @@ class RetinaNet(ArcGISModel):
         
         :returns: `RetinaNet` Object
         """
-
+        if not HAS_FASTAI:
+            _raise_fastai_import_error()
+            
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])

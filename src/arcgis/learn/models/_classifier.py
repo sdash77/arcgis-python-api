@@ -1,6 +1,7 @@
 import arcgis as _arcgis 
 from ._arcgis_model import ArcGISModel
 from ..._impl.common._deprecate import deprecated
+from .._data import _check_esri_files, _raise_fastai_import_error
 import random
 try:
     import pandas
@@ -25,7 +26,6 @@ try:
     from ._arcgis_model import _set_multigpu_callback
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch.nn.functional as functional
-    from .._data import _check_esri_files
     import glob
     import time
     import xml.etree.ElementTree as ElementTree
@@ -212,6 +212,9 @@ class FeatureClassifier(ArcGISModel):
 
         :returns: `FeatureClassifier` Object
         """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error()
+            
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)

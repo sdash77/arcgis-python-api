@@ -4,6 +4,7 @@ from ._codetemplate import image_classifier_prf
 from ._arcgis_model import _EmptyData
 from functools import partial
 import math
+from .._data import _raise_fastai_import_error
 
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
@@ -125,6 +126,9 @@ class UnetClassifier(ArcGISModel):
         
         :returns: `UnetClassifier` Object
         """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error()
+            
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
