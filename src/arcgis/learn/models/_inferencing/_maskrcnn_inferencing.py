@@ -233,7 +233,6 @@ class ChildInstanceDetector:
                                     self.model,
                                     batch,
                                     self.device,
-                                    [clas['Name'] for clas in self.json_info['Classes']],
                                     self.json_info['ImageHeight'],
                                     threshold=self.threshold,
                                     batch_size=self.batch_size,
@@ -251,7 +250,7 @@ def predict_mask_rcnn(model, images, device, chip_size, threshold=0.5):
     return predictions
     
 
-def pixel_mask_image(model, tiles, device, classes, chip_size, threshold=0.5, batch_size=4, return_bboxes=False):
+def pixel_mask_image(model, tiles, device, chip_size, threshold=0.5, batch_size=4, return_bboxes=False):
 
     side = int(math.sqrt(batch_size))
     img_normed = tiles/255

@@ -53,7 +53,7 @@ def is_no_color(color_mapping):
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
     _processor = SegmentationProcessor
-    def __init__(self, items, chip_size, classes=None, class_mapping=None, color_mapping=None, **kwargs):
+    def __init__(self, items, chip_size, classes=None, class_mapping=None, color_mapping=None, index_dir=None, **kwargs):
         super().__init__(items, **kwargs)
         self.class_mapping = class_mapping
         self.color_mapping = color_mapping
@@ -61,6 +61,7 @@ class ArcGISSegmentationLabelList(ImageList):
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
         self.chip_size = chip_size
         self.inverse_class_mapping = {}
+        self.index_dir = index_dir
         for k, v in self.class_mapping.items():
             self.inverse_class_mapping[v] = k
         if is_no_color(list(color_mapping.values())):
@@ -97,7 +98,7 @@ class ArcGISSegmentationLabelList(ImageList):
             for j in range(len(self.class_mapping)):
 
                 if k < len(fn):
-                    lbl_name = int(self.inverse_class_mapping[fn[k].parent.name])
+                    lbl_name = int(self.index_dir[self.inverse_class_mapping[fn[k].parent.name]])
                 else:
                     lbl_name = len(self.class_mapping) + 2
                 if lbl_name == j+1:                    
@@ -331,13 +332,18 @@ def compute_class_AP(model, dl, n_classes, show_progress, detect_thresh=0.5, iou
                                             iou_thresh,
                                             detect_thresh)
                             if not(torch.isnan(ap) or torch.isinf(ap)):
-                                aps[k-1].append(ap)
+                                aps[k-1].append(ap.item())
     if mean:
-        aps = np.mean(aps, axis=0)
+        if aps != []:
+            aps = np.mean(aps, axis=0)
+        else:
+            return 0.0
     else:
         for i in range(n_classes):
-            aps[i] = np.mean(aps[i])
+            if aps[i] != []:
+                aps[i] = np.mean(aps[i])
+            else:
+                aps[i] = 0.0
     if model._device == torch.device('cuda'):
         torch.cuda.empty_cache()
     return aps
-    

@@ -461,12 +461,14 @@ def prepare_data(path,
         src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
             .split_by_rand_pct(val_split_pct, seed=seed))
 
-        label_dirs = os.listdir(path/'labels')
-        for k,v in class_mapping.items():
-            label_dirs[k-1] = v
+        label_dirs = []
+        index_dir = {} #for handling calss value with any number
+        for i, k in enumerate(sorted(class_mapping.keys())):
+            label_dirs.append(class_mapping[k])
+            index_dir[k] = i+1
         label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
         get_y_func = partial(get_labels, label_dirs= label_dir)
-        src = src.label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)
+        src = src.label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir)
     
     elif dataset_type == 'Classified_Tiles':
 
