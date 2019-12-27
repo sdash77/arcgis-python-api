@@ -355,14 +355,22 @@ class EntityRecognizer(ArcGISModel):
                 item_names = os.listdir(text_list)
                 item_list = pd.Series()
                 text = []
-
+                skipped_docs=[]
                 for item_name in item_names:
                     try:
-                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-8') as f:
+                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-16', errors='ignore') as f:
                             item_list[item_name] = f.read()
                     except:
-                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-16',errors='ignore') as f:
-                            item_list[item_name]=f.read()
+                        try:
+                            with open(f'{text_list}/{item_name}', 'r', encoding='utf-8', errors='ignore') as f:
+                                item_list[item_name]=f.read()
+                        except:
+                            skipped_docs.append(item_name)
+                if len(skipped_docs):
+                    print('Unable to read the following documents ', ', '.join(skipped_docs))
+
+
+
     
             # if self._address_tag not in self.entities and self._has_address==True:
             #     return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
