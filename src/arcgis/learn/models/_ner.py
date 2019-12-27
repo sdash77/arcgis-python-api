@@ -46,13 +46,14 @@ class EntityRecognizer(ArcGISModel):
         super().__init__(data)
         self._code = entity_recognizer_placeholder
         self._emd_template = {}
+        self.model_dir=None
         self.model = spacy.blank(lang)
-        self.model_dir=Path('Models')
-        self.ner=None
+        self.ner = self.model.create_pipe('ner')
+        self.model.add_pipe(self.ner, last=True)
         self._address_tag = 'Address'  #Defines the default addres field
         self.entities = None #Stores all the entity names from the training data into a list
         self._has_address = False #Flag to identify if the training data has any address  
-        self.trained = False #Flag to check if model has been trained     
+        self._trained = False #Flag to check if model has been trained     
         self.lang = lang
         if data:
             self._address_tag=data._address_tag
@@ -143,15 +144,13 @@ class EntityRecognizer(ArcGISModel):
                         losses = losses)  
                 if VAL_DATA:
                     for val_text, val_annotations in (VAL_DATA):
-                        nlp.update([text],[annotations], sgd = None, losses = val_losses)
+                        nlp.update([val_text],[val_annotations], sgd = None, losses = val_losses)
 
-                # mb.first_bar.comment = f'{(losses)}'
                 train_loss = losses['ner']/len(TRAIN_DATA)
                 val_loss = val_losses['ner']/len(VAL_DATA)
-                # mb.write(f'Epoch: {itn} , train_loss: {losses['ner']/len(TRAIN_DATA)}, val_loss: {val_losses['ner']/len(VAL_DATA)}') 
                 mb.write([itn,round(train_loss,2),round(val_loss,2)],table=True)
 
-        self.trained = True
+        self._trained = True
         self.model = nlp
         self.entities = list({item[2:] for item in self.model.entity.move_names if item !='O'})
 
@@ -159,14 +158,15 @@ class EntityRecognizer(ArcGISModel):
         path=Path(path)
         self._emd_template["ModelConfiguration"] = "_ner"
         self._emd_template["InferenceFunction"] = "EntityRecognizer.py"
-        self._emd_template['ModelDir'] = str(Path(path))
+        self._emd_template['ModelFile'] = str(Path(path).name)
+        self._emd_template['ModelName'] = type(self).__name__
         self._emd_template['Labels'] = self.model.entity.labels
         self._emd_template['Lang'] = self.lang
         if self._has_address:
             self._emd_template['address_tag'] = self._address_tag
         json.dump(self._emd_template, open(path/Path(path.stem).with_suffix('.emd'), 'w'), indent=4)
         pathstr = path/Path(path.stem).with_suffix('.emd')
-        print(f'Model has been saved to {path}')
+        print(f'Model has been saved to {str(path.resolve())}')
   
     def save(self, name_or_path, **kwargs):
         """
@@ -188,7 +188,7 @@ class EntityRecognizer(ArcGISModel):
 
     def _save(self, name_or_path, zip_files=True):
         temp=self.path
-        if self.model == None:
+        if not self._trained:
             return logging.error("Model needs to be fitted, before saving.")
 
         if '\\' in name_or_path or '/' in name_or_path:
@@ -196,7 +196,6 @@ class EntityRecognizer(ArcGISModel):
             parent_path = path.parent
             name = path.parts[-1]
             self.model_dir = parent_path/name
-            print(self.model_dir)
             if not os.path.exists(self.model_dir):
                 os.makedirs(self.model_dir)
         else:
@@ -223,19 +222,20 @@ class EntityRecognizer(ArcGISModel):
         name_or_path            Required string. Path of the emd file.
         =====================   ===========================================
         """
+        model_path = Path(name_or_path).parent
 
         with open(name_or_path, 'r', encoding='utf-8') as f:
             emd = f.read()
         emd = json.loads(emd)
-        name_or_path = emd.get('ModelDir')
         address_tag= emd.get('address_tag')
         if address_tag:
             self._has_address=True
             self._address_tag=address_tag
-        self.model = spacy.load(name_or_path)
+        self.model = spacy.load(model_path)
         self.ner = self.model.get_pipe('ner')
-        self.trained = True
-        self.entities = list({item[2:] for item in self.model.entity.move_names if item !='O'})
+        self._trained = True
+        self.entities = list(self.model.entity.labels)
+        self.model_dir=Path(name_or_path).parent.resolve()
         print(self.model)
 
     @classmethod
@@ -261,7 +261,7 @@ class EntityRecognizer(ArcGISModel):
         ner = cls(data=data)
         ner.load(emd_path)
         ner.trained = True
-        ner.entities = list({item[2:] for item in ner.model.entity.move_names if item !='O'})
+        ner.entities = list(ner.model.entity.labels)
         return ner
 
 
@@ -345,7 +345,7 @@ class EntityRecognizer(ArcGISModel):
         :returns: Pandas DataFrame
         """
 
-        if self.trained:
+        if self._trained:
             df = pd.DataFrame(columns = ['TEXT','Filename']+self.entities)
 
             if isinstance(text_list, list):
@@ -361,7 +361,7 @@ class EntityRecognizer(ArcGISModel):
                         with open(f'{text_list}/{item_name}', 'r', encoding='utf-8') as f:
                             item_list[item_name] = f.read()
                     except:
-                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-16',errors='coerce') as f:
+                        with open(f'{text_list}/{item_name}', 'r', encoding='utf-16',errors='ignore') as f:
                             item_list[item_name]=f.read()
     
             # if self._address_tag not in self.entities and self._has_address==True:
@@ -412,7 +412,7 @@ class EntityRecognizer(ArcGISModel):
         :returns: Pandas DataFrame
         """
 
-        if not self.trained:
+        if not self._trained:
             return logging.warning('This model has not been trained')
         '''
         Make predictions on a batch of documents from specified ds_type.

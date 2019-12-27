@@ -176,14 +176,14 @@ def is_no_color(color_mapping):
         color_mapping = list(color_mapping.values())
     return (np.array(color_mapping) == [-1., -1., -1.]).any()
 
-def is_contigous(class_values):
+def is_contiguous(class_values):
     flag = True
     for i in range(len(class_values) - 1):
         if class_values[i] + 1 != class_values[i+1]:
             flag = False
     return flag
 
-def map_to_contigous(tensor, mapping):
+def map_to_contiguous(tensor, mapping):
     modified_tensor = torch.zeros_like(tensor)
     for i, value in enumerate(mapping):
         modified_tensor[tensor == value] = i
@@ -198,8 +198,8 @@ class ArcGISSegmentationLabelList(ImageList):
         self.color_mapping = color_mapping
         self.copy_new.append('classes')
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
-        self.is_contigous = is_contigous([0] + list(self.class_mapping.keys()))
-        if not self.is_contigous:
+        self.is_contiguous = is_contiguous(sorted([0] + list(self.class_mapping.keys())))
+        if not self.is_contiguous:
             self.pixel_mapping = [0] + list(self.class_mapping.keys())
 
     def open(self, fn):
@@ -212,8 +212,8 @@ class ArcGISSegmentationLabelList(ImageList):
                 x = x.convert('L')
             x = pil2tensor(x, np.float32)
 
-        if not self.is_contigous:
-            x = map_to_contigous(x, self.pixel_mapping)
+        if not self.is_contiguous:
+            x = map_to_contiguous(x, self.pixel_mapping)
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
     def analyze_pred(self, pred, thresh:float=0.5): 
