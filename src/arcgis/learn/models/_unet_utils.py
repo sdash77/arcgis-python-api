@@ -250,11 +250,14 @@ class ArcGISSegmentationMSItemList(ImageList):
 class LabelCallback(LearnerCallback):
     def __init__(self, learn):
         super().__init__(learn)
-        import pdb
         self.label_mapping = {value:(idx+1) for idx, value in enumerate(learn.data.class_mapping.keys())}
         
     def on_batch_begin(self, last_input, last_target, **kwargs):
-        modified_target = torch.zeros_like(last_target)
-        for label, idx in self.label_mapping.items():
-            modified_target[last_target==label] = idx
-        return {'last_input':last_input, 'last_target':modified_target}
+        """
+        This callback is not used anymore.
+        Not using this callback has increased the unet model training speed.
+        """
+        # modified_target = torch.zeros_like(last_target)
+        # for label, idx in self.label_mapping.items():
+        #     modified_target[last_target==label] = idx
+        return {'last_input':last_input, 'last_target':last_target}
