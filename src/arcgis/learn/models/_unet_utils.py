@@ -3,6 +3,7 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
+from .._utils import ArcGISMSImage
 import torch
 import warnings
 import PIL
@@ -231,7 +232,9 @@ class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
         import gdal
         path = str(os.path.abspath(fn))
         x = gdal.Open(path).ReadAsArray()
-        x = torch.tensor(x.astype(np.long))[None]
+        x = torch.tensor(x.astype(np.float32))[None]
+        if not self.is_contiguous:
+            x = map_to_contiguous(x, self.pixel_mapping)
         return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationMSItemList(ImageList):
@@ -243,8 +246,8 @@ class ArcGISSegmentationMSItemList(ImageList):
         x = gdal.Open(path).ReadAsArray()
         #x = ArcGISImageMSSegment(x.astype(np.float32))
         x = torch.tensor(x.astype(np.float32))
-        #x = ArcGISImageSegment( x[:3, ] )
-        x = ArcGISMultispectralImageSegment(x)
+        #x = ArcGISMultispectralImageSegment( x[:3, ] )
+        x = ArcGISMSImage(x)
         return x
 
 class LabelCallback(LearnerCallback):
@@ -261,3 +264,121 @@ class LabelCallback(LearnerCallback):
         # for label, idx in self.label_mapping.items():
         #     modified_target[last_target==label] = idx
         return {'last_input':last_input, 'last_target':last_target}
+
+def predict_batch(self, imagetensor_batch):
+    predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach().cpu()
+    return predictions.max(dim=1)[1]
+
+#def show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters 
+def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
+    import matplotlib.pyplot as plt
+
+    # Get Number of items
+    nrows = nrows
+    ncols = 2
+
+    type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
+    if type_data_loader == 'training':
+        data_loader = self._data.train_dl
+    elif type_data_loader == 'validation':
+        data_loader = self._data.valid_dl
+    elif type_data_loader == 'testing':
+        data_loader = self._data.test_dl
+    else:
+        e = Exception(f'could not find {type_data_loader} in data.')
+        raise(e)
+
+    rgb_bands = self._data._symbology_rgb_bands
+    if kwargs.get('rgb_bands', None) is not None:
+        rgb_bands = kwargs.get('rgb_bands')
+
+    nodata = 0
+    if kwargs.get('nodata', None) is not None:
+        nodata = kwargs.get('nodata')
+
+    index = 0
+    if kwargs.get('index', None) is not None:
+        index = kwargs.get('index')
+
+    imsize = 5
+    if kwargs.get('imsize', None) is not None:
+        imsize = kwargs.get('imsize')
+
+    title_font_size = 16
+    if kwargs.get('top', None) is not None:
+        top = kwargs.get('top')
+    else:
+        top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
+
+    statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+
+
+    e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
+    symbology_bands = []
+    if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
+        raise(e)
+    for b in rgb_bands:
+        if type(b) == str:
+            b_index = self._bands.index(b)
+        elif type(b) == int:
+            self._bands[b] # To check if the band index specified by the user really exists.
+            b_index = b
+        else:
+            raise(e)
+        b_index = self._data._extract_bands.index(b_index)
+        symbology_bands.append(b_index)
+
+    # Get Batch
+    x_batch, y_batch = [], []
+    i = 0
+    dl_iterater = iter(data_loader)
+    while i < nrows:
+        x, y = next(dl_iterater)
+        x_batch.append(x)
+        y_batch.append(y)
+        i+=self._data.batch_size
+    x_batch = torch.cat(x_batch)
+    # Denormalize X
+    y_batch = torch.cat(y_batch)
+
+    # Get Predictions
+    predictions = []
+    for i in range(0, x_batch.shape[0], self._data.batch_size):
+        predictions.append(predict_batch(self, x_batch[i:i+self._data.batch_size]))
+    predictions = torch.cat(predictions)
+
+    # Denormalize X
+    x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
+    
+    # Extract RGB Bands
+    symbology_x_batch = x_batch[:, symbology_bands]
+    if statistics_type == 'DRA':
+        shp = symbology_x_batch.shape
+        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    
+    # Channel first to channel last for plotting
+    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+    # Clamp float values to range 0 - 1
+    if symbology_x_batch.mean() < 1:
+        symbology_x_batch = symbology_x_batch.clamp(0, 1)
+
+    # Get color Array
+    color_array = self._data._multispectral_color_array
+    color_array[1:, 3] = alpha
+
+    # Size for plotting
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
+    for r in range(nrows):
+        ax[r][0].imshow(symbology_x_batch[r])
+        y_rgb = color_array[y_batch[r][0]]
+        ax[r][0].imshow(y_rgb, alpha=alpha)
+        ax[r][0].axis('off')
+        ax[r][1].imshow(symbology_x_batch[r])
+        p_rgb = color_array[predictions[r]]
+        ax[r][1].imshow(p_rgb, alpha=alpha)
+        ax[r][1].axis('off')
+        plt.subplots_adjust(top=top)
+    return ax

@@ -137,21 +137,16 @@ class SaveModelCallback(TrackerCallback):
             except:
                 pass
 
-
 def _get_tail(model):
-    index_order = 0
-    first_layer = None
-    try:
-        first_layer = model._modules[list(model._modules.keys())[0]]
-        while True:
-            first_layer = first_layer[0]
-            index_order+=1
-    except:
-        pass
-    return first_layer, index_order
+    if hasattr(model, 'named_children'):
+        child_name, child = next(model.named_children())
+        if isinstance(child, nn.Conv2d):
+            return child_name, child                
+    if hasattr(model, 'children'):
+        return _get_tail(next(model.children()))
 
 def _get_ms_tail(tail, data, type_init='random'):
-    new_tail = tail.__class__(
+    new_tail = nn.Conv2d(
         in_channels=len(data._extract_bands), 
         out_channels=tail.out_channels,
         kernel_size=tail.kernel_size,
@@ -178,37 +173,22 @@ def _get_ms_tail(tail, data, type_init='random'):
                 new_tail.weight.data[:, i] = torch.rand((new_tail.weight.data[:, i].shape)) # Random Weights for all other band weights
     return new_tail
 
+def _set_tail(model, new_tail):
+    updated = False
+    if hasattr(model, 'named_children'):
+        child_name, child = next(model.named_children())
+        if isinstance(child, nn.Conv2d):
+            setattr(model, child_name, new_tail)
+            updated = True
+    if hasattr(model, 'children') and not updated:
+        return _set_tail(next(model.children()), new_tail)
 
-def _set_tail(model, new_tail, index_order=0, inplace=True):
-    i = 0
-    codeblock = 'model._modules[list(model._modules.keys())[0]]'
-    while i < index_order:
-        codeblock += '[0]'
-        i += 1
-    exec(codeblock + ' = new_tail')
-    
-    #first_layer = model._modules[list(model._modules.keys())[0]]
-    #i = 0
-    #while i < index_order:
-    #    first_layer = first_layer[0]
-    #    i+=1
-    #first_layer = new_tail
-    
-    if not inplace:
-        return model
-
-
-def _change_tail(model, bands):
-        tail, index_order = _get_tail(model)
-        type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random') 
-        new_tail = _get_ms_tail(tail, bands, type_init=type_init)
-        _set_tail(
-            model, 
-            new_tail, 
-            index_order,
-            inplace=True
-        )
-        return model
+def _change_tail(model, data):
+    tail_name, tail = _get_tail(model)
+    type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random') 
+    new_tail = _get_ms_tail(tail, data, type_init=type_init)
+    _set_tail(model, new_tail)
+    return model
 
 
 class ArcGISModel(object):
@@ -241,9 +221,9 @@ class ArcGISModel(object):
         if self._is_multispectral:
             self._imagery_type = data._imagery_type   
             self._bands = data._bands
-            self._backbone_ = self._backbone
-            def backbone_wrapper(pretrained):
-                return _change_tail(self._backbone_(pretrained), data)
+            self._orig_backbone = self._backbone
+            def backbone_wrapper(*args, **kwargs):
+                return _change_tail(self._orig_backbone(*args, **kwargs), data)
             self._backbone = backbone_wrapper
 
         self.learn = None
@@ -266,7 +246,11 @@ class ArcGISModel(object):
     def _arcgis_init_callback(self):
         if self._is_multispectral:
             if self._data._train_tail:
-                next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
+                params_iterator = self.learn.model.parameters()
+                next(params_iterator).requires_grad = True # make first conv weights learnable
+                tail_name, first_layer = _get_tail(self.learn.model)
+                if first_layer.bias is not None:
+                    next(params_iterator).requires_grad = True # make first conv bias weights learnable
                 self.learn.create_opt(slice(3e-3))
             if hasattr(self, '_show_results_multispectral'):
                 self.show_results = self._show_results_multispectral
@@ -439,7 +423,7 @@ class ArcGISModel(object):
 
         backbone = self._backbone.__name__
         if backbone == 'backbone_wrapper':
-            backbone = self._backbone_.__name__
+            backbone = self._orig_backbone.__name__
 
         self._emd_template = self._get_emd_params()
 
@@ -468,6 +452,27 @@ class ArcGISModel(object):
             resize_to = self._data.resize_to
 
         self._emd_template['resize_to'] = resize_to
+        
+        # Check if model is Multispectral and dump parameters for that
+        self._emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)
+        if self._emd_template.get("IsMultispectral", False):
+            self._emd_template["Bands"] = self._data._bands
+            self._emd_template["ImageryType"] = self._data._imagery_type
+            self._emd_template["ExtractBands"] = self._data._extract_bands
+            self._emd_template["NormalizationStats"] = {
+                "band_min_values": self._data._band_min_values,
+                "band_max_values": self._data._band_max_values,
+                "band_mean_values": self._data._band_mean_values,
+                "band_std_values": self._data._band_std_values,
+                "scaled_min_values": self._data._scaled_min_values,
+                "scaled_max_values": self._data._scaled_max_values,
+                "scaled_mean_values": self._data._scaled_mean_values,
+                "scaled_std_values": self._data._scaled_std_values
+            }
+            for _stat in self._emd_template["NormalizationStats"]:
+                if self._emd_template["NormalizationStats"][_stat] is not None:
+                    self._emd_template["NormalizationStats"][_stat] = self._emd_template["NormalizationStats"][_stat].tolist()
+            self._emd_template["DoNormalize"] = self._data._do_normalize
 
         json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
 

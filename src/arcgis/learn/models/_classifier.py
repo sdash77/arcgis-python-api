@@ -3,6 +3,7 @@ from ._arcgis_model import ArcGISModel
 from ..._impl.common._deprecate import deprecated
 from .._data import _check_esri_files, _raise_fastai_import_error
 import random
+import math
 try:
     import pandas
     import tempfile
@@ -32,6 +33,7 @@ try:
     import PIL.Image
     import PIL.ExifTags
     from torch.nn import Module as NnModule
+    from .._utils.common import get_multispectral_data_params_from_emd
     HAS_FASTAI = True
 except Exception as e:
     class NnModule():
@@ -91,15 +93,21 @@ class FeatureClassifier(ArcGISModel):
 
         backbone_cut = None
         backbone_split = None
-        if self._backbone == models.mobilenet_v2:
+
+        _backbone = self._backbone
+        if hasattr(self, '_orig_backbone'):
+            _backbone = self._orig_backbone
+
+        if _backbone == models.mobilenet_v2:
             backbone_cut = -1
             backbone_split = _mobilenet_split
 
-        if not self._check_backbone_support(self._backbone):
+        if not self._check_backbone_support(_backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         self._code = feature_classifier_prf
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+        self._arcgis_init_callback() # make first conv weights learnable
 
         # Add Mixup data augmentation
         if mixup:
@@ -134,6 +142,115 @@ class FeatureClassifier(ArcGISModel):
             rows = math.floor(math.sqrt(len(self._data.valid_ds)))
 
         self.learn.show_results(rows=rows, **kwargs)
+   
+    def _show_results_multispectral(self, rows=5, **kwargs): # parameters adjusted in kwargs
+        import matplotlib.pyplot as plt
+
+        # Get Number of items
+        nrows = rows
+        ncols = kwargs.get('ncols', rows)
+
+        type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
+        if type_data_loader == 'training':
+            data_loader = self._data.train_dl
+        elif type_data_loader == 'validation':
+            data_loader = self._data.valid_dl
+        elif type_data_loader == 'testing':
+            data_loader = self._data.test_dl
+        else:
+            e = Exception(f'could not find {type_data_loader} in data.')
+            raise(e)
+
+        rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
+
+        nodata = kwargs.get('nodata', 0)
+
+        index = kwargs.get('start_index', 0)
+
+        imsize = kwargs.get('imsize', 5)
+
+        title_font_size = 16
+        _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
+        top = kwargs.get('top', _top)
+
+        statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+
+        e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
+        symbology_bands = []
+        if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
+            raise(e)
+        for b in rgb_bands:
+            if type(b) == str:
+                b_index = self._bands.index(b)
+            elif type(b) == int:
+                self._bands[b] # To check if the band index specified by the user really exists.
+                b_index = b
+            else:
+                raise(e)
+            b_index = self._data._extract_bands.index(b_index)
+            symbology_bands.append(b_index)
+
+        # Get Batch
+        x_batch, y_batch = [], []
+        i = 0
+        dl_iterater = iter(data_loader)
+        while i < nrows:
+            x, y = next(dl_iterater)
+            x_batch.append(x)
+            y_batch.append(y)
+            i+=self._data.batch_size
+        x_batch = torch.cat(x_batch)
+        # Denormalize X
+        y_batch = torch.cat(y_batch)
+
+        # Get Predictions
+        predictions_class_store = []
+        predictions_confidence_store = []
+        for i in range(0, x_batch.shape[0], self._data.batch_size):
+            _classes, _confidences = self._predict_batch(x_batch[i:i+self._data.batch_size])
+            predictions_class_store.extend(_classes)
+            predictions_confidence_store.extend(_confidences)
+
+        # Denormalize X
+        x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
+        
+        # Extract RGB Bands
+        symbology_x_batch = x_batch[:, symbology_bands]
+        if statistics_type == 'DRA':
+            shp = symbology_x_batch.shape
+            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+        
+        # Channel first to channel last for plotting
+        symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+        # Clamp float values to range 0 - 1
+        if symbology_x_batch.mean() < 1:
+            symbology_x_batch = symbology_x_batch.clamp(0, 1)
+
+        # Get color Array
+        color_array = self._data._multispectral_color_array
+
+        # Size for plotting
+        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+        fig.suptitle('Ground Truth\nPredictions', fontsize=title_font_size)
+        plt.subplots_adjust(top=top)
+        idx=0
+        for r in range(nrows):
+            for c in range(ncols):
+                if idx < symbology_x_batch.shape[0]:
+                    axi  = ax[r][c]
+                    axi.imshow(symbology_x_batch[idx])
+                    y = self._data.classes[y_batch[idx].item()]
+                    prediction = self._data.classes[predictions_class_store[idx]]
+                    # prediction_confidence = predictions_confidence_store[idx]
+                    # title = f"{y} \n {prediction} {prediction_confidence:0.f}%"
+                    title = f"{y}\n{prediction}"
+                    axi.set_title(title)
+                    axi.axis('off')
+                else:
+                    ax[r][c].axis('off')
+                idx+=1
 
     def predict(self, img_path):
         """
@@ -256,7 +373,8 @@ class FeatureClassifier(ArcGISModel):
             data.classes = list(class_mapping.values())
             data._is_empty = True
             data.emd_path = emd_path
-            data.emd = emd
+            data.emd = emd            
+            data = get_multispectral_data_params_from_emd(data, emd)
 
         resize_to = emd.get('resize_to')
         data.resize_to = resize_to

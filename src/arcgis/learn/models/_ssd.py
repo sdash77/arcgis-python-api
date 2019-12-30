@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 from ._codetemplate import code
 import warnings
+import math
 from .._data import _raise_fastai_import_error
 
 import logging
@@ -27,7 +28,8 @@ try:
     from torchvision.models import mobilenet_v2
     from torchvision import models
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
-    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou
+    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou, show_results_multispectral
+    from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
     from ._unet_utils import is_no_color
@@ -35,6 +37,7 @@ try:
     import PIL
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
+    from .._utils.common import get_multispectral_data_params_from_emd
 except Exception as e:
     class NnModule():
         pass
@@ -118,6 +121,10 @@ class SingleShotDetector(ArcGISModel):
         self._code = code
         self.ssd_version = ssd_version
 
+        if hasattr(self, '_orig_backbone'):
+            self._backbone_ms = self._backbone
+            self._backbone = self._orig_backbone
+
         if backbone is None:
             self._backbone = models.resnet34
             backbone_name = 'res'
@@ -193,8 +200,13 @@ class SingleShotDetector(ArcGISModel):
 
         else:
             raise Exception('SSDVersion can only be 1 or 2')
+        
+        if hasattr(self, '_backbone_ms'):
+            self._orig_backbone = self._backbone
+            self._backbone = self._backbone_ms
 
         self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
+        self._arcgis_init_callback() # make first conv weights learnable
         self.learn.model = self.learn.model.to(self._device)
 
         if focal_loss:
@@ -300,7 +312,8 @@ class SingleShotDetector(ArcGISModel):
             # Add 1 for background class
             data.c += 1
             data.emd_path = emd_path
-            data.emd = emd
+            data.emd = emd 
+            data = get_multispectral_data_params_from_emd(data, emd)
 
         data.resize_to = resize_to
         ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
@@ -424,7 +437,9 @@ class SingleShotDetector(ArcGISModel):
         _emd_template["ModelConfiguration"] = "_DynamicSSD"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template['backbone'] = self._backbone.__name__
+        _emd_template['backbone'] = self._backbone.__name__        
+        if _emd_template['backbone'] == 'backbone_wrapper':
+            _emd_template['backbone'] = self._orig_backbone.__name__
         _emd_template['Grids'] = self.grids
         _emd_template['Zooms'] = self.zooms
         _emd_template['Ratios'] = self.ratios
@@ -458,6 +473,16 @@ class SingleShotDetector(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+
+    def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
+        ax = show_results_multispectral(
+            self, 
+            nrows=rows, 
+            thresh=thresh, 
+            nms_overlap=nms_overlap, 
+            alpha=alpha, 
+            **kwargs
+        )
 
     def predict_video(
         self,

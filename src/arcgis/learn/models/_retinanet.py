@@ -25,13 +25,14 @@ try:
     from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
     from fastai.core import ifnone
     from torchvision import models
-    from ._ssd_utils import SSDObjectCategoryList
+    from ._ssd_utils import SSDObjectCategoryList, show_results_multispectral
     from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
     from ._arcgis_model import SaveModelCallback
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
+    from .._utils.common import get_multispectral_data_params_from_emd
 except:
     HAS_FASTAI = False
 
@@ -82,8 +83,14 @@ class RetinaNet(ArcGISModel):
 
         super().__init__(data, backbone)
 
+        
+        n_bands = len(getattr(self._data, '_extract_bands', [0, 1, 2]))
+        _backbone = self._backbone
+        if hasattr(self, '_orig_backbone'):
+            _backbone = self._orig_backbone
+
         # Check if a backbone provided is compatible, use resnet50 as default
-        if not self._check_backbone_support(backbone):
+        if not self._check_backbone_support(_backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         self.name = "RetinaNet"
@@ -100,13 +107,14 @@ class RetinaNet(ArcGISModel):
         self._encoder = create_body(self._backbone, -2)
 
         # Initialize the model, loss function and the Learner object        
-        self._model = RetinaNetModel(self._encoder, n_classes=data.c-1, final_bias=-4, chip_size=self._chip_size, n_anchors=self._n_anchors)
+        self._model = RetinaNetModel(self._encoder, n_classes=data.c-1, final_bias=-4, chip_size=self._chip_size, n_anchors=self._n_anchors, n_bands=n_bands)
         self._loss_f = RetinaNetFocalLoss(sizes=self._model.sizes, scales=self.scales, ratios=self.ratios)
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
         self.learn.split([self._model.encoder[6], self._model.c5top5])
         self.learn.freeze()
         if pretrained_path is not None:
             self.load(str(pretrained_path))
+        self._arcgis_init_callback() # make first conv weights learnable
 
     def __str__(self):
         return self.__repr__()
@@ -201,6 +209,7 @@ class RetinaNet(ArcGISModel):
             data.chip_size = chip_size
             data.class_mapping = class_mapping
             data.classes = ['background'] + list(class_mapping.values())
+            data = get_multispectral_data_params_from_emd(data, emd)
             # Add 1 for background class
             data.c += 1
             data._is_empty = True
@@ -242,6 +251,16 @@ class RetinaNet(ArcGISModel):
             rows = len(self._data.valid_ds)
 
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+
+    def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
+        ax = show_results_multispectral(
+            self, 
+            nrows=rows, 
+            thresh=thresh, 
+            nms_overlap=nms_overlap, 
+            alpha=alpha, 
+            **kwargs
+        )
 
     def predict_video(
         self,

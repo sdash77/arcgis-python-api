@@ -19,7 +19,9 @@ try:
     from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList
     from .models._ner_utils import ner_prepare_data
-    from ._augmentation import ClassifiedTilesPipeline
+    from ._utils import ArcGISMSImageList
+    from ._utils.labeled_tiles import show_batch_labeled_tiles
+    from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
     import random
     HAS_FASTAI = True
 except:
@@ -327,9 +329,11 @@ def prepare_data(path,
     :returns: data object
     """
     """kwargs documentation
-    imagery_type='RGB'
-    bands=None
-    rgb_bands=[0, 1, 2]
+    imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
+    bands=None # sepcify bands type for unknow imagery ['r', 'g', 'b', 'nir']
+    rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
+    norm_pct=0.3 # sample of images to calculate normalization stats on 
+    do_normalize=True # Normalize data 
     """
 
     height_width = []
@@ -501,14 +505,6 @@ def prepare_data(path,
                 r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
                 return r
             databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
-            if transforms is not False:
-                if transforms is None:
-                    train_tfms = ClassifiedTilesPipeline(target_size=chip_size, type_transforms='training', lighting_transforms=lighting_transforms)
-                    valid_tfms = ClassifiedTilesPipeline(target_size=chip_size, type_transforms='validation')
-                else:                
-                    train_tfms = ClassifiedTilesPipeline(transforms=transforms[0], target_size=chip_size, type_transforms='training')
-                    valid_tfms = ClassifiedTilesPipeline(transforms=transforms[1], target_size=chip_size, type_transforms='validation')
-                transforms = (train_tfms, valid_tfms)
 
 
         else:
@@ -520,16 +516,16 @@ def prepare_data(path,
                     color_mapping=color_mapping
                 )
 
-            if transforms is None:
-                transforms = get_transforms(
-                    flip_vert=True,
-                    max_rotate=90.,
-                    max_zoom=3.0,
-                    max_lighting=0.5
-                )
+        if transforms is None:
+            transforms = get_transforms(
+                flip_vert=True,
+                max_rotate=90.,
+                max_zoom=3.0,
+                max_lighting=0.5
+            )
 
-            kwargs_transforms['tfm_y'] = True
-            kwargs_transforms['size'] = chip_size
+        kwargs_transforms['tfm_y'] = True
+        kwargs_transforms['size'] = chip_size
     elif dataset_type == 'PASCAL_VOC_rectangles':
         not_label_count = [0]
         get_y_func = partial(
@@ -539,9 +535,15 @@ def prepare_data(path,
             height_width=height_width
         )
 
-        data = SSDObjectItemList.from_folder(path/'images')\
+        if _is_multispectral:
+            data = SSDObjectMSItemList.from_folder(path/'images')\
             .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_from_func(get_y_func)
+            _show_batch_multispectral = show_batch_pascal_voc_rectangles
+        else:
+            data = SSDObjectItemList.from_folder(path/'images')\
+                .split_by_rand_pct(val_split_pct, seed=seed)\
+                .label_from_func(get_y_func)
 
         if not_label_count[0]:
             logger = logging.getLogger()
@@ -568,9 +570,15 @@ def prepare_data(path,
             def get_y_func(x):
                 return x.parent.stem
 
-        data = ImageList.from_folder(path/'images')\
-            .split_by_rand_pct(val_split_pct, seed=42)\
-            .label_from_func(get_y_func)
+        if _is_multispectral:
+            data = ArcGISMSImageList.from_folder(path/'images')\
+                .split_by_rand_pct(val_split_pct, seed=42)\
+                .label_from_func(get_y_func)
+            _show_batch_multispectral = show_batch_labeled_tiles
+        else:
+            data = ImageList.from_folder(path/'images')\
+                .split_by_rand_pct(val_split_pct, seed=42)\
+                .label_from_func(get_y_func)
 
         if dataset_type == 'Imagenet':
             class_mapping = {}
@@ -603,7 +611,12 @@ def prepare_data(path,
             data = (src.transform(transforms, size=chip_size, tfm_y=True) 
                     .databunch(**databunch_kwargs))
     elif _is_multispectral:
-        data = data.databunch(**databunch_kwargs)
+        
+        data = (data.transform(transforms, **kwargs_transforms)
+                    .databunch(**databunch_kwargs))
+        
+        if len(data.x) < 300:
+            norm_pct = 1
 
         # Statistics        
         dummy_stats = {
@@ -657,25 +670,36 @@ def prepare_data(path,
         data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
         
         # Scaling
-        if kwargs.get('do_scale', None) is not None:
-            data._do_scale = kwargs.get('do_scale')
-        else:
-            data._do_scale = True
         data._min_max_scaler = partial(_tensor_scaler, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-        if data._do_scale:
-            data._min_max_scaler_tfm = partial(_tensor_scaler_tfm, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-            data.add_tfm(data._min_max_scaler_tfm)
+        data._min_max_scaler_tfm = partial(_tensor_scaler_tfm, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
+        #data.add_tfm(data._min_max_scaler_tfm)
         
         # Transforms
-        if transforms is not None and transforms is not False:
-            data.train_dl.add_tfm(transforms[0])
-            data.valid_dl.add_tfm(transforms[1])
+        def _scaling_tfm(x): 
+            ## Scales Fastai Image Scaling | MS Image Values -> 0 - 1 range
+            return x.__class__(data._min_max_scaler_tfm((x.data,None))[0][0])
         
+        ## Fastai need tfm, order and resolve.
+        class dummy():
+            pass
+        _scaling_tfm.tfm = dummy()
+        _scaling_tfm.tfm.order = 0
+        _scaling_tfm.resolve = dummy
+
+        ## Scaling the images before applying any  other transform
+        if getattr(data.train_ds, 'tfms') is not None:
+            data.train_ds.tfms = [_scaling_tfm] + data.train_ds.tfms
+        else:
+            data.train_ds.tfms = [_scaling_tfm]
+        if getattr(data.valid_ds, 'tfms') is not None:
+            data.valid_ds.tfms = [_scaling_tfm] + data.valid_ds.tfms
+        else:
+            data.valid_ds.tfms = [_scaling_tfm]
+
         # Normalize
+        data._do_normalize = True
         if kwargs.get('do_normalize', None) is not None:
             data._do_normalize = kwargs.get('do_normalize')
-        else:
-            data._do_normalize = True
         if data._do_normalize:
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
     else:
@@ -731,6 +755,8 @@ def prepare_data(path,
                 data._bands = data._symbology_rgb_bands = data._rgb_bands = ['p']
             else:
                 data._bands = ['u' for i in range(n_bands)]
+                if n_bands == 2:# Handle Data with two channels
+                    data._symbology_rgb_bands = [0]
         
         # 
         if data._rgb_bands is None:

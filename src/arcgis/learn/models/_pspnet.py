@@ -6,7 +6,7 @@ from ._arcgis_model import ArcGISModel
 try:
     from fastai.basic_train import Learner
     from ._arcgis_model import SaveModelCallback
-    from ._unet_utils import is_no_color
+    from ._unet_utils import is_no_color, predict_batch, show_results_multispectral
     import torch
     from torch import nn
     import torch.nn.functional as F
@@ -14,6 +14,7 @@ try:
     from ._unet_utils import LabelCallback
     from ._arcgis_model import _EmptyData
     from ._psp_utils import PSPNet, _pspnet_learner, _pspnet_learner_with_unet, accuracy
+    from .._utils.common import get_multispectral_data_params_from_emd
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
@@ -65,10 +66,14 @@ class PSPNetClassifier(ArcGISModel):
         if backbone is None: 
             backbone = models.resnet50
       
-        super().__init__(data, backbone)     
-
+        super().__init__(data, backbone)
+        
+        _backbone = self._backbone
+        if hasattr(self, '_orig_backbone'):
+            _backbone = self._orig_backbone
+       
         # Check if a backbone provided is compatible, use resnet50 as default
-        if not self._check_backbone_support(backbone):
+        if not self._check_backbone_support(_backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")              
 
         self._code = image_classifier_prf
@@ -97,6 +102,7 @@ class PSPNetClassifier(ArcGISModel):
         self.learn.model = self.learn.model.to(self._device)
         
         self.freeze()
+        self._arcgis_init_callback() # make first conv weights learnable
 
     def __str__(self):
         return self.__repr__()
@@ -152,6 +158,7 @@ class PSPNetClassifier(ArcGISModel):
             data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
             data.class_mapping = class_mapping
             data.color_mapping = color_mapping
+            data = get_multispectral_data_params_from_emd(data, emd)
             data.emd_path = emd_path
             data.emd = emd
 
@@ -235,6 +242,14 @@ class PSPNetClassifier(ArcGISModel):
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, **kwargs)   
+
+    def _show_results_multispectral(self, rows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
+        ax = show_results_multispectral(
+            self, 
+            nrows=rows, 
+            alpha=alpha, 
+            **kwargs
+        )
 
     @property
     def _model_metrics(self):

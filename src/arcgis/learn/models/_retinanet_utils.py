@@ -75,7 +75,7 @@ class LateralUpsampleMerge(nn.Module):
 
 class RetinaNetModel(nn.Module):
     "Implements RetinaNet from https://arxiv.org/abs/1708.02002"
-    def __init__(self, encoder, n_classes, final_bias=0., chs=256, n_anchors=9, flatten=True, chip_size=(256,256)):
+    def __init__(self, encoder, n_classes, final_bias=0., chs=256, n_anchors=9, flatten=True, chip_size=(256,256), n_bands=3):
 
         # chs - channels for top down layers in FPN
         
@@ -99,7 +99,7 @@ class RetinaNetModel(nn.Module):
         self.box_regressor = self._head_subnet(4, n_anchors, 0., chs=chs)
 
         # Create a dummy x to be passed through the model and fetch the sizes
-        x_dummy = torch.rand(3,self.chip_size[0],self.chip_size[1]).unsqueeze(0)
+        x_dummy = torch.rand(n_bands,self.chip_size[0],self.chip_size[1]).unsqueeze(0)
         p_states = self._create_p_states(x_dummy)
         self.sizes = [[p.size(2), p.size(3)] for p in p_states]
 
