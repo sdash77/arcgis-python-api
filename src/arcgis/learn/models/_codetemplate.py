@@ -8,6 +8,11 @@ import numpy as np
 import math
 import arcpy
 
+try:
+    import torch
+except:
+    raise Exception("PyTorch is not installed. Install it using conda install -c pytorch pytorch=1.1.0")
+
 def check_centroid_in_center(centroid, start_x, start_y, chip_sz, padding):
     return ((centroid[1] >= (start_y + padding)) and  \
                 (centroid[1] <= (start_y + (chip_sz - padding))) and \
@@ -147,6 +152,8 @@ class ArcGISObjectDetector:
         else:
             raise Exception("Invalid model configuration")
 
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+
         device = None
         if 'device' in kwargs:
             device = kwargs['device']
@@ -155,8 +162,7 @@ class ArcGISObjectDetector:
 
         if device is not None:
             if device >= 0:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                torch.cuda.set_device(device)
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
@@ -277,6 +283,11 @@ import numpy as np
 import json
 import sys, os, importlib
 import math
+
+try:
+    import torch
+except:
+    raise Exception("PyTorch is not installed. Install it using conda install -c pytorch pytorch=1.1.0")
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -414,6 +425,7 @@ class ArcGISImageClassifier:
         else:
             raise Exception("Invalid model configuration")
 
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         device = None
         if 'device' in kwargs:
             device = kwargs['device']
@@ -422,8 +434,7 @@ class ArcGISImageClassifier:
 
         if device is not None:
             if device >= 0:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                torch.cuda.set_device(device)
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
@@ -515,6 +526,11 @@ sys.path.append(os.path.dirname(__file__))
 import numpy as np
 import math
 import arcpy
+
+try:
+    import torch
+except:
+    raise Exception("PyTorch is not installed. Install it using conda install -c pytorch pytorch=1.1.0")
 
 def get_centroid(polygon):
     polygon = np.array(polygon)
@@ -658,6 +674,7 @@ class ArcGISInstanceDetector:
         else:
             raise Exception("Invalid model configuration")
 
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         device = None
         if 'device' in kwargs:
             device = kwargs['device']
@@ -666,8 +683,7 @@ class ArcGISInstanceDetector:
 
         if device is not None:
             if device >= 0:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                torch.cuda.set_device(device)
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
