@@ -476,7 +476,7 @@ class ParcelFabricManager(object):
             moment = int(time.time())        
         gdb_version = self._version.properties.versionName
         session_id = self._version._guid
-        url = "{base}/changeType".format(base=self._url)
+        url = "{base}/changeParcelType".format(base=self._url)
         params = {
             "gdbVersion": gdb_version,
             "sessionId": session_id,
