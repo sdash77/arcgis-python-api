@@ -248,9 +248,16 @@ class ArcGISModel(object):
             if self._data._train_tail:
                 params_iterator = self.learn.model.parameters()
                 next(params_iterator).requires_grad = True # make first conv weights learnable
-                tail_name, first_layer = _get_tail(self.learn.model)
-                if first_layer.bias is not None:
-                    next(params_iterator).requires_grad = True # make first conv bias weights learnable
+                if self.__class__.__name__ == 'MaskRCNN':
+                    iterater = self.learn.model.children()
+                    next(iterater)
+                    tail_name, first_layer = _get_tail(next(iterater))
+                else:
+                    tail_name, first_layer = _get_tail(self.learn.model)
+                if first_layer.bias is not None or self.__class__.__name__ == 'MaskRCNN':
+                    # make first conv bias weights learnable 
+                    # In case of maskrcnn make the batch norm trainable
+                    next(params_iterator).requires_grad = True
                 self.learn.create_opt(slice(3e-3))
             if hasattr(self, '_show_results_multispectral'):
                 self.show_results = self._show_results_multispectral

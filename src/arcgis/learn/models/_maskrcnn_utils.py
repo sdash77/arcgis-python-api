@@ -11,6 +11,8 @@ from skimage import io
 import matplotlib.pyplot as plt
 from fastprogress import progress_bar
 from torch import LongTensor
+import os
+from .._utils import ArcGISMSImage
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
@@ -127,6 +129,17 @@ class ArcGISSegmentationLabelList(ImageList):
 class ArcGISInstanceSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+
+class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
+    "`ItemList` suitable for segmentation tasks."
+    _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    def open(self, fn):
+        import gdal
+        path = str(os.path.abspath(fn))
+        x = gdal.Open(path).ReadAsArray()
+        x = torch.tensor(x.astype(np.float32))
+        x = ArcGISMSImage(x)
+        return x
 
 def mask_rcnn_loss(loss_value, *args):
 

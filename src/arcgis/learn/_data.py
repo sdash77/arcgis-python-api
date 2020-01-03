@@ -6,7 +6,7 @@ import math
 import sys
 import json 
 import logging      
-import types                                                                                                                                                            
+import types                                                                                                                                                       
 
 try:
     import numpy as np
@@ -17,10 +17,11 @@ try:
     import torch
     from .models._ssd_utils import SSDObjectItemList
     from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral, is_no_color
-    from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList
+    from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
     from .models._ner_utils import ner_prepare_data
     from ._utils import ArcGISMSImageList
     from ._utils.labeled_tiles import show_batch_labeled_tiles
+    from ._utils.rcnn_masks import show_batch_rcnn_masks
     from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
     import random
     HAS_FASTAI = True
@@ -461,9 +462,15 @@ def prepare_data(path,
 
         if color_mapping.get(0):
             del color_mapping[0]
-      
-        src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
-            .split_by_rand_pct(val_split_pct, seed=seed))
+
+        # Handle Multispectral
+        if _is_multispectral:
+            src = (ArcGISInstanceSegmentationMSItemList.from_folder(path/'images')
+                .split_by_rand_pct(val_split_pct, seed=seed))
+            _show_batch_multispectral = show_batch_rcnn_masks
+        else:
+            src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
+                .split_by_rand_pct(val_split_pct, seed=seed))
 
         label_dirs = []
         index_dir = {} #for handling calss value with any number
@@ -603,17 +610,18 @@ def prepare_data(path,
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
-    if dataset_type == 'RCNN_Masks':
-        if transforms ==  None:
-            data = (src.transform(size=chip_size, tfm_y=True)
-                .databunch(**databunch_kwargs))
+    if _is_multispectral:
+        if dataset_type == 'RCNN_Masks':
+            kwargs['do_normalize'] = False
+            if transforms ==  None:
+                data = (src.transform(size=chip_size, tfm_y=True)
+                    .databunch(**databunch_kwargs))
+            else:
+                data = (src.transform(transforms, size=chip_size, tfm_y=True) 
+                        .databunch(**databunch_kwargs))
         else:
-            data = (src.transform(transforms, size=chip_size, tfm_y=True) 
-                    .databunch(**databunch_kwargs))
-    elif _is_multispectral:
-        
-        data = (data.transform(transforms, **kwargs_transforms)
-                    .databunch(**databunch_kwargs))
+            data = (data.transform(transforms, **kwargs_transforms)
+                        .databunch(**databunch_kwargs))
         
         if len(data.x) < 300:
             norm_pct = 1
@@ -699,9 +707,18 @@ def prepare_data(path,
         # Normalize
         data._do_normalize = True
         if kwargs.get('do_normalize', None) is not None:
-            data._do_normalize = kwargs.get('do_normalize')
+            data._do_normalize = kwargs.get('do_normalize', True)
         if data._do_normalize:
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
+        
+    elif dataset_type == 'RCNN_Masks':
+        if transforms ==  None:
+            data = (src.transform(size=chip_size, tfm_y=True)
+                .databunch(**databunch_kwargs))
+        else:
+            data = (src.transform(transforms, size=chip_size, tfm_y=True) 
+                    .databunch(**databunch_kwargs))
+        data.show_batch = types.MethodType( show_batch_rcnn_masks, data )
     else:
         # 
         data = (data.transform(transforms, **kwargs_transforms)
