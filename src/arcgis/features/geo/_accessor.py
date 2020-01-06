@@ -2694,7 +2694,37 @@ class GeoAccessor(object):
         if global_id_field is not None:
             layer['layerDefinition']['globalIdField'] = global_id_field
         return FeatureCollection(layer)
-    #----------------------------------------------------------------------
+
+    # ---------------------------------------------------------------------
+
+    @staticmethod
+    def from_geodataframe(geo_df, sr=4326):
+        """
+        Import Geopandas GeoDataFrame into an ArcGIS Spatially enabled DataFrame.
+        Requires geopandas library be installed in current environment.
+        :param df:
+        :param sr:
+        :return:
+        """
+        try:
+            import geopandas as gpd
+        except ImportError:
+            raise ImportError('Needs Geopandas library for this functionality')
+
+        # export GPD DF to GeoJSON
+        gpd_geojson_str = geo_df.to_json()
+
+        import json
+        gpd_geojson_dict = json.loads(gpd_geojson_str)
+
+        # load GeoJSON into a FeatureSet
+        from arcgis.features import FeatureSet
+        ags_fset = FeatureSet.from_geojson(gpd_geojson_dict)
+
+        # return sdf
+        return ags_fset.sdf
+
+    # ----------------------------------------------------------------------
     @property
     def full_extent(self):
         """

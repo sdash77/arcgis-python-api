@@ -62,7 +62,23 @@ def test_from_layer():
     #assert layer.query(where).sdf['FIPS_CNTRY'][0] == 'SM'
 #--------------------------------------------------------------------------
 
+def test_from_gpd_df_sanity():
+    """
+    Sanity test case, verifies can read GeoDataFrame to a SeDF
+    :return:
+    """
+    import geopandas as gpd
+    geo_df = gpd.read_file('./world30.shp')
+
+    assert type(geo_df) is gpd.geodataframe
+
+    world_sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
+
+    assert type(world_sedf) is pd.DataFrame
+    print('Can successfully read GPD DF to SeDF')
+
 if __name__ == "__main__":
     test_chunks()
     test_from_layer()
+    # test_from_gpd_df_sanity()
     #test_to_layer()  # SKIPPED
