@@ -2709,7 +2709,7 @@ class GeoAccessor(object):
         try:
             import geopandas as gpd
         except ImportError:
-            raise ImportError('Needs Geopandas library for this functionality')
+            raise ImportError('Requires Geopandas library installed for this functionality')
 
         # export GPD DF to GeoJSON
         gpd_geojson_str = geo_df.to_json()
@@ -2724,6 +2724,23 @@ class GeoAccessor(object):
         # return sdf
         return ags_fset.sdf
 
+    # ---------------------------------------------------------------------
+
+    def to_geodataframe(self):
+        """
+        Converts an ArcGIS Spatially Enabled DataFrame to a GeoPandas GeoDataFrame
+        object.
+
+        Requires geopandas library be installed in current environment.
+        :return:
+        """
+        try:
+            import geopandas as gpd
+        except ImportError:
+            raise ImportError('Requires Geopandas library installed for this functionality')
+
+        # export current SeDF to GeoJSON
+        pass
     # ----------------------------------------------------------------------
     @property
     def full_extent(self):
