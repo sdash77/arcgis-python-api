@@ -11,6 +11,7 @@ try:
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
     from fastai.vision.image import open_image
+    from fastai.vision import flatten_model
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
@@ -79,7 +80,7 @@ class MaskRCNN(ArcGISModel):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         self._code = instance_detector_prf
-        
+
         if self._backbone.__name__ is 'resnet50':
             model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
             if self._is_multispectral:
@@ -130,7 +131,10 @@ class MaskRCNN(ArcGISModel):
         self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
-        self.learn.layer_groups = split_model_idx(self.learn.model, [28])
+        idx = 27
+        if self._backbone.__name__ in ['resnet18','resnet34']:
+            idx = self._freeze()
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
         # make first conv weights learnable
@@ -146,6 +150,15 @@ class MaskRCNN(ArcGISModel):
     def unfreeze(self):
         for _, param in self.learn.model.named_parameters():
             param.requires_grad = True
+
+    def _freeze(self):
+        "Freezes the pretrained backbone."
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (torch.nn.BatchNorm2d)):
+                continue
+            for p in i.parameters():
+                p.requires_grad = False
+        return idx
 
     def __str__(self):
         return self.__repr__()

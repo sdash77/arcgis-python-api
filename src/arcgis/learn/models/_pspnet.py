@@ -187,6 +187,8 @@ class PSPNetClassifier(ArcGISModel):
         "Freezes the pretrained backbone."
         for idx, i in enumerate(flatten_model(self.learn.model)):
             if hasattr(i, 'dilation'):
+                if isinstance(i, (nn.BatchNorm2d)):
+                    continue
                 dilation = i.dilation
                 dilation = dilation[0] if isinstance(dilation, tuple) else dilation
                 if dilation > 1:

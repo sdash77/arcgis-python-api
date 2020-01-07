@@ -219,6 +219,8 @@ class DeepLab(ArcGISModel):
     def _freeze(self):
         "Freezes the pretrained backbone."
         for idx, i in enumerate(flatten_model(self.learn.model)):
+            if isinstance(i, (nn.BatchNorm2d)):
+                continue
             if hasattr(i, 'dilation'):
                 dilation = i.dilation
                 dilation = dilation[0] if isinstance(dilation, tuple) else dilation
