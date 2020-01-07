@@ -3,13 +3,17 @@ arcgis.raster.functions.gbl module
 
 .. automodule:: arcgis.raster.functions.gbl
 
-calculate_travel_cost
-_______________
-.. autofunction:: arcgis.raster.functions.gbl.calculate_travel_cost
-
 calculate_distance
 __________________
 .. autofunction:: arcgis.raster.functions.gbl.calculate_distance
+
+calculate_travel_cost
+_____________________
+.. autofunction:: arcgis.raster.functions.gbl.calculate_travel_cost
+
+corridor
+________
+.. autofunction:: arcgis.raster.functions.gbl.corridor
 
 cost_allocation
 _______________
@@ -20,11 +24,11 @@ _____________
 .. autofunction:: arcgis.raster.functions.gbl.cost_backlink
 
 cost_distance
-_______________
+_____________
 .. autofunction:: arcgis.raster.functions.gbl.cost_distance
 
 cost_path
-__________
+_________
 .. autofunction:: arcgis.raster.functions.gbl.cost_path
 
 distance_accumulation
@@ -35,21 +39,21 @@ distance_allocation
 ___________________
 .. autofunction:: arcgis.raster.functions.gbl.distance_allocation
 
+euclidean_back_direction
+________________________
+.. autofunction:: arcgis.raster.functions.gbl.euclidean_back_direction
+
 euclidean_allocation
 _______________
 .. autofunction:: arcgis.raster.functions.gbl.euclidean_allocation
 
-euclidean_distance
-_______________
-.. autofunction:: arcgis.raster.functions.gbl.euclidean_distance
-
 euclidean_direction
-_______________
+___________________
 .. autofunction:: arcgis.raster.functions.gbl.euclidean_direction
 
-euclidean_back_direction
-________________________
-.. autofunction:: arcgis.raster.functions.gbl.euclidean_back_direction
+euclidean_distance
+__________________
+.. autofunction:: arcgis.raster.functions.gbl.euclidean_distance
 
 expand
 ______
@@ -63,20 +67,20 @@ flow_accumulation
 _________________
 .. autofunction:: arcgis.raster.functions.gbl.flow_accumulation
 
-flow_distance
-_______________
-.. autofunction:: arcgis.raster.functions.gbl.flow_distance
-
 flow_direction
 _______________
 .. autofunction:: arcgis.raster.functions.gbl.flow_direction
+
+flow_distance
+_____________
+.. autofunction:: arcgis.raster.functions.gbl.flow_distance
 
 flow_length
 ___________
 .. autofunction:: arcgis.raster.functions.gbl.flow_length
 
 kernel_density
-_______________
+______________
 .. autofunction:: arcgis.raster.functions.gbl.kernel_density
 
 least_cost_path
@@ -84,8 +88,24 @@ _______________
 .. autofunction:: arcgis.raster.functions.gbl.least_cost_path
 
 nibble
-_______________
+______
 .. autofunction:: arcgis.raster.functions.gbl.nibble
+
+path_distance
+_____________
+.. autofunction:: arcgis.raster.functions.gbl.path_distance
+
+path_distance_allocation
+________________________
+.. autofunction:: arcgis.raster.functions.gbl.path_distance_allocation
+
+path_distance_back_link
+_______________________
+.. autofunction:: arcgis.raster.functions.gbl.path_distance_back_link
+
+region_group
+____________
+.. autofunction:: arcgis.raster.functions.gbl.region_group
 
 shrink
 ______
@@ -95,13 +115,13 @@ sink
 ____
 .. autofunction:: arcgis.raster.functions.gbl.sink
 
-stream_link
-___________
-.. autofunction:: arcgis.raster.functions.gbl.stream_link
-
 snap_pour_point
 _______________
 .. autofunction:: arcgis.raster.functions.gbl.snap_pour_point
+
+stream_link
+___________
+.. autofunction:: arcgis.raster.functions.gbl.stream_link
 
 stream_order
 ____________
@@ -115,23 +135,4 @@ zonal_statistics
 _______________
 .. autofunction:: arcgis.raster.functions.gbl.zonal_statistics
 
-region_group
-____________
-.. autofunction:: arcgis.raster.functions.gbl.region_group
-
-corridor
-________
-.. autofunction:: arcgis.raster.functions.gbl.corridor
-
-path_distance
-_____________
-.. autofunction:: arcgis.raster.functions.gbl.path_distance
-
-path_distance_allocation
-________________________
-.. autofunction:: arcgis.raster.functions.gbl.path_distance_allocation
-
-path_distance_back_link
-_______________________
-.. autofunction:: arcgis.raster.functions.gbl.path_distance_back_link
 

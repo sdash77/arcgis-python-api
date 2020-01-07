@@ -4187,34 +4187,23 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
-                        {'bandCount': 3, 
 
-                         'extent': {"xmin": 4488761.95,
-                                     "ymin": 5478609.805,
-                                     "xmax": 4489727.05,
-                                     "ymax": 5479555.305,
-                                     "spatialReference": {
-
-                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-
-                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-
-                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
-
-                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
-
-                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
-
-                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
-
-                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
-
-                                     }}, 
-                         'pixelSizeX': 0.0999999999999614, 
-
-                         'pixelSizeY': 0.1, 
-
-                         'pixelType': 'U8'}
+                        {'bandCount': 3,'extent': {"xmin": 4488761.95,
+                        "ymin": 5478609.805,
+                        "xmax": 4489727.05,
+                        "ymax": 5479555.305,
+                        "spatialReference": {
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+                        SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+                        UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+                        PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+                        PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+                        PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+                        }}, 
+                        'pixelSizeX': 0.0999999999999614, 
+                        'pixelSizeY': 0.1, 
+                        'pixelType': 'U8'}
 
     :param distribution: Optional int. Specify the random value distribution method to use.
      Default 1. i,e; Uniform
@@ -4247,20 +4236,20 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
 
                         NegativeBinomial - A Pascal distribution with a defined {r} and {probability}.
 
-    :param min_uniform: Optional float. The default values is 0.0
-    :param max_uniform: Optional float. The default values is 1.0
-    :param min_integer: Optional int. The default values is 1
-    :param max_integer: Optional int. The default values is 10
-    :param normal_mean: Optional float. The default values is 0.0
-    :param std_dev: Optional float. The default values is 1.0
-    :param exp_mean: Optional float. The default values is 1.0
-    :param poisson_mean: Optional float. The default values is 1.0
-    :param alpha: Optional float. The default values is 1.0
-    :param beta: Optional float. The default values is 1.0
-    :param N: Optional int. The default values is 0.0
-    :param r: Optional int. The default values is 0.0
-    :param probability: Optional float. The default values is 0.5
-    :param seed: Optional int. The default values is 0.0
+    :param min_uniform: Optional float. The default value is 0.0
+    :param max_uniform: Optional float. The default value is 1.0
+    :param min_integer: Optional int. The default value is 1
+    :param max_integer: Optional int. The default value is 10
+    :param normal_mean: Optional float. The default value is 0.0
+    :param std_dev: Optional float. The default value is 1.0
+    :param exp_mean: Optional float. The default value is 1.0
+    :param poisson_mean: Optional float. The default value is 1.0
+    :param alpha: Optional float. The default value is 1.0
+    :param beta: Optional float. The default value is 1.0
+    :param N: Optional int. The default value is 0.0
+    :param r: Optional int. The default value is 0.0
+    :param probability: Optional float. The default value is 0.5
+    :param seed: Optional int. The default value is 0.0
     :param generator_type: Optional int. Default 2. i.e; MersenneTwister
                            Choice list:
                            Standard C Rand = 0
