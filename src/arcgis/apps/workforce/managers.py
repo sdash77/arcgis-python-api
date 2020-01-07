@@ -898,13 +898,17 @@ class AssignmentIntegrationManager:
         if "assignmentTypes" in integration:
             for key, value in integration["assignmentTypes"].items():
                 if isinstance(key, str):
-                    if key not in [at.name for at in self.project.assignment_types.search()]:
-                        raise ValidationError("Invalid assignment type in integration", self)
-                    elif "urlTemplate" not in value:
+                    if "urlTemplate" not in value:
                         raise ValidationError("Assignment integration must contain a urlTemplate", self)
-                    # swap the name for the code
-                    integration["assignmentTypes"][self.project.assignment_types.get(name=key).code] = integration[
-                        "assignmentTypes"].pop(key)
+                    if self.project._is_v2_project:
+                        if key not in [at.code for at in self.project.assignment_types.search()]:
+                            raise ValidationError("Invalid assignment type in integration", self)
+                    else:
+                        if key not in [at.name for at in self.project.assignment_types.search()]:
+                            raise ValidationError("Invalid assignment type in integration", self)
+                        # swap the name for the code
+                        integration["assignmentTypes"][self.project.assignment_types.get(name=key).code] = integration[
+                            "assignmentTypes"].pop(key)
                 elif isinstance(key, int):
                     if key not in [at.code for at in self.project.assignment_types.search()]:
                         raise ValidationError("Invalid assignment type in integration", self)
