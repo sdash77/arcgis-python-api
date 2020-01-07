@@ -4,6 +4,7 @@ try:
     import torch
     import torch.nn as nn
     import math
+    from .util import scale_batch
     HAS_TORCH = True
 except Exception as e:
     HAS_TORCH = False
@@ -228,10 +229,15 @@ class ChildInstanceDetector:
                                     fixed_tile_size=True,
                                     batch_height=self.rectangle_height,
                                     batch_width=self.rectangle_width)       
+        
+        if "NormalizationStats" in self.json_info:
+            img_normed = scale_batch(batch, self.json_info)
+        else:
+            img_normed = batch/255
 
         predictions = pixel_mask_image(
                                     self.model,
-                                    batch,
+                                    img_normed,
                                     self.device,
                                     self.json_info['ImageHeight'],
                                     threshold=self.threshold,
@@ -244,16 +250,16 @@ class ChildInstanceDetector:
 def predict_mask_rcnn(model, images, device, chip_size, threshold=0.5):
     
     model = model.to(device)
-    normed_batch_tensor = torch.tensor(images).to(device)
+    normed_batch_tensor = torch.tensor(images).to(device).float()
     predictions = model(list(normed_batch_tensor))
     
     return predictions
     
 
-def pixel_mask_image(model, tiles, device, chip_size, threshold=0.5, batch_size=4, return_bboxes=False):
+def pixel_mask_image(model, img_normed, device, chip_size, threshold=0.5, batch_size=4, return_bboxes=False):
 
     side = int(math.sqrt(batch_size))
-    img_normed = tiles/255
+    
     predictions = predict_mask_rcnn(model, img_normed, device, chip_size, threshold=threshold)
 
     all_contour_list = []

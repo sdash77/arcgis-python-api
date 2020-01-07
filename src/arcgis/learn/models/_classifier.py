@@ -309,6 +309,12 @@ class FeatureClassifier(ArcGISModel):
             class_data["Color"] = color
             _emd_template['Classes'].append(class_data.copy())
 
+        if getattr(self, '_is_multispectral', False):
+            _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+            _emd_template["ModelConfiguration"] = "_FeatureClassifier"
+            _emd_template["InferenceFunction"] = "ObjectClassifier.py"
+
+
         return _emd_template
 
     @classmethod
