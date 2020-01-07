@@ -2739,8 +2739,17 @@ class GeoAccessor(object):
         except ImportError:
             raise ImportError('Requires Geopandas library installed for this functionality')
 
-        # export current SeDF to GeoJSON
-        pass
+        # convert SeDF to FeatureSet to you can export to GeoJSON
+        fset = self.to_featureset()
+
+        # read GeoJSON into a dictionary
+        import json
+        geojson_dict = json.loads(fset.to_geojson)
+
+        # create gpd DF
+        geo_df = gpd.GeoDataFrame.from_features(geojson_dict['features'])
+
+        return geo_df
     # ----------------------------------------------------------------------
     @property
     def full_extent(self):
