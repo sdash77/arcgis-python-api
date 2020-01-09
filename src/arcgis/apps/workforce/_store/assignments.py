@@ -40,7 +40,7 @@ def query_assignments(project, where='1=1'):
         :returns: list of Assignments
     """
     assignments = []
-    assignment_features = project.assignments_layer.query(where, return_all_freatures=True).features
+    assignment_features = project.assignments_layer.query(where, return_all_records=True).features
     # fetch assignment types, dispatchers, and workers
     project._update_cached_objects()
     # refresh cached objects
