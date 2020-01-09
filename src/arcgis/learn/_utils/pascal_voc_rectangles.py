@@ -16,6 +16,8 @@ class SSDObjectMSItemList(ObjectItemList):
         path = str(os.path.abspath(fn))
         x = gdal.Open(path).ReadAsArray()
         x = torch.tensor(x.astype(np.float32))
+        if len(x.shape)==2:
+            x = x.unsqueeze(0)
         x = ArcGISMSImage(x)
         return x
 

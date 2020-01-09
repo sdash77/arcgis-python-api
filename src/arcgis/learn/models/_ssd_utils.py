@@ -565,6 +565,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
     for r in range(0, nrows):
         # Plot Ground Truth
         ax_ground_truth = ax[r][0]
+        ax_ground_truth.axis('off')
         ax_ground_truth.imshow(symbology_x_batch[idx])
         gt_classes = y_classes[idx][y_classes[idx] > 0]
         gt_bboxes = y_bboxes[idx][y_classes[idx] > 0]
@@ -576,10 +577,10 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
             color = self._data._multispectral_color_array[gt_classes[i]]
             ax_ground_truth.plot(xs, ys, color=color, linewidth=2)
             ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
-        ax_ground_truth.axis('off')
 
         # Plot Predictions
         ax_prediction  = ax[r][1]
+        ax_prediction.axis('off')
         ax_prediction.imshow(symbology_x_batch[idx])
         analyzed_prediction = _analyze_pred(
             (predictions_class_store[idx], predictions_activation_store[idx]), 
@@ -594,6 +595,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
             flt_mask = ( predicted_confidences > thresh )# & ( predictions_class_store[idx] > 0 )
             predicted_classes = predicted_classes[flt_mask]
             predicted_confidences = predicted_confidences[flt_mask]
+            predicted_bboxes = (predicted_bboxes+1)*.5
             predicted_bboxes = predicted_bboxes.clamp(0, 1)*(x_batch.shape[-1]-1)
             predicted_bboxes = predicted_bboxes[flt_mask]
             #return predicted_bboxes, predicted_classes, predicted_confidences
@@ -604,6 +606,6 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
                     color = self._data._multispectral_color_array[predicted_classes[i]]
                     ax_prediction.plot(xs, ys, color=color, linewidth=2)
                     ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
-            ax_prediction.axis('off')
+            
         idx+=1
     return ax

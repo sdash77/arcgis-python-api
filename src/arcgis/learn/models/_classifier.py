@@ -228,6 +228,10 @@ class FeatureClassifier(ArcGISModel):
         if symbology_x_batch.mean() < 1:
             symbology_x_batch = symbology_x_batch.clamp(0, 1)
 
+        # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+        if symbology_x_batch.shape[-1] == 1:
+            symbology_x_batch = symbology_x_batch.squeeze()
+
         # Get color Array
         color_array = self._data._multispectral_color_array
 

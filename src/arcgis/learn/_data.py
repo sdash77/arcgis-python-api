@@ -769,7 +769,8 @@ def prepare_data(path,
         if data._bands is None:
             n_bands = data.x[0].data.shape[0]
             if n_bands == 1:# Handle Pancromatic case
-                data._bands = data._symbology_rgb_bands = data._rgb_bands = ['p']
+                data._bands = ['p']
+                data._symbology_rgb_bands = [0]
             else:
                 data._bands = ['u' for i in range(n_bands)]
                 if n_bands == 2:# Handle Data with two channels
