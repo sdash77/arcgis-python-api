@@ -261,7 +261,14 @@ class _GISService(object):
             try:
                 # try as a federated server
                 if isinstance(self._con, arcgis.gis._impl._con.Connection) and self._con._auth.lower() != 'anon':
-                    self._token = self._con.generate_portal_server_token(url)
+                    try:
+                        self._token = self._con.generate_portal_server_token(url)
+                    except Exception as e: # GUESSED Auth Wrong, try anonymously 
+                        if str(e).find("'code': 201, 'message': 'Exception in generating token'") > -1:
+                            self._con._auth = "ANON"
+                        else:
+                            from requests.exceptions import RequestException
+                            raise RequestException(str(e))
                 else:
                     self._token = self._con.token
                 self._refresh()
