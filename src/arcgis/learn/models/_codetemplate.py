@@ -147,6 +147,7 @@ class ArcGISObjectDetector:
         else:
             raise Exception("Invalid model configuration")
 
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         device = None
         if 'device' in kwargs:
             device = kwargs['device']
@@ -155,8 +156,10 @@ class ArcGISObjectDetector:
 
         if device is not None:
             if device >= 0:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                try:
+                    import torch
+                except Exception:
+                    raise Exception("PyTorch is not installed. Install it using conda install -c esri deep-learning-essentials")
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
@@ -402,6 +405,8 @@ class ObjectClassifier:
         else:
             raise Exception("Invalid model configuration")
 
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+
         device = None
         if 'device' in kwargs:
             device = kwargs['device']
@@ -410,8 +415,10 @@ class ObjectClassifier:
 
         if device is not None:
             if device >= 0:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                try:
+                    import torch
+                except Exception:
+                    raise Exception("PyTorch is not installed. Install it using conda install -c esri deep-learning-essentials")
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
@@ -722,6 +729,7 @@ class ArcGISImageClassifier:
         else:
             raise Exception("Invalid model configuration")
 
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         device = None
         if 'device' in kwargs:
             device = kwargs['device']
@@ -730,8 +738,10 @@ class ArcGISImageClassifier:
 
         if device is not None:
             if device >= 0:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                try:
+                    import torch
+                except Exception:
+                    raise Exception("PyTorch is not installed. Install it using conda install -c esri deep-learning-essentials")
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
@@ -966,6 +976,7 @@ class ArcGISInstanceDetector:
         else:
             raise Exception("Invalid model configuration")
 
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
         device = None
         if 'device' in kwargs:
             device = kwargs['device']
@@ -974,8 +985,10 @@ class ArcGISInstanceDetector:
 
         if device is not None:
             if device >= 0:
-                os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-                os.environ['CUDA_VISIBLE_DEVICES'] = str(device)
+                try:
+                    import torch
+                except Exception:
+                    raise Exception("PyTorch is not installed. Install it using conda install -c esri deep-learning-essentials")
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
