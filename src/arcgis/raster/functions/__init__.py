@@ -4340,6 +4340,82 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     newlyr._fnra = template_dict
     return newlyr
 
+def aggregate_cells(raster, cell_factor=2, aggregation_type=9, expand_handling=False, ignore_nodata=False):
+
+    """
+    Generates a reduced-resolution version of a raster.
+
+    :param raster: the input raster
+    :param cell_factor: The factor by which to multiply the cell size of the input raster to 
+                        obtain the desired resolution for the output raster.
+                        For example, a cell factor value of three would result in an output cell 
+                        size three times larger than that of the input raster.
+                        The value must be an integer greater than 1.
+    :param aggregation_type: Optional int. Establishes how the value for each output cell will be determined.
+                             The values of the input cells encompassed by the coarser output cell 
+                             are aggregated by one of the following statistics:
+
+                                - 2 (MAXIMUM) : The largest value of the input cells.
+                                - 3 (MEAN) : The average value of the input cells.
+                                - 4 (MEDIAN) : The median value of the input cells.
+                                - 5 (MINIMUM) : The smallest value of the input cells.
+                                - 9 (SUM) : The sum (total) of the input cell values.This is the default.
+
+    :param expand_handling: Optional boolean. Defines how to handle the boundaries of the input raster when its rows 
+                            or columns are not a multiple of the cell factor.
+                                - True : Expands the top or right boundaries of the input raster so 
+                                  the total number of cells in a row or column is a multiple 
+                                  of the cell factor. Those expanded cells are given a value 
+                                  of NoData. With this option, the output raster can cover a 
+                                  larger spatial extent than the input raster. This is the default.
+                                - False : Reduces the number of rows or columns in the output raster by 1. 
+                                  This will truncate the remaining cells on the top or right 
+                                  boundaries of the input raster, making the number of rows 
+                                  or columns in the input raster a multiple of the cell factor.
+                                  With this option, the output raster can cover a smaller 
+                                  spatial extent than the input raster.
+
+                            If the number of rows and columns in the input raster is a multiple of the cell_factor, 
+                            this option is not used.
+
+    :param ignore_nodata: Optional boolean. Denotes whether NoData values are ignored by the aggregation calculation.
+
+                          - True : Specifies that if NoData values exist for any of the cells that fall within the 
+                            spatial extent of a larger cell on the output raster, the NoData values will be 
+                            ignored when determining the value for output cell locations. Only input cells 
+                            within the extent of the output cell that have data values will be used in
+                            determining the value of the output cell. This is the default.
+                          - False : Specifies that if any cell that falls within the spatial extent of a larger 
+                            cell on the output raster has a value of NoData, the value for that output 
+                            cell location will be NoData.When the this option is used, it is implied 
+                            that when cells within an aggregation contain the NoData value, 
+                            there is insufficient information to perform the specified calculations 
+                            necessary to determine an output value.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "Aggregate",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+    
+    if cell_factor is not None:
+        template_dict["rasterFunctionArguments"]['CellFactor'] = cell_factor
+
+    if aggregation_type is not None:
+        template_dict["rasterFunctionArguments"]['AggregationType'] = aggregation_type
+
+    if expand_handling is not None:
+        template_dict["rasterFunctionArguments"]['ExpandHandling'] = expand_handling
+
+    if ignore_nodata is not None:
+        template_dict["rasterFunctionArguments"]['IgnoreNoData'] = ignore_nodata
+
+    return _clone_layer(layer, template_dict, raster_ra)
 
 class RFT:
     def __init__(self, raster_function_template,gis=None):
