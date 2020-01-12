@@ -4339,7 +4339,7 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     newlyr._fnra = template_dict
     return newlyr
 
-def aggregate_cells(raster, cell_factor=2, aggregation_type=9, expand_handling=False, ignore_nodata=False):
+def aggregate_cells(raster, cell_factor=2, aggregation_type=9, extent_handling=False, ignore_nodata=False):
 
     """
     Generates a reduced-resolution version of a raster.
@@ -4360,7 +4360,7 @@ def aggregate_cells(raster, cell_factor=2, aggregation_type=9, expand_handling=F
                                 - 5 (MINIMUM) : The smallest value of the input cells.
                                 - 9 (SUM) : The sum (total) of the input cell values.This is the default.
 
-    :param expand_handling: Optional boolean. Defines how to handle the boundaries of the input raster when its rows 
+    :param extent_handling: Optional boolean. Defines how to handle the boundaries of the input raster when its rows 
                             or columns are not a multiple of the cell factor.
                                 - True : Expands the top or right boundaries of the input raster so 
                                   the total number of cells in a row or column is a multiple 
@@ -4373,9 +4373,6 @@ def aggregate_cells(raster, cell_factor=2, aggregation_type=9, expand_handling=F
                                   or columns in the input raster a multiple of the cell factor.
                                   With this option, the output raster can cover a smaller 
                                   spatial extent than the input raster.
-
-                            If the number of rows and columns in the input raster is a multiple of the cell_factor, 
-                            this option is not used.
 
     :param ignore_nodata: Optional boolean. Denotes whether NoData values are ignored by the aggregation calculation.
 
@@ -4408,8 +4405,8 @@ def aggregate_cells(raster, cell_factor=2, aggregation_type=9, expand_handling=F
     if aggregation_type is not None:
         template_dict["rasterFunctionArguments"]['AggregationType'] = aggregation_type
 
-    if expand_handling is not None:
-        template_dict["rasterFunctionArguments"]['ExpandHandling'] = expand_handling
+    if extent_handling is not None:
+        template_dict["rasterFunctionArguments"]['ExpandHandling'] = extent_handling
 
     if ignore_nodata is not None:
         template_dict["rasterFunctionArguments"]['IgnoreNoData'] = ignore_nodata
