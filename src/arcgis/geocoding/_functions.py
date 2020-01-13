@@ -251,7 +251,12 @@ class Geocoder(_GISResource):
                        source_country=None,
                        category=None,
                        out_sr=None,
-                       as_featureset=False):
+                       as_featureset=False,
+                       match_out_of_range=True,
+                       location_type='street',
+                       search_extent=None,
+                       lang_code='EN',
+                       preferred_label_values=''):
         """
         The batch_geocode() method geocodes an entire list of addresses.
         Geocoding many addresses at once is also known as bulk geocoding.
@@ -330,6 +335,12 @@ class Geocoder(_GISResource):
             addr_recordset.append(addr_rec)
 
         params['addresses'] = {"records": addr_recordset}
+        params['matchOutOfRange'] = match_out_of_range
+        params['locationType'] = location_type
+        if search_extent is not None:
+            params['searchExtent'] = search_extent
+        params['langCode'] = lang_code
+        params['preferredLabelValues'] = preferred_label_values
 
         resp = self._con.post(url, params, token=self._token)
         if resp is not None and as_featureset:
@@ -1050,7 +1061,12 @@ def batch_geocode(addresses,
                   category=None,
                   out_sr=None,
                   geocoder=None,
-                  as_featureset=False):
+                  as_featureset=False,
+                  match_out_of_range=True,
+                  location_type='street',
+                  search_extent=None,
+                  lang_code='EN',
+                  preferred_label_values=''):
     """
     The batch_geocode() function geocodes an entire list of addresses.
     Geocoding many addresses at once is also known as bulk geocoding.
@@ -1110,6 +1126,28 @@ def batch_geocode(addresses,
     ---------------     ----------------------------------------------------------------
     geocoder            Optional, the geocoder to be used. If not specified,
                         the active GIS's first geocoder is used.
+    ---------------     ----------------------------------------------------------------
+    match_out_of_range  Optional, A Boolean which specifies if StreetAddress matches should
+                        be returned even when the input house number is outside of the house
+                        number range defined for the input street.
+    ---------------     ----------------------------------------------------------------
+    location_type       Optional, Specifies if the output geometry of PointAddress matches
+                        should be the rooftop point or street entrance location. Valid values
+                        are rooftop and street.
+    ---------------     ----------------------------------------------------------------
+    search_extent       Optional, a set of bounding box coordinates that limit the search area
+                        to a specific region. The input can either be a comma-separated list of
+                        coordinates defining the bounding box or a JSON envelope object.
+    ---------------     ----------------------------------------------------------------
+    lang_code           Optional, sets the language in which geocode results are returned. See
+                        the table of supported countries for valid language code values in each
+                        country.
+    ---------------     ----------------------------------------------------------------
+    preferred_label_values
+                        Optional, allows simple configuration of output fields returned in a response
+                        from the World Geocoding Service by specifying which address component values
+                        should be included in output fields. Supports a single value or a comma-delimited
+                        collection of values as input. e.g. ='matchedCity,primaryStreet'
     ===============     ================================================================
 
     :returns:
@@ -1122,7 +1160,13 @@ def batch_geocode(addresses,
         source_country,
         category,
         out_sr,
-        as_featureset)
+        as_featureset,
+        match_out_of_range,
+        location_type,
+        search_extent,
+        lang_code,
+        preferred_label_values
+    )
 
 
 def suggest(text,
