@@ -2711,6 +2711,25 @@ class GeoAccessor(object):
         except ImportError:
             raise ImportError('Requires Geopandas library installed for this functionality')
 
+        # inspect the CRS of GDF. If projected, unproject first
+        if geo_df.crs:
+            if 'init' in geo_df.crs.keys():
+                crs = geo_df.crs['init']
+                if crs !='epsg:4326':  # 4326 is WGS84 lat lon, the CRS needed for GeoJSON
+                    # unproject
+                    try:
+                        geo_df.to_crs(epsg=4326, inplace=True)
+                    except Exception as proj_ex:
+                        print('Unable to un-project to GCS')
+                        raise proj_ex
+            else:
+                # unproject as not all crs have the same dict structure and this is unlikely to be 4326
+                try:
+                    geo_df.to_crs(epsg=4326, inplace=True)
+                except Exception as proj_ex:
+                    print('Unable to un-project to GCS')
+                    raise proj_ex
+
         # export GPD DF to GeoJSON
         gpd_geojson_str = geo_df.to_json()
 
@@ -2726,30 +2745,30 @@ class GeoAccessor(object):
 
     # ---------------------------------------------------------------------
 
-    def to_geodataframe(self):
-        """
-        Converts an ArcGIS Spatially Enabled DataFrame to a GeoPandas GeoDataFrame
-        object.
-
-        Requires geopandas library be installed in current environment.
-        :return:
-        """
-        try:
-            import geopandas as gpd
-        except ImportError:
-            raise ImportError('Requires Geopandas library installed for this functionality')
-
-        # convert SeDF to FeatureSet to you can export to GeoJSON
-        fset = self.to_featureset()
-
-        # read GeoJSON into a dictionary
-        import json
-        geojson_dict = json.loads(fset.to_geojson)
-
-        # create gpd DF
-        geo_df = gpd.GeoDataFrame.from_features(geojson_dict['features'])
-
-        return geo_df
+    # def to_geodataframe(self):  # not exposing per discussion with Andrew. Keeping it if we want to enable later.
+    #     """
+    #     Converts an ArcGIS Spatially Enabled DataFrame to a GeoPandas GeoDataFrame
+    #     object.
+    #
+    #     Requires geopandas library be installed in current environment.
+    #     :return:
+    #     """
+    #     try:
+    #         import geopandas as gpd
+    #     except ImportError:
+    #         raise ImportError('Requires Geopandas library installed for this functionality')
+    #
+    #     # convert SeDF to FeatureSet to you can export to GeoJSON
+    #     fset = self.to_featureset()
+    #
+    #     # read GeoJSON into a dictionary
+    #     import json
+    #     geojson_dict = json.loads(fset.to_geojson)
+    #
+    #     # create gpd DF
+    #     geo_df = gpd.GeoDataFrame.from_features(geojson_dict['features'])
+    #
+    #     return geo_df
     # ----------------------------------------------------------------------
     @property
     def full_extent(self):
