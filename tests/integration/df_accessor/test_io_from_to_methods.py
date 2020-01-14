@@ -158,6 +158,7 @@ def test_from_gpd_df_verify_crs_gcs_lines():
 
     print('GPD->SeDF Lines GCS success')
 
+
 def test_from_gpd_df_verify_crs_pcs_lines():
     """
     Sanity test case, verifies can read GeoDataFrame to a SeDF
@@ -178,6 +179,7 @@ def test_from_gpd_df_verify_crs_pcs_lines():
     assert 'OBJECTID' in sedf.columns
 
     print('GPD->SeDF Lines PCS success')
+
 
 def test_from_gpd_df_verify_crs_gcs_polygons():
     """
@@ -200,6 +202,7 @@ def test_from_gpd_df_verify_crs_gcs_polygons():
 
     print('GPD->SeDF Polygons GCS success')
 
+
 def test_from_gpd_df_verify_crs_pcs_polygons():
     """
     Sanity test case, verifies can read GeoDataFrame to a SeDF
@@ -221,6 +224,32 @@ def test_from_gpd_df_verify_crs_pcs_polygons():
 
     print('GPD->SeDF Polygons GCS success')
 
+
+def test_from_gpd_df_large_data_points():
+    """
+    Sanity test case, verifies can read GeoDataFrame to a SeDF
+    :return:
+    """
+    import geopandas as gpd
+    data_path = os.path.join(qalab_data_path, "large_files", "points_270krows_800mb_gcs.shp")
+    geo_df = gpd.read_file(data_path)
+
+    assert isinstance(geo_df, gpd.GeoDataFrame)
+    assert geo_df.crs == {'init': 'epsg:4269'}
+    assert geo_df.shape == (317,30)
+    print(geo_df.columns)
+
+    sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
+    assert isinstance(sedf, pd.DataFrame)
+    assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
+    assert sedf.iloc[0]['SHAPE'].type == 'POINT'
+    assert sedf.shape == (317, 30)
+    assert 'SHAPE' in sedf.columns
+    print(sedf.columns)
+
+    print('GPD->SeDF Points GCS success')
+
+
 # def test_to_gpd_df_sanity():  # export to GeoDataFrame is disabled.
 #     """
 #     Sanity test case, verifies can export SeDF to GeoDataFrame
@@ -241,5 +270,11 @@ if __name__ == "__main__":
     test_chunks()
     test_from_layer()
     test_from_gpd_df_sanity()
-    test_to_gpd_df_sanity()
+    test_from_gpd_df_verify_crs_gcs_points()
+    test_from_gpd_df_verify_crs_pcs_points()
+    test_from_gpd_df_verify_crs_gcs_lines()
+    test_from_gpd_df_verify_crs_pcs_lines()
+    test_from_gpd_df_verify_crs_gcs_polygons()
+    test_from_gpd_df_verify_crs_pcs_polygons()
+    test_from_gpd_df_large_data_points()
     #test_to_layer()  # SKIPPED
