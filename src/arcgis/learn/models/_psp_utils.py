@@ -41,6 +41,7 @@ from fastai.vision import flatten_model
 from fastai.vision.models import unet
 from fastai.basic_train import Learner
 from fastai.vision import to_device
+from ._arcgis_model import _get_backbone_meta
 
 def initialize_weights(*models):
     for model in models:
@@ -89,8 +90,11 @@ class _PyramidPoolingModule(nn.Module):
 def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True):
     """
     Function which returns PPM module attached to backbone which is then used to form the Unet.
-    """  
-    backbone = create_body(backbone_fn, pretrained=pretrained)
+    """      
+    if getattr(backbone_fn, '_is_multispectral', False):
+        backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+    else:
+        backbone = create_body(backbone_fn, pretrained=pretrained)
     
     backbone_name = backbone_fn.__name__
 
@@ -193,7 +197,10 @@ class PSPNet(nn.Module):
     def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True):
         super(PSPNet, self).__init__()        
         
-        self.backbone = create_body(backbone_fn, pretrained=pretrained)
+        if getattr(backbone_fn, '_is_multispectral', False):
+            self.backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+        else:
+            self.backbone = create_body(backbone_fn, pretrained=pretrained)
         
         backbone_name = backbone_fn.__name__
 

@@ -23,7 +23,7 @@ try:
     from fastai.vision.image import open_image
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
-    from fastai.vision.learner import cnn_learner, ClassificationInterpretation
+    from fastai.vision.learner import cnn_learner, ClassificationInterpretation, cnn_config
     from ._arcgis_model import _set_multigpu_callback
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch.nn.functional as functional
@@ -97,6 +97,9 @@ class FeatureClassifier(ArcGISModel):
         _backbone = self._backbone
         if hasattr(self, '_orig_backbone'):
             _backbone = self._orig_backbone
+            _backbone_meta = cnn_config(self._orig_backbone)
+            backbone_cut = _backbone_meta['cut']
+            backbone_split = _backbone_meta['split']
 
         if _backbone == models.mobilenet_v2:
             backbone_cut = -1

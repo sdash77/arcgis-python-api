@@ -19,7 +19,7 @@ try:
     from fastprogress import progress_bar
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
-    from fastai.vision.learner import create_body
+    from fastai.vision.learner import create_body, cnn_config
     from fastai.vision.data import ImageDataBunch
     from fastai.vision import ImageList
     from fastai.vision import imagenet_stats, normalize
@@ -121,9 +121,15 @@ class SingleShotDetector(ArcGISModel):
         self._code = code
         self.ssd_version = ssd_version
 
+        backbone_cut = None
+        backbone_split = None
+
         if hasattr(self, '_orig_backbone'):
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
+            _backbone_meta = cnn_config(self._orig_backbone)
+            backbone_cut = _backbone_meta['cut']
+            backbone_split = _backbone_meta['split']
 
         if backbone is None:
             self._backbone = models.resnet34
@@ -138,9 +144,6 @@ class SingleShotDetector(ArcGISModel):
         if not self._check_backbone_support(self._backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        backbone_cut = None
-        backbone_split = None
-
         if self._backbone == models.mobilenet_v2:
             backbone_cut = -1
             backbone_split = _mobilenet_split
@@ -151,7 +154,7 @@ class SingleShotDetector(ArcGISModel):
                 
             self._create_anchors(grids, zooms, ratios)
 
-            feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
+            feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
             num_features = feature_sizes[-1][-1]
             num_channels = feature_sizes[-1][1]
 

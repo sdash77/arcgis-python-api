@@ -36,12 +36,15 @@ from fastai.callbacks.hooks import model_sizes
 from torchvision.models.segmentation.segmentation import _segm_resnet
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
 from torchvision.models.segmentation.fcn import FCNHead
+from ._arcgis_model import _get_backbone_meta
 
 class Deeplab(nn.Module):
     def __init__(self, num_classes, backbone_fn, chip_size=224):
         super().__init__()        
-        
-        self.backbone = create_body(backbone_fn, pretrained=True)
+        if getattr(backbone_fn, '_is_multispectral', False):
+            self.backbone = create_body(backbone_fn, pretrained=True, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+        else:
+            self.backbone = create_body(backbone_fn, pretrained=True)
         
         backbone_name = backbone_fn.__name__
 
