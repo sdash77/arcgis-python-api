@@ -623,7 +623,7 @@ class ArcGISModel(object):
             print('Created model files at {spp}'.format(spp=saved_path.parent))
 
         if publish:
-            self._publish_dlpk((saved_path.parent/saved_path.stem).with_suffix('.dlpk'), gis=gis)
+            self._publish_dlpk((saved_path.parent/saved_path.stem).with_suffix('.dlpk'), gis=gis, overwrite=kwargs.get('overwrite', False))
 
         return saved_path.parent
 
@@ -664,7 +664,7 @@ class ArcGISModel(object):
         if hasattr(self, '_save_confusion_matrix'):
             self._save_confusion_matrix(model_characteristics_dir)
 
-    def _publish_dlpk(self, dlpk_path, gis=None):
+    def _publish_dlpk(self, dlpk_path, gis=None, overwrite=False):
         gis_user = arcgis.env.active_gis if gis is None else gis
         if not gis_user:
             warn('No active gis user found!')
@@ -700,7 +700,7 @@ class ArcGISModel(object):
             """
 
         item = gis_user.content.add(
-            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem},
+            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem, 'overwrite':'true' if overwrite else 'false'},
             data=str(dlpk_path.absolute())
         )
 
@@ -771,6 +771,10 @@ class ArcGISModel(object):
         ---------------------   -------------------------------------------
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
+        ---------------------   -------------------------------------------
+        kwargs                  Optional Parameters:
+                                Boolean `overwrite` if True, it will overwrite
+                                the item on ArcGIS Online/Enterprise, default False.                                
         =====================   ===========================================
         """        
         return self._save(name_or_path, framework=framework, publish=publish, gis=gis, **kwargs)
