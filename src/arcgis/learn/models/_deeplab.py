@@ -200,7 +200,7 @@ class DeepLab(ArcGISModel):
         return float(model_accuracy)
 
     def _deeplab_loss(self, outputs, targets):
-        targets = targets.squeeze().detach()
+        targets = targets.squeeze(1).detach()
         criterion = nn.CrossEntropyLoss().to(self._device)
         if self.learn.model.training:
             out = outputs[0]

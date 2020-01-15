@@ -266,7 +266,7 @@ def compute_matches(gt_class_ids, gt_masks,
 
     ious_mask = masks_iou(pred_masks, gt_masks)
 
-    pred_match = -1 * torch.ones([pred_masks.shape[0]])
+    pred_match = -1 * np.ones([pred_masks.shape[0]])
     if 0 not in ious_mask.shape:
         max_iou, matches = ious_mask.max(1)
         detected = []
@@ -287,19 +287,18 @@ def compute_ap(gt_class_ids, gt_masks,
         pred_class_ids, pred_scores, pred_masks,
         iou_threshold, detect_threshold)
 
-    precisions = torch.cumsum(pred_match > -1, dim=0) / (torch.arange(len(pred_match)) + 1)
-    recalls = torch.cumsum(pred_match > -1, dim=0).type(torch.float64) / len(gt_class_ids)
+    precisions = np.cumsum(pred_match > -1) / (np.arange(len(pred_match)) + 1)
+    recalls = np.cumsum(pred_match > -1).astype(np.float32) / len(gt_class_ids)
 
-    precisions = torch.cat([torch.tensor([0]), precisions, torch.tensor([0])]).type(torch.float64)
-    recalls = torch.cat([torch.tensor([0],dtype=torch.float64), recalls, torch.tensor([1], dtype=torch.float64)])
+    precisions = np.concatenate([[0], precisions, [0]])
+    recalls = np.concatenate([[0], recalls, [1]])
 
     for i in range(len(precisions) - 2, -1, -1):
-        precisions[i] = torch.max(precisions[i], precisions[i + 1])
+        precisions[i] = np.maximum(precisions[i], precisions[i + 1])
 
     indices = np.where(recalls[:-1] != recalls[1:])[0] + 1
-    mAP = torch.sum((recalls[indices] - recalls[indices - 1]) *
-                precisions[indices])
-
+    mAP = np.sum((recalls[indices] - recalls[indices - 1]) *
+                 precisions[indices])
     return mAP
 
 def compute_class_AP(model, dl, n_classes, show_progress, detect_thresh=0.5, iou_thresh=0.5, mean=False):
@@ -346,8 +345,7 @@ def compute_class_AP(model, dl, n_classes, show_progress, detect_thresh=0.5, iou
                                             pred_masks,
                                             iou_thresh,
                                             detect_thresh)
-                            if not(torch.isnan(ap) or torch.isinf(ap)):
-                                aps[k-1].append(ap.item())
+                            aps[k-1].append(ap)
     if mean:
         if aps != []:
             aps = np.mean(aps, axis=0)
