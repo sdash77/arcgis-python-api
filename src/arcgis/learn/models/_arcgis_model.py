@@ -11,12 +11,14 @@ import contextlib
 import io
 import sys
 import socket
+from functools import wraps
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
 
 try:
     from fastai.callbacks import TrackerCallback, EarlyStoppingCallback, LearnerCallback
+    from fastai.vision.learner import model_meta, _default_meta
     from torch import nn
     import torch
     from torchvision import models
@@ -190,6 +192,10 @@ def _change_tail(model, data):
     _set_tail(model, new_tail)
     return model
 
+def _get_backbone_meta(arch_name):
+    _model_meta = {i.__name__:j for i, j in model_meta.items()}
+    return _model_meta.get(arch_name, _default_meta)
+
 
 class ArcGISModel(object):
     
@@ -222,8 +228,10 @@ class ArcGISModel(object):
             self._imagery_type = data._imagery_type   
             self._bands = data._bands
             self._orig_backbone = self._backbone
+            @wraps(self._orig_backbone)
             def backbone_wrapper(*args, **kwargs):
                 return _change_tail(self._orig_backbone(*args, **kwargs), data)
+            backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
 
         self.learn = None

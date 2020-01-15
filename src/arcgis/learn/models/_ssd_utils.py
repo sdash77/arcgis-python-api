@@ -592,13 +592,8 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
         )
         if analyzed_prediction is not None:
             predicted_bboxes, predicted_classes, predicted_confidences = analyzed_prediction
-            flt_mask = ( predicted_confidences > thresh )# & ( predictions_class_store[idx] > 0 )
-            predicted_classes = predicted_classes[flt_mask]
-            predicted_confidences = predicted_confidences[flt_mask]
             predicted_bboxes = (predicted_bboxes+1)*.5
             predicted_bboxes = predicted_bboxes.clamp(0, 1)*(x_batch.shape[-1]-1)
-            predicted_bboxes = predicted_bboxes[flt_mask]
-            #return predicted_bboxes, predicted_classes, predicted_confidences
             if len(predicted_bboxes) > 0:
                 for i, bbox in enumerate(predicted_bboxes):
                     xs = bbox[[1, 1, 3, 3, 1]]

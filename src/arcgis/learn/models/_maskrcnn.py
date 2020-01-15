@@ -17,7 +17,7 @@ try:
     import numpy as np
     from .._data import prepare_data, _raise_fastai_import_error
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta
     import torchvision
     from torchvision import models
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -89,7 +89,7 @@ class MaskRCNN(ArcGISModel):
                 model.transform.image_std = scaled_std_values
         elif self._backbone.__name__ in ['resnet18','resnet34']:
             if self._is_multispectral:
-                backbone_small = create_body(self._backbone_ms)
+                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
                 backbone_small.out_channels = 512
                 model = models.detection.MaskRCNN(
                     backbone_small, 
