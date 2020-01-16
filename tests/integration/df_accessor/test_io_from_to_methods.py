@@ -28,6 +28,7 @@ _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
 
 qalab_base_path = _conf_reader2['test_data']['qalab_base_path']
 qalab_data_path = qalab_base_path + _conf_reader2['test_data']['qalab_dataprep']
+qalab_gax_datasets = qalab_data_path + _conf_reader2['test_data']['qalab_geoanalytics_datasets']
 
 #--------------------------------------------------------------------------
 def test_chunks():
@@ -235,15 +236,40 @@ def test_from_gpd_df_large_data_points():
     geo_df = gpd.read_file(data_path)
 
     assert isinstance(geo_df, gpd.GeoDataFrame)
-    assert geo_df.crs == {'init': 'epsg:4269'}
-    assert geo_df.shape == (317,30)
+    assert geo_df.crs == {'init': 'epsg:4326'}
+    assert geo_df.shape == (271868, 23)
     print(geo_df.columns)
 
     sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
     assert isinstance(sedf, pd.DataFrame)
     assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
     assert sedf.iloc[0]['SHAPE'].type == 'POINT'
-    assert sedf.shape == (317, 30)
+    assert sedf.shape == (271868, 24)
+    assert 'SHAPE' in sedf.columns
+    print(sedf.columns)
+
+    print('GPD->SeDF Points GCS success')
+
+
+def test_from_gpd_df_massive_3m_points():
+    """
+    Sanity test case, verifies can read GeoDataFrame to a SeDF
+    :return:
+    """
+    import geopandas as gpd
+    data_path = os.path.join(qalab_gax_datasets, "NYCTaxi_2","2015", "nyc_2015_01.shp")
+    geo_df = gpd.read_file(data_path)
+
+    assert isinstance(geo_df, gpd.GeoDataFrame)
+    assert geo_df.crs == {'init': 'epsg:4326'}
+    assert geo_df.shape == (3984199, 20)
+    print(geo_df.columns)
+
+    sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
+    assert isinstance(sedf, pd.DataFrame)
+    assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
+    assert sedf.iloc[0]['SHAPE'].type == 'POINT'
+    assert sedf.shape == (3984199, 21)
     assert 'SHAPE' in sedf.columns
     print(sedf.columns)
 
@@ -277,4 +303,5 @@ if __name__ == "__main__":
     test_from_gpd_df_verify_crs_gcs_polygons()
     test_from_gpd_df_verify_crs_pcs_polygons()
     test_from_gpd_df_large_data_points()
+    # test_from_gpd_df_massive_3m_points()
     #test_to_layer()  # SKIPPED
