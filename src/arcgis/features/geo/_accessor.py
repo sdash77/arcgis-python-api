@@ -2698,13 +2698,18 @@ class GeoAccessor(object):
     # ---------------------------------------------------------------------
 
     @staticmethod
-    def from_geodataframe(geo_df, sr=4326):
+    def from_geodataframe(geo_df):
         """
         Import Geopandas GeoDataFrame into an ArcGIS Spatially enabled DataFrame.
         Requires geopandas library be installed in current environment.
-        :param df:
-        :param sr:
-        :return:
+
+        =====================  ===============================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------------
+        geo_df                 GeoDataFrame object, created using GeoPandas library
+        =====================  ===============================================================
+
+        :return: ArcGIS Spatially Enabled DataFrame object.
         """
         try:
             import geopandas as gpd
