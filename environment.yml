@@ -1,4 +1,4 @@
-name: geosaurus_dev_env
+name: geosaurus_dev_env_oma
 channels:
 - defaults
 - fastai
