@@ -393,14 +393,16 @@ def prepare_data(path,
 
         ## Change all keys to int.
         if class_mapping is not None:
-            class_mapping = {int(key):value for key, value in class_mapping.items()}            
+            class_mapping = {int(key):value for key, value in class_mapping.items()}
+        else:
+            class_mapping = {}
 
         ## Map values from user defined classmapping to emd classmapping.
         for key, _ in emd_class_mapping.items():
             if class_mapping.get(key) is not None:
                 emd_class_mapping[key] = class_mapping[key]
             
-        class_mapping = emd_class_mapping            
+        class_mapping = emd_class_mapping
 
 
         color_mapping = {(i.get('Value', 0) or i.get('ClassValue', 0)): i['Color'] for i in emd.get('Classes', [])}

@@ -461,11 +461,7 @@ class SingleShotDetector(ArcGISModel):
         return _emd_template
 
     def _get_tfonnx_emd_params(self):
-        _emd_template = self._get_emd_params()
-
-        _emd_template["ModelConfiguration"] = "_SSDTensorflow"
-
-        return _emd_template
+        return {"ModelConfiguration": "_SSDTensorflow"}
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
 
