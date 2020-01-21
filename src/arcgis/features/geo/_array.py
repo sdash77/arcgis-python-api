@@ -287,8 +287,6 @@ class GeoArray(ExtensionArray):
     def __setitem__(self, key, value):
         if isinstance(value, pd.Series):
             value = value.values
-        if isinstance(value, (list, np.ndarray)):
-            value = from_shapely(value)
         if isinstance(value, GeoArray):
             if isinstance(key, numbers.Integral):
                 raise ValueError("cannot set a single element with an array")
@@ -423,7 +421,7 @@ class GeoArray(ExtensionArray):
         elif pd.api.types.is_string_dtype(dtype) and not pd.api.types.is_object_dtype(
             dtype
         ):
-            return to_wkt(self).astype(dtype, copy=False)
+            return np.array([g.JSON for g in self.data])
         else:
             return np.array(self, dtype=dtype, copy=copy)
 
@@ -477,7 +475,9 @@ class GeoArray(ExtensionArray):
         -------
         ExtensionArray
         """
-        return from_shapely(scalars)
+        data = np.empty(len(scalars), dtype=object)
+        data[:] = [Geometry(s) for s in scalars]
+        return cls(data)
 
     def _values_for_factorize(self):
         # type: () -> Tuple[np.ndarray, Any]
@@ -495,8 +495,7 @@ class GeoArray(ExtensionArray):
             `na_sentinal` and not included in `uniques`. By default,
             ``np.nan`` is used.
         """
-        vals = to_wkb(self)
-        return vals, None
+        return self, 0
 
     @classmethod
     def _from_factorized(cls, values, original):
@@ -515,7 +514,7 @@ class GeoArray(ExtensionArray):
         pandas.factorize
         ExtensionArray.factorize
         """
-        return from_wkb(values)
+        return cls(values)
 
     def _values_for_argsort(self):
         # type: () -> np.ndarray
