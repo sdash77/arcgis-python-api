@@ -717,10 +717,6 @@ class GeoArray(ExtensionArray):
                           left=self.data, 
                           right=second_geometry, 
                           **{'method' : method})
-        #return self._call_method(name='angle_distance_to',
-        #                         is_ga=False,
-        #                         **{'second_geometry' : second_geometry,
-        #                            'method' : method})
     #----------------------------------------------------------------------
     def boundary(self):
         """
