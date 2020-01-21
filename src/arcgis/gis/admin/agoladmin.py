@@ -219,38 +219,128 @@ class AGOLAdminManager(object):
                                       params={'f': 'json'})
         return res
     #----------------------------------------------------------------------
-    def history(self, start_date, num=100, save_folder=None):
+    def history(self, 
+                start_date, 
+                to_date=None, 
+                num=100, 
+                all_events=True, 
+                event_ids=None,
+                event_types=None, 
+                actors=None, 
+                owners=None,
+                actions=None, 
+                ips=None,
+                sort_order='asc',
+                data_format='csv',
+                save_folder=None):
         """
         Returns a CSV file containing the login history from a start_date to the present.
 
         ================  ===============================================================================
         **Argument**      **Description**
         ----------------  -------------------------------------------------------------------------------
-        start_date        Required datetime.datetime object. The beginning date.
+        start_date        Required datetime.datetime object. The beginning date to start with.
         ----------------  -------------------------------------------------------------------------------
-        num               Optional Integer. The maximum number of records to return.
+        to_date           Optional datetime.datetime object. The ending date.  If not provided, the query
+                          will attempt to obtain all records till the current date.  
+        ----------------  -------------------------------------------------------------------------------
+        num               Optional Integer. The maximum number of records to return.  The maximum value 
+                          is 10,000 set by the ArcGIS REST API.  If the value of -1 is provided it will 
+                          attempt to get all records for the date range.  The default is **100**.
+        ----------------  -------------------------------------------------------------------------------
+        all_events        Optional Boolean. If `True`, all types of events are included.  If `False`, only 
+                          actions targeted by the organization are included.  When exporting as `csv` this
+                          parameter is `True`.
+        ----------------  -------------------------------------------------------------------------------
+        event_id          Optional String. Filter events by specific target user name or target ID in a batch result set. 
+                          It can be the ID of an item, a group, a role, a collaboration, an identity 
+                          provider, and so on.
+        ----------------  -------------------------------------------------------------------------------
+        event_types       Optional String.  Filter events by a comma-separated list of target types in a 
+                          batch result set.
+
+                          Values: a (organization), c (collaboration), cp (collaboration participate), 
+                                  cpg (collaboration participate group), cw (collaboration workspace), 
+                                  cwp (collaboration workspace participate), g (group), i (item), 
+                                  idp (identity provider), inv (invitation), r (role), u (user)
+        ----------------  -------------------------------------------------------------------------------
+        actors            Optional String. Comma seperated list of usernames.
+        ----------------  -------------------------------------------------------------------------------
+        owners            Optional String. Filter events by a comma-separated list of user names who own 
+                          the action targets in a batch result set.
+        ----------------  -------------------------------------------------------------------------------
+        actions           Optional String. Comma seperated list of actions to query for.  
+                     
+                          Values: `add`, `addusers`, `create`, `delete`, `removeusers`, `share`, `unshare`, 
+                          `update`, `failedlogin`, `login`, and `updateUsers`.
+        ----------------  -------------------------------------------------------------------------------
+        ips               Optional String. Filter events by a comma-separated list of IP addresses in a batch result set.
+        ----------------  -------------------------------------------------------------------------------
+        sort_order        Optional String.  Describes whether the results return in ascending or 
+                          descending chronological order. The default is ascending.
+
+                          Values: `asc` or `desc`
+        ----------------  -------------------------------------------------------------------------------
+        data_format       Optional String.  The way the data is returned to the user.  The response can 
+                          be a `df` or `csv`.
+                          
+                          Values: `df` or `csv`
         ----------------  -------------------------------------------------------------------------------
         save_folder       Optional String. The save location of the CSV file.
         ================  ===============================================================================
 
-        :returns: string
+        :returns: string or pd.DataFrame
 
         """
         import tempfile, json
         from arcgis._impl.common._utils import _date_handler
         if save_folder is None:
             save_folder = tempfile.gettempdir()
-
+        if num == 0:
+            raise ValueError("`num` cannot be zero.")
         url = "{url}portals/self/history".format(url=self._gis._portal.resturl)
         params = {
-            'f' : 'csv',
+            'f' : data_format,
             'num' : num,
-            'all' : True,
-            'fromDate' : json.dumps(start_date, default=_date_handler)
+            #'start' : "",
+            'all' : all_events,
+            'id' : event_ids,
+            'types' : event_types,
+            'actors' : actors,
+            'owners' : owners,
+            'actions' : actions,
+            'fromDate' : json.dumps(start_date, default=_date_handler),
+            'toDate' : json.dumps(to_date, default=_date_handler),
+            'ips' : ips,
+            'sortOrder' : sort_order,
+            'ips' : ips
         }
-        return self._gis._con.post(url, params,
-                                   file_name="history.csv",
-                                   out_folder=save_folder)
+        
+        for k in list(params.keys()):
+            if params[k] is None:
+                del params[k]
+        
+        if data_format == 'csv':
+            params['f'] = 'csv'
+            params['num'] = 10000
+            return self._gis._con.post(url, params,
+                                       file_name="history.csv",
+                                       out_folder=save_folder)
+        elif data_format in ['json', 'df']:
+            import pandas as _pd
+            params['f'] = 'json'
+            data = []
+            
+            res = self._gis._con.post(url, params)
+            data.extend(data['items'])
+            while len(res['items']) > 0 and res['nextKey']:
+                params['start'] = res['nextKey']
+                res = self._gis._con.post(url, params)
+                data.extend(data['items'])
+                if num > 0 and len(data) >= num:
+                    data = data[:num]
+                    break
+            return _pd.DataFrame(data)
     #----------------------------------------------------------------------
     @property
     def certificates(self):
