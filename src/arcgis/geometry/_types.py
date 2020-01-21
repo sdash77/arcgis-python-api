@@ -9,61 +9,67 @@ except ImportError as e:
 from six import add_metaclass
 from functools import partial
 
+_number_type = (int, float)
+_empty_value = [None, "NaN"]
 #--------------------------------------------------------------------------
 def _is_valid(value):
     """checks if the value is valid"""
-    if 'spatialReference' not in value or \
-       isinstance(value['spatialReference'],
-                  (dict, SpatialReference)) == False:
+    if not isinstance(
+        value.get('spatialReference', None),
+        (dict, SpatialReference)
+    ):
         return False
+
     if isinstance(value, Point):
         if hasattr(value, 'x') and \
-           hasattr(value, 'y') :
+           hasattr(value, 'y'):
             return True
         elif 'x' in value and \
-             (value['x'] is None or \
-              value['x'] == "NaN"):
+             (value['x'] in _empty_value):
             return True
         return False
     elif isinstance(value, Envelope):
-        if all(hasattr(value, a) for a in ('xmin', 'ymin',
-                                           'xmax', 'ymax')) and \
-           all(isinstance(getattr(value,a), number_type) for a in ('xmin', 'ymin',
-                                                                   'xmax', 'ymax')):
+        if all(
+            isinstance(getattr(value, extent, None), _number_type)
+            for extent in ('xmin', 'ymin', 'xmax', 'ymax')
+        ):
             return True
         elif hasattr(value, "xmin") and \
-             (value.xmin is None or value.xmin == "NaN"):
+             (value.xmin in _empty_value):
             return True
-        else:
-            return False
+
+        return False
     elif isinstance(value, (MultiPoint,
                             Polygon,
                             Polyline)):
         if 'paths' in value:
             if len(value['paths']) == 0:
                 return True
-            else:
-                return _is_line(coords=value['paths'])
+            return _is_line(coords=value['paths'])
         elif 'rings' in value:
             if len(value['rings']) == 0:
                 return True
-            else:
-                return _is_polygon(coords=value['rings'])
+
+            return _is_polygon(coords=value['rings'])
         elif 'points' in value:
             if len(value['points']) == 0:
                 return True
-            else:
-                return _is_point(coords=value['points'])
-        return False
-    else:
-        return False
+
+            return _is_point(coords=value['points'])
+
     return False
 #--------------------------------------------------------------------------
 def _is_polygon(coords):
-    lengths = all(len(elem) >= 4 for elem in coords)
-    valid_pts = all(_is_line(part) for part in coords)
-    isring = all(elem[0] == elem[-1] for elem in coords)
-    return lengths and isring and valid_pts
+
+    for coord in coords:
+        if len(coord) < 4:
+            return False
+        if not _is_line(coord):
+            return False
+        if coord[0] != coord[-1]:
+            return False
+
+    return True
 #--------------------------------------------------------------------------
 def _is_line(coords):
     """
@@ -74,25 +80,27 @@ def _is_line(coords):
     if isinstance(coords, list_types) and \
        len(coords) > 0: # list of lists
         return all(_is_point(elem) for elem in coords)
-    else:
-        return True
-    return False
+
+    return True
+
+
 #--------------------------------------------------------------------------
 def _is_point(coords):
     """
     checks to see if the point has at
     least 2 coordinates in the list
     """
-    number_type = (int, float)
-    if isinstance(coords, (list, tuple)) and \
-       len(coords) > 1:
+    valid = False
+    if isinstance(coords, (list, tuple)) and len(coords) > 1:
         for coord in coords:
-            if isinstance(coord, number_type):
-                return all(isinstance(v, number_type) for v in coords) and \
-                       len(coords) > 1
+            if not isinstance(coord, _number_type):
+                if not _is_point(coord):
+                    return False
             else:
-                return _is_point(coord)
-    return False
+                valid = True
+    return valid
+
+
 #--------------------------------------------------------------------------
 def _geojson_type_to_esri_type(type_):
     if type_ in ['LineString','MultiLineString']:
