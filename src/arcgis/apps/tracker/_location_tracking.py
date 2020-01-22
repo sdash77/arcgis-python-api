@@ -126,7 +126,7 @@ class LocationTrackingManager:
         """
         item = self.item
         if self.status == "disabled":
-            possible_lts = self._gis.content.search(query='(typekeywords:"Location Tracking Service" NOT tags:"workforce") NOT typekeywords:"Location Tracking View"')
+            possible_lts = self._gis.content.search(query='typekeywords:"Location Tracking Service" NOT typekeywords:"Location Tracking View"')
             if len(possible_lts) == 0:
                 return False
             else:
