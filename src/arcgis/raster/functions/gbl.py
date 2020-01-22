@@ -3005,7 +3005,7 @@ def expand(input_raster,
 
     :param zone_values: Required. The list of zones to expand. The zone values 
                         must be integer, and they can be in any order.
-                        The zone_values can be specified as a list or  as a string 
+                        The zone values can be specified as a list or as a string. 
                         If specified as a string and if it is required to specify multiple zones, 
                         use a semicolon (";") to separate the zone values.
 
@@ -3056,7 +3056,7 @@ def shrink(input_raster,
                             The value must be integer, and can be 1 or greater.
 
     :param zone_values: Required. The list of zones to shrink. The zone values must be integer, and they can be in any order.
-                        The zone_values can be specified as a list or  as a string 
+                        The zone values can be specified as a list or as a string. 
                         If specified as a string and if it is required to specify multiple zones, 
                         use a semicolon (";") to separate the zone values.
 

@@ -4106,35 +4106,25 @@ def constant_raster(constant, raster_info, gis=None):
     :param constant: Required list. The value of the constant to be added to the virtual raster.
     :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+
                         Example for RasterInfo dict - 
-                        {'bandCount': 3, 
 
-                         'extent': {"xmin": 4488761.95,
-                                     "ymin": 5478609.805,
-                                     "xmax": 4489727.05,
-                                     "ymax": 5479555.305,
-                                     "spatialReference": {
-
-                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-
-                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-
-                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
-
-                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
-
-                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
-
-                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
-
-                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
-
-                                     }}, 
-                         'pixelSizeX': 0.0999999999999614, 
-
-                         'pixelSizeY': 0.1, 
-
-                         'pixelType': 'U8'}
+                        {'bandCount': 3,'extent': {"xmin": 4488761.95,
+                        "ymin": 5478609.805,
+                        "xmax": 4489727.05,
+                        "ymax": 5479555.305,
+                        "spatialReference": {
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+                        SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+                        UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+                        PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+                        PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+                        PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+                        }}, 
+                        'pixelSizeX': 0.0999999999999614, 
+                        'pixelSizeY': 0.1, 
+                        'pixelType': 'U8'}
 
 
     :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
