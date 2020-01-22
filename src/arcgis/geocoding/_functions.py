@@ -256,7 +256,7 @@ class Geocoder(_GISResource):
                        location_type='street',
                        search_extent=None,
                        lang_code='EN',
-                       preferred_label_values=''):
+                       preferred_label_values=None):
         """
         The batch_geocode() method geocodes an entire list of addresses.
         Geocoding many addresses at once is also known as bulk geocoding.
@@ -340,7 +340,8 @@ class Geocoder(_GISResource):
         if search_extent is not None:
             params['searchExtent'] = search_extent
         params['langCode'] = lang_code
-        params['preferredLabelValues'] = preferred_label_values
+        if preferred_label_values is not None:
+            params['preferredLabelValues'] = preferred_label_values
 
         resp = self._con.post(url, params, token=self._token)
         if resp is not None and as_featureset:
@@ -1066,89 +1067,90 @@ def batch_geocode(addresses,
                   location_type='street',
                   search_extent=None,
                   lang_code='EN',
-                  preferred_label_values=''):
+                  preferred_label_values=None):
     """
     The batch_geocode() function geocodes an entire list of addresses.
     Geocoding many addresses at once is also known as bulk geocoding.
 
-    ===============     ================================================================
-    **Argument**        **Description**
-    ---------------     ----------------------------------------------------------------
-    addresses           required list of strings or dictionaries.
-                        A list of addresses to be geocoded.
-                        For passing in the location name as a single line of text -
-                        single field batch geocoding - use a string.
-                        For passing in the location name as multiple lines of text
-                        multifield batch geocoding - use the address fields described
-                        in the Geocoder documentation.
-                         The maximum number of addresses that can be geocoded in a
-                         single request is limited to the SuggestedBatchSize property of
-                         the locator.
-                         Syntax:
-                          addresses = ["380 New York St, Redlands, CA",
-                          "1 World Way, Los Angeles, CA",
-                          "1200 Getty Center Drive, Los Angeles, CA",
-                          "5905 Wilshire Boulevard, Los Angeles, CA",
-                          "100 Universal City Plaza, Universal City, CA 91608",
-                          "4800 Oak Grove Dr, Pasadena, CA 91109"]
+    =========================     ================================================================
+    **Argument**                  **Description**
+    -------------------------     ----------------------------------------------------------------
+    addresses                     required list of strings or dictionaries.
+                                  A list of addresses to be geocoded.
+                                  For passing in the location name as a single line of text -
+                                  single field batch geocoding - use a string.
+                                  For passing in the location name as multiple lines of text
+                                  multifield batch geocoding - use the address fields described
+                                  in the Geocoder documentation.
+                                  The maximum number of addresses that can be geocoded in a
+                                  single request is limited to the SuggestedBatchSize property of
+                                  the locator.
+                                  Syntax:
+                                  addresses = ["380 New York St, Redlands, CA",
+                                    "1 World Way, Los Angeles, CA",
+                                    "1200 Getty Center Drive, Los Angeles, CA",
+                                    "5905 Wilshire Boulevard, Los Angeles, CA",
+                                    "100 Universal City Plaza, Universal City, CA 91608",
+                                    "4800 Oak Grove Dr, Pasadena, CA 91109"]
 
-                          OR
+                                  OR
 
-                          addresses= [{
-                             "Address": "380 New York St.",
-                             "City": "Redlands",
-                             "Region": "CA",
-                             "Postal": "92373"
-                         },{
-                             "Address": "1 World Way",
-                             "City": "Los Angeles",
-                             "Region": "CA",
-                             "Postal": "90045"
-                         }]
-    ---------------     ----------------------------------------------------------------
-    source_country      optional string, The source_country parameter is
-                        only supported by geocoders published using StreetMap
-                        Premium locators.
-                        Added at 10.3 and only supported by geocoders published
-                        with ArcGIS 10.3 for Server and later versions.
-    ---------------     ----------------------------------------------------------------
-    category            The category parameter is only supported by geocode
-                        services published using StreetMap Premium locators.
-    ---------------     ----------------------------------------------------------------
-    out_sr              optional dictionary, The spatial reference of the
-                        x/y coordinates returned by a geocode request. This
-                        is useful for applications using a map with a spatial
-                        reference different than that of the geocode service.
-    ---------------     ----------------------------------------------------------------
-    as_featureset       optional boolean, if True, the result set is
-                        returned as a FeatureSet object, else it is a
-                        dictionary.
-    ---------------     ----------------------------------------------------------------
-    geocoder            Optional, the geocoder to be used. If not specified,
-                        the active GIS's first geocoder is used.
-    ---------------     ----------------------------------------------------------------
-    match_out_of_range  Optional, A Boolean which specifies if StreetAddress matches should
-                        be returned even when the input house number is outside of the house
-                        number range defined for the input street.
-    ---------------     ----------------------------------------------------------------
-    location_type       Optional, Specifies if the output geometry of PointAddress matches
-                        should be the rooftop point or street entrance location. Valid values
-                        are rooftop and street.
-    ---------------     ----------------------------------------------------------------
-    search_extent       Optional, a set of bounding box coordinates that limit the search area
-                        to a specific region. The input can either be a comma-separated list of
-                        coordinates defining the bounding box or a JSON envelope object.
-    ---------------     ----------------------------------------------------------------
-    lang_code           Optional, sets the language in which geocode results are returned. See
-                        the table of supported countries for valid language code values in each
-                        country.
-    ---------------     ----------------------------------------------------------------
-    preferred_label_values
-                        Optional, allows simple configuration of output fields returned in a response
-                        from the World Geocoding Service by specifying which address component values
-                        should be included in output fields. Supports a single value or a comma-delimited
-                        collection of values as input. e.g. ='matchedCity,primaryStreet'
-    ===============     ================================================================
+                                  addresses= [{
+                                       "Address": "380 New York St.",
+                                       "City": "Redlands",
+                                       "Region": "CA",
+                                       "Postal": "92373"
+                                   },{
+                                       "Address": "1 World Way",
+                                       "City": "Los Angeles",
+                                       "Region": "CA",
+                                       "Postal": "90045"
+                                   }]
+    -------------------------     ----------------------------------------------------------------
+    source_country                optional string, The source_country parameter is
+                                  only supported by geocoders published using StreetMap
+                                  Premium locators.
+                                  Added at 10.3 and only supported by geocoders published
+                                  with ArcGIS 10.3 for Server and later versions.
+    -------------------------     ----------------------------------------------------------------
+    category                      The category parameter is only supported by geocode
+                                  services published using StreetMap Premium locators.
+    -------------------------     ----------------------------------------------------------------
+    out_sr                        optional dictionary, The spatial reference of the
+                                  x/y coordinates returned by a geocode request. This
+                                  is useful for applications using a map with a spatial
+                                  reference different than that of the geocode service.
+    -------------------------     ----------------------------------------------------------------
+    as_featureset                 optional boolean, if True, the result set is
+                                  returned as a FeatureSet object, else it is a
+                                  dictionary.
+    -------------------------     ----------------------------------------------------------------
+    geocoder                      Optional, the geocoder to be used. If not specified,
+                                  the active GIS's first geocoder is used.
+    -------------------------     ----------------------------------------------------------------
+    match_out_of_range            Optional, A Boolean which specifies if StreetAddress matches should
+                                  be returned even when the input house number is outside of the house
+                                  number range defined for the input street.
+    -------------------------     ----------------------------------------------------------------
+    location_type                 Optional, Specifies if the output geometry of PointAddress matches
+                                  should be the rooftop point or street entrance location. Valid values
+                                  are rooftop and street.
+    -------------------------     ----------------------------------------------------------------
+    search_extent                 Optional, a set of bounding box coordinates that limit the search
+                                  area to a specific region. The input can either be a comma-separated
+                                  list of coordinates defining the bounding box or a JSON envelope
+                                  object.
+    -------------------------     ----------------------------------------------------------------
+    lang_code                     Optional, sets the language in which geocode results are returned.
+                                  See the table of supported countries for valid language code values
+                                  in each country.
+    -------------------------     ----------------------------------------------------------------
+    preferred_label_values        Optional, allows simple configuration of output fields returned
+                                  in a response from the World Geocoding Service by specifying which
+                                  address component values should be included in output fields. Supports
+                                  a single value or a comma-delimited collection of values as input.
+                                  e.g. ='matchedCity,primaryStreet'
+    =========================     ================================================================
 
     :returns:
        dictionary or FeatureSet
