@@ -49,12 +49,10 @@ def _is_valid(value):
         elif 'rings' in value:
             if len(value['rings']) == 0:
                 return True
-
             return _is_polygon(coords=value['rings'])
         elif 'points' in value:
             if len(value['points']) == 0:
                 return True
-
             return _is_point(coords=value['points'])
 
     return False
@@ -96,8 +94,8 @@ def _is_point(coords):
             if not isinstance(coord, _number_type):
                 if not _is_point(coord):
                     return False
-            else:
-                valid = True
+            valid = True
+
     return valid
 
 
