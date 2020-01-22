@@ -1257,16 +1257,12 @@ def watershed(input_flow_direction_raster,
 
     Parameters
     ----------
-    :param input_flow_direction_raster: Required. The input raster that shows the direction of flow out of each cell.
-    :param input_pour_point_data: Required. The input pour point locations. For a raster, this represents cells above
+    :param input_flow_direction_raster: Required raster layer. The input raster that shows the direction of flow out of each cell.
+    :param input_pour_point_data: Required raster layer. This raster represents cells above
                             which the contributing area, or catchment, will be determined. All cells that
                             are not NoData will be used as source cells.
-                            For a point feature dataset, this represents locations above which the contributing
-                            area, or catchment, will be determined.
-    :param pour_point_field: Optional. Field used to assign values to the pour point locations. If the pour point dataset is a
-                       raster, use Value.
-                       If the pour point dataset is a feature, use a numeric field. If the field contains
-                       floating-point values, they will be truncated into integers.
+    :param pour_point_field: Optional string. Field used to assign values to the pour point locations.
+                             For a raster pour point dataset, Value is used by default.
     :return: output raster with function applied
 
     """
@@ -1611,8 +1607,8 @@ def cost_path(in_destination_data,
 
     Parameters
     ----------
-    :param in_destination_data:     Required. A raster or feature dataset that identifies those cells from which the least-cost
-                                    path is determined to the least costly source. If the input is a raster, the input
+    :param in_destination_data:     Required raster layer. A raster that identifies those cells from which the least-cost
+                                    path is determined to the least costly source. The input raster layer
                                     consists of cells that have valid values (zero is a valid value), and the remaining
                                     cells must be assigned NoData.
     :param in_cost_distance_raster: Required. The name of a cost distance raster to be used to determine the least-cost path from
@@ -1689,7 +1685,7 @@ def euclidean_direction(in_source_data,
 
     Parameters
     ----------
-    :param in_source_data:  Required. The input source locations. This is a raster or feature dataset that
+    :param in_source_data:  Required raster layer. The input source locations. This is a raster that
                             identifies the cells or locations to which the Euclidean distance for
                             every output cell location is calculated. For rasters, the input type
                             can  be integer or floating point.
@@ -1697,13 +1693,10 @@ def euclidean_direction(in_source_data,
                             exceed. If an accumulative Euclidean distance value exceeds this
                             value, the output value for the cell location will be NoData. The default
                             distance is to the edge of the output raster.
-    :param max_distance:    Optional. The cell size at which the output raster will be created. This will be the
-                            value in the environment if it is explicitly set. If it is not set in the
-                            environment, the default cell size will depend on if the input source data
-                            is a raster or a feature, as follows: If the source is raster, the output
-                            will have that same cell size. If the source is feature, the output will
-                            have a cell size determined by the shorter of the width or height of the
-                            extent of input feature, in the input spatial reference, divided by 250.
+    :param max_distance:    Optional. Defines the threshold distance within which the direction to the 
+                            closest source will be calculated. If the distance to the nearest source 
+                            exceeds this, the output for that cell will be NoData. The default distance 
+                            is to the extent of the output raster.
     :param distance_method: Optional String; Determines whether to calculate the distance using a planar (flat earth) 
                             or a geodesic (ellipsoid) method.
 
@@ -2178,7 +2171,7 @@ def path_distance_allocation(in_source_data,
     Parameters
     ----------
     :param in_source_data:  Required. The input source locations.
-                            This is a raster or feature dataset that identifies the cells or locations from or to which
+                            This is a raster that identifies the cells or locations from or to which
                             the least accumulated cost distance for every output cell location is calculated.
 
                             For rasters, the input type can be integer or floating point.
@@ -2207,7 +2200,7 @@ def path_distance_allocation(in_source_data,
 
     :param in_value_raster:  Optional. The input integer raster that identifies the zone values that should be
                              used for each input source location.
-                             For each source location (cell or feature), the value defined by the {in_value_raster} will be
+                             For each source location cell, the value defined by the {in_value_raster} will be
                              assigned to all cells allocated to the source location for the computation.
                              The value raster will take precedence over any setting for the {source_field}.
 
