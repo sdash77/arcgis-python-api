@@ -76,14 +76,19 @@ class Test_SSD(unittest.TestCase):
         ssd.average_precision_score()
         ssd.save('post_fit_ssd')
 
-        self.assertEqual(ssd._emd_template["Framework"], "arcgis.learn.models._inferencing")
-        self.assertEqual(ssd._emd_template["InferenceFunction"], "ArcGISObjectDetector.py")
-        self.assertEqual(ssd._emd_template["ModelConfiguration"], "_DynamicSSD")
-        self.assertEqual(ssd._emd_template["ImageHeight"], 300)
-        self.assertEqual(ssd._emd_template["ImageWidth"], 300)
-        self.assertEqual(ssd._emd_template["ModelType"], "ObjectDetection")
-        self.assertEqual(ssd._emd_template["ModelParameters"]["backbone"], "resnet34")
-        self.assertEqual(ssd._emd_template["SSDVersion"], 2)
+        emd_path = os.path.join(self.data2, 'models/post_fit_ssd/post_fit_ssd.emd')
+        import json
+        with open(emd_path) as f:
+            _emd_template = json.load(f)
+
+        self.assertEqual(_emd_template["Framework"], "arcgis.learn.models._inferencing")
+        self.assertEqual(_emd_template["InferenceFunction"], "ArcGISObjectDetector.py")
+        self.assertEqual(_emd_template["ModelConfiguration"], "_DynamicSSD")
+        self.assertEqual(_emd_template["ImageHeight"], 300)
+        self.assertEqual(_emd_template["ImageWidth"], 300)
+        self.assertEqual(_emd_template["ModelType"], "ObjectDetection")
+        self.assertEqual(_emd_template["ModelParameters"]["backbone"], "resnet34")
+        self.assertEqual(_emd_template["SSDVersion"], 2)
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     def test_2_load_from_model(self):

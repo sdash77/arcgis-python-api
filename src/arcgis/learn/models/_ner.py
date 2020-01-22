@@ -222,8 +222,12 @@ class EntityRecognizer(ArcGISModel):
         name_or_path            Required string. Path of the emd file.
         =====================   ===========================================
         """
-        model_path = Path(name_or_path).parent
-
+        if '\\' in name_or_path or '/' in name_or_path:
+            name_or_path=name_or_path
+            model_path = Path(name_or_path).parent
+        else:
+            model_path =  Path(self.path) /'models'/ name_or_path
+            name_or_path=Path(self.path) /'models'/ name_or_path / f'{name_or_path}.emd'
         with open(name_or_path, 'r', encoding='utf-8') as f:
             emd = f.read()
         emd = json.loads(emd)

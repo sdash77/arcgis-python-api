@@ -421,60 +421,60 @@ class ArcGISModel(object):
         """
         self.learn.unfreeze()
 
-    def _create_emd(self, path):
+    def _create_emd_template(self, path):
 
+        _emd_template = {}
+        #For old models - add lr, ModelName
         if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
-            self._emd_template = self._data.emd
-            self._emd_template["ModelFile"] = path.name
-            if not self._emd_template.get("ModelName"):
-                self._emd_template["ModelName"] = type(self).__name__
+            _emd_template = self._data.emd
+            _emd_template["ModelFile"] = path.name
+            if not _emd_template.get("ModelName"):
+                _emd_template["ModelName"] = type(self).__name__
 
-            if not self._emd_template.get("LearningRate"):
-                self._emd_template["LearningRate"] = "0.0"
+            if not _emd_template.get("LearningRate"):
+                _emd_template["LearningRate"] = "0.0"
 
-            json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
-
-            return path.stem
+            return _emd_template
 
         backbone = self._backbone.__name__
         if backbone == 'backbone_wrapper':
             backbone = self._orig_backbone.__name__
 
-        self._emd_template = self._get_emd_params()
+        _emd_template = self._get_emd_params()
 
-        self._emd_template["ModelFile"] = path.name
-        self._emd_template["ImageHeight"] = self._data.chip_size
-        self._emd_template["ImageWidth"] = self._data.chip_size
-        self._emd_template["ImageSpaceUsed"] = self._data._image_space_used
-        self._emd_template["LearningRate"] = str(self._learning_rate)
-        self._emd_template["ModelName"] = type(self).__name__
+        _emd_template["ModelFile"] = path.name
+        _emd_template["ImageHeight"] = self._data.chip_size
+        _emd_template["ImageWidth"] = self._data.chip_size
+        _emd_template["ImageSpaceUsed"] = self._data._image_space_used
+        _emd_template["LearningRate"] = str(self._learning_rate)
+        _emd_template["ModelName"] = type(self).__name__
 
-        if not self._emd_template.get("ModelParameters"):
-            self._emd_template["ModelParameters"] = {"backbone": backbone}
+        if not _emd_template.get("ModelParameters"):
+            _emd_template["ModelParameters"] = {"backbone": backbone}
         else:
-            self._emd_template["ModelParameters"]["backbone"] = backbone
+            _emd_template["ModelParameters"]["backbone"] = backbone
 
         model_metrics = self._model_metrics
 
         if model_metrics.get('accuracy'):
-            self._emd_template['accuracy'] = model_metrics.get('accuracy')
+            _emd_template['accuracy'] = model_metrics.get('accuracy')
         
         if model_metrics.get('average_precision_score'):
-            self._emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
+            _emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
 
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
             resize_to = self._data.resize_to
 
-        self._emd_template['resize_to'] = resize_to
+        _emd_template['resize_to'] = resize_to
         
         # Check if model is Multispectral and dump parameters for that
-        self._emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)
-        if self._emd_template.get("IsMultispectral", False):
-            self._emd_template["Bands"] = self._data._bands
-            self._emd_template["ImageryType"] = self._data._imagery_type
-            self._emd_template["ExtractBands"] = self._data._extract_bands
-            self._emd_template["NormalizationStats"] = {
+        _emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)
+        if _emd_template.get("IsMultispectral", False):
+            _emd_template["Bands"] = self._data._bands
+            _emd_template["ImageryType"] = self._data._imagery_type
+            _emd_template["ExtractBands"] = self._data._extract_bands
+            _emd_template["NormalizationStats"] = {
                 "band_min_values": self._data._band_min_values,
                 "band_max_values": self._data._band_max_values,
                 "band_mean_values": self._data._band_mean_values,
@@ -484,12 +484,16 @@ class ArcGISModel(object):
                 "scaled_mean_values": self._data._scaled_mean_values,
                 "scaled_std_values": self._data._scaled_std_values
             }
-            for _stat in self._emd_template["NormalizationStats"]:
-                if self._emd_template["NormalizationStats"][_stat] is not None:
-                    self._emd_template["NormalizationStats"][_stat] = self._emd_template["NormalizationStats"][_stat].tolist()
-            self._emd_template["DoNormalize"] = self._data._do_normalize
+            for _stat in _emd_template["NormalizationStats"]:
+                if _emd_template["NormalizationStats"][_stat] is not None:
+                    _emd_template["NormalizationStats"][_stat] = _emd_template["NormalizationStats"][_stat].tolist()
+            _emd_template["DoNormalize"] = self._data._do_normalize
 
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
+        return _emd_template
+
+    @staticmethod
+    def _write_emd(_emd_template, path):
+        json.dump(_emd_template, open(path, 'w'), indent=4)
 
         return path.stem
 
@@ -599,31 +603,36 @@ class ArcGISModel(object):
             self.learn.path = temp
             self.learn.model_dir = 'models'
 
+        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'))
+
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get('batch_size', 16)
 
             with nostdout():
                 self._save_as_tfonnx(saved_path, batch_size)
 
-            zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
+            self._create_tfonnx_emd_template(_emd_template, saved_path.with_suffix('.onnx'), batch_size)
             os.remove(saved_path.with_suffix('.pth'))
-        else:
-            zip_name = self._create_emd(saved_path)
+
+        ArcGISModel._write_emd(_emd_template, saved_path.with_suffix('.emd'))
+        zip_name = saved_path.stem
 
         if save_html:
             self._save_model_characteristics(saved_path.parent.absolute() / model_characteristics_folder)
             ArcGISModel._create_html(saved_path)
 
-        if self._emd_template.get('InferenceFunction', False):
-            with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
+        if _emd_template.get('InferenceFunction', False):
+            with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
                 f.write(self._code)
+
         if zip_files:
             _create_zip(str(zip_name), str(saved_path.parent))
+
         if arcgis.env.verbose:
             print('Created model files at {spp}'.format(spp=saved_path.parent))
 
         if publish:
-            self._publish_dlpk((saved_path.parent/saved_path.stem).with_suffix('.dlpk'), gis=gis)
+            self._publish_dlpk((saved_path.parent/saved_path.stem).with_suffix('.dlpk'), gis=gis, overwrite=kwargs.get('overwrite', False))
 
         return saved_path.parent
 
@@ -664,7 +673,7 @@ class ArcGISModel(object):
         if hasattr(self, '_save_confusion_matrix'):
             self._save_confusion_matrix(model_characteristics_dir)
 
-    def _publish_dlpk(self, dlpk_path, gis=None):
+    def _publish_dlpk(self, dlpk_path, gis=None, overwrite=False):
         gis_user = arcgis.env.active_gis if gis is None else gis
         if not gis_user:
             warn('No active gis user found!')
@@ -700,7 +709,7 @@ class ArcGISModel(object):
             """
 
         item = gis_user.content.add(
-            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem},
+            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem, 'overwrite':'true' if overwrite else 'false'},
             data=str(dlpk_path.absolute())
         )
 
@@ -711,23 +720,12 @@ class ArcGISModel(object):
 
         item.update(item_properties={'screenshots': screenshots})
 
-    def _create_tfonnx_emd(self, saved_path, batch_size):
-        _emd_template = self._get_tfonnx_emd_params()
-        if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
-            _emd_template = self._data.emd
-            _emd_template["ModelFile"] = saved_path.name
-            if not _emd_template.get("ModelName"):
-                _emd_template["ModelName"] = type(self).__name__
+    def _create_tfonnx_emd_template(self, _emd_template, saved_path, batch_size):
+        _emd_template.update(self._get_tfonnx_emd_params())
+        _emd_template['BatchSize'] = batch_size
+        _emd_template["ModelFile"] = saved_path.name
 
-            if not _emd_template.get("LearningRate"):
-                _emd_template["LearningRate"] = "0.0"
-        else:
-            _emd_template['BatchSize'] = batch_size
-
-        self._emd_template = _emd_template
-        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
-
-        return saved_path.stem
+        return _emd_template
 
     def _get_tfonnx_emd_params(self):
         # Raises error if framework specified is TF-ONNX but is not supported by the model
@@ -771,6 +769,10 @@ class ArcGISModel(object):
         ---------------------   -------------------------------------------
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
+        ---------------------   -------------------------------------------
+        kwargs                  Optional Parameters:
+                                Boolean `overwrite` if True, it will overwrite
+                                the item on ArcGIS Online/Enterprise, default False.                                
         =====================   ===========================================
         """        
         return self._save(name_or_path, framework=framework, publish=publish, gis=gis, **kwargs)

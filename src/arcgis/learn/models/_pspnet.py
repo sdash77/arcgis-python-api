@@ -166,7 +166,7 @@ class PSPNetClassifier(ArcGISModel):
 
     def _psp_loss(self, outputs, targets):
         targets = targets.squeeze(1).detach()
-        criterion = nn.CrossEntropyLoss().cuda()
+        criterion = nn.CrossEntropyLoss().to(self._device)
 
         if self.learn.model.training: # returns a tuple of aux_logits and main_logits while training
             out = outputs[0]

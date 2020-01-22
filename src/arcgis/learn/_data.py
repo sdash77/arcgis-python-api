@@ -384,11 +384,26 @@ def prepare_data(path,
             emd = json.load(f)
 
         # Create Class Mapping from EMD if not specified by user
-        if class_mapping is None:
-            try:
-                class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
-            except KeyError:
-                class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
+        ## Validate user defined class_mapping keys with emd (issue #3064)
+        # Get classmapping from emd file.
+        try:
+            emd_class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+        except KeyError:
+            emd_class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
+
+        ## Change all keys to int.
+        if class_mapping is not None:
+            class_mapping = {int(key):value for key, value in class_mapping.items()}
+        else:
+            class_mapping = {}
+
+        ## Map values from user defined classmapping to emd classmapping.
+        for key, _ in emd_class_mapping.items():
+            if class_mapping.get(key) is not None:
+                emd_class_mapping[key] = class_mapping[key]
+            
+        class_mapping = emd_class_mapping
+
 
         color_mapping = {(i.get('Value', 0) or i.get('ClassValue', 0)): i['Color'] for i in emd.get('Classes', [])}
 
