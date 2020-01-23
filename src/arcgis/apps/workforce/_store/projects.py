@@ -500,9 +500,13 @@ def _v2_create_service_with_layers(gis, folder_name, service_name, assignments_l
     for layer_def in layer_defs:
         if layer_def["type"] != "Table":
             layer_def["extent"] = default_extent
-        feature_layer_collection.manager.add_to_definition({
-            "layers": [layer_def]
-        })
+            feature_layer_collection.manager.add_to_definition({
+                "layers": [layer_def]
+            })
+        else:
+            feature_layer_collection.manager.add_to_definition({
+                "tables": [layer_def]
+            })
 
         # enabled editor tracking
     feature_layer_collection.manager.update_definition({

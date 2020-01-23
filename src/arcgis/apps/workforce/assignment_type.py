@@ -46,7 +46,7 @@ class AssignmentType(FeatureModel):
         return self.name
 
     def __repr__(self):
-        return "<AssignmentType {}>".format(self.code)
+        return "<AssignmentType {}>".format(self.name)
 
     def update(self, name=None):
         """
