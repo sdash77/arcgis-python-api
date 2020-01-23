@@ -40,7 +40,7 @@ def query_dispatchers(project, where):
         :param where: An ArcGIS where clause.
         :returns: list of Dispatchers
     """
-    features = project.dispatchers_layer.query(where, return_all_records=True).features
+    features = project.dispatchers_layer.query(where, return_all_freatures=True).features
     return [workforce.Dispatcher(project, feature) for feature in features]
 
 

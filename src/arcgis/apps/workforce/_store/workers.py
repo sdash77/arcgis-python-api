@@ -40,7 +40,7 @@ def query_workers(project, where):
         :param where: An ArcGIS where clause.
         :returns: list of Workers
     """
-    worker_features = project.workers_layer.query(where, return_all_records=True).features
+    worker_features = project.workers_layer.query(where, return_all_freatures=True).features
     return [workforce.Worker(project, feature) for feature in worker_features]
 
 
