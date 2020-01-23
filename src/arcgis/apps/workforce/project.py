@@ -80,7 +80,7 @@ class Project:
         return self.title
 
     def __repr__(self):
-        return "<Project {}>".format(self.id)
+        return "<Project {}>".format(self.title)
 
     def delete(self):
         """

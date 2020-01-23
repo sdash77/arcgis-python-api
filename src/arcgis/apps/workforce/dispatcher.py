@@ -44,7 +44,7 @@ class Dispatcher(FeatureModel):
 
     def __repr__(self):
         if self.project._is_v2_project:
-            return "<Dispatcher {}>".format(self.global_id)
+            return "<Dispatcher {}>".format(self.name)
         else:
             return "<Dispatcher {}>".format(self.object_id)
 
