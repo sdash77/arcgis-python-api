@@ -104,6 +104,7 @@ class Project:
         self.worker_webmap.item.delete()
         self._item.protect(False)
         self._item.delete()
+        self.group.protected = False
         self.group.delete()
         for folder in self.gis.users.get(owner).folders:
             if folder['id'] == self._item_data['folderId']:
