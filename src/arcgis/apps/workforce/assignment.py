@@ -257,7 +257,7 @@ class Assignment(FeatureModel):
 
     @property
     def assignment_type_code(self):
-        return self._feature.attributes.get(self._schema.assignment_type)
+        return self._feature.attributes.get(self._schema.assignment_type).upper()
 
     @property
     def assignment_type(self):

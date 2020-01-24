@@ -93,13 +93,11 @@ class Project:
         if self._supports_tracks:
             self.tracks_item.protect(False)
             self.tracks_item.delete()
-        self.workers_item.protect(False)
-        self.workers_item.delete()
-        self.dispatchers_item.protect(False)
-        self.dispatchers_item.delete()
-        if self._is_v2_project:
-            self.assignment_types_item.protect(False)
-            self.assignment_types_item.delete()
+        if not self._is_v2_project:
+            self.workers_item.protect(False)
+            self.workers_item.delete()
+            self.dispatchers_item.protect(False)
+            self.dispatchers_item.delete()
         self.dispatcher_webmap.item.protect(False)
         self.dispatcher_webmap.item.delete()
         self.worker_webmap.item.protect(False)
