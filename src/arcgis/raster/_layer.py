@@ -3125,6 +3125,8 @@ class ImageryLayer(Layer):
                     output_type="Polygon",
                     simplify=True,
                     output_name=None,
+                    create_multipart_features=False,
+                    max_vertices_per_feature=None,
                     *,
                     gis=None,
                     future=False,
@@ -3136,24 +3138,51 @@ class ImageryLayer(Layer):
         applying raster functions at source resolution across the extent of the raster
         and performing a raster to features conversion.
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        field                 optional string. numerical or a string field on the input layer
-                              that will be used for the conversion
-        -----------------     --------------------------------------------------------------------
-        output_type           string, type of output. Point, Line or Polygon
-        -----------------     --------------------------------------------------------------------
-        simplify              boolean, specify if features will be smoothed out
-        -----------------     --------------------------------------------------------------------
-        output_name           string, name of output feature layer
-        -----------------     --------------------------------------------------------------------
-        gis                   optional arcgis.gis.GIS object. The GIS to be used for saving the
-                              output. The GIS must have Raster Analytics capability.
-        -----------------     --------------------------------------------------------------------
-        future                Optional boolean. If True, the result will be a GPJob object and
-                              results will be returned asynchronously. Keyword only parameter.
-        =================     ====================================================================
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field                                    Optional string - field that specifies which value will be used for the conversion.
+                                                 It can be any integer or a string field.
+
+                                                 A field containing floating-point values can only be used if the output is to a point dataset.
+
+                                                 Default is "Value"
+        ------------------------------------     --------------------------------------------------------------------
+        output_type                              Optional string.
+
+                                                 One of the following: ['Point', 'Line', 'Polygon']
+        ------------------------------------     --------------------------------------------------------------------
+        simplify                                 Optional bool, This option that specifies how the features should be smoothed. It is 
+                                                 only available for line and polygon output.
+
+                                                 True, then the features will be smoothed out. This is the default.
+
+                                                 if False, then The features will follow exactly the cell boundaries of the raster dataset.
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              Optional. If not provided, an Feature layer is created by the method and used as the output 
+        .
+                                                 You can pass in an existing Feature Service Item from your GIS to use that instead.
+
+                                                 Alternatively, you can pass in the name of the output Feature Service that should be created by this method
+                                                 to be used as the output for the tool.
+
+                                                 A RuntimeError is raised if a service by that name already exists
+        ------------------------------------     --------------------------------------------------------------------
+        create_multipart_features                Optional boolean. Specifies whether the output polygons will consist of 
+                                                 single-part or multipart features.
+
+                                                 True: Specifies that multipart features will be created based on polygons that have the same value.
+
+                                                 False: Specifies that individual features will be created for each polygon. This is the default.
+        ------------------------------------     --------------------------------------------------------------------
+        max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons. 
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      Optional GIS object. If not speficied, the currently active connection
+                                                 is used.
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                                 results will be returned asynchronously.
+        ====================================     ====================================================================
 
         :return:  converted feature layer item
 
@@ -3161,16 +3190,24 @@ class ImageryLayer(Layer):
         g = _arcgis.env.active_gis if gis is None else gis
 
         from arcgis.raster.analytics import convert_raster_to_feature
-        input_raster_dict=None
-        if "url" in self._lyr_dict:
-            url = self._lyr_dict["url"]
-        if "serviceToken" in self._lyr_dict:
-            url = url+"?token="+ self._lyr_dict["serviceToken"]
-        if self._fnra is None:
-            return convert_raster_to_feature(url, field, output_type, simplify, output_name, gis=g,future=future, **kwargs)
-        fnarg_ra = self._fnra['rasterFunctionArguments']
-        fnarg = self._fn
-        return convert_raster_to_feature({"url":url,"renderingRule":self._fn}, field, output_type, simplify, output_name, gis=g,future=future,  **kwargs)
+        #input_raster_dict=None
+        #if "url" in self._lyr_dict:
+        #    url = self._lyr_dict["url"]
+        #if "serviceToken" in self._lyr_dict:
+        #    url = url+"?token="+ self._lyr_dict["serviceToken"]
+        #if self._fnra is None:
+        #    return convert_raster_to_feature(url, field, output_type, simplify, output_name, gis=g,future=future, **kwargs)
+        #fnarg_ra = self._fnra['rasterFunctionArguments']
+        #fnarg = self._fn
+        return convert_raster_to_feature(self, 
+                                         field, 
+                                         output_type, 
+                                         simplify, 
+                                         output_name, 
+                                         create_multipart_features=create_multipart_features,  
+                                         max_vertices_per_feature=max_vertices_per_feature,
+                                         gis=g,future=future,  
+                                         **kwargs)
 
 
     def draw_graph(self,show_attributes=False,graph_size="14.25, 15.25"):

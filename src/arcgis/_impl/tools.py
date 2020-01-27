@@ -5944,6 +5944,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                   output_type="Point",
                                   simplify_lines_or_polygons=True,
                                   context=None,
+                                  create_multipart_features=False,
+                                  max_vertices_per_feature=None,
                                   future=False,
                                   **kwargs):
         """
@@ -6021,14 +6023,28 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             output_name = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
                                            "itemProperties": {"itemId": output_service.itemid}})
-        gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
-                                                    output_name=output_name,
-                                                    field=field,
-                                                    output_type=output_type,
-                                                    simplify_lines_or_polygons=simplify_lines_or_polygons,
-                                                    context=context,
-                                                    gis=self._gis,
-                                                    future=True)
+
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
+            gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
+                                                        output_name=output_name,
+                                                        field=field,
+                                                        output_type=output_type,
+                                                        simplify_lines_or_polygons=simplify_lines_or_polygons,
+                                                        context=context,
+                                                        gis=self._gis,
+                                                        future=True)
+
+        else:
+            gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
+                                                        output_name=output_name,
+                                                        field=field,
+                                                        output_type=output_type,
+                                                        simplify_lines_or_polygons=simplify_lines_or_polygons,
+                                                        create_multipart_features=create_multipart_features,
+                                                        max_vertices_per_feature=max_vertices_per_feature,
+                                                        context=context,
+                                                        gis=self._gis,
+                                                        future=True)
         gpjob._is_ra = True
         gpjob._return_item = output_service
         gpjob._item_properties = True
