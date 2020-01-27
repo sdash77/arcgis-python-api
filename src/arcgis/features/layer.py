@@ -2066,6 +2066,7 @@ class FeatureLayer(Layer):
         dtypes = None
         geom = None
         names = None
+        dfields = []
         rows = [feature_to_row(row, sr) \
                 for row in featureset_dict['features']]
         if len(rows) == 0:
@@ -2079,9 +2080,12 @@ class FeatureLayer(Layer):
                 if fld['type'] != "esriFieldTypeGeometry":
                     dtypes[fld['name']] = _fld_lu[fld['type']]
                     names.append(fld['name'])
+                if fld['type'] == 'esriFieldTypeDate':
+                    dfields.append(fld['name'])
         if 'SHAPE' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
-
+        if len(dfields) > 0:
+            df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
         return df
 
 
