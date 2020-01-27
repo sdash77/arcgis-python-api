@@ -67,7 +67,7 @@ def update_dispatcher(project, dispatcher, contact_number=None, name=None, user_
         dispatcher.contact_number = contact_number
     if name:
         dispatcher.name = name
-    if user_id:
+    if user_id and dispatcher.user_id != project.owner_user_id:
         dispatcher.user_id = user_id
     return update_dispatchers(project, [dispatcher])[0]
 
