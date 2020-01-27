@@ -44,7 +44,7 @@ def get_available_device(max_memory=0.8):
 
     GPUs = GPUtil.getGPUs()
     freeMemory = 0
-    available=-1
+    available = 0
     for GPU in GPUs:
         if GPU.memoryUtil > max_memory:
             continue
@@ -293,7 +293,7 @@ def get_available_device(max_memory=0.8):
 
     GPUs = GPUtil.getGPUs()
     freeMemory = 0
-    available=-1
+    available = 0
     for GPU in GPUs:
         if GPU.memoryUtil > max_memory:
             continue
@@ -611,7 +611,7 @@ def get_available_device(max_memory=0.8):
 
     GPUs = GPUtil.getGPUs()
     freeMemory = 0
-    available=-1
+    available = 0
     for GPU in GPUs:
         if GPU.memoryUtil > max_memory:
             continue
@@ -876,7 +876,7 @@ def get_available_device(max_memory=0.8):
 
     GPUs = GPUtil.getGPUs()
     freeMemory = 0
-    available=-1
+    available = 0
     for GPU in GPUs:
         if GPU.memoryUtil > max_memory:
             continue
