@@ -499,7 +499,7 @@ class Assignment(FeatureModel):
     @property
     def worker_id(self):
         """Gets the worker id of the assignment"""
-        if self.project._is_v2_project:
+        if self.project._is_v2_project and self.worker is not None:
             return self._feature.attributes.get(self._schema.worker_id).upper()
         else:
             return self._feature.attributes.get(self._schema.worker_id)
