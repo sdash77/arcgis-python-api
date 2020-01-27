@@ -7,7 +7,7 @@ from arcgis.gis import *
 from arcgis.features import *
 
 import six
-from six.moves.urllib_parse import urlencode
+from urllib.parse import urlencode
 
 
 class StreamLayer(Layer):

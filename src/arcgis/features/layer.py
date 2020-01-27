@@ -1185,7 +1185,7 @@ class FeatureLayer(Layer):
         params = {
             "f" : "json"
         }
-        if not isinstance(sql, six.string_types):
+        if not isinstance(sql, str):
             raise ValueError("sql must be a string")
         else:
             params['sql'] = sql

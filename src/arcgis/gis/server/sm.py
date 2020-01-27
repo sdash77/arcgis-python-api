@@ -224,7 +224,7 @@ class ServerManager(object):
         else:
             function = functions[str(function).lower()]
         server_id = None
-        from six.moves.urllib.parse import urlparse
+        from urllib.parse import urlparse
         b = urlparse(url=server._admin_url).netloc.lower()
         for s in self._server_info:
             if b == urlparse(s['adminUrl'].lower()).netloc:

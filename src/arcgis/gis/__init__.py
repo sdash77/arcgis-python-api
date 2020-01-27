@@ -22,12 +22,13 @@ import logging
 
 from urllib.error import  HTTPError
 
-import arcgis._impl.portalpy as portalpy
+#from ._impl import _portalpy as portalpy#import arcgis.gis._impl._portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
-from arcgis._impl.connection import _is_http_url
+from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
+from ._impl import _portalpy
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -228,7 +229,7 @@ class GIS(object):
         self._proxy_host = kwargs.pop('proxy_host', None)
         self._proxy_port = kwargs.pop('proxy_port', 80)
         self._referer = kwargs.pop('referer', None)
-
+        custom_auth = kwargs.pop('custom_auth', None)
         from arcgis._impl.tools import _Tools
         if profile is not None and \
            len(profile) == 0:
@@ -297,23 +298,24 @@ class GIS(object):
         if self._url.lower() == "home":
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
-
+        #from ._impl import _portalpy as portalpy
         try:
-            self._portal = portalpy.Portal(self._url, self._username,
+            self._portal = _portalpy.Portal(self._url, self._username,
                                            self._password, self._key_file,
                                            self._cert_file,
                                            proxy_host=self._proxy_host,
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id,
-                                           referer=self._referer)
+                                           referer=self._referer,
+                                           custom_auth=custom_auth)
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
-                self._portal.con._auth = "BUILTIN"
+                self._portal.con._auth = "HOME"
 
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -326,7 +328,7 @@ class GIS(object):
             if url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in and \
                self._portal.con._auth.lower() == 'oauth':
-                from six.moves.urllib_parse import urlparse
+                from urllib.parse import urlparse
                 props = self._portal.get_properties(force=False)
                 url = "%s://%s.%s" % (urlparse(self._url).scheme,
                                       props['urlKey'],
@@ -340,13 +342,13 @@ class GIS(object):
                     self._portal.con._token = None
             elif url.lower().find("arcgis.com") > -1 and \
                  self._portal.is_logged_in:
-                from six.moves.urllib_parse import urlparse
+                from urllib.parse import urlparse
                 props = self._portal.get_properties(force=False)
                 url = "%s://%s.%s" % (urlparse(self._url).scheme,
                                       props['urlKey'],
                                       props['customBaseUrl'])
                 self._url = url
-                pp =  portalpy.Portal(url,
+                pp =  _portalpy.Portal(url,
                                       self._username,
                                       self._password,
                                       self._key_file,
@@ -355,14 +357,17 @@ class GIS(object):
                                       client_id=self._client_id,
                                       proxy_port=self._proxy_port,
                                       proxy_host=self._proxy_host,
-                                      referer=self._referer)
+                                      referer=self._referer,
+                                      custom_auth=custom_auth)
                 self._portal = pp
         except: pass
 
         force_refresh = False
-        if not (self._utoken is None):
+        if not (self._utoken is None) and self._portal.con._auth != "HOME":
             self._portal.con._token = self._utoken
             self._portal.con._auth = "BUILTIN"
+            force_refresh = True
+        elif self._portal.con._auth == "HOME":
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
@@ -5754,7 +5759,6 @@ class Group(dict):
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
-        isinstance(self._portal, portalpy.Portal)
         resp = self._portal.update_group(self.groupid, title, tags,
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
@@ -7142,7 +7146,8 @@ class Item(dict):
                 try:
                     with _DisableLogger():
                         self._populate_layers()
-                except:
+                except Exception as e:
+                    print(e)
                     pass
                 return self['layers']
         elif name == 'tables':
@@ -8220,7 +8225,7 @@ class Item(dict):
             print()
         else:
             return None
-        if isinstance(self._gis._portal, portalpy.Portal) and \
+        if isinstance(self._gis._portal, _portalpy.Portal) and \
            self._gis._portal.is_arcgisonline:
             tbx = Toolbox(url=gp_url)
         else:
@@ -9992,8 +9997,7 @@ class _GISResource(object):
     """
     def __init__(self, url, gis=None):
 
-        from .server._common import ServerConnection
-        from .._impl.connection import _ArcGISConnection
+        from ._impl._con import Connection
         self._hydrated = False
         self.url = url
         self._url = url
@@ -10004,7 +10008,7 @@ class _GISResource(object):
             self._con = gis._con
         else:
             self._gis = gis
-            if isinstance(gis, (ServerConnection, _ArcGISConnection)):
+            if isinstance(gis, Connection):
                 self._con = gis
             else:
                 self._con = gis._con
@@ -10018,16 +10022,16 @@ class _GISResource(object):
     def _refresh(self):
         params = {"f": "json"}
         if type(self).__name__ == 'ImageryLayer':
-            if hasattr(self, "_uri"):
-                if self._uri:
-                    params["Raster"] = self._uri
             if self._fn is not None:
                 params['renderingRule'] = self._fn
+            if hasattr(self, "_uri"):
+                if isinstance(self._uri, bytes):
+                    if 'renderingRule' in params.keys():
+                        del params['renderingRule']
+                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
-            dictdata = self._con.get(self.url, params, token=self._lazy_token)
-        elif type(self).__name__ == 'ImageryLayer':
-            dictdata = self._con.post(self.url, params, token=self._lazy_token)
+            dictdata = self._con.get(self.url, params, token=self._lazy_token)        
         else:
             try:
                 dictdata = self._con.post(self.url, params, token=self._lazy_token)
@@ -10060,11 +10064,12 @@ class _GISResource(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                if self._con._token is None:
-                    self._lazy_token = None
+                if self._con.token is None:
+                    self._lazy_token = self._lazy_token = self._con.generate_portal_server_token(serverUrl=self.url)
                 else:
-                    if isinstance(self._con, arcgis._impl._ArcGISConnection):
-                        self._lazy_token = self._con.generate_portal_server_token(self._url)
+                    from ._impl._con import Connection
+                    if isinstance(self._con, Connection):
+                        self._lazy_token = self._con.generate_portal_server_token(serverUrl=self._url)
                     else:
                         self._lazy_token = self._con.token
 
@@ -10087,6 +10092,20 @@ class _GISResource(object):
                         # try token in the provided gis
                         self._lazy_token = self._con.token
                         self._refresh()
+            except:
+                try:
+                    # try as a public server
+                    self._lazy_token = None
+                    self._refresh()
+            
+                except HTTPError as httperror:
+                    _log.error(httperror)
+                    err = httperror
+                except RuntimeError as e:
+                    if 'Token Required' in e.args[0]:
+                        # try token in the provided gis
+                        self._lazy_token = self._con.token
+                        self._refresh()                
 
         if err is not None:
             raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)
