@@ -82,7 +82,7 @@ class AssignmentType(FeatureModel):
         if not self.project._is_v2_project:
             return self._coded_value['code']
         else:
-            return self._feature.attributes.get(self._schema.global_id)
+            return self._feature.attributes.get(self._schema.global_id).upper()
 
     @property
     def name(self):

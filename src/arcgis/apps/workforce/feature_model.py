@@ -28,7 +28,7 @@ class FeatureModel(Model):
     def id(self):
         """The object (version 1) or global id (version 2) of the feature"""
         if self.project._is_v2_project:
-            return self.global_id
+            return self.global_id.upper()
         else:
             return self.object_id
 

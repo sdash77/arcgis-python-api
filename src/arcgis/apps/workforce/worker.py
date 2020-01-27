@@ -58,10 +58,7 @@ class Worker(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        if self.project._is_v2_project:
-            return "<Worker {}>".format(self.global_id)
-        else:
-            return "<Worker {}>".format(self.object_id)
+        return "<Worker {}>".format(self.id)
 
     def update(self, geometry=None, contact_number=None,
                  name=None, notes=None, status=None, title=None, user_id=None):
@@ -199,11 +196,7 @@ class Worker(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        if self.project._is_v2_project:
-            id = self.global_id
-        else:
-            id = self.object_id
-        assignments = _store.query_assignments(self.project, "{} = '{}'".format(self.project._assignment_schema.worker_id, id))
+        assignments = _store.query_assignments(self.project, "{} = '{}'".format(self.project._assignment_schema.worker_id, self.id))
         if assignments:
             errors.append(ValidationError("Cannot remove a Worker that has assignments", self))
         return errors
