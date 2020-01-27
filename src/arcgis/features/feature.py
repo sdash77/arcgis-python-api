@@ -893,8 +893,10 @@ class FeatureSet(object):
                         if part_item:
                             part_list.append([part_item])
                     geometry["rings"] = part_list[0]
-            elif geo_type in ["LineString", "MultiPoint"]:
-                geometry = geom
+            elif geo_type == "MultiPoint":
+                geometry["points"] = [c[:] for c in geom["coordinates"]]
+            elif geo_type == "LineString":
+                geometry["paths"] = [[c[:] for c in geom["coordinates"]]]
             elif geo_type == "MultiLineString":
                 if HASARCPY == 'rem':
                     geom = arcpy.AsShape(geom)

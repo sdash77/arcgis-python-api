@@ -271,6 +271,8 @@ class Portal(object):
         commentsEnabled   optional boolean.  Default is true.  Controls whether comments are allowed.
         ----------------  ----------------------------------------------------------------------------
         culture           optional string.  Language and country information.
+        ----------------  ----------------------------------------------------------------------------
+        overwrite         Optional boolean. Default is `false`. Controls whether item can be overwritten.
         ================  ============================================================================
 
 

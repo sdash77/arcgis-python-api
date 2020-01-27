@@ -3325,6 +3325,8 @@ class ContentManager(object):
                            or not allowed (false).
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Language and country information.
+        -----------------   ----------------------------------------------------------------------------
+        overwrite          Optional boolean. Default is `false`. Controls whether item can be overwritten.
         =================  =====================================================================
 
 

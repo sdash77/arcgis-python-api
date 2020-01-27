@@ -9,7 +9,7 @@ except:
 from pathlib import Path
 import json,random,os,tempfile,logging
 
-__all__=["_from_bio_tags","_from_json","ner_prepare_data","_create_zip"]
+__all__=["_from_iob_tags","_from_json","ner_prepare_data","_create_zip"]
 
 def _raise_spacy_import_error():
     raise Exception('This module requires pandas and spacy version 2.1.8. Install it using \"pip install pandas spacy==2.1.8\"')
@@ -26,9 +26,9 @@ def _create_zip(zipname, path):
     shutil.move(zip_file, path)
 
 
-def _from_bio_tags(tokens_collection, tags_collection):
+def _from_iob_tags(tokens_collection, tags_collection):
     """
-    Converts training data from ``BIO`` format to spacy offsets.
+    Converts training data from ``IOB`` format to spacy offsets.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -106,7 +106,7 @@ def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    dataset_type            Required string. ['ner_json', 'BIO', 'LBIOU']
+    dataset_type            Required string. ['ner_json', 'IOB', 'BILUO']
     ---------------------   -------------------------------------------
     address_tag             Optional dict. Address field/tag name 
                             in the training data.
@@ -133,7 +133,7 @@ def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
     if dataset_type == 'ner_json':
         train_data = _from_json(path=path)
         path=path.parent
-    elif dataset_type == 'BIO':
+    elif dataset_type == 'BIO' or dataset_type == 'IOB':
         tags_collection = []
         tokens_collection = []
         tags_df = pd.read_csv(path/'tags.csv')
@@ -145,21 +145,37 @@ def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
         for i,tokens in tokens_df.iterrows():
             tokens_collection.append(list(tokens.dropna()))
 
-        train_data = _from_bio_tags(tags_collection=tags_collection, tokens_collection=tokens_collection)
-    elif dataset_type == 'LBIOU':
+        train_data = _from_iob_tags(tags_collection=tags_collection, tokens_collection=tokens_collection)
+    elif dataset_type == 'LBIOU' or dataset_type == 'BILUO':
 
         tags_collection = []
         tokens_collection = []
         tags_df = pd.read_csv(path/'tags.csv')
         tokens_df = pd.read_csv(path/'tokens.csv')
-        
+        train_data = []
+
         for i,tags in tags_df.iterrows():
             tags_collection.append(list(tags.dropna()))
         
         for i,tokens in tokens_df.iterrows():
             tokens_collection.append(list(tokens.dropna()))
-        train_data = _offsets_from_biluo_tags(tags=tags_collection, tokens=tokens_collection)
-    # return train_data
+    
+        nlp=spacy.blank('en')
+        train_data = [] 
+        for tags, tokens in zip(tags_collection, tokens_collection):
+            try:
+                tags = _iob_to_biluo(tags)
+
+                doc = spacy.tokens.doc.Doc(
+                nlp.vocab, words = tokens, spaces = [True]*(len(tokens)-1)+[False])
+                # run the standard pipeline against it
+                for name, proc in nlp.pipeline:
+                    doc = proc(doc) 
+                text=' '.join(tokens)
+                tags = _offsets_from_biluo_tags(doc, tags)
+                train_data.append((text,{'entities':tags}))
+            except:
+                pass        
     data=DatabunchNER(train_data, val_split_pct=val_split_pct, address_tag=address_tag, test_ds=None)
     data.path=path
     return data

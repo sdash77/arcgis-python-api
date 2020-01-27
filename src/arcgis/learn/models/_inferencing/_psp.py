@@ -165,9 +165,9 @@ class ChildImageClassifier:
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.padding = int(scalars['padding'])
-        self.batch_size = int(scalars['batch_size'])
-        self.predict_background = scalars['predict_background'].lower() in ['true', '1', 't', 'y', 'yes']
+        self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
+        self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size 
+        self.predict_background = scalars.get('predict_background', 'true').lower() in ['true', '1', 't', 'y', 'yes']  ## Default value True
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
@@ -175,7 +175,7 @@ class ChildImageClassifier:
 
         return {
             'extractBands': tuple(self.json_info['ExtractBands']),
-            'padding': int(scalars['padding']),
+            'padding': self.padding,
             'tx': tx,
             'ty': ty,
             'fixedTileSize': 1
@@ -192,7 +192,7 @@ class ChildImageClassifier:
                                     batch_height=self.rectangle_height,
                                     batch_width=self.rectangle_width)
 
-        semantic_predictions = util.pixel_classify_image(self.model, batch, self.device, classes=[clas['Name'] for clas in self.json_info['Classes']], predict_bg=self.predict_background)
+        semantic_predictions = util.pixel_classify_image(self.model, batch, self.device, classes=[clas['Name'] for clas in self.json_info['Classes']], predict_bg=self.predict_background, model_info=self.json_info)
         semantic_predictions = batch_to_tile(semantic_predictions.unsqueeze(dim=1).cpu().numpy(), batch_height, batch_width)
         return semantic_predictions
 

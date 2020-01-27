@@ -14,6 +14,22 @@ std  = 255* np.array(imagenet_stats[1], dtype=np.float32)
 norm = lambda x: (x-mean)/ std
 denorm = lambda x: x * std + mean
 
+def scale_batch(image_batch, model_info, normalization_stats=None):
+    if normalization_stats is None:
+        normalization_stats = model_info.get("NormalizationStats", None)
+    band_min_values = np.array(normalization_stats["band_min_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
+    band_max_values = np.array(normalization_stats["band_max_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
+    img_scaled = ( image_batch - band_min_values ) / ( band_max_values - band_min_values)
+    return img_scaled
+
+def normalize_batch(image_batch, model_info=None, normalization_stats=None):
+    if normalization_stats is None:
+        normalization_stats = model_info.get("NormalizationStats", None)
+    scaled_mean_values = np.array(normalization_stats["scaled_mean_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
+    scaled_std_values = np.array(normalization_stats["scaled_std_values"])[model_info['ExtractBands']].reshape(1, -1, 1, 1)
+    img_scaled = scale_batch(image_batch, model_info)
+    img_normed = ( img_scaled - scaled_mean_values ) / scaled_std_values
+    return img_normed
 
 def pred2dict(bb_np, score, cat_str, c):
     # convert to top left x,y bottom right x,y
@@ -39,7 +55,7 @@ def load_weights(m, p):
 
 def predict_(model, images, device):
     model = model.to(device)
-    images = tensor(images).to(device)
+    images = tensor(images).to(device).float()
     clas, bbox = model(images)
     return clas, bbox
     
@@ -153,12 +169,14 @@ def predictions(bbox, clas=None, prs=None, thresh=0.3, classes=None): # FIX- tak
             predictions.append(pred2dict(bb_np, score, cat_str, c))
     return predictions
 
-def detect_objects_image_space(model, tiles, anchors, grid_sizes, device, classes, nms_overlap, thres):
+def detect_objects_image_space(model, tiles, anchors, grid_sizes, device, classes, nms_overlap, thres, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    img_normed = norm(tiles.transpose(0,2,3,1))
+    if "NormalizationStats" in model_info:
+        img_normed = normalize_batch(tiles, model_info)
+    else:
+        img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
 
-
-    clas, bbox = predict_(model, img_normed.transpose(0, 3, 1, 2), device)
+    clas, bbox = predict_(model, img_normed, device)
 
     preds = { }
 
@@ -201,15 +219,10 @@ def segment_image(model, images, device, predict_bg):
         return output[:, 1:].max(dim=1)[1]
     
 
-def pixel_classify_image(model, tiles, device, classes, predict_bg, normalization_stats=None):
+def pixel_classify_image(model, tiles, device, classes, predict_bg, model_info):
     tile_height, tile_width = tiles.shape[2], tiles.shape[3]
-    if normalization_stats is not None: # Torch Tensors
-        band_min_values = np.array(normalization_stats["band_min_values"]).reshape(1, -1, 1, 1)
-        band_max_values = np.array(normalization_stats["band_max_values"]).reshape(1, -1, 1, 1)
-        scaled_mean_values = np.array(normalization_stats["scaled_mean_values"]).reshape(1, -1, 1, 1)
-        scaled_std_values = np.array(normalization_stats["scaled_std_values"]).reshape(1, -1, 1, 1)
-        img_scaled = ( tiles - band_min_values ) / ( band_max_values - band_min_values)
-        img_normed = ( img_scaled - scaled_mean_values ) / scaled_std_values
+    if "NormalizationStats" in model_info:
+        img_normed = normalize_batch(tiles, model_info)
     else:
         img_normed = norm(tiles.transpose(0, 2, 3, 1)).transpose(0, 3, 1, 2)
     semantic_predictions = segment_image(model, img_normed, device, predict_bg)
