@@ -43,10 +43,7 @@ class Dispatcher(FeatureModel):
         return "{} ({})".format(self.name, self.user_id)
 
     def __repr__(self):
-        if self.project._is_v2_project:
-            return "<Dispatcher {}>".format(self.name)
-        else:
-            return "<Dispatcher {}>".format(self.object_id)
+        return "<Dispatcher {}>".format(self.name)
 
     def update(self, contact_number=None, name=None, user_id=None):
         """
@@ -114,11 +111,7 @@ class Dispatcher(FeatureModel):
 
     def _validate_for_remove(self, **kwargs):
         errors = super()._validate_for_remove(**kwargs)
-        if self.project._is_v2_project:
-            id = self.global_id
-        else:
-            id = self.object_id
-        where = "{} = '{}'".format(self.project._assignment_schema.dispatcher_id,id)
+        where = "{} = '{}'".format(self.project._assignment_schema.dispatcher_id,self.id)
         assignments = workforce._store.query_assignments(self.project, where=where)
         if assignments:
             errors.append(ValidationError("Cannot remove a Dispatcher that has assignments", self))

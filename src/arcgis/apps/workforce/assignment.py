@@ -257,7 +257,10 @@ class Assignment(FeatureModel):
 
     @property
     def assignment_type_code(self):
-        return self._feature.attributes.get(self._schema.assignment_type).upper()
+        if self.project._is_v2_project:
+            return self._feature.attributes.get(self._schema.assignment_type).upper()
+        else:
+            return self._feature.attributes.get(self._schema.assignment_type)
 
     @property
     def assignment_type(self):
@@ -326,7 +329,10 @@ class Assignment(FeatureModel):
     @property
     def dispatcher_id(self):
         """Gets the dispatcher id of the assignment"""
-        return self._feature.attributes.get(self._schema.dispatcher_id)
+        if self.project._is_v2_project:
+            return self._feature.attributes.get(self._schema.dispatcher_id).upper()
+        else:
+            return self._feature.attributes.get(self._schema.dispatcher_id)
 
     @property
     def dispatcher(self):
@@ -493,7 +499,10 @@ class Assignment(FeatureModel):
     @property
     def worker_id(self):
         """Gets the worker id of the assignment"""
-        return self._feature.attributes.get(self._schema.worker_id)
+        if self.project._is_v2_project:
+            return self._feature.attributes.get(self._schema.worker_id).upper()
+        else:
+            return self._feature.attributes.get(self._schema.worker_id)
 
     @property
     def worker(self):
