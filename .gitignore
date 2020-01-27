@@ -77,3 +77,4 @@ tests/.coverage*
 /tests/integration/df_accessor/test_from_fc.py
 
 
+/src/*.pfx

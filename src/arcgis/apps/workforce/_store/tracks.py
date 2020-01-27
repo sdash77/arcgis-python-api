@@ -99,7 +99,7 @@ def query_tracks(project, where):
         :param where: An ArcGIS where clause.
         :returns: list of Tracks
     """
-    track_features = project.tracks_layer.query(where, return_all_freatures=True).features
+    track_features = project.tracks_layer.query(where, return_all_records=True).features
     return [workforce.Track(project, feature) for feature in track_features]
 
 

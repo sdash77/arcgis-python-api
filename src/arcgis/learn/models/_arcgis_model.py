@@ -11,12 +11,14 @@ import contextlib
 import io
 import sys
 import socket
+from functools import wraps
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
 
 try:
     from fastai.callbacks import TrackerCallback, EarlyStoppingCallback, LearnerCallback
+    from fastai.vision.learner import model_meta, _default_meta
     from torch import nn
     import torch
     from torchvision import models
@@ -47,10 +49,11 @@ model_characteristics_folder = 'ModelCharacteristics'
 @contextlib.contextmanager
 def nostdout():
     save_stdout = sys.stdout
-    sys.stdout = io.BytesIO()
+    sys.stdout = io.StringIO()
     yield
     sys.stdout = save_stdout
-    
+
+
 class _EmptyData():
     def __init__(self, path, c, loss_func, chip_size):
         self.path = path
@@ -137,19 +140,15 @@ class SaveModelCallback(TrackerCallback):
                 pass
 
 def _get_tail(model):
-    index_order = 0
-    first_layer = None
-    try:
-        first_layer = model._modules[list(model._modules.keys())[0]]
-        while True:
-            first_layer = first_layer[0]
-            index_order+=1
-    except:
-        pass
-    return first_layer, index_order
+    if hasattr(model, 'named_children'):
+        child_name, child = next(model.named_children())
+        if isinstance(child, nn.Conv2d):
+            return child_name, child                
+    if hasattr(model, 'children'):
+        return _get_tail(next(model.children()))
 
-def _get_ms_tail(tail, data, type_init='average'):
-    new_tail = tail.__class__(
+def _get_ms_tail(tail, data, type_init='random'):
+    new_tail = nn.Conv2d(
         in_channels=len(data._extract_bands), 
         out_channels=tail.out_channels,
         kernel_size=tail.kernel_size,
@@ -160,49 +159,43 @@ def _get_ms_tail(tail, data, type_init='average'):
         bias=tail.bias is not None,
         padding_mode=tail.padding_mode,
     )
-    if type_init == 'average':
-        rgb_weights = tail.weight.data
-        avg_weights = tail.weight.data.mean(dim=1)
-        rgb_map = {'r':0, 'g':1, 'b': 2}
-        for i, j in enumerate(data._extract_bands):
-            band = str(data._bands[j]).lower()
-            b = rgb_map.get(band, None)
-            #print(b)
-            if b is not None:
-                new_tail.weight.data[:, i] = tail.weight.data[:, b]
-            else:
-                #print('unknown band')
-                new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Wieghts for all other band weights
+    avg_weights = tail.weight.data.mean(dim=1)
+    rgb_map = {'r':0, 'g':1, 'b': 2}
+    for i, j in enumerate(data._extract_bands):
+        band = str(data._bands[j]).lower()
+        b = rgb_map.get(band, None)
+        if b is not None:
+            new_tail.weight.data[:, i] = tail.weight.data[:, b]
+        else:
+            if type_init == 'red_band':
+                new_tail.weight.data[:, i] = tail.weight.data[:, 0] # Red Band Weights for all other band weights
+            elif type_init == 'average':
+                new_tail.weight.data[:, i] = avg_weights # Average Weights for all other band weights
+            elif type_init == 'random':
+                new_tail.weight.data[:, i] = torch.rand((new_tail.weight.data[:, i].shape)) # Random Weights for all other band weights
     return new_tail
 
-def _set_tail(model, new_tail, index_order=0, inplace=True):
-    i = 0
-    codeblock = 'model._modules[list(model._modules.keys())[0]]'
-    while i < index_order:
-        codeblock+='[0]'
-        i+=1
-    exec(codeblock + ' = new_tail')
-    
-    #first_layer = model._modules[list(model._modules.keys())[0]]
-    #i = 0
-    #while i < index_order:
-    #    first_layer = first_layer[0]
-    #    i+=1
-    #first_layer = new_tail
-    
-    if not inplace:
-        return model
+def _set_tail(model, new_tail):
+    updated = False
+    if hasattr(model, 'named_children'):
+        child_name, child = next(model.named_children())
+        if isinstance(child, nn.Conv2d):
+            setattr(model, child_name, new_tail)
+            updated = True
+    if hasattr(model, 'children') and not updated:
+        return _set_tail(next(model.children()), new_tail)
 
-def _change_tail(model, bands):
-        tail, index_order = _get_tail(model)
-        new_tail = _get_ms_tail(tail, bands)
-        _set_tail(
-            model, 
-            new_tail, 
-            index_order,
-            inplace=True
-        )
-        return model
+def _change_tail(model, data):
+    tail_name, tail = _get_tail(model)
+    type_init = getattr(arcgis.env, 'type_init_tail_parameters', 'random') 
+    new_tail = _get_ms_tail(tail, data, type_init=type_init)
+    _set_tail(model, new_tail)
+    return model
+
+def _get_backbone_meta(arch_name):
+    _model_meta = {i.__name__:j for i, j in model_meta.items()}
+    return _model_meta.get(arch_name, _default_meta)
+
 
 class ArcGISModel(object):
     
@@ -234,9 +227,11 @@ class ArcGISModel(object):
         if self._is_multispectral:
             self._imagery_type = data._imagery_type   
             self._bands = data._bands
-            self._backbone_ = self._backbone
-            def backbone_wrapper(pretrained):
-                return _change_tail(self._backbone_(pretrained), data)
+            self._orig_backbone = self._backbone
+            @wraps(self._orig_backbone)
+            def backbone_wrapper(*args, **kwargs):
+                return _change_tail(self._orig_backbone(*args, **kwargs), data)
+            backbone_wrapper._is_multispectral = True
             self._backbone = backbone_wrapper
 
         self.learn = None
@@ -259,16 +254,34 @@ class ArcGISModel(object):
     def _arcgis_init_callback(self):
         if self._is_multispectral:
             if self._data._train_tail:
-                next(self.learn.model.parameters()).requires_grad = True # make first conv weights learnable
+                params_iterator = self.learn.model.parameters()
+                next(params_iterator).requires_grad = True # make first conv weights learnable
+                if self.__class__.__name__ == 'MaskRCNN':
+                    iterater = self.learn.model.children()
+                    next(iterater)
+                    tail_name, first_layer = _get_tail(next(iterater))
+                else:
+                    tail_name, first_layer = _get_tail(self.learn.model)
+                if first_layer.bias is not None or self.__class__.__name__ == 'MaskRCNN':
+                    # make first conv bias weights learnable 
+                    # In case of maskrcnn make the batch norm trainable
+                    next(params_iterator).requires_grad = True
                 self.learn.create_opt(slice(3e-3))
             if hasattr(self, '_show_results_multispectral'):
                 self.show_results = self._show_results_multispectral
-            
+
+    # function for checking if data exists for using class functions.
+    def _check_requisites(self):
+        if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
+            raise Exception("Can't call this function without data.")
+
     def lr_find(self, allow_plot=True):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
         Helps in choosing the optimum learning rate for training the model.
         """
+        self._check_requisites()
+
         self.learn.lr_find()
         from IPython.display import clear_output
         clear_output()
@@ -364,6 +377,8 @@ class ArcGISModel(object):
                                 The default value is 'False'.
         =====================   ===========================================
         """
+        self._check_requisites()
+
         if lr is None:
             print('Finding optimum learning rate.')
 
@@ -406,32 +421,84 @@ class ArcGISModel(object):
         """
         self.learn.unfreeze()
 
-    def _create_emd(self, path):
+    def _create_emd_template(self, path):
+
+        _emd_template = {}
+        #For old models - add lr, ModelName
+        if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
+            _emd_template = self._data.emd
+            _emd_template["ModelFile"] = path.name
+            if not _emd_template.get("ModelName"):
+                _emd_template["ModelName"] = type(self).__name__
+
+            if not _emd_template.get("LearningRate"):
+                _emd_template["LearningRate"] = "0.0"
+
+            return _emd_template
+
         backbone = self._backbone.__name__
         if backbone == 'backbone_wrapper':
-            backbone = self._backbone_.__name__
-        self._emd_template = {
-            'ModelFile': path.name,
-            'ImageHeight': self._data.chip_size,
-            'ImageWidth': self._data.chip_size,
-            'ModelParameters': {'backbone': backbone},
-            'LearningRate': str(self._learning_rate),
-            'ModelName': type(self).__name__
-        }
+            backbone = self._orig_backbone.__name__
+
+        _emd_template = self._get_emd_params()
+
+        _emd_template["ModelFile"] = path.name
+        _emd_template["ImageHeight"] = self._data.chip_size
+        _emd_template["ImageWidth"] = self._data.chip_size
+        _emd_template["ImageSpaceUsed"] = self._data._image_space_used
+        _emd_template["LearningRate"] = str(self._learning_rate)
+        _emd_template["ModelName"] = type(self).__name__
+
+        if not _emd_template.get("ModelParameters"):
+            _emd_template["ModelParameters"] = {"backbone": backbone}
+        else:
+            _emd_template["ModelParameters"]["backbone"] = backbone
 
         model_metrics = self._model_metrics
 
         if model_metrics.get('accuracy'):
-            self._emd_template['accuracy'] = model_metrics.get('accuracy')
+            _emd_template['accuracy'] = model_metrics.get('accuracy')
         
         if model_metrics.get('average_precision_score'):
-            self._emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
+            _emd_template['average_precision_score'] = model_metrics.get('average_precision_score')
 
         resize_to = None
         if hasattr(self._data, 'resize_to') and self._data.resize_to:
             resize_to = self._data.resize_to
 
-        self._emd_template['resize_to'] = resize_to
+        _emd_template['resize_to'] = resize_to
+        
+        # Check if model is Multispectral and dump parameters for that
+        _emd_template["IsMultispectral"] = getattr(self, '_is_multispectral', False)
+        if _emd_template.get("IsMultispectral", False):
+            _emd_template["Bands"] = self._data._bands
+            _emd_template["ImageryType"] = self._data._imagery_type
+            _emd_template["ExtractBands"] = self._data._extract_bands
+            _emd_template["NormalizationStats"] = {
+                "band_min_values": self._data._band_min_values,
+                "band_max_values": self._data._band_max_values,
+                "band_mean_values": self._data._band_mean_values,
+                "band_std_values": self._data._band_std_values,
+                "scaled_min_values": self._data._scaled_min_values,
+                "scaled_max_values": self._data._scaled_max_values,
+                "scaled_mean_values": self._data._scaled_mean_values,
+                "scaled_std_values": self._data._scaled_std_values
+            }
+            for _stat in _emd_template["NormalizationStats"]:
+                if _emd_template["NormalizationStats"][_stat] is not None:
+                    _emd_template["NormalizationStats"][_stat] = _emd_template["NormalizationStats"][_stat].tolist()
+            _emd_template["DoNormalize"] = self._data._do_normalize
+
+        return _emd_template
+
+    @staticmethod
+    def _write_emd(_emd_template, path):
+        json.dump(_emd_template, open(path, 'w'), indent=4)
+
+        return path.stem
+
+    def _get_emd_params(self):
+        return {}
 
     @staticmethod
     def _create_html(path_model):
@@ -462,12 +529,18 @@ class ArcGISModel(object):
 
         emd_template = json.load(open(emd_path, 'r'))
 
+        encoded_losses = ""
+        if encoded_losses_img:
+            encoded_losses = f"""
+                <p><b>Training and Validation loss</b></p>
+                <img src="{encoded_losses_img}" alt="training and validation losses">
+            """
+
         HTML_TEMPLATE = f"""        
                 <p><b> {emd_template.get("ModelName").replace('>', '').replace('<', '')} </b></p>
                 <p><b>Backbone:</b> {emd_template.get('ModelParameters', {}).get('backbone')}</p>
                 <p><b>Learning Rate:</b> {emd_template.get('LearningRate')}</p>
-                <p><b>Training and Validation loss</b></p>
-                <img src="{encoded_losses_img}" alt="training and validation losses">
+                {encoded_losses}
         """
 
         model_analysis = None
@@ -475,6 +548,7 @@ class ArcGISModel(object):
              model_analysis = f""" <p><b>Confusion Matrix</p></b>
                     <img src="{confusion_matrix_img}" alt="Confusion Matrix" width="500" height="333">
             """
+
         if emd_template.get('accuracy'):
             model_analysis = f"""
             <p><b>Accuracy:</b> {emd_template.get('accuracy')}</p>
@@ -491,10 +565,11 @@ class ArcGISModel(object):
             {model_analysis}
         """
 
-        HTML_TEMPLATE += f"""
-            <p><b>Sample Results</b></p>
-            <img src="{encoded_showresults}" alt="Sample Results">
-        """
+        if encoded_showresults:
+            HTML_TEMPLATE += f"""
+                <p><b>Sample Results</b></p>
+                <img src="{encoded_showresults}" alt="Sample Results">
+            """
 
         file = open(html_file_path, 'w')
         file.write(HTML_TEMPLATE)
@@ -514,7 +589,7 @@ class ArcGISModel(object):
         else:
             # fixing fastai bug
             self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
+            self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
             if not os.path.exists(self.learn.path / self.learn.model_dir):
                 os.makedirs(self.learn.path / self.learn.model_dir)
             name = name_or_path
@@ -522,41 +597,67 @@ class ArcGISModel(object):
         try:
             saved_path = self.learn.save(name,  return_path=True)
             # undoing changes to self.learn.path
-        except Exception as e:  
+        except Exception as e:
             raise e
         finally:
             self.learn.path = temp
             self.learn.model_dir = 'models'
+
+        _emd_template = self._create_emd_template(saved_path.with_suffix('.pth'))
 
         if framework.lower() == "tf-onnx":
             batch_size = kwargs.get('batch_size', 16)
 
             with nostdout():
                 self._save_as_tfonnx(saved_path, batch_size)
-                zip_name = self._create_tfonnx_emd(saved_path.with_suffix('.onnx'), batch_size)
-                os.remove(saved_path.with_suffix('.pth'))
-        else:
-            zip_name = self._create_emd(saved_path)
 
-            if save_html:
-                self._save_model_characteristics(saved_path.parent.absolute()/model_characteristics_folder)
-                ArcGISModel._create_html(saved_path)
-                
-        if self._emd_template.get('InferenceFunction', False):
-            with open(saved_path.parent / self._emd_template['InferenceFunction'], 'w') as f:
+            self._create_tfonnx_emd_template(_emd_template, saved_path.with_suffix('.onnx'), batch_size)
+            os.remove(saved_path.with_suffix('.pth'))
+
+        ArcGISModel._write_emd(_emd_template, saved_path.with_suffix('.emd'))
+        zip_name = saved_path.stem
+
+        if save_html:
+            self._save_model_characteristics(saved_path.parent.absolute() / model_characteristics_folder)
+            ArcGISModel._create_html(saved_path)
+
+        if _emd_template.get('InferenceFunction', False):
+            with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
                 f.write(self._code)
+
         if zip_files:
             _create_zip(str(zip_name), str(saved_path.parent))
+
         if arcgis.env.verbose:
             print('Created model files at {spp}'.format(spp=saved_path.parent))
 
         if publish:
-            self._publish_dlpk((saved_path.parent/saved_path.stem).with_suffix('.dlpk'), gis=gis)
+            self._publish_dlpk((saved_path.parent/saved_path.stem).with_suffix('.dlpk'), gis=gis, overwrite=kwargs.get('overwrite', False))
 
         return saved_path.parent
 
     def _save_model_characteristics(self, model_characteristics_dir):
+
+        import shutil
         import matplotlib.pyplot as plt
+
+        if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
+            if not os.path.exists(os.path.join(self._data.emd_path.parent, model_characteristics_folder)):
+                return
+            temp_path = tempfile.NamedTemporaryFile().name
+            shutil.copytree(
+                os.path.join(self._data.emd_path.parent, model_characteristics_folder),
+                temp_path
+            )
+            if os.path.exists(os.path.join(model_characteristics_dir, model_characteristics_dir)):
+                shutil.rmtree(os.path.join(model_characteristics_dir, model_characteristics_dir), ignore_errors=True)
+
+            shutil.copytree(
+                temp_path,
+                os.path.join(model_characteristics_dir, model_characteristics_dir)
+            )
+
+            return
 
         if not os.path.exists(os.path.join(model_characteristics_dir, model_characteristics_dir)):
             os.mkdir(os.path.join(model_characteristics_dir, model_characteristics_dir))
@@ -572,7 +673,7 @@ class ArcGISModel(object):
         if hasattr(self, '_save_confusion_matrix'):
             self._save_confusion_matrix(model_characteristics_dir)
 
-    def _publish_dlpk(self, dlpk_path, gis=None):
+    def _publish_dlpk(self, dlpk_path, gis=None, overwrite=False):
         gis_user = arcgis.env.active_gis if gis is None else gis
         if not gis_user:
             warn('No active gis user found!')
@@ -608,7 +709,7 @@ class ArcGISModel(object):
             """
 
         item = gis_user.content.add(
-            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem},
+            {'type': 'Deep Learning Package', 'description': formatted_description, 'title': dlpk_path.stem, 'overwrite':'true' if overwrite else 'false'},
             data=str(dlpk_path.absolute())
         )
 
@@ -619,8 +720,15 @@ class ArcGISModel(object):
 
         item.update(item_properties={'screenshots': screenshots})
 
-    def _create_tfonnx_emd(self, saved_path, batch_size):
-        "Raises error if framework specified is TF-ONNX but is not supported by the model"
+    def _create_tfonnx_emd_template(self, _emd_template, saved_path, batch_size):
+        _emd_template.update(self._get_tfonnx_emd_params())
+        _emd_template['BatchSize'] = batch_size
+        _emd_template["ModelFile"] = saved_path.name
+
+        return _emd_template
+
+    def _get_tfonnx_emd_params(self):
+        # Raises error if framework specified is TF-ONNX but is not supported by the model
         raise NotImplementedError('TF-ONNX framework is currently not supported by this model.')
 
     def _save_as_tfonnx(self, saved_path, batch_size):
@@ -652,15 +760,19 @@ class ArcGISModel(object):
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
                                 model. (Only supported by ``SingleShotDetector``, currently.)
-                                If framework used is ``TF-ONNX``, ``batch_size`` is required
-                                to be passed as keyword arguments. 
+                                If framework used is ``TF-ONNX``, ``batch_size`` can be
+                                passed as an optional keyword argument. 
                                 
-                                Choice list: ['PyTorch', 'TF-ONNX']
+                                Framework choice: 'PyTorch' and 'TF-ONNX'
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
         gis                     Optional GIS Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
+        ---------------------   -------------------------------------------
+        kwargs                  Optional Parameters:
+                                Boolean `overwrite` if True, it will overwrite
+                                the item on ArcGIS Online/Enterprise, default False.                                
         =====================   ===========================================
         """        
         return self._save(name_or_path, framework=framework, publish=publish, gis=gis, **kwargs)
@@ -694,7 +806,7 @@ class ArcGISModel(object):
         else:
             # fixing fastai bug
             self.learn.path = self.learn.path.parent
-            self.learn.model_dir =  Path(self.learn.model_dir) /  name_or_path
+            self.learn.model_dir = Path(self.learn.model_dir) / name_or_path
             name = name_or_path
 
         try:

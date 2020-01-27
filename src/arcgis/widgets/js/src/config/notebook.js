@@ -1,15 +1,32 @@
 var config = require("./common");
 var configureCdn = require("./configure-cdn");
 
-//This section is a workaround for notebooks.esri.com, since it uses tmpnb
-var strnb = location.href.lastIndexOf("/notebooks");
-var nbextensionPath = "";
-if ((strnb > 0) && !(location.href.match(/.*localhost.*/))) {
-    nbextensionPath = location.href.substring(0, strnb) + "/nbextensions/arcgis/";
-} else {
-    nbextensionPath = "/nbextensions/arcgis/";
+// This logic constructs the base URL where the nbextensions widgets are stored.
+// This is located at http://<host>:<port>/nbextensions/arcgis/ for any jupyter
+// notebook server. When you are accessing notebooks through this server 
+// directly, the base URL should be "/nbextensions/arcgis/". When accessing a
+// notebook through ArcGIS Hosted Notebooks, the jupyter server is accessed
+// indirectly, so extra steps are needed. A notebook is at a URL like this:
+// https://<host>:<port>/<webadaptor>/notebooks/<32_char_uuid>/notebooks/file.ipynb
+// for an enterprise setup. An AGOL setup has a URL like this:
+// https://<host>:<port>/<32_char_uuid>/notebooks/file.ipynb
+// For both of the AGOL/enterprise use cases, the nbextensions location is 
+// located AFTER the <32_char_uuid> hexadecimal string.
+// (ex. https://<host>:<port>/<32_char_uuid>/nbextensions/)
+
+var jupyterBase = "/";
+if(/\/[0-9A-Fa-f]{32}\/notebooks\//.test(location.pathname)){
+    // We are in a hosted notebooks environment
+    try{
+        jupyterBase = location.pathname.match(
+            /.*\/[0-9A-Fa-f]{32}\/(?=notebooks\/)/)[0];}
+    catch (e){}
 }
-//end section
+var nbextensionPath = jupyterBase + "nbextensions/arcgis/";
+console.log("nbextension path = " + nbextensionPath);
+
+// end section
+// end section
 
 config.JupyterTarget = "notebook"; 
 config.BaseRequireJSConfig = {

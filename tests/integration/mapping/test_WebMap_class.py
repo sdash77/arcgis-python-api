@@ -770,6 +770,65 @@ class Test_WebMap_AGO(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    @unittest.skipIf(test_skip, "Test condition not met. Check if old outputs are present")
+    def test_add_geocoding_and_saveas_web_map(self):
+        """
+        Compose a new web map with one operational layer and save to disk.
+        :return:
+        """
+        try:
+            usa_map = self.gis.map('USA', zoomlevel=4)  # you can specify the zoom level when creating a map
+
+            # Draw capitals with custom marker
+            from arcgis.geocoding import batch_geocode
+            addresses_list = [
+                {
+                    "Address": "380 New York St",
+                    "Neighborhood": "",
+                    "City": "Redlands",
+                    "Subregion": "",
+                    "Region": "CA"
+                },
+                {
+                    "Address": "1 World Way",
+                    "Neighborhood": "",
+                    "City": "Los Angeles",
+                    "Subregion": "",
+                    "Region": "CA"
+                }
+            ]
+            usa_poi_fset = batch_geocode(addresses=addresses_list,
+                                         location_type="street",
+                                         match_out_of_range=True,
+                                         preferred_label_values="primaryStreet,postalCity",
+                                         lang_code='ES',
+                                         as_featureset=True)
+            poi_symbol = {"angle": 0, "xoffset": 0, "yoffset": 0, "type": "picture-marker",
+                          "url": "http://static.arcgis.com/images/Symbols/PeoplePlaces/esriBusinessMarker_57.png",
+                          "contentType": "image/png", "width": 24, "height": 24}
+            usa_map.draw(usa_poi_fset, symbol=poi_symbol)
+
+            wm_item = usa_map.save({'title': self.test_case_name,
+                                   'snippet': 'created with Python API unit test',
+                                   'tags': ['unittest', 'automation', 'geosaurus']})
+
+            self.assertIsInstance(wm_item, arcgis.gis.Item, 'save_as() does not return and item')
+            self.assertEqual(wm_item.type, "Web Map", "item type created by save_as() is not Web Map")
+
+            # delete the item for future runs
+            del_result = wm_item.delete()
+            print("delete result " + str(del_result))
+
+        except AssertionError as assertErrorException:
+            test_skip = True
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
 #TestModule
 def tearDownModule():
     print("**End GIS module Tests**")

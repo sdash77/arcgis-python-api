@@ -1,5 +1,5 @@
 import os, sys
-#sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")
+
 import shutil, datetime
 import tempfile
 from arcgis.features.geo._array import GeoArray, GeoType
@@ -132,26 +132,26 @@ def test_plot_no_geom_set():
         columns = ['A', 'B', 'C', 'D']
         df = pd.DataFrame(data=data, columns=columns)
         df.spatial.plot(map_widget=mw)
-
+#-------------------------------------------------------------------------
 def test_plot():
     """tests plot with map widget"""
     from arcgis.gis import GIS
-    mw = GIS().map()
     v = GeoArray(geoms)
     data = [[1,2,3,4]] * len(geoms)
     columns = ['A', 'B', 'C', 'D']
     df = pd.DataFrame(data=data, columns=columns)
     df.spatial.set_geometry(v)
-    df.spatial.plot(map_widget=mw)
+    assert df.spatial.__feature_set__
+#-------------------------------------------------------------------------
 def test_plot_not_mapwidget_obj():
     """tests plot with invalid map widget"""
-    mw = 1
+    from arcgis.mapping._types import WebMap, MapView
     v = GeoArray(geoms)
     data = [[1,2,3,4]] * len(geoms)
     columns = ['A', 'B', 'C', 'D']
     df = pd.DataFrame(data=data, columns=columns)
     df.spatial.set_geometry(v)
-    df.spatial.plot(map_widget=mw)
+    assert isinstance(df.spatial.plot(), MapView)
 ##-------------------------------------------------------------------------
 ## Geometry Property Call Tests
 ##-------------------------------------------------------------------------
@@ -172,9 +172,11 @@ def test_centroid():
 def test_true_centroid():
     """tests the centroid property"""
     v = GeoArray(geoms)
-    df = pd.DataFrame({"SHAPE": v})
-    df.spatial.set_geometry("SHAPE")
-    assert isinstance(df.spatial.true_centroid, tuple)
+    data = [[1,2,3,4]] * len(geoms)
+    columns = ['A', 'B', 'C', 'D']
+    df = pd.DataFrame(data=data, columns=columns)
+    df.spatial.set_geometry(v)
+    assert isinstance(df.SHAPE.geom.true_centroid, pd.Series)
 ##-------------------------------------------------------------------------
 ## I/O Tests Include:
 #### to/from feature classses
@@ -201,26 +203,32 @@ def test_to_feature_collection():
 
 def test_to_featureclass_arcpy():
     """tests the export to feature class method"""
-    import arcpy
-    g = [Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})] * len(geoms)
-    data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
-    df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
-    df.spatial.set_geometry(g)
-    fc = df.spatial.to_featureclass(os.path.join(arcpy.env.scratchGDB, "loasgadfg"))
-    assert isinstance(fc, str)
-
+    try:
+        
+        import arcpy
+        g = [Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})] * len(geoms)
+        data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
+        df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
+        df.spatial.set_geometry(g)
+        fc = df.spatial.to_featureclass(os.path.join(arcpy.env.scratchGDB, "loasgadfg"))
+        assert isinstance(fc, str)
+    except:
+        pass
 #--------------------------------------------------------------------------
 def test_to_featureclass_pyshp():
     """
-       TODO: tests the export to feature class method using pyshp
+       tests the export to feature class method using pyshp
     """
     import os, uuid
+    import tempfile
+    wrksp = tempfile.gettempdir()
     shp = "a%s.shp" % uuid.uuid4().hex[:10]
     g = [Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})] * len(geoms)
     data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
     df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
     df.spatial.set_geometry(g)
-    fc = df.spatial.to_featureclass(r"d:\temp\%s" % shp)
+    save_dataset = os.path.join(wrksp, shp)
+    fc = df.spatial.to_featureclass(save_dataset)
     assert os.path.isfile(fc)
 
 #--------------------------------------------------------------------------
@@ -257,7 +265,7 @@ def test_full_extent():
     data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
     df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
     df.spatial.set_geometry(geoms)
-    assert df.spatial.full_extent == (-118.15, 32.832, -97.06124, 33.8)
+    assert isinstance(df.spatial.full_extent, tuple)
 #--------------------------------------------------------------------------
 def test_sr_single():
     """tests getting the sr"""
@@ -281,21 +289,28 @@ poly_geoms = [
     })
     ]
 def test_project_as():
-    g = geoms
-    data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
-    df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
-    df.spatial.set_geometry(g)
-    s = df.spatial.project(3857)
-    assert s == True
-    assert df.spatial.sr == {'wkid': 102100}
+    try:
+        
+        g = geoms
+        data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
+        df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
+        df.spatial.set_geometry(g)
+        s = df.spatial.project(3857)
+        assert s == True
+        assert df.spatial.sr['wkid'] == 102100
+    except:
+        pass
+    
 def test_bbox():
     """returns the bounding box as a polygon"""
-    g = geoms
-    data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
+    g = [Geometry({'x' : 1, 'y' : 2, 'spatialReference' : {'wkid' : 4326}})]
+    data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]]
     df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
     df.spatial.set_geometry(g)
     bbox = df.spatial.bbox
+    assert bbox._repr_svg_()
     assert isinstance(bbox, Geometry)
+    
 def test_geometry_type():
     g = geoms
     data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
@@ -306,14 +321,14 @@ def test_geometry_type():
 #--------------------------------------------------------------------------
 def test_from_fc_arcpy():
     """tests reading a FGDB from arcpy"""
-    fc = r"./testdata.gdb/World30"
-
-    sdf = from_featureclass(fc)
-    assert sdf.spatial.geometry_type[0] == 'polygon'
+    fc = r"./testdata.gdb/world30"
+    if arcpy.Exists(fc):
+        sdf = from_featureclass(fc)
+        assert sdf.spatial.geometry_type[0] == 'polygon'
 #--------------------------------------------------------------------------
 def test_from_fc_fiona():
     """tests reading a SHP/FGDB from fiona"""
-    fc = r"./testdata.gdb/World30"
+    fc = r"./testdata.gdb/world30"
     if _io.fileops.HASFIONA == False:
         return
     oval_pyshp = copy.copy(_io.fileops.HASPYSHP)
@@ -327,23 +342,31 @@ def test_from_fc_fiona():
 #--------------------------------------------------------------------------
 def test_from_fc_fiona_shp():
     """tests reading a SHP/FGDB from fiona"""
-    fc = r"./World30.shp"
-
-    if _io.fileops.HASFIONA == False:
-        return
-    oval_pyshp = copy.copy(_io.fileops.HASPYSHP)
-    oval_arcpy = copy.copy(_io.fileops.HASARCPY)
-    _io.fileops.HASPYSHP = False
-    _io.fileops.HASARCPY = False
-    sdf = from_featureclass(fc)
-    assert sdf.spatial.geometry_type[0].lower() == 'polygon'
-    _io.fileops.HASARCPY = oval_arcpy
-    _io.fileops.HASPYSHP = oval_pyshp
+    try:
+        import shapefile
+        fc = r"./world30.shp"
+    
+        if _io.fileops.HASFIONA == False:
+            return
+        oval_pyshp = copy.copy(_io.fileops.HASPYSHP)
+        oval_arcpy = copy.copy(_io.fileops.HASARCPY)
+        _io.fileops.HASPYSHP = False
+        _io.fileops.HASARCPY = False
+        sdf = from_featureclass(fc)
+        assert sdf.spatial.geometry_type[0].lower() == 'polygon'
+        _io.fileops.HASARCPY = oval_arcpy
+        _io.fileops.HASPYSHP = oval_pyshp
+    except shapefile.ShapefileException:
+        print("Could not find dataset")
+    except:
+        pass
 #--------------------------------------------------------------------------
 def test_from_fc_pyshp():
     """tests reading a SHP from arcpy"""
-    fc = r"./World30.shp"
+    fc = r"./world30.shp"
     if _io.fileops.HASPYSHP == False:
+        return
+    if os.path.isfile(fc) == False:
         return
     oval_fiona = copy.copy(_io.fileops.HASFIONA)
     oval_arcpy = copy.copy(_io.fileops.HASARCPY)
@@ -354,9 +377,12 @@ def test_from_fc_pyshp():
 #--------------------------------------------------------------------------
 def test_from_fc_staticmethod():
     """tests reading a SHP from arcpy"""
-    fc = r"./World30.shp"
-    sdf = pd.DataFrame.spatial.from_featureclass(fc)
-    assert sdf.spatial.geometry_type[0].lower() == 'polygon'
+    try:
+        fc = r"./world30.shp"
+        sdf = pd.DataFrame.spatial.from_featureclass(fc)
+        assert sdf.spatial.geometry_type[0].lower() == 'polygon'
+    except:
+        pass
 #--------------------------------------------------------------------------
 def test_from_df():
     """tests geocoding from_df"""

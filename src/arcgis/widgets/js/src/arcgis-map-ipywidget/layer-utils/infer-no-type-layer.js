@@ -30,6 +30,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                                 'esri/layers/TileLayer',
                                 'esri/layers/MapImageLayer',
                                 'esri/layers/VectorTileLayer',
+                                'esri/layers/SceneLayer',
                                 'esri/layers/FeatureLayer',
                                 'esri/tasks/support/FeatureSet',
                                 'esri/PopupTemplate',
@@ -40,6 +41,7 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                         TileLayer,
                         MapImageLayer,
                         VectorTileLayer,
+                        SceneLayer,
                         FeatureLayer,
                         FeatureSet,
                         PopupTemplate,
@@ -93,6 +95,10 @@ var inferNoTypeLayer = function(noTypeLayer, widget){
                 resolve(typedLayer)}
             else if (noTypeLayer.type == "VectorTileLayer") {
                 var typedLayer = new VectorTileLayer(noTypeLayer.url);
+                typedLayer.id = noTypeLayer._hashFromPython;
+                resolve(typedLayer);}
+            else if (noTypeLayer.type == "SceneLayer") {
+                var typedLayer = new SceneLayer(noTypeLayer.url);
                 typedLayer.id = noTypeLayer._hashFromPython;
                 resolve(typedLayer);}
             else if ((noTypeLayer.type == "FeatureLayer") ||

@@ -9,6 +9,10 @@ import PIL
 import numpy as np
 from skimage import io
 import matplotlib.pyplot as plt
+from fastprogress import progress_bar
+from torch import LongTensor
+import os
+from .._utils import ArcGISMSImage
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
@@ -51,7 +55,7 @@ def is_no_color(color_mapping):
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
     _processor = SegmentationProcessor
-    def __init__(self, items, chip_size, classes=None, class_mapping=None, color_mapping=None, **kwargs):
+    def __init__(self, items, chip_size, classes=None, class_mapping=None, color_mapping=None, index_dir=None, **kwargs):
         super().__init__(items, **kwargs)
         self.class_mapping = class_mapping
         self.color_mapping = color_mapping
@@ -59,6 +63,7 @@ class ArcGISSegmentationLabelList(ImageList):
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
         self.chip_size = chip_size
         self.inverse_class_mapping = {}
+        self.index_dir = index_dir
         for k, v in self.class_mapping.items():
             self.inverse_class_mapping[v] = k
         if is_no_color(list(color_mapping.values())):
@@ -95,7 +100,7 @@ class ArcGISSegmentationLabelList(ImageList):
             for j in range(len(self.class_mapping)):
 
                 if k < len(fn):
-                    lbl_name = int(self.inverse_class_mapping[fn[k].parent.name])
+                    lbl_name = int(self.index_dir[self.inverse_class_mapping[fn[k].parent.name]])
                 else:
                     lbl_name = len(self.class_mapping) + 2
                 if lbl_name == j+1:                    
@@ -125,6 +130,19 @@ class ArcGISInstanceSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
 
+class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
+    "`ItemList` suitable for segmentation tasks."
+    _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    def open(self, fn):
+        import gdal
+        path = str(os.path.abspath(fn))
+        x = gdal.Open(path).ReadAsArray()
+        if len(x.shape)==2:
+            x = x.unsqueeze(0)
+        x = torch.tensor(x.astype(np.float32))
+        x = ArcGISMSImage(x)
+        return x
+
 def mask_rcnn_loss(loss_value, *args):
 
     final_loss = 0.
@@ -134,60 +152,211 @@ def mask_rcnn_loss(loss_value, *args):
             
     return final_loss
 
+def mask_to_dict(last_target, device):
+    target_list = []
+    for i in range(len(last_target)):
+
+        boxes =  []
+        masks = np.zeros((1, last_target[i].shape[1], last_target[i].shape[2]))
+        labels = []
+        for j in range(last_target[i].shape[0]):
+
+            mask = np.array(last_target[i].data[j])
+            obj_ids = np.unique(mask)
+
+            if len(obj_ids)==1:
+                continue
+
+            obj_ids = obj_ids[1:]
+            mask_j = mask == obj_ids[:, None, None]
+            num_objs = len(obj_ids)
+            for k in range(num_objs):
+                pos = np.where(mask_j[k])
+                xmin = np.min(pos[1])
+                xmax = np.max(pos[1])
+                ymin = np.min(pos[0])
+                ymax = np.max(pos[0])
+                boxes.append([xmin, ymin, xmax, ymax])
+
+            masks = np.append(masks, mask_j, axis = 0)
+            labels_j = torch.ones((num_objs,), dtype=torch.int64)
+            labels_j = labels_j*(j+1)
+            labels.append(labels_j)
+        
+        if(masks.shape[0]==1): # if no object in image
+            masks[0,50:51,50:51] = 1
+            labels = torch.tensor([0])
+            boxes = torch.tensor([[50.,50.,51.,51.]])
+        else:
+            labels = torch.cat(labels)
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+            masks = masks[1:,:,:]
+        masks = torch.as_tensor(masks, dtype=torch.uint8)
+        target = {}
+        target["boxes"] = boxes.to(device)
+        target["labels"] = labels.to(device)
+        target["masks"] = masks.to(device)
+        target_list.append(target)
+
+    return target_list
+
 class train_callback(LearnerCallback):
 
     def __init__(self, learn):
         super().__init__(learn)
    
     def on_batch_begin(self, last_input, last_target, **kwargs):
-        "Handle new batch `xb`,`yb` in `train` or validation."
-
-        target_list = []
-        for i in range(len(last_target)):
-
-            boxes =  []
-            masks = np.zeros((1, last_target[i].shape[1], last_target[i].shape[2]))
-            labels = []
-            for j in range(last_target[i].shape[0]):
-
-                mask = np.array(last_target[i].data[j])
-                obj_ids = np.unique(mask)
-
-                if len(obj_ids)==1:
-                    continue
-
-                obj_ids = obj_ids[1:]
-                mask_j = mask == obj_ids[:, None, None]
-                num_objs = len(obj_ids)
-                for k in range(num_objs):
-                    pos = np.where(mask_j[k])
-                    xmin = np.min(pos[1])
-                    xmax = np.max(pos[1])
-                    ymin = np.min(pos[0])
-                    ymax = np.max(pos[0])
-                    boxes.append([xmin, ymin, xmax, ymax])
-
-                masks = np.append(masks, mask_j, axis = 0)
-                labels_j = torch.ones((num_objs,), dtype=torch.int64)
-                labels_j = labels_j*(j+1)
-                labels.append(labels_j)
-            
-            if(masks.shape[0]==1): # if no object in image
-                masks[0,50:51,50:51] = 1
-                labels = torch.tensor([0])
-                boxes = torch.tensor([[50.,50.,51.,51.]])
-            else:
-                labels = torch.cat(labels)
-                boxes = torch.as_tensor(boxes, dtype=torch.float32)
-                masks = masks[1:,:,:]
-            masks = torch.as_tensor(masks, dtype=torch.uint8)
-            target = {}
-            target["boxes"] = boxes.cuda()
-            target["labels"] = labels.cuda()
-            target["masks"] = masks.cuda()
-            target_list.append(target)
-
+        "Handle new batch `xb`,`yb` in `train` or validation."        
+        target_list = mask_to_dict(last_target, self.c_device)
         self.learn.model.train()
-        last_input = [last_input, target_list]
+        last_input = [list(last_input.to(self.c_device)), target_list]
         last_target = [torch.tensor([1]) for i in last_target]
-        return {'last_input':last_input, 'last_target':last_target}            
+        return {'last_input':last_input, 'last_target':last_target}
+
+def masks_iou(masks1, masks2):
+    # Mask R-CNN
+
+    # The MIT License (MIT)
+
+    # Copyright (c) 2017 Matterport, Inc.
+
+    # Permission is hereby granted, free of charge, to any person obtaining a copy
+    # of this software and associated documentation files (the "Software"), to deal
+    # in the Software without restriction, including without limitation the rights
+    # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    # copies of the Software, and to permit persons to whom the Software is
+    # furnished to do so, subject to the following conditions:
+
+    # The above copyright notice and this permission notice shall be included in
+    # all copies or substantial portions of the Software.
+
+    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    # THE SOFTWARE.
+
+    #Method is based on https://github.com/matterport/Mask_RCNN
+
+    if masks1.shape[0] == 0 or masks2.shape[0] == 0:
+        return torch.zeros((masks1.shape[0], masks2.shape[0]))
+    masks1 = masks1.permute(1,2,0)
+    masks2 = masks2.permute(1,2,0)
+    masks1 = torch.reshape(masks1 > .5, (-1, masks1.shape[-1])).type(torch.float64)
+    masks2 = torch.reshape(masks2 > .5, (-1, masks2.shape[-1])).type(torch.float64)
+    area1 = torch.sum(masks1, dim=0)
+    area2 = torch.sum(masks2, dim=0)
+
+    intersections = torch.mm(masks1.transpose(1,0), masks2)
+    union = area1[:, None] + area2[None, :] - intersections
+    overlaps = intersections / union
+    return overlaps
+
+def compute_matches(gt_class_ids, gt_masks,
+                    pred_class_ids, pred_scores, pred_masks,
+                    iou_threshold=0.5, detect_threshold=0.5):
+
+    #Method is based on https://github.com/matterport/Mask_RCNN
+    indices = torch.argsort(pred_scores, descending=True)
+    pred_class_ids = pred_class_ids[indices]
+    pred_scores = pred_scores[indices]
+    pred_masks = pred_masks[indices]
+
+    ious_mask = masks_iou(pred_masks, gt_masks)
+
+    pred_match = -1 * np.ones([pred_masks.shape[0]])
+    if 0 not in ious_mask.shape:
+        max_iou, matches = ious_mask.max(1)
+        detected = []
+        for i in range(len(pred_class_ids)):
+            if max_iou[i] >= iou_threshold and pred_scores[i] >= detect_threshold and matches[i] not in detected and gt_class_ids[matches[i]] == pred_class_ids[i]:
+                detected.append(matches[i])
+                pred_match[i] = pred_class_ids[i]
+
+    return pred_match
+
+def compute_ap(gt_class_ids, gt_masks,
+               pred_class_ids, pred_scores, pred_masks,
+               iou_threshold=0.5, detect_threshold=0.5):
+
+    #Method is based on https://github.com/matterport/Mask_RCNN
+    pred_match = compute_matches(
+        gt_class_ids, gt_masks,
+        pred_class_ids, pred_scores, pred_masks,
+        iou_threshold, detect_threshold)
+
+    precisions = np.cumsum(pred_match > -1) / (np.arange(len(pred_match)) + 1)
+    recalls = np.cumsum(pred_match > -1).astype(np.float32) / len(gt_class_ids)
+
+    precisions = np.concatenate([[0], precisions, [0]])
+    recalls = np.concatenate([[0], recalls, [1]])
+
+    for i in range(len(precisions) - 2, -1, -1):
+        precisions[i] = np.maximum(precisions[i], precisions[i + 1])
+
+    indices = np.where(recalls[:-1] != recalls[1:])[0] + 1
+    mAP = np.sum((recalls[indices] - recalls[indices - 1]) *
+                 precisions[indices])
+    return mAP
+
+def compute_class_AP(model, dl, n_classes, show_progress, detect_thresh=0.5, iou_thresh=0.5, mean=False):
+
+    model.learn.model.eval()
+    if mean:
+        aps = []
+    else:
+        aps = [[] for _ in range(n_classes)]
+    with torch.no_grad():
+        for input,target in progress_bar(dl, display=show_progress):
+            predictions = model.learn.model(list(input))
+            ground_truth = mask_to_dict(target, model._device)
+            for i in range(len(predictions)):
+
+                predictions[i]["masks"] = predictions[i]["masks"].squeeze()
+                if predictions[i]["masks"].shape[0] == 0:
+                    continue
+                if len(predictions[i]["masks"].shape) == 2:
+                    predictions[i]["masks"] = predictions[i]["masks"][None]
+                if mean:
+                    ap = compute_ap(ground_truth[i]["labels"],
+                                    ground_truth[i]["masks"],
+                                    predictions[i]["labels"],
+                                    predictions[i]["scores"],
+                                    predictions[i]["masks"],
+                                    iou_thresh,
+                                    detect_thresh)
+                    aps.append(ap)
+                else:
+                    for k in range(1, n_classes+1):
+                        gt_labels_index = (ground_truth[i]["labels"]== k).nonzero().reshape(-1)
+                        gt_labels = ground_truth[i]["labels"][gt_labels_index]
+                        gt_masks = ground_truth[i]["masks"][gt_labels_index]
+                        pred_labels_index = (predictions[i]["labels"]== k).nonzero().reshape(-1)
+                        pred_labels = predictions[i]["labels"][pred_labels_index]
+                        pred_masks = predictions[i]["masks"][pred_labels_index]
+                        pred_scores = predictions[i]["scores"][pred_labels_index]
+                        if len(gt_labels):
+                            ap = compute_ap(gt_labels,
+                                            gt_masks,
+                                            pred_labels,
+                                            pred_scores,
+                                            pred_masks,
+                                            iou_thresh,
+                                            detect_thresh)
+                            aps[k-1].append(ap)
+    if mean:
+        if aps != []:
+            aps = np.mean(aps, axis=0)
+        else:
+            return 0.0
+    else:
+        for i in range(n_classes):
+            if aps[i] != []:
+                aps[i] = np.mean(aps[i])
+            else:
+                aps[i] = 0.0
+    if model._device == torch.device('cuda'):
+        torch.cuda.empty_cache()
+    return aps

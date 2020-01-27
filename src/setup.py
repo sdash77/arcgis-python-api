@@ -31,12 +31,6 @@ def _get_rel_site_packages_dir():
                 return res
         except Exception:
             pass
-        try:
-            res = "Lib" + sitepackages.split("Lib")[1] + "/arcgis/gis/_impl"
-            if res:
-                return res
-        except Exception:
-            pass
 
 # Conda uses this setup file, but we want to suppress some functionality
 if "--conda-install-mode" in sys.argv:
@@ -59,6 +53,11 @@ else:
         'keyring',
         'jupyterlab',
         'pyshp >=1.2.11,<2',
+        'requests',
+        'requests-oauthlib',
+        'requests_toolbelt',
+        'requests_ntlm',
+        'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"' ]
 
 def _post_install():
@@ -72,7 +71,7 @@ def _post_install():
        '/Applications/Python X.X/Install Certificates.command' cmd
     """
     if conda_install_mode:
-	#Don't run any post installation methods for conda installs
+        # Don't run any post installation methods for conda installs
         return
 
     # 1) activate the notebook map widget
@@ -140,9 +139,17 @@ description_md_file = open("pypi_long_description.md", "r")
 long_description = description_md_file.read()
 description_md_file.close()
 
-# Get the long description from the README file
-# with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
-#     long_description = f.read()
+#Assemble the `data_files` list of all non-python files
+data_files = [('share/jupyter/nbextensions/arcgis', [
+                   'arcgis/widgets/js/dist/extension.js',
+                   'arcgis/widgets/js/dist/arcgis-map-ipywidget.js',
+                   'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map'
+                   ]),
+             ]
+data_files += [] if ("win" in sys.platform or "darwin" in sys.platform) else \
+              [(_get_rel_site_packages_dir() + "arcgis/gis/_impl", [
+                 "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so"])
+              ]
 
 kwargs = {
     "name":'arcgis',
@@ -150,7 +157,7 @@ kwargs = {
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version":'1.7.0',
+    "version":'1.7.1',
 
     "description":'ArcGIS API for Python',
     "long_description":long_description,
@@ -212,15 +219,7 @@ kwargs = {
     # this:
     "packages":find_packages(),
     "include_package_data":True,
-    'data_files': [
-        ('share/jupyter/nbextensions/arcgis', [
-            'arcgis/widgets/js/dist/extension.js',
-            'arcgis/widgets/js/dist/arcgis-map-ipywidget.js',
-            'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map',
-        ]), (_get_rel_site_packages_dir() + "arcgis/gis/_impl", [
-            "arcgis/gis/_impl/_decrypt_nbauth.cpython-36m-x86_64-linux-gnu.so"
-        ])
-    ],
+    'data_files': data_files,
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
     # requirements files see:

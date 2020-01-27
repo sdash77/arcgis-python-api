@@ -38,10 +38,14 @@ class VideoUtils():
         multiplex=False,
         multiplex_file_path=None,
         tracker_options={'assignment_iou_thrd': 0.3, 'vanish_frames': 40, 'detect_frames': 10},
-        visual_options={'show_scores': True, 'thickness': 2, 'fontface': 0, 'show_labels': True, 'color': (255, 255, 255)}
+        visual_options={'show_scores': True, 'thickness': 2, 'fontface': 0, 'show_labels': True, 'color': (255, 255, 255)},
+        resize=False
     ):
         if not HAS_OPENCV:
             raise Exception("This function requires opencv 4.0.1.24. Install it using pip install opencv-python==4.0.1.24")
+
+        if not os.path.exists(input_video_path):
+            raise Exception("The input video path doesn't exist.")
 
         video_read = cv2.VideoCapture(input_video_path)
         fps = video_read.get(cv2.CAP_PROP_FPS)
@@ -56,18 +60,11 @@ class VideoUtils():
         tracker_list = []
         tracker_ind = 0
 
-        thickness = None
-        fontface = None
-        show_labels = None
-        color = None
-        show_scores = True
-
-        if visualize:
-            thickness = visual_options.get('thickness', 2)
-            fontface = visual_options.get('fontface', 0)
-            show_labels = visual_options.get('show_labels', True)
-            color = visual_options.get('color', (255, 255, 255))
-            show_scores = visual_options.get('show_scores', True)
+        thickness = visual_options.get('thickness', 2)
+        fontface = visual_options.get('fontface', 0)
+        show_labels = visual_options.get('show_labels', True)
+        color = visual_options.get('color', (255, 255, 255))
+        show_scores = visual_options.get('show_scores', True)
 
         for pb in progress_bar(range(total_frames)):
             success, frame = video_read.read()
@@ -86,9 +83,11 @@ class VideoUtils():
                         os.path.basename(input_video_path).split('.')[0] + '_predictions.avi'
                     )
                 video_obj = cv2.VideoWriter(output_file_path, cv2.VideoWriter_fourcc(*'DIVX'), fps, (width, height))
+                if not video_obj.isOpened():
+                    raise Exception("Unable to write to output file path.")
 
             predictions, labels, scores = model.predict(frame, threshold=threshold, nms_overlap=nms_overlap,
-                                                       return_scores=True)
+                                                       return_scores=True, resize=resize)
             vmti_detections = '\n'
 
             if predictions:

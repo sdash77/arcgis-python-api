@@ -6,7 +6,7 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 1.7.0
+  version: 1.7.1
 requirements:
   build:
   - python
@@ -22,6 +22,11 @@ requirements:
   - keyring
   - pytest
   - pyshp <2
+  - requests
+  - requests-toolbelt
+  - requests-kerberos
+  - requests-oauthlib
+  - requests_ntlm
   - winkerberos      [win]
   run:
   - python
@@ -35,6 +40,11 @@ requirements:
   - matplotlib
   - keyring
   - pyshp <2
+  - requests
+  - requests-toolbelt
+  - requests-kerberos
+  - requests-oauthlib
+  - requests_ntlm
   - winkerberos      [win]
 source:
   path: ../../src

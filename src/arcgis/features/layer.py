@@ -9,6 +9,7 @@ import json
 import os
 from re import search
 import time
+import concurrent.futures
 import six
 from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
@@ -682,6 +683,7 @@ class FeatureLayer(Layer):
               return_true_curves=False,
               return_exceeded_limit_features=None,
               as_df=False,
+              datum_transformation=None,
               **kwargs):
         """
         Queries a feature layer based on a sql statement
@@ -865,6 +867,31 @@ class FeatureLayer(Layer):
         as_df                               Optional boolean.  If True, the results are returned as a DataFrame
                                             instead of a FeatureSet.
         -------------------------------     --------------------------------------------------------------------
+        datum_transformation                Optional Integer/Dictionary.  This parameter applies a datum transformation while 
+                                            projecting geometries in the results when out_sr is different than the layer's spatial
+                                            reference. When specifying transformations, you need to think about which datum 
+                                            transformation best projects the layer (not the feature service) to the `outSR` and 
+                                            `sourceSpatialReference` property in the layer properties. For a list of valid datum 
+                                            transformation ID values ad well-known text strings, see `Coordinate systems and 
+                                            transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_. 
+                                            For more information on datum transformations, please see the transformation 
+                                            parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
+                                            
+                                            **Examples**
+            
+            
+                                                ===========     ===================================
+                                                Inputs          Description
+                                                -----------     -----------------------------------
+                                                WKID            Integer. Ex: datum_transformation=4326
+                                                -----------     -----------------------------------
+                                                WKT             Dict. Ex: datum_transformation={"wkt": "<WKT>"}
+                                                -----------     -----------------------------------
+                                                Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
+                                                ===========     ===================================
+                                            
+                                            
+        -------------------------------     --------------------------------------------------------------------
         kwargs                              Optional dict. Optional parameters that can be passed to the Query
                                             function.  This will allow users to pass additional parameters not
                                             explicitly implemented on the function. A complete list of functions
@@ -901,7 +928,9 @@ class FeatureLayer(Layer):
         params['returnIdsOnly'] = return_ids_only
         params['returnZ'] = return_z
         params['returnM'] = return_m
-
+        if not datum_transformation is None:
+            params['datumTransformation'] = datum_transformation
+            
         # convert out_fields to a comma separated string
         if isinstance(out_fields, (list, tuple)):
             out_fields = ','.join(out_fields)
@@ -1156,7 +1185,7 @@ class FeatureLayer(Layer):
         params = {
             "f" : "json"
         }
-        if not isinstance(sql, six.string_types):
+        if not isinstance(sql, str):
             raise ValueError("sql must be a string")
         else:
             params['sql'] = sql
@@ -1581,43 +1610,118 @@ class FeatureLayer(Layer):
                       deletes=None,
                       gdb_version=None,
                       use_global_ids=False,
-                      rollback_on_failure=True):
+                      rollback_on_failure=True,
+                      return_edit_moment=False,
+                      attachments=None,
+                      true_curve_client=False,
+                      session_id=None,
+                      use_previous_moment=False,
+                      datum_transformation=None):
         """
-           This operation adds, updates, and deletes features to the
-           associated feature layer or table in a single call.
+        This operation adds, updates, and deletes features to the
+        associated feature layer or table in a single call.
 
-           =====================   ===========================================
-           **Inputs**              **Description**
-           ---------------------   -------------------------------------------
-           adds                    Optional FeatureSet/List. The array of
-                                   features to be added.
-           ---------------------   -------------------------------------------
-           updates                 Optional FeatureSet/List. The array of
-                                   features to be updated.
-           ---------------------   -------------------------------------------
-           deletes                 Optional FeatureSet/List. string of OIDs to
-                                   remove from service
-           ---------------------   -------------------------------------------
-           use_global_ids          Optional boolean. Instead of referencing
-                                   the default Object ID field, the service
-                                   will look at a GUID field to track changes.
-                                   This means the GUIDs will be passed instead
-                                   of OIDs for delete, update or add features.
-           ---------------------   -------------------------------------------
-           gdb_version             Optional boolean. Geodatabase version to
-                                   apply the edits.
-           ---------------------   -------------------------------------------
-           rollback_on_failure     Optional boolean. Optional parameter to
-                                   specify if the edits should be applied only
-                                   if all submitted edits succeed. If false, the
-                                   server will apply the edits that succeed
-                                   even if some of the submitted edits fail.
-                                   If true, the server will apply the edits
-                                   only if all edits succeed. The default
-                                   value is true.
-           =====================   ===========================================
+        =====================   ======================================================================================
+        **Inputs**              **Description**
+        ---------------------   --------------------------------------------------------------------------------------
+        adds                    Optional FeatureSet/List. The array of features to be added.
+        ---------------------   --------------------------------------------------------------------------------------
+        updates                 Optional FeatureSet/List. The array of features to be updated.
+        ---------------------   --------------------------------------------------------------------------------------
+        deletes                 Optional FeatureSet/List. string of OIDs to remove from service
+        ---------------------   --------------------------------------------------------------------------------------
+        use_global_ids          Optional boolean. Instead of referencing the default Object ID field, the service
+                                will look at a GUID field to track changes. This means the GUIDs will be passed 
+                                instead of OIDs for delete, update or add features.
+        ---------------------   --------------------------------------------------------------------------------------
+        gdb_version             Optional boolean. Geodatabase version to apply the edits.
+        ---------------------   --------------------------------------------------------------------------------------
+        rollback_on_failure     Optional boolean. Optional parameter to specify if the edits should be applied only
+                                if all submitted edits succeed. If false, the server will apply the edits that succeed
+                                even if some of the submitted edits fail. If true, the server will apply the edits
+                                only if all edits succeed. The default value is true.
+        ---------------------   --------------------------------------------------------------------------------------
+        return_edit_moment      Optional boolean. Introduced at 10.5, only applicable with ArcGIS Server services 
+                                only. Specifies whether the response will report the time edits were applied. If set 
+                                to true, the server will return the time in the response's editMoment key. The default 
+                                value is false.
+        ---------------------   --------------------------------------------------------------------------------------
+        attachments             Optional Dict. This parameter adds, updates, or deletes attachments. It applies only 
+                                when the `use_global_ids` parameter is set to true. For adds, the globalIds of the 
+                                attachments provided by the client are preserved. When useGlobalIds is true, updates 
+                                and deletes are identified by each feature or attachment globalId, rather than their 
+                                objectId or attachmentId. This parameter requires the layer's 
+                                supportsApplyEditsWithGlobalIds property to be true.
+        
+                                Attachments to be added or updated can use either pre-uploaded data or base 64 
+                                encoded data.
+                                
+                                **Inputs**
 
-           Output: dictionary
+                                    ========     ================================
+                                    Inputs       Description
+                                    --------     --------------------------------
+                                    adds         List of attachments to add. 
+                                    --------     --------------------------------
+                                    updates      List of attachements to update
+                                    --------     --------------------------------
+                                    deletes      List of attachments to delete
+                                    ========     ================================
+                                
+                                Additional attachment information `here <https://developers.arcgis.com/rest/services-reference/apply-edits-feature-service-layer-.htm>`_.
+                                
+        ---------------------   --------------------------------------------------------------------------------------
+        true_curve_client       Optional boolean. Introduced at 10.5. Indicates to the server whether the client is 
+                                true curve capable. When set to true, this indicates to the server that true curve 
+                                geometries should be downloaded and that geometries containing true curves should be 
+                                consumed by the map service without densifying it. When set to false, this indicates 
+                                to the server that the client is not true curves capable. The default value is false.
+        ---------------------   --------------------------------------------------------------------------------------
+        session_id              Optional String. Introduced at 10.6. The `session_id` is a GUID value that clients 
+                                establish at the beginning and use throughout the edit session. The sessonID ensures 
+                                isolation during the edit session. The `session_id` parameter is set by a client 
+                                during long transaction editing on a branch version.
+        ---------------------   --------------------------------------------------------------------------------------
+        use_previous_moment     Optional Boolean. Introduced at 10.6. The `use_previous_moment` parameter is used to 
+                                apply the edits with the same edit moment as the previous set of edits. This allows an
+                                editor to apply single block of edits partially, complete another task and then 
+                                complete the block of edits. This parameter is set by a client during long transaction 
+                                editing on a branch version.
+        
+                                When set to true, the edits are applied with the same edit moment as the previous set 
+                                of edits. When set to false or not set (default) the edits are applied with a new 
+                                edit moment.
+                                
+        ---------------------   --------------------------------------------------------------------------------------
+        datum_transformation    Optional Integer/Dictionary.  This parameter applies a datum transformation while 
+                                projecting geometries in the results when out_sr is different than the layer's spatial
+                                reference. When specifying transformations, you need to think about which datum 
+                                transformation best projects the layer (not the feature service) to the `outSR` and 
+                                `sourceSpatialReference` property in the layer properties. For a list of valid datum 
+                                transformation ID values ad well-known text strings, see `Coordinate systems and 
+                                transformations <https://developers.arcgis.com/net/latest/wpf/guide/coordinate-systems-and-transformations.htm>`_. 
+                                For more information on datum transformations, please see the transformation 
+                                parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
+                                            
+                                **Examples**
+
+
+                                    ===========     ===================================
+                                    Inputs          Description
+                                    -----------     -----------------------------------
+                                    WKID            Integer. Ex: datum_transformation=4326
+                                    -----------     -----------------------------------
+                                    WKT             Dict. Ex: datum_transformation={"wkt": "<WKT>"}
+                                    -----------     -----------------------------------
+                                    Composite       Dict. Ex: datum_transformation=```{'geoTransforms':[{'wkid':<id>,'forward':<true|false>},{'wkt':'<WKT>','forward':<True|False>}]}```
+                                    ===========     ===================================
+
+                                
+        =====================   ======================================================================================
+
+        Output: dictionary
+        
+        
         """
         if adds is None:
             adds = []
@@ -1681,7 +1785,18 @@ class FeatureLayer(Layer):
 
             if field_name:
                 params['deletes'] = ",".join([str(feat.get_value(field_name=field_name)) for feat in deletes.features])
-
+        if not return_edit_moment is None:
+            params['returnEditMoment'] = return_edit_moment
+        if not attachments is None and isinstance(attachments, dict):
+            params['attachments'] = attachments
+        if not true_curve_client is None:
+            params['trueCurveClient'] = true_curve_client
+        if not use_previous_moment is None:
+            params['usePreviousEditMoment'] = use_previous_moment
+        if not datum_transformation is None:
+            params['datumTransformation'] = datum_transformation
+        if session_id and isinstance(session_id, str):
+            params['sessionID'] = session_id
         if 'deletes' not in params and 'updates' not in params and 'adds' not in params:
             print("Parameters not valid for edit_features")
             return None
@@ -1690,7 +1805,8 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def calculate(self, where, calc_expression,
                   sql_format="standard", version=None,
-                  sessionid=None, return_edit_moment=None):
+                  sessionid=None, return_edit_moment=None, 
+                  future=False):
         """
         The calculate operation is performed on a feature layer
         resource. It updates the values of one or more fields in an
@@ -1746,6 +1862,13 @@ class FeatureLayer(Layer):
                                 key. This parameter applies only if the
                                 `isDataBranchVersioned` property of the layer is
                                 true.
+        ---------------------   ----------------------------------------------------
+        future                  Optional Boolean.  If True, the result is returned
+                                as a future object and the results are obtained in 
+                                an asynchronous fashion.  False is the default.
+                                
+                                **This applies to 10.8+ only**
+                                
         =====================   ====================================================
 
         .. code-block:: python
@@ -1786,7 +1909,16 @@ class FeatureLayer(Layer):
             params['sessionID'] = sessionid
         if isinstance(return_edit_moment, bool):
             params['returnEditMoment'] = return_edit_moment
-
+        if "supportsASyncCalculate" in self.properties and \
+           self.properties.supportsASyncCalculate and \
+           future:
+            params['async'] = True
+            executor =  concurrent.futures.ThreadPoolExecutor(1)
+            res = self._con.post(path=url,
+                                 postdata=params, token=self._token)
+            future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+            executor.shutdown(False)
+            return future            
         return self._con.post(path=url,
                               postdata=params, token=self._token)
 
@@ -1827,18 +1959,28 @@ class FeatureLayer(Layer):
             else:
                 raise queryException
 
+        def is_true(x):
+            if isinstance(x, bool) and x:
+                return True
+            elif isinstance(x, str) and x.lower() == 'true':
+                return True
+            else:
+                return False
+
         if 'error' in result:
             raise ValueError(result)
-        if params['returnCountOnly']:
+        if 'returnCountOnly' in params and is_true(params['returnCountOnly']):
             return result['count']
-        elif params['returnIdsOnly']:
+        elif 'returnIdsOnly' in params and is_true(params['returnIdsOnly']):
             return result
         elif 'extent' in result:
             return result
-        elif raw:
+        elif is_true(raw):
             return result
         else:
             return FeatureSet.from_dict(result)
+
+    # ----------------------------------------------------------------------
     def _query_df(self, url, params):
         """ returns results of a query as a pd.DataFrame"""
         import pandas as pd
@@ -1924,6 +2066,7 @@ class FeatureLayer(Layer):
         dtypes = None
         geom = None
         names = None
+        dfields = []
         rows = [feature_to_row(row, sr) \
                 for row in featureset_dict['features']]
         if len(rows) == 0:
@@ -1937,9 +2080,12 @@ class FeatureLayer(Layer):
                 if fld['type'] != "esriFieldTypeGeometry":
                     dtypes[fld['name']] = _fld_lu[fld['type']]
                     names.append(fld['name'])
+                if fld['type'] == 'esriFieldTypeDate':
+                    dfields.append(fld['name'])
         if 'SHAPE' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
-
+        if len(dfields) > 0:
+            df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
         return df
 
 
@@ -2716,7 +2862,69 @@ class FeatureLayerCollection(_GISResource):
         elif res is not None:
             return res
         return None
-
+    # ----------------------------------------------------------------------
+    def _cleanup_change_tracking(self, 
+                                 layers,
+                                 retention_period,
+                                 period_unit='days',
+                                 min_server_gen=None,
+                                 replica_id=None,
+                                 future=False):
+        """
+        
+        
+        
+        :returns: Boolean
+        
+        """
+        url = "{url}/cleanupChangeTracking".format(url=self._url)
+        params = {
+            "f": "json",
+            'layers' : layers,
+            'retentionPeriod' : retention_period,
+            'retentionPeriodUnits' : period_unit
+        }
+        if min_server_gen:
+            params['minServerGen'] = min_server_gen
+        if replica_id:
+            params['replicaId'] = replica_id
+        if future:
+            params['async'] = future
+            res = self._con.post(url, params)
+            if "statusUrl" in res:
+                import concurrent.futures
+                executor =  concurrent.futures.ThreadPoolExecutor(1)
+                res = self._con.post(path=url, postdata=params, token=self._token)
+                future = executor.submit(self._status_via_url, *(self._con, res['statusUrl'], {'f' : 'json'}))
+                executor.shutdown(False)
+                return future                
+            return res
+        else:
+            res = self._con.post(url, params)
+        if 'success' in res:
+            return res['success']
+        return res
+    # ----------------------------------------------------------------------
+    def _status_via_url(self, con, url, params):
+        """
+        performs the asynchronous check to see if the operation finishes
+        """
+        status_allowed = ['Pending', 'InProgress', 'Completed', 'Failed ImportChanges',
+                          'ExportChanges', 'ExportingData', 'ExportingSnapshot',
+                          'ExportAttachments', 'ImportAttachments', 'ProvisioningReplica',
+                          'UnRegisteringReplica', 'CompletedWithErrors']
+        status = con.get(url, params)
+        while not status['status'] in status_allowed:
+            if status['status'] == 'Completed':
+                return status
+            elif status['status'] == 'CompletedWithErrors':
+                break
+            elif 'fail' in status['status'].lower():
+                break
+            elif 'error' in status['status'].lower():
+                break
+            status = con.get(url, params)
+        return status    
     # ----------------------------------------------------------------------
     def _synchronize_replica(self,
                              replica_id,

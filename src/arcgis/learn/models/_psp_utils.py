@@ -37,6 +37,11 @@ import math
 from fastai.callbacks.hooks import hook_output
 from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
+from fastai.vision import flatten_model
+from fastai.vision.models import unet
+from fastai.basic_train import Learner
+from fastai.vision import to_device
+from ._arcgis_model import _get_backbone_meta
 
 def initialize_weights(*models):
     for model in models:
@@ -85,8 +90,11 @@ class _PyramidPoolingModule(nn.Module):
 def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True):
     """
     Function which returns PPM module attached to backbone which is then used to form the Unet.
-    """  
-    backbone = create_body(backbone_fn, pretrained=pretrained)
+    """      
+    if getattr(backbone_fn, '_is_multispectral', False):
+        backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+    else:
+        backbone = create_body(backbone_fn, pretrained=pretrained)
     
     backbone_name = backbone_fn.__name__
 
@@ -144,13 +152,55 @@ def _pspnet_unet(num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3
     layers = [*backbone, ppm, final_conv]
     return nn.Sequential(*layers)
 
+class AuxPSUnet(nn.Module):
+    """
+    Adds auxillary loss to PSUnet.
+    """
+    def __init__(self, model, chip_size, num_classes):
+        super(AuxPSUnet, self).__init__()      
+        self.model = model
 
+        for idx, i in enumerate(flatten_model(self.model)):
+            if hasattr(i, 'dilation'):
+                dilation = i.dilation
+                dilation = dilation[0] if isinstance(dilation, tuple) else dilation
+                if dilation > 1:
+                    break   
+
+        self.hook = hook_output(flatten_model(model)[idx - 1])
+
+        ## returns the size of various activations
+        model_sizes(self.model, size=(chip_size, chip_size))
+
+        ## Geting the stored parameters inside of the hook
+        aux_in_channels = self.hook.stored.shape[1]
+        del self.hook.stored                     
+        self.aux_logits = nn.Conv2d(aux_in_channels, num_classes, kernel_size=1)       
+
+    def forward(self, x):  
+        out = self.model(x) 
+        if self.training:
+            aux_l = self.aux_logits(self.hook.stored)
+            ## Remove hook to free up memory
+            self.hook.remove()
+            return out, F.interpolate(aux_l, x.shape[2:], mode='bilinear', align_corners=True)
+        else:
+            return out
+
+def _add_auxillary_branch_to_psunet(model, chip_size, num_classes):
+    return AuxPSUnet(model, chip_size, num_classes)
 
 class PSPNet(nn.Module):
+    """
+    Vanilla PSPNet
+    """
     def __init__(self, num_classes, backbone_fn, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True):
         super(PSPNet, self).__init__()        
         
-        self.backbone = create_body(backbone_fn, pretrained=pretrained)
+        if getattr(backbone_fn, '_is_multispectral', False):
+            self.backbone = create_body(backbone_fn, pretrained=pretrained, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+        else:
+            self.backbone = create_body(backbone_fn, pretrained=pretrained)
         
         backbone_name = backbone_fn.__name__
 
@@ -231,4 +281,24 @@ class PSPNet(nn.Module):
         if self.training:
             return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True), F.interpolate(aux_l, x_size[2:], mode='bilinear', align_corners=True)
         else:
-            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True) 
+            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True)
+
+def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, **kwargs):
+    "Build psp_net learner from `data` and `arch`."
+    model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained), data.device)
+    learn = Learner(data, model, **kwargs)
+    return learn
+
+def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, unet_aux_loss=False, **kwargs):
+    "Build psunet learner from `data` and `arch`."
+    model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
+    if unet_aux_loss:
+        model = _add_auxillary_branch_to_psunet(model, chip_size, data.c)
+    learn = Learner(data, model, **kwargs)
+    return learn
+
+def accuracy(input, target): 
+    if isinstance(input, tuple): # while training
+        input = input[0]
+    target = target.squeeze(1)
+    return (input.argmax(dim=1) == target).float().mean()            

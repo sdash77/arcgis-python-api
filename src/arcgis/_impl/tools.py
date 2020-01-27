@@ -26,7 +26,7 @@ from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
 from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
 from arcgis.features import Feature, FeatureSet, FeatureCollection, FeatureLayer
-from six.moves.urllib.error import HTTPError
+from urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
 from arcgis.raster._util import _set_context as _set_raster_context
 _log = logging.getLogger(__name__)
@@ -260,8 +260,15 @@ class _GISService(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                if isinstance(self._con, arcgis._impl._ArcGISConnection):
-                    self._token = self._con.generate_portal_server_token(url)
+                if isinstance(self._con, arcgis.gis._impl._con.Connection) and self._con._auth.lower() != 'anon':
+                    try:
+                        self._token = self._con.generate_portal_server_token(url)
+                    except Exception as e: # GUESSED Auth Wrong, try anonymously 
+                        if str(e).find("'code': 201, 'message': 'Exception in generating token'") > -1:
+                            self._con._auth = "ANON"
+                        else:
+                            from requests.exceptions import RequestException
+                            raise RequestException(str(e))
                 else:
                     self._token = self._con.token
                 self._refresh()
@@ -3454,6 +3461,296 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         return gpjob.result()
+###########################################################################
+class _PackagingTools(object):
+    """Exposes the Publishing Geoprocessing tools"""
+    _gptbx = None
+    _url = None
+    _gis = None
+    _properties = None
+    #----------------------------------------------------------------------
+    def __init__(self, url, gis, verbose=False):
+        """initializer"""
+        if gis is None:
+            gis = arcgis.env.active_gis
+        if url is None:
+            url = gis.properties['helperServices']['packaging']['url']
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+        self._verbose = verbose    
+    #----------------------------------------------------------------------
+    def _refresh(self):
+        params = {"f": "json"}
+        try:
+            dictdata = self._con.post(self._url, params)
+        except:
+            dictdata = self._con.get(self._url, params)
+        self._properties = PropertyMap(dictdata)
+    #----------------------------------------------------------------------
+    @property
+    def properties(self):
+        """returns the services properties"""
+        if self._properties is None:
+            self._refresh()
+        return self._properties
+    #----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(url_or_item=self._url, 
+                                         gis=self._gis, 
+                                         verbose=self._verbose)
+        return self._gptbx
+    #----------------------------------------------------------------------
+    def __str__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s url:"%s">' % (type(self).__name__, self._url)
+    #----------------------------------------------------------------------
+    def invoke(self, method, **kwargs):
+        """Invokes the specified method on this service passing in parameters from the kwargs name-value pairs"""
+        url = self._url + "/" + method
+        params = { "f" : "json"}
+        if len(kwargs) > 0:
+            for k,v in kwargs.items():
+                params[k] = v
+                del k,v
+        return self._con.post(path=url, postdata=params, token=self._con.token)
+    #----------------------------------------------------------------------
+    @property
+    def _tools(self):
+        return self.properties.tasks
+    #----------------------------------------------------------------------
+    def create_map_area(self, 
+                        map_item_id, 
+                        bookmark=None,
+                        extent=None,
+                        area_type='BOOKMARK',
+                        area=None,
+                        output_name=None,
+                        gis=None,
+                        future=False):
+        """
+        The Create Map Area task is used to create a map area item from a 
+        web map with a given extent in ArcGIS Online or ArcGIS Enterprise. 
+        Web map needs to be enabled for offline use with an Offline type 
+        keyword on the item. A maximum of 16 map areas can be created from
+        a web map. This tool adds a Map2Area relationship between the web 
+        map and output map area item. A web map can only have one map area
+        for a given extent.
+
+        The task is only available to the owner of the web map and 
+        organization administrators.
+
+        ========================   ====================================================================
+        **Argument**               **Description**
+        ------------------------   --------------------------------------------------------------------
+        map_item_id                    Required Item. The ID/Item of the web map item.
+        ------------------------   --------------------------------------------------------------------
+        bookmark                   Optional String. Map extent specified using a bookmark from the map, 
+                                   or extent parameter can be used instead.  **DEPRECATED AT ARCGIS 10.6.1+**
+        ------------------------   --------------------------------------------------------------------
+        extent                     Optional Envelope. Map extent specified using a JSON envelope object 
+                                   to create output item. Extent is required specified using either 
+                                   bookmark or extent. If both are available, extent will take 
+                                   precedence over bookmark.  **DEPRECATED AT ARCGIS 10.6.1+**
+        ------------------------   --------------------------------------------------------------------
+        area_type                  Required String. Specifies what type of area to use. Can be set to 
+                                   bookmark, envelope, or polygon.
+        ------------------------   --------------------------------------------------------------------
+        area                       Required String/Object. Species the map area using an envelope, a 
+                                   polygon, or the name of a bookmark.
+
+                                   Bookmark example:
+
+                                   {
+                                    "name" : "Redlands bookmark"
+                                   }
+
+                                   Envelope example:
+
+                                   { 
+                                      "spatialReference" : {"latestWkid" : 3857, "wkid" : 102100},
+                                      "xmin" : 10782717.18820468,
+                                      "ymin" : 5024701.169341451,
+                                      "xmax" : 13016716.535830744,
+                                      "ymax" : 6818423.383336087
+                                   }
+
+                                   Polygon example:
+
+                                   {
+                                      "spatialReference" : {"latestWkid":3857, "wkid":102100},
+                                      "rings" : [[[-1091028.5893342558,5441435.281784553],
+                                                [-155031.7985004736,5428390.228011981],
+                                                [480924.27683202364,5118565.274308054],
+                                                [-1009495.8089271132,4365201.923529557],
+                                                [-1123641.8209299697,4733730.514956484],
+                                                [-1091028.5893342558,5441435.281784553]]]
+                                   }
+
+        ------------------------   --------------------------------------------------------------------
+        output_name                Optional Dict. A JSON object that contains information specified for 
+                                   the output item including title, snippet, tags, description, 
+                                   folderId, and packageRefreshSchedule.
+
+                                   packageRefreshSchedule defines a schedule for keeping the map area 
+                                   up to date for download and is defined using a standard cron 
+                                   expression (the maximum frequency cannot be set to less than 
+                                   daily). If createPkgDeltas is enabled it also defines how often 
+                                   scheduled updates are created and available for download.
+
+                                   For example, if the packageRefreshSchedule is once per week, then 
+                                   the package is updated with changes since the last update on a 
+                                   weekly basis. If createPkgDeltas is also enabled each update will
+                                   contain one weeks worth of changes.
+
+                                   The output item is created in the same folder as the web map by default.
+
+                                   Example:
+
+                                    {  
+                                      "title": "Highland Earthquake",  
+                                      "folderId": "bd259c0a138d45189ad71ba06fe0097d"
+                                      "packageRefreshSchedule" : "0 0 12 ? * MON *"
+                                    }
+        ------------------------   --------------------------------------------------------------------
+        gis                        Optional GIS.  The connection object to the WebGIS site.
+        ------------------------   --------------------------------------------------------------------
+        future                     Optional Boolean.  If true, the operation will occur in an asynchronous manner.
+        ========================   ====================================================================
+
+        :returns: ToolOutput or GPJob
+
+        """
+        import uuid
+        if output_name is None:
+            output_name = {}
+            output_name['title'] = uuid.uuid4().hex
+        if gis is None:
+            gis = arcgis.env.active_gis
+        if isinstance(map_item_id, arcgis.gis.Item):
+            map_item_id = map_item_id.itemid
+        inputs = locals()
+        function_args = {}
+        for key in self._tbx.create_map_area.__annotations__.keys():
+            if key in inputs:
+                function_args[key] = inputs[key]
+            del key
+        function_args['future'] = True
+        function_args['gis'] = gis
+        res = self._tbx.create_map_area(**function_args)
+        if future:
+            return res
+        return res.result()
+    #----------------------------------------------------------------------
+    def refresh_map_area_package(self, packages, gis=None, future=False):
+        """
+        The Refresh Map Area Package task refreshes existing map area packages to update them with changes made on the source data since the last time those packages were created or refreshed.
+        
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        packages                                                                    List Items.  A JSON array consisting of packages that need to be refreshed, specified with the ID of each package item. Packages can belong to different map areas. A package item should only be listed if you are the owner of the package item or organization administrators.
+        =========================================================================   ===========================================================================
+        
+        :returns: Job, ToolOutput or Dict
+        
+        """
+        res = []
+        if gis is None:
+            gis = self._gis
+        if isinstance(packages, (tuple, list)):            
+            for package in packages:
+                if isinstance(package, Item):
+                    res.append({"itemId": package.itemid})
+                elif isinstance(package, str):
+                    res.append({"itemId": package})
+            res = json.dumps(res)
+        else:
+            res = packages
+        job = self._tbx.refresh_map_area_package(packages=res, gis=gis, future=True)
+        if future:
+            return job
+        return job.result()
+    #----------------------------------------------------------------------
+    def setup_map_area(self, 
+                       map_area_item_id, 
+                       map_layers_to_ignore=None, 
+                       tile_services=None, 
+                       feature_services=None, 
+                       gis=None, 
+                       future=False):
+        """
+        The Setup Map Area task creates packages for each service in the web map within the map area extent. The tool generates tile packages (.tpk or .vtpk) for exportTilesAllowed tiled services (i.e. basemap layer) and SQLite Geodatabase format replica packages for sync enabled feature services (i.e. operational layers). It adds an Area2Package relationship between the map area item and created package items.
+
+        Existing package related to a map area will remain unchanged after running the task a second time as long as its corresponding layer remain existed in the web map and therefore a valid map layer. For example, if a web map is updated with a feature layer removed after a package is created for that layer using the GP tool, the package will be removed the next time executing it since its corresponding layer no longer exists in the web map thus becomes invalid.
+
+        This task is available for the map area item owner and organization administrators in ArcGIS Online and ArcGIS Enterprise.
+        
+        =========================================================================   ===========================================================================
+        **Argument**                                                                **Description**
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        map_area_item_id                                                            Required String. Map area item ID, created by the Create Map Area tool.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        map_layers_to_ignore                                                        Optional List. A list of individual layers, specified with their service URLs, in the map to ignore. The task generates packages for all map layers by default.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        tile_services                                                               Optional List. An array of JSON objects that contains additional export tiles enabled tile services for which tile packages (.tpk or .vtpk) need to be created. Each tile service is specified with its URL and desired level of details.
+        -------------------------------------------------------------------------   ---------------------------------------------------------------------------
+        feature_services                                                            Optional List. An array of JSON objects that contains additional sync enabled feature services for which replicas need to be created. It can also be used to override layer definition query in the map. Each feature service is specified with its url, layers, layerQueries, returnAttachments, attachmentsSyncDirection, syncModel, syncDirection, and createPkgDeltas properties. See create replica for details of each.
+
+                                                                                    Example:
+                                                                                    
+                                                                                    [
+                                                                                      {
+                                                                                        "url":"https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/LandUse/FeatureServer",
+                                                                                        "layers":[0,1],
+                                                                                        "returnAttachments":false,
+                                                                                        "attachmentsSyncDirection":"upload",
+                                                                                        "syncModel":"perLayer"
+                                                                                      }
+                                                                                    ]
+                                                                                    Feature services support scheduled updates (version 10.7.1 and higher). Scheduled updates allow apps to download server side changes based on a fixed schedule. This is to support download-only workflows where you only need a copy of the data for reference even if the service supports editing. It is not intended for workflows where clients make edits and sync. If createPkgDeltas is configured, apps downloading the map area can periodically download changes from the server based on a schedule.
+                                                                                    
+                                                                                    The maxDeltaAge property of createPkgDeltas is used to set the number of days that individual deltas are kept on the server and are available for download (the default is 5 days). If an app goes too long without downloading updates they may be required to re-download the full map area again.
+                                                                                    
+                                                                                    Example:
+                                                                                    
+                                                                                    [
+                                                                                      {
+                                                                                        "url": "https://services.arcgis.com/ERmEceOGq5cHrItq/arcgis/rest/services/LandUse/FeatureServer",
+                                                                                        "layers": [0,1],
+                                                                                        "returnAttachments": false,
+                                                                                        "attachmentsSyncDirection": "upload",
+                                                                                        "syncModel": "perLayer",
+                                                                                        "createPkgDeltas": {
+                                                                                          "maxDeltaAge": 5
+                                                                                        }
+                                                                                      }
+                                                                                    ]
+        =========================================================================   ===========================================================================
+        
+        :returns: Job, ToolOutput or Dict
+        
+        
+        """ 
+        inputs = locals()
+        
+        function_args = {}
+        for key in self._tbx.setup_map_area.__annotations__.keys():
+            if key in inputs:
+                function_args[key] = inputs[key]
+            del key
+        function_args['future'] = True
+        function_args['gis'] = gis        
+        job = self._tbx.setup_map_area(**function_args)
+        if future:
+            return job
+        return job.result()
+
 ###########################################################################
 class _HydrologyTool():
     """Exposes the Orthmapping Geoprocessing tools"""
@@ -8632,725 +8929,6 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 
-
-###########################################################################
-class _RasterAnalysisToolsOLD(_AsyncService):
-    "Exposes the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
-
-    def __init__(self, url, gis):
-        """
-        Constructs a client to the service given it's url from ArcGIS Online or Portal.
-        """
-        super(_RasterAnalysisTools, self).__init__(url, gis)
-
-    def _create_output_image_service(self, output_name, task):
-        ok = self._gis.content.is_service_name_available(output_name, "Image Service")
-        if not ok:
-            raise RuntimeError("An Image Service by this name already exists: " + output_name)
-
-        createParameters = {
-            "name": output_name,
-            "description": "",
-            "capabilities": "Image",
-                "properties": {
-                    "path": "@",
-                    "description": "",
-                    "copyright": ""
-                }
-        }
-
-        output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="imageService")
-        description = "Image Service generated from running the " + task + " tool."
-        item_properties = {
-            "description" : description,
-            "tags" : "Analysis Result, " + task,
-            "snippet": "Analysis Image Service generated from " + task
-        }
-        output_service.update(item_properties)
-        return output_service
-
-    def generate_raster(self,
-                        raster_function,
-                        function_arguments=None,
-                        output_raster=None,
-                       output_raster_properties=None,
-                       context=None,
-                       num_instances=None):
-        """
-
-
-        Parameters
-        ----------
-        raster_function : Required, see http://resources.arcgis.com/en/help/rest/apiref/israsterfunctions.html
-
-        function_arguments : Optional,  for specifying input Raster alone, portal Item can be passed
-
-        output_raster : Optional. If not provided, an Image Service is created by the method and used as the output raster.
-            You can pass in an existing Image Service Item from your GIS to use that instead.
-            Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
-            A RuntimeError is raised if a service by that name already exists
-
-        output_raster_properties : Optional string
-
-        context : Optional
-
-        num_instances : Optional, number of instances to use
-
-
-        Returns
-        -------
-        out_raster : Image Service item
-        """
-
-        task ="GenerateRaster"
-
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        if isinstance(function_arguments, arcgis.gis.Item):
-            if function_arguments.type.lower() == 'image service':
-                function_arguments =  { "Raster":{"itemId": function_arguments.itemid } }
-            else:
-                raise TypeError("The item type of function_arguments must be an image service")
-
-        params = {}
-
-        params["rasterFunction"] = raster_function
-        params["outputRaster"] = output_raster
-        if function_arguments is not None:
-            params["functionArguments"] = function_arguments
-        if output_raster_properties is not None:
-            params["outputRasterProperties"] = output_raster_properties
-        if context is not None:
-            params["context"] = context
-        if num_instances is not None:
-            params["numInstances"] = num_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                "jobId": job_info['jobId'],
-                "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def rasterize(self,
-                  input_table,
-                  output_raster,
-                  raster_info,
-                       value_field=None,
-                       context=None,
-                       num_instances=None):
-        """
-
-
-        Parameters
-        ----------
-        input_table : Required string
-
-        output_raster : Required string
-
-        raster_info : Required string
-
-        value_field : Optional string
-
-        context : Optional string
-
-        num_instances : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer
-        """
-
-        task ="Rasterize"
-
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        params = {}
-
-        params["inputTable"] = input_table
-        params["outputRaster"] = output_raster
-        params["rasterInfo"] = raster_info
-        if value_field is not None:
-            params["valueField"] = value_field
-        if context is not None:
-            params["context"] = context
-        if num_instances is not None:
-            params["numInstances"] = num_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-
-    def interpolate(self,
-                    input_table,
-                    output_raster,
-                    raster_info,
-                       value_field=None,
-                       interpolation_method="Nearest",
-                       radius=None,
-                       context=None,
-                       num_instances=None):
-        """
-
-
-        Parameters
-        ----------
-        input_table : Required string
-
-        output_raster : Required string
-
-        raster_info : Required string
-
-        value_field : Optional string
-
-        interpolation_method : Optional string
-            One of the following: ['Nearest', 'Bilinear', 'Linear', 'NaturalNeighbor']
-        radius : Optional float
-
-        context : Optional string
-
-        num_instances : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer (Feature Service item)
-        """
-
-        task ="Interpolate"
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-
-        params = {}
-
-        params["inputTable"] = input_table
-        params["outputRaster"] = output_raster
-        params["rasterInfo"] = raster_info
-        if value_field is not None:
-            params["valueField"] = value_field
-        if interpolation_method is not None:
-            params["interpolationMethod"] = interpolation_method
-        if radius is not None:
-            params["radius"] = radius
-        if context is not None:
-            params["context"] = context
-        if num_instances is not None:
-            params["numInstances"] = num_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def copy_raster(self,
-                    input_raster,
-                    output_raster,
-                    output_cellsize=None,
-                       resampling_method="NEAREST",
-                       clipping_geometry=None,
-                       context=None,
-                       num_instances=None):
-        """
-
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        output_raster : Required string
-
-        output_cellsize : Optional string
-
-        resampling_method : Optional string
-            One of the following: ['NEAREST', 'BILINEAR', 'CUBIC', 'MAJORITY']
-        clipping_geometry : Optional string
-
-        context : Optional string
-
-        num_instances : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer
-        """
-
-        task ="CopyRaster"
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        params = {}
-
-        params["inputRaster"] = input_raster
-        params["outputRaster"] = output_raster
-        if output_cellsize is not None:
-            params["outputCellsize"] = output_cellsize
-        if resampling_method is not None:
-            params["resamplingMethod"] = resampling_method
-        if clipping_geometry is not None:
-            params["clippingGeometry"] = clipping_geometry
-        if context is not None:
-            params["context"] = context
-        if num_instances is not None:
-            params["numInstances"] = num_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-    def summarize_raster_within(self,
-                                input_zone_layer,
-                                zone_field,
-                                input_raster_layerto_summarize,
-                       output_name,
-                       statistic_type="Mean",
-                       ignore_missing_values=True,
-                       context=None):
-        """
-
-
-        Parameters
-        ----------
-        input_zone_layer : Required layer
-
-        zone_field : Required string
-
-        input_raster_layerto_summarize : Required string
-
-        output_name : Required string
-
-        statistic_type : Optional string
-            One of the following: ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety']
-        ignore_missing_values : Optional bool
-
-        context : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer
-        """
-
-        task ="Summarize Raster Within"
-
-        output_service = None
-
-        if output_name is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_name, str):
-            output_service = self._create_output_image_service(output_name, task)
-        elif isinstance(output_name, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-
-        params = {}
-
-        params["inputZoneLayer"] = super()._feature_input(input_zone_layer)
-        params["zoneField"] = zone_field
-        params["inputRasterLayertoSummarize"] = input_raster_layerto_summarize
-
-        params["outputRaster"] = output_raster
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-        if statistic_type is not None:
-            params["statisticType"] = statistic_type
-        if ignore_missing_values is not None:
-            params["ignoreMissingValues"] = ignore_missing_values
-        if context is not None:
-            params["context"] = context
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def density(self,
-                input_feature_class,
-                output_raster,
-                value_field,
-                       raster_info=None,
-                       method="Point_Density",
-                       neighborhood=None,
-                       area_units="Square_map_units",
-                       context=None):
-        """
-
-
-        Parameters
-        ----------
-        input_feature_class : Required string
-
-        output_raster : Required string
-
-        value_field : Required string
-
-        raster_info : Optional string
-
-        method : Optional string
-            One of the following: ['Point_Density', 'Line_Density', 'Kernel_Density_Densities_Planar', 'Kernel_Density_Densities_Geodesic', 'Kernel_Density_Counts_Planar', 'Kernel_Density_Counts_Geodesic']
-        neighborhood : Optional string
-
-        area_units : Optional string
-            One of the following: ['Square_map_units', 'Square_miles', 'Square_kilometers', 'Arces', 'Hectares', 'Square_yards', 'Square_feet', 'Square_inches', 'Square_meters', 'Square_centimeters', 'Square_millimeters']
-        context : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer (Feature Service item)
-        """
-
-        task ="Density"
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-
-        params = {}
-
-        params["inputFeatureClass"] = input_feature_class
-        params["outputRaster"] = output_raster
-        params["valueField"] = value_field
-        if raster_info is not None:
-            params["rasterInfo"] = raster_info
-        if method is not None:
-            params["method"] = method
-        if neighborhood is not None:
-            params["neighborhood"] = neighborhood
-        if area_units is not None:
-            params["areaUnits"] = area_units
-        if context is not None:
-            params["context"] = context
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def classify(self,
-                 input_raster,
-                 input_classifier_definition,
-                 output_raster,
-                 additional_input_raster=None,
-                 number_of_instances="4"):
-        """
-
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        input_classifier_definition : Required string
-
-        output_raster : Required string
-
-        additional_input_raster : Optional string
-
-        number_of_instances : Required string
-
-
-        Returns
-        -------
-        """
-
-        task ="Classify"
-
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        params = {}
-
-        params["Input_Raster"] = input_raster
-        params["Input_Classifier_Definition"] = input_classifier_definition
-        params["Output_Classified_Raster"] = output_raster
-        if additional_input_raster is not None:
-            params["Additional_Input_Raster"] = additional_input_raster
-        params["Number_of_Instances"] = number_of_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                "jobId": job_info['jobId'],
-                "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def segment_mean_shift(self,
-                           input_raster,
-                           output_raster,
-                           spectral_detail="15.5",
-                       spatial_detail="15",
-                       minimum_segment_size_in_pixels="20",
-                       band_indexes="1,2,3",
-                       remove_tiiling_artifacts="false",
-                       number_of_instances="4"):
-        """
-
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        output_raster : Required string
-
-        spectral_detail : Required string
-
-        spatial_detail : Required string
-
-        minimum_segment_size_in_pixels : Required string
-
-        band_indexes : Required string
-
-        remove_tiiling_artifacts : Required string
-
-        number_of_instances : Required string
-
-
-        Returns
-        -------
-        """
-
-        task ="Segment Mean Shift"
-
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        params = {}
-
-        params["Input_Raster"] = input_raster
-        params["Output_Raster_Dataset"] = output_raster
-        params["Spectral_Detail"] = spectral_detail
-        params["Spatial_Detail"] = spatial_detail
-        params["Minimum_Segment_Size_In_Pixels"] = minimum_segment_size_in_pixels
-        params["Band_Indexes"] = band_indexes
-        params["Remove_Tiiling_Artifacts"] = remove_tiiling_artifacts
-        params["Number_of_Instances"] = number_of_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                "jobId": job_info['jobId'],
-                "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def train_classifier(self,
-                         input_raster,
-                         input_training_sample_json,
-                         segmented_raster,
-                         classifier_parameters,
-                         segment_attributes="COLOR;MEAN"):
-        """
-
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        input_training_sample_json : Required string
-
-        segmented_raster : Required string
-
-        classifier_parameters : Required string
-
-        segment_attributes : Required string
-
-
-        Returns
-        -------
-        output_classifier_definition : layer
-        """
-
-        task ="Train Classifier"
-
-        params = {}
-
-        params["Input_Raster"] = input_raster
-        params["Input_Training_Sample_JSON"] = input_training_sample_json
-        params["Segmented_Raster"] = segmented_raster
-        params["Classifier_Parameters"] = classifier_parameters
-        params["Segment_Attributes"] = segment_attributes
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-
-        return job_values['Output_Classifier_Definition']
-
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):
     """
@@ -12177,6 +11755,7 @@ class _Tools(object):
         self._raster_analysis = None
         self._geoanalytics = None
         self._orthomapping = None
+        self._packaging = None
 
     def _validate_url(self, url):
         res = self._gis._private_service_url(url)
@@ -12284,6 +11863,28 @@ class _Tools(object):
             return self._analysis
         except KeyError:
             return None
+    
+    @property
+    def packaging(self):
+        """The Portal's Packaging Tools"""
+        if self._packaging is not None:
+            return self._packaging
+        try:
+             
+            svcurl = self._gis.properties['helperServices']['packaging']['url']
+            if self._gis._is_hosted_nb_home:
+                svcurl = self._validate_url(svcurl)            
+            self._packaging = _PackagingTools(url=svcurl, gis=self._gis)
+            return self._packaging
+        except:
+            if self._gis._con.token is None:
+                print("You need to be signed in to use Packaging Tools.")
+                return
+            else:
+                print("This GIS does not support Packaging Tools.")            
+                return
+        return None
+    
     @property
     def orthomapping(self):
         """the portal's Ortho-Mapping tools, if available and configured"""

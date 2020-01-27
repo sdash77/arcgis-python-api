@@ -1,6 +1,9 @@
 import arcgis as _arcgis 
 from ._arcgis_model import ArcGISModel
+from ..._impl.common._deprecate import deprecated
+from .._data import _check_esri_files, _raise_fastai_import_error
 import random
+import math
 try:
     import pandas
     import tempfile
@@ -20,23 +23,28 @@ try:
     from fastai.vision.image import open_image
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
-    from fastai.vision.learner import cnn_learner, ClassificationInterpretation
+    from fastai.vision.learner import cnn_learner, ClassificationInterpretation, cnn_config
     from ._arcgis_model import _set_multigpu_callback
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch.nn.functional as functional
-    from .._data import _check_esri_files
     import glob
     import time
     import xml.etree.ElementTree as ElementTree
     import PIL.Image
     import PIL.ExifTags
     from torch.nn import Module as NnModule
+    from .._utils.common import get_multispectral_data_params_from_emd
     HAS_FASTAI = True
 except Exception as e:
     class NnModule():
         pass
     HAS_FASTAI = False
 
+HAS_ARCPY = True
+try: 
+    import arcpy 
+except Exception: 
+    HAS_ARCPY = False
 
 def _mobilenet_split(m:NnModule): return m[0][0][0], m[1]
 
@@ -79,21 +87,34 @@ class FeatureClassifier(ArcGISModel):
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False):
         
         super().__init__(data, backbone)
 
         backbone_cut = None
         backbone_split = None
-        if self._backbone == models.mobilenet_v2:
+
+        _backbone = self._backbone
+        if hasattr(self, '_orig_backbone'):
+            _backbone = self._orig_backbone
+            _backbone_meta = cnn_config(self._orig_backbone)
+            backbone_cut = _backbone_meta['cut']
+            backbone_split = _backbone_meta['split']
+
+        if _backbone == models.mobilenet_v2:
             backbone_cut = -1
             backbone_split = _mobilenet_split
 
-        if not self._check_backbone_support(self._backbone):
+        if not self._check_backbone_support(_backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         self._code = feature_classifier_prf
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+        self._arcgis_init_callback() # make first conv weights learnable
+
+        # Add Mixup data augmentation
+        if mixup:
+            self.learn = self.learn.mixup()
 
         self.learn.model = self.learn.model.to(self._device)
 
@@ -109,17 +130,148 @@ class FeatureClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
+        """
+        Supported torchvision backbones for this model.
+        """
         return [*self._resnet_family, models.mobilenet_v2.__name__]
 
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
         """
-        if rows > self._data.batch_size:
-            rows = self._data.batch_size
+        self._check_requisites()
+        import math
+        if (rows ** 2) > len(self._data.valid_ds):
+            rows = math.floor(math.sqrt(len(self._data.valid_ds)))
+
         self.learn.show_results(rows=rows, **kwargs)
+   
+    def _show_results_multispectral(self, rows=5, **kwargs): # parameters adjusted in kwargs
+        import matplotlib.pyplot as plt
+
+        # Get Number of items
+        nrows = rows
+        ncols = kwargs.get('ncols', rows)
+
+        type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
+        if type_data_loader == 'training':
+            data_loader = self._data.train_dl
+        elif type_data_loader == 'validation':
+            data_loader = self._data.valid_dl
+        elif type_data_loader == 'testing':
+            data_loader = self._data.test_dl
+        else:
+            e = Exception(f'could not find {type_data_loader} in data.')
+            raise(e)
+
+        rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
+
+        nodata = kwargs.get('nodata', 0)
+
+        index = kwargs.get('start_index', 0)
+
+        imsize = kwargs.get('imsize', 5)
+
+        title_font_size = 16
+        _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
+        top = kwargs.get('top', _top)
+
+        statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+
+        e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
+        symbology_bands = []
+        if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
+            raise(e)
+        for b in rgb_bands:
+            if type(b) == str:
+                b_index = self._bands.index(b)
+            elif type(b) == int:
+                self._bands[b] # To check if the band index specified by the user really exists.
+                b_index = b
+            else:
+                raise(e)
+            b_index = self._data._extract_bands.index(b_index)
+            symbology_bands.append(b_index)
+
+        # Get Batch
+        x_batch, y_batch = [], []
+        i = 0
+        dl_iterater = iter(data_loader)
+        while i < nrows:
+            x, y = next(dl_iterater)
+            x_batch.append(x)
+            y_batch.append(y)
+            i+=self._data.batch_size
+        x_batch = torch.cat(x_batch)
+        # Denormalize X
+        y_batch = torch.cat(y_batch)
+
+        # Get Predictions
+        predictions_class_store = []
+        predictions_confidence_store = []
+        for i in range(0, x_batch.shape[0], self._data.batch_size):
+            _classes, _confidences = self._predict_batch(x_batch[i:i+self._data.batch_size])
+            predictions_class_store.extend(_classes)
+            predictions_confidence_store.extend(_confidences)
+
+        # Denormalize X
+        x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
+        
+        # Extract RGB Bands
+        symbology_x_batch = x_batch[:, symbology_bands]
+        if statistics_type == 'DRA':
+            shp = symbology_x_batch.shape
+            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+        
+        # Channel first to channel last for plotting
+        symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+        # Clamp float values to range 0 - 1
+        if symbology_x_batch.mean() < 1:
+            symbology_x_batch = symbology_x_batch.clamp(0, 1)
+
+        # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+        if symbology_x_batch.shape[-1] == 1:
+            symbology_x_batch = symbology_x_batch.squeeze()
+
+        # Get color Array
+        color_array = self._data._multispectral_color_array
+
+        # Size for plotting
+        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+        fig.suptitle('Ground Truth\nPredictions', fontsize=title_font_size)
+        plt.subplots_adjust(top=top)
+        idx=0
+        for r in range(nrows):
+            for c in range(ncols):
+                if idx < symbology_x_batch.shape[0]:
+                    axi  = ax[r][c]
+                    axi.imshow(symbology_x_batch[idx])
+                    y = self._data.classes[y_batch[idx].item()]
+                    prediction = self._data.classes[predictions_class_store[idx]]
+                    # prediction_confidence = predictions_confidence_store[idx]
+                    # title = f"{y} \n {prediction} {prediction_confidence:0.f}%"
+                    title = f"{y}\n{prediction}"
+                    axi.set_title(title)
+                    axi.axis('off')
+                else:
+                    ax[r][c].axis('off')
+                idx+=1
 
     def predict(self, img_path):
+        """
+        Runs prediction on an Image.
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        image_path              Required. Path to the image file to make the
+                                predictions on.
+        =====================   ===========================================
+        
+        :returns: prediciton label and confidence        
+        """
+        
         img = open_image(img_path)
         return self.learn.predict(img)
 
@@ -144,17 +296,17 @@ class FeatureClassifier(ArcGISModel):
     @property
     def _model_metrics(self):
         return {}
-    
-    def _create_emd(self, path):
-        super()._create_emd(path)
-        self._emd_template["Framework"] = "PyTorch"
-        self._emd_template["ModelConfiguration"] = "FeatureClassifier"
-        self._emd_template["ModelType"] = "ObjectClassification"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['CropSizeFixed'] = 1  # hardcoded
-        self._emd_template['BlackenAroundFeature'] = 0 #hardcoded
-        self._emd_template['ImageSpaceUsed'] = "MAP_SPACE"
-        self._emd_template['Classes'] = []
+
+    def _get_emd_params(self):
+        _emd_template = {}
+        _emd_template["Framework"] = "PyTorch"
+        _emd_template["ModelConfiguration"] = "FeatureClassifier"
+        _emd_template["ModelType"] = "ObjectClassification"
+        _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template['CropSizeFixed'] = 1  # hardcoded
+        _emd_template['BlackenAroundFeature'] = 0  # hardcoded
+        _emd_template['ImageSpaceUsed'] = "MAP_SPACE"
+        _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes):
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
@@ -162,37 +314,37 @@ class FeatureClassifier(ArcGISModel):
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
+            _emd_template['Classes'].append(class_data.copy())
 
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
+        if getattr(self, '_is_multispectral', False):
+            _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+            _emd_template["ModelConfiguration"] = "_FeatureClassifier"
+            _emd_template["InferenceFunction"] = "ObjectClassifier.py"
 
-        return path.stem
 
-    def _create_tf_emd(self, saved_path, onnx_path):
-        import random
-        super()._create_tf_emd(saved_path, onnx_path)
-
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
-        self._emd_template["ModelConfiguration"] = "_classifier"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['Classes'] = []
-
-        class_data = {}
-        for i, class_name in enumerate(self._data.classes):
-            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            class_data["Value"] = inverse_class_mapping[class_name]
-            class_data["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)]
-            class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
-
-        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
-
-        return saved_path.stem
+        return _emd_template
 
     @classmethod
     def from_model(cls, emd_path, data=None):
+        """
+        Creates a Feature classifier from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+
+        :returns: `FeatureClassifier` Object
+        """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error()
+            
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
@@ -225,13 +377,17 @@ class FeatureClassifier(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
 
-                tempdata = ImageDataBunch.single_from_classes(
-                    tempfile.TemporaryDirectory().name, sorted(list(class_mapping.values())),
+                data = ImageDataBunch.single_from_classes(
+                    emd_path.parent.parent, sorted(list(class_mapping.values())),
                     ds_tfms=transforms, size=chip_size).normalize(imagenet_stats)
-                tempdata.chip_size = chip_size
-                tempdata.class_mapping = class_mapping
-                tempdata.classes = list(class_mapping.keys())
-                data = tempdata
+
+            data.chip_size = chip_size
+            data.class_mapping = class_mapping
+            data.classes = list(class_mapping.values())
+            data._is_empty = True
+            data.emd_path = emd_path
+            data.emd = emd            
+            data = get_multispectral_data_params_from_emd(data, emd)
 
         resize_to = emd.get('resize_to')
         data.resize_to = resize_to
@@ -242,6 +398,7 @@ class FeatureClassifier(ArcGISModel):
         """
         Plots a confusion matrix of the model predictions to evaluate accuracy
         """
+        self._check_requisites()
         interp = ClassificationInterpretation.from_learner(self.learn)
         interp.plot_confusion_matrix()
 
@@ -256,6 +413,7 @@ class FeatureClassifier(ArcGISModel):
                                 ``prepare_data`` function.
         =====================   ===========================================
         """
+        self._check_requisites()
         interp = ClassificationInterpretation.from_learner(self.learn)
         interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=True)
 
@@ -619,7 +777,10 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite
     ):  
-        #
+        # class values
+        class_values = list(self._data.class_mapping.keys())
+
+        # normalization stats
         norm_mean = torch.tensor(imagenet_stats[0])
         norm_std = torch.tensor(imagenet_stats[1])
 
@@ -702,19 +863,19 @@ class FeatureClassifier(ArcGISModel):
         update_store = {}
 
         if raster is not None:
-            import arcpy
+            if not HAS_ARCPY:
+                raise Exception("This function requires arcpy.")
 
             #Arcpy Environment to export data
             arcpy.env.cellSize = cell_size
-            arcpy.env.outputCoordinateSystem = coordinate_system
-            arcpy.env.cartographicCoordinateSystem = coordinate_system
+            if coordinate_system is not None:
+                arcpy.env.outputCoordinateSystem = coordinate_system
+                arcpy.env.cartographicCoordinateSystem = coordinate_system
 
             feature_layer_url = feature_layer.url
 
             if feature_layer._token is not None:
                 feature_layer_url = feature_layer_url + f"?token={feature_layer._token}"
-
-            
             
             # Create Temporary ID field
             tempid_field = _tempid_field = 'f_fcuid'
@@ -722,9 +883,21 @@ class FeatureClassifier(ArcGISModel):
             while tempid_field in feature_layer_fields:
                 tempid_field = _tempid_field + str(i)
                 i+=1
-            arcpy.AddField_management(feature_layer_url, tempid_field, "LONG")
-            #feature_layer.manager.add_to_definition({'fields': [tempid_field_template]})
-            arcpy.CalculateField_management(feature_layer_url, tempid_field, f"{oid_field}", "SQL")
+            #arcpy.AddField_management(feature_layer_url, tempid_field, "LONG")
+            tempid_field_template = {
+                "name": tempid_field,
+                "type": "esriFieldTypeInteger",
+                "alias": tempid_field,
+                "sqlType": "sqlTypeOther",
+                "nullable": True,
+                "editable": True,
+                "visible": True,
+                "domain": None,
+                "defaultValue": -999
+            }
+            feature_layer.manager.add_to_definition({'fields': [tempid_field_template]})
+            #arcpy.CalculateField_management(feature_layer_url, tempid_field, f"{oid_field}", "SQL")
+            feature_layer.calculate(where='1=1', calc_expression={"field": tempid_field, "sqlExpression": f"{oid_field}"})
 
             temp_folder = arcpy.env.scratchFolder
             temp_datafldr = os.path.join(temp_folder, 'categorize_features_'+str(int(time.time())))
@@ -746,7 +919,8 @@ class FeatureClassifier(ArcGISModel):
                 rotation_angle=0
             )
             # cleanup
-            arcpy.DeleteField_management(feature_layer_url, [ tempid_field ])
+            #arcpy.DeleteField_management(feature_layer_url, [ tempid_field ])
+            feature_layer.manager.delete_from_definition({'fields': [tempid_field_template]})
 
             image_list = ImageList.from_folder(os.path.join(temp_datafldr, 'images'))
             def get_id(imagepath):
@@ -766,7 +940,7 @@ class FeatureClassifier(ArcGISModel):
                 
                 # push prediction to store
                 for ui, oid in enumerate(tempids):
-                    classvalue = self._data.classes[predicted_classes[ui]]
+                    classvalue = class_values[predicted_classes[ui]]
                     update_store[oid] = {
                         oid_field: oid,
                         class_value_field: classvalue,
@@ -813,7 +987,7 @@ class FeatureClassifier(ArcGISModel):
             for oid in update_store_scratch:
                 max_prediction_class, max_prediction_value = predict_function(update_store_scratch[oid])
                 if max_prediction_class is not None:
-                    classvalue = self._data.classes[max_prediction_class]
+                    classvalue = class_values[max_prediction_class]
                     classname = self._data.class_mapping[classvalue]
                 else:
                     classvalue = None
@@ -843,6 +1017,7 @@ class FeatureClassifier(ArcGISModel):
                     continue
                 warnings.warn(f"Something went wrong for data {resp}")
             time.sleep(2)
+        return True
 
 
     def _categorize_feature_class(
@@ -858,7 +1033,12 @@ class FeatureClassifier(ArcGISModel):
         batch_size,
         overwrite
     ):
-        import arcpy
+        
+        # class values
+        class_values = list(self._data.class_mapping.keys())
+
+        if not HAS_ARCPY:
+            raise Exception("This function requires arcpy to access feature class.")
         arcpy.env.overwriteOutput = overwrite
 
         if batch_size is None:
@@ -905,8 +1085,9 @@ class FeatureClassifier(ArcGISModel):
         if raster is not None:
             #Arcpy Environment to export data
             arcpy.env.cellSize = cell_size
-            arcpy.env.outputCoordinateSystem = coordinate_system
-            arcpy.env.cartographicCoordinateSystem = coordinate_system
+            if coordinate_system is not None:
+                arcpy.env.outputCoordinateSystem = coordinate_system
+                arcpy.env.cartographicCoordinateSystem = coordinate_system
 
             tempid_field = _tempid_field = 'f_fcuid'
             i = 1
@@ -963,7 +1144,7 @@ class FeatureClassifier(ArcGISModel):
                 for row in update_cursor:
                     row_tempid = row.getValue(oid_field)
                     ui = tempids.index(row_tempid)
-                    classvalue = self._data.classes[predicted_classes[ui]]
+                    classvalue = class_values[predicted_classes[ui]]
                     row.setValue(class_value_field, classvalue)
                     row.setValue(class_name_field, self._data.class_mapping[classvalue])
                     if confidence_field is not None:
@@ -1016,7 +1197,7 @@ class FeatureClassifier(ArcGISModel):
                 row_oid = row.getValue(oid_field)
                 max_prediction_class, max_prediction_value = predict_function(store[row_oid])
                 if max_prediction_class is not None:
-                    classvalue = self._data.classes[max_prediction_class]
+                    classvalue = class_values[max_prediction_class]
                     classname = self._data.class_mapping[classvalue]
                 else:
                     classvalue = None
@@ -1032,6 +1213,7 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
+    @deprecated(deprecated_in="1.7.1", details="Please use arcgis.learn.classify_objects() instead")
     def categorize_features(
         self,
         feature_layer,
@@ -1040,7 +1222,7 @@ class FeatureClassifier(ArcGISModel):
         class_name_field='prediction',
         confidence_field="confidence",
         cell_size=1,
-        coordinate_system=3857,
+        coordinate_system=None,
         predict_function=None,
         batch_size=64,
         overwrite=False 
@@ -1048,11 +1230,12 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
+        Deprecated, Please use arcgis.learn.classify_objects() instead.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Feature Layer or path of local feature class for classification with read, write, edit permissions.
+        feature_layer                            Required. Public Feature Layer or path of local feature class for classification with read, write, edit permissions.
         ------------------------------------     --------------------------------------------------------------------
         raster                                   Optional. Imagery layer or path of local raster to be used for exporting image chips. (Requires arcpy)
         ------------------------------------     --------------------------------------------------------------------
@@ -1090,6 +1273,10 @@ class FeatureClassifier(ArcGISModel):
         from arcgis.raster import ImageryLayer
         from arcgis.gis import Item
         
+        class_value_field = class_value_field.lower()
+        class_name_field = class_name_field.lower()
+        confidence_field = confidence_field.lower()
+
         if predict_function is None:
             predict_function = _prediction_function
 
@@ -1140,4 +1327,4 @@ class FeatureClassifier(ArcGISModel):
         else:
             e = Exception("Could not understand layer type")
             raise(e)
-            
+

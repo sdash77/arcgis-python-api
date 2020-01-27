@@ -3,6 +3,7 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
+from .._utils import ArcGISMSImage
 import torch
 import warnings
 import PIL
@@ -34,14 +35,16 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     if kwargs.get('n_items', None) is not None:
         n_items = kwargs.get('n_items')
 
-    ds = self.train_ds
-    if kwargs.get('type_ds', None) is not None:
-        type_ds = kwargs.get('type_ds')
-        if getattr(self, type_ds, None) is not None:
-            ds = getattr(self, type_ds)
-        else:
-            e = Exception(f'could not find {str(type_ds)} in data.')
-            raise(e)
+    type_data_loader = kwargs.get('data_loader', 'training') # options : traininig, validation, testing
+    if type_data_loader == 'training':
+        data_loader = self.train_dl
+    elif type_data_loader == 'validation':
+        data_loader = self.valid_dl
+    elif type_data_loader == 'testing':
+        data_loader = self.test_dl
+    else:
+        e = Exception(f'could not find {type_data_loader} in data.')
+        raise(e)
 
     rgb_bands = self._symbology_rgb_bands
     if kwargs.get('rgb_bands', None) is not None:
@@ -59,6 +62,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     if kwargs.get('imsize', None) is not None:
         imsize = kwargs.get('imsize')
 
+    statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
 
     e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
     symbology_bands = []
@@ -72,6 +76,7 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
             b_index = b
         else:
             raise(e)
+        b_index = self._extract_bands.index(b_index)
         symbology_bands.append(b_index)
 
     # Get Batch
@@ -82,16 +87,39 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     n_items = min(n_items, len(self.x))
 
     x_batch, y_batch = [], []
-    for i in range(index, index+n_items):
-        x_batch.append(ds.x[i].data)
-        y_batch.append(ds.y[i].data[0])
-    x_batch = self._min_max_scaler(torch.stack(x_batch))
-    symbology_x_batch = x_batch[:, symbology_bands].cpu().numpy()
+    i = 0
+    dl_iterater = iter(data_loader)
+    while i < n_items:
+        x, y = next(dl_iterater)
+        x_batch.append(x)
+        y_batch.append(y)
+        i+=self.batch_size
+    x_batch = torch.cat(x_batch)
+    # Denormalize X
+    x_batch = (self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
+    y_batch = torch.cat(y_batch)
 
-    # Channel first to channel last for plotting
-    symbology_x_batch = np.rollaxis(symbology_x_batch, 1, 4)
-    if symbology_x_batch.max() < 1.5:
-        symbology_x_batch = symbology_x_batch.clip(0, 1)
+    # Extract RGB Bands
+    symbology_x_batch = x_batch[:, symbology_bands]
+    if statistics_type == 'DRA':
+        shp = symbology_x_batch.shape
+        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+
+    # Channel first to channel last and clamp float values to range 0 - 1 for plotting
+    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+    # Clamp float values to range 0 - 1
+    if symbology_x_batch.mean() < 1:
+        symbology_x_batch = symbology_x_batch.clamp(0, 1)
+
+    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    if symbology_x_batch.shape[-1] == 1:
+        symbology_x_batch = symbology_x_batch.squeeze()
+
+    # Get color Array
+    color_array = self._multispectral_color_array
+    color_array[1:, 3] = alpha
 
     # Size for plotting
     fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
@@ -101,7 +129,8 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
             if idx < symbology_x_batch.shape[0]:
                 axi  = ax[r][c]
                 axi.imshow(symbology_x_batch[idx])
-                y_rgb = _class_array_to_rbg(y_batch[idx], self._multispectral_color_mapping, nodata)
+                y_rgb = color_array[y_batch[idx][0]]#.cpu().numpy()
+                #y_rgb = _class_array_to_rbg(y_batch[idx][0], self._multispectral_color_mapping, nodata)
                 axi.imshow(y_rgb, alpha=alpha)
                 axi.axis('off')
             else:
@@ -110,10 +139,9 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
-    def __init__(self, x, cmap=None, norm=None):
+    def __init__(self, x, color_mapping=None):
         super(ArcGISImageSegment, self).__init__(x)
-        self.cmap = cmap
-        self.mplnorm = norm
+        self.color_mapping = color_mapping
 
     def lighting(self, func, *args, **kwargs):
         return self
@@ -128,21 +156,43 @@ class ArcGISImageSegment(Image):
         return self.px.long()
 
     def show(self, ax=None, figsize:tuple=(3,3), title=None, hide_axis:bool=True,
-        cmap='tab20', alpha:float=0.5, **kwargs):
+        cmap=None, alpha:float=0.5, **kwargs):
         "Show the `ImageSegment` on `ax`."
-        ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap=self.cmap, figsize=figsize,
-                        interpolation='nearest', alpha=alpha, vmin=0, norm=self.mplnorm, **kwargs)
+        if is_no_color(self.color_mapping):
+            ## This condition will not be true.
+            ax = show_image(self, ax=ax, hide_axis=hide_axis, cmap="tab20", figsize=figsize,
+                        interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
+        else:     
+            color_mapping = torch.tensor(list(self.color_mapping.values()))
+            color_mapping = torch.cat((color_mapping.float()/255, torch.tensor([float(alpha)] * len(color_mapping)).view(-1, 1)), dim=1)
+            color_mapping = torch.cat((torch.tensor([0., 0., 0., 0.]).view(1, -1), color_mapping), dim=0)
+            ax = show_image(color_mapping[self.data[0]].permute(2, 0, 1), ax=ax, hide_axis=hide_axis, cmap=cmap, figsize=figsize,
+                            interpolation='nearest', alpha=alpha, vmin=0, **kwargs)
         if title: ax.set_title(title)
 
 class ArcGISMultispectralImageSegment():
     def __init__(self, tensor):
         self.data = tensor
         self.size = tensor.shape
+        self.shape = tensor.shape
 
 def is_no_color(color_mapping):
     if isinstance(color_mapping, dict):
         color_mapping = list(color_mapping.values())
     return (np.array(color_mapping) == [-1., -1., -1.]).any()
+
+def is_contiguous(class_values):
+    flag = True
+    for i in range(len(class_values) - 1):
+        if class_values[i] + 1 != class_values[i+1]:
+            flag = False
+    return flag
+
+def map_to_contiguous(tensor, mapping):
+    modified_tensor = torch.zeros_like(tensor)
+    for i, value in enumerate(mapping):
+        modified_tensor[tensor == value] = i
+    return modified_tensor
 
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
@@ -153,26 +203,9 @@ class ArcGISSegmentationLabelList(ImageList):
         self.color_mapping = color_mapping
         self.copy_new.append('classes')
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
-
-        if is_no_color(list(color_mapping.values())):
-            self.cmap = 'tab20'  ## compute cmap from palette
-            import matplotlib as mpl
-            bounds = list(color_mapping.keys())
-            if len(bounds) < 3: # Two handle two classes i am adding one number to the classes which is not already in bounds
-                bounds = bounds + [max(bounds)+1]
-            self.mplnorm = mpl.colors.BoundaryNorm(bounds, len(bounds))
-        else:
-            import matplotlib as mpl
-            bounds = list(color_mapping.keys())
-            if len(bounds) < 3: # Two handle two classes i am adding one number to the classes which is not already in bounds
-                bounds = bounds + [max(bounds)+1]
-            self.cmap = mpl.colors.ListedColormap(np.array(list(color_mapping.values()))/255)
-            self.mplnorm = mpl.colors.BoundaryNorm(bounds, self.cmap.N)
-
-        if len(color_mapping.keys()) == 1:
-            self.cmap = 'tab20'
-            self.mplnorm = None
-        
+        self.is_contiguous = is_contiguous(sorted([0] + list(self.class_mapping.keys())))
+        if not self.is_contiguous:
+            self.pixel_mapping = [0] + list(self.class_mapping.keys())
 
     def open(self, fn):
         with warnings.catch_warnings():
@@ -184,18 +217,15 @@ class ArcGISSegmentationLabelList(ImageList):
                 x = x.convert('L')
             x = pil2tensor(x, np.float32)
 
-        return ArcGISImageSegment(x, cmap=self.cmap, norm=self.mplnorm)
+        if not self.is_contiguous:
+            x = map_to_contiguous(x, self.pixel_mapping)
+        return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
     def analyze_pred(self, pred, thresh:float=0.5): 
-        label_mapping = {(idx + 1):value for idx, value in enumerate(self.class_mapping.keys())}
-        out = pred.argmax(dim=0)[None]
-        predictions = torch.zeros_like(out)
-        for key, value in label_mapping.items():
-            predictions[out==key] = value
-        return predictions
+        return pred.argmax(dim=0)[None]
 
     def reconstruct(self, t): 
-        return ArcGISImageSegment(t, cmap=self.cmap, norm=self.mplnorm)
+        return ArcGISImageSegment(t, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
@@ -206,8 +236,10 @@ class ArcGISSegmentationMSLabelList(ArcGISSegmentationLabelList):
         import gdal
         path = str(os.path.abspath(fn))
         x = gdal.Open(path).ReadAsArray()
-        x = torch.tensor(x.astype(np.long))[None]
-        return ArcGISImageSegment(x, cmap=self.cmap, norm=self.mplnorm)
+        x = torch.tensor(x.astype(np.float32))[None]
+        if not self.is_contiguous:
+            x = map_to_contiguous(x, self.pixel_mapping)
+        return ArcGISImageSegment(x, color_mapping=self.color_mapping)
 
 class ArcGISSegmentationMSItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
@@ -218,18 +250,145 @@ class ArcGISSegmentationMSItemList(ImageList):
         x = gdal.Open(path).ReadAsArray()
         #x = ArcGISImageMSSegment(x.astype(np.float32))
         x = torch.tensor(x.astype(np.float32))
-        #x = ArcGISImageSegment( x[:3, ] )
-        x = ArcGISMultispectralImageSegment(x)
+        #x = ArcGISMultispectralImageSegment( x[:3, ] )
+        if len(x.shape)==2:
+            x = x.unsqueeze(0)
+        x = ArcGISMSImage(x)
         return x
 
 class LabelCallback(LearnerCallback):
     def __init__(self, learn):
         super().__init__(learn)
-        import pdb
         self.label_mapping = {value:(idx+1) for idx, value in enumerate(learn.data.class_mapping.keys())}
         
     def on_batch_begin(self, last_input, last_target, **kwargs):
-        modified_target = torch.zeros_like(last_target)
-        for label, idx in self.label_mapping.items():
-            modified_target[last_target==label] = idx
-        return {'last_input':last_input, 'last_target':modified_target}
+        """
+        This callback is not used anymore.
+        Not using this callback has increased the unet model training speed.
+        """
+        # modified_target = torch.zeros_like(last_target)
+        # for label, idx in self.label_mapping.items():
+        #     modified_target[last_target==label] = idx
+        return {'last_input':last_input, 'last_target':last_target}
+
+def predict_batch(self, imagetensor_batch):
+    predictions = self.learn.model.eval()(imagetensor_batch.to(self._device).float()).detach().cpu()
+    return predictions.max(dim=1)[1]
+
+#def show_results_multispectral(self, nrows=3, index=0, type_ds='valid', rgb_bands=None, nodata=0, alpha=0.7, imsize=5, top=0.97): # Proposed Parameters 
+def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters adjusted in kwargs
+    import matplotlib.pyplot as plt
+
+    # Get Number of items
+    nrows = nrows
+    ncols = 2
+
+    type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
+    if type_data_loader == 'training':
+        data_loader = self._data.train_dl
+    elif type_data_loader == 'validation':
+        data_loader = self._data.valid_dl
+    elif type_data_loader == 'testing':
+        data_loader = self._data.test_dl
+    else:
+        e = Exception(f'could not find {type_data_loader} in data.')
+        raise(e)
+
+    rgb_bands = self._data._symbology_rgb_bands
+    if kwargs.get('rgb_bands', None) is not None:
+        rgb_bands = kwargs.get('rgb_bands')
+
+    nodata = 0
+    if kwargs.get('nodata', None) is not None:
+        nodata = kwargs.get('nodata')
+
+    index = 0
+    if kwargs.get('index', None) is not None:
+        index = kwargs.get('index')
+
+    imsize = 5
+    if kwargs.get('imsize', None) is not None:
+        imsize = kwargs.get('imsize')
+
+    title_font_size = 16
+    if kwargs.get('top', None) is not None:
+        top = kwargs.get('top')
+    else:
+        top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
+
+    statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+
+
+    e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
+    symbology_bands = []
+    if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
+        raise(e)
+    for b in rgb_bands:
+        if type(b) == str:
+            b_index = self._bands.index(b)
+        elif type(b) == int:
+            self._bands[b] # To check if the band index specified by the user really exists.
+            b_index = b
+        else:
+            raise(e)
+        b_index = self._data._extract_bands.index(b_index)
+        symbology_bands.append(b_index)
+
+    # Get Batch
+    x_batch, y_batch = [], []
+    i = 0
+    dl_iterater = iter(data_loader)
+    while i < nrows:
+        x, y = next(dl_iterater)
+        x_batch.append(x)
+        y_batch.append(y)
+        i+=self._data.batch_size
+    x_batch = torch.cat(x_batch)
+    # Denormalize X
+    y_batch = torch.cat(y_batch)
+
+    # Get Predictions
+    predictions = []
+    for i in range(0, x_batch.shape[0], self._data.batch_size):
+        predictions.append(predict_batch(self, x_batch[i:i+self._data.batch_size]))
+    predictions = torch.cat(predictions)
+
+    # Denormalize X
+    x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
+    
+    # Extract RGB Bands
+    symbology_x_batch = x_batch[:, symbology_bands]
+    if statistics_type == 'DRA':
+        shp = symbology_x_batch.shape
+        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    
+    # Channel first to channel last for plotting
+    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+    # Clamp float values to range 0 - 1
+    if symbology_x_batch.mean() < 1:
+        symbology_x_batch = symbology_x_batch.clamp(0, 1)
+
+    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    if symbology_x_batch.shape[-1] == 1:
+        symbology_x_batch = symbology_x_batch.squeeze()
+
+    # Get color Array
+    color_array = self._data._multispectral_color_array
+    color_array[1:, 3] = alpha
+
+    # Size for plotting
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
+    for r in range(nrows):
+        ax[r][0].imshow(symbology_x_batch[r])
+        y_rgb = color_array[y_batch[r][0]]
+        ax[r][0].imshow(y_rgb, alpha=alpha)
+        ax[r][0].axis('off')
+        ax[r][1].imshow(symbology_x_batch[r])
+        p_rgb = color_array[predictions[r]]
+        ax[r][1].imshow(p_rgb, alpha=alpha)
+        ax[r][1].axis('off')
+        plt.subplots_adjust(top=top)
+    return ax

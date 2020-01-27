@@ -41,14 +41,13 @@ def _infer_type(df, col):
     Ouput:
       field type name
     """
-    import six
     nn = df[col].notnull()
     nn = list(df[nn].index)
     if len(nn) > 0:
         val = df[col][nn[0]]
         if isinstance(val, six.string_types):
             return "TEXT"
-        elif isinstance(val, tuple(list(six.integer_types) + [np.int32])):
+        elif isinstance(val, tuple([int] + [np.int32])):
             return "INTEGER"
         elif isinstance(val, (float, np.int64 )):
             return "FLOAT"
@@ -337,6 +336,19 @@ def from_featureclass(filename, **kwargs):
         sr = kwargs.pop('sr', None)
         spatial_filter = kwargs.pop('spatial_filter', None)
         geom = None
+        try:
+            desc = arcpy.da.Describe(filename)
+            area_field = desc.pop('areaFieldName', None)
+            length_field = desc.pop('lengthFieldName', None)
+        except: # for older versions of arcpy
+            desc = arcpy.Describe(filename)
+            desc = {
+                'fields' : desc.fields,
+                'shapeType' : desc.shapeType
+            }
+            area_field = getattr(desc, 'areaFieldName', None)
+            length_field = getattr(desc, 'lengthFieldName', None)
+            
         if spatial_filter:
             _sf_lu = {
                 "esriSpatialRelIntersects" : "INTERSECT",
@@ -355,19 +367,8 @@ def from_featureclass(filename, **kwargs):
             geom = geom.as_arcpy
             flname = "a" + uuid.uuid4().hex[:6]
             filename = arcpy.management.MakeFeatureLayer(filename, out_layer=flname, where_clause=where_clause)[0]
-            arcpy.management.SelectLayerByLocation(filename, overlap_type=relto, select_features=geom)
-        try:
-            desc = arcpy.da.Describe(filename)
-            area_field = desc.pop('areaFieldName', None)
-            length_field = desc.pop('lengthFieldName', None)
-        except: # for older versions of arcpy
-            desc = arcpy.Describe(filename)
-            desc = {
-                'fields' : desc.fields,
-                'shapeType' : desc.shapeType
-            }
-            area_field = getattr(desc, 'areaFieldName', None)
-            length_field = getattr(desc, 'lengthFieldName', None)
+            arcpy.management.SelectLayerByLocation(filename, overlap_type=relto, select_features=geom)[0] 
+        
         shape_name = desc['shapeType']
         if fields is None:
             fields = [fld.name for fld in desc['fields'] \

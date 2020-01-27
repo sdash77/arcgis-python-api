@@ -19,8 +19,10 @@ log = logging.getLogger(__name__)
 
 import yaml
 
-BASE_BUILD_CMD = "cd {build_dir} && conda build arcgis --py {python_version} "\
-                 "--output-folder {output_dir}"
+ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev/"
+
+BASE_BUILD_CMD = "cd {build_dir} && conda build -c " + ESRI_CHANNEL_DEV + " "\
+                 "arcgis --py {python_version} --output-folder {output_dir}"
 BASE_CONVERT_CMD = "conda convert -f -p {os_build_target} {conda_package} "\
                    "-o {output_dir}" 
 BASE_INDEX_CMD = "cd {output_dir} && conda index {os_build_target}"

@@ -6,7 +6,7 @@ import math
 import sys
 import json 
 import logging      
-import types                                                                                                                                                            
+import types                                                                                                                                                       
 
 try:
     import numpy as np
@@ -16,9 +16,14 @@ try:
     from fastai.torch_core import data_collate
     import torch
     from .models._ssd_utils import SSDObjectItemList
-    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral
-    from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList
+    from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral, is_no_color
+    from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
     from .models._ner_utils import ner_prepare_data
+    from ._utils import ArcGISMSImageList
+    from ._utils.labeled_tiles import show_batch_labeled_tiles
+    from ._utils.rcnn_masks import show_batch_rcnn_masks
+    from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
+    import random
     HAS_FASTAI = True
 except:
     HAS_FASTAI = False
@@ -240,7 +245,7 @@ def _tensor_scaler(tensor_batch, min_values, max_values, mode='minmax', create_v
         min_values = min_values.view(view_shape)
     if mode=='minmax':
         # new_value = (((old_value - old_min) / (old_max-old_min))*(new_max-new_min))+new_min
-        scaled_tensor_batch = (tensor_batch - min_values) / (max_values - min_values)
+        scaled_tensor_batch = (tensor_batch - min_values) / ( (max_values - min_values) + 1e-05)
     return scaled_tensor_batch
 
 def _tensor_scaler_tfm(tensor_batch, min_values, max_values, mode='minmax'):
@@ -276,7 +281,7 @@ def prepare_data(path,
     -For object detection, use Pascal_VOC_rectangles format.
     -For feature categorization use Labelled Tiles or ImageNet format.
     -For pixel classification, use Classified Tiles format.
-    -For entity extraction from text, use BIO, LBIOU or ner_json formats. 
+    -For entity extraction from text, use IOB, BILUO or ner_json formats. 
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -285,7 +290,7 @@ def prepare_data(path,
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
-                            For dataset_type=BIO, LBIOU or ner_json:
+                            For dataset_type=IOB, BILUO or ner_json:
                                 Provide address field as class mapping
                                 in below format:
                                 class_mapping={'address_tag':'address_field'}
@@ -325,15 +330,20 @@ def prepare_data(path,
     :returns: data object
     """
     """kwargs documentation
-    imagery_type='RGB'
-    bands=None
-    rgb_bands=[0, 1, 2]
+    imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
+    bands=None # sepcify bands type for unknow imagery ['r', 'g', 'b', 'nir']
+    rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
+    norm_pct=0.3 # sample of images to calculate normalization stats on 
+    do_normalize=True # Normalize data 
     """
 
     height_width = []
 
     if not HAS_FASTAI:
         _raise_fastai_import_error()
+
+    if isinstance(path, str) and not os.path.exists(path):
+        raise Exception("Invalid input path.")
 
     if type(path) is str:
         path = Path(path)
@@ -374,11 +384,26 @@ def prepare_data(path,
             emd = json.load(f)
 
         # Create Class Mapping from EMD if not specified by user
-        if class_mapping is None:
-            try:
-                class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
-            except KeyError:
-                class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
+        ## Validate user defined class_mapping keys with emd (issue #3064)
+        # Get classmapping from emd file.
+        try:
+            emd_class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+        except KeyError:
+            emd_class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
+
+        ## Change all keys to int.
+        if class_mapping is not None:
+            class_mapping = {int(key):value for key, value in class_mapping.items()}
+        else:
+            class_mapping = {}
+
+        ## Map values from user defined classmapping to emd classmapping.
+        for key, _ in emd_class_mapping.items():
+            if class_mapping.get(key) is not None:
+                emd_class_mapping[key] = class_mapping[key]
+            
+        class_mapping = emd_class_mapping
+
 
         color_mapping = {(i.get('Value', 0) or i.get('ClassValue', 0)): i['Color'] for i in emd.get('Classes', [])}
 
@@ -434,7 +459,9 @@ def prepare_data(path,
         norm_pct= kwargs.get('norm_pct')
         norm_pct = min(max(0, norm_pct), 1)
     else:
-        norm_pct = .1
+        norm_pct = .3
+
+    lighting_transforms = kwargs.get('lighting_transforms', True)
 
     if dataset_type == 'RCNN_Masks':
 
@@ -451,14 +478,23 @@ def prepare_data(path,
         if color_mapping.get(0):
             del color_mapping[0]
 
-      
-        src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
-            .split_by_rand_pct(val_split_pct, seed=seed))
+        # Handle Multispectral
+        if _is_multispectral:
+            src = (ArcGISInstanceSegmentationMSItemList.from_folder(path/'images')
+                .split_by_rand_pct(val_split_pct, seed=seed))
+            _show_batch_multispectral = show_batch_rcnn_masks
+        else:
+            src = (ArcGISInstanceSegmentationItemList.from_folder(path/'images')
+                .split_by_rand_pct(val_split_pct, seed=seed))
 
-        label_dirs = os.listdir(path/'labels')
+        label_dirs = []
+        index_dir = {} #for handling calss value with any number
+        for i, k in enumerate(sorted(class_mapping.keys())):
+            label_dirs.append(class_mapping[k])
+            index_dir[k] = i+1
         label_dir = [os.path.join(path/'labels', lbl) for lbl in label_dirs if os.path.isdir(os.path.join(path/'labels', lbl))]
         get_y_func = partial(get_labels, label_dirs= label_dir)
-        src = src.label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping)
+        src = src.label_from_func(get_y_func, chip_size=chip_size, classes=['NoData'] + list(class_mapping.values()), class_mapping=class_mapping, color_mapping=color_mapping, index_dir=index_dir)
     
     elif dataset_type == 'Classified_Tiles':
 
@@ -471,6 +507,9 @@ def prepare_data(path,
         if color_mapping.get(0):
             del color_mapping[0]
 
+        if is_no_color(color_mapping):
+            color_mapping = {j:[random.choice(range(256)) for i in range(3)] for j in class_mapping.keys()}
+            
         # TODO : Handle NoData case
 
         # Handle Multispectral
@@ -488,6 +527,7 @@ def prepare_data(path,
                 r = ( torch.stack([x[0].data for x in samples]), torch.stack([x[1].data for x in samples]) )
                 return r
             databunch_kwargs['collate_fn'] = classified_tiles_collate_fn
+
 
         else:
             data = ArcGISSegmentationItemList.from_folder(path/'images')\
@@ -517,9 +557,15 @@ def prepare_data(path,
             height_width=height_width
         )
 
-        data = SSDObjectItemList.from_folder(path/'images')\
+        if _is_multispectral:
+            data = SSDObjectMSItemList.from_folder(path/'images')\
             .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_from_func(get_y_func)
+            _show_batch_multispectral = show_batch_pascal_voc_rectangles
+        else:
+            data = SSDObjectItemList.from_folder(path/'images')\
+                .split_by_rand_pct(val_split_pct, seed=seed)\
+                .label_from_func(get_y_func)
 
         if not_label_count[0]:
             logger = logging.getLogger()
@@ -546,9 +592,15 @@ def prepare_data(path,
             def get_y_func(x):
                 return x.parent.stem
 
-        data = ImageList.from_folder(path/'images')\
-            .split_by_rand_pct(val_split_pct, seed=42)\
-            .label_from_func(get_y_func)
+        if _is_multispectral:
+            data = ArcGISMSImageList.from_folder(path/'images')\
+                .split_by_rand_pct(val_split_pct, seed=42)\
+                .label_from_func(get_y_func)
+            _show_batch_multispectral = show_batch_labeled_tiles
+        else:
+            data = ImageList.from_folder(path/'images')\
+                .split_by_rand_pct(val_split_pct, seed=42)\
+                .label_from_func(get_y_func)
 
         if dataset_type == 'Imagenet':
             class_mapping = {}
@@ -568,20 +620,26 @@ def prepare_data(path,
             ]
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
-    elif dataset_type in ['ner_json','BIO','LBIOU']:
+    elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
-    if dataset_type == 'RCNN_Masks':
-        if transforms ==  None:
-            data = (src.transform(size=chip_size, tfm_y=True)
-                .databunch(**databunch_kwargs))
-        else:
-            data = (src.transform(transforms, size=chip_size, tfm_y=True) 
+    if _is_multispectral:
+        if dataset_type == 'RCNN_Masks':
+            kwargs['do_normalize'] = False
+            if transforms ==  None:
+                data = (src.transform(size=chip_size, tfm_y=True)
                     .databunch(**databunch_kwargs))
-    elif _is_multispectral:
-        data = data.databunch(**databunch_kwargs)
+            else:
+                data = (src.transform(transforms, size=chip_size, tfm_y=True) 
+                        .databunch(**databunch_kwargs))
+        else:
+            data = (data.transform(transforms, **kwargs_transforms)
+                        .databunch(**databunch_kwargs))
+        
+        if len(data.x) < 300:
+            norm_pct = 1
 
         # Statistics        
         dummy_stats = {
@@ -629,24 +687,53 @@ def prepare_data(path,
         data._scaled_max_values = batch_stats['scaled_max_values']
         data._scaled_mean_values = batch_stats['scaled_mean_values']
         data._scaled_std_values = batch_stats['scaled_std_values']
+
+        # Prevent Divide by zeros
+        data._band_max_values[data._band_min_values == data._band_max_values]+=1
+        data._scaled_std_values[data._scaled_std_values == 0]+=1e-02
         
         # Scaling
-        if kwargs.get('do_scale', None) is not None:
-            data._do_scale = kwargs.get('do_scale')
-        else:
-            data._do_scale = True
         data._min_max_scaler = partial(_tensor_scaler, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-        if data._do_scale:
-            data._min_max_scaler_tfm = partial(_tensor_scaler_tfm, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
-            data.add_tfm(data._min_max_scaler_tfm)
+        data._min_max_scaler_tfm = partial(_tensor_scaler_tfm, min_values=data._band_min_values, max_values=data._band_max_values, mode='minmax')
+        #data.add_tfm(data._min_max_scaler_tfm)
         
-        # Normalize
-        if kwargs.get('do_normalize', None) is not None:
-            data._do_normalize = kwargs.get('do_normalize')
+        # Transforms
+        def _scaling_tfm(x): 
+            ## Scales Fastai Image Scaling | MS Image Values -> 0 - 1 range
+            return x.__class__(data._min_max_scaler_tfm((x.data,None))[0][0])
+        
+        ## Fastai need tfm, order and resolve.
+        class dummy():
+            pass
+        _scaling_tfm.tfm = dummy()
+        _scaling_tfm.tfm.order = 0
+        _scaling_tfm.resolve = dummy
+
+        ## Scaling the images before applying any  other transform
+        if getattr(data.train_ds, 'tfms') is not None:
+            data.train_ds.tfms = [_scaling_tfm] + data.train_ds.tfms
         else:
-            data._do_normalize = True
+            data.train_ds.tfms = [_scaling_tfm]
+        if getattr(data.valid_ds, 'tfms') is not None:
+            data.valid_ds.tfms = [_scaling_tfm] + data.valid_ds.tfms
+        else:
+            data.valid_ds.tfms = [_scaling_tfm]
+
+        # Normalize
+        data._do_normalize = True
+        if kwargs.get('do_normalize', None) is not None:
+            data._do_normalize = kwargs.get('do_normalize', True)
         if data._do_normalize:
             data = data.normalize(stats=(data._scaled_mean_values, data._scaled_std_values), do_x=True, do_y=False)
+        
+    elif dataset_type == 'RCNN_Masks':
+        if transforms ==  None:
+            data = (src.transform(size=chip_size, tfm_y=True)
+                .databunch(**databunch_kwargs))
+        else:
+            data = (src.transform(transforms, size=chip_size, tfm_y=True) 
+                    .databunch(**databunch_kwargs))
+        data.show_batch = types.MethodType( show_batch_rcnn_masks, data )
     else:
         # 
         data = (data.transform(transforms, **kwargs_transforms)
@@ -685,13 +772,24 @@ def prepare_data(path,
                 if -1 in data._multispectral_color_mapping[c]:
                     data._multispectral_color_mapping[c] = random_color_list[i]
 
+        # prepare color array
+        alpha = kwargs.get('alpha', 0.7)
+        color_array = torch.tensor( list(data.color_mapping.values()) ).float() / 255
+        alpha_tensor = torch.tensor( [alpha]*len(color_array) ).view(-1, 1).float()
+        color_array = torch.cat( [ color_array, alpha_tensor ], dim=-1)
+        background_color = torch.tensor( [[0, 0, 0, 0]] ).float()
+        data._multispectral_color_array = torch.cat( [background_color, color_array] )
+
         # Prepare unknown bands list if bands data is missing
         if data._bands is None:
             n_bands = data.x[0].data.shape[0]
             if n_bands == 1:# Handle Pancromatic case
-                data._bands = data._symbology_rgb_bands = data._rgb_bands = ['p']
+                data._bands = ['p']
+                data._symbology_rgb_bands = [0]
             else:
                 data._bands = ['u' for i in range(n_bands)]
+                if n_bands == 2:# Handle Data with two channels
+                    data._symbology_rgb_bands = [0]
         
         # 
         if data._rgb_bands is None:
@@ -735,5 +833,10 @@ def prepare_data(path,
         if [data._bands[i] for i in data._extract_bands] == ['r', 'g', 'b']:
             _train_tail = False
         data._train_tail = kwargs.get('train_tail', _train_tail)
+
+    if has_esri_files:
+        data._image_space_used = emd.get('ImageSpaceUsed', 'MAP_SPACE')
+    else:
+        data._image_space_used = 'PIXEL_SPACE'
 
     return data

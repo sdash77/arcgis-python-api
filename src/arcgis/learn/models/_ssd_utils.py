@@ -6,6 +6,7 @@ from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastprogress import progress_bar
 import numpy as np
 import random
+import math
 
 def conv_params(in_size, out_size):
     filters = [3,2,5,4]
@@ -256,6 +257,9 @@ def nms(boxes, scores, overlap=0.5, top_k=100):
     return keep, count
 
 def _analyze_pred(pred, thresh=0.5, nms_overlap=0.1, ssd=None, ret_scores=True, device=torch.device('cpu')):
+    """
+    It works on a single activation, does not support batch.
+    """
     from ._ssd import SingleShotDetector
     from ._retinanet import RetinaNet
 
@@ -355,7 +359,6 @@ def compute_class_AP(ssd, dl, n_classes, show_progress, iou_thresh=0.5, detect_t
                 op = ssd._data.y.analyze_pred((output[0][i], output[1][i]), thresh=detect_thresh, nms_overlap=iou_thresh, ssd=ssd, ret_scores=True, device=ssd._device)
                 tgt_bbox, tgt_clas = ssd._get_y(target[0][i], target[1][i])
                 
-
                 try:
                     bbox_pred, preds, scores = op
                     if len(bbox_pred) != 0 and len(tgt_bbox) != 0:
@@ -371,8 +374,11 @@ def compute_class_AP(ssd, dl, n_classes, show_progress, iou_thresh=0.5, detect_t
                         p_scores.append(scores.cpu())
                 except Exception as e:
                     pass
-                n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)               
-    
+                n_gts += ((tgt_clas.cpu()[:,None] - 1) == classes[None,:]).sum(0)
+
+    # If no true positives are found return an average precision score of 0.
+    if len(tps) == 0: return [0. for cls in range(1, n_classes + 1)]
+
     tps, p_scores, clas = torch.tensor(tps), torch.cat(p_scores,0), torch.cat(clas,0)
     fps = 1-tps
     idx = p_scores.argsort(descending=True)
@@ -437,3 +443,164 @@ def kmeans(bboxes, num_anchor):
             
         prev_centroids = cur_centroids.copy()
     
+def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs): # parameters adjusted in kwargs
+    from matplotlib import pyplot as plt
+    from matplotlib import patheffects
+
+    # Get Number of items
+    ncols = 2
+
+    type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
+    if type_data_loader == 'training':
+        data_loader = self._data.train_dl
+    elif type_data_loader == 'validation':
+        data_loader = self._data.valid_dl
+    elif type_data_loader == 'testing':
+        data_loader = self._data.test_dl
+    else:
+        e = Exception(f'could not find {type_data_loader} in data.')
+        raise(e)
+
+    rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
+
+    nodata = kwargs.get('nodata', 0)
+
+    index = kwargs.get('start_index', 0)
+
+    imsize = kwargs.get('imsize', 4)
+
+    title_font_size = 16
+    _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
+    top = kwargs.get('top', _top)
+
+    statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+    label_font_size = kwargs.get('label_font_size', 16)
+
+    e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
+    symbology_bands = []
+    if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
+        raise(e)
+    for b in rgb_bands:
+        if type(b) == str:
+            b_index = self._bands.index(b)
+        elif type(b) == int:
+            self._bands[b] # To check if the band index specified by the user really exists.
+            b_index = b
+        else:
+            raise(e)
+        b_index = self._data._extract_bands.index(b_index)
+        symbology_bands.append(b_index)
+
+    # Get Batch
+    x_batch, y_batch = [], []
+    i = 0
+    dl_iterater = iter(data_loader)
+    while i < nrows:
+        x, y = next(dl_iterater)
+        x_batch.append(x)
+        y_batch.append(y)
+        i+=self._data.batch_size
+    x_batch = torch.cat(x_batch)
+    y_bboxes = []
+    y_classes = []
+    for yb in y_batch:
+        y_bboxes.extend(yb[0])
+        y_classes.extend(yb[1])
+
+    # Get Predictions
+    # predictions_class_store = []
+    # predictions_confidence_store = []
+    # predictions_activation_store = []
+    # for i in range(0, x_batch.shape[0], self._data.batch_size):
+    #     _classes_sparse, _activations = self.learn.model.eval()(x_batch[i:i+self._data.batch_size])
+    #     _confidences, _classes = _classes_sparse[:, :, 1:].max(dim=-1) # _class_confidences are not used anywhere
+    #     #_confidences = torch.stack([_classes_sparse[:, :, -1], _confidences], dim=-1).max(dim=-1)[0] # Confidence wether there is an object in the anchor box or not
+    #     predictions_confidence_store.append(_confidences)
+    #     predictions_class_store.append(_classes)
+    #     predictions_activation_store.append(_activations)
+    # predictions_activation_store = torch.cat(predictions_activation_store)
+    # predictions_class_store = torch.cat(predictions_class_store)
+    # predictions_confidence_store = torch.cat(predictions_confidence_store)
+    
+    predictions_class_store = []
+    predictions_activation_store = []
+    for i in range(0, x_batch.shape[0], self._data.batch_size):
+        _classes_sparse, _activations = self.learn.model.eval()(x_batch[i:i+self._data.batch_size])
+        predictions_class_store.append(_classes_sparse)
+        predictions_activation_store.append(_activations)
+    predictions_activation_store = torch.cat(predictions_activation_store)
+    predictions_class_store = torch.cat(predictions_class_store)
+    # predictions_bbox_store, predictions_class_store, predictions_confidence_store = _analyze_pred((predictions_class_store, predictions_activation_store), thresh=thresh, nms_overlap=nms_overlap, ssd=self, ret_scores=True, device=self._device)
+
+    # Denormalize X
+    x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
+
+    # Extract RGB Bands
+    symbology_x_batch = x_batch[:, symbology_bands]
+    if statistics_type == 'DRA':
+        shp = symbology_x_batch.shape
+        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+
+    # Channel first to channel last for plotting
+    symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+    # Clamp float values to range 0 - 1
+    if symbology_x_batch.mean() < 1:
+        symbology_x_batch = symbology_x_batch.clamp(0, 1)
+    
+    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    if symbology_x_batch.shape[-1] == 1:
+        symbology_x_batch = symbology_x_batch.squeeze()
+
+    # Get color Array
+    color_array = self._data._multispectral_color_array
+    color_array[1:, 3] = alpha
+
+    # Size for plotting
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
+    fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
+    plt.subplots_adjust(top=top)
+    idx=0
+    for r in range(0, nrows):
+        # Plot Ground Truth
+        ax_ground_truth = ax[r][0]
+        ax_ground_truth.axis('off')
+        ax_ground_truth.imshow(symbology_x_batch[idx])
+        gt_classes = y_classes[idx][y_classes[idx] > 0]
+        gt_bboxes = y_bboxes[idx][y_classes[idx] > 0]
+        gt_bboxes = (gt_bboxes+1)*.5
+        gt_bboxes = gt_bboxes.clamp(0, 1)*(x_batch.shape[-1]-1)
+        for i, bbox in enumerate(gt_bboxes):
+            xs = bbox[[1, 1, 3, 3, 1]]
+            ys = bbox[[0, 2, 2, 0, 0]]
+            color = self._data._multispectral_color_array[gt_classes[i]]
+            ax_ground_truth.plot(xs, ys, color=color, linewidth=2)
+            ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
+
+        # Plot Predictions
+        ax_prediction  = ax[r][1]
+        ax_prediction.axis('off')
+        ax_prediction.imshow(symbology_x_batch[idx])
+        analyzed_prediction = _analyze_pred(
+            (predictions_class_store[idx], predictions_activation_store[idx]), 
+            thresh=thresh, 
+            nms_overlap=nms_overlap, 
+            ssd=self, 
+            ret_scores=True, 
+            device=self._device
+        )
+        if analyzed_prediction is not None:
+            predicted_bboxes, predicted_classes, predicted_confidences = analyzed_prediction
+            predicted_bboxes = (predicted_bboxes+1)*.5
+            predicted_bboxes = predicted_bboxes.clamp(0, 1)*(x_batch.shape[-1]-1)
+            if len(predicted_bboxes) > 0:
+                for i, bbox in enumerate(predicted_bboxes):
+                    xs = bbox[[1, 1, 3, 3, 1]]
+                    ys = bbox[[0, 2, 2, 0, 0]]
+                    color = self._data._multispectral_color_array[predicted_classes[i]]
+                    ax_prediction.plot(xs, ys, color=color, linewidth=2)
+                    ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
+            
+        idx+=1
+    return ax

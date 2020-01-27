@@ -12,6 +12,7 @@ from functools import partial
 #--------------------------------------------------------------------------
 def _is_valid(value):
     """checks if the value is valid"""
+    number_type = (int, float)
     if 'spatialReference' not in value or \
        isinstance(value['spatialReference'],
                   (dict, SpatialReference)) == False:
@@ -399,7 +400,13 @@ class Geometry(BaseGeometry):
             xmin, ymin, xmax, ymax = self.extent
             if xmin == xmax and ymin == ymax:
                 # This is a point; buffer using an arbitrary size
-                xmin, ymin, xmax, ymax = self.buffer(1).extent
+                try:                
+                    xmin, ymin, xmax, ymax = self.buffer(1).extent
+                except:
+                    xmin -= expand_amount
+                    ymin -= expand_amount
+                    xmax += expand_amount
+                    ymax += expand_amount
             else:
                 # Expand bounds by a fraction of the data ranges
                 expand = 0.04  # or 4%, same as R plots
@@ -590,6 +597,18 @@ class Geometry(BaseGeometry):
                 return min(xs), min(ys), max(xs), max(ys)
         return None
     #----------------------------------------------------------------------
+
+    @property
+    def envelope(self):
+        """Returns the geoextent as an Envelope object"""
+        env_dict = {'xmin':self.geoextent[0],
+                    'ymin':self.geoextent[1],
+                    'xmax':self.geoextent[2],
+                    'ymax':self.geoextent[3],
+                    'spatialReference':self.spatial_reference}
+
+        return Envelope(env_dict)
+    # ----------------------------------------------------------------------
     def skew(self, x_angle=0,
              y_angle=0, inplace=False):
         """
