@@ -3526,7 +3526,7 @@ class _PackagingTools(object):
     #----------------------------------------------------------------------
     def create_map_area(self, 
                         map_item_id, 
-                        bookmaark=None,
+                        bookmark=None,
                         extent=None,
                         area_type='BOOKMARK',
                         area=None,

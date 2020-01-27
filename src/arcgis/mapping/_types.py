@@ -1779,6 +1779,7 @@ class OfflineMapAreaManager(object):
             item_properties = {}
         if isinstance(area, str):  # bookmark specified
             _bookmark = area
+            area_type = 'BOOKMARK'
         elif isinstance(area, (list, tuple)):  # extent specified as list
             _extent = {'xmin': area[0][0],
                        'ymin': area[0][1],
@@ -1966,9 +1967,14 @@ class OfflineMapAreaManager(object):
         item.update(item_properties=update_items)
         if _extent is None and area_type == "BOOKMARK":
             for bm in self._web_map._webmapdict['bookmarks']:
-                if bm['name'].lower() == area['name'].lower():
-                    _extent = bm['extent']
-                    break        
+                if isinstance(area, dict):
+                    if bm['name'].lower() == area['name'].lower():
+                        _extent = bm['extent']
+                        break
+                else:
+                    if bm['name'].lower() == area.lower():
+                        _extent = bm['extent']
+                        break
         update_items = {
             "properties": {
                 "extent": _extent,
