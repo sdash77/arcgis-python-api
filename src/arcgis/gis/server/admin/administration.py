@@ -155,11 +155,11 @@ class Server(BaseServer):
         import json
         if sd_file.lower().endswith('.sd') == False:
             return False
-        catalog = self._catalog
-        if 'System' not in catalog.folders:
+        catalog = self.content
+        if 'System' not in self.services.folders:
             return False
         if folder and \
-           folder.lower() not in [f.lower() for f in catalog.folders]:
+           folder.lower() not in [f.lower() for f in self.services.folders]:
             self.services.create_folder(folder)
         service = catalog.get(name="PublishingTools", folder='System')
         if service is None:
