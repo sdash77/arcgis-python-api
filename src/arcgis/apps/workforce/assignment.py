@@ -95,19 +95,28 @@ class Assignment(FeatureModel):
             # uses cached objects that are set when the assignments were last queried
             # speeds up construction by not querying FS for every assignment instantiated
             if feature.attributes[project._assignment_schema.worker_id]:
-                self.worker = self.project._cached_workers[feature.attributes[project._assignment_schema.worker_id]]
+                if self.project._is_v2_project:
+                    self.worker = self.project._cached_workers[feature.attributes[project._assignment_schema.worker_id].upper()]
+                else:
+                    self.worker = self.project._cached_workers[feature.attributes[project._assignment_schema.worker_id]]
             else:
                 self.worker = None
             if feature.attributes[project._assignment_schema.dispatcher_id]:
                 # in case dispatcher for an existing assignment has been deleted
                 try:
-                    self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id]]
+                    if self.project._is_v2_project:
+                        self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id].upper()]
+                    else:
+                        self.dispatcher = self.project._cached_dispatchers[feature.attributes[project._assignment_schema.dispatcher_id]]
                 except KeyError:
                     self.dispatcher = None
             else:
                 self.dispatcher = None
             if feature.attributes[project._assignment_schema.assignment_type]:
-                self.assignment_type = self.project._cached_assignment_types[feature.attributes[project._assignment_schema.assignment_type]]
+                if self.project._is_v2_project:
+                    self.assignment_type = self.project._cached_assignment_types[feature.attributes[project._assignment_schema.assignment_type].upper()]
+                else:
+                    self.assignment_type = self.project._cached_assignment_types[feature.attributes[project._assignment_schema.assignment_type]]
             else:
                 self.assignment_type = None
         else:
