@@ -87,6 +87,7 @@ class Project:
             Deletes the project, group, folder, layers, and webmaps.
             Assumes the currently signed in user owns the project or is an admin.
         """
+        title = self.title
         owner = self._item.owner
         self.assignments_item.protect(False)
         self.assignments_item.delete()
@@ -107,7 +108,7 @@ class Project:
         self.group.protected = False
         self.group.delete()
         for folder in self.gis.users.get(owner).folders:
-            if folder['id'] == self._item_data['folderId']:
+            if folder['title'] == title:
                 self.gis.content.delete_folder(folder['title'], owner=owner)
 
     def _update_data(self):
