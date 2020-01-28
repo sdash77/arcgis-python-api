@@ -81,8 +81,10 @@ class AssignmentType(FeatureModel):
         """Gets the internal code that uniquely identifies the assignment type"""
         if not self.project._is_v2_project:
             return self._coded_value['code']
-        else:
+        elif self._feature.attributes.get(self._schema.global_id):
             return self._feature.attributes.get(self._schema.global_id).upper()
+        else:
+            return None
 
     @property
     def name(self):

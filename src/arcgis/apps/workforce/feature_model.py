@@ -27,10 +27,13 @@ class FeatureModel(Model):
     @property
     def id(self):
         """The object (version 1) or global id (version 2) of the feature"""
-        if self.project._is_v2_project:
+        # Returns global ID in upper case form if it exists for v2 project, otherwise returns nothing
+        if self.project._is_v2_project and self.global_id is not None:
             return self.global_id.upper()
-        else:
+        elif not self.project._is_v2_project:
             return self.object_id
+        else:
+            return None
 
     @property
     def feature(self):

@@ -94,6 +94,7 @@ class Assignment(FeatureModel):
             # create required objects from the feature
             # uses cached objects that are set when the assignments were last queried
             # speeds up construction by not querying FS for every assignment instantiated
+            # forces GUIDs to upper case
             if feature.attributes[project._assignment_schema.worker_id]:
                 if self.project._is_v2_project:
                     self.worker = self.project._cached_workers[feature.attributes[project._assignment_schema.worker_id].upper()]
@@ -266,7 +267,7 @@ class Assignment(FeatureModel):
 
     @property
     def assignment_type_code(self):
-        if self.project._is_v2_project:
+        if self.project._is_v2_project and self._assignment_type is not None:
             return self._feature.attributes.get(self._schema.assignment_type).upper()
         else:
             return self._feature.attributes.get(self._schema.assignment_type)
@@ -338,7 +339,7 @@ class Assignment(FeatureModel):
     @property
     def dispatcher_id(self):
         """Gets the dispatcher id of the assignment"""
-        if self.project._is_v2_project:
+        if self.project._is_v2_project and self.dispatcher is not None:
             return self._feature.attributes.get(self._schema.dispatcher_id).upper()
         else:
             return self._feature.attributes.get(self._schema.dispatcher_id)

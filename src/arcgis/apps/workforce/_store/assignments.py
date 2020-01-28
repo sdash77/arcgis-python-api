@@ -156,7 +156,7 @@ def update_assignment(project, assignment, geometry=None, assignment_type=None,
     if paused_date:
         assignment.paused_date = paused_date
     if priority:
-        assignment._priority = priority
+        assignment.priority = priority
     if status:
         assignment.status = status
     if work_order_id:
