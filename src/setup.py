@@ -48,7 +48,7 @@ else:
         'ipywidgets >=7',
         'widgetsnbextension >=3',
         'pandas >=0.25',
-        'numpy >=1.16.2,,<1.18',
+        'numpy >=1.16.2,<1.18',
         'matplotlib',
         'keyring',
         'jupyterlab',
