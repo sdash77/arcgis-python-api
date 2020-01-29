@@ -140,17 +140,6 @@ def _build_operational_layers(item, popup_def=None, visibility=True, layer_index
     return op_layer
 
 
-def _build_table(item, table_index):
-    table = item.tables[table_index]
-    op_table = {
-        "url": table.url,
-        "id": "{}_0".format(table.properties["name"]),
-        "title": table.properties["name"],
-        "itemId": item.id,
-    }
-    return op_table
-
-
 def _v2_create_project(gis, summary, title):
     for f in gis.users.me.folders:
         if f['title'].lower() == title.lower():
@@ -391,7 +380,6 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
         },
         "authoringApp": "ArcGISPythonAPI",
         "authoringAppVersion": str(arcgis.__version__),
-        "tables": [],
         "applicationProperties": {
             "viewing": {
                 "search": {
@@ -414,8 +402,6 @@ def _v2_create_worker_webmap(gis, folder_name, workforce_service_item, assignmen
     }
     webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, assignments_popup_def, layer_index=0))
     webmap_data["operationalLayers"].append(_build_operational_layers(workforce_service_item, workers_popup_def, layer_index=1))
-    webmap_data["tables"].append(_build_table(workforce_service_item, table_index=0))
-    webmap_data["tables"].append(_build_table(workforce_service_item, table_index=1))
     item_properties["text"] = json.dumps(webmap_data)
 
     item = gis.content.add(item_properties, folder=folder_name)
