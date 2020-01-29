@@ -46,7 +46,7 @@ class Mode(BaseServer):
     #----------------------------------------------------------------------
     @deprecated(deprecated_in="1.7.1", 
                 removed_in=None,
-                current_version="1.7.1",
+                current_version="1.8.0",
                 details="Use `Mode.update_mode` instead.")    
     def update(self,
                siteMode,
