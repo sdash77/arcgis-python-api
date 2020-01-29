@@ -58,6 +58,9 @@ class ServerManager(object):
                     self._server_list.append(
                           NotebookServer(url=admin_url, gis=self._gis)
                      )
+                elif server['serverFunction'] == 'MissionServer':
+                    from arcgis.gis.mission import MissionServer
+                    self._server_list.append(MissionServer(url=admin_url, gis=self._gis))
                 else:
                     c = ServicesDirectory(url=admin_url, portal_connection=self._gis._portal.con, )
                     self._server_list.append(c.admin)
@@ -221,7 +224,7 @@ class ServerManager(object):
         else:
             function = functions[str(function).lower()]
         server_id = None
-        from six.moves.urllib.parse import urlparse
+        from urllib.parse import urlparse
         b = urlparse(url=server._admin_url).netloc.lower()
         for s in self._server_info:
             if b == urlparse(s['adminUrl'].lower()).netloc:

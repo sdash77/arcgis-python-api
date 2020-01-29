@@ -707,15 +707,14 @@ class FeatureSet(object):
             Ouput:
               field type name
             """
-            import six
             import numpy as np
             nn = df[col].notnull()
             nn = list(df[nn].index)
             if len(nn) > 0:
                 val = df[col][nn[0]]
-                if isinstance(val, six.string_types):
+                if isinstance(val, str):
                     return "esriFieldTypeString"
-                elif isinstance(val, tuple(list(six.integer_types) + [np.int32])):
+                elif isinstance(val, tuple([int] + [np.int32])):
                     return "esriFieldTypeInteger"
                 elif isinstance(val, (float, np.int64)):
                     return "esriFieldTypeDouble"
@@ -894,8 +893,10 @@ class FeatureSet(object):
                         if part_item:
                             part_list.append([part_item])
                     geometry["rings"] = part_list[0]
-            elif geo_type in ["LineString", "MultiPoint"]:
-                geometry = geom
+            elif geo_type == "MultiPoint":
+                geometry["points"] = [c[:] for c in geom["coordinates"]]
+            elif geo_type == "LineString":
+                geometry["paths"] = [[c[:] for c in geom["coordinates"]]]
             elif geo_type == "MultiLineString":
                 if HASARCPY == 'rem':
                     geom = arcpy.AsShape(geom)

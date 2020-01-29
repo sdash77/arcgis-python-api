@@ -11,6 +11,8 @@ from skimage import io
 import matplotlib.pyplot as plt
 from fastprogress import progress_bar
 from torch import LongTensor
+import os
+from .._utils import ArcGISMSImage
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."
@@ -53,7 +55,7 @@ def is_no_color(color_mapping):
 class ArcGISSegmentationLabelList(ImageList):
     "`ItemList` for segmentation masks."
     _processor = SegmentationProcessor
-    def __init__(self, items, chip_size, classes=None, class_mapping=None, color_mapping=None, **kwargs):
+    def __init__(self, items, chip_size, classes=None, class_mapping=None, color_mapping=None, index_dir=None, **kwargs):
         super().__init__(items, **kwargs)
         self.class_mapping = class_mapping
         self.color_mapping = color_mapping
@@ -61,6 +63,7 @@ class ArcGISSegmentationLabelList(ImageList):
         self.classes, self.loss_func = classes, CrossEntropyFlat(axis=1)
         self.chip_size = chip_size
         self.inverse_class_mapping = {}
+        self.index_dir = index_dir
         for k, v in self.class_mapping.items():
             self.inverse_class_mapping[v] = k
         if is_no_color(list(color_mapping.values())):
@@ -97,7 +100,7 @@ class ArcGISSegmentationLabelList(ImageList):
             for j in range(len(self.class_mapping)):
 
                 if k < len(fn):
-                    lbl_name = int(self.inverse_class_mapping[fn[k].parent.name])
+                    lbl_name = int(self.index_dir[self.inverse_class_mapping[fn[k].parent.name]])
                 else:
                     lbl_name = len(self.class_mapping) + 2
                 if lbl_name == j+1:                    
@@ -126,6 +129,19 @@ class ArcGISSegmentationLabelList(ImageList):
 class ArcGISInstanceSegmentationItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+
+class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
+    "`ItemList` suitable for segmentation tasks."
+    _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
+    def open(self, fn):
+        import gdal
+        path = str(os.path.abspath(fn))
+        x = gdal.Open(path).ReadAsArray()
+        if len(x.shape)==2:
+            x = x.unsqueeze(0)
+        x = torch.tensor(x.astype(np.float32))
+        x = ArcGISMSImage(x)
+        return x
 
 def mask_rcnn_loss(loss_value, *args):
 
@@ -198,6 +214,31 @@ class train_callback(LearnerCallback):
         return {'last_input':last_input, 'last_target':last_target}
 
 def masks_iou(masks1, masks2):
+    # Mask R-CNN
+
+    # The MIT License (MIT)
+
+    # Copyright (c) 2017 Matterport, Inc.
+
+    # Permission is hereby granted, free of charge, to any person obtaining a copy
+    # of this software and associated documentation files (the "Software"), to deal
+    # in the Software without restriction, including without limitation the rights
+    # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    # copies of the Software, and to permit persons to whom the Software is
+    # furnished to do so, subject to the following conditions:
+
+    # The above copyright notice and this permission notice shall be included in
+    # all copies or substantial portions of the Software.
+
+    # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    # THE SOFTWARE.
+
+    #Method is based on https://github.com/matterport/Mask_RCNN
 
     if masks1.shape[0] == 0 or masks2.shape[0] == 0:
         return torch.zeros((masks1.shape[0], masks2.shape[0]))
@@ -217,6 +258,7 @@ def compute_matches(gt_class_ids, gt_masks,
                     pred_class_ids, pred_scores, pred_masks,
                     iou_threshold=0.5, detect_threshold=0.5):
 
+    #Method is based on https://github.com/matterport/Mask_RCNN
     indices = torch.argsort(pred_scores, descending=True)
     pred_class_ids = pred_class_ids[indices]
     pred_scores = pred_scores[indices]
@@ -224,7 +266,7 @@ def compute_matches(gt_class_ids, gt_masks,
 
     ious_mask = masks_iou(pred_masks, gt_masks)
 
-    pred_match = -1 * torch.ones([pred_masks.shape[0]])
+    pred_match = -1 * np.ones([pred_masks.shape[0]])
     if 0 not in ious_mask.shape:
         max_iou, matches = ious_mask.max(1)
         detected = []
@@ -239,24 +281,24 @@ def compute_ap(gt_class_ids, gt_masks,
                pred_class_ids, pred_scores, pred_masks,
                iou_threshold=0.5, detect_threshold=0.5):
 
+    #Method is based on https://github.com/matterport/Mask_RCNN
     pred_match = compute_matches(
         gt_class_ids, gt_masks,
         pred_class_ids, pred_scores, pred_masks,
         iou_threshold, detect_threshold)
 
-    precisions = torch.cumsum(pred_match > -1, dim=0) / (torch.arange(len(pred_match)) + 1)
-    recalls = torch.cumsum(pred_match > -1, dim=0).type(torch.float64) / len(gt_class_ids)
+    precisions = np.cumsum(pred_match > -1) / (np.arange(len(pred_match)) + 1)
+    recalls = np.cumsum(pred_match > -1).astype(np.float32) / len(gt_class_ids)
 
-    precisions = torch.cat([torch.tensor([0]), precisions, torch.tensor([0])]).type(torch.float64)
-    recalls = torch.cat([torch.tensor([0],dtype=torch.float64), recalls, torch.tensor([1], dtype=torch.float64)])
+    precisions = np.concatenate([[0], precisions, [0]])
+    recalls = np.concatenate([[0], recalls, [1]])
 
     for i in range(len(precisions) - 2, -1, -1):
-        precisions[i] = torch.max(precisions[i], precisions[i + 1])
+        precisions[i] = np.maximum(precisions[i], precisions[i + 1])
 
     indices = np.where(recalls[:-1] != recalls[1:])[0] + 1
-    mAP = torch.sum((recalls[indices] - recalls[indices - 1]) *
-                precisions[indices])
-
+    mAP = np.sum((recalls[indices] - recalls[indices - 1]) *
+                 precisions[indices])
     return mAP
 
 def compute_class_AP(model, dl, n_classes, show_progress, detect_thresh=0.5, iou_thresh=0.5, mean=False):
@@ -303,14 +345,18 @@ def compute_class_AP(model, dl, n_classes, show_progress, detect_thresh=0.5, iou
                                             pred_masks,
                                             iou_thresh,
                                             detect_thresh)
-                            if not(torch.isnan(ap) or torch.isinf(ap)):
-                                aps[k-1].append(ap)
+                            aps[k-1].append(ap)
     if mean:
-        aps = np.mean(aps, axis=0)
+        if aps != []:
+            aps = np.mean(aps, axis=0)
+        else:
+            return 0.0
     else:
         for i in range(n_classes):
-            aps[i] = np.mean(aps[i])
+            if aps[i] != []:
+                aps[i] = np.mean(aps[i])
+            else:
+                aps[i] = 0.0
     if model._device == torch.device('cuda'):
         torch.cuda.empty_cache()
     return aps
-    

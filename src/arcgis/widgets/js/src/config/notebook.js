@@ -20,7 +20,7 @@ if(/\/[0-9A-Fa-f]{32}\/notebooks\//.test(location.pathname)){
     try{
         jupyterBase = location.pathname.match(
             /.*\/[0-9A-Fa-f]{32}\/(?=notebooks\/)/)[0];}
-    catch{}
+    catch (e){}
 }
 var nbextensionPath = jupyterBase + "nbextensions/arcgis/";
 console.log("nbextension path = " + nbextensionPath);

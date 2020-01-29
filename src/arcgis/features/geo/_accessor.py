@@ -63,9 +63,8 @@ class GeoSeriesAccessor:
 
         :returns: float in a series
         """
-        res = self._data.area
-        res.index = self._index
-        return res
+        return pd.Series(self._data.area, name='area', index=self._index)
+        
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
@@ -74,9 +73,7 @@ class GeoSeriesAccessor:
 
         :returns: arcpy.Geometry in a series
         """
-        res = self._data.as_arcpy
-        res.index = self._index
-        return res
+        return pd.Series(self._data.as_arcpy, name='as_arcpy', index=self._index)
     #----------------------------------------------------------------------
     @property
     def as_shapely(self):
@@ -85,9 +82,7 @@ class GeoSeriesAccessor:
 
         :returns: shapely.Geometry in a series
         """
-        res = self._data.as_shapely
-        res.index = self._index
-        return res
+        return pd.Series(self._data.as_shapely, name='as_arcpy', index=self._index)
     #----------------------------------------------------------------------
     @property
     def centroid(self):
@@ -96,9 +91,7 @@ class GeoSeriesAccessor:
 
         :returns: tuple (x,y) in series
         """
-        res = self._data.centroid
-        res.index = self._index
-        return res
+        return pd.Series(self._data.centroid, name='centroid', index=self._index)
     #----------------------------------------------------------------------
     @property
     def extent(self):
@@ -107,9 +100,7 @@ class GeoSeriesAccessor:
 
         :returns: tuple (xmin,ymin,xmax,ymax) in series
         """
-        res = self._data.extent
-        res.index = self._index
-        return res
+        return pd.Series(self._data.extent, name='extent', index=self._index)
     #----------------------------------------------------------------------
     @property
     def first_point(self):
@@ -118,9 +109,7 @@ class GeoSeriesAccessor:
 
         :returns: Geometry
         """
-        res = self._data.first_point
-        res.index = self._index
-        return res
+        return pd.Series(self._data.first_point, name='first_point', index=self._index)
     #----------------------------------------------------------------------
     @property
     def geoextent(self):
@@ -129,9 +118,9 @@ class GeoSeriesAccessor:
 
         :returns: Series of Floats
         """
-        res = self._data.geoextent
-        res.index = self._index
-        return res
+        #res = self._data.geoextent
+        #res.index = self._index
+        return pd.Series(self._data.geoextent, name='geoextent', index=self._index)
     #----------------------------------------------------------------------
     @property
     def geometry_type(self):
@@ -140,9 +129,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of strings
         """
-        res = self._data.geometry_type
-        res.index = self._index
-        return res
+        return pd.Series(self._data.geometry_type, name='geometry_type', index=self._index)
     #----------------------------------------------------------------------
     @property
     def hull_rectangle(self):
@@ -151,9 +138,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of strings
         """
-        res = self._data.hull_rectangle
-        res.index = self._index
-        return res
+        return pd.Series(self._data.hull_rectangle, name='hull_rectangle', index=self._index)
     #----------------------------------------------------------------------
     @property
     def is_empty(self):
@@ -162,9 +147,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Booleans
         """
-        res = self._data.is_empty
-        res.index = self._index
-        return res
+        return pd.Series(self._data.is_empty, name='is_empty', index=self._index)
     #----------------------------------------------------------------------
     @property
     def is_multipart(self):
@@ -173,9 +156,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Booleans
         """
-        res = self._data.is_multipart
-        res.index = self._index
-        return res
+        return pd.Series(self._data.is_multipart, name='is_multipart', index=self._index)
     #----------------------------------------------------------------------
     @property
     def is_valid(self):
@@ -184,9 +165,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Booleans
         """
-        res = self._data.is_valid
-        res.index = self._index
-        return res
+        return pd.Series(self._data.is_valid, name='is_valid', index=self._index)
     #----------------------------------------------------------------------
     @property
     def JSON(self):
@@ -195,9 +174,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of strings
         """
-        res = self._data.JSON
-        res.index = self._index
-        return res
+        return pd.Series(self._data.JSON, name='JSON', index=self._index)
     #----------------------------------------------------------------------
     @property
     def label_point(self):
@@ -206,9 +183,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Geometries
         """
-        res = self._data.label_point
-        res.index = self._index
-        return res
+        return pd.Series(self._data.label_point, name='label_point', index=self._index)
     #----------------------------------------------------------------------
     @property
     def last_point(self):
@@ -217,9 +192,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Geometry
         """
-        res = self._data.last_point
-        res.index = self._index
-        return res
+        return pd.Series(self._data.last_point, name='last_point', index=self._index)
     #----------------------------------------------------------------------
     @property
     def length(self):
@@ -228,9 +201,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of float
         """
-        res = self._data.length
-        res.index = self._index
-        return res
+        return pd.Series(self._data.length, name='length', index=self._index)
     #----------------------------------------------------------------------
     @property
     def length3D(self):
@@ -239,9 +210,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of float
         """
-        res = self._data.length3D
-        res.index = self._index
-        return res
+        return pd.Series(self._data.length3D, name='length3D', index=self._index)
     #----------------------------------------------------------------------
     @property
     def part_count(self):
@@ -250,9 +219,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Integer
         """
-        res = self._data.part_count
-        res.index = self._index
-        return res
+        return pd.Series(self._data.part_count, name='part_count', index=self._index)
     #----------------------------------------------------------------------
     @property
     def point_count(self):
@@ -261,9 +228,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Integer
         """
-        res = self._data.point_count
-        res.index = self._index
-        return res
+        return pd.Series(self._data.part_count, name='point_count', index=self._index)
     #----------------------------------------------------------------------
     @property
     def spatial_reference(self):
@@ -272,9 +237,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of SpatialReference
         """
-        res = self._data.spatial_reference
-        res.index = self._index
-        return res
+        return pd.Series(self._data.spatial_reference, name='spatial_reference', index=self._index)
     #----------------------------------------------------------------------
     @property
     def true_centroid(self):
@@ -283,9 +246,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Points
         """
-        res = self._data.true_centroid
-        res.index = self._index
-        return res
+        return pd.Series(self._data.true_centroid, name='true_centroid', index=self._index)
     #----------------------------------------------------------------------
     @property
     def WKB(self):
@@ -294,9 +255,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of Bytes
         """
-        res = self._data.WKB
-        res.index = self._index
-        return res
+        return pd.Series(self._data.WKB, name='WKB', index=self._index)
     #----------------------------------------------------------------------
     @property
     def WKT(self):
@@ -305,9 +264,7 @@ class GeoSeriesAccessor:
 
         :returns: Series of String
         """
-        res = self._data.WKT
-        res.index = self._index
-        return res
+        return pd.Series(self._data.WKT, name='WKT', index=self._index)
     ##---------------------------------------------------------------------
     ##  Accessor Geometry Method
     ##---------------------------------------------------------------------
@@ -332,8 +289,7 @@ class GeoSeriesAccessor:
         """
         res = self._data.angle_distance_to(**{'second_geometry' : second_geometry,
                                                'method' : method})
-        res.index = self._index
-        return res
+        return pd.Series(res, index=self._index, name='angle_distance_to')
     #----------------------------------------------------------------------
     def boundary(self):
         """
@@ -341,10 +297,9 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Polyline
         """
-
-        res = self._data.boundary()
-        res.index = self._index
-        return res
+        return pd.Series(self._data.boundary(), 
+                         index=self._index, 
+                         name='boundary')
     #----------------------------------------------------------------------
     def buffer(self, distance):
         """
@@ -360,9 +315,9 @@ class GeoSeriesAccessor:
 
         :returns: arcgis.geometry.Polygon
         """
-        res = self._data.buffer(**{'distance' : distance})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.buffer(**{'distance' : distance}), 
+                         index=self._index, 
+                         name='buffer')
     #----------------------------------------------------------------------
     def clip(self, envelope):
         """
@@ -378,9 +333,9 @@ class GeoSeriesAccessor:
         :returns: output geometry clipped to extent
 
         """
-        res = self._data.clip(**{'envelope' : envelope})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.clip(**{'envelope' : envelope}), 
+                         index=self._index, 
+                         name='clip')
     #----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
         """
@@ -400,19 +355,20 @@ class GeoSeriesAccessor:
 
         :returns: boolean
         """
-        res = self._data.contains(**{'second_geometry' : second_geometry,
-                                      'relation' : relation})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.contains(**{'second_geometry' : second_geometry,
+                                                'relation' : relation}), 
+                         name='contains', 
+                         index=self._index)
+        
     #----------------------------------------------------------------------
     def convex_hull(self):
         """
         Constructs the geometry that is the minimal bounding polygon such
         that all outer angles are convex.
         """
-        res = self._data.convex_hull()
-        res.index = self._index
-        return res
+        return pd.Series(self._data.convex_hull(), 
+                         index=self._index, 
+                         name='convex_hull')
     #----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
@@ -428,9 +384,9 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        res = self._data.crosses(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.crosses(**{'second_geometry' : second_geometry}), 
+                         name='crosses', 
+                         index=self._index)
     #----------------------------------------------------------------------
     def cut(self, cutter):
         """
@@ -446,9 +402,9 @@ class GeoSeriesAccessor:
         :returns: a list of two geometries
 
         """
-        res = self._data.cut(**{'cutter' : cutter})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.cut(**{'cutter' : cutter}), 
+                         index=self._index, 
+                         name='cut')
     #----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
@@ -477,11 +433,11 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        res = self._data.densify(**{'method' : method,
-                                    'distance' : distance,
-                                    'deviation' : deviation})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.densify(**{'method' : method,
+                                               'distance' : distance,
+                                               'deviation' : deviation}), 
+                         index=self._index, 
+                         name='densify')
     #----------------------------------------------------------------------
     def difference(self, second_geometry):
         """
@@ -499,9 +455,9 @@ class GeoSeriesAccessor:
         :returns: arcgis.geometry.Geometry
 
         """
-        res = self._data.difference(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.difference(**{'second_geometry' : second_geometry}), 
+                         index=self._index, 
+                         name='difference')
     #----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
@@ -518,8 +474,7 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.disjoint(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(res, index=self._index, name='disjoint')
     #----------------------------------------------------------------------
     def distance_to(self, second_geometry):
         """
@@ -537,8 +492,9 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.distance_to(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='distance_to')
     #----------------------------------------------------------------------
     def equals(self, second_geometry):
         """
@@ -556,14 +512,14 @@ class GeoSeriesAccessor:
 
 
         """
-        res = self._data.equals(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.equals(**{'second_geometry' : second_geometry}), 
+                         name='equals', 
+                         index=self._index)
     #----------------------------------------------------------------------
     def generalize(self, max_offset):
         """
         Creates a new simplified geometry using a specified maximum offset
-        tolerance.
+        tolerance.  This only works on Polylines and Polygons.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -575,8 +531,9 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.generalize(**{'max_offset' : max_offset})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='generalize')
     #----------------------------------------------------------------------
     def get_area(self, method, units=None):
         """
@@ -602,8 +559,9 @@ class GeoSeriesAccessor:
         """
         res = self._data.get_area(**{'method' : method,
                                       'units' : units})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='get_area')
     #----------------------------------------------------------------------
     def get_length(self, method, units):
         """
@@ -628,8 +586,9 @@ class GeoSeriesAccessor:
         """
         res = self._data.get_length(**{'method' : method,
                                        'units' : units})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='get_length')
     #----------------------------------------------------------------------
     def get_part(self, index=None):
         """
@@ -647,7 +606,10 @@ class GeoSeriesAccessor:
         :return: arcpy.Array
 
         """
-        return self._data.get_part(**{'index' : index})
+        res = self._data.get_part(**{'index' : index})
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='get_part')        
     #----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
@@ -674,10 +636,10 @@ class GeoSeriesAccessor:
         :returns: boolean
 
         """
-        res = self._data.intersect(**{'second_geometry' : second_geometry,
-                                       'dimension' : dimension})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.intersect(**{'second_geometry' : second_geometry,
+                                                'dimension' : dimension}), 
+                         name='intersect', 
+                         index=self._index)
     #----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
         """
@@ -697,8 +659,9 @@ class GeoSeriesAccessor:
         """
         res = self._data.measure_on_line(**{'second_geometry' : second_geometry,
                                             'as_percentage' : as_percentage})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='measure_on_line')
     #----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
@@ -715,9 +678,9 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        res = self._data.overlaps(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.overlaps(**{'second_geometry' : second_geometry}), 
+                         name='overlaps', 
+                         index=self._index)
     #----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
         """
@@ -745,8 +708,9 @@ class GeoSeriesAccessor:
         res = self._data.point_from_angle_and_distance(**{'angle' : angle,
                                                            'distance' : distance,
                                                            'method' : method})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='point_from_angle_and_distance')
     #----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
@@ -770,8 +734,9 @@ class GeoSeriesAccessor:
         """
         res = self._data.position_along_line(**{'value' : value,
                                                 'use_percentage' : use_percentage})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='position_along_line')
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
@@ -790,8 +755,9 @@ class GeoSeriesAccessor:
         """
         res = self._data.project_as(**{'spatial_reference' : spatial_reference,
                                        'transformation_name' : transformation_name})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='project_as')
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
                                  use_percentage=False):
@@ -815,8 +781,9 @@ class GeoSeriesAccessor:
         """
         res = self._data.query_point_and_distance(**{'second_geometry' : second_geometry,
                                                       'use_percentage' : use_percentage})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='query_point_and_distance')
     #----------------------------------------------------------------------
     def segment_along_line(self, start_measure,
                            end_measure, use_percentage=False):
@@ -846,8 +813,9 @@ class GeoSeriesAccessor:
         res = self._data.segment_along_line(**{'start_measure' : start_measure,
                                                'end_measure' : end_measure,
                                                'use_percentage' : use_percentage})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='segment_along_line')
     #----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
         """
@@ -863,8 +831,9 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.snap_to_line(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='snap_to_line')
     #----------------------------------------------------------------------
     def symmetric_difference (self, second_geometry):
         """
@@ -882,8 +851,9 @@ class GeoSeriesAccessor:
         :return: arcgis.gis.Geometry
         """
         res = self._data.symmetric_difference(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='symmetric_difference')
     #----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
@@ -898,9 +868,9 @@ class GeoSeriesAccessor:
 
         :return: boolean
         """
-        res = self._data.touches(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(self._data.touches(**{'second_geometry' : second_geometry}), 
+                         name='touches', 
+                         index=self._index)
     #----------------------------------------------------------------------
     def union(self, second_geometry):
         """
@@ -917,8 +887,9 @@ class GeoSeriesAccessor:
         :return: arcgis.gis.Geometry
         """
         res = self._data.union(**{'second_geometry' : second_geometry})
-        res.index = self._index
-        return res
+        return pd.Series(res, 
+                         index=self._index, 
+                         name='union')
     #----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
@@ -940,11 +911,10 @@ class GeoSeriesAccessor:
         :return: boolean
 
         """
-        res = self._data.within(**{'second_geometry' : second_geometry,
-                                    'relation' : relation}
-                                 )
-        res.index = self._index
-        return res
+        return pd.Series(self._data.within(**{'second_geometry' : second_geometry,
+                                                'relation' : relation}), 
+                         name='within', 
+                         index=self._index)
 
 
 #--------------------------------------------------------------------------

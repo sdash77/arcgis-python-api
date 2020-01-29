@@ -1185,7 +1185,7 @@ class FeatureLayer(Layer):
         params = {
             "f" : "json"
         }
-        if not isinstance(sql, six.string_types):
+        if not isinstance(sql, str):
             raise ValueError("sql must be a string")
         else:
             params['sql'] = sql
@@ -1959,18 +1959,28 @@ class FeatureLayer(Layer):
             else:
                 raise queryException
 
+        def is_true(x):
+            if isinstance(x, bool) and x:
+                return True
+            elif isinstance(x, str) and x.lower() == 'true':
+                return True
+            else:
+                return False
+
         if 'error' in result:
             raise ValueError(result)
-        if params['returnCountOnly']:
+        if 'returnCountOnly' in params and is_true(params['returnCountOnly']):
             return result['count']
-        elif params['returnIdsOnly']:
+        elif 'returnIdsOnly' in params and is_true(params['returnIdsOnly']):
             return result
         elif 'extent' in result:
             return result
-        elif raw:
+        elif is_true(raw):
             return result
         else:
             return FeatureSet.from_dict(result)
+
+    # ----------------------------------------------------------------------
     def _query_df(self, url, params):
         """ returns results of a query as a pd.DataFrame"""
         import pandas as pd
@@ -2056,6 +2066,7 @@ class FeatureLayer(Layer):
         dtypes = None
         geom = None
         names = None
+        dfields = []
         rows = [feature_to_row(row, sr) \
                 for row in featureset_dict['features']]
         if len(rows) == 0:
@@ -2069,9 +2080,12 @@ class FeatureLayer(Layer):
                 if fld['type'] != "esriFieldTypeGeometry":
                     dtypes[fld['name']] = _fld_lu[fld['type']]
                     names.append(fld['name'])
+                if fld['type'] == 'esriFieldTypeDate':
+                    dfields.append(fld['name'])
         if 'SHAPE' in featureset_dict:
             df.spatial.set_geometry('SHAPE')
-
+        if len(dfields) > 0:
+            df[dfields] = df[dfields].apply(pd.to_datetime, unit='ms')
         return df
 
 

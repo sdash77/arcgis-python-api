@@ -17,6 +17,7 @@ RUN conda install --quiet --yes \
 
 # Install dependencies for Python API
 RUN conda install -y unzip \
+					 xlrd \
                      pandas \
                      lxml \
                      html5lib \
@@ -31,6 +32,7 @@ RUN conda install -y unzip \
                      pysal \
                      pyshp \
                      keyring \
+		     requests \
     && conda clean -tipsy \
     && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
 #RUN conda install jupyter_dashboards -c conda-forge -y

@@ -257,6 +257,7 @@ class Version(object):
     _mode = None
     _save = None
     _properties = None
+    _validation = None
     #----------------------------------------------------------------------
     def __init__(self,
                  url,
@@ -285,7 +286,24 @@ class Version(object):
         self._flc = flc
     #----------------------------------------------------------------------
     @property
-    def _parcel_fabric(self):
+    def validation(self):
+        """
+        Provides access to a validation manager.
+
+        :returns: ValidationManager
+        """
+        if self._validation is None:
+            from arcgis.mapping import MapImageLayer
+            ms = MapImageLayer(url=os.path.dirname(self._flc.url) + "/MapServer", gis=self._gis)
+            if 'validationserver' in ms.properties.supportedExtensions.lower():    
+                from arcgis.features._validation import ValidationManager
+                url = os.path.dirname(self._flc.url) + "/ValidationServer"
+                self._validation = ValidationManager(url=url, version=self, gis=self._gis)
+        return self._validation
+        
+    #----------------------------------------------------------------------
+    @property
+    def parcel_fabric(self):
         """
         Provides access to a parcel fabric manager
 

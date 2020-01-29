@@ -15,7 +15,8 @@ with the server properties API.
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
-from six.moves.urllib_parse import urlparse
+from urllib.parse import urlparse
+
 ########################################################################
 class Uploads(BaseServer):
     """

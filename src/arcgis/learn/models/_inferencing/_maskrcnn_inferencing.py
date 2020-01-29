@@ -4,6 +4,7 @@ try:
     import torch
     import torch.nn as nn
     import math
+    from .util import scale_batch
     HAS_TORCH = True
 except Exception as e:
     HAS_TORCH = False
@@ -200,10 +201,10 @@ class ChildInstanceDetector:
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.padding = int(scalars['padding'])
-        self.batch_size = int(math.sqrt(int(scalars['batch_size']))) ** 2
-        self.threshold = float(scalars['threshold'])
-        self.return_bboxes = eval(scalars['return_bboxes'])
+        self.padding = int(scalars.get('padding', self.json_info['ImageHeight'] // 4)) ## Default padding Imageheight//4.
+        self.batch_size = int(math.sqrt(int(scalars.get('batch_size', 4)))) ** 2  ## Default 4 batch_size        
+        self.threshold = float(scalars.get('threshold', 0.9)) ## Default 0.9 threshold.
+        self.return_bboxes = eval(scalars.get('return_bboxes', 'False'))
 
         self.rectangle_height, self.rectangle_width = calculate_rectangle_size_from_batch_size(self.batch_size)
         ty, tx = get_tile_size(self.json_info['ImageHeight'], self.json_info['ImageWidth'],
@@ -211,7 +212,7 @@ class ChildInstanceDetector:
 
         return {
             'extractBands': tuple(self.json_info['ExtractBands']),
-            'padding': int(scalars['padding']),
+            'padding': self.padding,
             'tx': tx,
             'ty': ty,
             'fixedTileSize': 1
@@ -228,12 +229,16 @@ class ChildInstanceDetector:
                                     fixed_tile_size=True,
                                     batch_height=self.rectangle_height,
                                     batch_width=self.rectangle_width)       
+        
+        if "NormalizationStats" in self.json_info:
+            img_normed = scale_batch(batch, self.json_info)
+        else:
+            img_normed = batch/255
 
         predictions = pixel_mask_image(
                                     self.model,
-                                    batch,
+                                    img_normed,
                                     self.device,
-                                    [clas['Name'] for clas in self.json_info['Classes']],
                                     self.json_info['ImageHeight'],
                                     threshold=self.threshold,
                                     batch_size=self.batch_size,
@@ -245,16 +250,16 @@ class ChildInstanceDetector:
 def predict_mask_rcnn(model, images, device, chip_size, threshold=0.5):
     
     model = model.to(device)
-    normed_batch_tensor = torch.tensor(images).to(device)
+    normed_batch_tensor = torch.tensor(images).to(device).float()
     predictions = model(list(normed_batch_tensor))
     
     return predictions
     
 
-def pixel_mask_image(model, tiles, device, classes, chip_size, threshold=0.5, batch_size=4, return_bboxes=False):
+def pixel_mask_image(model, img_normed, device, chip_size, threshold=0.5, batch_size=4, return_bboxes=False):
 
     side = int(math.sqrt(batch_size))
-    img_normed = tiles/255
+    
     predictions = predict_mask_rcnn(model, img_normed, device, chip_size, threshold=threshold)
 
     all_contour_list = []

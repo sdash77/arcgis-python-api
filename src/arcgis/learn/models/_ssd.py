@@ -1,14 +1,13 @@
 from ._arcgis_model import ArcGISModel
-import tempfile
 from pathlib import Path
 import json
 from ._codetemplate import code
-import logging
-logger = logging.getLogger() 
-import os, csv
 import warnings
-from warnings import warn
-from . import _tracker_util
+import math
+from .._data import _raise_fastai_import_error
+
+import logging
+logger = logging.getLogger()
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -20,7 +19,7 @@ try:
     from fastprogress import progress_bar
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
-    from fastai.vision.learner import create_body
+    from fastai.vision.learner import create_body, cnn_config
     from fastai.vision.data import ImageDataBunch
     from fastai.vision import ImageList
     from fastai.vision import imagenet_stats, normalize
@@ -29,7 +28,7 @@ try:
     from torchvision.models import mobilenet_v2
     from torchvision import models
     from ._ssd_utils import SSDHead, BCE_Loss, FocalLoss, one_hot_embedding, nms
-    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou
+    from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou, show_results_multispectral
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
@@ -38,6 +37,7 @@ try:
     import PIL
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
+    from .._utils.common import get_multispectral_data_params_from_emd
 except Exception as e:
     class NnModule():
         pass
@@ -121,6 +121,16 @@ class SingleShotDetector(ArcGISModel):
         self._code = code
         self.ssd_version = ssd_version
 
+        backbone_cut = None
+        backbone_split = None
+
+        if hasattr(self, '_orig_backbone'):
+            self._backbone_ms = self._backbone
+            self._backbone = self._orig_backbone
+            _backbone_meta = cnn_config(self._orig_backbone)
+            backbone_cut = _backbone_meta['cut']
+            backbone_split = _backbone_meta['split']
+
         if backbone is None:
             self._backbone = models.resnet34
             backbone_name = 'res'
@@ -134,9 +144,6 @@ class SingleShotDetector(ArcGISModel):
         if not self._check_backbone_support(self._backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        backbone_cut = None
-        backbone_split = None
-
         if self._backbone == models.mobilenet_v2:
             backbone_cut = -1
             backbone_split = _mobilenet_split
@@ -147,7 +154,7 @@ class SingleShotDetector(ArcGISModel):
                 
             self._create_anchors(grids, zooms, ratios)
 
-            feature_sizes = model_sizes(create_body(self._backbone), size=(data.chip_size, data.chip_size))
+            feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
             num_features = feature_sizes[-1][-1]
             num_channels = feature_sizes[-1][1]
 
@@ -196,8 +203,13 @@ class SingleShotDetector(ArcGISModel):
 
         else:
             raise Exception('SSDVersion can only be 1 or 2')
+        
+        if hasattr(self, '_backbone_ms'):
+            self._orig_backbone = self._backbone
+            self._backbone = self._backbone_ms
 
         self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
+        self._arcgis_init_callback() # make first conv weights learnable
         self.learn.model = self.learn.model.to(self._device)
 
         if focal_loss:
@@ -218,6 +230,9 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def supported_backbones(self):
+        """
+        Supported torchvision backbones for this model.
+        """        
         return [*self._resnet_family, *self._densenet_family, *self._vgg_family, models.mobilenet_v2.__name__]
 
     @classmethod
@@ -260,6 +275,9 @@ class SingleShotDetector(ArcGISModel):
         
         :returns: `SingleShotDetector` Object
         """
+        if not HAS_FASTAI:
+            _raise_fastai_import_error()
+            
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
         model_file = Path(emd['ModelFile'])
@@ -287,13 +305,18 @@ class SingleShotDetector(ArcGISModel):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", UserWarning)
                 
-                sd = ImageList([], path=tempfile.TemporaryDirectory().name).split_by_idx([])
-                tempdata = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
-                tempdata.chip_size = chip_size
-                tempdata.class_mapping = class_mapping
-                tempdata.classes = ['background'] + list(class_mapping.values())
-                data = tempdata
-                data.c += 1 # Add 1 for background class
+                sd = ImageList([], path=emd_path.parent.parent).split_by_idx([])
+                data = sd.label_const(0, label_cls=SSDObjectCategoryList, classes=list(class_mapping.values())).transform(ds_tfms).databunch().normalize(imagenet_stats)
+
+            data.chip_size = chip_size
+            data.class_mapping = class_mapping
+            data.classes = ['background'] + list(class_mapping.values())
+            data._is_empty = True
+            # Add 1 for background class
+            data.c += 1
+            data.emd_path = emd_path
+            data.emd = emd 
+            data = get_multispectral_data_params_from_emd(data, emd)
 
         data.resize_to = resize_to
         ssd = cls(data, emd['Grids'], emd['Zooms'], emd['Ratios'], pretrained_path=str(model_file), backbone=backbone, ssd_version=ssd_version)
@@ -409,73 +432,56 @@ class SingleShotDetector(ArcGISModel):
     def _model_metrics(self):
         return {'average_precision_score': self.average_precision_score(show_progress=False)}
 
-    def _create_emd(self, path):
+    def _get_emd_params(self):
         import random
-        super()._create_emd(path)
-
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
-        self._emd_template["ModelConfiguration"] = "_DynamicSSD"
-        self._emd_template["ModelType"] = "ObjectDetection"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['backbone'] = self._backbone.__name__
-        self._emd_template['Grids'] = self.grids
-        self._emd_template['Zooms'] = self.zooms
-        self._emd_template['Ratios'] = self.ratios
-        self._emd_template['SSDVersion'] = self.ssd_version
-        self._emd_template['Classes'] = []
+        _emd_template = {}
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
+        _emd_template["ModelConfiguration"] = "_DynamicSSD"
+        _emd_template["ModelType"] = "ObjectDetection"
+        _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template['backbone'] = self._backbone.__name__        
+        if _emd_template['backbone'] == 'backbone_wrapper':
+            _emd_template['backbone'] = self._orig_backbone.__name__
+        _emd_template['Grids'] = self.grids
+        _emd_template['Zooms'] = self.zooms
+        _emd_template['Ratios'] = self.ratios
+        _emd_template['SSDVersion'] = self.ssd_version
+        _emd_template['Classes'] = []
 
         class_data = {}
-        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
+        for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
             class_data["Value"] = inverse_class_mapping[class_name]
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
+            _emd_template['Classes'].append(class_data.copy())
 
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
+        return _emd_template
 
-        return path.stem
+    def _get_tfonnx_emd_params(self):
+        return {"ModelConfiguration": "_SSDTensorflow"}
 
-    def _create_tfonnx_emd(self, saved_path, batch_size):
-        import random
-        super()._create_emd(saved_path)
-
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISObjectDetector.py"
-        self._emd_template["ModelConfiguration"] = "_SSDTensorflow"
-        self._emd_template["ModelType"] = "ObjectDetection"
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['backbone'] = self._backbone.__name__
-        self._emd_template['Grids'] = self.grids
-        self._emd_template['Zooms'] = self.zooms
-        self._emd_template['Ratios'] = self.ratios
-        self._emd_template['SSDVersion'] = self.ssd_version
-        self._emd_template['Classes'] = []
-        self._emd_template['BatchSize'] = batch_size
-
-        class_data = {}
-        for i, class_name in enumerate(self._data.classes[1:]): # 0th index is background
-            inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
-            class_data["Value"] = inverse_class_mapping[class_name]
-            class_data["Name"] = class_name
-            color = [random.choice(range(256)) for i in range(3)]
-            class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
-
-        json.dump(self._emd_template, open(saved_path.with_suffix('.emd'), 'w'), indent=4)
-
-        return saved_path.stem
-    
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
 
         """
         Displays the results of a trained model on a part of the validation set.
         """
+        self._check_requisites()
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         self.learn.show_results(rows=rows, thresh=thresh, nms_overlap=nms_overlap, ssd=self)
+
+    def _show_results_multispectral(self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs):
+        ax = show_results_multispectral(
+            self, 
+            nrows=rows, 
+            thresh=thresh, 
+            nms_overlap=nms_overlap, 
+            alpha=alpha, 
+            **kwargs
+        )
 
     def predict_video(
         self,
@@ -499,7 +505,8 @@ class SingleShotDetector(ArcGISModel):
             'thickness': 2,
             'fontface': 0,
             'color': (255, 255, 255)
-        }
+        },
+        resize=False
     ):
 
         """
@@ -554,6 +561,16 @@ class SingleShotDetector(ArcGISModel):
                                 fontface integer, fontface value from opencv values,
                                 color tuple (B, G, R), tuple containing values between
                                 0-255.
+        ---------------------   -------------------------------------------
+        resize                  Optional boolean. Resizes the video frames to the same size
+                                (chip_size parameter in prepare_data) that the model was trained on,
+                                before detecting objects.
+                                Note that if resize_to parameter was used in prepare_data,
+                                the video frames are resized to that size instead.
+
+                                By default, this parameter is false and the detections are run
+                                in a sliding window fashion by applying the model on cropped sections
+                                of the frame (of the same size as the model was trained on).
         =====================   ===========================================
         
         """
@@ -569,7 +586,8 @@ class SingleShotDetector(ArcGISModel):
             multiplex,
             multiplex_file_path,
             tracker_options,
-            visual_options
+            visual_options,
+            resize
         )
 
     def predict(
@@ -578,11 +596,12 @@ class SingleShotDetector(ArcGISModel):
         threshold=0.5,
         nms_overlap=0.1,
         return_scores=False,
-        visualize=False
+        visualize=False,
+        resize=False
     ):
 
         """
-        Runs prediction on a video and appends the output VMTI predictions in the metadata file.
+        Runs prediction on an Image.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -603,6 +622,16 @@ class SingleShotDetector(ArcGISModel):
         ---------------------   -------------------------------------------
         visualize               Optional boolean. Displays the image with
                                 predicted bounding boxes if True.
+        ---------------------   -------------------------------------------
+        resize                  Optional boolean. Resizes the image to the same size
+                                (chip_size parameter in prepare_data) that the model was trained on,
+                                before detecting objects.
+                                Note that if resize_to parameter was used in prepare_data,
+                                the image is resized to that size instead.
+
+                                By default, this parameter is false and the detections are run
+                                in a sliding window fashion by applying the model on cropped sections
+                                of the image (of the same size as the model was trained on).
         =====================   ===========================================
         
         :returns: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
@@ -617,6 +646,10 @@ class SingleShotDetector(ArcGISModel):
 
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
+
+        if resize and self._data.resize_to is None\
+                and self._data.chip_size is not None:
+            image = cv2.resize(image, (self._data.chip_size, self._data.chip_size))
 
         if self._data.resize_to is not None:
             if isinstance(self._data.resize_to, tuple):
@@ -736,7 +769,9 @@ class SingleShotDetector(ArcGISModel):
         =====================   ===========================================
         
         :returns: `dict` if mean is False otherwise `float`
-        """        
+        """
+        self._check_requisites()
+
         aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh=detect_thresh, iou_thresh=iou_thresh)
         if mean:
             import statistics

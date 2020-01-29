@@ -164,6 +164,10 @@ class ParcelFabricManager(object):
         --------------------     --------------------------------------------------------------------
         return_errors            Optional Boolean. If True, a verbose response will be given if errors
                                  occured.  The default is False.  **Deprecated**
+        --------------------     --------------------------------------------------------------------
+        record                   Optional String. Represents the record identifier (guid).  If a 
+                                 record guid is provided, only parcels associated to the record are 
+                                 built, regardless of the build extent.
         ====================     ====================================================================
 
 
@@ -472,7 +476,7 @@ class ParcelFabricManager(object):
             moment = int(time.time())        
         gdb_version = self._version.properties.versionName
         session_id = self._version._guid
-        url = "{base}/changeType".format(base=self._url)
+        url = "{base}/changeParcelType".format(base=self._url)
         params = {
             "gdbVersion": gdb_version,
             "sessionId": session_id,
