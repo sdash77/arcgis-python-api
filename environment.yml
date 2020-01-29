@@ -7,7 +7,7 @@ channels:
 dependencies:
 - ipywidgets >=7
 - pandas >=0.25
-- numpy=1.16.2,<1.18
+- numpy>=1.16.2
 - pip
 - python=3.6
 - setuptools
