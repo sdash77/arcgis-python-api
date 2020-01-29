@@ -310,7 +310,7 @@ class AGOLAdminManager(object):
             'owners' : owners,
             'actions' : actions,
             'fromDate' : json.dumps(start_date, default=_date_handler),
-            'toDate' : json.dumps(to_date, default=_date_handler),
+            
             'ips' : ips,
             'sortOrder' : sort_order,
             'ips' : ips
@@ -319,13 +319,18 @@ class AGOLAdminManager(object):
         for k in list(params.keys()):
             if params[k] is None:
                 del params[k]
-        
+        if to_date:
+            params['toDate'] = json.dumps(to_date, 
+                                          default=_date_handler)
+            
         if data_format == 'csv':
             params['f'] = 'csv'
             params['num'] = 10000
+            params['all'] = True
             return self._gis._con.post(url, params,
                                        file_name="history.csv",
-                                       out_folder=save_folder)
+                                       out_folder=save_folder,
+                                       try_json=False)
         elif data_format in ['json', 'df']:
             import pandas as _pd
             params['f'] = 'json'
