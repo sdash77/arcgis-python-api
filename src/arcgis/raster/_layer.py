@@ -733,7 +733,7 @@ class ImageryLayer(Layer):
                  pixel_size=None,
                  time_extent=None,
                  return_geometry=False,
-                 return_catalog_items=True,
+                 return_catalog_items=False,
                  return_pixel_values=True,
                  max_item_count=None
                  ):
