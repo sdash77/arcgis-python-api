@@ -287,15 +287,6 @@ class GeoArray(ExtensionArray):
             return GeoArray(self.data[idx])
         else:
             raise TypeError("Index type not supported", idx)
-  
-    def __setitem__2222(self, key, value):
-        if value is None or  \
-           (isinstance(value, str) and value == ""):
-            self.data[key] = value
-        else:
-            value = Geometry(value)
-            self.data[key] = value
-
 
     def __setitem__(self, key, value):
         if isinstance(value, pd.Series):
