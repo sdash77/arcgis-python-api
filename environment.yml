@@ -1,9 +1,8 @@
-name: geosaurus_dev_env1
+name: geosaurus_dev_env
 channels:
 - defaults
 - fastai
 - pytorch
-- conda-forge
 dependencies:
 - ipywidgets >=7
 - pandas >=0.25
