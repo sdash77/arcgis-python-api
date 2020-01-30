@@ -2276,6 +2276,25 @@ class ImageryLayer(Layer):
 
         :returns: dictionary
 
+        .. code-block:: python
+
+            # Usage Example 1: Compute the stats and histogram at a point for a time instant.
+
+            comp_stats_hist_01 = image_service.compute_stats_and_histograms(geometry=pt,
+                                                                            rendering_rule={"rasterFunction":None},
+                                                                            time="1326650400000")
+
+        .. code-block:: python
+
+            # Usage Example 2: Compute the stats and histogram at a point for a time extent.
+            # If the datetime object is not in the UTC timezone, the API will internally convert it to the UTC timezone.
+
+            start = datetime.datetime(2012,1,15,18,0,0, tzinfo=datetime.timezone.utc)
+            end = datetime.datetime(2012,1,15,21,0,0, tzinfo=datetime.timezone.utc)
+            comp_stats_hist_02 = image_service.compute_stats_and_histograms(geometry=pt,
+                                                                            rendering_rule={"rasterFunction":None},
+                                                                            time=[start,end])
+
         """
         import datetime
         url = "%s/computeStatisticsHistograms" % self._url
@@ -2572,24 +2591,43 @@ class ImageryLayer(Layer):
                               Examples:
                                 - pixel_size={"x": 0.18, "y": 0.18}
                                 - pixel_size='0.18,0.18'
-       ----------------------  --------------------------------------------------------------------
-        time                   optional datetime.date, datetime.datetime or timestamp string. The
-                               time instant or the time extent of the exported image.
-                               Time instant specified as datetime.date, datetime.datetime or
-                               timestamp in milliseconds since epoch
-                               Syntax: time=<timeInstant>
+        -----------------     --------------------------------------------------------------------
+        time                  optional datetime.date, datetime.datetime or timestamp string. The
+                              time instant or the time extent of the exported image.
+                              Time instant specified as datetime.date, datetime.datetime or
+                              timestamp in milliseconds since epoch
+                              Syntax: time=<timeInstant>
 
-                               Time extent specified as list of [<startTime>, <endTime>]
-                               For time extents one of <startTime> or <endTime> could be None. A
-                               None value specified for start time or end time will represent
-                               infinity for start or end time respectively.
-                               Syntax: time=[<startTime>, <endTime>] ; specified as
-                               datetime.date, datetime.datetime or timestamp
+                              Time extent specified as list of [<startTime>, <endTime>]
+                              For time extents one of <startTime> or <endTime> could be None. A
+                              None value specified for start time or end time will represent
+                              infinity for start or end time respectively.
+                              Syntax: time=[<startTime>, <endTime>] ; specified as
+                              datetime.date, datetime.datetime or timestamp
 
-                               Added at 10.8
+                              Added at 10.8
         =================     ====================================================================
 
         :returns: dict
+
+        .. code-block:: python
+
+            # Usage Example 1: Compute the histogram at a point for a time instant.
+
+            comp_hist_01 = image_service.compute_histograms(geometry=pt,
+                                                            rendering_rule={"rasterFunction":None},
+                                                            time="1326650400000")
+
+        .. code-block:: python
+
+            # Usage Example 2: Compute the histogram at a point for a time extent.
+            # If the datetime object is not in the UTC timezone, the API will internally convert it to the UTC timezone.
+
+            start = datetime.datetime(2012,1,15,18,0,0, tzinfo=datetime.timezone.utc)
+            end = datetime.datetime(2012,1,15,21,0,0, tzinfo=datetime.timezone.utc)
+            comp_hist_02 = image_service.compute_histograms(geometry=pt,
+                                                            rendering_rule={"rasterFunction":None},
+                                                            time=[start, end])
 
         """
         import datetime
