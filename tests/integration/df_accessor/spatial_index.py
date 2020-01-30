@@ -100,8 +100,8 @@ def test_build_sindex_rt_load_fn():
         df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
         df.spatial.set_geometry(g)
         si = df.spatial.sindex('rtree', filename=EXISTING_FILENAME)
-    except ImportError:
-        pass    
+    except Exception as e:
+        print("no rtree installed.") 
 #--------------------------------------------------------------------------
 def test_intersect_rtree():
     """"""
@@ -124,8 +124,8 @@ def test_intersect_quadtree():
         si.insert(0, [-179, -89, 179, 89])
         r = si.intersect([-180, -90, 180, 90])
         assert  r == [0]
-    except ImportError:
-        pass    
+    except Exception as e:
+        print("no rtree installed.") 
 if __name__ == "__main__":
     print("####  Begin  ##################################################################")
     print("Running Spatial Index Tests")
