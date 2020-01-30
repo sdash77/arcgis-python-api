@@ -733,7 +733,7 @@ class ImageryLayer(Layer):
                  pixel_size=None,
                  time_extent=None,
                  return_geometry=False,
-                 return_catalog_items=False,
+                 return_catalog_items=True,
                  return_pixel_values=True,
                  max_item_count=None
                  ):
@@ -2635,7 +2635,7 @@ class ImageryLayer(Layer):
                 params['time'] = "%s,%s" % (starttime, endtime)
             else:
                 params['time'] = _date_handler(time)
-
+        print(params['time'])
         if self._datastore_raster:
             params["Raster"]=self._uri
             if isinstance(self._uri, bytes):
