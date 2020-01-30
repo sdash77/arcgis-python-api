@@ -10299,6 +10299,8 @@ class _GISResource(object):
             except Exception as e:
                 if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)
+                elif str(e).lower().find("token required") > -1:
+                    dictdata = self._con.get(self.url, params)
                 else:
                     raise e
 
