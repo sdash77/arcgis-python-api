@@ -191,6 +191,17 @@ def test_true_centroid():
 #### to/from geojson
 #### from_xy
 ##-------------------------------------------------------------------------
+def test_import_gis_content():
+    from arcgis.gis import GIS
+    gis = GIS(profile='your_online_profile')
+    g = [Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})] * len(geoms)
+    data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
+    df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
+    df.spatial.set_geometry(g)
+    item = gis.content.import_data(df)    
+    assert item
+    assert item.delete()
+    
 def test_to_feature_collection():
     from arcgis.features import FeatureCollection
     g = [Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})] * len(geoms)
@@ -438,7 +449,7 @@ if __name__ == "__main__":
     test_true_centroid()
     print('End of Testing Dataset Properties')
     print('#######################################################')
-
+    test_import_gis_content()
     print('#######################################################')
     print("Testing IO/Data Converstion Operations")
     test_from_df()
@@ -448,7 +459,7 @@ if __name__ == "__main__":
     test_to_feature_collection()
     print("End of Testing IO/Data Converstion Operations")
     print('#######################################################')
-
+    
     print('#######################################################')
     print("Testing Package Specific Operations")
     if HASPYSHP and HASARCPY == False:

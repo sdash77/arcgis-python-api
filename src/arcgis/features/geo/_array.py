@@ -227,18 +227,20 @@ class GeoArray(ExtensionArray):
 
     _dtype = GeoType()
 
-    def __init__(self, data):
-        if isinstance(data, self.__class__):
-            data = data.data
-        elif isinstance(data, pd.Series):
-            data = data.values
-        elif isinstance(data, (list, tuple)):
-            data = np.array(data)
-        elif not isinstance(data, np.ndarray):
+    def __init__(self, values):
+        if isinstance(values, self.__class__):
+            data = values.data
+        elif isinstance(values, pd.Series):
+            data = values.values
+        elif isinstance(values, (list, tuple)):
+            data = np.array(values)
+        elif isinstance(values, np.ndarray):
+            data = values
+        elif not isinstance(values, np.ndarray):
             raise TypeError(
                 "'data' should be array of geometry objects."
             )
-        elif not data.ndim == 1:
+        elif not values.ndim == 1:
             raise ValueError(
                 "'data' should be a 1-dimensional array of geometry objects."
             )
@@ -304,6 +306,9 @@ class GeoArray(ExtensionArray):
                 self.data[key] = value_array
             else:
                 self.data[key] = value
+        elif (isinstance(value, str) and value != ""):
+            value = Geometry(value)
+            self.data[key] = value            
         else:
             raise TypeError(
                 "Value should be either a Geometry or None, got %s" % str(value)
@@ -630,7 +635,7 @@ class GeoArray(ExtensionArray):
         """
         The first coordinate point of the geometry for each entry.
         """
-        return _unary_geo('extent', self.data, None) 
+        return _unary_geo('first_point', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def geoextent(self):
@@ -651,6 +656,12 @@ class GeoArray(ExtensionArray):
     @property
     def is_multipart(self):
         return _unary_op('is_multipart', self.data, False)
+    #----------------------------------------------------------------------
+    @property
+    def is_valid(self):
+        return _binary_op(name='is_valid', 
+                          left=self.data, 
+                          right=None)
     #----------------------------------------------------------------------
     @property
     def JSON(self):

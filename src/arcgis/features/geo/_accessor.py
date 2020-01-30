@@ -82,7 +82,7 @@ class GeoSeriesAccessor:
 
         :returns: shapely.Geometry in a series
         """
-        return pd.Series(self._data.as_shapely, name='as_arcpy', index=self._index)
+        return pd.Series(self._data.as_shapely, name='as_shapely', index=self._index)
     #----------------------------------------------------------------------
     @property
     def centroid(self):
