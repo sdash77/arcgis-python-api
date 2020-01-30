@@ -197,7 +197,8 @@ def _binary_op_geo(name, left, right=None, *args, **kwargs):
 class GeoType(ExtensionDtype):
     type = Geometry
     name = "geometry"
-    na_value = np.nan
+    na_value = None
+    #np.nan
 
     @classmethod
     def construct_from_string(cls, string):
@@ -231,10 +232,11 @@ class GeoArray(ExtensionArray):
             data = data.data
         elif isinstance(data, pd.Series):
             data = data.values
+        elif isinstance(data, (list, tuple)):
+            data = np.array(data)
         elif not isinstance(data, np.ndarray):
             raise TypeError(
-                "'data' should be array of geometry objects. Use the "
-                "from_geometries functions to construct a GeoArray."
+                "'data' should be array of geometry objects."
             )
         elif not data.ndim == 1:
             raise ValueError(
