@@ -2748,6 +2748,49 @@ class GeoAccessor(object):
         # return sdf
         return ags_fset.sdf
 
+    @staticmethod
+    def from_geodataframe2(geo_df):
+        """
+        Import Geopandas GeoDataFrame into an ArcGIS Spatially enabled DataFrame.
+        Requires geopandas library be installed in current environment.
+
+        =====================  ===============================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------------
+        geo_df                 GeoDataFrame object, created using GeoPandas library
+        =====================  ===============================================================
+
+        :return: ArcGIS Spatially Enabled DataFrame object.
+        """
+        try:
+            import geopandas as gpd
+        except ImportError:
+            raise ImportError('Requires Geopandas library installed for this functionality')
+
+        # import geometry libraries
+        from arcgis.geometry import Geometry as ags_geometry
+        from arcgis.features.geo._array import GeoArray
+        from shapely.geometry import mapping as shp_mapping
+
+        # import pandas
+        import pandas as pd
+
+        # extract geometries from GDF
+        gdf_geom = geo_df.geometry
+
+        # create a regular pd dataframe without any spatial columns
+        plain_df = pd.DataFrame(geo_df.drop(columns='geometry'))
+
+        # create AGS geometry obj from Shapely geometry obj
+        ags_geom = [ags_geometry(shp_mapping(g)) if g is not None else None for g in gdf_geom]
+        ags_geoarray = GeoArray(ags_geom)
+
+        # put the GeoArray obj as spatial column into the plain pd dataframe
+        plain_df['SHAPE'] = ags_geoarray
+
+        return plain_df
+
+
     # ---------------------------------------------------------------------
 
     # def to_geodataframe(self):  # not exposing per discussion with Andrew. Keeping it if we want to enable later.
