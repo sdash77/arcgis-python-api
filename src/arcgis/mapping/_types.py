@@ -1420,22 +1420,26 @@ class OfflineMapAreaManager(object):
         creates one or more map area packages corresponding to each layer type in the extent.
 
         .. note::
-            - Offline map area functionality is only available if your GIS is ArcGIS Online.
             - There can be only 1 map area item for an extent or bookmark.
             - You need to be the owner of the web map or an administrator of your GIS.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        area                   Required object. You can specify the name of a web map bookmark or a
-                               desired extent.
+        area                   Required object.  Bookmark or extent. Specify as either:
 
-                               To get the bookmarks from a web map, query the `definition.bookmarks`
-                               property.
+                                   + bookmark name
+                                       `WebMap.definition.bookmarks` returns list of bookmarks.
+                                   + list of coordinate pairs:
+                                       [['xmin', 'ymin'], ['xmax', 'ymax']]
+                                   + dictionary:
+                                         {'xmin': <value>,
+                                         'ymin': <value>,
+                                         'xmax': <value>,
+                                         'ymax': <value>,
+                                         'spatialReference' : {'wkid' : <value>}}
 
-                               You can specify the extent as a list or dictionary of 'xmin', 'ymin',
-                               'xmax', 'ymax' and spatial reference. If spatial reference is not
-                               specified, it is assumed to be 'wkid' : 4326.
+                               If spatial reference is not specified, it is assumed 'wkid': 4326.
         ------------------     --------------------------------------------------------------------
         item_properties        Required dictionary. See table below for the keys and values.
         ------------------     --------------------------------------------------------------------
