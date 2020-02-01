@@ -135,7 +135,7 @@ def test_plot_no_geom_set():
         data = [[1,2,3,4]] * len(geoms)
         columns = ['A', 'B', 'C', 'D']
         df = pd.DataFrame(data=data, columns=columns)
-        df.spatial.plot()
+        df.spatial.plot(map_widget=mw)
 #-------------------------------------------------------------------------
 def test_plot():
     """tests plot with map widget"""
