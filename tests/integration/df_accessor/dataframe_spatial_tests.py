@@ -1,15 +1,19 @@
-import os, sys
-
-import shutil, datetime
-import tempfile
-from arcgis.features.geo._array import GeoArray, GeoType
-from arcgis.features.geo import from_featureclass
-from arcgis.geometry import Geometry
+import datetime
 import copy
-from arcgis.features.geo import _io
+import os
+import shutil
+import sys
+from pathlib import Path
+import tempfile
+
+
+from arcgis.features.geo import from_featureclass, _io
+from arcgis.features.geo._array import GeoArray, GeoType
+from arcgis.geometry import Geometry
 import pandas as pd
 from pandas.core.internals import ExtensionBlock
 import pandas.util.testing as tm
+
 try:
     import arcpy
     HASARCPY = True
@@ -131,7 +135,7 @@ def test_plot_no_geom_set():
         data = [[1,2,3,4]] * len(geoms)
         columns = ['A', 'B', 'C', 'D']
         df = pd.DataFrame(data=data, columns=columns)
-        df.spatial.plot(map_widget=mw)
+        df.spatial.plot()
 #-------------------------------------------------------------------------
 def test_plot():
     """tests plot with map widget"""
@@ -333,6 +337,13 @@ def test_geometry_type():
 def test_from_fc_arcpy():
     """tests reading a FGDB from arcpy"""
     fc = r"./testdata.gdb/world30"
+    if arcpy.Exists(fc):
+        sdf = from_featureclass(fc)
+        assert sdf.spatial.geometry_type[0] == 'polygon'
+
+def test_from_fc_arcpy_path():
+    """tests reading a FGDB feature class using arcpy from a Path object"""
+    fc = Path(r"./testdata.gdb/world30")
     if arcpy.Exists(fc):
         sdf = from_featureclass(fc)
         assert sdf.spatial.geometry_type[0] == 'polygon'
