@@ -4,6 +4,7 @@ IO operations for Feature Classes
 import os
 import sys
 import uuid
+from pathlib import Path
 import shutil
 import datetime
 
@@ -150,6 +151,10 @@ def _from_xy(df, x_column, y_column, sr=None):
     df.spatial.set_geometry('SHAPE')
     return df
 
+def _ensure_path_string(input_path):
+    """Provide hander to facilitate file path inputs to be Path object instances."""
+    return str(input_path) if isinstance(input_path, Path) else input_path
+
 #--------------------------------------------------------------------------
 def from_table(filename, **kwargs):
     """
@@ -160,7 +165,7 @@ def from_table(filename, **kwargs):
     ===============     ====================================================
     **Argument**        **Description**
     ---------------     ----------------------------------------------------
-    filename            Required string. The path to the table.
+    filename            Required string or Path. The path to the table.
     ===============     ====================================================
 
     **Keyword Arguments**
@@ -195,6 +200,8 @@ def from_table(filename, **kwargs):
     :returns: pd.DataFrame
 
     """
+    filename = _ensure_path_string(filename)
+
     if HASARCPY:
         where = kwargs.pop("where", None)
         fields = kwargs.pop('fields', "*")
@@ -306,7 +313,7 @@ def from_featureclass(filename, **kwargs):
     ===========================     ====================================================================
     **Argument**                    **Description**
     ---------------------------     --------------------------------------------------------------------
-    filename                        Required string. Full path to the feature class
+    filename                        Required string or Path. Full path to the feature class
     ===========================     ====================================================================
 
     *Optional parameters when ArcPy library is available in the current environment*:
@@ -329,6 +336,9 @@ def from_featureclass(filename, **kwargs):
     """
     from arcgis.geometry import _types
     import json
+
+    filename = _ensure_path_string(filename)
+
     if HASARCPY:
         sql_clause = kwargs.pop('sql_clause', (None,None))
         where_clause = kwargs.pop('where_clause', None)
