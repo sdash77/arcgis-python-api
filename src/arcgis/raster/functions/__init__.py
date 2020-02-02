@@ -4105,7 +4105,7 @@ def constant_raster(constant, raster_info, gis=None):
     Creates a virtual raster with a single pixel value.
 
     :param constant: Required list. The value of the constant to be added to the virtual raster.
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
@@ -4176,7 +4176,7 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     """
     Creates a virtual raster with random values for each cell.
 
-    :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
+    :param raster_info: Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
 
                         Example for RasterInfo dict - 
