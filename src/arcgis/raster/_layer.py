@@ -613,6 +613,19 @@ class ImageryLayer(Layer):
 
         if "pixelSizeY" in self.properties:
             self._raster_info.update({"pixelSizeY":self.properties.pixelSizeY})
+
+        if "compressionType" in self.properties:
+            self._raster_info.update({"compressionType":self.properties.compressionType})
+
+        if "blockHeight" in self.properties:
+            self._raster_info.update({"blockHeight":self.properties.blockHeight})
+
+        if "blockWidth" in self.properties:
+            self._raster_info.update({"blockWidth":self.properties.blockWidth})
+
+        if "noDataValues" in self.properties:
+            self._raster_info.update({"noDataValues":self.properties.noDataValues})
+
         return self._raster_info
 
     @extent.setter
