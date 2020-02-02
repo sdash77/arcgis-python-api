@@ -17,6 +17,7 @@ try:
     from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd
     from ._psp_utils import accuracy
+    from ._deeplab_utils import compute_miou
     HAS_FASTAI = True
 except Exception as e:
     class NnModule():
@@ -223,3 +224,28 @@ class UnetClassifier(ArcGISModel):
             model_accuracy = np.max(self.learn.recorder.metrics)
 
         return float(model_accuracy)
+
+    def mIOU(self, mean=False, show_progress=True):
+
+        """
+        Computes mean IOU on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                mean IOU, otherwise returns mean iou of all
+                                classes combined.   
+        ---------------------   -------------------------------------------
+        show_progress           Optional bool. Displays the prgress bar if
+                                True.                     
+        =====================   ===========================================
+        
+        :returns: `dict` if mean is False otherwise `float`
+        """
+        num_classes = torch.arange(self._data.c)
+        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
+        if mean:
+            return np.mean(miou)
+        return dict(zip(['0'] + self._data.classes[1:], miou))
+        

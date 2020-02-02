@@ -37,6 +37,7 @@ from torchvision.models.segmentation.segmentation import _segm_resnet
 from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
 from torchvision.models.segmentation.fcn import FCNHead
 from ._arcgis_model import _get_backbone_meta
+from fastprogress import progress_bar
 
 class Deeplab(nn.Module):
     def __init__(self, num_classes, backbone_fn, chip_size=224):
@@ -108,4 +109,38 @@ class Deeplab(nn.Module):
             x = F.interpolate(aux_l, x_size[2:], mode='bilinear', align_corners=False)
             return result, x
         else:
-            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=False) 
+            return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=False)
+
+def mask_iou(mask1, mask2):
+     
+    mask1 = mask1.permute(0,2,3,1)
+    mask2 = mask2.permute(0,2,3,1)
+    mask1 = torch.reshape(mask1>0, (-1, mask1.shape[-1])).type(torch.float64)
+    mask2 = torch.reshape(mask2>0, (-1, mask2.shape[-1])).type(torch.float64)
+    area1 = torch.sum(mask1, dim=0)
+    area2 = torch.sum(mask2, dim=0)
+    intersection = torch.sum(mask1*mask2, dim=0)
+    union = area1 + area2 - intersection
+    iou = intersection / (union + 1e-6)
+    return iou
+
+def compute_miou(model, dl, mean, num_classes, show_progress):
+
+    ious=[]
+    model.learn.model.eval()
+    with torch.no_grad():
+        for input, target in progress_bar(dl, display=show_progress):
+            pred = model.learn.model(input)
+            pred = pred.argmax(dim=1)
+            target = target.squeeze(1)
+            mask1 = []
+            mask2 = []
+            for i in range(pred.shape[0]):
+                mask1.append(pred[i].to(model._device) == num_classes[:, None, None].to(model._device))
+                mask2.append(target[i].to(model._device) == num_classes[:, None, None].to(model._device))
+            mask1 = torch.stack(mask1)
+            mask2 =torch.stack(mask2)
+            iou = mask_iou(mask1, mask2)
+            ious.append(iou.tolist())
+
+    return np.mean(ious, 0)
