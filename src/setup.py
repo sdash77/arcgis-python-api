@@ -143,7 +143,8 @@ description_md_file.close()
 data_files = [('share/jupyter/nbextensions/arcgis', [
                    'arcgis/widgets/js/dist/extension.js',
                    'arcgis/widgets/js/dist/arcgis-map-ipywidget.js',
-                   'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map'
+                   'arcgis/widgets/js/dist/arcgis-map-ipywidget.js.map',
+                   'arcgis/apps/workforce/_store/resources/default-project-thumbnail.png'
                    ]),
              ]
 data_files += [] if ("win" in sys.platform or "darwin" in sys.platform) else \
