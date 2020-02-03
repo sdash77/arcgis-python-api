@@ -243,7 +243,7 @@ def test_from_gpd_df_large_data_points():
     sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
     assert isinstance(sedf, pd.DataFrame)
     assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
-    assert sedf.iloc[0]['SHAPE'].type == 'POINT'
+    assert sedf.iloc[0]['SHAPE'].type == 'Point'
     assert sedf.shape == (271868, 24)
     assert 'SHAPE' in sedf.columns
     print(sedf.columns)
