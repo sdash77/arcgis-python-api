@@ -287,7 +287,7 @@ def _v2_create_project_item(gis, folder_name, workforce_service_item, dispatcher
                 "urlTemplate": "arcgis-navigator://?stop=${assignment.latitude},${assignment.longitude}&stopname=${assignment.location}&callback=arcgis-workforce://&callbackprompt=Workforce",
             }
         ],
-        "version": "2.0.0-beta",
+        "version": "2.0.0-beta.2",
         "assignmentTypes": {
             "serviceItemId": workforce_service_item.id,
             "url": workforce_service_item.tables[1].url
