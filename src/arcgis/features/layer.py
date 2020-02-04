@@ -1540,7 +1540,8 @@ class FeatureLayer(Layer):
         delete_url = self._url + "/deleteFeatures"
         params = {
             "f": "json",
-            "rollbackOnFailure": rollback_on_failure
+            "rollbackOnFailure": rollback_on_failure,
+            "returnDeleteResults": return_delete_results
         }
         if gdb_version is not None:
             params['gdbVersion'] = gdb_version
