@@ -103,13 +103,13 @@ class CreditManager(object):
     #----------------------------------------------------------------------
     def deallocate(self, username):
         """
-        Allows organization administrators to remove credit allocation for
+        Allows organization administrators to set credit limit to umlimited for
         organizational users in ArcGIS Online
 
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        username                        Required string.The name of the user to remove all credit from.
+        username                        Required string.The name of the user to set to unlimited credits.
         ===========================     ====================================================================
 
         :returns: boolean
