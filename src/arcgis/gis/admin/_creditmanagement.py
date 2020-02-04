@@ -88,7 +88,7 @@ class CreditManager(object):
         """
         if hasattr(username, 'username'):
             username = getattr(username, "username")
-        if credits:
+        if not credits is None:
             params = {
                 "f" : "json",
                 "userAssignments" : [{"username" : username, "credits" : credits}]
