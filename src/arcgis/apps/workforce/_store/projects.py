@@ -143,6 +143,7 @@ def _build_operational_layers(item, popup_def=None, visibility=True, layer_index
 def _build_table(item, table_index):
     table = item.tables[table_index]
     op_table = {
+        "capabilities": "Create,Delete,Query,Update,Editing,Sync",
         "url": table.url,
         "id": "{}_0".format(table.properties["name"]),
         "title": table.properties["name"],
