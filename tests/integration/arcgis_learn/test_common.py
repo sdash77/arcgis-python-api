@@ -102,7 +102,7 @@ def common_test(model_type, output_name, data_path, old_models, **prepare_data_k
 
 
 #For object detection inferencing.
-def object_detection_inferencing(in_model_definition, in_raster, out_detected_objects):
+def object_detection_inferencing(in_model_definition, in_raster, out_detected_objects, model_args):
     import arcpy
     arcpy.env.processorType = "GPU"
     arcpy.CheckOutExtension("ImageAnalyst")
@@ -111,7 +111,7 @@ def object_detection_inferencing(in_model_definition, in_raster, out_detected_ob
         in_raster,
         out_detected_objects,
         in_model_definition,
-        "padding 56;nms_overlap 0.2;threshold 0.5;batch_size 4;exclude_pad_detections True",
+        model_args,
         "NO_NMS",
         "Confidence",
         "Class",
@@ -219,7 +219,8 @@ class Test_Common(unittest.TestCase):
         object_detection_inferencing(
             os.path.join(self.obj_detection_data2, 'models/post_fit_ssd/post_fit_ssd.emd'),
             self.obj_detection_inference_data1,
-            os.environ["object_detection_inferencing_result_ssd"]
+            os.environ["object_detection_inferencing_result_ssd"],
+            os.environ["object_detection_inferencing_ssd_args"]
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
@@ -236,7 +237,8 @@ class Test_Common(unittest.TestCase):
         object_detection_inferencing(
             os.path.join(self.obj_detection_data2, 'models/post_fit_rn/post_fit_rn.emd'),
             self.obj_detection_inference_data1,
-            os.environ["object_detection_inferencing_result_rn"]
+            os.environ["object_detection_inferencing_result_rn"],
+            os.environ["object_detection_inferencing_rn_args"]
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
@@ -297,9 +299,10 @@ class Test_Common(unittest.TestCase):
         )
 
         object_detection_inferencing(
-            os.path.join(self.obj_detection_data2, 'models/post_fit_maskrcnn/post_fit_maskrcnn.emd'),
+            os.path.join(self.maskrcnn_data1, 'models/post_fit_maskrcnn/post_fit_maskrcnn.emd'),
             self.obj_detection_inference_data1,
-            os.environ["object_detection_inferencing_result_maskrcnn"]
+            os.environ["object_detection_inferencing_result_maskrcnn"],
+            os.environ["object_detection_inferencing_maskrcnn_args"]
         )
 
 

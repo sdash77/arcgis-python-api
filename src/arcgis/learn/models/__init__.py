@@ -6,3 +6,4 @@ from ._ner import EntityRecognizer
 from ._classifier import FeatureClassifier
 from ._pspnet import PSPNetClassifier
 from ._maskrcnn import MaskRCNN
+from ._deeplab import DeepLab

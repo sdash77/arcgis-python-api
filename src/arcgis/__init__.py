@@ -1,10 +1,10 @@
-__version__ = '1.7.0'
+__version__ = '1.8.0'
 
-from . import (features, geoanalytics, geocoding, geometry,
-               geoprocessing, network, raster, realtime, schematics,
-               mapping, apps, learn)
+from . import (features, geoanalytics, geocoding, geometry)
+from . import (geoprocessing, network, raster, realtime, schematics)
+from . import (mapping, apps, learn)
 
-from .gis import GIS
+from arcgis.gis import GIS
 from .features.analysis import *
 from .geocoding import geocode
 

@@ -1,4 +1,4 @@
-﻿""" The portalpy module for working with the ArcGIS Online and Portal APIs."""
+""" The portalpy module for working with the ArcGIS Online and Portal APIs."""
 
 
 from __future__ import absolute_import
@@ -8,14 +8,13 @@ import imghdr
 import logging
 import os
 import tempfile
-from .connection import _ArcGISConnection, _normalize_url
-from .connection import _is_http_url
-from .connection import _parse_hostname, _unpack
-from .common._utils import _to_utf8
-from six.moves.urllib import request
-from six.moves.urllib_parse import urlparse
+from ._con import Connection
+from ._con import _normalize_url, _is_http_url, _parse_hostname, _unpack
+from ..._impl.common._utils import _to_utf8
+from urllib import request
+from urllib.parse import urlparse
 
-__version__ = '1.7.0'
+__version__ = '1.8.0'
 
 _log = logging.getLogger(__name__)
 
@@ -79,7 +78,8 @@ class Portal(object):
     def __init__(self, url, username=None, password=None, key_file=None,
                  cert_file=None, expiration=60, referer=None, proxy_host=None,
                  proxy_port=None, connection=None, workdir=tempfile.gettempdir(),
-                 tokenurl=None, verify_cert=True, client_id=None):
+                 tokenurl=None, verify_cert=True, client_id=None, custom_auth=None, 
+                 token=None):
         """ The Portal constructor. Requires URL and optionally username/password."""
         url = url.strip()            # be permissive in accepting home app urls
         homepos = url.find('/home')
@@ -135,32 +135,36 @@ class Portal(object):
         if not connection:
             _log.debug('Connecting to portal: ' + self.hostname)
             if self._is_arcpy:
-                self.con = _ArcGISConnection(baseurl="pro",
-                                             tokenurl=tokenurl,
-                                             username=username,
-                                             password=password,
-                                             key_file=key_file,
-                                             cert_file=cert_file,
-                                             expiration=expiration,
-                                             all_ssl=True,
-                                             referer=referer,
-                                             proxy_host=proxy_host,
-                                             proxy_port=proxy_port,
-                                             verify_cert=verify_cert)
+                self.con = Connection(baseurl="pro",
+                                      tokenurl=tokenurl,
+                                      username=username,
+                                      password=password,
+                                      key_file=key_file,
+                                      cert_file=cert_file,
+                                      expiration=expiration,
+                                      all_ssl=True,
+                                      referer=referer,
+                                      proxy_host=proxy_host,
+                                      proxy_port=proxy_port,
+                                      verify_cert=verify_cert,
+                                      custom_auth=custom_auth, 
+                                      token=token)
             else:
-                self.con = _ArcGISConnection(baseurl=self.resturl,
-                                             tokenurl=tokenurl,
-                                             username=username,
-                                             password=password,
-                                             key_file=key_file,
-                                             cert_file=cert_file,
-                                             expiration=expiration,
-                                             all_ssl=True,
-                                             referer=referer,
-                                             proxy_host=proxy_host,
-                                             proxy_port=proxy_port,
-                                             verify_cert=verify_cert,
-                                             client_id=client_id)
+                self.con = Connection(baseurl=self.resturl,
+                                      tokenurl=tokenurl,
+                                      username=username,
+                                      password=password,
+                                      key_file=key_file,
+                                      cert_file=cert_file,
+                                      expiration=expiration,
+                                      all_ssl=True,
+                                      referer=referer,
+                                      proxy_host=proxy_host,
+                                      proxy_port=proxy_port,
+                                      verify_cert=verify_cert,
+                                      client_id=client_id,
+                                      custom_auth=custom_auth,
+                                      token=token)
         #self.get_version(True)
         self.get_properties(True)
 
@@ -267,6 +271,8 @@ class Portal(object):
         commentsEnabled   optional boolean.  Default is true.  Controls whether comments are allowed.
         ----------------  ----------------------------------------------------------------------------
         culture           optional string.  Language and country information.
+        ----------------  ----------------------------------------------------------------------------
+        overwrite         Optional boolean. Default is `false`. Controls whether item can be overwritten.
         ================  ============================================================================
 
 
@@ -1072,6 +1078,7 @@ class Portal(object):
         # forcing a check of the server, then check the server
         if not self._properties or force:
             path = 'accounts/self' if self._is_pre_162 else 'portals/self'
+            resp = None
             try:
                 resp = self.con.post(path, self._postdata(), ssl=True)
             except Exception as e:
@@ -1084,6 +1091,8 @@ class Portal(object):
                     resp = self.con.post(path, self._postdata(), ssl=True)
                 if self.con._auth == "PKI":
                     resp = self.con.get(path, ssl=True) # issue seen with key, cert auth
+                if not resp:
+                    raise e
 
             if resp:
                 self._properties = resp
@@ -2177,7 +2186,7 @@ class Portal(object):
         files = []
         if data:
             if isinstance(data, dict):
-                postdata['text'] = json.dumps(data)
+                postdata['text'] = data#json.dumps(data)
             elif _is_http_url(data):
                 data = request.urlretrieve(data)[0]
             elif isinstance(data, str) and (len(data) < 32767) and os.path.isfile(data):

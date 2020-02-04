@@ -1015,6 +1015,8 @@ def convert_raster_to_feature(input_raster,
                               simplify=True,
                               output_name=None,
                               context=None,
+                              create_multipart_features=False,
+                              max_vertices_per_feature=None,
                               *,
                               gis=None,
                               future=False,
@@ -1078,6 +1080,15 @@ def convert_raster_to_feature(input_raster,
                                                 Example: 
                                                     {"outSR": {spatial reference}}
     ------------------------------------     --------------------------------------------------------------------
+    create_multipart_features                Optional boolean. Specifies whether the output polygons will consist of 
+                                             single-part or multipart features.
+
+                                             True: Specifies that multipart features will be created based on polygons that have the same value.
+
+                                             False: Specifies that individual features will be created for each polygon. This is the default.
+    ------------------------------------     --------------------------------------------------------------------
+    max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons. 
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not speficied, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -1097,6 +1108,8 @@ def convert_raster_to_feature(input_raster,
                                                                output_name = output_name,
                                                                simplify_lines_or_polygons=simplify,
                                                                context=context,
+                                                               create_multipart_features=create_multipart_features,
+                                                               max_vertices_per_feature=max_vertices_per_feature,
                                                                future=future,
                                                                **kwargs)
 

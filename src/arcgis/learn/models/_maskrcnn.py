@@ -1,11 +1,9 @@
 from ._arcgis_model import ArcGISModel
-import tempfile
 from pathlib import Path
 import json
-from ._codetemplate import code
-from ._arcgis_model import _EmptyData
-import logging
+from ._arcgis_model import _EmptyData, _change_tail
 from ._codetemplate import instance_detector_prf
+import math
 
 try:
     import torch
@@ -13,21 +11,26 @@ try:
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
     from fastai.vision.image import open_image
+    from fastai.vision import flatten_model
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
     from .._data import prepare_data, _raise_fastai_import_error
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta
     import torchvision
     from torchvision import models
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
     from fastai.basic_train import Learner
-    from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback
+    from ._maskrcnn_utils import is_no_color, mask_rcnn_loss, train_callback, compute_class_AP
+    from .._utils.common import get_multispectral_data_params_from_emd
     from fastai.torch_core import split_model_idx
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
+    import matplotlib
+    from fastai.basic_data import DatasetType
+    from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 
     HAS_FASTAI = True
 except Exception as e:
@@ -59,15 +62,61 @@ class MaskRCNN(ArcGISModel):
     def __init__(self, data, backbone=None, pretrained_path=None):
 
         super().__init__(data, backbone)
-    
-        self._backbone = models.resnet50
 
-        #if not self._check_backbone_support(self._backbone):
-        #    raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+        if self._is_multispectral:
+            self._backbone_ms = self._backbone
+            self._backbone = self._orig_backbone
+            scaled_mean_values = data._scaled_mean_values[data._extract_bands].tolist()
+            scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
+
+        if backbone is None:
+            self._backbone = models.resnet50
+        elif type(backbone) is str:
+            self._backbone = getattr(models, backbone)
+        else:
+            self._backbone = backbone
+
+        if not self._check_backbone_support(self._backbone):
+            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         self._code = instance_detector_prf
 
-        model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = data.chip_size)
+        if self._backbone.__name__ is 'resnet50':
+            model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+            if self._is_multispectral:
+                model.backbone = _change_tail(model.backbone, data)
+                model.transform.image_mean = scaled_mean_values
+                model.transform.image_std = scaled_std_values
+        elif self._backbone.__name__ in ['resnet18','resnet34']:
+            if self._is_multispectral:
+                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+                backbone_small.out_channels = 512
+                model = models.detection.MaskRCNN(
+                    backbone_small, 
+                    91, 
+                    min_size = 1.5*data.chip_size, 
+                    max_size = 2*data.chip_size, 
+                    image_mean = scaled_mean_values, 
+                    image_std = scaled_std_values
+                )
+            else:
+                backbone_small = create_body(self._backbone)
+                backbone_small.out_channels = 512
+                model = models.detection.MaskRCNN(backbone_small, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
+        else:
+            backbone_fpn = resnet_fpn_backbone(self._backbone.__name__, True)
+            if self._is_multispectral:
+                backbone_fpn = _change_tail(backbone_fpn, data)
+                model = models.detection.MaskRCNN(
+                    backbone_fpn, 
+                    91, 
+                    min_size = 1.5*data.chip_size, 
+                    max_size = 2*data.chip_size, 
+                    image_mean = scaled_mean_values, 
+                    image_std = scaled_std_values
+                )
+            else:
+                model = models.detection.MaskRCNN(backbone_fpn, 91, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
         in_features = model.roi_heads.box_predictor.cls_score.in_features
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, data.c)
         in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
@@ -82,11 +131,34 @@ class MaskRCNN(ArcGISModel):
         self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
-        self.learn.layer_groups = split_model_idx(self.learn.model, [28])
+        idx = 27
+        if self._backbone.__name__ in ['resnet18','resnet34']:
+            idx = self._freeze()
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
+        # make first conv weights learnable
+        self._arcgis_init_callback()
+
         if pretrained_path is not None:
-            self.load(pretrained_path)           
+            self.load(pretrained_path)
+                
+        if self._is_multispectral:
+            self._orig_backbone = self._backbone
+            self._backbone = self._backbone_ms
+             
+    def unfreeze(self):
+        for _, param in self.learn.model.named_parameters():
+            param.requires_grad = True
+
+    def _freeze(self):
+        "Freezes the pretrained backbone."
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (torch.nn.BatchNorm2d)):
+                continue
+            for p in i.parameters():
+                p.requires_grad = False
+        return idx
 
     def __str__(self):
         return self.__repr__()
@@ -96,7 +168,10 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        return [models.detection.maskrcnn_resnet50_fpn.__name__]
+        """
+        Supported torchvision backbones for this model.
+        """        
+        return [*self._resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -136,24 +211,26 @@ class MaskRCNN(ArcGISModel):
             class_mapping = {i['ClassValue'] : i['ClassName'] for i in emd['Classes']} 
             color_mapping = {i['ClassValue'] : i['Color'] for i in emd['Classes']}                
 
-        
         if data is None:
-            empty_data = _EmptyData(path=tempfile.TemporaryDirectory().name, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
-            empty_data.class_mapping = class_mapping
-            empty_data.color_mapping = color_mapping
-            return cls(empty_data, **model_params, pretrained_path=str(model_file))
-        else:
-            return cls(data, **model_params, pretrained_path=str(model_file))        
+            data = _EmptyData(path=emd_path.parent.parent, loss_func=None, c=len(class_mapping) + 1, chip_size=emd['ImageHeight'])
+            data.class_mapping = class_mapping
+            data.color_mapping = color_mapping
+            data.emd_path = emd_path
+            data.emd = emd
+            data = get_multispectral_data_params_from_emd(data, emd)
 
-    def _create_emd(self, path):
+        return cls(data, **model_params, pretrained_path=str(model_file))
+
+    def _get_emd_params(self):
         import random
-        super()._create_emd(path)
-        self._emd_template["Framework"] = "arcgis.learn.models._inferencing"
-        self._emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
-        self._emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
 
-        self._emd_template["ExtractBands"] = [0, 1, 2]
-        self._emd_template['Classes'] = []
+        _emd_template = {}
+        _emd_template["Framework"] = "arcgis.learn.models._inferencing"
+        _emd_template["ModelConfiguration"] = "_maskrcnn_inferencing"
+        _emd_template["InferenceFunction"] = "ArcGISInstanceDetector.py"
+
+        _emd_template["ExtractBands"] = [0, 1, 2]
+        _emd_template['Classes'] = []
         class_data = {}
         for i, class_name in enumerate(self._data.classes[1:]):  # 0th index is background
             inverse_class_mapping = {v: k for k, v in self._data.class_mapping.items()}
@@ -162,20 +239,22 @@ class MaskRCNN(ArcGISModel):
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
             self._data.color_mapping[inverse_class_mapping[class_name]]
             class_data["Color"] = color
-            self._emd_template['Classes'].append(class_data.copy())
-            
-        json.dump(self._emd_template, open(path.with_suffix('.emd'), 'w'), indent=4)
-        return path.stem
+            _emd_template['Classes'].append(class_data.copy())
+
+        return _emd_template
 
     @property
     def _model_metrics(self):
-        return {}
+        return {'average_precision_score': self.average_precision_score(show_progress=False)}
 
     def _predict_results(self, xb):
 
         self.learn.model.eval()
-        predictions = self.learn.model(xb.cuda())
-        predictionsf =[]
+        xb_l = xb.to(self._device)
+        predictions = self.learn.model(list(xb_l))
+        xb_l = xb_l.detach().cpu()
+        del xb_l
+        predictionsf = []
         for i in range(len(predictions)):
             predictionsf.append({})
             predictionsf[i]['masks'] = predictions[i]['masks'].detach().cpu().numpy()
@@ -186,9 +265,8 @@ class MaskRCNN(ArcGISModel):
             del predictions[i]['boxes']
             del predictions[i]['labels']
             del predictions[i]['scores']
-        del xb
-        torch.cuda.empty_cache()      
-
+        if self._device == torch.device('cuda'):
+            torch.cuda.empty_cache()
         return predictionsf
 
     def _predict_postprocess(self, predictions, threshold=0.5, box_threshold = 0.5):
@@ -204,13 +282,11 @@ class MaskRCNN(ArcGISModel):
                 if len(out.shape) == 2: # for out dimension hxw (in case of only one predicted mask)
                     out = out[None]
                 ymask = np.where(out[0]> threshold, 1, 0)
-                #if torch.max(out[0]) > threshold:
                 if predictions[i]['scores'][0] > box_threshold:
                     pred_box[i].append(predictions[i]['boxes'][0])
                 for j in range(1,out.shape[0]):
                     ym1 = np.where(out[j]> threshold, j+1, 0)
                     ymask += ym1
-                    #if torch.max(out[j]) > threshold:
                     if predictions[i]['scores'][j] > box_threshold:
                         pred_box[i].append(predictions[i]['boxes'][j])
             else:
@@ -218,7 +294,7 @@ class MaskRCNN(ArcGISModel):
             pred_mask.append(ymask)
         return pred_mask, pred_box
 
-    def show_results(self, mode='mask', mask_threshold=0.5, box_threshold=0.7, nrows=None, imsize=5, index=0, alpha=0.5, cmap='tab20'):
+    def show_results(self, rows=4, mode='mask', mask_threshold=0.5, box_threshold=0.7, imsize=5, index=0, alpha=0.5, cmap='tab20', **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
 
@@ -239,46 +315,161 @@ class MaskRCNN(ArcGISModel):
         nrows                   Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================
-        """ 
-
+        """
+        self._check_requisites()
         if mode not in ['bbox', 'mask', 'bbox_mask']:
             raise Exception("mode can be only ['bbox', 'mask', 'bbox_mask']")
 
         # Get Number of items
-        if nrows is None:
-            nrows = self._data.batch_size
+        nrows = rows
         ncols=2
-    
-        # Get Batch
-        xb,yb = self._data.one_batch('DatasetType.Valid')
-        
-        predictions = self._predict_results(xb)
 
-        pred_mask, pred_box = self._predict_postprocess(predictions, mask_threshold, box_threshold)
+        type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
+        if type_data_loader == 'training':
+            data_loader = self._data.train_dl
+        elif type_data_loader == 'validation':
+            data_loader = self._data.valid_dl
+        elif type_data_loader == 'testing':
+            data_loader = self._data.test_dl
+        else:
+            e = Exception(f'could not find {type_data_loader} in data.')
+            raise(e)
+
+        statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
+
+        cmap_fn = getattr(matplotlib.cm, cmap)
+        
+        title_font_size = 16
+        if kwargs.get('top', None) is not None:
+            top = kwargs.get('top')
+        else:
+            top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
+
+        x_batch, y_batch = [], []
+        i = 0
+        dl_iterater = iter(data_loader)
+        while i < nrows:
+            x, y = next(dl_iterater)
+            x_batch.append(x)
+            y_batch.append(y)
+            i+=self._data.batch_size
+        x_batch = torch.cat(x_batch)
+        y_batch = torch.cat(y_batch)
+
+        # Get Predictions
+        prediction_store = []
+        for i in range(0, x_batch.shape[0], self._data.batch_size):
+            prediction_store.extend(self._predict_results(x_batch[i:i+self._data.batch_size]))
+        pred_mask, pred_box = self._predict_postprocess(prediction_store, mask_threshold, box_threshold)
+
+        if self._is_multispectral:
+            rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
+
+            e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
+            symbology_bands = []
+            if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
+                raise(e)
+            for b in rgb_bands:
+                if type(b) == str:
+                    b_index = self._bands.index(b)
+                elif type(b) == int:
+                    self._bands[b] # To check if the band index specified by the user really exists.
+                    b_index = b
+                else:
+                    raise(e)
+                b_index = self._data._extract_bands.index(b_index)
+                symbology_bands.append(b_index)
+
+             # Denormalize X
+            if self._data._do_normalize:
+                x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
+
+            # Extract RGB Bands
+            symbology_x_batch = x_batch[:, symbology_bands]
+            if statistics_type == 'DRA':
+                shp = symbology_x_batch.shape
+                min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+                max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+                symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+
+            # Channel first to channel last for plotting
+            symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
+            # Clamp float values to range 0 - 1
+            if symbology_x_batch.mean() < 1:
+                symbology_x_batch = symbology_x_batch.clamp(0, 1)
+        else:
+            symbology_x_batch = x_batch.permute(0, 2, 3, 1)
+
+        # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+        if symbology_x_batch.shape[-1] == 1:
+            symbology_x_batch = symbology_x_batch.squeeze()
 
         fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
-        fig.suptitle('Ground Truth / Predictions', fontsize=20)
-
+        fig.suptitle('Ground Truth / Predictions', fontsize=title_font_size)
         for i in range(nrows):
-            ax[i][0].imshow(xb[i].numpy().transpose(1,2,0))
-            ax[i][0].axis('off')
+            if nrows == 1:
+                ax_i = ax
+            else:
+                ax_i = ax[i]
+
+            # Ground Truth
+            ax_i[0].imshow(symbology_x_batch[i])
+            ax_i[0].axis('off')
             if mode in ['mask', 'bbox_mask']:
-                yb_mask = yb[i][0].numpy()
-                for j in range(1, yb[i].shape[0]):
-                    max_unique = np.max(np.unique(yb_mask))
-                    yb_j = np.where(yb[i][j]>0, yb[i][j] + max_unique, yb[i][j])
-                    yb_mask += yb_j
-                ax[i][0].imshow(yb_mask, cmap = cmap, alpha = alpha)
-            ax[i][0].axis('off')
-            ax[i][1].imshow(xb[i].numpy().transpose(1,2,0))
-            ax[i][1].axis('off')
+                n_instance = y_batch[i].unique().shape[0]
+                y_merged = y_batch[i].max(dim=0)[0].cpu().numpy()
+                y_rgba = cmap_fn._resample(n_instance)(y_merged)
+                y_rgba[y_merged == 0] = 0
+                y_rgba[:, :, -1] = alpha
+                ax_i[0].imshow(y_rgba)
+            ax_i[0].axis('off')
+
+            # Predictions
+            ax_i[1].imshow(symbology_x_batch[i])
+            ax_i[1].axis('off')
             if mode in ['mask', 'bbox_mask']:
-                ax[i][1].imshow(pred_mask[i], cmap=cmap, alpha = alpha)
-            if mode in ['bbox','bbox']:
+                n_instance = np.unique(pred_mask[i]).shape[0]
+                p_rgba = cmap_fn._resample(n_instance)(pred_mask[i])
+                p_rgba[pred_mask[i] == 0] = 0
+                p_rgba[:, :, -1] = alpha
+                ax_i[1].imshow(p_rgba)
+            if mode in ['bbox_mask','bbox']:
                 if pred_box[i] != []:
                     for num_boxes in pred_box[i]:
                         rect = patches.Rectangle((num_boxes[0], num_boxes[1]), num_boxes[2]-num_boxes[0], num_boxes[3]-num_boxes[1], linewidth=1, edgecolor='r', facecolor='none')
-                        ax[i][1].add_patch(rect)
-            ax[i][1].axis('off')
-        plt.subplots_adjust(top=0.95)
-        torch.cuda.empty_cache()
+                        ax_i[1].add_patch(rect)
+            ax_i[1].axis('off')
+        plt.subplots_adjust(top=top)
+        if self._device == torch.device('cuda'):
+            torch.cuda.empty_cache()
+
+    def average_precision_score(self, detect_thresh=0.5, iou_thresh=0.5, mean=False, show_progress=True):
+
+        """
+        Computes average precision on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        detect_thresh           Optional float. The probabilty above which
+                                a detection will be considered for computing
+                                average precision.
+        ---------------------   -------------------------------------------                        
+        iou_thresh              Optional float. The intersection over union
+                                threshold with the ground truth mask, above
+                                which a predicted mask will be
+                                considered a true positive.
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                average precision otherwise returns mean
+                                average precision.
+        =====================   ===========================================
+        :returns: `dict` if mean is False otherwise `float`
+        """
+        self._check_requisites()
+        if mean:
+            aps = compute_class_AP(self, self._data.valid_dl, 1, show_progress, detect_thresh, iou_thresh, mean)
+            return aps
+        else:
+            aps = compute_class_AP(self, self._data.valid_dl, self._data.c - 1, show_progress, detect_thresh, iou_thresh)
+            return dict(zip(self._data.classes[1:], aps))

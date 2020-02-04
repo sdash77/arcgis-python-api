@@ -40,7 +40,7 @@ def query_dispatchers(project, where):
         :param where: An ArcGIS where clause.
         :returns: list of Dispatchers
     """
-    features = project.dispatchers_layer.query(where, return_all_freatures=True).features
+    features = project.dispatchers_layer.query(where, return_all_records=True).features
     return [workforce.Dispatcher(project, feature) for feature in features]
 
 
@@ -67,7 +67,7 @@ def update_dispatcher(project, dispatcher, contact_number=None, name=None, user_
         dispatcher.contact_number = contact_number
     if name:
         dispatcher.name = name
-    if user_id:
+    if user_id and dispatcher.user_id != project.owner_user_id:
         dispatcher.user_id = user_id
     return update_dispatchers(project, [dispatcher])[0]
 
