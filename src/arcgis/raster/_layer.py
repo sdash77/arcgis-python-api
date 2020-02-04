@@ -2300,23 +2300,9 @@ class ImageryLayer(Layer):
         elif self._mosaic_rule is not None:
             params['mosaicRule'] = self._mosaic_rule
 
+        from ._util import _set_time_param
         if time is not None:
-            if type(time) is list:
-                if isinstance(time[0], datetime.datetime) or isinstance(time[0], datetime.date):
-                    if time[0].tzname() is None or time[0].tzname() != "UTC":
-                        time[0] = time[0].astimezone(datetime.timezone.utc)
-                if isinstance(time[1], datetime.datetime) or isinstance(time[1], datetime.date):
-                    if time[1].tzname() is None or time[1].tzname() != "UTC":
-                        time[1] = time[1].astimezone(datetime.timezone.utc)
-                starttime = _date_handler(time[0])
-                endtime = _date_handler(time[1])
-                if starttime is None:
-                    starttime = 'null'
-                if endtime is None:
-                    endtime = 'null'
-                params['time'] = "%s,%s" % (starttime, endtime)
-            else:
-                params['time'] = _date_handler(time)
+            params['time'] = _set_time_param(time)
 
         if self._datastore_raster:
             params["Raster"]=self._uri
@@ -2618,23 +2604,11 @@ class ImageryLayer(Layer):
         if not pixel_size is None:
             params["pixelSize"] = pixel_size
 
+
+        from ._util import _set_time_param
+
         if time is not None:
-            if type(time) is list:
-                if isinstance(time[0], datetime.datetime) or isinstance(time[0], datetime.date):
-                    if time[0].tzname() is None or time[0].tzname() != "UTC":
-                        time[0] = time[0].astimezone(datetime.timezone.utc)
-                if isinstance(time[1], datetime.datetime) or isinstance(time[1], datetime.date):
-                    if time[1].tzname() is None or time[1].tzname() != "UTC":
-                        time[1] = time[1].astimezone(datetime.timezone.utc)
-                starttime = _date_handler(time[0])
-                endtime = _date_handler(time[1])
-                if starttime is None:
-                    starttime = 'null'
-                if endtime is None:
-                    endtime = 'null'
-                params['time'] = "%s,%s" % (starttime, endtime)
-            else:
-                params['time'] = _date_handler(time)
+            params['time'] = _set_time_param(time)
 
         if self._datastore_raster:
             params["Raster"]=self._uri
