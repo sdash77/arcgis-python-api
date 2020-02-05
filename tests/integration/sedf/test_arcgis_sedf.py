@@ -26,6 +26,7 @@ from arcgis.features.geo._array import GeoArray
 from arcgis.gis.server._service import Service
 from arcgis.features import FeatureLayer
 import tempfile, uuid
+import pytest
 
 fs_urls = ["https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",# Point
            "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/USA_Railroads/FeatureServer/0", # Polyline
@@ -614,7 +615,7 @@ if HAS_ARCPY:
             r1 = geom.intersect(second_geometry=cross_line)
             assert isinstance(r1, pd.Series)
             assert r1.isnull().all() == False
-            assert r1.dtype.name == 'geometry'
+            assert r1.dtype.name == 'bool'
         #------------------------------------------------------------------
         #@unittest.SkipTest
         def test_measure_on_line(self):

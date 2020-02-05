@@ -12,7 +12,10 @@ from arcgis.features.geo._array import GeoArray, GeoType
 from arcgis.geometry import Geometry
 import pandas as pd
 from pandas.core.internals import ExtensionBlock
-import pandas.util.testing as tm
+try:
+    import pandas.util.testing as tm
+except:
+    import pandas.testing as tm
 
 try:
     import arcpy
