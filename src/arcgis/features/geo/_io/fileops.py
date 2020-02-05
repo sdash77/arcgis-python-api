@@ -165,7 +165,8 @@ def from_table(filename, **kwargs):
     ===============     ====================================================
     **Argument**        **Description**
     ---------------     ----------------------------------------------------
-    filename            Required string or Path. The path to the table.
+    filename            Required string or pathlib.Path. The path to the
+                        table.
     ===============     ====================================================
 
     **Keyword Arguments**
@@ -313,7 +314,7 @@ def from_featureclass(filename, **kwargs):
     ===========================     ====================================================================
     **Argument**                    **Description**
     ---------------------------     --------------------------------------------------------------------
-    filename                        Required string or Path. Full path to the feature class
+    filename                        Required string or pathlib.Path. Full path to the feature class
     ===========================     ====================================================================
 
     *Optional parameters when ArcPy library is available in the current environment*:
