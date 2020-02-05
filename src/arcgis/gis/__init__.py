@@ -1992,7 +1992,8 @@ class UserManager(object):
             The user if successfully created, None if unsuccessful.
 
         """
-        kwargs = locals()
+        #kwargs = locals()
+        kwargs = {k:v for k,v in locals().items()}
         if self._gis.version >= [6,4]:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
                             'email', 'description', 'role', 'provider', 'idp_username',
@@ -2234,6 +2235,7 @@ class UserManager(object):
 
         if groups is None:
             groups = []
+
         if user_type.lower() in levels:
             user_type = levels[user_type.lower()]
 
@@ -2254,11 +2256,16 @@ class UserManager(object):
 <p>This link will expire in two weeks.</p>
 <p style="color:gray;">This is an automated email. Please do not reply.</p>
 </body></html>'''
-            if credits is None:
-                credits = -1
+            if credits == -1 and self._gis.properties['defaultUserCreditAssignment']:
+                credits = self._gis.properties['defaultUserCreditAssignment']
+            if not groups and self.user_settings['groups']:
+                groups = [self._gis.groups.get(g)
+                          for g in self.user_settings['groups']]
+            if not role and self.user_settings['role']:
+                role = self.user_settings['role']
             params = {
                 'f': 'json',
-                'invitationList' : {'invitations' : [
+                'invitationList': {'invitations': [
                     {
                     'username': username,
                     'firstname': firstname,
@@ -2277,18 +2284,6 @@ class UserManager(object):
                 },
                 #'message' : email_text
             }
-            if self._gis._portal.is_arcgisonline:
-                try:
-                    userDefaultSettings = self._portal.con.post('portals/self/userDefaultSettings',
-                                                                {'f': 'json'},
-                                                                 ssl=True)
-                    for k in [udef for udef in userDefaultSettings.keys() if userDefaultSettings[udef]]:
-                        if not k in params['invitationList']['invitations'][0].keys():
-                            params['invitationList']['invitations'][0][k] = userDefaultSettings[k]
-                        if k == 'groups' and not params['invitationList']['invitations'][0].get(k):
-                            params['invitationList']['invitations'][0][k] = ",".join(userDefaultSettings[k])
-                except Exception as e:
-                    params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
             if idp_username is not None:
                 if provider is None:
                     provider = 'enterprise'
@@ -2304,7 +2299,15 @@ class UserManager(object):
                     _log.error('Unable to create ' + username)
                     return None
                 else:
-                    return self.get(username)
+                    new_user = self.get(username)
+                    if not self.user_settings['userType'] == 'arcgisonly':
+                        update_url = "community/users/" + username + "/update"
+                        url = self._con.baseurl + update_url
+                        user_params = {"f":"json",
+                                       "token":"token",
+                                       "userType": self.user_settings['userType']}
+                        self._portal.con.post(url, user_params, ssl=True)
+                    return new_user
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             params = {
