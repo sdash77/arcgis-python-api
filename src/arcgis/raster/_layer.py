@@ -733,7 +733,9 @@ class ImageryLayer(Layer):
                  pixel_size=None,
                  time_extent=None,
                  return_geometry=False,
-                 return_catalog_items=True
+                 return_catalog_items=True,
+                 return_pixel_values=True,
+                 max_item_count=None
                  ):
         """
 
@@ -793,6 +795,27 @@ class ImageryLayer(Layer):
                               the identify operation's performance significantly. When set to
                               false, neither the geometry nor attributes of catalog items will be
                               returned.
+        --------------------  --------------------------------------------------------------------
+        return_pixel_values   optional boolean.  Indicates whether to return the pixel values of 
+                              all mosaicked raster catalog items under the requested geometry. 
+
+                              Set it to false when only the pixel value of mosaicked output is 
+                              needed at requested geometry. 
+
+                              The default value of this parameter is true.
+
+                              Added at 10.6.1.
+        --------------------  --------------------------------------------------------------------
+        max_item_count        optional int. If the returnCatalogItems parameter is set to true, 
+                              this parameter will take effect. The default behavior is to return 
+                              all raster catalog items within the requested geometry. 
+                              Otherwise, the number of items returned will be the value specified in the
+                              max_item_count or all eligible items, whichever is smaller.
+
+                              Added at 10.6.1.
+
+                              Example:
+                                2
         ====================  ====================================================================
 
         :returns: dictionary
@@ -839,6 +862,12 @@ class ImageryLayer(Layer):
             params['returnGeometry'] = return_geometry
         if isinstance(return_catalog_items, bool):
             params['returnCatalogItems'] = return_catalog_items
+        if isinstance(return_pixel_values, bool):
+            params['returnPixelValues'] = return_pixel_values
+
+        if max_item_count is not None:
+            params['maxItemCount'] = max_item_count
+
 
         if self._datastore_raster:
             params["Raster"]=self._uri
@@ -2194,6 +2223,7 @@ class ImageryLayer(Layer):
                                      mosaic_rule=None,
                                      rendering_rule=None,
                                      pixel_size=None,
+                                     time=None
                                      ):
         """
         The result of this operation contains both statistics and histograms
@@ -2227,11 +2257,46 @@ class ImageryLayer(Layer):
                               Examples:
                                 - pixel_size={"x": 0.18, "y": 0.18}
                                 - pixel_size='0.18,0.18'
+        -----------------     --------------------------------------------------------------------
+        time                  optional datetime.date, datetime.datetime or timestamp string. The
+                              time instant or the time extent of the exported image.
+                              Time instant specified as datetime.date, datetime.datetime or
+                              timestamp in milliseconds since epoch
+                              Syntax: time=<timeInstant>
+
+                              Time extent specified as list of [<startTime>, <endTime>]
+                              For time extents one of <startTime> or <endTime> could be None. A
+                              None value specified for start time or end time will represent
+                              infinity for start or end time respectively.
+                              Syntax: time=[<startTime>, <endTime>] ; specified as
+                              datetime.date, datetime.datetime or timestamp
+
+                              Added at 10.8
         =================     ====================================================================
 
         :returns: dictionary
 
+        .. code-block:: python
+
+            # Usage Example 1: Compute the stats and histogram at a point for a time instant.
+
+            comp_stats_hist_01 = image_service.compute_stats_and_histograms(geometry=pt,
+                                                                            rendering_rule={"rasterFunction":None},
+                                                                            time="1326650400000")
+
+        .. code-block:: python
+
+            # Usage Example 2: Compute the stats and histogram at a point for a time extent.
+            # If the datetime object is not in the UTC timezone, the API will internally convert it to the UTC timezone.
+
+            start = datetime.datetime(2012,1,15,18,0,0, tzinfo=datetime.timezone.utc)
+            end = datetime.datetime(2012,1,15,21,0,0, tzinfo=datetime.timezone.utc)
+            comp_stats_hist_02 = image_service.compute_stats_and_histograms(geometry=pt,
+                                                                            rendering_rule={"rasterFunction":None},
+                                                                            time=[start,end])
+
         """
+        import datetime
         url = "%s/computeStatisticsHistograms" % self._url
         from arcgis.geometry import Polygon
         if isinstance(geometry, Polygon):
@@ -2253,6 +2318,10 @@ class ImageryLayer(Layer):
             params['mosaicRule'] = mosaic_rule
         elif self._mosaic_rule is not None:
             params['mosaicRule'] = self._mosaic_rule
+
+        from ._util import _set_time_param
+        if time is not None:
+            params['time'] = _set_time_param(time)
 
         if self._datastore_raster:
             params["Raster"]=self._uri
@@ -2463,7 +2532,8 @@ class ImageryLayer(Layer):
         return self._con.post(path=url, postdata=params)
     # ----------------------------------------------------------------------
     def compute_histograms(self, geometry, mosaic_rule=None,
-                           rendering_rule=None, pixel_size=None):
+                           rendering_rule=None, pixel_size=None,
+                           time=None):
         """
         The compute_histograms operation is performed on an imagery layer
         method. This operation is supported by any imagery layer published with
@@ -2507,13 +2577,46 @@ class ImageryLayer(Layer):
                               Examples:
                                 - pixel_size={"x": 0.18, "y": 0.18}
                                 - pixel_size='0.18,0.18'
+        -----------------     --------------------------------------------------------------------
+        time                  optional datetime.date, datetime.datetime or timestamp string. The
+                              time instant or the time extent of the exported image.
+                              Time instant specified as datetime.date, datetime.datetime or
+                              timestamp in milliseconds since epoch
+                              Syntax: time=<timeInstant>
 
+                              Time extent specified as list of [<startTime>, <endTime>]
+                              For time extents one of <startTime> or <endTime> could be None. A
+                              None value specified for start time or end time will represent
+                              infinity for start or end time respectively.
+                              Syntax: time=[<startTime>, <endTime>] ; specified as
+                              datetime.date, datetime.datetime or timestamp
+
+                              Added at 10.8
         =================     ====================================================================
 
         :returns: dict
 
-        """
+        .. code-block:: python
 
+            # Usage Example 1: Compute the histogram at a point for a time instant.
+
+            comp_hist_01 = image_service.compute_histograms(geometry=pt,
+                                                            rendering_rule={"rasterFunction":None},
+                                                            time="1326650400000")
+
+        .. code-block:: python
+
+            # Usage Example 2: Compute the histogram at a point for a time extent.
+            # If the datetime object is not in the UTC timezone, the API will internally convert it to the UTC timezone.
+
+            start = datetime.datetime(2012,1,15,18,0,0, tzinfo=datetime.timezone.utc)
+            end = datetime.datetime(2012,1,15,21,0,0, tzinfo=datetime.timezone.utc)
+            comp_hist_02 = image_service.compute_histograms(geometry=pt,
+                                                            rendering_rule={"rasterFunction":None},
+                                                            time=[start, end])
+
+        """
+        import datetime
         url = self._url + "/computeHistograms"
         params = {
             "f": "json",
@@ -2539,6 +2642,11 @@ class ImageryLayer(Layer):
         if not pixel_size is None:
             params["pixelSize"] = pixel_size
 
+
+        from ._util import _set_time_param
+
+        if time is not None:
+            params['time'] = _set_time_param(time)
         if self._datastore_raster:
             params["Raster"]=self._uri
             if isinstance(self._uri, bytes):
@@ -2925,6 +3033,51 @@ class ImageryLayer(Layer):
 
         return None
 
+    def query_boundary(self, out_sr=None):
+        """
+        The Query Boundary operation is supported by image services based on mosaic datasets 
+        or raster datasets.
+
+        For an image service based on a mosaic dataset, the result of this operation 
+        includes the geometry shape of the mosaicked items' boundary and area of 
+        coverage in square meters.
+
+        For an image service based on a raster dataset, the result of this operation 
+        includes the geometry shape of the dataset's envelope boundary and area of 
+        coverage in square meters.
+
+        Added at 10.6
+
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        out_sr                The spatial reference of the boundary's geometry.
+
+                              The spatial reference can be specified as either a well-known ID or 
+                              as a spatial reference JSON object.
+                               
+                              If the outSR is not specified, the boundary will be reported in the 
+                              spatial reference of the image service.
+
+                              Example:
+                                4326                                
+        =================     ====================================================================
+
+        :return: dictionary showing whether the specified rendering rule and/or mosaic rule is valid
+        """
+
+        url = self._url + "/queryBoundary"
+
+        params = {
+            'f': 'json'
+        }
+        if out_sr is not None:
+            params['outSR'] = out_sr
+
+        if self._datastore_raster:
+            params["Raster"]=self._uri
+
+        return self._con.post(path=url, postdata=params)
 
     @property
     def mosaic_rule(self):
