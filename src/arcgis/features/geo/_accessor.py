@@ -2092,7 +2092,7 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        location                        Required string. Full path to the feature class
+        location                        Required string or pathlib.Path. Full path to the feature class
         ===========================     ====================================================================
 
         *Optional parameters when ArcPy library is available in the current environment*:
@@ -2125,7 +2125,8 @@ class GeoAccessor(object):
             ===============     ====================================================
             **Argument**        **Description**
             ---------------     ----------------------------------------------------
-            filename            Required string. The path to the table.
+            filename            Required string or pathlib.Path. The path to the
+                                table.
             ===============     ====================================================
 
             **Keyword Arguments**
