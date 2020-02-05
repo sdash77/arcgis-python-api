@@ -268,6 +268,8 @@ class _GISService(object):
                             self._con._auth = "ANON"
                         elif str(e).lower().find("unable to generate token for this server") > -1:
                             raise RuntimeError(str(e))
+                        elif str(e).lower().find("exception in generating token") > -1 and self._con._auth == 'IWA':
+                            self._con._auth = "ANON"
                         else:
                             from requests.exceptions import RequestException
                             raise RequestException(str(e))
