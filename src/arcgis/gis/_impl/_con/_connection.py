@@ -455,11 +455,32 @@ class Connection(object):
                     raise Exception(resp['error'])                
             else:
                 data = resp.json()
+            #if 'error' in data:
+                #raise Exception(data['error'])
+            #return data
+        #else:
+            #return resp.text
             if 'error' in data:
-                raise Exception(data['error'])
+                errorcode = data['error']['code'] if 'code' in data['error'] else 0
+                self._handle_json_error(data['error'], errorcode)
             return data
         else:
             return resp.text
+    #----------------------------------------------------------------------
+    def _handle_json_error(self, error, errorcode):
+        errormessage = error.get('message', 'Unknown Error')
+        #_log.error(errormessage)
+        if 'details' in error and error['details'] is not None:
+            if isinstance(error['details'], str):
+                errormessage = f"{errormessage} \n {error['details']}"
+                #_log.error(error['details'])
+            else:
+                for errordetail in error['details']:
+                    errormessage = errormessage + "\n" + errordetail
+                    #_log.error(errordetail)
+    
+        errormessage = errormessage + "\n(Error Code: " + str(errorcode) +")"
+        raise Exception(errormessage)
     #----------------------------------------------------------------------
     def post(self,
              path,
