@@ -2302,12 +2302,14 @@ class UserManager(object):
                     new_user = self.get(username)
                     if not self.user_settings['userType'] == 'arcgisonly':
                         update_url = "community/users/" + username + "/update"
-                        url = self._con.baseurl + update_url
+                        url = self._portal.resturl + update_url
                         user_params = {"f":"json",
                                        "token":"token",
                                        "userType": self.user_settings['userType']}
                         self._portal.con.post(url, user_params, ssl=True)
-                    return new_user
+                        return new_user
+                    else:
+                        return new_user
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             params = {
