@@ -2271,10 +2271,6 @@ class UserManager(object):
             if not groups and self.user_settings['groups']:
                 groups = [self._gis.groups.get(g)
                           for g in self.user_settings['groups']]
-            if not user_type:
-                user_type = self.user_settings['userLicenseType']
-            if not role and self.user_settings['role']:
-                role = self.user_settings['role']
             params = {
                 'f': 'json',
                 'invitationList': {'invitations': [
