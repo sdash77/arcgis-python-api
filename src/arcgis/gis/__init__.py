@@ -1992,8 +1992,7 @@ class UserManager(object):
             The user if successfully created, None if unsuccessful.
 
         """
-        #kwargs = locals()
-        kwargs = {k:v for k,v in locals().items()}
+        kwargs = locals()
         if self._gis.version >= [6,4]:
             allowed_keys = {'username', 'password', 'firstname', 'lastname',
                             'email', 'description', 'role', 'provider', 'idp_username',
@@ -2205,6 +2204,16 @@ class UserManager(object):
 
         """
         #map role parameter of a viewer to the internal value for org viewer.
+        if self._gis._is_agol:
+            if user_type is None and role is None:
+                if 'userLicenseType' in self.user_settings:
+                    user_type = self.user_settings['userLicenseType']
+                    role = self.user_settings['role']
+        else:
+            if user_type is None and role is None:
+                if 'defaultUserTypeIdForUser' in self._gis.admin.security.config:
+                    user_type = self._gis.admin.security.config['defaultUserTypeIdForUser']
+                    role = self._gis.admin.security.config['defaultRoleForUser']
         if level == 2 and user_type is None and role is None:
             user_type = "creator"
             role = 'publisher'
@@ -2256,11 +2265,14 @@ class UserManager(object):
 <p>This link will expire in two weeks.</p>
 <p style="color:gray;">This is an automated email. Please do not reply.</p>
 </body></html>'''
-            if credits == -1 and self._gis.properties['defaultUserCreditAssignment']:
+            if credits == -1 and \
+                    self._gis.properties['defaultUserCreditAssignment'] != -1:
                 credits = self._gis.properties['defaultUserCreditAssignment']
             if not groups and self.user_settings['groups']:
                 groups = [self._gis.groups.get(g)
                           for g in self.user_settings['groups']]
+            if not user_type:
+                user_type = self.user_settings['userLicenseType']
             if not role and self.user_settings['role']:
                 role = self.user_settings['role']
             params = {
