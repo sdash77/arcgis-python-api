@@ -23,6 +23,9 @@ try:
     from fastai.vision.image import open_image
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
+    from fastai.callbacks import LearnerCallback
+    from fastai.basic_train import Learner
+    from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
     from fastai.vision.learner import cnn_learner, ClassificationInterpretation, cnn_config
     from ._arcgis_model import _set_multigpu_callback
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
@@ -82,12 +85,20 @@ class FeatureClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    ---------------------   -------------------------------------------
+    mixup                   Optional boolean. If set to True, it creates 
+                            new training images by randomly mixing training set images.
+
+                            The default is set to False.
+    ---------------------   -------------------------------------------
+    oversample              Optional boolean. If set to True, it oversamples unbalanced
+                            classes of the dataset during training.
     =====================   ===========================================
 
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False):
+    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False):
         
         super().__init__(data, backbone)
 
@@ -110,6 +121,8 @@ class FeatureClassifier(ArcGISModel):
 
         self._code = feature_classifier_prf
         self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+        if oversample:
+            self.learn.callbacks.append(OverSamplingCallback(self.learn))
         self._arcgis_init_callback() # make first conv weights learnable
 
         # Add Mixup data augmentation
@@ -1327,4 +1340,23 @@ class FeatureClassifier(ArcGISModel):
         else:
             e = Exception("Could not understand layer type")
             raise(e)
+
+if HAS_FASTAI:
+    class OverSamplingCallback(LearnerCallback):
+
+        """
+        The OverSamplingCallback support handles unbalanced dataset (dataset with rare classes). It is used to oversample data during training.
+        """
+        def __init__(self,learn:Learner,weights:torch.Tensor=None):
+            super(OverSamplingCallback, self).__init__(learn)
+            self.weights = weights
+
+        def on_train_begin(self, **kwargs):
+            self.labels = self.learn.data.train_dl.dataset.y.items
+            _, counts = np.unique(self.labels,return_counts=True)
+            self.weights = (self.weights if self.weights is not None else
+                            torch.DoubleTensor((1/(counts + 1e-8))[self.labels]))
+            self.label_counts = np.bincount([self.learn.data.train_dl.dataset.y[i].data for i in range(len(self.learn.data.train_dl.dataset))])
+            self.total_len_oversample = int(self.learn.data.c*np.max(self.label_counts))
+            self.learn.data.train_dl.dl.batch_sampler = BatchSampler(WeightedRandomSampler(self.weights,self.total_len_oversample), self.learn.data.train_dl.batch_size,False)
 
