@@ -23,10 +23,6 @@ requirements:
   - pytest
   - pyshp <2
   - requests
-  - requests-toolbelt
-  - requests-kerberos
-  - requests-oauthlib
-  - requests_ntlm
   - winkerberos      [win]
   run:
   - python
@@ -41,10 +37,6 @@ requirements:
   - keyring
   - pyshp <2
   - requests
-  - requests-toolbelt
-  - requests-kerberos
-  - requests-oauthlib
-  - requests_ntlm
   - winkerberos      [win]
 source:
   path: ../../src
