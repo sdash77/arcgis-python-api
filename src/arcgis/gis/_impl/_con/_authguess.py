@@ -15,8 +15,11 @@ try:
     HAS_KERBEROS = True
 except ImportError:
     HAS_KERBEROS = False
-from requests_ntlm import HttpNtlmAuth
-from requests_toolbelt.auth import _digest_auth_compat as auth_compat, http_proxy_digest
+try:
+    from requests_ntlm import HttpNtlmAuth
+    from requests_toolbelt.auth import _digest_auth_compat as auth_compat, http_proxy_digest
+except ImportError:
+    pass
 
 class GuessAuth(auth.AuthBase):
     """Guesses the auth type by the WWW-Authentication header."""

@@ -22,11 +22,14 @@ import tempfile
 from urllib.request import urlparse, unquote
 import requests
 from requests import Session
-from requests_toolbelt.downloadutils import stream
-from requests_toolbelt.multipart.encoder import MultipartEncoder
-from ._helpers import _filename_from_headers, _filename_from_url
-from ._authguess import GuessAuth
-from arcgis._impl.common._mixins import PropertyMap
+try:
+    from requests_toolbelt.downloadutils import stream
+    from requests_toolbelt.multipart.encoder import MultipartEncoder
+    from ._helpers import _filename_from_headers, _filename_from_url
+    from ._authguess import GuessAuth
+    from arcgis._impl.common._mixins import PropertyMap
+except ImportError:
+    pass
 
 __version__ = "2.0.0"
 
