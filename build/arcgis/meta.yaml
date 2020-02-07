@@ -23,7 +23,6 @@ requirements:
   - pytest
   - pyshp
   - requests-toolbelt
-  - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
   - requests
@@ -42,7 +41,6 @@ requirements:
   - pyshp
   - requests
   - requests-toolbelt
-  - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
   - winkerberos      [win]
