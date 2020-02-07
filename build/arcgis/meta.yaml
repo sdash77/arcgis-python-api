@@ -21,7 +21,7 @@ requirements:
   - matplotlib
   - keyring
   - pytest
-  - pyshp <2
+  - pyshp
   - requests
   - winkerberos      [win]
   run:
@@ -35,7 +35,7 @@ requirements:
   - pyshp
   - matplotlib
   - keyring
-  - pyshp <2
+  - pyshp
   - requests
   - winkerberos      [win]
 source:
