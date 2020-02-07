@@ -28,7 +28,7 @@ from arcgis.geometry import Geometry
 # -----------------------------------------------------------------------------
 PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
-PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("0.26.0.dev")
+PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1")
 #--------------------------------------------------------------------------
 def _isna(value):
     """
@@ -280,7 +280,7 @@ class GeoArray(ExtensionArray):
                 idx = pd.array(idx)
             dtype = idx.dtype
             if pd.api.types.is_bool_dtype(dtype):
-                idx = pd.api.indexers.check_bool_array_indexer(self, idx)
+                idx = pd.api.indexers.check_array_indexer(self, idx)
             elif pd.api.types.is_integer_dtype(dtype):
                 idx = np.asarray(idx, dtype="int")
         if isinstance(idx, (Iterable, slice)):

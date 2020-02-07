@@ -930,7 +930,8 @@ class FeatureLayerCollectionManager(_GISResource):
                     allow_schema_changes=True,
                     updateable=True,
                     capabilities="Query",
-                    view_layers=None):
+                    view_layers=None,
+                    view_tables=None):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
         represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
@@ -966,6 +967,9 @@ class FeatureLayerCollectionManager(_GISResource):
         --------------------     --------------------------------------------------------------------
         view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
                                  that you want in the view.
+        --------------------     --------------------------------------------------------------------
+        view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
+                                 that you want in the view.                                 
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
@@ -1031,9 +1035,24 @@ class FeatureLayerCollectionManager(_GISResource):
         view = content.get(res['itemId'])
         fs_view = FeatureLayerCollection(url=view.url, gis=gis)
         add_def = {
-            "layers" : []
+            "layers" : [],
+            "tables" : []
         }
-        if view_layers is None:
+
+        def is_none_or_empty(view_param):
+            if not view_param:
+                return True
+            if isinstance(view_param, list) and len(view_param) == 0:
+                return True
+            if isinstance(view_param, dict):
+                for k,v in view_param.items():
+                    if view_param[k] is not None:
+                        return False
+                return True
+            return False
+
+        if is_none_or_empty(view_layers) and is_none_or_empty(view_tables):
+            # When view_layers and view_tables are not specified, create a view from all layers and tables
             for lyr in fs.layers:
                 add_def['layers'].append(
                     {
@@ -1047,19 +1066,93 @@ class FeatureLayerCollectionManager(_GISResource):
                         },
                         "name" : lyr.manager.properties['name']
                     })
-        elif isinstance(view_layers, list):
-            for lyr in view_layers:
-                add_def['layers'].append(
+            for tbl in fs.tables:
+                add_def['tables'].append(
                     {
-                        "adminLayerInfo": {"viewLayerDefinition":
-                                               {"sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
-                                                "sourceLayerId": lyr.manager.properties['id'],
-                                                "sourceLayerFields": "*"}
-                                           },
-                        "name": lyr.manager.properties['name']
+                        "adminLayerInfo" : {"viewLayerDefinition" :
+                                                {"sourceServiceName" : os.path.basename(os.path.dirname(fs.url)),
+                                                 "sourceLayerId" : tbl.manager.properties['id'],
+                                                 "sourceLayerFields" :  "*"}
+                                            },
+                        "id": tbl.manager.properties['id'],
+                        "name" : tbl.manager.properties['name'],
+                        "type": "Table"
                     })
         else:
-            add_def = view_layers
+            # when view_layers is specified
+            if view_layers:
+                if isinstance(view_layers, list):
+                    for lyr in view_layers:
+                            add_def['layers'].append(
+                                {
+                                    "adminLayerInfo": {"viewLayerDefinition":
+                                                        {"sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
+                                                        "sourceLayerId": lyr.manager.properties['id'],
+                                                        "sourceLayerFields": "*"}
+                                                    },
+                                    "name": lyr.manager.properties['name']
+                                })
+                else:
+                    import logging
+                    _log = logging.getLogger(__name__)
+                    from arcgis.features.layer import Layer
+                    if isinstance(view_layers, dict):
+                        if 'layers' in view_layers:
+                            add_def['layers'] = view_layers['layers']
+                        else:
+                            add_def['layers'].append(view_layers)
+                    elif isinstance(view_layers, Layer):
+                        add_def['layers'].append(
+                            {
+                                "adminLayerInfo": {"viewLayerDefinition":
+                                                    {"sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
+                                                    "sourceLayerId": view_layers.manager.properties['id'],
+                                                    "sourceLayerFields": "*"}
+                                                },
+                                "name": view_layers.manager.properties['name']
+                            })
+                    else:
+                        _log.error('Unable to parse the view_layers parameter')
+                        
+
+            # when view_tables is specified
+            if view_tables:
+                if isinstance(view_tables, list):
+                    for tbl in view_tables:
+                        add_def['tables'].append(
+                            {
+                                "adminLayerInfo" : {"viewLayerDefinition" :
+                                                        {"sourceServiceName" : os.path.basename(os.path.dirname(fs.url)),
+                                                        "sourceLayerId" : tbl.manager.properties['id'],
+                                                        "sourceLayerFields" :  "*"}
+                                                    },
+                                "id": tbl.manager.properties['id'],
+                                "name" : tbl.manager.properties['name'],
+                                "type": "Table"
+                            })
+                else:
+                    import logging
+                    _log = logging.getLogger(__name__)
+                    
+                    from arcgis.features.layer import Table
+                    if isinstance(view_tables, dict):
+                        if 'tables' in view_tables:
+                            add_def['tables'] = view_tables['tables']
+                        else:
+                            add_def['tables'].append(view_tables)
+                    elif isinstance(view_tables, Table):
+                        add_def['tables'].append(
+                            {
+                                "adminLayerInfo": {"viewLayerDefinition":
+                                                    {"sourceServiceName": os.path.basename(os.path.dirname(fs.url)),
+                                                    "sourceLayerId": view_tables.manager.properties['id'],
+                                                    "sourceLayerFields": "*"}
+                                                },
+                                "name": view_tables.manager.properties['name']
+                            })
+                    else:
+                        _log.error('Unable to parse the view_tables parameter')
+
         fs_view.manager.add_to_definition(add_def)
         return content.get(res['itemId'])
     # ----------------------------------------------------------------------
