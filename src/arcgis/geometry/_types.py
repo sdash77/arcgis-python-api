@@ -12,6 +12,7 @@ from functools import partial
 #--------------------------------------------------------------------------
 def _is_valid(value):
     """checks if the value is valid"""
+    number_type = (int, float)
     if 'spatialReference' not in value or \
        isinstance(value['spatialReference'],
                   (dict, SpatialReference)) == False:

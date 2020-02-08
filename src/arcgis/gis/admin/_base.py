@@ -3,7 +3,7 @@ Contains the base class that all portaladmin object inherit from.
 """
 from __future__ import absolute_import
 import json
-from ..._impl.connection import _ArcGISConnection
+from ...gis._impl._con import Connection
 from ...gis import GIS
 from ..._impl.common._mixins import PropertyMap
 ###########################################################################
@@ -17,14 +17,14 @@ class BasePortalAdmin(object):
         """class initializer"""
         super(BasePortalAdmin, self).__init__()
         self._url = url
-        if isinstance(gis, _ArcGISConnection):
+        if isinstance(gis, Connection):
             self._con = gis
         elif isinstance(gis, GIS):
             self._gis = gis
             self._con = gis._con
         else:
             raise ValueError(
-                "connection must be of type GIS or _ArcGISConnection")
+                "connection must be of type GIS or Connection")
         if initialize:
             self._init(connection=self._con)
     #----------------------------------------------------------------------

@@ -5,6 +5,7 @@ try:
     import torch.nn as nn
     import math
     from .._ssd_utils import _analyze_pred, _reconstruct
+    from .util import normalize_batch
     HAS_TORCH = True
 except Exception as e:
     HAS_TORCH = False
@@ -325,9 +326,12 @@ class ChildObjectDetector:
         std  = 255* np.array(imagenet_stats[1], dtype=np.float32)
         norm = lambda x: (x-mean)/ std
 
-        batch = norm(batch.transpose(0,2,3,1))
+        if "NormalizationStats" in self.json_info:
+            batch = normalize_batch(batch, self.json_info)
+        else:
+            batch = norm(batch.transpose(0,2,3,1)).transpose(0, 3, 1, 2)
 
-        batch_classes, batch_bboxes = self.retinanet.learn.model(torch.tensor(batch.transpose(0, 3, 1, 2)).to(self.device))
+        batch_classes, batch_bboxes = self.retinanet.learn.model(torch.tensor(batch).to(self.device).float())
 
         num_boxes = 0
         for chip_idx, (clas, bbox) in enumerate(zip(batch_classes, batch_bboxes)):

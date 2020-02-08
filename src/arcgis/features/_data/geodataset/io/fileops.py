@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from six import iteritems, integer_types
 from datetime import datetime
-from six.moves.urllib import request
+from urllib import request
 from ..utils import NUMERIC_TYPES, STRING_TYPES, DATETIME_TYPES
 from ..utils import sanitize_field_name
 from arcgis.geometry import _types

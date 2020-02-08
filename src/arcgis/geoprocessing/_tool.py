@@ -30,7 +30,7 @@ except:
         return False
 
 
-def _import_code(code, name, verbose=False, add_to_sys_modules=False):
+def _import_code(code, name, verbose=False, add_to_sys_modules=False, choice_list=None):
     """
     Import dynamically generated code as a module. code is the
     object containing the code (a string, a file handle or an
@@ -60,7 +60,10 @@ def _import_code(code, name, verbose=False, add_to_sys_modules=False):
     exec(code, module.__dict__)
     if add_to_sys_modules:
         sys.modules[name] = module
-
+        
+    if choice_list:
+        setattr(module, "choice_list", choice_list)
+        module.__dict__['choice_list'] = choice_list
     return module
 
 _log = logging.getLogger(__name__)
@@ -165,11 +168,10 @@ def _generate_fn(task, tbx):
 
     uses_map_as_result = tbx.properties.resultMapServerName != ''
 
-    helpstring, name_name, name_type, return_values, spec, name_param = _inspect_tool(taskprops, uses_map_as_result)
+    helpstring, name_name, name_type, return_values, spec, name_param, choice_list_db_param = _inspect_tool(taskprops, uses_map_as_result)
 
     src_code = 'def ' + fnname + '('
     num_spaces = len(src_code)
-
     if len(spec) > 0:
         param_name, param_dval = spec[0]
         param_type = name_type[param_name]
@@ -189,6 +191,7 @@ def _generate_fn(task, tbx):
     src_code += '\n\t"""\n\n' + helpstring + '\n\t"""\n'
 
     src_code += '\tkwargs = locals()\n\n'
+    #src_code += f'\tchoice_list_db = {choice_list_db_dict}\n\n'
     src_code += '\tparam_db = { '
 
     for param_name_dval in spec: # [ (param_name, param_dval) ]
@@ -212,7 +215,7 @@ def _generate_fn(task, tbx):
     src_code += '\treturn _execute_gp_tool(gis, "' + task + '", kwargs, param_db, return_values, _use_async, _url, future=future)'
 
     src_code += '\n\n\n'
-    return src_code
+    return src_code, choice_list_db_param, _camelCase_to_underscore(taskprops['name'])
 
 
 def _generate_param(name_param, param_dval, param_name, param_type):
@@ -243,7 +246,7 @@ def _inspect_tool(taskprops, map_as_result):
     name_type = {}  #
     name_name = {}  # map from camel_case to GPParameterName
     name_param = {}
-
+    choice_list_db_param = {}
     return_values = []
 
     # tools with output map service - add another output:
@@ -261,6 +264,7 @@ def _inspect_tool(taskprops, map_as_result):
     task_params = taskprops['parameters']
     for param in task_params:
         param_helpstring, param_name_mapping, param_name_type_mapping, param_spec, param_return_values, param_name_param = _process_parameter(param, map_as_result)
+        choice_list_db_param.update({_camelCase_to_underscore(t['name']) : t['choiceList'] for t in task_params if 'choiceList' in t})
         helpstring += param_helpstring
         name_param.update(param_name_param)
         if param_spec is not None:
@@ -294,7 +298,7 @@ def _inspect_tool(taskprops, map_as_result):
     if 'helpUrl' in taskprops:
         helpstring = helpstring + "\nSee " + taskprops['helpUrl'] + " for additional help."
 
-    return helpstring, name_name, name_type, return_values, spec, name_param
+    return helpstring, name_name, name_type, return_values, spec, name_param, choice_list_db_param
 
 
 def _process_parameter(param, map_as_result):
@@ -332,7 +336,10 @@ def _process_parameter(param, map_as_result):
             helpstring = helpstring + ' ' + param['description']
 
         if param_chcs is not None and len(param_chcs) > 0:
-            helpstring = helpstring + '\n      Choice list:' + str(param_chcs)
+            if isinstance(param_chcs, (tuple, list)):
+                helpstring = helpstring + '\n      Choice list:' + ",".join(param_chcs)
+            else:    
+                helpstring = helpstring + '\n      Choice list:' + str(param_chcs)
 
     elif param_drtn == 'esriGPParameterDirectionOutput':
 
@@ -431,10 +438,12 @@ _log = _logging.getLogger(__name__)
 
     src_code += '\n_url = "' + url + '"'
     src_code += '\n_use_async = ' + str(use_async) + '\n\n'
+    listed_params = {}
     if len(tbx.properties.tasks) < 4:
         for task in tbx.properties.tasks:
-            fn_src = _generate_fn(task, tbx)
+            fn_src, choice_list, func_name = _generate_fn(task, tbx)
             src_code += fn_src
+            listed_params[func_name] = choice_list
     else:
         source = []
         import concurrent.futures
@@ -444,10 +453,16 @@ _log = _logging.getLogger(__name__)
                 #_generate_fn(task, tbx)
                 f = executor.submit(fn=_generate_fn, **{"task": task, "tbx" :tbx})
                 source.append(f)
-        for fn_src in source:
-            src_code += fn_src.result()
-
-    return _import_code(src_code, 'name', verbose)
+        for fnsrc in source:
+            fn_src, choice_list, func_name = fnsrc.result()
+            src_code += fn_src
+            listed_params[func_name] = choice_list
+    if len(listed_params) == 0 :
+        listed_params = None
+    else:
+        listed_params = PropertyMap(listed_params)
+    
+    return _import_code(src_code, 'name', verbose, choice_list=listed_params)
     #print(src_code)
 
 

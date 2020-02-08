@@ -23,7 +23,7 @@ try:
     from torchvision.models.segmentation.segmentation import _segm_resnet
     from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
     from torchvision.models.segmentation.fcn import FCNHead
-    from ._deeplab_utils import Deeplab
+    from ._deeplab_utils import Deeplab, compute_miou
     from .._utils.common import get_multispectral_data_params_from_emd
     HAS_FASTAI = True
 except Exception as e:
@@ -200,7 +200,7 @@ class DeepLab(ArcGISModel):
         return float(model_accuracy)
 
     def _deeplab_loss(self, outputs, targets):
-        targets = targets.squeeze().detach()
+        targets = targets.squeeze(1).detach()
         criterion = nn.CrossEntropyLoss().to(self._device)
         if self.learn.model.training:
             out = outputs[0]
@@ -219,6 +219,8 @@ class DeepLab(ArcGISModel):
     def _freeze(self):
         "Freezes the pretrained backbone."
         for idx, i in enumerate(flatten_model(self.learn.model)):
+            if isinstance(i, (nn.BatchNorm2d)):
+                continue
             if hasattr(i, 'dilation'):
                 dilation = i.dilation
                 dilation = dilation[0] if isinstance(dilation, tuple) else dilation
@@ -256,3 +258,27 @@ class DeepLab(ArcGISModel):
 
         target = target.squeeze(1)
         return (input.argmax(dim=1) == target).float().mean()
+
+    def mIOU(self, mean=False, show_progress=True):
+
+        """
+        Computes mean IOU on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                mean IOU, otherwise returns mean iou of all
+                                classes combined.
+        ---------------------   -------------------------------------------
+        show_progress           Optional bool. Displays the prgress bar if
+                                True.                                         
+        =====================   ===========================================
+        
+        :returns: `dict` if mean is False otherwise `float`
+        """
+        num_classes = torch.arange(self._data.c)
+        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
+        if mean:
+            return np.mean(miou)
+        return dict(zip(['0'] + self._data.classes[1:], miou))

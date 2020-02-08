@@ -279,6 +279,6 @@ class ChildObjectDetector:
 
         bounding_boxes, scores, classes = util.detect_objects_image_space(self.model, batch, self.ssd._anchors, self.ssd._grid_sizes, self.device,\
                                                                         classes=[clas['Name'] for clas in self.json_info['Classes']],\
-                                                                        nms_overlap=self.nms_overlap, thres=self.thres)
+                                                                        nms_overlap=self.nms_overlap, thres=self.thres, model_info=self.json_info)
                                                     
         return convert_bounding_boxes_to_coord_list(bounding_boxes), scores, classes

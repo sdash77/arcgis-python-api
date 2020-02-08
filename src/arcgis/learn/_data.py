@@ -384,11 +384,26 @@ def prepare_data(path,
             emd = json.load(f)
 
         # Create Class Mapping from EMD if not specified by user
-        if class_mapping is None:
-            try:
-                class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
-            except KeyError:
-                class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
+        ## Validate user defined class_mapping keys with emd (issue #3064)
+        # Get classmapping from emd file.
+        try:
+            emd_class_mapping = {i['Value']: i['Name'] for i in emd['Classes']}
+        except KeyError:
+            emd_class_mapping = {i['ClassValue']: i['ClassName'] for i in emd['Classes']}
+
+        ## Change all keys to int.
+        if class_mapping is not None:
+            class_mapping = {int(key):value for key, value in class_mapping.items()}
+        else:
+            class_mapping = {}
+
+        ## Map values from user defined classmapping to emd classmapping.
+        for key, _ in emd_class_mapping.items():
+            if class_mapping.get(key) is not None:
+                emd_class_mapping[key] = class_mapping[key]
+            
+        class_mapping = emd_class_mapping
+
 
         color_mapping = {(i.get('Value', 0) or i.get('ClassValue', 0)): i['Color'] for i in emd.get('Classes', [])}
 
@@ -769,7 +784,8 @@ def prepare_data(path,
         if data._bands is None:
             n_bands = data.x[0].data.shape[0]
             if n_bands == 1:# Handle Pancromatic case
-                data._bands = data._symbology_rgb_bands = data._rgb_bands = ['p']
+                data._bands = ['p']
+                data._symbology_rgb_bands = [0]
             else:
                 data._bands = ['u' for i in range(n_bands)]
                 if n_bands == 2:# Handle Data with two channels

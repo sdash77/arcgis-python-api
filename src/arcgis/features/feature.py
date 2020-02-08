@@ -707,15 +707,14 @@ class FeatureSet(object):
             Ouput:
               field type name
             """
-            import six
             import numpy as np
             nn = df[col].notnull()
             nn = list(df[nn].index)
             if len(nn) > 0:
                 val = df[col][nn[0]]
-                if isinstance(val, six.string_types):
+                if isinstance(val, str):
                     return "esriFieldTypeString"
-                elif isinstance(val, tuple(list(six.integer_types) + [np.int32])):
+                elif isinstance(val, tuple([int] + [np.int32])):
                     return "esriFieldTypeInteger"
                 elif isinstance(val, (float, np.int64)):
                     return "esriFieldTypeDouble"
@@ -732,7 +731,11 @@ class FeatureSet(object):
         features = []
         index = 0
         sr = None
-        df = df.fillna('')
+        try:
+            cols = [col for col in df.columns if col != df.spatial.name]
+            df = df.fillna('')
+        except:
+            pass
         old_idx = df.index
         df.reset_index(drop=True, inplace=True)
         if isinstance(df, SpatialDataFrame):

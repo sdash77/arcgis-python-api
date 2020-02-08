@@ -5,25 +5,25 @@ arcgis.learn module
 
 detect_objects
 --------------
-.. automethod:: arcgis.learn.detect_objects
+.. autofunction:: arcgis.learn.detect_objects
 
 classify_objects
 ----------------
-.. automethod:: arcgis.learn.classify_objects
+.. autofunction:: arcgis.learn.classify_objects
     
 classify_pixels
 --------------
-.. automethod:: arcgis.learn.classify_pixels
+.. autofunction:: arcgis.learn.classify_pixels
 
 
 export_training_data
 ---------------
-.. automethod:: arcgis.learn.export_training_data
+.. autofunction:: arcgis.learn.export_training_data
 
 
 list_models
 ---------------
-.. automethod:: arcgis.learn.list_models
+.. autofunction:: arcgis.learn.list_models
 
 
 Model
@@ -34,7 +34,7 @@ Model
 
 prepare_data
 -----------
-.. automethod:: arcgis.learn.prepare_data
+.. autofunction:: arcgis.learn.prepare_data
 
 SingleShotDetector
 ------------------

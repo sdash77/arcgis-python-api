@@ -3,6 +3,8 @@ from arcgis.raster._layer import ImageryLayer as _ImageryLayer
 import arcgis as _arcgis
 import string as _string
 import random as _random
+from arcgis._impl.common._utils import _date_handler
+import datetime
 
 
 def _set_context(params, function_context = None):
@@ -66,3 +68,26 @@ def _set_context(params, function_context = None):
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
     return ''.join(_random.choice(chars) for _ in range(size))
+
+
+def _set_time_param(time):
+    time_val = time
+    if time is not None:
+        if type(time) is list:
+            if isinstance(time[0], datetime.datetime) or isinstance(time[0], datetime.date):
+                if time[0].tzname() is None or time[0].tzname() != "UTC":
+                    time[0] = time[0].astimezone(datetime.timezone.utc)
+            if isinstance(time[1], datetime.datetime) or isinstance(time[1], datetime.date):
+                if time[1].tzname() is None or time[1].tzname() != "UTC":
+                    time[1] = time[1].astimezone(datetime.timezone.utc)
+            starttime = _date_handler(time[0])
+            endtime = _date_handler(time[1])
+            if starttime is None:
+                starttime = 'null'
+            if endtime is None:
+                endtime = 'null'
+            time_val = "%s,%s" % (starttime, endtime)
+        else:
+            time_val = _date_handler(time)
+
+    return time_val

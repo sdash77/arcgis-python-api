@@ -191,8 +191,7 @@ class ChildImageClassifier:
                                     batch_height=self.rectangle_height,
                                     batch_width=self.rectangle_width)
         
-        normalization_stats = self.json_info.get("NormalizationStats", None)
-        semantic_predictions = util.pixel_classify_image(self.model, batch, self.device, classes=[clas['Name'] for clas in self.json_info['Classes']], predict_bg=self.predict_background, normalization_stats=normalization_stats)
+        semantic_predictions = util.pixel_classify_image(self.model, batch, self.device, classes=[clas['Name'] for clas in self.json_info['Classes']], predict_bg=self.predict_background, model_info=self.json_info)
         semantic_predictions = batch_to_tile(semantic_predictions.unsqueeze(dim=1).cpu().numpy(), batch_height, batch_width)
         return semantic_predictions
 

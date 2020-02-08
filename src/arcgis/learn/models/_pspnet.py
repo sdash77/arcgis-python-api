@@ -19,6 +19,7 @@ try:
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
     from fastai.vision import flatten_model
+    from ._deeplab_utils import compute_miou
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -166,7 +167,7 @@ class PSPNetClassifier(ArcGISModel):
 
     def _psp_loss(self, outputs, targets):
         targets = targets.squeeze(1).detach()
-        criterion = nn.CrossEntropyLoss().cuda()
+        criterion = nn.CrossEntropyLoss().to(self._device)
 
         if self.learn.model.training: # returns a tuple of aux_logits and main_logits while training
             out = outputs[0]
@@ -187,6 +188,8 @@ class PSPNetClassifier(ArcGISModel):
         "Freezes the pretrained backbone."
         for idx, i in enumerate(flatten_model(self.learn.model)):
             if hasattr(i, 'dilation'):
+                if isinstance(i, (nn.BatchNorm2d)):
+                    continue
                 dilation = i.dilation
                 dilation = dilation[0] if isinstance(dilation, tuple) else dilation
                 if dilation > 1:
@@ -264,3 +267,27 @@ class PSPNetClassifier(ArcGISModel):
         if checkpoint:
             model_accuracy = np.max(self.learn.recorder.metrics)
         return float(model_accuracy)
+
+    def mIOU(self, mean=False, show_progress=True):
+
+        """
+        Computes mean IOU on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                mean IOU, otherwise returns mean iou of all
+                                classes combined.   
+        ---------------------   -------------------------------------------
+        show_progress           Optional bool. Displays the prgress bar if
+                                True.                     
+        =====================   ===========================================
+        
+        :returns: `dict` if mean is False otherwise `float`
+        """
+        num_classes = torch.arange(self._data.c)
+        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
+        if mean:
+            return np.mean(miou)
+        return dict(zip(['0'] + self._data.classes[1:], miou))

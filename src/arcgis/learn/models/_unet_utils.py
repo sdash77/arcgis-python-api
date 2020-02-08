@@ -113,6 +113,10 @@ def _show_batch_unet_multispectral(self, rows=3, alpha=0.7, **kwargs): # paramet
     if symbology_x_batch.mean() < 1:
         symbology_x_batch = symbology_x_batch.clamp(0, 1)
 
+    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    if symbology_x_batch.shape[-1] == 1:
+        symbology_x_batch = symbology_x_batch.squeeze()
+
     # Get color Array
     color_array = self._multispectral_color_array
     color_array[1:, 3] = alpha
@@ -247,6 +251,8 @@ class ArcGISSegmentationMSItemList(ImageList):
         #x = ArcGISImageMSSegment(x.astype(np.float32))
         x = torch.tensor(x.astype(np.float32))
         #x = ArcGISMultispectralImageSegment( x[:3, ] )
+        if len(x.shape)==2:
+            x = x.unsqueeze(0)
         x = ArcGISMSImage(x)
         return x
 
@@ -363,6 +369,10 @@ def show_results_multispectral(self, nrows=5, alpha=0.7, **kwargs): # parameters
     # Clamp float values to range 0 - 1
     if symbology_x_batch.mean() < 1:
         symbology_x_batch = symbology_x_batch.clamp(0, 1)
+
+    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    if symbology_x_batch.shape[-1] == 1:
+        symbology_x_batch = symbology_x_batch.squeeze()
 
     # Get color Array
     color_array = self._data._multispectral_color_array

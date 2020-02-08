@@ -22,12 +22,13 @@ import logging
 
 from urllib.error import  HTTPError
 
-import arcgis._impl.portalpy as portalpy
+#from ._impl import _portalpy as portalpy#import arcgis.gis._impl._portalpy as portalpy
 import arcgis.env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _DisableLogger
-from arcgis._impl.connection import _is_http_url
+from arcgis.gis._impl._con._helpers import _is_http_url
 from arcgis._impl.common._deprecate import deprecated
+from ._impl import _portalpy
 _log = logging.getLogger(__name__)
 
 class Error(Exception): pass
@@ -228,7 +229,7 @@ class GIS(object):
         self._proxy_host = kwargs.pop('proxy_host', None)
         self._proxy_port = kwargs.pop('proxy_port', 80)
         self._referer = kwargs.pop('referer', None)
-
+        custom_auth = kwargs.pop('custom_auth', None)
         from arcgis._impl.tools import _Tools
         if profile is not None and \
            len(profile) == 0:
@@ -297,23 +298,24 @@ class GIS(object):
         if self._url.lower() == "home":
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
-
+        #from ._impl import _portalpy as portalpy
         try:
-            self._portal = portalpy.Portal(self._url, self._username,
+            self._portal = _portalpy.Portal(self._url, self._username,
                                            self._password, self._key_file,
                                            self._cert_file,
                                            proxy_host=self._proxy_host,
                                            proxy_port=self._proxy_port,
                                            verify_cert=self._verify_cert,
                                            client_id=self._client_id,
-                                           referer=self._referer)
+                                           referer=self._referer,
+                                           custom_auth=custom_auth)
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
-                self._portal.con._auth = "BUILTIN"
+                self._portal.con._auth = "HOME"
 
         except Exception as e:
             if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
@@ -326,7 +328,7 @@ class GIS(object):
             if url.lower().find("arcgis.com") > -1 and \
                self._portal.is_logged_in and \
                self._portal.con._auth.lower() == 'oauth':
-                from six.moves.urllib_parse import urlparse
+                from urllib.parse import urlparse
                 props = self._portal.get_properties(force=False)
                 url = "%s://%s.%s" % (urlparse(self._url).scheme,
                                       props['urlKey'],
@@ -340,13 +342,13 @@ class GIS(object):
                     self._portal.con._token = None
             elif url.lower().find("arcgis.com") > -1 and \
                  self._portal.is_logged_in:
-                from six.moves.urllib_parse import urlparse
+                from urllib.parse import urlparse
                 props = self._portal.get_properties(force=False)
                 url = "%s://%s.%s" % (urlparse(self._url).scheme,
                                       props['urlKey'],
                                       props['customBaseUrl'])
                 self._url = url
-                pp =  portalpy.Portal(url,
+                pp =  _portalpy.Portal(url,
                                       self._username,
                                       self._password,
                                       self._key_file,
@@ -355,14 +357,17 @@ class GIS(object):
                                       client_id=self._client_id,
                                       proxy_port=self._proxy_port,
                                       proxy_host=self._proxy_host,
-                                      referer=self._referer)
+                                      referer=self._referer,
+                                      custom_auth=custom_auth)
                 self._portal = pp
         except: pass
 
         force_refresh = False
-        if not (self._utoken is None):
+        if not (self._utoken is None) and self._portal.con._auth != "HOME":
             self._portal.con._token = self._utoken
             self._portal.con._auth = "BUILTIN"
+            force_refresh = True
+        elif self._portal.con._auth == "HOME":
             force_refresh = True
 
         # If a token was injected, then force refresh to get updated properties
@@ -726,6 +731,88 @@ class GIS(object):
         self._is_agol = self._portal.is_arcgisonline
         self._product_version = [int(i) for i in self._portal.get_version().split('.')]
         return self._product_version
+    #----------------------------------------------------------------------
+    @property
+    def org_settings(self):
+        """
+        The portal settings resource is used to return a view of the 
+        portal's configuration as seen by the current users, either 
+        anonymous or logged in. Information returned by this resource 
+        includes helper services, allowed redirect URIs, and the current 
+        configuration for any access notices or information banners.
+        
+        ======================     ===============================================================
+        **Parameters**             **Description**
+        ----------------------     ---------------------------------------------------------------
+        settings                   Required Dict.  A dictionary of the settings
+        
+                                    ==========================    =============================================
+                                    **Fields**                    **Description**
+                                    --------------------------    ---------------------------------------------
+                                    anonymousAccessNotice         Dict. A JSON object representing a notice that is shown to your organization's anonymous users.
+                                                                  Ex: {'title': 'Anonymous Access Notice Title', 'text': 'Anonymous Access Notice Text', 'buttons': 'acceptAndDecline', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    authenticatedAccessNotice     Dict. A JSON object representing a notice that is shown to your organization's authenticated users.
+                                                                  Ex: {'title': 'Authenticated Access Notice Title', 'text': 'Authenticated Access Notice Text', 'buttons': 'okOnly', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    informationalBanner           Dict. A JSON object representing the informational banner that is shown at the top of your organization's page.
+                                                                  Ex: {'text': 'Header Text', 'bgColor': 'grey', 'fontColor': 'blue', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    clearEmptyFields              Bool.  If True, any empty dictionary will be set to null.
+                                    ==========================    =============================================
+                                    
+        ======================     ===============================================================
+        
+        :returns: Dictionary
+        
+        """
+        if self.version >= [7,4]:
+            url = "portals/self/settings"
+            params = {'f' : 'json'}
+            return self._con.post(url, params)
+        return    
+    #----------------------------------------------------------------------
+    @org_settings.setter
+    def org_settings(self, settings):
+        """
+        This operation allows you to enable and customize an access notice 
+        and informational banner for your organization. The access notice, 
+        for authenticated and anonymous access, acts as a terms of service 
+        that users must agree to before being able to access the portal 
+        site. The informational banner allows you to alert members of your 
+        organization about your site's current status and content, such as 
+        a notice that the site is currently in read-only mode or 
+        containing content of a specific classification level. 
+        
+        ======================     ===============================================================
+        **Parameters**             **Description**
+        ----------------------     ---------------------------------------------------------------
+        settings                   Required Dict.  A dictionary of the settings
+        
+                                    ==========================    =============================================
+                                    **Fields**                    **Description**
+                                    --------------------------    ---------------------------------------------
+                                    anonymousAccessNotice         Dict. A JSON object representing a notice that is shown to your organization's anonymous users.
+                                                                  Ex: {'title': 'Anonymous Access Notice Title', 'text': 'Anonymous Access Notice Text', 'buttons': 'acceptAndDecline', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    authenticatedAccessNotice     Dict. A JSON object representing a notice that is shown to your organization's authenticated users.
+                                                                  Ex: {'title': 'Authenticated Access Notice Title', 'text': 'Authenticated Access Notice Text', 'buttons': 'okOnly', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    informationalBanner           Dict. A JSON object representing the informational banner that is shown at the top of your organization's page.
+                                                                  Ex: {'text': 'Header Text', 'bgColor': 'grey', 'fontColor': 'blue', 'enabled': True}
+                                    --------------------------    ---------------------------------------------
+                                    clearEmptyFields              Bool.  If True, any empty dictionary will be set to null.
+                                    ==========================    =============================================
+                                    
+        ======================     ===============================================================
+        
+        """
+        if self.version >= [7,4] and \
+           isinstance(settings, dict):
+            url = "portals/self/settings/update"
+            params = {'f' : 'json'}
+            params.update(settings)
+            self._con.post(url, params)
     #----------------------------------------------------------------------
     def __str__(self):
         return 'GIS @ {url} version:{version}'.format(url=self.url,
@@ -1489,16 +1576,195 @@ class UserManager(object):
     Users call methods on this 'users' object to manipulate (create, get, search, etc) users.
     """
     _me = None
+    #----------------------------------------------------------------------
     def __init__(self, gis):
         self._gis = gis
         self._portal = gis._portal
-
+    #----------------------------------------------------------------------
     def __str__(self):
         return "<UserManager @ {url}>".format(url=self._gis._url)
-
+    #----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-
+    #----------------------------------------------------------------------
+    @property
+    def user_settings(self):
+        """
+        Gets/sets the user's settings
+        
+        The `user_settings` allows administrators to set, and edit, new 
+        member defaults. Members who create their own built-in accounts and
+        members added by an administrator or through automatic account 
+        creation will be automatically assigned the new member defaults. 
+        
+        Passing in `None` to the property will delete all the user settings.
+        
+        **Settings Key/Value Dictionary**
+        
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        role	          String/Role. The role ID. To assign a custom role as the new member default, 
+                          provide a Role object.  
+                          
+                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object 
+        ----------------  -------------------------------------------------------------------------------
+        userLicenseType   String. The ID of a user type licensed with your organization. To see which 
+                          user types are included with your organization's licensing, see the License 
+                          resource in the Portal Admin API.
+                          
+                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`, 
+                          `viewer`, or `fieldWorker`
+        ----------------  -------------------------------------------------------------------------------
+        groups            List of String/Groups. An array of group ID numbers or `Group` objects that 
+                          specify the groups new members will be added to.
+        ----------------  -------------------------------------------------------------------------------
+        userType          String.  This key only applies to `ArcGIS Online`. If new members will have 
+                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default 
+                          value is `arcgisonly`.
+                          
+                          Values: `arcgisonly` or `both`
+        ----------------  -------------------------------------------------------------------------------
+        apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
+                          Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
+        ----------------  -------------------------------------------------------------------------------
+        appBundles        List of dictionaries. An array of an app bundle's ID.
+        
+                          Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
+        ================  ===============================================================================
+        
+        :returns: Dictionary
+        
+        """
+        if self._gis.version >= [7,3]:
+            url = f"{self._gis._portal.resturl}portals/self/userDefaultSettings"
+            params = {'f' : 'json'}
+            return self._gis._con.get(url, params)
+        return None
+    #----------------------------------------------------------------------
+    @user_settings.setter
+    def user_settings(self, settings):
+        """
+        Gets/sets the user's settings
+        
+        The `user_settings` allows administrators to set, and edit, new 
+        member defaults. Members who create their own built-in accounts and
+        members added by an administrator or through automatic account 
+        creation will be automatically assigned the new member defaults. 
+        
+        Passing in `None` to the property will delete all the user settings.
+        
+        **Settings Key/Value Dictionary**
+        
+        ================  ===============================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        role	          String/Role. The role ID. To assign a custom role as the new member default, 
+                          provide a Role object.  
+                          
+                          Values: `administrator`, `publisher`, `editor`, `viewer` or custom `Role` object 
+        ----------------  -------------------------------------------------------------------------------
+        userLicenseType   String. The ID of a user type licensed with your organization. To see which 
+                          user types are included with your organization's licensing, see the License 
+                          resource in the Portal Admin API.
+                          
+                          Values: `creator`, `editor`, `Advanced GIS`, `Basic GIS`, `Standard GIS`, 
+                          `viewer`, or `fieldWorker`
+        ----------------  -------------------------------------------------------------------------------
+        groups            List of String/Groups. An array of group ID numbers or `Group` objects that 
+                          specify the groups new members will be added to.
+        ----------------  -------------------------------------------------------------------------------
+        userType          String.  This key only applies to `ArcGIS Online`. If new members will have 
+                          Esri access (both) or if Esri access will be disabled (arcgisonly). The default 
+                          value is `arcgisonly`.
+                          
+                          Values: `arcgisonly` or `both`
+        ----------------  -------------------------------------------------------------------------------
+        apps              List of dictionaries.  An array of an app's itemID and, when applicable, entitlement.
+                          Example: `{"apps" :[{"itemId": "f761dd0f298944dcab22d1e888c60293","entitlements": ["Insights"]}]}`
+        ----------------  -------------------------------------------------------------------------------
+        appBundles        List of dictionaries. An array of an app bundle's ID.
+        
+                          Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
+        ================  ===============================================================================
+        
+        :returns: Dictionary
+        
+        """
+        user_li_lu = {
+            "creatorUT" : "creatorUT",
+            "creator" : "creatorUT",
+            "editor" : "editorUT",
+            "editorUT" : "editorUT",
+            "GISProfessionalAdvUT" : "GISProfessionalAdvUT",
+            "Advanced GIS" : "GISProfessionalAdvUT",
+            "Basic GIS" : "GISProfessionalBasicUT",
+            "GISProfessionalBasicUT" : "GISProfessionalBasicUT",
+            "Standard GIS" : "GISProfessionalStdUT",
+            "GISProfessionalStdUT" : "GISProfessionalStdUT",
+            "viewer" : "viewerUT",
+            "viewerUT" : "viewerUT",
+            "fieldworker" : "fieldWorkerUT",
+            "fieldWorkerUT" : "fieldWorkerUT"
+        }
+        role_lu = {
+             "administrator" : "org_admin",
+             "org_admin" : "org_admin",
+             "publisher" : "org_publisher",
+             "org_publisher" : "org_publisher",
+             "user" : "org_user",
+             "iBBBBBBBBBBBBBBB" : "iBBBBBBBBBBBBBBB",
+             "editor" : "iBBBBBBBBBBBBBBB",
+             "viewer" : "iAAAAAAAAAAAAAAA",
+             "iAAAAAAAAAAAAAAA" : "iAAAAAAAAAAAAAAA"
+        }
+        if self._gis.version > [7, 3]:            
+            if settings is None or \
+               (isinstance(settings, dict) and \
+               len(settings) == 0):
+                cs = self.user_settings
+                if cs and len(cs) > 0:
+                    self._delete_user_settings()
+            else:
+                url = f"{self._gis._portal.resturl}portals/self/setUserDefaultSettings"
+                params = {'f' : 'json'}
+                if 'role' in settings:
+                    if settings['role'] in role_lu:
+                        settings['role'] = role_lu[settings['role'].lower()]
+                    elif isinstance(settings['role'], Role):
+                        settings['role'] = settings['role'].role_id
+                if 'userLicenseType' in settings:
+                    if settings['userLicenseType'].lower() in user_li_lu:
+                        settings['userLicenseType'] = user_li_lu[settings['userLicenseType'].lower()]
+                if 'userType' in settings and self._gis._portal.is_arcgisonline == False:
+                    del settings['userType']
+                if 'groups' in settings:
+                    settings['groups'] = [grp.groupid for grp in settings['groups'] if isinstance(grp, Group)] + \
+                        [grp for grp in settings['groups'] if isinstance(grp, str)]
+                params.update(settings)
+                res = self._gis._con.post(url, params)
+                if 'success' in res and res['success'] == False:
+                    raise Exception(res)
+    #----------------------------------------------------------------------
+    def _delete_user_settings(self):
+        """
+        This operation allows administrators to clear the previously 
+        configured new member defaults set either through the Set User 
+        Default Settings operation or from the New Member Defaults tab in 
+        the Organization Settings of the portal.
+        
+        :returns: Boolean
+        
+        """
+        if self._gis.version > [7, 3]:
+            url = f"{self._gis._portal.resturl}portals/self/userDefaultSettings/delete"
+            params = {'f' : 'json'}
+            res = self._portal.con.post(url, params)
+            if 'success' in res:
+                return res['success']
+            return res
+        return None
+    #----------------------------------------------------------------------
     @property
     def license_types(self):
         """
@@ -1529,7 +1795,7 @@ class UserManager(object):
             res = self._gis._con.get(url, params)
             results += res['userLicenseTypes']
         return results
-
+    #----------------------------------------------------------------------
     def counts(self, type='bundles', as_df=True):
         """
         This method returns a simple report on the number of licenses currently used
@@ -1603,7 +1869,7 @@ class UserManager(object):
             import pandas as pd
             return pd.DataFrame(data=results)
         return results
-
+    #----------------------------------------------------------------------
     def send_notification(self,
                           users,
                           subject,
@@ -1656,7 +1922,7 @@ class UserManager(object):
         else:
             raise NotImplementedError("The current version of the enterprise does not support `send_notification`")
         return False
-
+    #----------------------------------------------------------------------
     def create(self, username, password, firstname, lastname, email, description=None, role=None,
                provider='arcgis', idp_username=None, level=2, thumbnail=None, user_type=None, credits=-1,
                groups=None):
@@ -1746,7 +2012,7 @@ class UserManager(object):
                     params[k] = v
             return self._createPre64(**params)
         return None
-
+    #----------------------------------------------------------------------
     def _createPre64(self, username, password, firstname, lastname, email, description=None, role='org_user',
                      provider='arcgis', idp_username=None, level=2, thumbnail=None):
         """
@@ -2121,7 +2387,7 @@ class UserManager(object):
         if 'success' in res:
             return res['success']
         return False
-
+    #----------------------------------------------------------------------
     @property
     def invitations(self):
         """
@@ -2138,7 +2404,7 @@ class UserManager(object):
         from ._impl._invitations import InvitationManager
         url = self._portal.resturl + "portals/self/invitations"
         return InvitationManager(url, gis=self._gis)
-
+    #----------------------------------------------------------------------
     def signup(self, username, password, fullname, email):
         """
         Signs up a user to an instance of Portal for ArcGIS.
@@ -2174,7 +2440,7 @@ class UserManager(object):
             return User(self._gis, username)
         else:
             return None
-
+    #----------------------------------------------------------------------
     def get(self, username):
         """
         Returns the user object for the specified username.
@@ -2202,7 +2468,7 @@ class UserManager(object):
         if user is not None:
             return User(self._gis, user['username'], user)
         return None
-
+    #----------------------------------------------------------------------
     def enable_users(self, users):
         """
         This is a bulk operation that allows administrators to quickly enable large number of users
@@ -2240,7 +2506,7 @@ class UserManager(object):
             else:
                 raise ValueError('Invalid input: must be of type list.')
         return False
-
+    #----------------------------------------------------------------------
     def disable_users(self, users):
         """
         This is a bulk disables user operation that allows administrators to quickly disable large
@@ -2278,7 +2544,7 @@ class UserManager(object):
             else:
                 raise ValueError('Invalid input: must be of type list.')
         return False
-
+    #----------------------------------------------------------------------
     def advanced_search(self, query, 
                         return_count=False, max_users=10, 
                         start=1, sort_field="username", 
@@ -2503,7 +2769,7 @@ class UserManager(object):
             else:
                 self._me = None
         return self._me
-
+    #----------------------------------------------------------------------
     @_lazy_property
     def roles(self):
         """Helper object to manage custom roles for users"""
@@ -3320,6 +3586,8 @@ class ContentManager(object):
                            or not allowed (false).
         -----------------  ---------------------------------------------------------------------
         culture            Optional string. Language and country information.
+        -----------------   ----------------------------------------------------------------------------
+        overwrite          Optional boolean. Default is `false`. Controls whether item can be overwritten.
         =================  =====================================================================
 
 
@@ -5752,7 +6020,6 @@ class Group(dict):
         if tags is not None:
             if type(tags) is list:
                 tags = ",".join(tags)
-        isinstance(self._portal, portalpy.Portal)
         resp = self._portal.update_group(self.groupid, title, tags,
                                          description, snippet, access,
                                          is_invitation_only, sort_field,
@@ -7140,7 +7407,8 @@ class Item(dict):
                 try:
                     with _DisableLogger():
                         self._populate_layers()
-                except:
+                except Exception as e:
+                    print(e)
                     pass
                 return self['layers']
         elif name == 'tables':
@@ -8218,7 +8486,7 @@ class Item(dict):
             print()
         else:
             return None
-        if isinstance(self._gis._portal, portalpy.Portal) and \
+        if isinstance(self._gis._portal, _portalpy.Portal) and \
            self._gis._portal.is_arcgisonline:
             tbx = Toolbox(url=gp_url)
         else:
@@ -9990,8 +10258,7 @@ class _GISResource(object):
     """
     def __init__(self, url, gis=None):
 
-        from .server._common import ServerConnection
-        from .._impl.connection import _ArcGISConnection
+        from ._impl._con import Connection
         self._hydrated = False
         self.url = url
         self._url = url
@@ -10002,7 +10269,7 @@ class _GISResource(object):
             self._con = gis._con
         else:
             self._gis = gis
-            if isinstance(gis, (ServerConnection, _ArcGISConnection)):
+            if isinstance(gis, Connection):
                 self._con = gis
             else:
                 self._con = gis._con
@@ -10016,22 +10283,24 @@ class _GISResource(object):
     def _refresh(self):
         params = {"f": "json"}
         if type(self).__name__ == 'ImageryLayer':
-            if hasattr(self, "_uri"):
-                if self._uri:
-                    params["Raster"] = self._uri
             if self._fn is not None:
                 params['renderingRule'] = self._fn
+            if hasattr(self, "_uri"):
+                if isinstance(self._uri, bytes):
+                    if 'renderingRule' in params.keys():
+                        del params['renderingRule']
+                params["Raster"] = self._uri
 
         if type(self).__name__ == 'VectorTileLayer': # VectorTileLayer is GET only
-            dictdata = self._con.get(self.url, params, token=self._lazy_token)
-        elif type(self).__name__ == 'ImageryLayer':
-            dictdata = self._con.post(self.url, params, token=self._lazy_token)
+            dictdata = self._con.get(self.url, params, token=self._lazy_token)        
         else:
             try:
                 dictdata = self._con.post(self.url, params, token=self._lazy_token)
             except Exception as e:
                 if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)
+                elif str(e).lower().find("token required") > -1:
+                    dictdata = self._con.get(self.url, params)
                 else:
                     raise e
 
@@ -10058,11 +10327,12 @@ class _GISResource(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                if self._con._token is None:
-                    self._lazy_token = None
+                if self._con.token is None:
+                    self._lazy_token = self._lazy_token = self._con.generate_portal_server_token(serverUrl=self.url)
                 else:
-                    if isinstance(self._con, arcgis._impl._ArcGISConnection):
-                        self._lazy_token = self._con.generate_portal_server_token(self._url)
+                    from ._impl._con import Connection
+                    if isinstance(self._con, Connection):
+                        self._lazy_token = self._con.generate_portal_server_token(serverUrl=self._url)
                     else:
                         self._lazy_token = self._con.token
 
@@ -10085,6 +10355,20 @@ class _GISResource(object):
                         # try token in the provided gis
                         self._lazy_token = self._con.token
                         self._refresh()
+            except:
+                try:
+                    # try as a public server
+                    self._lazy_token = None
+                    self._refresh()
+            
+                except HTTPError as httperror:
+                    _log.error(httperror)
+                    err = httperror
+                except RuntimeError as e:
+                    if 'Token Required' in e.args[0]:
+                        # try token in the provided gis
+                        self._lazy_token = self._con.token
+                        self._refresh()                
 
         if err is not None:
             raise RuntimeError('HTTPError: this service url encountered an HTTP Error: ' + self.url)

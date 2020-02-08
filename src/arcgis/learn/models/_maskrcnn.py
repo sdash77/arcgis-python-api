@@ -11,12 +11,13 @@ try:
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body
     from fastai.vision.image import open_image
+    from fastai.vision import flatten_model
     from torchvision.models import resnet34
     from torchvision import models
     import numpy as np
     from .._data import prepare_data, _raise_fastai_import_error
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta
     import torchvision
     from torchvision import models
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -79,7 +80,7 @@ class MaskRCNN(ArcGISModel):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
         self._code = instance_detector_prf
-        
+
         if self._backbone.__name__ is 'resnet50':
             model = models.detection.maskrcnn_resnet50_fpn(pretrained=True, min_size = 1.5*data.chip_size, max_size = 2*data.chip_size)
             if self._is_multispectral:
@@ -88,7 +89,7 @@ class MaskRCNN(ArcGISModel):
                 model.transform.image_std = scaled_std_values
         elif self._backbone.__name__ in ['resnet18','resnet34']:
             if self._is_multispectral:
-                backbone_small = create_body(self._backbone_ms)
+                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
                 backbone_small.out_channels = 512
                 model = models.detection.MaskRCNN(
                     backbone_small, 
@@ -130,7 +131,10 @@ class MaskRCNN(ArcGISModel):
         self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
-        self.learn.layer_groups = split_model_idx(self.learn.model, [28])
+        idx = 27
+        if self._backbone.__name__ in ['resnet18','resnet34']:
+            idx = self._freeze()
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
         # make first conv weights learnable
@@ -146,6 +150,15 @@ class MaskRCNN(ArcGISModel):
     def unfreeze(self):
         for _, param in self.learn.model.named_parameters():
             param.requires_grad = True
+
+    def _freeze(self):
+        "Freezes the pretrained backbone."
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (torch.nn.BatchNorm2d)):
+                continue
+            for p in i.parameters():
+                p.requires_grad = False
+        return idx
 
     def __str__(self):
         return self.__repr__()
@@ -403,8 +416,9 @@ class MaskRCNN(ArcGISModel):
             ax_i[0].imshow(symbology_x_batch[i])
             ax_i[0].axis('off')
             if mode in ['mask', 'bbox_mask']:
+                n_instance = y_batch[i].unique().shape[0]
                 y_merged = y_batch[i].max(dim=0)[0].cpu().numpy()
-                y_rgba = cmap_fn(y_merged)
+                y_rgba = cmap_fn._resample(n_instance)(y_merged)
                 y_rgba[y_merged == 0] = 0
                 y_rgba[:, :, -1] = alpha
                 ax_i[0].imshow(y_rgba)
@@ -414,7 +428,8 @@ class MaskRCNN(ArcGISModel):
             ax_i[1].imshow(symbology_x_batch[i])
             ax_i[1].axis('off')
             if mode in ['mask', 'bbox_mask']:
-                p_rgba = cmap_fn(pred_mask[i])
+                n_instance = np.unique(pred_mask[i]).shape[0]
+                p_rgba = cmap_fn._resample(n_instance)(pred_mask[i])
                 p_rgba[pred_mask[i] == 0] = 0
                 p_rgba[:, :, -1] = alpha
                 ax_i[1].imshow(p_rgba)
