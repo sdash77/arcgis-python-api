@@ -2832,25 +2832,32 @@ class GeoAccessor(object):
 
         # get wkid
         try:
-            if geo_df.crs is not None:
+            if geo_df.crs is not None and 'init' in geo_df.crs:
                 epsg_code = geo_df.crs['init'].split(':')[-1]
                 epsg_code = int(epsg_code) # convert string to number
+            elif geo_df.crs is not None:
+                # crs is present, but no epsg code. Try to reproject to 4326
+                geo_df.to_crs(epsg=4326, inplace=True)
+                epsg_code = 4326
             else:
                 _LOGGER.info('Cannot acquire spatial reference from GeoDataFrame. Setting it a default of WKID 4326')
                 epsg_code = 4326 # set a safe default value
 
         except Exception as proj_ex:
             _LOGGER.warning('Error acquiring spatial reference from GeoDataFrame' \
-                            'Converting to WKID 4326. ' + str(proj_ex))
-            # when error occurs, reproject to 4326
-            geo_df.to_crs(epsg=4326, inplace=True)
-            epsg_code = 4326
+                            ' Spatial reference will not be set.' + str(proj_ex))
+            epsg_code = None
+
+        if epsg_code:
+            spatial_reference = {'wkid':epsg_code}
+        else:
+            spatial_reference = None
 
         # convert geometry
         def _converter(g):
             if g is not None:
                 # return ags_geometry(shp_mapping(g))
-                return ags_geometry.from_shapely(g, spatial_reference={'wkid':epsg_code})
+                return ags_geometry.from_shapely(g, spatial_reference=spatial_reference)
             else:
                 return None
 
@@ -2869,7 +2876,7 @@ class GeoAccessor(object):
             geo_df[column_name] = GeoArray(ags_geom)
 
         geo_df.spatial.set_geometry(column_name)
-        geo_df.spatial.sr = {'wkid':epsg_code}
+        geo_df.spatial.sr = spatial_reference
 
         return geo_df
 

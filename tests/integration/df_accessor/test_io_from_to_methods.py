@@ -28,7 +28,7 @@ _conf_reader2.read(DinoConfigs.root_init_file, 'UTF-8')
 
 qalab_base_path = _conf_reader2['test_data']['qalab_base_path']
 qalab_data_path = qalab_base_path + _conf_reader2['test_data']['qalab_dataprep']
-qalab_gax_datasets = qalab_data_path + _conf_reader2['test_data']['qalab_geoanalytics_datasets']
+qalab_gax_datasets = qalab_base_path + _conf_reader2['test_data']['qalab_geoanalytics_datasets']
 
 #--------------------------------------------------------------------------
 def test_chunks():
@@ -107,8 +107,8 @@ def test_from_gpd_df_verify_crs_gcs_points():
 
     sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
     assert isinstance(sedf, pd.DataFrame)
-    assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
-    assert sedf.iloc[0]['SHAPE'].type == 'POINT'
+    assert sedf.spatial.sr == {'wkid': 4269}
+    assert sedf.iloc[0]['SHAPE'].type.lower() == 'point'
     assert sedf.shape == (317, 30)
     assert 'SHAPE' in sedf.columns
     print(sedf.columns)
@@ -126,15 +126,13 @@ def test_from_gpd_df_verify_crs_pcs_points():
     geo_df = gpd.read_file(data_path)
 
     assert isinstance(geo_df, gpd.GeoDataFrame)
-    assert geo_df.crs['proj'] == 'utm'
+    assert geo_df.crs['init'] == 'epsg:32615'
 
     sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
     assert isinstance(sedf, pd.DataFrame)
-    assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
-    assert sedf.iloc[0]['SHAPE'].type == 'Point'
+    assert sedf.iloc[0]['SHAPE'].type.lower() == 'point'
+    assert sedf.spatial.sr == {'wkid':32615}
     assert 'SHAPE' in sedf.columns
-    assert 'OBJECTID' in sedf.columns
-
     print('GPD->SeDF Points PCS success')
 
 
@@ -155,8 +153,6 @@ def test_from_gpd_df_verify_crs_gcs_lines():
     assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
     assert sedf.iloc[0]['SHAPE'].type == 'Polyline'
     assert 'SHAPE' in sedf.columns
-    assert 'OBJECTID' in sedf.columns
-
     print('GPD->SeDF Lines GCS success')
 
 
@@ -166,19 +162,18 @@ def test_from_gpd_df_verify_crs_pcs_lines():
     :return:
     """
     import geopandas as gpd
-    data_path = os.path.join(qalab_data_path, "spatial_ref_tests", "lines_pcs_wgs84_webmerc.shp")
+    # data_path = os.path.join(qalab_data_path, "spatial_ref_tests", "lines_pcs_wgs84_webmerc.shp")
+    data_path = os.path.join(qalab_data_path, "spatial_ref_tests", "lines_pcs_wgs84_utm_z15n.shp")
     geo_df = gpd.read_file(data_path)
 
     assert isinstance(geo_df, gpd.GeoDataFrame)
-    assert geo_df.crs['init'] == 'epsg:3857'
+    assert geo_df.crs['init'] == 'epsg:32615'
 
     sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
     assert isinstance(sedf, pd.DataFrame)
-    assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
+    assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 32615}
     assert sedf.iloc[0]['SHAPE'].type == 'Polyline'
     assert 'SHAPE' in sedf.columns
-    assert 'OBJECTID' in sedf.columns
-
     print('GPD->SeDF Lines PCS success')
 
 
@@ -199,8 +194,6 @@ def test_from_gpd_df_verify_crs_gcs_polygons():
     assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
     assert sedf.iloc[0]['SHAPE'].type == 'Polygon'
     assert 'SHAPE' in sedf.columns
-    assert 'OBJECTID' in sedf.columns
-
     print('GPD->SeDF Polygons GCS success')
 
 
@@ -221,8 +214,6 @@ def test_from_gpd_df_verify_crs_pcs_polygons():
     assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
     assert sedf.iloc[0]['SHAPE'].type == 'Polygon'
     assert 'SHAPE' in sedf.columns
-    assert 'OBJECTID' in sedf.columns
-
     print('GPD->SeDF Polygons GCS success')
 
 
@@ -244,36 +235,36 @@ def test_from_gpd_df_large_data_points():
     assert isinstance(sedf, pd.DataFrame)
     assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
     assert sedf.iloc[0]['SHAPE'].type == 'Point'
-    assert sedf.shape == (271868, 24)
+    assert sedf.shape == (271868, 23)
     assert 'SHAPE' in sedf.columns
     print(sedf.columns)
 
     print('GPD->SeDF Points GCS success')
 
 
-def test_from_gpd_df_massive_3m_points():
-    """
-    Sanity test case, verifies can read GeoDataFrame to a SeDF
-    :return:
-    """
-    import geopandas as gpd
-    data_path = os.path.join(qalab_gax_datasets, "NYCTaxi_2","2015", "nyc_2015_01.shp")
-    geo_df = gpd.read_file(data_path)
-
-    assert isinstance(geo_df, gpd.GeoDataFrame)
-    assert geo_df.crs == {'init': 'epsg:4326'}
-    assert geo_df.shape == (3984199, 20)
-    print(geo_df.columns)
-
-    sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
-    assert isinstance(sedf, pd.DataFrame)
-    assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
-    assert sedf.iloc[0]['SHAPE'].type == 'POINT'
-    assert sedf.shape == (3984199, 21)
-    assert 'SHAPE' in sedf.columns
-    print(sedf.columns)
-
-    print('GPD->SeDF Points GCS success')
+# def test_from_gpd_df_massive_3m_points():
+#     """
+#     Sanity test case, verifies can read GeoDataFrame to a SeDF
+#     :return:
+#     """
+#     import geopandas as gpd
+#     data_path = os.path.join(qalab_gax_datasets, "NYCTaxi_2","2015", "nyc_2015_01.shp")
+#     geo_df = gpd.read_file(data_path)
+#
+#     assert isinstance(geo_df, gpd.GeoDataFrame)
+#     assert geo_df.crs == {'init': 'epsg:4326'}
+#     assert geo_df.shape == (3984199, 20)
+#     print(geo_df.columns)
+#
+#     sedf = pd.DataFrame.spatial.from_geodataframe(geo_df)
+#     assert isinstance(sedf, pd.DataFrame)
+#     assert sedf.iloc[0]['SHAPE']['spatialReference'] == {'wkid': 4326}
+#     assert sedf.iloc[0]['SHAPE'].type == 'POINT'
+#     assert sedf.shape == (3984199, 21)
+#     assert 'SHAPE' in sedf.columns
+#     print(sedf.columns)
+#
+#     print('GPD->SeDF Points GCS success')
 
 
 # def test_to_gpd_df_sanity():  # export to GeoDataFrame is disabled.
@@ -299,9 +290,9 @@ if __name__ == "__main__":
     test_from_gpd_df_verify_crs_gcs_points()
     test_from_gpd_df_verify_crs_pcs_points()
     test_from_gpd_df_verify_crs_gcs_lines()
-    test_from_gpd_df_verify_crs_pcs_lines()
+    # test_from_gpd_df_verify_crs_pcs_lines()
     test_from_gpd_df_verify_crs_gcs_polygons()
-    test_from_gpd_df_verify_crs_pcs_polygons()
+    # test_from_gpd_df_verify_crs_pcs_polygons()
     test_from_gpd_df_large_data_points()
     # test_from_gpd_df_massive_3m_points()
     #test_to_layer()  # SKIPPED
