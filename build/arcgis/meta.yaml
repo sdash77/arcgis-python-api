@@ -10,13 +10,12 @@ package:
 requirements:
   build:
   - python
-  - setuptools
   - six
   - notebook
-  - ipywidgets >=7
-  - widgetsnbextension >=3
-  - pandas >=0.25
-  - numpy >=1.16.2
+  - ipywidgets
+  - widgetsnbextension
+  - pandas
+  - numpy
   - pyshp
   - matplotlib
   - keyring
@@ -31,10 +30,10 @@ requirements:
   - python
   - six
   - notebook
-  - ipywidgets >=7
-  - widgetsnbextension >=3
-  - pandas >=0.25
-  - numpy >=1.16.2
+  - ipywidgets
+  - widgetsnbextension
+  - pandas
+  - numpy
   - pyshp
   - matplotlib
   - keyring
