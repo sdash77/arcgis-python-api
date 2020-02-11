@@ -15,7 +15,7 @@ requirements:
   - notebook
   - ipywidgets
   - widgetsnbextension
-  - pandas >=0.25
+  - pandas
   - numpy >=1.16.2
   - pyshp
   - matplotlib
@@ -34,7 +34,7 @@ requirements:
   - notebook
   - ipywidgets
   - widgetsnbextension
-  - pandas >=0.25
+  - pandas
   - numpy >=1.16.2
   - pyshp
   - matplotlib
