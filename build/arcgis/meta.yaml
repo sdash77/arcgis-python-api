@@ -10,18 +10,13 @@ package:
 requirements:
   build:
   - python
-  - setuptools
   - six
-  - notebook
+  - jupyter
   - ipywidgets
   - widgetsnbextension
-  - pandas
-  - numpy >=1.16.2
-  - pyshp
   - matplotlib
   - keyring
   - pytest
-  - pyshp
   - requests
   - requests-toolbelt
   - requests-kerberos
@@ -31,15 +26,11 @@ requirements:
   run:
   - python
   - six
-  - notebook
+  - jupyter
   - ipywidgets
   - widgetsnbextension
-  - pandas
-  - numpy >=1.16.2
-  - pyshp
   - matplotlib
   - keyring
-  - pyshp
   - requests
   - requests-toolbelt
   - requests-kerberos
