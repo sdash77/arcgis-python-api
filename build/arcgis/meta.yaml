@@ -22,7 +22,6 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
-  - winkerberos      [win]
   run:
   - python
   - six
@@ -36,7 +35,6 @@ requirements:
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
-  - winkerberos      [win]
 source:
   path: ../../src
 test:
