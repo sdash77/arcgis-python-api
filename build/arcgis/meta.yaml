@@ -10,11 +10,11 @@ package:
 requirements:
   build:
   - python
+  - setuptools
   - six
   - notebook
-  - ipywidgets
-  - widgetsnbextension
-  - pandas
+  - ipywidgets >=7
+  - widgetsnbextension >=3
   - pandas >=0.25
   - numpy >=1.16.2
   - pyshp
@@ -23,13 +23,17 @@ requirements:
   - pytest
   - pyshp
   - requests
+  - requests-toolbelt
+  - requests-kerberos
+  - requests-oauthlib
+  - requests_ntlm
   - winkerberos      [win]
   run:
   - python
   - six
   - notebook
-  - ipywidgets
-  - widgetsnbextension
+  - ipywidgets >=7
+  - widgetsnbextension >=3
   - pandas >=0.25
   - numpy >=1.16.2
   - pyshp
@@ -37,6 +41,10 @@ requirements:
   - keyring
   - pyshp
   - requests
+  - requests-toolbelt
+  - requests-kerberos
+  - requests-oauthlib
+  - requests_ntlm
   - winkerberos      [win]
 source:
   path: ../../src

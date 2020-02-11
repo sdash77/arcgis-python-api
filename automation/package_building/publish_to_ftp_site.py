@@ -42,8 +42,8 @@ def publish_to_ftp_site(username, password, automation_type, build_number,
     if re.match(PUBLISH_REGEX, automation_type):
         _publish_conda_to_ftp_branch(ftp = ftp,
                                ftp_folder_name = ftp_folder_name)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  ftp_folder_name = ftp_folder_name)
+        #_copy_esri_channel_dev_to(ftp = ftp,
+        #                          ftp_folder_name = ftp_folder_name)
 
 def _publish_conda_to_ftp_master(ftp, build_number):
     """Pushes any files in staging/conda_builds to ftp://zion/master"""
