@@ -10,31 +10,8 @@ package:
 requirements:
   build:
   - python
-  - six
-  - jupyter
-  - ipywidgets
-  - widgetsnbextension
-  - matplotlib
-  - keyring
-  - pytest
-  - requests
-  - requests-toolbelt
-  - requests-kerberos
-  - requests-oauthlib
-  - requests_ntlm
   run:
   - python
-  - six
-  - jupyter
-  - ipywidgets
-  - widgetsnbextension
-  - matplotlib
-  - keyring
-  - requests
-  - requests-toolbelt
-  - requests-kerberos
-  - requests-oauthlib
-  - requests_ntlm
 source:
   path: ../../src
 test:
