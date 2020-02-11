@@ -13,8 +13,8 @@ requirements:
   - setuptools
   - six
   - notebook
-  - ipywidgets >=7
-  - widgetsnbextension >=3
+  - ipywidgets
+  - widgetsnbextension
   - pandas >=0.25
   - numpy >=1.16.2
   - pyshp
@@ -32,8 +32,8 @@ requirements:
   - python
   - six
   - notebook
-  - ipywidgets >=7
-  - widgetsnbextension >=3
+  - ipywidgets
+  - widgetsnbextension
   - pandas >=0.25
   - numpy >=1.16.2
   - pyshp
