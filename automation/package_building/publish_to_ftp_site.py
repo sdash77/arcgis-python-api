@@ -86,7 +86,7 @@ def _merge_w_esri_channel_dev_and_upload(ftp, src_dir_path, dst_dir_path):
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
                                 dst_dir_path = dst_dir_path,
-                                overwrite_dir = False)
+                                overwrite_dir = True)
 
 def _publish_pip_to_ftp_packages(ftp, build_number):
     """Pushes any files in staging/pip_builds to ftp://zion/packages"""
@@ -126,7 +126,8 @@ def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path,
                 _make_dir_overwrite_if_exists(ftp, curr_dst_path)
             else:
                 _make_dir_ignore_if_exists(ftp, curr_dst_path)
-            _upload_directory_recursive(ftp, curr_src_path, curr_dst_path)
+            _upload_directory_recursive(ftp, curr_src_path,
+                                        curr_dst_path, overwrite_dir)
 
 def _delete_directory_recursive(ftp, dst_dir_path):
     """Delete everything in a directory"""
