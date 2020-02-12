@@ -167,8 +167,8 @@ class UnetClassifier(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'accuracy': self._get_model_metrics()}
-
+        return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
+        
     def _get_emd_params(self):
         import random
         _emd_template = {}
