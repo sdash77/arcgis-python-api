@@ -11,7 +11,7 @@ import requests
 from automation._common import *
 
 FTP_SITE = "zion"
-ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev/"
+ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev_2/"
 NUM_BUILDS_TO_KEEP = 100
 
 def publish_to_ftp_site(username, password, automation_type, build_number,
@@ -23,10 +23,6 @@ def publish_to_ftp_site(username, password, automation_type, build_number,
     if re.match(MASTER_REGEX, automation_type):
         _publish_conda_to_ftp_master(ftp = ftp,
                                      build_number = build_number)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  build_number = build_number)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  ftp_folder_name = "master")
         _publish_pip_to_ftp_packages(ftp = ftp,
                                      build_number = build_number)
         _remove_old_builds_from_ftp_server(ftp = ftp,
@@ -35,15 +31,9 @@ def publish_to_ftp_site(username, password, automation_type, build_number,
     if re.match(LINUX_SLAVE_REGEX, automation_type):
         _publish_conda_to_ftp_master(ftp = ftp,
                                      build_number = build_number)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  build_number = build_number)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  ftp_folder_name = "master")
     if re.match(PUBLISH_REGEX, automation_type):
         _publish_conda_to_ftp_branch(ftp = ftp,
-                               ftp_folder_name = ftp_folder_name)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  ftp_folder_name = ftp_folder_name)
+                                     ftp_folder_name = ftp_folder_name)
 
 def _publish_conda_to_ftp_master(ftp, build_number):
     """Pushes any files in staging/conda_builds to ftp://zion/master"""
@@ -56,56 +46,47 @@ def _publish_conda_to_ftp_master(ftp, build_number):
     rootmaster_dst_dir_path = "master"  
 
     _make_dir_ignore_if_exists(ftp, buildnum_dst_dir_path)
-    _upload_directory_recursive(ftp = ftp,
-                                src_dir_path = src_dir_path,
-                                dst_dir_path = buildnum_dst_dir_path)
-    _upload_directory_recursive(ftp = ftp,
-                                src_dir_path = src_dir_path,
-                                dst_dir_path = rootmaster_dst_dir_path)
+    _merge_w_esri_channel_dev_and_upload(ftp = ftp,
+                                         src_dir_path = src_dir_path,
+                                         dst_dir_path = buildnum_dst_dir_path)
+    _merge_w_esri_channel_dev_and_upload(ftp = ftp,
+                                         src_dir_path = src_dir_path,
+                                         dst_dir_path = rootmaster_dst_dir_path)
 
 def _publish_conda_to_ftp_branch(ftp, ftp_folder_name):
     """Pushes any files in staging/conda_builds to ftp://zion/ftp_fold_name"""
     src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
     _make_dir_ignore_if_exists(ftp, ftp_folder_name) 
-    _upload_directory_recursive(ftp = ftp,
-                                src_dir_path = src_dir_path,
-                                dst_dir_path = ftp_folder_name)
+    _merge_w_esri_channel_dev_and_upload(ftp = ftp,
+                                         src_dir_path = src_dir_path,
+                                         dst_dir_path = ftp_folder_name)
 
-def _copy_esri_channel_dev_to(ftp, build_number=None, ftp_folder_name=None):
-    if build_number and ftp_folder_name:
-        raise Exception("Can't specify build_number & ftp_folder_name (use 1)")
+def _merge_w_esri_channel_dev_and_upload(ftp, src_dir_path, dst_dir_path):
     ext = '.tar.bz2'
-    dst_dir_path = None
-    if build_number:
-        dst_dir_path = "master/{}".format(build_number)
-    if ftp_folder_name:
-        dst_dir_path = ftp_folder_name
-
-    def get_files_recurs(url, ext=''):
+    def download_files_recurs(url, ext=''):
         output = []
         page = requests.get(url).text
         soup = BeautifulSoup(page, 'html.parser')
         for url2 in [url + '/' + node.get('href') for node in soup.find_all('a')]:
             if url2.endswith(ext):
                 output.append(url2)
-            output += get_files_recurs(url2, ext)
+            output += download_files_recurs(url2, ext)
         return output
 
-    with EmptyTmpDir() as src_dir_path:
-        for file_url in get_files_recurs(ESRI_CHANNEL_DEV, ext):
-            filename = os.path.basename(file_url)
-            arch_dir = os.path.join(src_dir_path, 
-                                    os.path.dirname(file_url).split("/")[-1])
-            download_file_dst = os.path.join(arch_dir, filename)
-            if not os.path.exists(arch_dir):
-                os.mkdir(arch_dir)
-            urllib.request.urlretrieve(file_url, download_file_dst)
+    for file_url in download_files_recurs(ESRI_CHANNEL_DEV, ext):
+        filename = os.path.basename(file_url)
+        arch_dir = os.path.join(src_dir_path, 
+                                os.path.dirname(file_url).split("/")[-1])
+        download_file_dst = os.path.join(arch_dir, filename)
+        if not os.path.exists(arch_dir):
+            os.mkdir(arch_dir)
+        urllib.request.urlretrieve(file_url, download_file_dst)
 
-        run_shell_command(f"conda index {src_dir_path}")
-        _upload_directory_recursive(ftp = ftp,
-                                    src_dir_path = src_dir_path,
-                                    dst_dir_path = dst_dir_path,
-                                    overwrite_dir = False)
+    run_shell_command(f"conda index {src_dir_path}")
+    _upload_directory_recursive(ftp = ftp,
+                                src_dir_path = src_dir_path,
+                                dst_dir_path = dst_dir_path,
+                                overwrite_dir = False)
 
 def _publish_pip_to_ftp_packages(ftp, build_number):
     """Pushes any files in staging/pip_builds to ftp://zion/packages"""
