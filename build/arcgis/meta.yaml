@@ -23,9 +23,11 @@ requirements:
   - pytest
   - pyshp
   - requests
+  - requests-toolbelt
+  - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
-  - requests-toolbelt
+  - winkerberos      [win]
   run:
   - python
   - six
@@ -37,11 +39,15 @@ requirements:
   - pyshp
   - matplotlib
   - keyring
-  - pytest
   - pyshp
   - requests
+  - requests-toolbelt
+  - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
-  - requests-toolbelt
+  - winkerberos      [win]
 source:
   path: ../../src
+test:
+  imports:
+  - arcgis.gis
