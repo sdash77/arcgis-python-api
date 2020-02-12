@@ -42,8 +42,8 @@ def publish_to_ftp_site(username, password, automation_type, build_number,
     if re.match(PUBLISH_REGEX, automation_type):
         _publish_conda_to_ftp_branch(ftp = ftp,
                                ftp_folder_name = ftp_folder_name)
-        #_copy_esri_channel_dev_to(ftp = ftp,
-        #                          ftp_folder_name = ftp_folder_name)
+        _copy_esri_channel_dev_to(ftp = ftp,
+                                  ftp_folder_name = ftp_folder_name)
 
 def _publish_conda_to_ftp_master(ftp, build_number):
     """Pushes any files in staging/conda_builds to ftp://zion/master"""
@@ -104,7 +104,8 @@ def _copy_esri_channel_dev_to(ftp, build_number=None, ftp_folder_name=None):
         run_shell_command(f"conda index {src_dir_path}")
         _upload_directory_recursive(ftp = ftp,
                                     src_dir_path = src_dir_path,
-                                    dst_dir_path = dst_dir_path)
+                                    dst_dir_path = dst_dir_path,
+                                    ovewrite_dir = False)
 
 def _publish_pip_to_ftp_packages(ftp, build_number):
     """Pushes any files in staging/pip_builds to ftp://zion/packages"""
@@ -125,7 +126,8 @@ def _publish_pip_to_ftp_packages(ftp, build_number):
                                                           FTP_SITE,
                                                           bldnum_dst))
 
-def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
+def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path,
+                                overwrite_dir = True):
     """Upload the contents of a directory, overwriting folders and files"""
     for name in os.listdir(src_dir_path):
         curr_src_path = os.path.join(src_dir_path, name)
@@ -139,7 +141,10 @@ def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
             log.info("Uploading {} -> ftp://{}/{}".format(curr_src_path,
                                                           FTP_SITE,
                                                           curr_dst_path))
-            _make_dir_overwrite_if_exists(ftp, curr_dst_path)
+            if overwrite_dir:
+                _make_dir_overwrite_if_exists(ftp, curr_dst_path)
+            else:
+                _make_dir_ignore_if_exists(ftp, curr_dst_path)
             _upload_directory_recursive(ftp, curr_src_path, curr_dst_path)
 
 def _delete_directory_recursive(ftp, dst_dir_path):
