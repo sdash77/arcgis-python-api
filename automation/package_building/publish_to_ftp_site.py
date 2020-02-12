@@ -105,7 +105,7 @@ def _copy_esri_channel_dev_to(ftp, build_number=None, ftp_folder_name=None):
         _upload_directory_recursive(ftp = ftp,
                                     src_dir_path = src_dir_path,
                                     dst_dir_path = dst_dir_path,
-                                    ovewrite_dir = False)
+                                    overwrite_dir = False)
 
 def _publish_pip_to_ftp_packages(ftp, build_number):
     """Pushes any files in staging/pip_builds to ftp://zion/packages"""
