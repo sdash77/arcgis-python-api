@@ -25,6 +25,7 @@ requirements:
   - requests
   - requests-oauthlib
   - requests_ntlm
+  - requests-toolbelt
   run:
   - python
   - six
@@ -41,5 +42,6 @@ requirements:
   - requests
   - requests-oauthlib
   - requests_ntlm
+  - requests-toolbelt
 source:
   path: ../../src
