@@ -256,7 +256,7 @@ class PSPNetClassifier(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'accuracy': self._get_model_metrics()}
+        return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get('checkpoint', True)
