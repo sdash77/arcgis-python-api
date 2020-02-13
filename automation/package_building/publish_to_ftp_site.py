@@ -104,8 +104,7 @@ def _merge_w_esri_channel_dev_and_upload(ftp, src_dir_path, dst_dir_path):
     run_shell_command(f"conda index {src_dir_path}")
     _upload_directory_recursive(ftp = ftp,
                                 src_dir_path = src_dir_path,
-                                dst_dir_path = dst_dir_path,
-                                overwrite_dir = False)
+                                dst_dir_path = dst_dir_path)
 
 def _publish_pip_to_ftp_packages(ftp, build_number):
     """Pushes any files in staging/pip_builds to ftp://zion/packages"""
