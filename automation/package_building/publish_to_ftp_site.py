@@ -11,7 +11,7 @@ import requests
 from automation._common import *
 
 FTP_SITE = "zion"
-ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev_2/"
+ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev/"
 NUM_BUILDS_TO_KEEP = 100
 MASTER_ARCHS = ["win-32","win-64", "noarch"]
 SLAVE_ARCHS = ["linux-32", "linux-64", "osx-64"]
