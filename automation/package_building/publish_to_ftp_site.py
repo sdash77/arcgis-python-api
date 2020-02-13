@@ -154,16 +154,27 @@ def _delete_directory_recursive(ftp, dst_dir_path, blacklist = []):
     log.info("ftp://{}/{}/ deleted recursively".format(FTP_SITE, dst_dir_path))
 
 def _del_dir_recurs_helper(ftp, dst_dir_path, blacklist):
-    for curr_path in ftp.nlst(dst_dir_path):
-        try: # will not throw exception if durr_path is a file
-            for black_item_regex in blacklist:
-                if re.match(black_item_regex, curr_path):
-                    continue
-            ftp.delete(curr_path)
-        except error_perm as e: # will throw exception if curr_path is a dir
-            if e.args[0].startswith('550'):
-                _del_dir_recurs_helper(ftp, curr_path, blacklist)
-                ftp.rmd(curr_path)
+    try:
+        paths = ftp.nlst(dst_dir_path)
+        log.debug(f"Paths to delete = {paths}")
+        for curr_path in paths:
+            try: # will not throw exception if durr_path is a file
+                for black_item_regex in blacklist:
+                    if re.match(black_item_regex, curr_path):
+                        continue
+                ftp.delete(curr_path)
+            except error_perm as e: # will throw exception if curr_path is a dir
+                if e.args[0].startswith('550'):
+                    _del_dir_recurs_helper(ftp, curr_path, blacklist)
+                    ftp.rmd(curr_path)
+    except error_perm as e:
+        if e.args[0].startswith('550'):
+            log.warn(f"Tried to delete {dst_dir_path}, but ran into 550 "\
+                     f"error {e.args[0]}. Probably a non-existant dir..."\
+                     f"SKIPPING...")
+            return
+        else:
+            raise e
 
 def _remove_old_builds_from_ftp_server(ftp, build_number):
     """Only keep NUM_BUILDS on build server, delete old files/folders"""
