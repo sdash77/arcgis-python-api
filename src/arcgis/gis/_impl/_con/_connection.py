@@ -30,6 +30,8 @@ from arcgis._impl.common._mixins import PropertyMap
 
 __version__ = "2.0.0"
 
+_DEFAULT_TOKEN = uuid.uuid4()
+
 class Connection(object):
     """
     Universal Connection Object
@@ -298,6 +300,7 @@ class Connection(object):
         if self._baseurl.endswith('/') == False:
             self._baseurl += "/"
         url = path
+        token = kwargs.pop('token', _DEFAULT_TOKEN)
         token_as_header = kwargs.pop('token_as_header', False)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
         if url.find('://') == -1:
@@ -316,16 +319,20 @@ class Connection(object):
 
         try_json = kwargs.pop("try_json", True)
         add_token = kwargs.pop('add_token', True)
-        if add_token and \
-           str(self._auth).upper() in ['BUILTIN', 'OAUTH', 'PRO', 'HOME']:
-            if token_as_header == False and not 'token' in kwargs:
+            
+        if add_token:
+            if token != _DEFAULT_TOKEN:
+                if token is not None:
+                    params['token'] = token
+                else:
+                    params.pop('token', None)
+                    #pass
+            elif token_as_header == False and self.token is not None: #as ?token=
                 params['token'] = self.token
-            elif token_as_header == False and 'token' in kwargs:
-                params['token'] = kwargs['token']
-            elif token_as_header and 'token' in kwargs:
-                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            
-            elif token_as_header and token_header and self.token:
-                self._session.headers.update({token_header: "Bearer %s" % self.token})            
+            elif token_as_header and self.token is not None:#(token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
+                self._session.headers.update({token_header: "Bearer %s" % token})            
+            elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
+                self._session.headers.update({token_header: "Bearer %s" % self.token})
         if try_json:
             params['f'] = 'json'
         if params == {}:
@@ -408,7 +415,8 @@ class Connection(object):
 
         """
         if 'Set-Cookie' in resp.headers and \
-           str(self._auth).lower() in ['anon']:
+           (str(self._auth).lower() in ['anon'] or \
+            (str(self._username).find("\\") > -1 and str(self._auth).lower() in ['builtin'])):
             self._auth = 'IWA'
 
         data = None
@@ -447,11 +455,32 @@ class Connection(object):
                     raise Exception(resp['error'])                
             else:
                 data = resp.json()
+            #if 'error' in data:
+                #raise Exception(data['error'])
+            #return data
+        #else:
+            #return resp.text
             if 'error' in data:
-                raise Exception(data['error'])
+                errorcode = data['error']['code'] if 'code' in data['error'] else 0
+                self._handle_json_error(data['error'], errorcode)
             return data
         else:
             return resp.text
+    #----------------------------------------------------------------------
+    def _handle_json_error(self, error, errorcode):
+        errormessage = error.get('message', 'Unknown Error')
+        #_log.error(errormessage)
+        if 'details' in error and error['details'] is not None:
+            if isinstance(error['details'], str):
+                errormessage = f"{errormessage} \n {error['details']}"
+                #_log.error(error['details'])
+            else:
+                for errordetail in error['details']:
+                    errormessage = errormessage + "\n" + errordetail
+                    #_log.error(errordetail)
+    
+        errormessage = errormessage + "\n(Error Code: " + str(errorcode) +")"
+        raise Exception(errormessage)
     #----------------------------------------------------------------------
     def post(self,
              path,
@@ -519,6 +548,7 @@ class Connection(object):
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
+        token = kwargs.pop('token', _DEFAULT_TOKEN)
         post_json = kwargs.pop("post_json", False)
         token_as_header = kwargs.pop('token_as_header', False)
         token_header = kwargs.pop('token_header', "X-Esri-Authorization")
@@ -539,12 +569,16 @@ class Connection(object):
         if kwargs.pop("ssl", False) or self._all_ssl:
             url = url.replace("http://", "https://")
         if add_token:
-            if token_as_header == False and (not 'token' in kwargs or kwargs['token'] is None): #as ?token=
+            if token != _DEFAULT_TOKEN:
+                if token is not None:
+                    params['token'] = token
+                else:
+                    params.pop('token', None)
+                    #pass
+            elif token_as_header == False and self.token is not None: #as ?token=
                 params['token'] = self.token
-            elif token_as_header == False and 'token' in kwargs and kwargs['token']: #as ?token= and user provides the token
-                params['token'] = kwargs['token']
-            elif token_as_header and 'token' in kwargs: # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            
+            elif token_as_header and self.token is not None:#(token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
+                self._session.headers.update({token_header: "Bearer %s" % token})            
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
         if try_json:
@@ -668,6 +702,7 @@ class Connection(object):
         :returns: dict or string depending on the response
 
         """
+        token = kwargs.pop('token', _DEFAULT_TOKEN)
         out_path = kwargs.pop('out_path', None)
         file_name = kwargs.pop('file_name', None)
         token_as_header = kwargs.pop('token_as_header', True)
@@ -683,12 +718,16 @@ class Connection(object):
         if kwargs.pop("ssl", False):
             url = url.replace("http://", "https://")
         if add_token:
-            if token_as_header == False and not 'token' in kwargs: #as ?token=
+            if token != _DEFAULT_TOKEN:
+                if token is not None:
+                    params['token'] = token
+                else:
+                    params.pop('token', None)
+                    #pass
+            elif token_as_header == False and self.token is not None: #as ?token=
                 params['token'] = self.token
-            elif token_as_header == False and 'token' in kwargs: #as ?token= and user provides the token
-                params['token'] = kwargs['token']
-            elif token_as_header and 'token' in kwargs: # as X-Esri-Auth header with given token
-                self._session.headers.update({token_header: "Bearer %s" % kwargs['token']})            
+            elif token_as_header and self.token is not None:#(token and token != _DEFAULT_TOKEN): # as X-Esri-Auth header with given token
+                self._session.headers.update({token_header: "Bearer %s" % token})            
             elif token_as_header and token_header and self.token: # as X-Esri-Auth header with generated token
                 self._session.headers.update({token_header: "Bearer %s" % self.token})
 

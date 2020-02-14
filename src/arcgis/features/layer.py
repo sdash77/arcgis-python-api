@@ -1030,6 +1030,7 @@ class FeatureLayer(Layer):
 
         params['returnCountOnly'] = False
         if record_count == 0 and as_df:
+            from arcgis.features.geo._array import GeoArray
             import numpy as np
             import pandas as pd
             _fld_lu = {
@@ -1038,7 +1039,7 @@ class FeatureLayer(Layer):
                 "esriFieldTypeSingle" : np.int32,
                 "esriFieldTypeDouble" : float,
                 "esriFieldTypeString" : str,
-                "esriFieldTypeDate" : pd.datetime,
+                "esriFieldTypeDate" : np.datetime64,
                 "esriFieldTypeOID" : np.int64,
                 "esriFieldTypeGeometry" : object,
                 "esriFieldTypeBlob" : object,
@@ -1051,9 +1052,13 @@ class FeatureLayer(Layer):
             for fld in self.properties.fields:
                 fld = dict(fld)
                 columns[fld['name']] = _fld_lu[fld['type']]
-            columns['SHAPE'] = object
-            df = pd.DataFrame([], columns=columns.keys()).astype(columns, False)
-            df.spatial.set_geometry("SHAPE")
+            if "geometryType" in self.properties and \
+               not self.properties.geometryType is None:
+                columns['SHAPE'] = object
+            df = pd.DataFrame([], columns=columns.keys()).astype(columns, True)
+            if 'SHAPE' in df.columns:
+                df['SHAPE'] = GeoArray([])
+                df.spatial.set_geometry("SHAPE")
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
@@ -1540,7 +1545,8 @@ class FeatureLayer(Layer):
         delete_url = self._url + "/deleteFeatures"
         params = {
             "f": "json",
-            "rollbackOnFailure": rollback_on_failure
+            "rollbackOnFailure": rollback_on_failure,
+            "returnDeleteResults": return_delete_results
         }
         if gdb_version is not None:
             params['gdbVersion'] = gdb_version

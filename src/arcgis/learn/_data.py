@@ -94,10 +94,7 @@ def _bb_pad_collate(samples, pad_idx=0):
     return torch.cat(imgs,0), (bboxes,labels)    
 
 
-def _get_bbox_classes(xmlfile, class_mapping, not_label_count=[0], height_width=[]):
-    if not os.path.exists(xmlfile):
-        not_label_count[0] += 1
-        return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
+def _get_bbox_classes(xmlfile, class_mapping , height_width=[]):
 
     tree = ET.parse(xmlfile)
     xmlroot = tree.getroot()
@@ -129,9 +126,9 @@ def _get_bbox_classes(xmlfile, class_mapping, not_label_count=[0], height_width=
     return [bboxes, classes]
 
 
-def _get_bbox_lbls(imagefile, class_mapping, not_label_count, height_width):
+def _get_bbox_lbls(imagefile, class_mapping, height_width):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
-    return _get_bbox_classes(xmlfile, class_mapping, not_label_count, height_width)
+    return _get_bbox_classes(xmlfile, class_mapping, height_width)
 
 
 def _get_lbls(imagefile, class_mapping):
@@ -549,21 +546,31 @@ def prepare_data(path,
         kwargs_transforms['tfm_y'] = True
         kwargs_transforms['size'] = chip_size
     elif dataset_type == 'PASCAL_VOC_rectangles':
+
+        def image_without_label(imagefile, not_label_count=[0]):
+            xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
+            if not os.path.exists(xmlfile):
+                not_label_count[0] += 1
+                return False
+            return True
+
         not_label_count = [0]
+        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
         get_y_func = partial(
             _get_bbox_lbls,
             class_mapping=class_mapping,
-            not_label_count=not_label_count,
             height_width=height_width
         )
 
         if _is_multispectral:
             data = SSDObjectMSItemList.from_folder(path/'images')\
+            .filter_by_func(remove_image_without_label)\
             .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_from_func(get_y_func)
             _show_batch_multispectral = show_batch_pascal_voc_rectangles
         else:
             data = SSDObjectItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(get_y_func)
 

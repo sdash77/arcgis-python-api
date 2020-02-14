@@ -25,6 +25,8 @@ def publish_to_ftp_site(username, password, automation_type, build_number,
                                      build_number = build_number)
         _copy_esri_channel_dev_to(ftp = ftp,
                                   build_number = build_number)
+        _copy_esri_channel_dev_to(ftp = ftp,
+                                  ftp_folder_name = "master")
         _publish_pip_to_ftp_packages(ftp = ftp,
                                      build_number = build_number)
         _remove_old_builds_from_ftp_server(ftp = ftp,
@@ -33,7 +35,10 @@ def publish_to_ftp_site(username, password, automation_type, build_number,
     if re.match(LINUX_SLAVE_REGEX, automation_type):
         _publish_conda_to_ftp_master(ftp = ftp,
                                      build_number = build_number)
-
+        _copy_esri_channel_dev_to(ftp = ftp,
+                                  build_number = build_number)
+        _copy_esri_channel_dev_to(ftp = ftp,
+                                  ftp_folder_name = "master")
     if re.match(PUBLISH_REGEX, automation_type):
         _publish_conda_to_ftp_branch(ftp = ftp,
                                ftp_folder_name = ftp_folder_name)
