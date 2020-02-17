@@ -11,7 +11,7 @@ import types
 try:
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
-    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr
+    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
     from fastai.vision import ImageDataBunch
     from fastai.torch_core import data_collate
     import torch
@@ -352,6 +352,8 @@ def prepare_data(path,
     kwargs_transforms = {}
     if resize_to:
         kwargs_transforms['size'] = resize_to
+        # Applying SQUISH ResizeMethod to avoid reflection padding
+        kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
 
     has_esri_files = _check_esri_files(path)
     alter_class_mapping = False
