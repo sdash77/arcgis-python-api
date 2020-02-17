@@ -1154,6 +1154,15 @@ class FeatureLayerCollectionManager(_GISResource):
                         _log.error('Unable to parse the view_tables parameter')
 
         fs_view.manager.add_to_definition(add_def)
+        if view_layers:
+            item_upd_dict = {
+                'layers': [ilyr
+                           for ilyr in item.get_data()['layers']
+                           for lyr in view_layers
+                           if int(lyr.url[-1]) == ilyr['id']]}
+            view.update(data=item_upd_dict)
+        else:
+            view.update(data=item.get_data())
         return content.get(res['itemId'])
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict):
