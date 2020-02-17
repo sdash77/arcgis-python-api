@@ -2057,8 +2057,6 @@ class Portal(object):
             properties['snippet'] = snippet
         if access:
             properties['access'] = access
-        if is_invitation_only:
-            properties['isinvitationOnly'] = is_invitation_only
         if sort_field:
             properties['sortField'] = sort_field
         if sort_order:
@@ -2076,6 +2074,7 @@ class Portal(object):
             properties['capabilities'] = ""
         else:
             properties['capabilities'] = "updateitemcontrol"
+        properties['isinvitationOnly'] = is_invitation_only
         properties['clearEmptyFields'] = clear_empty_fields
         postdata.update(properties)
         if True:
