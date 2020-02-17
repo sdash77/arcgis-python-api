@@ -23,6 +23,7 @@ try:
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
     from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
+    from ._utils.pointcloud_data import pointcloud_prepare_data
     import random
     HAS_FASTAI = True
 except:
@@ -629,6 +630,8 @@ def prepare_data(path,
             transforms = (train_tfms, val_tfms)
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct)
+    elif dataset_type == "PointCloud" or dataset_type == 'PointCloud_TF':
+        return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, **kwargs)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
