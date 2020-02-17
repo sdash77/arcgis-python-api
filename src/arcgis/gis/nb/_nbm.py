@@ -1,7 +1,7 @@
 import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
-
+import concurrent.futures
 ########################################################################
 class NotebookManager(object):
     """
@@ -10,10 +10,12 @@ class NotebookManager(object):
     _url = None
     _gis = None
     _properties = None
+    _nbs = None
     #----------------------------------------------------------------------
-    def __init__(self, url, gis):
+    def __init__(self, url, gis, nbs):
         """Constructor"""
         self._url = url
+        self._nbs = nbs
         if isinstance(gis, GIS):
             self._gis = gis
             self._con = self._gis._con
@@ -82,11 +84,31 @@ class NotebookManager(object):
             return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
+    @staticmethod
+    def _future_job(fn,
+                    task_name,
+                    jobid=None, 
+                    task_url=None, 
+                    notify=False, 
+                    gis=None,
+                    **kwargs):
+        """
+        runs the job asynchronously
+        
+        :returns: Job object
+        """
+        from arcgis._impl._async.jobs import Job
+        tp = concurrent.futures.ThreadPoolExecutor(1)
+        future = tp.submit(fn=fn, **kwargs)
+        tp.shutdown(False)
+        return Job(future, task_name, jobid, task_url, notify, gis=gis)
+    #----------------------------------------------------------------------
     def execute_notebook(self,
                          item,
                          update_portal_item=True,
                          parameters=None,
-                         save_parameters=False):
+                         save_parameters=False,
+                         future=False):
         """
         
         The Execute Notebook operation allows administrators to remotely 
@@ -121,6 +143,8 @@ class NotebookManager(object):
         parameters               Optional Array. An optional array of parameters to add to the notebook for this execution. The parameters will be inserted as a new cell directly after the cell you have tagged "parameters." Separate parameters with a comma. Use the format "x":1 when defining parameters with numbers, and "y":"text" when defining parameters with text strings.
         --------------------     --------------------------------------------------------------------
         save_parameters          Optional Boolean.  Specifies whether the notebookParameters cell should be saved in the notebook for future use. The default is false.
+        --------------------     --------------------------------------------------------------------
+        future                   Optional Boolean.  The default is false.  When True, the operation returns a notebook job that will let you view the results as needed.
         ====================     ====================================================================
         
         :returns: Boolean
@@ -141,9 +165,26 @@ class NotebookManager(object):
         }
         if parameters:
             params['notebookParameters'] = parameters
+        if future:
+            def _fn(url, params, nbs):
+                import time
+                resp = self._gis._con.post(url, params)
+                if resp['status'] == 'success':
+                    job_id = resp['jobId']
+                    status = nbs.system.job_details(job_id)  
+                    i = 0
+                    while (status['status'].lower() != 'completed'):
+                        time.sleep(.3)
+                        if status['status'].lower().find('fail') > -1 or\
+                           status['status'].lower().find('error') > -1:
+                            raise Exception(f"Job Fail {jobstatus}")
+                        status = nbs.system.job_details(job_id)  
+                    return status
+            return NotebookManager._future_job(fn=_fn, 
+                                               task_name='Execute Notebook', 
+                                               gis=self._gis, 
+                                               **{'url' : url, 'params' : params, 'nbs' : self._nbs})
         res = self._gis._con.post(url, params)
-        if 'status' in res:
-            return res['status'] == 'success'
         return res
     #----------------------------------------------------------------------
     def open_notebook(self,
