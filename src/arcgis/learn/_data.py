@@ -750,8 +750,9 @@ def prepare_data(path,
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats))
 
-
-    data.chip_size = data.x[0].shape[-1] if transforms is False else chip_size
+    # Assigning chip size from training dataset and not data.x 
+    # to consider transforms and resizing
+    data.chip_size = data.train_ds[0][0].shape[-1]
 
     if alter_class_mapping:
         new_mapping = {}
