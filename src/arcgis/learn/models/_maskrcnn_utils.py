@@ -134,14 +134,7 @@ class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationLabelList, False
     def open(self, fn):
-        import gdal
-        path = str(os.path.abspath(fn))
-        x = gdal.Open(path).ReadAsArray()
-        if len(x.shape)==2:
-            x = x.unsqueeze(0)
-        x = torch.tensor(x.astype(np.float32))
-        x = ArcGISMSImage(x)
-        return x
+        return ArcGISMSImage.open_gdal(fn)
 
 def mask_rcnn_loss(loss_value, *args):
 

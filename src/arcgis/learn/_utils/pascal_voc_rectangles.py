@@ -7,19 +7,13 @@ from . import ArcGISMSImage
 from ..models._ssd_utils import SSDObjectCategoryList
 from matplotlib import pyplot as plt
 from matplotlib import patheffects
+
     
 class SSDObjectMSItemList(ObjectItemList):
     "`ItemList` suitable for object detection on Multispectral Data."
     _label_cls,_square_show_res = SSDObjectCategoryList,False
     def open(self, fn):
-        import gdal
-        path = str(os.path.abspath(fn))
-        x = gdal.Open(path).ReadAsArray()
-        x = torch.tensor(x.astype(np.float32))
-        if len(x.shape)==2:
-            x = x.unsqueeze(0)
-        x = ArcGISMSImage(x)
-        return x
+        return ArcGISMSImage.open_gdal(fn)
 
 def show_batch_pascal_voc_rectangles(self, rows=3, alpha=1, **kwargs): # parameters adjusted in kwargs 
     nrows = rows
