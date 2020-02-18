@@ -5022,15 +5022,15 @@ class _RasterAnalysisTools(BaseAnalytics):
             if "folder" in output_properties:
                 folder = output_properties["folder"]
         if folder is not None:
+            user = gis.properties.user.username
             if isinstance(folder, dict):
-                if "id" in folder:
+                if "id" in folder and "title" in folder:
                     folderId = folder["id"]
                     folder=folder["title"]
             else:
-                owner = gis.properties.user.username
-                folderId = gis._portal.get_folder_id(owner, folder)
+                folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_dict = gis.content.create_folder(folder, user)
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -8948,6 +8948,57 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return gpjob
         return gpjob.result()
+
+    def define_nodata(self,
+                      input_raster,
+                      nodata,
+                      query_filter=None,
+                      num_of_bands=None,
+                      composite_value=None,
+                      future=False,
+                      **kwargs):
+        """
+        Parameters
+        ----------
+        input_raster: inputRaster (str). Required parameter.  
+        nodata: nodata (str). Required parameter.  
+        query_filter: queryfilter (str). Optional parameter.  
+        num_of_bands: numOfBands (int). Optional parameter.  
+        composite_value: compositeValue (bool). Optional parameter.      
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for 
+                the task to complete. The default is False, which means wait for results.
+        Returns
+        -------
+        output_raster : Image layer item
+        """
+        task = "DefineNodata"
+        gis = self._gis
+
+        context_param = {}
+        context=None
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster = self._layer_input(input_raster)
+
+        if not isinstance(composite_value, bool):
+            raise RuntimeError('composite_value must be an instance of boolean')
+
+
+        gpjob = self._tbx.define_nodata(input_raster=input_raster,
+                                        nodata=nodata,
+                                        query_filter=query_filter,
+                                        num_of_bands=num_of_bands,
+                                        composite_value=composite_value,
+                                        gis=self._gis,
+                                        future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
+
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):

@@ -245,16 +245,7 @@ class ArcGISSegmentationMSItemList(ImageList):
     "`ItemList` suitable for segmentation tasks."
     _label_cls, _square_show_res = ArcGISSegmentationMSLabelList, False
     def open(self, fn):
-        import gdal
-        path = str(os.path.abspath(fn))
-        x = gdal.Open(path).ReadAsArray()
-        #x = ArcGISImageMSSegment(x.astype(np.float32))
-        x = torch.tensor(x.astype(np.float32))
-        #x = ArcGISMultispectralImageSegment( x[:3, ] )
-        if len(x.shape)==2:
-            x = x.unsqueeze(0)
-        x = ArcGISMSImage(x)
-        return x
+        return ArcGISMSImage.open_gdal(fn)
 
 class LabelCallback(LearnerCallback):
     def __init__(self, learn):

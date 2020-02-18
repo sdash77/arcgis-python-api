@@ -31,19 +31,21 @@ class ArcGISMSImage(Image):
     def _repr_jpeg_(self): 
         return self.show()
 
+    @classmethod
+    def open_gdal(cls, path):
+        import gdal
+        path = str(os.path.abspath(path))
+        x = gdal.Open(path).ReadAsArray()
+        x = torch.tensor(x.astype(np.float32))
+        if len(x.shape)==2:
+            x = x.unsqueeze(0)
+        return cls(x)
 
 class ArcGISMSImageList(ImageList):
     "`ImageList` suitable for classification tasks."
     _square_show_res = False
     def open(self, fn):
-        import gdal
-        path = str(os.path.abspath(fn))
-        x = gdal.Open(path).ReadAsArray()
-        x = torch.tensor(x.astype(np.float32))
-        if len(x.shape)==2:
-            x = x.unsqueeze(0)
-        x = ArcGISMSImage(x)
-        return x
+        return ArcGISMSImage.open_gdal(fn)
 
 def get_multispectral_data_params_from_emd(data, emd):
     data._is_multispectral = emd.get('IsMultispectral', False)

@@ -435,10 +435,13 @@ class ArcGISModel(object):
                 _emd_template["LearningRate"] = "0.0"
 
             return _emd_template
-
-        backbone = self._backbone.__name__
-        if backbone == 'backbone_wrapper':
-            backbone = self._orig_backbone.__name__
+        
+        if self._backbone is None:
+            backbone = self._backbone
+        else:
+            backbone = self._backbone.__name__
+            if backbone == 'backbone_wrapper':
+                backbone = self._orig_backbone.__name__
 
         _emd_template = self._get_emd_params()
 

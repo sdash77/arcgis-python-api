@@ -121,6 +121,12 @@ class TrackViewerManager:
         """
         if isinstance(viewers, (str, arcgis.gis.User)):
             viewers = [viewers]
+        if isinstance(viewers[0], str):
+            if self._track_view._item['owner'] in viewers:
+                raise LocationTrackingError("Cannot remove track view owner from being a track viewer. Please try again without the owner included")
+        else:
+            if any(viewer.username == self._track_view._item['owner'] for viewer in viewers):
+                raise LocationTrackingError("Cannot remove track view owner from being a track viewer. Please try again without the owner included")
         max_add_per_call = 25
         for i in range(0, math.ceil(len(viewers)/max_add_per_call)):
             self._track_view.group.remove_users(viewers[i * max_add_per_call:(i * max_add_per_call) + max_add_per_call])

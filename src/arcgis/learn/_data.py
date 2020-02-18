@@ -11,7 +11,7 @@ import types
 try:
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
-    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr
+    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
     from fastai.vision import ImageDataBunch
     from fastai.torch_core import data_collate
     import torch
@@ -23,6 +23,7 @@ try:
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
     from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
+    from ._utils.pointcloud_data import pointcloud_prepare_data
     import random
     HAS_FASTAI = True
 except:
@@ -351,6 +352,8 @@ def prepare_data(path,
     kwargs_transforms = {}
     if resize_to:
         kwargs_transforms['size'] = resize_to
+        # Applying SQUISH ResizeMethod to avoid reflection padding
+        kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
 
     has_esri_files = _check_esri_files(path)
     alter_class_mapping = False
@@ -629,6 +632,8 @@ def prepare_data(path,
             transforms = (train_tfms, val_tfms)
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
         return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct)
+    elif dataset_type == "PointCloud" or dataset_type == 'PointCloud_TF':
+        return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, **kwargs)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
@@ -747,8 +752,9 @@ def prepare_data(path,
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats))
 
-
-    data.chip_size = data.x[0].shape[-1] if transforms is False else chip_size
+    # Assigning chip size from training dataset and not data.x 
+    # to consider transforms and resizing
+    data.chip_size = data.train_ds[0][0].shape[-1]
 
     if alter_class_mapping:
         new_mapping = {}

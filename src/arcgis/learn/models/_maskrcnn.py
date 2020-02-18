@@ -61,20 +61,16 @@ class MaskRCNN(ArcGISModel):
     """
     def __init__(self, data, backbone=None, pretrained_path=None):
 
-        super().__init__(data, backbone)
+        # Set default backbone to be 'resnet50'
+        if backbone is None:
+            backbone = models.resnet50
 
+        super().__init__(data, backbone)
         if self._is_multispectral:
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
             scaled_mean_values = data._scaled_mean_values[data._extract_bands].tolist()
             scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
-
-        if backbone is None:
-            self._backbone = models.resnet50
-        elif type(backbone) is str:
-            self._backbone = getattr(models, backbone)
-        else:
-            self._backbone = backbone
 
         if not self._check_backbone_support(self._backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
