@@ -1192,11 +1192,8 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": json.dumps(False)
         }
         adddefn_url = self._url + "/addToDefinition"
-        old_ref = self._con._referer
-        self._con._referer = "http"
         res = self._con.post(adddefn_url, params)
         self.refresh()
-        self._con._referer = old_ref
         return res
 
     # ----------------------------------------------------------------------
@@ -1267,10 +1264,7 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": False
         }
         u_url = self._url + "/updateDefinition"
-        old_ref = self._con._referer
-        self._con._referer = "http"
         res = self._con.post(u_url, params)
-        self._con._referer = old_ref
         self.refresh()
         return res
 
