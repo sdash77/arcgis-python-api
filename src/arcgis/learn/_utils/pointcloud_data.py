@@ -1,21 +1,60 @@
+# MIT License
+
+# PointCNN
+# Copyright (c) 2018 Shandong University
+# Copyright (c) 2018 Yangyan Li, Rui Bu, Mingchao Sun, Baoquan Chen
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
 import torch.nn.functional as F
 import torch
 import numpy as np
 from fastai.data_block import DataBunch
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from pathlib import Path
-import h5py
 import json
 import types
-import plotly.graph_objects as go
 import random
 import arcgis
-import laspy
 import os
 import math
 from fastai.data_block import ItemList
 from fastprogress import master_bar, progress_bar
 import glob
+import importlib
+import random
+
+def try_import(module):
+    try:
+        importlib.import_module(module)
+    except ModuleNotFoundError:
+        if module == 'plotly':
+            raise Exception("This function requires plotly. Install it using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil'")
+        elif module == 'laspy':
+            raise Exception("This function requires laspy. Install it using 'pip install laspy==1.6.0'")
+        elif module == 'h5py'
+            raise Exception(f"This function requires {module}. Install it using 'conda install {module}=2.10.0'")
+        else:
+            raise Exception(f"This function requires {module}. Please install it in your environment.")
+
 
 def pad_tensor(cur_tensor, max_points, to_float=True):
     cur_points = cur_tensor.shape[0]
@@ -59,6 +98,8 @@ def concatenate_tensors(read_file, input_keys, tile, max_points):
 
 class PointCloudDataset(Dataset):
     def __init__(self, path, max_point, extra_dim, class_mapping, **kwargs):
+        try_import("h5py")
+        import h5py
         self.init_kwargs = kwargs
         self.path = Path(path)
         self.max_point = max_point  ## maximum number of points
@@ -155,9 +196,12 @@ def recenter(pc):
     max_val = np.amax(pc, axis=0)
     return (pc - min_val[None])
 
-def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
+def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=False):
+    try_import("h5py")
+    import h5py
+    try_import('plotly')
+    import plotly.graph_objects as go
     rows = min(rows, self.batch_size)
-    filter_outliers = kwargs.get('filter_outliers', False)
     color_mapping = self.color_mapping if color_mapping is None else np.array(color_mapping) / 255
 
     idx = 0
@@ -178,7 +222,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         for i in idxs:
             current_block = i['unnormalized_data'][:, :3]
             data_num = i['data_num'][()]   
-            pc.append(current_block[:data_num] + block_center)
+            pc.append(current_block[:data_num])
             labels.append(i['label_seg'][:data_num])  
             
         if pc == []:
@@ -188,6 +232,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         labels = np.concatenate(labels, axis=0)
         sample_idxs = labels!=0
         sampled_pc = pc[sample_idxs]
+        if sampled_pc.shape[0] == 0:
+            continue
         x, y, z = recenter(sampled_pc).transpose(1,0)       
         if filter_outliers:
             ## Filter on the basis of std.
@@ -200,8 +246,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
         
         scene=dict(aspectmode='data')
         layout = go.Layout(
-            width=kwargs.get('figsize', 512),
-            height=kwargs.get('figsize', 512),
+            width=kwargs.get('width', 512),
+            height=kwargs.get('height', 512),
             scene = scene)
 
         figww = go.Figure(data=[go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
@@ -222,6 +268,8 @@ def get_device():
     return device    
 
 def read_xyzinumr_label_from_las(filename_las, extra_features):
+    try_import('laspy')
+    import laspy
     file = laspy.file.File(filename_las, mode='r')    
     h = file.header
     xyzirgb_num = h.point_records_count
@@ -243,6 +291,8 @@ def prepare_las_data(root,
                        folder_names=['train', 'val'],
                        segregate=True
                        ):
+    try_import("h5py")
+    import h5py                       
     block_size_ = block_size
     batch_size= blocks_per_file
     data = np.zeros((batch_size, max_point_num, 3 + len(extra_features))) #XYZ, Intensity, NumReturns
@@ -344,7 +394,6 @@ def prepare_las_data(root,
                         point_indices_repeated.extend(list(point_indices[point_indices_in_block]))
                     block_point_indices[block_idx] = np.array(point_indices_repeated)
                     block_point_counts[block_idx] = len(point_indices_repeated)
-                ''' - '''
                 for block_idx in range(idx_last_non_empty_block + 1):
                     point_indices = block_point_indices[block_idx]
                     if point_indices.shape[0] == 0:
@@ -459,6 +508,8 @@ def prepare_las_data(root,
 ## Segregated data ItemList
 
 def open_h5py_tensor(fn, keys=['data']):
+    try_import("h5py")
+    import h5py
     data_label = []
     file = h5py.File(fn, 'r')
     for key in keys:
@@ -570,6 +621,8 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
     return data
 
 def read_xyz_label_from_las(filename_las):
+    try_import('laspy')
+    import laspy
     msg = 'Loading {}...'.format(filename_las)
     f = laspy.file.File(filename_las, mode='r')    
     h = f.header
@@ -586,6 +639,8 @@ def read_xyz_label_from_las(filename_las):
     return xyz, labels, xyzirgb_num, xyz_offset, encoding
 
 def save_xyz_label_to_las(filename_las, xyz, xyz_offset, encoding, labels):  
+    try_import('laspy')
+    import laspy
     msg = 'Saving {}...'.format(filename_las)
     h = laspy.header.Header()
     h.dataformat_id = 1
@@ -616,6 +671,8 @@ def save_xyz_label_to_las(filename_las, xyz, xyz_offset, encoding, labels):
 
 
 def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes):
+    try_import('laspy')
+    import laspy
     false_positives = [0] * num_classes
     true_positives = [0] * num_classes
     false_negatives = [0] * num_classes
@@ -666,8 +723,39 @@ def get_pred_prefixes(datafolder):
             pred_pfx += [p.split(to_check)[0]]
     return np.unique(pred_pfx)
 
-def inference_las(path, pointcnn_model):
+def get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, batch_size, point_num):
+    ## Getting sampling indices
+    tile_num = math.ceil((sample_num * batch_size) / point_num)
+    indices_shuffle = np.tile(np.arange(point_num), tile_num)[0:sample_num * batch_size]
+    np.random.shuffle(indices_shuffle)
+    indices_batch_shuffle = np.reshape(indices_shuffle, (batch_size, sample_num, 1))
+
+    model_input = np.concatenate([points_batch[i, s[:, 0]][None] for i, s in enumerate(indices_batch_shuffle)], axis=0)
     
+    ## Putting model in evaluation mode and inferencing.
+    pointcnn_model.learn.model.eval()
+    with torch.no_grad():
+        probs = pointcnn_model.learn.model(torch.tensor(model_input).to(pointcnn_model._device).float()).softmax(dim=-1).cpu()
+        
+    seg_probs = probs.numpy()
+    
+    probs_2d = np.reshape(seg_probs, (sample_num * batch_size, -1))  ## Complete probs
+    predictions = [(-1, 0.0)] * point_num  ## predictions
+    
+    ## Assigning the confidences and labels to the appropriate index.
+    for idx in range(sample_num * batch_size):
+        point_idx = indices_shuffle[idx]
+        probs = probs_2d[idx, :]
+        confidence = np.amax(probs)
+        label = np.argmax(probs)
+        if confidence > predictions[point_idx][1]:
+            predictions[point_idx] = [label, confidence]
+        
+    return predictions
+
+def inference_las(path, pointcnn_model, out_path=None):
+    try_import("h5py")
+    import h5py    
     ## Export data
     path = Path(path)
     prepare_las_data(path.parent,
@@ -679,7 +767,9 @@ def inference_las(path, pointcnn_model):
                      segregate=False
     )
     
-    out_path = path / 'results'
+    if out_path is None:
+        out_path = path / 'results'
+
     ## Predict and postprocess
     max_point_num = pointcnn_model._data.max_point
     sample_num = pointcnn_model.sample_point_num
@@ -697,37 +787,10 @@ def inference_las(path, pointcnn_model):
         confidences_pred = np.zeros((batch_num, max_point_num), dtype=np.float32)
 
 
-        for batch_idx in progress_bar(range(batch_num), parent=mb):
-            
+        for batch_idx in progress_bar(range(batch_num), parent=mb): 
             points_batch = data[[batch_idx] * batch_size, ...]
             point_num = data_num[batch_idx]
-
-            ## Getting sampling indices
-            tile_num = math.ceil((sample_num * batch_size) / point_num)
-            indices_shuffle = np.tile(np.arange(point_num), tile_num)[0:sample_num * batch_size]
-            np.random.shuffle(indices_shuffle)
-            indices_batch_shuffle = np.reshape(indices_shuffle, (batch_size, sample_num, 1))
-
-            model_input = np.concatenate([points_batch[i, s[:, 0]][None] for i, s in enumerate(indices_batch_shuffle)], axis=0)
-            
-            ## Putting model in evaluation mode and inferencing.
-            pointcnn_model.learn.model.eval()
-            with torch.no_grad():
-                probs = pointcnn_model.learn.model(torch.tensor(model_input).to(pointcnn_model._device)).softmax(dim=-1).cpu()
-                
-            seg_probs = probs.numpy()
-            
-            probs_2d = np.reshape(seg_probs, (sample_num * batch_size, -1))  ## Complete probs
-            predictions = [(-1, 0.0)] * point_num  ## predictions
-            
-            for idx in range(sample_num * batch_size):
-                point_idx = indices_shuffle[idx]
-                probs = probs_2d[idx, :]
-                confidence = np.amax(probs)
-                label = np.argmax(probs)
-                if confidence > predictions[point_idx][1]:
-                    predictions[point_idx] = [label, confidence]
-                    
+            predictions = get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, batch_size, point_num)      
             labels_pred[batch_idx, 0:point_num] = np.array([label for label, _ in predictions])
             confidences_pred[batch_idx, 0:point_num] = np.array([confidence for _, confidence in predictions])
 
@@ -780,8 +843,8 @@ def inference_las(path, pointcnn_model):
                 for i in range(indices.shape[0]):
                     label_length = np.max([label_length, np.max(indices[i][:data_num[i]])])
                 label_length += 1
-                merged_label = np.zeros((label_length),dtype=int)
-                merged_confidence = np.zeros((label_length),dtype=float)
+                merged_label = np.zeros((label_length), dtype=int)
+                merged_confidence = np.zeros((label_length), dtype=float)
             else:
                 label_length2 = 0
                 for i in range(indices.shape[0]):
@@ -822,12 +885,108 @@ def inference_las(path, pointcnn_model):
         *calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)))
 
 
-    for fn in glob.glob(str(out_path.parent / '*.h5'), recursive=True): ## Remove h5 files in val directory.
+    for fn in glob.glob(str(path / '*.h5'), recursive=True): ## Remove h5 files in val directory.
         os.remove(fn) 
 
-    for fn in glob.glob(str(out_path.parent/ '*' / '*.h5'), recursive=True):  ## Remove h5 files in results directory.
+    for fn in glob.glob(str(out_path / '*.h5'), recursive=True):  ## Remove h5 files in results directory.
         os.remove(fn)        
 
-    return out_path    
+    return out_path
+
+def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs):
+    try_import("h5py")
+    try_import('plotly')
+    import h5py    
+    import plotly.graph_objects as go
+    import random
+    rows = min(rows, self._data.batch_size)
+    color_mapping = self._data.color_mapping if color_mapping is None else np.array(color_mapping) / 255
+
+    idx = 0
+    keys = list(self._data.meta['files'].keys()).copy()
+    keys = [f for f in keys if Path(f).parent.stem == 'val']
+    random.shuffle(keys)
+
+    for fn in keys:
+        from plotly.subplots import make_subplots
+        from plotly import tools
+        
+        fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'scene'}, {'type': 'scene'}]])        
+
+        num_files = self._data.meta['files'][fn]['idxs']
+        block_center = self._data.meta['files'][fn]['block_center']
+        block_center = np.array(block_center)
+        block_center[0][2], block_center[0][1] = block_center[0][1], block_center[0][2]
+        if num_files == []:
+            continue
+        idxs = [h5py.File(fn[:-3] + f'_{i}.h5', 'r') for i in num_files]
+        pc = []
+        labels = []
+        pred_class = []
+        pred_confidence = []
+        for nn, i in enumerate(idxs):
+            print(f'{nn+1}/{len(idxs)}', end='\r')
+            current_block = i['unnormalized_data'][:, :3]
+            data_num = i['data_num'][()] 
+            data = i['data'][:] 
+            pc.append(current_block[:data_num])
+            labels.append(i['label_seg'][:data_num])
+
+            max_point_num = self._data.max_point
+            sample_num = self.sample_point_num
+            batch_size = 1 * math.ceil(max_point_num / sample_num) 
+            data = data[None]
+            batch_idx = 0
+            points_batch = data[[batch_idx] * batch_size, ...]
+            point_num = data_num
+            predictions = np.array(get_predictions(self, data, batch_idx, points_batch, sample_num, batch_size, point_num))
+            pred_class.append(predictions[:, 0])
+            pred_confidence.append(predictions[:, 1])
+            
+        if pc == []:
+            continue         
+                
+        pc = np.concatenate(pc, axis=0)
+        labels = np.concatenate(labels, axis=0)
+        pred_class = np.zeros_like(labels)
+        pred_class = np.concatenate(pred_class, axis=0).astype(int)
+        sample_idxs = labels!=0
+        sampled_pc = pc[sample_idxs]
+        if sampled_pc.shape[0] == 0:
+            continue
+        x, y, z = recenter(sampled_pc).transpose(1,0)       
+        if filter_outliers:
+            ## Filter on the basis of std.
+            mask = filter_pc(pc)
+        else:
+            ## all points
+            mask = x > -9999999
+            
+        color_list_true =  color_mapping[labels[sample_idxs]][mask].tolist()
+        color_list_pred = color_mapping[pred_class[sample_idxs]][mask].tolist()
+        
+        scene=dict(aspectmode='data')
 
 
+        fig.add_trace(go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
+                                        mode='markers', marker=dict(size=1, color=color_list_true)), row=1, col=1)
+
+        fig.add_trace(go.Scatter3d(x=x[mask], y=z[mask], z=y[mask], 
+                                mode='markers', marker=dict(size=1, color=color_list_pred)), row=1, col=2)
+
+
+        fig.update_layout(
+            scene=scene,
+            scene2=scene,
+            title_text='Ground Truth / Predictions',
+            width=kwargs.get('width', 1024),
+            height=kwargs.get('width', 512)
+        )
+
+        fig.show()
+
+        if idx == rows-1:
+            break
+        idx += 1 
+
+    

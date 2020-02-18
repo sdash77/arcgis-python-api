@@ -3,7 +3,7 @@ from .._data import _raise_fastai_import_error
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
     from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero
-    from .._utils.pointcloud_data import get_device, inference_las
+    from .._utils.pointcloud_data import get_device, inference_las, show_results
     from ._unet_utils import is_no_color
     from fastai.basic_train import Learner
     import torch
@@ -74,10 +74,9 @@ class PointCNN(ArcGISModel):
 
         return _emd_template
         
-    def show_results(self, rows=2):
-        ## Change this
-        self._data.show_batch()
+    def show_results(self, rows=2, **kwargs):
+        return show_results(self, rows, **kwargs)
 
-    def predict_las(self, path):
-        return inference_las(path, self)
+    def predict_las(self, path, output_path=None, publish=False, **kwargs):
+        return inference_las(path, self, output_path)
         
