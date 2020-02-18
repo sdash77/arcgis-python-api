@@ -19,6 +19,9 @@ def _pad_image(image, stride):
     return img
 
 def _get_image_chips(image, chip_dim):
+    """Function to take an image and 
+    return sequentially cropped and padded chips of size chip_dim."""
+
     img_h, img_w, _ = image.shape
     chips_data = []
     stride = chip_dim // 2
@@ -26,7 +29,7 @@ def _get_image_chips(image, chip_dim):
     start_x = 0
     start_y = 0
 
-    if chip_dim >= img_w or chip_dim >= img_h:
+    if chip_dim >= img_w and chip_dim >= img_h:
         return [{'height': img_h, 'width': img_w, 'chip': image, 'xmin': start_x, 'ymin': start_y, 'predictions': []}]
 
     # Add zero-padding to enable prediction on all parts of the image
