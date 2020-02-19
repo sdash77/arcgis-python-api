@@ -50,7 +50,7 @@ def try_import(module):
             raise Exception("This function requires plotly. Install it using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil'")
         elif module == 'laspy':
             raise Exception("This function requires laspy. Install it using 'pip install laspy==1.6.0'")
-        elif module == 'h5py'
+        elif module == 'h5py':
             raise Exception(f"This function requires {module}. Install it using 'conda install {module}=2.10.0'")
         else:
             raise Exception(f"This function requires {module}. Please install it in your environment.")
@@ -196,7 +196,7 @@ def recenter(pc):
     max_val = np.amax(pc, axis=0)
     return (pc - min_val[None])
 
-def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=False):
+def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=False, **kwargs):
     try_import("h5py")
     import h5py
     try_import('plotly')

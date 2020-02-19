@@ -77,6 +77,6 @@ class PointCNN(ArcGISModel):
     def show_results(self, rows=2, **kwargs):
         return show_results(self, rows, **kwargs)
 
-    def predict_las(self, path, output_path=None, publish=False, **kwargs):
+    def predict_las(self, path, output_path=None, **kwargs):
         return inference_las(path, self, output_path)
         
