@@ -1025,7 +1025,7 @@ class Connection(object):
             postdata = { 'username': self._username,
                          'password': self._password,
                          #'client': 'requestip',
-                         'referer' : 'http',
+                         'referer' : self._referer,
                          'expiration': self._expiration,
                          'f': 'json' }
         res = self.post(path=self._token_url,

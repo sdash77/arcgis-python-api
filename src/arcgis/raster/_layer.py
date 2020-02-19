@@ -3830,6 +3830,93 @@ class ImageryLayer(Layer):
         return _draw_graph(self, show_attributes,function_dictionary,G)
 
 
+    def temporal_profile(self, points=[], time_field=None, variables=[],  bands=[0], time_extent=None, dimension=None, dimension_values=[], 
+                     show_values=False, trend_type=None, trend_order=None, plot_properties={}):
+
+        '''
+        A temporal profile serves as a basic analysis tool for imagery data in a time series. 
+        Visualizing change over time with the temporal profile allows trends to be displayed 
+        and compared with variables, bands, or values from other dimensions simultaneously.
+
+        Using the functionality in temporal profile charts, you can perform trend analysis, gain insight into 
+        multidimensional raster data at given locations, and plot values that are changing over time 
+        in the form of a line graph.
+
+        Temporal profile charts can be used in various scientific applications involving time series 
+        analysis of raster data, and the graphical output of results can be used directly as 
+        input for strategy management and decision making.
+
+        The x-axis of the temporal profile displays the time in continuous time intervals. The time field is 
+        obtained from the timeInfo of the image service.
+    
+        The y-axis of the temporal profile displays the variable value.
+
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of point Geometry objects. 
+        ------------------------------------     --------------------------------------------------------------------
+        time_field                               Required string. The time field that will be used for plotting 
+                                                 temporal profile.
+                                             
+                                                 If not specified the time field is obtained from the timeInfo of 
+                                                 the image service.
+        ------------------------------------     --------------------------------------------------------------------
+        variables                                Required list of variable names. 
+                                                 For non multidimensional data, the variable would be name of the Sensor.
+                                                 To plot the graph against all sensors specify - "ALL_SENSORS" 
+        ------------------------------------     --------------------------------------------------------------------
+        bands                                    Optional list of band indices. By default takes the 
+                                                 first band (band index - 0). 
+                                                 For a multiband data, you can compare the time change of different 
+                                                 bands over different locations.
+        ------------------------------------     --------------------------------------------------------------------
+        time_extent                              Optional list of date time object. This represents the time extent
+        ------------------------------------     --------------------------------------------------------------------
+        dimension                                Optional list of dimension names. This option works specifically on 
+                                                 multidimensional data containing a time dimension and other dimensions.
+
+                                                 The temporal profile is created based on the specific values in other 
+                                                 dimensions, such as depth at the corresponding time value. For example, 
+                                                 soil moisture data usually includes both a time dimension and vertical 
+                                                 dimension below the earth's surface, resulting in a temporal profile 
+                                                 at 0.1, 0.2, and 0.3 meters below the ground.
+        ------------------------------------     --------------------------------------------------------------------
+        dimension_values                         Optional list of dimension values. This parameter can be used to specify
+                                                 the values of dimension parameter other than the time dimension (dimension
+                                                 name specified using dimension parameter)
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional bool. Default False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+        ------------------------------------     --------------------------------------------------------------------
+        trend_type                               Optional string. Default None.
+                                                 Set the trend_type parameter eith with linear or harmonic to draw the trend line
+                                                 linear : Fits the pixel values for a variable along a linear trend line.
+                                                 harmonic : Fits the pixel values for a variable along a harmonic trend line.
+        ------------------------------------     --------------------------------------------------------------------
+        trend_order                              optional number. The frequency number to use in the trend fitting. 
+                                                 This parameter specifies the frequency of cycles in a year. 
+                                                 The default value is 1, or one harmonic cycle per year.
+
+                                                 This parameter is only included in the trend analysis for a harmonic regression.
+        ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dict. This parameter can be used to set the figure 
+                                                 properties. These are the matplotlib.pyplot.figure() parameters and values
+                                                 specified in dict format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        '''
+        from arcgis.raster._charts import temporal_profile
+        return temporal_profile(self, points=points, time_field=time_field, variables=variables,  bands=bands, time_extent=time_extent, dimension=dimension, dimension_values=dimension_values, 
+                     show_values=show_values, trend_type=trend_type, trend_order=trend_order, plot_properties=plot_properties)
+
+
     def _repr_jpeg_(self):
         bbox_sr = None
         if 'spatialReference' in self.extent:

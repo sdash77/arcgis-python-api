@@ -183,7 +183,7 @@ class NotebookServer(object):
         """
         if self._notebook is None:
             url = self._url + "/notebooks"
-            self._notebook = NotebookManager(url=url, gis=self._gis)
+            self._notebook = NotebookManager(url=url, gis=self._gis, nbs=self)
         return self._notebook
     #----------------------------------------------------------------------
     @property

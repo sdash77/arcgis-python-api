@@ -21,7 +21,7 @@ requirements:
   - matplotlib
   - keyring
   - pytest
-  - pyshp <2
+  - pyshp >=2
   - requests
   - requests-toolbelt
   - requests-kerberos
@@ -36,10 +36,10 @@ requirements:
   - widgetsnbextension >=3
   - pandas >=0.25
   - numpy >=1.16.2
-  - pyshp
+  - pyshp >=2
   - matplotlib
   - keyring
-  - pyshp <2
+  - pyshp
   - requests
   - requests-toolbelt
   - requests-kerberos
