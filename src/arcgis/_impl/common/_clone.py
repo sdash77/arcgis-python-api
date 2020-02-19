@@ -289,7 +289,10 @@ class _DeepCloner():
                 is_view = service_definition["isView"]
 
             # Get the item data, for example any popup definition associated with the item
-            data = item.get_data()
+            try:
+                data = item.get_data()
+            except:
+                data = {}
 
             # Get the definitions of the the layers and tables
             layers_definition = {'layers': [], 'tables': []}

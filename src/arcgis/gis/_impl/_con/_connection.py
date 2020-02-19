@@ -337,9 +337,13 @@ class Connection(object):
             params['f'] = 'json'
         if params == {}:
             params = None
-
-        out_path = kwargs.pop('out_path',
-                              tempfile.gettempdir())
+        
+        if 'out_folder' in kwargs:
+            out_path = kwargs.pop('out_folder',
+                                  tempfile.gettempdir())            
+        else:
+            out_path = kwargs.pop('out_path',
+                                  tempfile.gettempdir())
         file_name = kwargs.pop('file_name', None)
         if params:
             for k, v in copy.copy(params).items():
