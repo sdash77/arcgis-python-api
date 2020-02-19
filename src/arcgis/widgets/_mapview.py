@@ -911,7 +911,8 @@ class MapView(widgets.DOMWidget):
             else:
                 raise Exception('Could not add DataFrame to map it is not a spatially enabled DataFrame')
         elif isinstance(item, FeatureSet):
-            fc = FeatureCollection.from_featureset(item)
+            fset_symbol = options['symbol'] if options and 'symbol' in options else None
+            fc = FeatureCollection.from_featureset(item, symbol=fset_symbol)
             self._add_layer_to_widget(fc, options)
 
         elif isinstance(item, dict):
