@@ -631,7 +631,9 @@ def prepare_data(path,
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
-        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct)
+        if batch_size == 64:
+            batch_size = 8
+        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct,batch_size=batch_size)
     elif dataset_type == "PointCloud" or dataset_type == 'PointCloud_TF':
         return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, **kwargs)
     else:

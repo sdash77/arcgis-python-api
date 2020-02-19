@@ -1,8 +1,10 @@
 try:
     import spacy
+    from spacy.util import minibatch, compounding
     import pandas as pd
     from fastprogress import master_bar, progress_bar
     from ._codetemplate import entity_recognizer_placeholder
+    import numpy as np
     HAS_SPACY=True
 except:
     HAS_SPACY=False
@@ -55,6 +57,7 @@ class EntityRecognizer(ArcGISModel):
         self._has_address = False #Flag to identify if the training data has any address  
         self._trained = False #Flag to check if model has been trained     
         self.lang = lang
+        self.optimizer = self.model.begin_training()
         if data:
             self._address_tag=data._address_tag
             self._has_address=data._has_address
@@ -62,16 +65,55 @@ class EntityRecognizer(ArcGISModel):
             self.data = data
             self.train_ds = data.train_ds
             self.val_ds = data.val_ds
+            for ent in data.entities:
+                if (ent not in self.ner.labels):
+                        self.model.entity.add_label(ent)
         else:
             self.train_ds = None
             self.val_ds = None
             self.path = '.'
+        self.learn = self
+        self.recorder = Recorder()
 
     def lr_find(self, allow_plot=True):
+    
         """
-        Not implemented for this model.
+        Runs the Learning Rate Finder, and displays the graph of it's output.
+        Helps in choosing the optimum learning rate for training the model.
         """
-        logging.error('lr_find() is not implemented for EntityRecognizer model.')
+
+        start_lr=1e-6
+        end_lr=10
+        num_it=10
+        smoothening=4
+
+        self.model.to_disk('tmp') #caches the current model state
+        if self._trained: 
+            temp_optimizer = self.optimizer #preserving the current state of the model for later load
+        trained = self._trained #preserving the current state of the model for later load
+        recorder = self.recorder #preserving the current state of the model for later load
+        self.recorder.losses,self.recorder.val_loss,self.recorder.lrs = [],[],[] #resetting the recorder
+        lrs = even_mults(start_lr,end_lr,12)
+        epochs = int(np.ceil(num_it/(len(self.data.train_ds)/self.data.batch_size)))
+        for lr in lrs:
+            self.fit(lr=lr, epochs=epochs, from_lr_find=True)
+            from IPython.display import clear_output
+            clear_output()
+        
+        N = smoothening #smoothening factor
+        self.recorder.losses = np.convolve(self.recorder.losses, np.ones((N,))/N, mode='valid').tolist()
+        self.recorder.lrs = np.convolve(self.recorder.lrs, np.ones((N,))/N, mode='valid').tolist()
+        lr,index = self._find_lr(losses_skipped=0, trailing_losses_skipped=1, section_factor=2)
+
+        if allow_plot:
+            self._show_lr_plot(index, losses_skipped=0, trailing_losses_skipped=1)       
+        self._trained = trained      
+        self.recorder = recorder
+        import spacy,shutil
+        self.model = spacy.load('tmp')
+        shutil.rmtree('tmp', ignore_errors=True)
+        return(lr)
+    
     
     def unfreeze(self):
         """
@@ -100,6 +142,10 @@ class EntityRecognizer(ArcGISModel):
         early_stopping          Not implemented for this model.
         =====================   ===========================================
         """
+        if lr is None: #searching for the optimal learning rate when no learning rate is provided
+            print('Finding optimum learning rate')
+            lr = self.lr_find(allow_plot=False)
+            print(f'Optimal learning rate is {lr}')
 
         if self.train_ds==None:
             return logging.warning('Cannot fit the model on empty data.')
@@ -122,37 +168,53 @@ class EntityRecognizer(ArcGISModel):
         
         other_pipes = [pipe for pipe in nlp.pipe_names if pipe != 'ner'] # get names of other pipes to disable them during training
         with nlp.disable_pipes(*other_pipes):  # only train NER
-            nlp.vocab.vectors.name = 'spacy_pretrained_vectors'
-            optimizer = nlp.begin_training()
-            if lr is not None:
-                if not isinstance(lr,(int,float)):
-                    raise Exception('lr needs to be an int or a floating point number.')
-                else:
-                    optimizer.alpha=lr
+            if not nlp.vocab.vectors.name:
+                nlp.vocab.vectors.name = 'spacy_pretrained_vectors'
+
+            if not isinstance(lr,(int,float)):
+                raise Exception('lr needs to be an int or a floating point number.')
+            else:
+                self.optimizer.alpha=lr
+            batch_size = self.data.batch_size
+            n_iter = (len(TRAIN_DATA)//batch_size)*epochs
             mb = master_bar(range(epochs))
-            mb.write(['Epoch','Train_loss','Val_loss'],table=True)
+            mb.write(['epoch','losses','val_loss'],table=True)
+            losses_list = []
             for itn in mb:
                 random.shuffle(TRAIN_DATA)
+                batches = minibatch(TRAIN_DATA, size=batch_size)
+                
                 losses = {}
-                val_losses = {}
-                for text, annotations in progress_bar(TRAIN_DATA, parent=mb):
-                    nlp.update(
-                        [text],  # batch of texts
-                        [annotations],  # batch of annotations
-                        drop = 0.2,  # dropout - make it harder to memorise data
-                        sgd = optimizer,  # callable to update weights
-                        losses = losses)  
+                
+                batch_index = 0
+                for _ in progress_bar(range(len(TRAIN_DATA)//batch_size),parent=mb):
+                    batch_index += 1
+                    batch = next(batches)
+                    texts, annotations = zip(*batch)
+                    nlp.update(texts, annotations, sgd=self.optimizer, drop=0.35, losses=losses)
+                    losses_list.append(losses['ner']//(len(batch)*batch_index))
+                    if 'from_lr_find' in kwargs and len(self.recorder.losses)>0:  #'from_lr_find' kwarg specifies that the fit is call from lr_find.
+                        if np.mean(losses_list) > 3*np.min(self.recorder.losses): #break the epoch if loss overshoots
+                                break  
                 if VAL_DATA:
-                    for val_text, val_annotations in (VAL_DATA):
-                        nlp.update([val_text],[val_annotations], sgd = None, losses = val_losses)
+                    val_batches = minibatch(VAL_DATA, size=batch_size)
+                    val_losses = {}
+                    val_loss_list = []
+                    for val_batch in val_batches:
+                        val_text, val_annotations = zip(*val_batch)
+                        nlp.update(val_text,val_annotations, sgd = None, losses = val_losses)
+                        val_loss_list.append(np.min(losses['ner']//len(val_batch)))
+                    self.recorder.val_loss.append(val_loss_list)    
 
-                train_loss = losses['ner']/len(TRAIN_DATA)
+                losses = losses['ner']/len(TRAIN_DATA)
                 val_loss = val_losses['ner']/len(VAL_DATA)
-                mb.write([itn,round(train_loss,2),round(val_loss,2)],table=True)
+                mb.write([itn,round(losses,2),round(val_loss,2)],table=True)
+            self.recorder.losses.append(np.min(losses_list))
+            self.recorder.lrs.append(self.optimizer.alpha)  
 
         self._trained = True
         self.model = nlp
-        self.entities = list({item[2:] for item in self.model.entity.move_names if item !='O'})
+        self.entities = list(self.model.entity.labels)
 
     def _create_emd(self, path):
         path=Path(path)
@@ -274,11 +336,12 @@ class EntityRecognizer(ArcGISModel):
         This function post processes the output dataframe from extract_entities function and returns a processed dataframe.
         """
         processed_df = pd.DataFrame(columns = unprocessed_df.columns)
+        print(unprocessed_df.columns)
         for col in unprocessed_df.columns: ## converting all list columns to string
             if pd.Series(filter(lambda x: x != '',unprocessed_df[col])).apply(isinstance,args = ([str])).sum() == 0: ## split if this condition
-                processed_df[col] = unprocessed_df[col].apply(",".join)  #join the list to strind and copy to the processed df
-            else:
-                 processed_df[col] = unprocessed_df[col] #copy to the processed df
+                processed_df[col] = unprocessed_df[col].apply(",".join)  #join the list to string and copy to the processed df
+            else: 
+                processed_df[col] = unprocessed_df[col] #copy to the processed df
         return processed_df
 
     def _post_process_address_df(self, unprocessed_df,drop):
@@ -443,3 +506,9 @@ class EntityRecognizer(ArcGISModel):
             return self.extract_entities(xs)
         else:
             print('Please provide a valid ds_type:[\'valid\'|\'train\']')
+
+class Recorder():
+    def __init__(self):
+        self.lrs = []
+        self.losses = []
+        self.val_loss = []
