@@ -291,7 +291,7 @@ class ArcGISModel(object):
 
         return lr
 
-    def _show_lr_plot(self, index):
+    def _show_lr_plot(self, index, losses_skipped=losses_skipped, trailing_losses_skipped=trailing_losses_skipped):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(1, 1)
         ax.plot(
@@ -312,7 +312,7 @@ class ArcGISModel(object):
 
         plt.show()
 
-    def _find_lr(self):
+    def _find_lr(self, losses_skipped=losses_skipped, trailing_losses_skipped=trailing_losses_skipped, section_factor=3):
         losses = self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
         lrs = self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped]
 
@@ -331,9 +331,8 @@ class ArcGISModel(object):
                     max_end = i
                     max_start = max_end - lds[max_end]
 
-        sections = (max_end - max_start) / 3
+        sections = (max_end - max_start) / section_factor
         final_index = max_start + int(sections) + int(sections/2)
-
         return lrs[final_index], losses_skipped + final_index
 
     @property

@@ -1157,7 +1157,6 @@ def las2h5(data_path, block_size, max_points, output_path, extra_features, **kwa
     max_points: Maximum number of points to contain in each block.
     """
     from ._utils.pointcloud_data import  prepare_las_data
-    #from _utils.poincloud_data import iterate_and_export
     prepare_las_data(data_path, block_size, max_points, output_path, **kwargs)
 
     
