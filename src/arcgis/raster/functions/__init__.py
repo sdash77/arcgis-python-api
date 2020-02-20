@@ -2479,7 +2479,17 @@ def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
-    :return: the output raster
+    :returns: the output raster  
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To extract raster from flow direction raster layer that only covers the watershed. 
+                       rasters: 
+                       ["Input raster representing the true or false result of the desired condition. It can be of integer or floating point type.", 
+                        "The input whose values will be used as the output cell values if the condition is true. It can be an integer or a floating point raster, or a constant value.", 
+                        "The input whose values will be used as the output cell values if the condition is false. It can be an integer or a floating point raster, or a constant value."]
+
+        con([stowe_watershed_lyr, Stowe_fill_flow_direction_lyr, 0])
 
     """
     return local(rasters, 78, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)

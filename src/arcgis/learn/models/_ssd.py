@@ -240,12 +240,14 @@ class SingleShotDetector(ArcGISModel):
 
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+        
+        Note: Only supported for Pytorch models.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
-                                file.
+                                file. 
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
