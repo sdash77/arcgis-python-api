@@ -97,13 +97,14 @@ class PSPNetClassifier(ArcGISModel):
             self.learn.loss_func = self._psp_loss
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
-        if pretrained_path is not None:
-            self.load(pretrained_path)
-
         self.learn.model = self.learn.model.to(self._device)
         
         self.freeze()
         self._arcgis_init_callback() # make first conv weights learnable
+
+        if pretrained_path is not None:
+            self.load(pretrained_path)
+
 
     def __str__(self):
         return self.__repr__()
@@ -198,7 +199,8 @@ class PSPNetClassifier(ArcGISModel):
                 p.requires_grad = False
 
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.      
-  
+        self.learn.create_opt(lr=3e-3)
+
     def unfreeze(self):
         """
         Unfreezes the earlier layers of the model for fine-tuning.

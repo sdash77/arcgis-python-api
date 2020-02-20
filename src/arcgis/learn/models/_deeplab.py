@@ -104,11 +104,10 @@ class DeepLab(ArcGISModel):
         self.learn = Learner(data, model, metrics=self._accuracy)
         self.learn.loss_func = self._deeplab_loss
         self.learn.model = self.learn.model.to(self._device)
-
-        if pretrained_path is not None:
-            self.load(pretrained_path)
         self._freeze()
         self._arcgis_init_callback() # make first conv weights learnable
+        if pretrained_path is not None:
+            self.load(pretrained_path)
     
     @property
     def supported_backbones(self):
@@ -231,7 +230,8 @@ class DeepLab(ArcGISModel):
             for p in i.parameters():
                 p.requires_grad = False
 
-        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.      
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.
+        self.learn.create_opt(lr=3e-3)
 
     def unfreeze(self):
         for _, param in self.learn.model.named_parameters():
