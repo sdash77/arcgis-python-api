@@ -248,7 +248,7 @@ class SamplePointsCallback(LearnerCallback):
         indices = torch.tensor(get_indices(batch, self.sample_point_num, point_nums.long())).to(last_input.device)
         
         ## Get indices in the correct shape to be used for indexing
-        indices = indices.view(-1, 2)
+        indices = indices.view(-1, 2).long()
 
         ##  sample points from all the input and output points
         last_input = last_input[indices[:, 0], indices[:, 1]].view(batch, self.sample_point_num, num_features).contiguous()  ## batch, self.sample_point_num, num_features                
