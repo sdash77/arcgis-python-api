@@ -12,7 +12,7 @@ Functions can be applied to various rasters (or images), including the following
 * Rasters within imagery layers
 
 """
-from arcgis.raster._layer import ImageryLayer
+from arcgis.raster._layer import ImageryLayer,  Raster, _ArcpyRaster
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
@@ -56,6 +56,8 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _gbl_clone_layer(layer, function_chain, function_chain_ra,**kwargs):
+    if isinstance(layer, Raster):
+        return _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs)
     if isinstance(layer, Item):
         layer = layer.layers[0]
 
@@ -101,6 +103,38 @@ def _feature_gbl_clone_layer(layer, function_chain, function_chain_ra,**kwargs):
     newlyr._uses_gbl_function = True
     for key in kwargs:
         newlyr._other_outputs.update({key:kwargs[key]})
+    return newlyr
+
+
+def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
+
+    if layer._datastore_raster:
+        newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+    else:
+        newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+
+    if layer._engine==_ArcpyRaster:
+        try:            
+            import arcpy, json
+            arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
+            newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except:
+            pass
+
+    #newlyr.properties = layer.properties
+    newlyr._engine_obj._fn = function_chain
+    newlyr._engine_obj._fnra = function_chain_ra
+    newlyr._engine_obj._where_clause = layer._where_clause
+    newlyr._engine_obj._spatial_filter = layer._spatial_filter
+    newlyr._engine_obj._temporal_filter = layer._temporal_filter
+    newlyr._engine_obj._mosaic_rule = layer._mosaic_rule
+    newlyr._engine_obj._filtered = layer._filtered
+    newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
+    newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+
+    if layer._do_not_hydrate:
+        newlyr._engine_obj.token = layer.token
+
     return newlyr
 
 def euclidean_distance(in_source_data,

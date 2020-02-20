@@ -1,12 +1,29 @@
-from .._layer import ImageryLayer
+from .._layer import ImageryLayer, Raster
 from arcgis.gis import Item
 import numbers
 from arcgis.features.layer import FeatureLayer
 
 def _raster_input(raster, raster2=None):
     layer=None
+    if isinstance(raster, Raster):
+        if hasattr(raster,"_engine_obj"):
+            raster=raster._engine_obj
+    if isinstance(raster2, Raster):
+        if hasattr(raster2,"_engine_obj"):
+            raster2=raster2._engine_obj
+    if isinstance(raster, list):
+        for index, ele in  enumerate(raster):
+             if isinstance(ele, Raster):
+                if hasattr(ele,"_engine_obj"):
+                    raster[index]=ele._engine_obj
+    if isinstance(raster2, list):
+        for index, ele in  enumerate(raster2):
+            if isinstance(ele, Raster):
+                if hasattr(ele,"_engine_obj"):
+                    raster2[index]=ele._engine_obj
+
     if raster2 is not None:
-        if isinstance(raster2, ImageryLayer) and isinstance(raster, ImageryLayer):
+        if isinstance(raster2, (ImageryLayer, Raster)) and isinstance(raster, (ImageryLayer, Raster)):
             layer = raster2
             raster_ra = _get_raster_ra(raster2)
             if raster._datastore_raster and raster2._datastore_raster:
@@ -61,7 +78,7 @@ def _raster_input(raster, raster2=None):
                                 raster2 = raster2._url
                         else:
                             raster2 = raster2._uri
-        elif isinstance(raster2, ImageryLayer) and not isinstance(raster, ImageryLayer):
+        elif isinstance(raster2, (ImageryLayer, Raster)) and not isinstance(raster, (ImageryLayer, Raster)):
             layer = raster2
             raster_ra = _get_raster_ra(raster2)
             raster2 = _get_raster(raster2)
@@ -102,7 +119,7 @@ def _raster_input(raster, raster2=None):
             raster_ra = raster2
         return layer, raster2, raster_ra
 
-    if isinstance(raster, ImageryLayer):
+    if isinstance(raster, (ImageryLayer, Raster)):
         layer = raster
         raster_ra = _get_raster_ra(raster)
         raster = _get_raster(raster)
@@ -118,7 +135,7 @@ def _raster_input(raster, raster2=None):
         #     pass
 
         for r in raster:
-            if isinstance(r, ImageryLayer):
+            if isinstance(r, (ImageryLayer, Raster)):
                 if r._datastore_raster:
                     layer = r
         if layer is None:
@@ -149,7 +166,7 @@ def _raster_input(raster, raster2=None):
     return layer, raster, raster_ra
 
 def _get_raster(raster):
-    if isinstance(raster, ImageryLayer):
+    if isinstance(raster, (ImageryLayer, Raster)):
         if raster._fn is not None:
             raster = raster._fn
         else:
@@ -183,7 +200,7 @@ def _replace_raster_url(obj, url=None):
 
 
 def _get_raster_url(raster, layer):
-    if isinstance(raster, ImageryLayer):
+    if isinstance(raster, (ImageryLayer, Raster)):
         if raster._fn is not None:
             if raster._datastore_raster and layer._datastore_raster:
                 if raster._uri == layer._uri:
@@ -233,11 +250,22 @@ def _get_raster_url(raster, layer):
 
 def _get_raster_ra(raster):
 
-    if isinstance(raster, ImageryLayer):
-        if "url" in raster._lyr_dict:
-            url = raster._lyr_dict["url"]
-        if "serviceToken" in raster._lyr_dict:
-            url = url+"?token="+ raster._lyr_dict["serviceToken"]
+    if isinstance(raster, (ImageryLayer, Raster)):
+        if hasattr(raster, "_do_not_hydrate"):
+            if raster._do_not_hydrate:
+                url = raster.url
+                if raster.token is not None:
+                    url = url+"?token="+ raster.token
+            else:
+                if "url" in raster._lyr_dict:
+                    url = raster._lyr_dict["url"]
+                if "serviceToken" in raster._lyr_dict:
+                    url = url+"?token="+ raster._lyr_dict["serviceToken"]
+        else:
+            if "url" in raster._lyr_dict:
+                url = raster._lyr_dict["url"]
+            if "serviceToken" in raster._lyr_dict:
+                url = url+"?token="+ raster._lyr_dict["serviceToken"]
         if raster._fnra is not None:
             raster_ra = raster._fnra
         else:
@@ -269,7 +297,7 @@ def _get_raster_ra(raster):
 
 
 def _raster_input_rft(raster, raster2=None):
-    if isinstance(raster, ImageryLayer) or isinstance(raster,FeatureLayer):
+    if isinstance(raster, (ImageryLayer, Raster)) or isinstance(raster,FeatureLayer):
         raster_ra = _get_raster_ra_rft(raster)
 
     elif isinstance(raster, list):
@@ -282,7 +310,10 @@ def _raster_input_rft(raster, raster2=None):
 
 
 def _get_raster_ra_rft(raster):
-    if isinstance(raster, ImageryLayer):
+    if isinstance(raster, Raster):
+        if hasattr(raster,"_engine_obj"):
+            raster=raster._engine_obj
+    if isinstance(raster, (ImageryLayer, Raster)):
         if "url" in raster._lyr_dict:
             url = raster._lyr_dict["url"]
         if "serviceToken" in raster._lyr_dict:
@@ -320,7 +351,7 @@ def _input_rft(input_layer):
         input_param = input_layer
 
     elif isinstance(input_layer, str):
-        if '/fileShares/' in input_layer or '/rasterStores/' in input_layer or '/cloudStores/' in input_layer:
+        if '/fileShares/' in input_layer or '/rasterStores/' in input_layer or '/cloudStores/' in input_layer  or ('http' not in input_layer and 'https' not in input_layer):
             input_param = {"uri": input_layer}
         else:
             input_param = {"url": input_layer}

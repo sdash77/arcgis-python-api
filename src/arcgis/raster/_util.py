@@ -1,10 +1,15 @@
 import json as _json
 from arcgis.raster._layer import ImageryLayer as _ImageryLayer
+#from arcgis.raster._layer import Raster as _Raster
+from arcgis.features import FeatureLayer as _FeatureLayer
 import arcgis as _arcgis
 import string as _string
 import random as _random
 from arcgis._impl.common._utils import _date_handler
 import datetime
+from arcgis.geometry import Geometry  as _Geometry
+import numbers
+
 
 import logging as _logging
 _LOGGER = _logging.getLogger(__name__)
@@ -230,3 +235,229 @@ def _harmonic_regression(sample_size, date_list, x, y, trend_order):
             y_temp=y_temp + x1[q+1][0] * _np.cos(2 * 3.14159265358979323846 * (q / 2) * date_list[i] / 365.25)
         YY.append(y_temp)
     return x, YY
+
+def _epoch_to_iso(dt):
+    import datetime
+    return  datetime.datetime.fromtimestamp(dt/1000, tz=datetime.timezone.utc).isoformat()
+
+def _datetime2ole(date):
+    #date = datetime.strptime(date, '%d-%b-%Y')
+    import datetime
+    OLE_TIME_ZERO = datetime.datetime(1899, 12, 30)
+    delta = date - OLE_TIME_ZERO
+    return float(delta.days) + (float(delta.seconds) / 86400)
+
+def _ole2datetime(oledt):
+    import datetime
+    OLE_TIME_ZERO = datetime.datetime(1899, 12, 30, 0, 0, 0)
+    try:
+        return OLE_TIME_ZERO + datetime.timedelta(days=float(oledt))
+    except:
+        return datetime.datetime.utcfromtimestamp(oledt/1000)
+
+def _iso_to_datetime(timestamp):
+    format_string = '%Y-%m-%dT%H:%M:%S%z'
+    try:
+        colon = timestamp[-3]
+        colonless_timestamp = timestamp
+        if colon == ':':
+            colonless_timestamp = timestamp[:-3] + timestamp[-2:]
+        dt_ob = datetime.datetime.strptime(colonless_timestamp, format_string)
+        return dt_ob.replace(tzinfo=None)
+    except:
+        try:
+            format_string = '%Y-%m-%dT%H:%M:%S.%f%z'
+            dt_ob = datetime.datetime.strptime(colonless_timestamp, format_string)
+            return dt_ob.replace(tzinfo=None)
+        except:
+            try:
+                format_string = '%Y-%m-%dT%H:%M:%S'
+                dt_ob = datetime.datetime.strptime(timestamp, format_string)
+                return dt_ob
+            except:
+                return timestamp
+
+def _check_if_iso_format(timestamp):
+    format_string = '%Y-%m-%dT%H:%M:%S%z'
+    try:
+        colon = timestamp[-3]
+        colonless_timestamp = timestamp
+        if colon == ':':
+            colonless_timestamp = timestamp[:-3] + timestamp[-2:]
+        dt_ob = datetime.datetime.strptime(colonless_timestamp, format_string)
+        return True
+    except:
+        try:
+            format_string = '%Y-%m-%dT%H:%M:%S'
+            dt_ob = datetime.datetime.strptime(timestamp, format_string)
+            return dt_ob
+        except:
+            return False
+
+def _local_function_template(operation_number=None):
+    template_dict = {
+  "name" : "max_rft",
+  "description" : "A raster function template.",
+  "function" : {
+    "pixelType" : "UNKNOWN",
+    "name" : "Cell Statistics",
+    "description" : "Calculates a per-cell statistic from multiple rasters.  The available statistics are Majority, Maximum, Mean, Median, Minimum, Minority, Range, Standard Deviation, Sum, and Variety.",
+    "type" : "LocalFunction",
+    "_object_id" : 1
+  },
+  "arguments" : {
+    "Rasters" : {
+      "name" : "Rasters",
+      "value" : {
+        "elements" : [
+        ],
+        "type" : "ArgumentArray",
+        "_object_id" : 2
+      },
+      "aliases" : [
+        "__IsRasterArray__"
+      ],
+      "isDataset" : False,
+      "isPublic" : False,
+      "type" : "RasterFunctionVariable",
+      "_object_id" : 3
+    },
+    "Operation" : {
+      "name" : "Operation",
+      "value" : "",
+      "isDataset" : False,
+      "isPublic" : False,
+      "type" : "RasterFunctionVariable",
+      "_object_id" : 4
+    },
+    "CellsizeType" : {
+      "name" : "CellsizeType",
+      "value" : 2,
+      "isDataset" : False,
+      "isPublic" : False,
+      "type" : "RasterFunctionVariable",
+      "_object_id" : 5
+    },
+    "ExtentType" : {
+      "name" : "ExtentType",
+      "value" : 1,
+      "isDataset" : False,
+      "isPublic" : False,
+      "type" : "RasterFunctionVariable",
+      "_object_id" : 6
+    },
+    "ProcessAsMultiband" : {
+      "name" : "ProcessAsMultiband",
+      "value" : True,
+      "isDataset" : False,
+      "isPublic" : False,
+      "type" : "RasterFunctionVariable",
+      "_object_id" : 7
+    },
+    "MatchVariable" : {
+      "name" : "MatchVariable",
+      "value" : True,
+      "isDataset" : False,
+      "isPublic" : False,
+      "type" : "RasterFunctionVariable",
+      "_object_id" : 8
+    },
+    "UnionDimension" : {
+      "name" : "UnionDimension",
+      "value" : False,
+      "isDataset" : False,
+      "isPublic" : False,
+      "type" : "RasterFunctionVariable",
+      "_object_id" : 9
+    },
+    "type" : "LocalFunctionArguments",
+    "_object_id" : 10
+  },
+  "functionType" : 0,
+  "thumbnail" : ""
+}
+    if operation_number is not None:
+        template_dict["arguments"]["Operation"]["value"]=operation_number
+    return template_dict
+
+def _get_geometry(data):
+    if data is None:
+        return None
+
+    if isinstance(data, _Geometry):
+        return data
+    elif isinstance(data, arcgis.raster.Raster):
+        return _Geometry(data.extent)
+    elif isinstance(data, _ImageryLayer):
+        return _Geometry(data.extent)
+    elif isinstance(data, _FeatureLayer):
+        return _get_geometry_from_feature_layer(data)
+    else:
+        return data
+
+def _get_geometry_from_feature_layer(data):
+    geo=None
+    layer_fset = layer.query()
+    for ele in layer_fset.features:
+        geo = geo.union(_Geometry(ele.geometry)) if geo else _Geometry(ele.geometry)
+    return geometry
+
+def build_query_string(field_name, operator, field_values):
+    operator_map = {
+    "equals": "=",
+    "less_than": "<",
+    "greater_than": ">",
+    "not_equals": "<>",
+    "not_less_than": ">=",
+    "not_greater_than": "<=",
+        }
+
+    if operator in operator_map:
+        if isinstance(field_values, numbers.Number):
+            return field_name + ' ' + operator_map[operator] + ' ' + str(field_values)
+        elif isinstance(field_values, str):
+            return field_name + ' ' + operator_map[operator] + ' \'' + field_values + '\''
+        else:
+            raise TypeError('field_value must be numeric or string')
+
+    elif operator in ['starts_with', 'ends_with', 'not_starts_with', 'not_ends_with', 'contains', 'not_contains']:
+        if not isinstance(field_values, str):
+            raise TypeError('field_value must be string')
+        if operator == 'starts_with':
+            return field_name + ' LIKE ' + '\'' + field_values + '%\''
+        elif operator == 'ends_with':
+            return field_name + ' LIKE' + '\'%' + field_values + '\''
+        elif operator == 'not_starts_with':
+            return field_name + ' NOT LIKE ' + '\'' + field_values + '%\''
+        elif operator == 'not_ends_with':
+            return field_name + ' NOT LIKE ' + '\'%' + field_values + '\''
+        elif operator == 'contains':
+            return field_name + ' LIKE ' + '\'%' + field_values + '%\''
+        elif operator == 'not_contains':
+            return field_name + ' NOT LIKE ' + '\'%' + field_values + '%\''
+    elif operator == 'in':
+        if not isinstance(field_values, list):
+            raise TypeError('field_values must be type list for operator "in"')
+        values = '('
+        for item in field_values:
+            if not (isinstance(item, numbers.Number) or isinstance(item, str)):
+                raise TypeError('item in field_values must be numeric or string')
+            if values == '(':
+                values += '\'' + item + '\'' if isinstance(item, str) else str(item)
+            else:
+                values += ',\'' + item + '\'' if isinstance(item, str) else ',' + str(item)
+        values += ')'
+        return field_name + ' IN ' + values
+    elif operator == 'not_in':
+        values = '('
+        for item in field_values:
+            if not (isinstance(item, numbers.Number) or isinstance(item, str)):
+                raise TypeError('item in field_values must be numeric or string')
+            if values == '(':
+                values += '\'' + item + '\'' if isinstance(item, str) else str(item)
+            else:
+                values += ',\'' + item + '\'' if isinstance(item, str) else ',' + str(item)
+        values += ')'
+        return field_name + ' NOT IN ' + values
+    else:
+        raise ValueError('invalid operator value')
