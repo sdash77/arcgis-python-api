@@ -4612,8 +4612,25 @@ class RFT:
             if(len(kwargs)==1):
                 for k,v in self._raster_dict.items():
                     self._raster_dict.update({k:kwargs[list(kwargs.keys())[0]]})	
-                return self._apply_rft(self._raster_dict, self._gis)
-                
+                    layer = self._apply_rft(self._raster_dict, self._gis)
+                if isinstance(layer, Raster):
+                    self._template = layer._engine_obj._fnra
+                    if layer._engine_obj.url is None:
+                        return None
+                    if layer._engine==_ArcpyRaster:
+                        try:
+                            import arcpy, json
+                            arcpylyr=arcpy.ia.Apply(layer._engine_obj._uri,json.dumps(layer._engine_obj._fnra))
+                            layer = Raster(str(arcpylyr), is_multidimensional= layer._engine_obj._is_multidimensional, engine= layer._engine, gis=layer._engine_obj._gis)
+                            return layer
+
+                        except:
+                            raise
+                else:
+                    self._template = layer._fnra
+                    if layer.url is None:
+                        return None
+                return layer
 
 
             for key in kwargs.keys():
@@ -4621,9 +4638,22 @@ class RFT:
                     if(k==key):
                         self._arguments[k]=kwargs[key]
             layer = self._apply_rft(self._arguments, self._gis)
-            self._template = layer._fnra
-            if layer.url is None:
-                return None
+            if isinstance(layer, Raster):
+                self._template = layer._engine_obj._fnra
+                if layer._engine_obj.url is None:
+                    return None
+                if layer._engine==_ArcpyRaster:
+                    try:
+                        import arcpy, json
+                        arcpylyr=arcpy.ia.Apply(layer._engine_obj._uri,json.dumps(layer._engine_obj._fnra))
+                        layer = Raster(str(arcpylyr), is_multidimensional= layer._engine_obj._is_multidimensional, engine= layer._engine, gis=layer._engine_obj._gis)
+                        return layer
+                    except:
+                        raise
+            else:
+                self._template = layer._fnra
+                if layer.url is None:
+                    return None
             return layer
 
         except:
