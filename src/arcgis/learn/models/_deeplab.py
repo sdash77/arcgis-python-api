@@ -14,7 +14,7 @@ try:
     import torch.nn.functional as F
     from torchvision import models
     from ._unet_utils import LabelCallback
-    from ._arcgis_model import _EmptyData
+    from ._arcgis_model import _EmptyData, _change_tail
     from fastai.vision import to_device
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
@@ -46,7 +46,7 @@ class _DeepLabOverride(DeepLabV3):
         else:
             return result['out']
 
-def _create_deeplab(num_class, backbone, pretrained=True, **kwargs):
+def _create_deeplab(num_class, pretrained=True, **kwargs):
     '''
     Create default torchvision pretrained model with resnet101.
     '''
@@ -95,18 +95,19 @@ class DeepLab(ArcGISModel):
 
         self._code = image_classifier_prf
         if self._backbone.__name__ is 'resnet101':
-            model = _create_deeplab(data.c, self._backbone)
+            model = _create_deeplab(data.c)
+            if self._is_multispectral:
+                model = _change_tail(model, data)
         else:
             model = Deeplab(data.c, self._backbone, data.chip_size)
 
         self.learn = Learner(data, model, metrics=self._accuracy)
         self.learn.loss_func = self._deeplab_loss
         self.learn.model = self.learn.model.to(self._device)
-
-        if pretrained_path is not None:
-            self.load(pretrained_path)
         self._freeze()
         self._arcgis_init_callback() # make first conv weights learnable
+        if pretrained_path is not None:
+            self.load(pretrained_path)
     
     @property
     def supported_backbones(self):
@@ -229,7 +230,8 @@ class DeepLab(ArcGISModel):
             for p in i.parameters():
                 p.requires_grad = False
 
-        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.      
+        self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.
+        self.learn.create_opt(lr=3e-3)
 
     def unfreeze(self):
         for _, param in self.learn.model.named_parameters():

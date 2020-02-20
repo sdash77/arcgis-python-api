@@ -10282,7 +10282,7 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        if type(self).__name__ == 'ImageryLayer':
+        if type(self).__name__ == 'ImageryLayer' or type(self).__name__ == '_ImageServerRaster':
             if self._fn is not None:
                 params['renderingRule'] = self._fn
             if hasattr(self, "_uri"):

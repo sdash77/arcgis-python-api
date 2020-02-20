@@ -2253,6 +2253,7 @@ class GeoAccessor(object):
         import arcgis
         cols_norm = [col for col in self._data.columns]
         cols_lower = [col.lower() for col in self._data.columns]
+        
         fields = []
         features = []
         date_fields = []
@@ -2275,6 +2276,10 @@ class GeoAccessor(object):
             "fields" : [],
             "features" : []
         }
+        # Ensure all number values are 0 so errors do not occur.
+        for c in self._data.select_dtypes(include='number').columns.tolist():
+            self._data[c].fillna(0, inplace=True)
+        
         if 'objectid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]

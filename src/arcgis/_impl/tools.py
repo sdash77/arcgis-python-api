@@ -4949,6 +4949,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_param = input_layer
 
         url = ""
+        from arcgis.raster import Raster
+        if isinstance(input_layer, Raster):
+            if hasattr(input_layer,"_engine_obj"):
+                input_layer=input_layer._engine_obj
         if isinstance(input_layer, arcgis.gis.Item):
             if input_layer.type == "Image Collection":
                 input_param = {"itemId": input_layer.itemid}
@@ -4968,7 +4972,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_param = input_layer._lyr_dict
             from arcgis.raster import ImageryLayer
             import json
-            if isinstance(input_layer, ImageryLayer):
+            if isinstance(input_layer, ImageryLayer) or isinstance(input_layer, Raster):
                 if 'options' in input_layer._lyr_json:
                     if isinstance(input_layer._lyr_json['options'], str): #sometimes the rendering info is a string
                         #load json
