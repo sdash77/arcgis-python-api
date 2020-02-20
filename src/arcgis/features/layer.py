@@ -1729,6 +1729,13 @@ class FeatureLayer(Layer):
         
         
         """
+        try:
+            import pandas as pd
+            from arcgis.features.geo import _is_geoenabled
+            HAS_PANDAS = True
+        except:
+            HAS_PANDAS = False
+            
         if adds is None:
             adds = []
         if updates is None:
@@ -1741,9 +1748,24 @@ class FeatureLayer(Layer):
         }
         if gdb_version is not None:
             params['gdbVersion'] = gdb_version
-        if isinstance(adds, FeatureSet):
+        if HAS_PANDAS and \
+           isinstance(adds, pd.DataFrame) and \
+           _is_geoenabled(adds):
+            cols = [c for c in adds.columns.tolist() if c.lower() not in ['objectid', 'fid']]
+            params['adds'] = json.dumps(adds[cols].spatial.__feature_set__['features'], 
+                                        default=_date_handler)
+        elif HAS_PANDAS and \
+           isinstance(adds, pd.DataFrame) and \
+           _is_geoenabled(adds) == False:
+            # we have a regular panadas dataframe
+            cols = [c for c in adds.columns.tolist() if c.lower() not in ['objectid', 'fid']]
+            params['adds'] = json.dumps([{"attributes" : row } for \
+                                         row in adds[cols].to_dict(orient='record')], 
+                                        default=_date_handler)
+        elif isinstance(adds, FeatureSet):
             params['adds'] = json.dumps([f.as_dict for f in adds.features],
                                         default=_date_handler)
+        
         elif len(adds) > 0:
             if isinstance(adds[0], dict):
                 params['adds'] = json.dumps([f for f in adds],
@@ -1759,6 +1781,19 @@ class FeatureLayer(Layer):
         if isinstance(updates, FeatureSet):
             params['updates'] = json.dumps([f.as_dict for f in updates.features],
                                            default=_date_handler)
+        elif HAS_PANDAS and \
+               isinstance(updates, pd.DataFrame) and \
+               _is_geoenabled(updates):
+            params['updates'] = json.dumps(updates.spatial.__feature_set__['features'], 
+                                           default=_date_handler)
+        elif HAS_PANDAS and \
+             isinstance(updates, pd.DataFrame) and \
+             _is_geoenabled(updates) == False:
+            # we have a regular panadas dataframe
+            cols = [c for c in updates.columns.tolist() if c.lower() not in ['objectid', 'fid']]
+            params['updates'] = json.dumps([{"attributes" : row } for \
+                                            row in updates[cols].to_dict(orient='record')], 
+                                           default=_date_handler)
         elif len(updates) > 0:
             if isinstance(updates[0], dict):
                 params['updates'] = json.dumps([f for f in updates],
@@ -1772,14 +1807,20 @@ class FeatureLayer(Layer):
             else:
                 print('pass in features as list of Features, dicts or PropertyMap')
         if deletes is not None and \
-                isinstance(deletes, str):
+           isinstance(deletes, str):
             params['deletes'] = deletes
         elif deletes is not None and \
-                isinstance(deletes, PropertyMap):
+             isinstance(deletes, PropertyMap):
             print('pass in delete, unable to convert PropertyMap to string list of OIDs')
-
         elif deletes is not None and \
-                isinstance(deletes, FeatureSet):
+             isinstance(deletes, pd.DataFrame):
+            cols = [c for c in deletes.columns.tolist() if c.lower() in ['objectid', 'fid']]
+            if len(cols) > 0:
+                params['deletes'] = ",".join([str(d) for d in deletes[cols[0]]])
+            else:
+                raise Exception("Could not find ObjectId or FID field.")
+        elif deletes is not None and \
+             isinstance(deletes, FeatureSet):
 
             field_name = None
             if deletes.object_id_field_name:
@@ -1791,6 +1832,8 @@ class FeatureLayer(Layer):
 
             if field_name:
                 params['deletes'] = ",".join([str(feat.get_value(field_name=field_name)) for feat in deletes.features])
+        elif isinstance(deletes, (list, tuple)):
+            params['deletes'] = ",".join([str(d) for d in deletes])
         if not return_edit_moment is None:
             params['returnEditMoment'] = return_edit_moment
         if not attachments is None and isinstance(attachments, dict):
