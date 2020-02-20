@@ -14,7 +14,7 @@ try:
     import torch.nn.functional as F
     from torchvision import models
     from ._unet_utils import LabelCallback
-    from ._arcgis_model import _EmptyData
+    from ._arcgis_model import _EmptyData, _change_tail
     from fastai.vision import to_device
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
@@ -46,7 +46,7 @@ class _DeepLabOverride(DeepLabV3):
         else:
             return result['out']
 
-def _create_deeplab(num_class, backbone, pretrained=True, **kwargs):
+def _create_deeplab(num_class, pretrained=True, **kwargs):
     '''
     Create default torchvision pretrained model with resnet101.
     '''
@@ -95,7 +95,9 @@ class DeepLab(ArcGISModel):
 
         self._code = image_classifier_prf
         if self._backbone.__name__ is 'resnet101':
-            model = _create_deeplab(data.c, self._backbone)
+            model = _create_deeplab(data.c)
+            if self._is_multispectral:
+                model = _change_tail(model, data)
         else:
             model = Deeplab(data.c, self._backbone, data.chip_size)
 
