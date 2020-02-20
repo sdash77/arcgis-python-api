@@ -13,7 +13,6 @@ from arcgis.gis import _GISResource
 import logging
 import arcgis as _arcgis
 import base64
-from . import Lerc
 from collections import defaultdict
 try:
     import numpy as np
@@ -5831,6 +5830,8 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
         :return: numpy.ndarray. If self is a multidimensional raster, the array has shape (slices, height, width, bands)
         """
+        from . import Lerc
+
         extent = self.extent
         xmin, ymin, xmax, ymax = extent['xmin'], extent['ymin'], extent['xmax'], extent['ymax']
         if cell_size is None:
