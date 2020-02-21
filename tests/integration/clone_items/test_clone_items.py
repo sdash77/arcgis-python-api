@@ -3,7 +3,7 @@
 # Purpose:     Sanity tests for ArcGIS Python API
 #-------------------------------------------------------------------------------
 import sys
-sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork\src")
+#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork\src")
 import unittest, pytest
 import os
 from pathlib import Path
