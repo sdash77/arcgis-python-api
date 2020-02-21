@@ -634,7 +634,7 @@ def prepare_data(path,
         if batch_size == 64:
             batch_size = 8
         return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct,batch_size=batch_size)
-    elif dataset_type == "PointCloud" or dataset_type == 'PointCloud_TF':
+    elif dataset_type == "PointCloud":
         return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, **kwargs)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))

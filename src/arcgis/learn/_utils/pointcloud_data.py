@@ -41,6 +41,8 @@ from fastprogress import master_bar, progress_bar
 import glob
 import importlib
 import random
+import sys
+import warnings
 
 def try_import(module):
     try:
@@ -289,7 +291,8 @@ def prepare_las_data(root,
                        grid_size=1.0,
                        blocks_per_file=2048,
                        folder_names=['train', 'val'],
-                       segregate=True
+                       segregate=True,
+                       **kwargs
                        ):
     try_import("h5py")
     import h5py                       
@@ -502,7 +505,9 @@ def prepare_las_data(root,
         with open(output_path / 'meta.json', 'w') as f:
             json.dump(meta_file, f)
 
-    print('Export finished.')
+    if kwargs.get('print_it', True):
+        print('Export finished.')
+
     return output_path
 
 ## Segregated data ItemList
@@ -556,6 +561,7 @@ PointCloudItemList._label_cls = PointCloudLabelList
 ## Prepare data called in _data.py
 
 def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type='PointCloud', **kwargs):
+    databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     if (path / 'Statistics.json').exists():
         dataset_type = "PointCloud"
     else:
@@ -585,8 +591,8 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         train_sampler = SubsetRandomSampler(train_indices)
         val_sampler = SubsetRandomSampler(val_indices)
 
-        train_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=train_sampler)
-        valid_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=val_sampler)
+        train_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=train_sampler, **databunch_kwargs)
+        valid_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=val_sampler, **databunch_kwargs)
         device = get_device()
         data = DataBunch(train_dl, valid_dl, device=device)
         data.show_batch = types.MethodType(show_point_cloud_batch, data)
@@ -598,7 +604,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         val_idxs = [i for i,p in enumerate(src.items) if p.parent.name == 'val']
         src = src.split_by_idxs(train_idxs, val_idxs)\
             .label_from_func(lambda x: x)
-        data = src.databunch(bs=batch_size)
+        data = src.databunch(bs=batch_size, **databunch_kwargs)
         with open(Path(path) / 'meta.json', 'r') as f:
             data.meta = json.load(f)
         data.c = data.meta['num_classes']
@@ -705,9 +711,11 @@ def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes):
     return false_positives, true_positives, false_negatives
 
 def calculate_metrics(false_positives, true_positives, false_negatives):
-    precision = np.divide(true_positives, np.add(true_positives, false_positives))
-    recall = np.divide(true_positives, np.add(true_positives, false_negatives))
-    f_1 = np.multiply(2.0, np.divide(np.multiply(precision, recall), np.add(precision, recall)))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        precision = np.divide(true_positives, np.add(true_positives, false_positives))
+        recall = np.divide(true_positives, np.add(true_positives, false_negatives))
+        f_1 = np.multiply(2.0, np.divide(np.multiply(precision, recall), np.add(precision, recall)))
     return precision, recall, f_1
 
 def get_pred_prefixes(datafolder):
@@ -758,13 +766,15 @@ def inference_las(path, pointcnn_model, out_path=None):
     import h5py    
     ## Export data
     path = Path(path)
+    out_path = Path(out_path)
     prepare_las_data(path.parent,
                      block_size=pointcnn_model._data.block_size[0],
                      max_point_num=pointcnn_model._data.max_point,
                      output_path=path.parent,
                      extra_features=pointcnn_model._data.extra_features,
                      folder_names=[path.stem],
-                     segregate=False
+                     segregate=False,
+                     print_it=False
     )
     
     if out_path is None:
@@ -825,7 +835,7 @@ def inference_las(path, pointcnn_model, out_path=None):
         if not os.path.exists(os.path.join(out_path)):
             os.makedirs(os.path.join(out_path))
         pred_list = [pred for pred in os.listdir(out_path)
-                    if category in pred  and pred.split(".")[0].split("_")[-1] == 'pred']
+                    if category in pred and pred.split(".")[0].split("_")[-1] == 'pred' and pred[-3:] != 'las']
 
         merged_label = None
         merged_confidence = None
@@ -948,7 +958,6 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
                 
         pc = np.concatenate(pc, axis=0)
         labels = np.concatenate(labels, axis=0)
-        pred_class = np.zeros_like(labels)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
         sample_idxs = labels!=0
         sampled_pc = pc[sample_idxs]
