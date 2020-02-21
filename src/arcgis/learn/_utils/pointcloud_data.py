@@ -42,6 +42,7 @@ import glob
 import importlib
 import random
 import sys
+import warnings
 
 def try_import(module):
     try:
@@ -290,7 +291,8 @@ def prepare_las_data(root,
                        grid_size=1.0,
                        blocks_per_file=2048,
                        folder_names=['train', 'val'],
-                       segregate=True
+                       segregate=True,
+                       **kwargs
                        ):
     try_import("h5py")
     import h5py                       
@@ -503,7 +505,9 @@ def prepare_las_data(root,
         with open(output_path / 'meta.json', 'w') as f:
             json.dump(meta_file, f)
 
-    print('Export finished.')
+    if kwargs.get('print_it', True):
+        print('Export finished.')
+
     return output_path
 
 ## Segregated data ItemList
@@ -707,9 +711,11 @@ def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes):
     return false_positives, true_positives, false_negatives
 
 def calculate_metrics(false_positives, true_positives, false_negatives):
-    precision = np.divide(true_positives, np.add(true_positives, false_positives))
-    recall = np.divide(true_positives, np.add(true_positives, false_negatives))
-    f_1 = np.multiply(2.0, np.divide(np.multiply(precision, recall), np.add(precision, recall)))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        precision = np.divide(true_positives, np.add(true_positives, false_positives))
+        recall = np.divide(true_positives, np.add(true_positives, false_negatives))
+        f_1 = np.multiply(2.0, np.divide(np.multiply(precision, recall), np.add(precision, recall)))
     return precision, recall, f_1
 
 def get_pred_prefixes(datafolder):
@@ -760,13 +766,15 @@ def inference_las(path, pointcnn_model, out_path=None):
     import h5py    
     ## Export data
     path = Path(path)
+    out_path = Path(out_path)
     prepare_las_data(path.parent,
                      block_size=pointcnn_model._data.block_size[0],
                      max_point_num=pointcnn_model._data.max_point,
                      output_path=path.parent,
                      extra_features=pointcnn_model._data.extra_features,
                      folder_names=[path.stem],
-                     segregate=False
+                     segregate=False,
+                     print_it=False
     )
     
     if out_path is None:
@@ -827,7 +835,7 @@ def inference_las(path, pointcnn_model, out_path=None):
         if not os.path.exists(os.path.join(out_path)):
             os.makedirs(os.path.join(out_path))
         pred_list = [pred for pred in os.listdir(out_path)
-                    if category in pred  and pred.split(".")[0].split("_")[-1] == 'pred']
+                    if category in pred and pred.split(".")[0].split("_")[-1] == 'pred' and pred[-3:] != 'las']
 
         merged_label = None
         merged_confidence = None
@@ -950,7 +958,6 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
                 
         pc = np.concatenate(pc, axis=0)
         labels = np.concatenate(labels, axis=0)
-        pred_class = np.zeros_like(labels)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
         sample_idxs = labels!=0
         sampled_pc = pc[sample_idxs]
