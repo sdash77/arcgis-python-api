@@ -34,6 +34,8 @@ class TestCloneItems(unittest.TestCase):
         csource = gis_source.content
         for it in csource.search("clone_item_test_*"):
             it.delete()
+        for it in csource.search("test_point_cloning*"):
+            it.delete()      
         isinstance(csource, ContentManager)
         item = csource.add(item_properties={'title' : "clone_item_test_" + f"{int(time.time())}"[:10],
                                             "type":"Feature Collection",
@@ -47,7 +49,9 @@ class TestCloneItems(unittest.TestCase):
                          'tags':['automation', 'erase me', 'python']})
         gis_dest =  GIS(profile=profiles[0], verify_cert=False)
         for it in gis_dest.content.search("clone_item_test_*"):
-            it.delete()           
+            it.delete()        
+        for it in gis_dest.content.search("test_point_cloning*"):
+            it.delete()            
         res = gis_dest.content.clone_items([saved_map])
         assert len(res) > 0
         for i in res:
