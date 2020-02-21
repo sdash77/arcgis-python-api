@@ -425,7 +425,8 @@ class Connection(object):
 
         data = None
         url = resp.url
-        if os.path.isdir(out_path) == False:
+        if out_path and \
+           os.path.isdir(out_path) == False:
             os.makedirs(out_path)
         if file_name is None and \
            resp.headers['Content-Type'].lower().find('json') == -1:
