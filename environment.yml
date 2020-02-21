@@ -32,7 +32,6 @@ dependencies:
 - torchvision=0.3.0
 - pytorch=1.1.0
 - cudatoolkit
-- geopandas
 - requests
 - rtree>=0.8.3
 - pip:
