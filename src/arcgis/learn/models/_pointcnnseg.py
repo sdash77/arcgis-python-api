@@ -2,7 +2,7 @@ from .._data import _raise_fastai_import_error
 
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
-    from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero
+    from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero, AverageMetric
     from .._utils.pointcloud_data import get_device, inference_las, show_results
     from ._unet_utils import is_no_color
     from fastai.basic_train import Learner
@@ -27,7 +27,7 @@ class PointCNN(ArcGISModel):
         self.learn = Learner(data,
                 PointCNNSeg(self.sample_point_num, data.c, data.extra_dim, kwargs.get('encoder_params', None), kwargs.get('dropout', None)),
                 loss_func=CrossEntropyPC(data.c),
-                metrics=[accuracy, accuracy_non_zero],
+                metrics=[AverageMetric(accuracy), AverageMetric(accuracy_non_zero)],
                 callback_fns=[partial(SamplePointsCallback, sample_point_num=self.sample_point_num)])
         self.encoder_params = self.learn.model.encoder_params
 

@@ -41,6 +41,7 @@ from fastprogress import master_bar, progress_bar
 import glob
 import importlib
 import random
+import sys
 
 def try_import(module):
     try:
@@ -556,6 +557,7 @@ PointCloudItemList._label_cls = PointCloudLabelList
 ## Prepare data called in _data.py
 
 def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type='PointCloud', **kwargs):
+    databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     if (path / 'Statistics.json').exists():
         dataset_type = "PointCloud"
     else:
@@ -585,8 +587,8 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         train_sampler = SubsetRandomSampler(train_indices)
         val_sampler = SubsetRandomSampler(val_indices)
 
-        train_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=train_sampler)
-        valid_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=val_sampler)
+        train_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=train_sampler, **databunch_kwargs)
+        valid_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=val_sampler, **databunch_kwargs)
         device = get_device()
         data = DataBunch(train_dl, valid_dl, device=device)
         data.show_batch = types.MethodType(show_point_cloud_batch, data)
@@ -598,7 +600,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         val_idxs = [i for i,p in enumerate(src.items) if p.parent.name == 'val']
         src = src.split_by_idxs(train_idxs, val_idxs)\
             .label_from_func(lambda x: x)
-        data = src.databunch(bs=batch_size)
+        data = src.databunch(bs=batch_size, **databunch_kwargs)
         with open(Path(path) / 'meta.json', 'r') as f:
             data.meta = json.load(f)
         data.c = data.meta['num_classes']
