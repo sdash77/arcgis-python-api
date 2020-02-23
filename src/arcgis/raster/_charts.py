@@ -213,7 +213,7 @@ def temporal_profile(raster, points=[], time_field=None, variables=[],  bands=[0
 
         if plot_properties is None:
             plot_properties = {}
-        if plot_properties=={} or (plot_properties!={} and "figsize" not in plot_properties.keys()):
+        if len(plot_properties)==0 or (len(plot_properties)>0 and "figsize" not in plot_properties.keys()):
             plot_properties.update({"figsize":(15,15)})
         if plot_properties is not None and isinstance(plot_properties,dict):
             #{"figsize":(20,10),"dpi":100,"facecolor":"yellow","edgecolor":"blue","linewidth":10.0,"frameon":False}
@@ -344,7 +344,7 @@ def temporal_profile(raster, points=[], time_field=None, variables=[],  bands=[0
         #print(t1)
         if plot_properties is None:
             plot_properties = {}
-        if plot_properties=={} or (plot_properties!={} and "figsize" not in plot_properties.keys()):
+        if len(plot_properties)==0 or (len(plot_properties)>0 and "figsize" not in plot_properties.keys()):
             plot_properties.update({"figsize":(15,15)})
         if plot_properties is not None and isinstance(plot_properties,dict):
             #{"figsize":(20,10),"dpi":100,"facecolor":"yellow","edgecolor":"blue","linewidth":10.0,"frameon":False}
