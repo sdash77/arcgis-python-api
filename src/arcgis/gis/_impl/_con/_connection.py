@@ -1036,6 +1036,8 @@ class Connection(object):
                                                                          p.path[1:].split('/')[0],)
         if self._portal_connection:
             #self._token_url = token_url
+            if self._portal_connection._auth.lower() == 'home':
+                self._referer = ""
             ptoken = self._portal_connection.token
             postdata = {'serverURL':self._baseurl,
                         'token': ptoken,
@@ -1062,8 +1064,11 @@ class Connection(object):
     #----------------------------------------------------------------------
     def _enterprise_token(self):
         """generates a portal/agol token"""
-        if self._referer is None:
+        if self._referer is None and self._portal_connection is None:
             self._referer = "http"
+        elif self._referer is None and self._portal_connection and \
+             self._portal_connection._auth.lower() == "home":
+            self._referer = ""
         postdata = { 'username': self._username, 'password': self._password,
                      'client': 'referer', 'referer': self._referer,
                      'expiration': self._expiration, 'f': 'json' }
@@ -1373,7 +1378,7 @@ class Connection(object):
             params = {"f" : "json"}
             for pt in parts:
                 try:
-                    #print(pt)
+                    print(pt)
                     res = self.get(root + pt, params=params, add_token=False)
                     if self._token_url is None and \
                        res is not None and \
