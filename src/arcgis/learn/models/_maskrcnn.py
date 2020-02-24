@@ -85,7 +85,7 @@ class MaskRCNN(ArcGISModel):
                 model.transform.image_std = scaled_std_values
         elif self._backbone.__name__ in ['resnet18','resnet34']:
             if self._is_multispectral:
-                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(self._backbone.__name__)['cut'])
                 backbone_small.out_channels = 512
                 model = models.detection.MaskRCNN(
                     backbone_small, 

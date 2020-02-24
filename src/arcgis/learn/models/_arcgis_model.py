@@ -443,12 +443,19 @@ class ArcGISModel(object):
                 backbone = self._orig_backbone.__name__
 
         _emd_template = self._get_emd_params()
+        
+        if isinstance(self._learning_rate, slice):
+            _emd_lr = slice('{0:1.4e}'.format(self._learning_rate.start), '{0:1.4e}'.format(self._learning_rate.stop))
+        elif self._learning_rate is not None:
+            _emd_lr = '{0:1.4e}'.format(self._learning_rate)
+        else:
+            _emd_lr = None
 
         _emd_template["ModelFile"] = path.name
         _emd_template["ImageHeight"] = self._data.chip_size
         _emd_template["ImageWidth"] = self._data.chip_size
         _emd_template["ImageSpaceUsed"] = self._data._image_space_used
-        _emd_template["LearningRate"] = str(self._learning_rate)
+        _emd_template["LearningRate"] = str(_emd_lr)
         _emd_template["ModelName"] = type(self).__name__
 
         if not _emd_template.get("ModelParameters"):
