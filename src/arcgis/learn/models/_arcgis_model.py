@@ -675,9 +675,13 @@ class ArcGISModel(object):
             self.learn.recorder.plot_losses()
             plt.savefig(os.path.join(model_characteristics_dir, 'loss_graph.png'))
             plt.close()
-        self.show_results()
-        plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
-        plt.close()
+
+        if self.__str__() == '<PointCNN>':
+            self.show_results(save_html=True, save_path=model_characteristics_dir)
+        else:
+            self.show_results()
+            plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
+            plt.close()
 
         if hasattr(self, '_save_confusion_matrix'):
             self._save_confusion_matrix(model_characteristics_dir)

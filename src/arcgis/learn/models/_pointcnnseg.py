@@ -72,6 +72,57 @@ class PointCNN(ArcGISModel):
             data.dataset_type = 'PointCloud'                 
 
         return cls(data, **model_params, pretrained_path=str(model_file))
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __repr__(self):
+        return '<%s>' % (type(self).__name__)
+
+    def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False, **kwargs):
+        """
+        Train the model for the specified number of epochs and using the
+        specified learning rates
+        
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        epochs                  Required integer. Number of cycles of training
+                                on the data. Increase it if underfitting.
+        ---------------------   -------------------------------------------
+        lr                      Optional float or slice of floats. Learning rate
+                                to be used for training the model. If ``lr=None``, 
+                                an optimal learning rate is automatically deduced 
+                                for training the model.
+        ---------------------   -------------------------------------------
+        one_cycle               Optional boolean. Parameter to select 1cycle
+                                learning rate schedule. If set to `False` no 
+                                learning rate schedule is used.       
+        ---------------------   -------------------------------------------
+        early_stopping          Optional boolean. Parameter to add early stopping.
+                                If set to 'True' training will stop if validation
+                                loss stops improving for 5 epochs.        
+        ---------------------   -------------------------------------------
+        checkpoint              Optional boolean. Parameter to save the best model
+                                during training. If set to `True` the best model 
+                                based on validation loss will be saved during 
+                                training.
+        ---------------------   -------------------------------------------
+        tensorboard             Optional boolean. Parameter to write the training log. 
+                                If set to 'True' the log will be saved at 
+                                <dataset-path>/training_log which can be visualized in
+                                tensorboard. Required tensorboardx version=1.7 (Experimental support).
+
+                                The default value is 'False'.
+        =====================   ===========================================
+        """
+        self._check_requisites()
+
+        if lr is None:
+            print('Finding optimum learning rate.')
+            lr = self.lr_find(allow_plot=False)
+        
+        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs)
         
     @property
     def _model_metrics(self):
@@ -93,9 +144,7 @@ class PointCNN(ArcGISModel):
         _emd_template = {"DataAttributes" : {}, "ModelParameters" : {}}
         _emd_template["Framework"] = "N/A"
         _emd_template["ModelConfiguration"] = "N/A"
-        # _emd_template["InferenceFunction"] = "N/A"
         _emd_template["ExtractBands"] = "N/A"
-        print(_emd_template)
         _emd_template["ModelParameters"]["encoder_params"] = self.encoder_params
         _emd_template["ModelParameters"]["sample_point_num"] = self.sample_point_num
 

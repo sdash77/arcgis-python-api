@@ -44,6 +44,14 @@ import random
 import sys
 import warnings
 
+def try_imports(list_of_modules):
+    ## Not a generic function.
+    try:
+        for module in list_of_modules:
+            importlib.import_module(module)
+    except Exception as e:
+        raise Exception(f"This function requires {' '.join(modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy=1.6.0'")
+
 def try_import(module):
     try:
         importlib.import_module(module)
@@ -53,10 +61,9 @@ def try_import(module):
         elif module == 'laspy':
             raise Exception("This function requires laspy. Install it using 'pip install laspy==1.6.0'")
         elif module == 'h5py':
-            raise Exception(f"This function requires {module}. Install it using 'conda install {module}=2.10.0'")
+            raise Exception(f"This function requires h5py. Install it using 'conda install h5py=2.10.0'")
         else:
             raise Exception(f"This function requires {module}. Please install it in your environment.")
-
 
 def pad_tensor(cur_tensor, max_points, to_float=True):
     cur_points = cur_tensor.shape[0]
@@ -248,7 +255,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=
         
         scene=dict(aspectmode='data')
         layout = go.Layout(
-            width=kwargs.get('width', 512),
+            width=kwargs.get('width', 750),
             height=kwargs.get('height', 512),
             scene = scene)
 
@@ -561,6 +568,7 @@ PointCloudItemList._label_cls = PointCloudLabelList
 ## Prepare data called in _data.py
 
 def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type='PointCloud', **kwargs):
+    try_imports(['h5py', 'plotly', 'laspy'])
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     if (path / 'Statistics.json').exists():
         dataset_type = "PointCloud"
@@ -907,8 +915,13 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
     try_import("h5py")
     try_import('plotly')
     import h5py    
+    import plotly
     import plotly.graph_objects as go
     import random
+    
+    save_html = kwargs.get('save_html', False)
+    save_path = kwargs.get('save_path', False)
+
     rows = min(rows, self._data.batch_size)
     color_mapping = self._data.color_mapping if color_mapping is None else np.array(color_mapping) / 255
 
@@ -935,7 +948,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         pred_class = []
         pred_confidence = []
         for nn, i in enumerate(idxs):
-            print(f'{nn+1}/{len(idxs)}', end='\r')
+            # print(f'Running Show Results: Processing {nn+1} of {len(idxs)} blocks.', end='\r')
             current_block = i['unnormalized_data'][:, :3]
             data_num = i['data_num'][()] 
             data = i['data'][:] 
@@ -992,7 +1005,13 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
             height=kwargs.get('width', 512)
         )
 
-        fig.show()
+        if save_html:
+            save_path = Path(save_path)
+            plotly.io.write_html(fig, str(save_path / 'show_results.html'))
+            fig.write_image(str(save_path / 'show_results.png'))
+            return
+        else:
+            fig.show()
 
         if idx == rows-1:
             break
