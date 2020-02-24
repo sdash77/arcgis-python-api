@@ -1,3 +1,8 @@
+**Current Version:** [![Anaconda-Server Badge](https://anaconda.org/esri/arcgis/badges/version.svg)](https://anaconda.org/esri/arcgis) </br>
+**Last Update:** [![Anaconda-Server Badge](https://anaconda.org/esri/arcgis/badges/latest_release_relative_date.svg)](https://anaconda.org/esri/arcgis) </br>
+**Anaconda Total Downloads:** [![Anaconda-Server Badge](https://anaconda.org/esri/arcgis/badges/downloads.svg)](https://anaconda.org/esri/arcgis) </br>
+**PyPI Downloads:** ![PyPI - Downloads](https://img.shields.io/pypi/dm/arcgis?style=flat-square) </br>
+
 # Vision
  
 [ **A powerful Python library for spatial analysis, mapping and GIS** ](https://developers.arcgis.com/python/)
