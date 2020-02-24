@@ -1378,7 +1378,7 @@ class Connection(object):
             params = {"f" : "json"}
             for pt in parts:
                 try:
-                    print(pt)
+                    #print(pt)
                     res = self.get(root + pt, params=params, add_token=False)
                     if self._token_url is None and \
                        res is not None and \
