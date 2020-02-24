@@ -59,13 +59,16 @@ def _flatten_list(*unpacked_list):
 
 def _get_extent(item):
     from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-    from arcgis.raster import ImageryLayer
+    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster
     from arcgis.gis import Layer
     from arcgis.gis import Item
     from arcgis._impl.common._mixins import PropertyMap
     from arcgis.mapping import MapImageLayer, VectorTileLayer
     from pandas import DataFrame
 
+    if isinstance(item, Raster):
+        if isinstance(item._engine_obj, _ImageServerRaster):
+            item=item._engine_obj
     if isinstance(item, Item):
         return list(map(_get_extent, item.layers))
     elif isinstance(item, list):
@@ -869,12 +872,16 @@ class MapView(widgets.DOMWidget):
 
     def _add_layer_to_widget(self, item, options):
         from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-        from arcgis.raster import ImageryLayer
+        from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping import MapImageLayer, VectorTileLayer
         from pandas import DataFrame
+
+        if isinstance(item, Raster):
+            if isinstance(item._engine_obj, _ImageServerRaster):
+                item=item._engine_obj
 
         if isinstance(item, Item):
             try:
@@ -911,7 +918,8 @@ class MapView(widgets.DOMWidget):
             else:
                 raise Exception('Could not add DataFrame to map it is not a spatially enabled DataFrame')
         elif isinstance(item, FeatureSet):
-            fc = FeatureCollection.from_featureset(item)
+            fset_symbol = options['symbol'] if options and 'symbol' in options else None
+            fc = FeatureCollection.from_featureset(item, symbol=fset_symbol)
             self._add_layer_to_widget(fc, options)
 
         elif isinstance(item, dict):
@@ -1017,12 +1025,16 @@ class MapView(widgets.DOMWidget):
         that would exist in self.layers
         """
         from arcgis.features import FeatureSet, Feature, FeatureCollection
-        from arcgis.raster import ImageryLayer
+        from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster
         from arcgis.gis import Layer
         from arcgis.gis import Item
         from arcgis._impl.common._mixins import PropertyMap
 
         output_layers = []
+        if isinstance(arg, Raster):
+            if isinstance(arg._engine_obj, _ImageServerRaster):
+                arg=arg._engine_obj
+
         if isinstance(arg, Layer):
             output_layers.append(arg)
         elif isinstance(arg, Item):

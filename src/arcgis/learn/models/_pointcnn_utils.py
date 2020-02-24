@@ -6,6 +6,12 @@ import torch.nn.functional as F
 from fastai.callbacks import LearnerCallback
 from torch_geometric.nn import fps, knn
 
+# For AverageMetric callback.
+from fastai.callback import Callback
+from fastai.core import first_el , is_listy
+from fastai.torch_core import add_metrics, num_distrib
+import torch.distributed as dist
+
 def farthest_point_sample(pts, npoint):
     """
     Input:
@@ -248,7 +254,7 @@ class SamplePointsCallback(LearnerCallback):
         indices = torch.tensor(get_indices(batch, self.sample_point_num, point_nums.long())).to(last_input.device)
         
         ## Get indices in the correct shape to be used for indexing
-        indices = indices.view(-1, 2)
+        indices = indices.view(-1, 2).long()
 
         ##  sample points from all the input and output points
         last_input = last_input[indices[:, 0], indices[:, 1]].view(batch, self.sample_point_num, num_features).contiguous()  ## batch, self.sample_point_num, num_features                
@@ -410,4 +416,36 @@ def accuracy_non_zero(pred, target):
     target = target.contiguous()
     pred = pred.argmax(dim=-1)
     mask = target != 0
-    return (pred[mask] == target[mask]).float().mean()
+    accuracy_value = (pred[mask] == target[mask]).float().mean()
+    return accuracy_value
+
+## Redefines AverageMetric Callback so that it handle nan values and does not compute average on those.
+class AverageMetric(Callback):
+    "Wrap a `func` in a callback for metrics computation."
+    def __init__(self, func):
+        # If func has a __name__ use this one else it should be a partial
+        name = func.__name__ if hasattr(func, '__name__') else func.func.__name__
+        self.func, self.name = func, name
+        self.world = num_distrib()
+
+    def on_epoch_begin(self, **kwargs):
+        "Set the inner value to 0."
+        self.val, self.count = 0.,0
+
+    def on_batch_end(self, last_output, last_target, **kwargs):
+        "Update metric computation with `last_output` and `last_target`."
+        if not is_listy(last_target): last_target=[last_target]
+        val = self.func(last_output, *last_target)
+        ## If nan do not increase counter and return
+        if torch.isnan(val).tolist():
+            return
+        self.count += first_el(last_target).size(0)
+        if self.world:
+            val = val.clone()
+            dist.all_reduce(val, op=dist.ReduceOp.SUM)
+            val /= self.world
+        self.val += first_el(last_target).size(0) * val.detach().cpu()
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        "Set the final result in `last_metrics`."
+        return add_metrics(last_metrics, self.val/self.count)

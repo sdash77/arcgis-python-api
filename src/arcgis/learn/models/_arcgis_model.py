@@ -45,6 +45,14 @@ losses_skipped = 5
 trailing_losses_skipped = 5
 model_characteristics_folder = 'ModelCharacteristics'
 
+if HAS_FASTAI:
+    # Declare the family of backbones to be unpacked and used by different models as supported types
+    _vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__,
+                        models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
+    _resnet_family = [models.resnet18.__name__, models.resnet34.__name__, models.resnet50.__name__,
+                           models.resnet101.__name__, models.resnet152.__name__]
+    _densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__,
+                             models.densenet201.__name__]
 
 @contextlib.contextmanager
 def nostdout():
@@ -238,13 +246,6 @@ class ArcGISModel(object):
         self._data = data
         self._learning_rate = None
 
-        # Declare the family of backbones to be unpacked and used by different models as supported types
-        self._vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__, 
-                            models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
-        self._resnet_family = [models.resnet18.__name__, models.resnet34.__name__, models.resnet50.__name__, 
-                               models.resnet101.__name__, models.resnet152.__name__]
-        self._densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__, 
-                                 models.densenet201.__name__]
 
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"
@@ -443,12 +444,19 @@ class ArcGISModel(object):
                 backbone = self._orig_backbone.__name__
 
         _emd_template = self._get_emd_params()
+        
+        if isinstance(self._learning_rate, slice):
+            _emd_lr = slice('{0:1.4e}'.format(self._learning_rate.start), '{0:1.4e}'.format(self._learning_rate.stop))
+        elif self._learning_rate is not None:
+            _emd_lr = '{0:1.4e}'.format(self._learning_rate)
+        else:
+            _emd_lr = None
 
         _emd_template["ModelFile"] = path.name
         _emd_template["ImageHeight"] = self._data.chip_size
         _emd_template["ImageWidth"] = self._data.chip_size
         _emd_template["ImageSpaceUsed"] = self._data._image_space_used
-        _emd_template["LearningRate"] = str(self._learning_rate)
+        _emd_template["LearningRate"] = str(_emd_lr)
         _emd_template["ModelName"] = type(self).__name__
 
         if not _emd_template.get("ModelParameters"):
@@ -668,9 +676,13 @@ class ArcGISModel(object):
             self.learn.recorder.plot_losses()
             plt.savefig(os.path.join(model_characteristics_dir, 'loss_graph.png'))
             plt.close()
-        self.show_results()
-        plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
-        plt.close()
+
+        if self.__str__() == '<PointCNN>':
+            self.show_results(save_html=True, save_path=model_characteristics_dir)
+        else:
+            self.show_results()
+            plt.savefig(os.path.join(model_characteristics_dir, 'show_results.png'))
+            plt.close()
 
         if hasattr(self, '_save_confusion_matrix'):
             self._save_confusion_matrix(model_characteristics_dir)

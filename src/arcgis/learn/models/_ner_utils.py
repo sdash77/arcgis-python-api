@@ -287,6 +287,8 @@ class DatabunchNER():
         self._address_tag=address_tag
         self._has_address=True
         self.batch_size=batch_size
+        if self.batch_size>len(self.train_ds):
+            return logging.error(f"Number of training data items ({len(self.train_ds)}) is less than the batch size ({self.batch_size}). Please get more training data or lower the batch size")        
         if self._address_tag not in self.entities:
             self._has_address=False
             return logging.warning("No Address tag found in your data.\n\

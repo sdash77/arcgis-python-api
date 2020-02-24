@@ -5,7 +5,7 @@ from ._arcgis_model import ArcGISModel
 
 try:
     from fastai.basic_train import Learner
-    from ._arcgis_model import SaveModelCallback
+    from ._arcgis_model import SaveModelCallback, _resnet_family, _densenet_family, _vgg_family
     from ._unet_utils import is_no_color, predict_batch, show_results_multispectral
     import torch
     from torch import nn
@@ -97,13 +97,14 @@ class PSPNetClassifier(ArcGISModel):
             self.learn.loss_func = self._psp_loss
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
-        if pretrained_path is not None:
-            self.load(pretrained_path)
-
         self.learn.model = self.learn.model.to(self._device)
         
         self.freeze()
         self._arcgis_init_callback() # make first conv weights learnable
+
+        if pretrained_path is not None:
+            self.load(pretrained_path)
+
 
     def __str__(self):
         return self.__repr__()
@@ -117,7 +118,11 @@ class PSPNetClassifier(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """        
-        return [*self._resnet_family, *self._densenet_family, *self._vgg_family]
+        return PSPNetClassifier._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family, *_densenet_family, *_vgg_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -198,7 +203,8 @@ class PSPNetClassifier(ArcGISModel):
                 p.requires_grad = False
 
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.      
-  
+        self.learn.create_opt(lr=3e-3)
+
     def unfreeze(self):
         """
         Unfreezes the earlier layers of the model for fine-tuning.

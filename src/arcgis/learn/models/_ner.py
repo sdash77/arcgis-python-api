@@ -93,7 +93,7 @@ class EntityRecognizer(ArcGISModel):
         trained = self._trained #preserving the current state of the model for later load
         recorder = self.recorder #preserving the current state of the model for later load
         self.recorder.losses,self.recorder.val_loss,self.recorder.lrs = [],[],[] #resetting the recorder
-        lrs = even_mults(start_lr,end_lr,12)
+        lrs = even_mults(start_lr,end_lr,14)
         epochs = int(np.ceil(num_it/(len(self.data.train_ds)/self.data.batch_size)))
         for lr in lrs:
             self.fit(lr=lr, epochs=epochs, from_lr_find=True)
@@ -180,35 +180,39 @@ class EntityRecognizer(ArcGISModel):
             mb = master_bar(range(epochs))
             mb.write(['epoch','losses','val_loss'],table=True)
             losses_list = []
+            
             for itn in mb:
                 random.shuffle(TRAIN_DATA)
                 batches = minibatch(TRAIN_DATA, size=batch_size)
-                
                 losses = {}
-                
                 batch_index = 0
                 for _ in progress_bar(range(len(TRAIN_DATA)//batch_size),parent=mb):
                     batch_index += 1
                     batch = next(batches)
                     texts, annotations = zip(*batch)
                     nlp.update(texts, annotations, sgd=self.optimizer, drop=0.35, losses=losses)
-                    losses_list.append(losses['ner']//(len(batch)*batch_index))
+                    processed_len=(len(batch)*batch_index)
+                    losses_list.append(losses['ner']//processed_len)
                     if 'from_lr_find' in kwargs and len(self.recorder.losses)>0:  #'from_lr_find' kwarg specifies that the fit is call from lr_find.
                         if np.mean(losses_list) > 3*np.min(self.recorder.losses): #break the epoch if loss overshoots
                                 break  
                 if VAL_DATA:
+
                     val_batches = minibatch(VAL_DATA, size=batch_size)
                     val_losses = {}
                     val_loss_list = []
+                    batch_index = 0
                     for val_batch in val_batches:
+                        batch_index += 1
+                        processed_len_val=batch_size*(batch_index)
                         val_text, val_annotations = zip(*val_batch)
                         nlp.update(val_text,val_annotations, sgd = None, losses = val_losses)
-                        val_loss_list.append(np.min(losses['ner']//len(val_batch)))
-                    self.recorder.val_loss.append(val_loss_list)    
+                        val_loss_i=val_losses['ner']//(processed_len_val)
+                        val_loss_list.append(val_loss_i)
+                    self.recorder.val_loss.append(np.min(val_loss_list))    
 
-                losses = losses['ner']/len(TRAIN_DATA)
-                val_loss = val_losses['ner']/len(VAL_DATA)
-                mb.write([itn,round(losses,2),round(val_loss,2)],table=True)
+                losses = losses['ner']/processed_len
+                mb.write([itn,round(losses,2),round(val_loss_i,2)],table=True)
             self.recorder.losses.append(np.min(losses_list))
             self.recorder.lrs.append(self.optimizer.alpha)  
 
@@ -284,7 +288,7 @@ class EntityRecognizer(ArcGISModel):
         name_or_path            Required string. Path of the emd file.
         =====================   ===========================================
         """
-        if '\\' in name_or_path or '/' in name_or_path:
+        if '\\' in str(name_or_path) or '/' in str(name_or_path):
             name_or_path=name_or_path
             model_path = Path(name_or_path).parent
         else:
@@ -336,7 +340,6 @@ class EntityRecognizer(ArcGISModel):
         This function post processes the output dataframe from extract_entities function and returns a processed dataframe.
         """
         processed_df = pd.DataFrame(columns = unprocessed_df.columns)
-        print(unprocessed_df.columns)
         for col in unprocessed_df.columns: ## converting all list columns to string
             if pd.Series(filter(lambda x: x != '',unprocessed_df[col])).apply(isinstance,args = ([str])).sum() == 0: ## split if this condition
                 processed_df[col] = unprocessed_df[col].apply(",".join)  #join the list to string and copy to the processed df

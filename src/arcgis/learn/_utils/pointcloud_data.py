@@ -41,6 +41,16 @@ from fastprogress import master_bar, progress_bar
 import glob
 import importlib
 import random
+import sys
+import warnings
+
+def try_imports(list_of_modules):
+    ## Not a generic function.
+    try:
+        for module in list_of_modules:
+            importlib.import_module(module)
+    except Exception as e:
+        raise Exception(f"This function requires {' '.join(modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy=1.6.0'")
 
 def try_import(module):
     try:
@@ -51,10 +61,9 @@ def try_import(module):
         elif module == 'laspy':
             raise Exception("This function requires laspy. Install it using 'pip install laspy==1.6.0'")
         elif module == 'h5py':
-            raise Exception(f"This function requires {module}. Install it using 'conda install {module}=2.10.0'")
+            raise Exception(f"This function requires h5py. Install it using 'conda install h5py=2.10.0'")
         else:
             raise Exception(f"This function requires {module}. Please install it in your environment.")
-
 
 def pad_tensor(cur_tensor, max_points, to_float=True):
     cur_points = cur_tensor.shape[0]
@@ -246,7 +255,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=
         
         scene=dict(aspectmode='data')
         layout = go.Layout(
-            width=kwargs.get('width', 512),
+            width=kwargs.get('width', 750),
             height=kwargs.get('height', 512),
             scene = scene)
 
@@ -289,7 +298,8 @@ def prepare_las_data(root,
                        grid_size=1.0,
                        blocks_per_file=2048,
                        folder_names=['train', 'val'],
-                       segregate=True
+                       segregate=True,
+                       **kwargs
                        ):
     try_import("h5py")
     import h5py                       
@@ -502,7 +512,9 @@ def prepare_las_data(root,
         with open(output_path / 'meta.json', 'w') as f:
             json.dump(meta_file, f)
 
-    print('Export finished.')
+    if kwargs.get('print_it', True):
+        print('Export finished.')
+
     return output_path
 
 ## Segregated data ItemList
@@ -556,6 +568,8 @@ PointCloudItemList._label_cls = PointCloudLabelList
 ## Prepare data called in _data.py
 
 def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type='PointCloud', **kwargs):
+    try_imports(['h5py', 'plotly', 'laspy'])
+    databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     if (path / 'Statistics.json').exists():
         dataset_type = "PointCloud"
     else:
@@ -585,8 +599,8 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         train_sampler = SubsetRandomSampler(train_indices)
         val_sampler = SubsetRandomSampler(val_indices)
 
-        train_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=train_sampler)
-        valid_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=val_sampler)
+        train_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=train_sampler, **databunch_kwargs)
+        valid_dl = DataLoader(pointcloud_dataset, batch_size=batch_size, sampler=val_sampler, **databunch_kwargs)
         device = get_device()
         data = DataBunch(train_dl, valid_dl, device=device)
         data.show_batch = types.MethodType(show_point_cloud_batch, data)
@@ -598,7 +612,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         val_idxs = [i for i,p in enumerate(src.items) if p.parent.name == 'val']
         src = src.split_by_idxs(train_idxs, val_idxs)\
             .label_from_func(lambda x: x)
-        data = src.databunch(bs=batch_size)
+        data = src.databunch(bs=batch_size, **databunch_kwargs)
         with open(Path(path) / 'meta.json', 'r') as f:
             data.meta = json.load(f)
         data.c = data.meta['num_classes']
@@ -705,9 +719,11 @@ def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes):
     return false_positives, true_positives, false_negatives
 
 def calculate_metrics(false_positives, true_positives, false_negatives):
-    precision = np.divide(true_positives, np.add(true_positives, false_positives))
-    recall = np.divide(true_positives, np.add(true_positives, false_negatives))
-    f_1 = np.multiply(2.0, np.divide(np.multiply(precision, recall), np.add(precision, recall)))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        precision = np.divide(true_positives, np.add(true_positives, false_positives))
+        recall = np.divide(true_positives, np.add(true_positives, false_negatives))
+        f_1 = np.multiply(2.0, np.divide(np.multiply(precision, recall), np.add(precision, recall)))
     return precision, recall, f_1
 
 def get_pred_prefixes(datafolder):
@@ -758,13 +774,15 @@ def inference_las(path, pointcnn_model, out_path=None):
     import h5py    
     ## Export data
     path = Path(path)
+    out_path = Path(out_path)
     prepare_las_data(path.parent,
                      block_size=pointcnn_model._data.block_size[0],
                      max_point_num=pointcnn_model._data.max_point,
                      output_path=path.parent,
                      extra_features=pointcnn_model._data.extra_features,
                      folder_names=[path.stem],
-                     segregate=False
+                     segregate=False,
+                     print_it=False
     )
     
     if out_path is None:
@@ -825,7 +843,7 @@ def inference_las(path, pointcnn_model, out_path=None):
         if not os.path.exists(os.path.join(out_path)):
             os.makedirs(os.path.join(out_path))
         pred_list = [pred for pred in os.listdir(out_path)
-                    if category in pred  and pred.split(".")[0].split("_")[-1] == 'pred']
+                    if category in pred and pred.split(".")[0].split("_")[-1] == 'pred' and pred[-3:] != 'las']
 
         merged_label = None
         merged_confidence = None
@@ -897,8 +915,13 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
     try_import("h5py")
     try_import('plotly')
     import h5py    
+    import plotly
     import plotly.graph_objects as go
     import random
+    
+    save_html = kwargs.get('save_html', False)
+    save_path = kwargs.get('save_path', False)
+
     rows = min(rows, self._data.batch_size)
     color_mapping = self._data.color_mapping if color_mapping is None else np.array(color_mapping) / 255
 
@@ -925,7 +948,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         pred_class = []
         pred_confidence = []
         for nn, i in enumerate(idxs):
-            print(f'{nn+1}/{len(idxs)}', end='\r')
+            # print(f'Running Show Results: Processing {nn+1} of {len(idxs)} blocks.', end='\r')
             current_block = i['unnormalized_data'][:, :3]
             data_num = i['data_num'][()] 
             data = i['data'][:] 
@@ -948,7 +971,6 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
                 
         pc = np.concatenate(pc, axis=0)
         labels = np.concatenate(labels, axis=0)
-        pred_class = np.zeros_like(labels)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
         sample_idxs = labels!=0
         sampled_pc = pc[sample_idxs]
@@ -983,7 +1005,13 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
             height=kwargs.get('width', 512)
         )
 
-        fig.show()
+        if save_html:
+            save_path = Path(save_path)
+            plotly.io.write_html(fig, str(save_path / 'show_results.html'))
+            fig.write_image(str(save_path / 'show_results.png'))
+            return
+        else:
+            fig.show()
 
         if idx == rows-1:
             break
