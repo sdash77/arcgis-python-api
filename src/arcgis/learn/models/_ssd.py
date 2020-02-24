@@ -31,7 +31,7 @@ try:
     from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou, show_results_multispectral
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family
     from ._unet_utils import is_no_color
     from torch.nn import Module as NnModule
     import PIL
@@ -232,8 +232,12 @@ class SingleShotDetector(ArcGISModel):
     def supported_backbones(self):
         """
         Supported torchvision backbones for this model.
-        """        
-        return [*self._resnet_family, *self._densenet_family, *self._vgg_family, models.mobilenet_v2.__name__]
+        """
+        return SingleShotDetector._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family, *_densenet_family, *_vgg_family, models.mobilenet_v2.__name__]
 
     @classmethod
     def from_model(cls, emd_path, data=None):

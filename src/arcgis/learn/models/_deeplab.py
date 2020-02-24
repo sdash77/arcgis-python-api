@@ -7,7 +7,7 @@ from ._arcgis_model import ArcGISModel
 
 try:
     from fastai.basic_train import Learner
-    from ._arcgis_model import SaveModelCallback
+    from ._arcgis_model import SaveModelCallback, _resnet_family, _vgg_family, _densenet_family
     from ._unet_utils import is_no_color, predict_batch, show_results_multispectral
     import torch
     from torch import nn
@@ -111,7 +111,11 @@ class DeepLab(ArcGISModel):
     
     @property
     def supported_backbones(self):
-        return [*self._resnet_family, *self._densenet_family, *self._vgg_family]
+        return DeepLab._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family, *_densenet_family, *_vgg_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):

@@ -29,7 +29,7 @@ try:
     from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
-    from ._arcgis_model import SaveModelCallback
+    from ._arcgis_model import SaveModelCallback, _resnet_family
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd
@@ -128,7 +128,11 @@ class RetinaNet(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """        
-        return [*self._resnet_family]
+        return RetinaNet._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family]
 
     def _get_emd_params(self):
         _emd_template = {}
