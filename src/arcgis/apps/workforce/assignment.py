@@ -214,6 +214,14 @@ class Assignment(FeatureModel):
         delete_assignments(self.project, [self])
 
     @property
+    def app_link(self):
+        if self.project.gis.properties["isPortal"]:
+            portal_url = self.project.gis.properties['portalHostname']
+            return f"Assignment Link: https://{portal_url}/apps/workforce/#/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
+        else:
+            return f"Assignment Link: https://workforce.arcgis.com/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
+    
+    @property
     def attachments(self):
         """Gets the :class:`~arcgis.apps.workforce.managers.AssignmentAttachmentManager` of the assignment"""
         return AssignmentAttachmentManager(self)
