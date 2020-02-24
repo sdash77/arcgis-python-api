@@ -45,13 +45,6 @@ class ServerManager(object):
         from . import ServicesDirectory
         if self._server_list is not None:
             return self._server_list
-        def _form_obj(server, gis, cls):
-            admin_url = server['adminUrl']
-            public_url = server['url']            
-            try:
-                return cls(url=admin_url, gis=gis)
-            except:
-                return cls(url=public_url, gis=gis)
         self._server_list = []
         self._catalog_list = []
         res = self._portal.con.post("portals/self/servers", {"f": "json"})
@@ -86,15 +79,19 @@ class ServerManager(object):
                         self._server_list.append(ms)                        
                 else:
                     try:
-                        c = ServicesDirectory(url=admin_url, portal_connection=self._gis._portal.con)
+                        
+                        c = ServicesDirectory(url=admin_url, 
+                                              portal_connection=self._gis._portal.con)
                         self._server_list.append(c.admin)
                         self._catalog_list.append(c)
                     except:
-                        c = ServicesDirectory(url=public_url, portal_connection=self._gis._portal.con)
+                        c = ServicesDirectory(url=public_url, 
+                                              portal_connection=self._gis._portal.con)
                         self._server_list.append(c.admin)
                         self._catalog_list.append(c)                        
                     
             except:
+                print(server)
                 _log.warning("Could not access the server at " + admin_url)
 
         return self._server_list
