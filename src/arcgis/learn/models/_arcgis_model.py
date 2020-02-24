@@ -45,6 +45,14 @@ losses_skipped = 5
 trailing_losses_skipped = 5
 model_characteristics_folder = 'ModelCharacteristics'
 
+if HAS_FASTAI:
+    # Declare the family of backbones to be unpacked and used by different models as supported types
+    _vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__,
+                        models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
+    _resnet_family = [models.resnet18.__name__, models.resnet34.__name__, models.resnet50.__name__,
+                           models.resnet101.__name__, models.resnet152.__name__]
+    _densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__,
+                             models.densenet201.__name__]
 
 @contextlib.contextmanager
 def nostdout():
@@ -238,13 +246,6 @@ class ArcGISModel(object):
         self._data = data
         self._learning_rate = None
 
-        # Declare the family of backbones to be unpacked and used by different models as supported types
-        self._vgg_family = [models.vgg11.__name__, models.vgg11_bn.__name__, models.vgg13.__name__, models.vgg13_bn.__name__, 
-                            models.vgg16.__name__, models.vgg16_bn.__name__, models.vgg19.__name__, models.vgg19_bn.__name__]
-        self._resnet_family = [models.resnet18.__name__, models.resnet34.__name__, models.resnet50.__name__, 
-                               models.resnet101.__name__, models.resnet152.__name__]
-        self._densenet_family = [models.densenet121.__name__, models.densenet169.__name__, models.densenet161.__name__, 
-                                 models.densenet201.__name__]
 
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"

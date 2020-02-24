@@ -7,7 +7,7 @@ import math
 from .._data import _raise_fastai_import_error
 
 try:
-    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
+    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family
     import torch
     from torchvision import models
     from fastai.vision.learner import unet_learner, cnn_config
@@ -88,7 +88,11 @@ class UnetClassifier(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """        
-        return [*self._resnet_family]
+        return UnetClassifier._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
