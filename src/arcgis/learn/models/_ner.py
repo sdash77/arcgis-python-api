@@ -288,7 +288,7 @@ class EntityRecognizer(ArcGISModel):
         name_or_path            Required string. Path of the emd file.
         =====================   ===========================================
         """
-        if '\\' in name_or_path or '/' in name_or_path:
+        if '\\' in str(name_or_path) or '/' in str(name_or_path):
             name_or_path=name_or_path
             model_path = Path(name_or_path).parent
         else:
