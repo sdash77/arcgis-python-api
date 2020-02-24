@@ -340,7 +340,6 @@ class EntityRecognizer(ArcGISModel):
         This function post processes the output dataframe from extract_entities function and returns a processed dataframe.
         """
         processed_df = pd.DataFrame(columns = unprocessed_df.columns)
-        print(unprocessed_df.columns)
         for col in unprocessed_df.columns: ## converting all list columns to string
             if pd.Series(filter(lambda x: x != '',unprocessed_df[col])).apply(isinstance,args = ([str])).sum() == 0: ## split if this condition
                 processed_df[col] = unprocessed_df[col].apply(",".join)  #join the list to string and copy to the processed df
