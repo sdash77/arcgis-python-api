@@ -446,8 +446,10 @@ class ArcGISModel(object):
         
         if isinstance(self._learning_rate, slice):
             _emd_lr = slice('{0:1.4e}'.format(self._learning_rate.start), '{0:1.4e}'.format(self._learning_rate.stop))
-        else:
+        elif self._learning_rate is not None:
             _emd_lr = '{0:1.4e}'.format(self._learning_rate)
+        else:
+            _emd_lr = None
 
         _emd_template["ModelFile"] = path.name
         _emd_template["ImageHeight"] = self._data.chip_size
