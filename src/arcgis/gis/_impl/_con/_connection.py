@@ -1399,6 +1399,8 @@ class Connection(object):
                     res = ""
                 except json.decoder.JSONDecodeError:
                     res = ""
+                except Exception as e:
+                    res = ""
                 if isinstance(res, dict) and \
                    "currentVersion" in res and \
                    self._token_url:
