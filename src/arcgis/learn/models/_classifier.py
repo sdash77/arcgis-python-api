@@ -27,7 +27,7 @@ try:
     from fastai.basic_train import Learner
     from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
     from fastai.vision.learner import cnn_learner, ClassificationInterpretation, cnn_config
-    from ._arcgis_model import _set_multigpu_callback
+    from ._arcgis_model import _set_multigpu_callback, _resnet_family
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms
     import torch.nn.functional as functional
     import glob
@@ -146,7 +146,11 @@ class FeatureClassifier(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """
-        return [*self._resnet_family, models.mobilenet_v2.__name__]
+        return FeatureClassifier._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family, models.mobilenet_v2.__name__]
 
     def show_results(self, rows=5, **kwargs):
         """
