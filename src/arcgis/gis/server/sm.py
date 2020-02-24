@@ -91,7 +91,6 @@ class ServerManager(object):
                         self._catalog_list.append(c)                        
                     
             except:
-                print(server)
                 _log.warning("Could not access the server at " + admin_url)
 
         return self._server_list
