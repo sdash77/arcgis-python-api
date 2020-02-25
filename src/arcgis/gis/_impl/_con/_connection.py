@@ -28,7 +28,7 @@ from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
 
-__version__ = "2.0.0"
+__version__ = "1.8.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 
@@ -103,7 +103,13 @@ class Connection(object):
         self._portal_connection = kwargs.pop('portal_connection', None) # For Federated Objects (Portal Connection)
         if isinstance(self._portal_connection, GIS):
             self._portal_connection = self._portal_connection._con
-        self._referer = kwargs.pop('referer', 'http')
+        
+        if (self._referer or self._referer is None) and \
+           self._portal_connection and \
+           str(self._portal_connection._auth).lower() == "home":
+            self._referer = None
+        else:
+            self._referer = kwargs.pop('referer', 'http')
 
         self._verify_cert = kwargs.pop("verify_cert", False)#True)
         if self._verify_cert == False:
@@ -154,7 +160,7 @@ class Connection(object):
         elif self._client_id:
             self._product = self._check_product()
             if self._product in ['PORTAL', "AGOL"]:
-                resp = self._session.post("/portals/self", {'f' : 'json'}, add_token=False)
+                resp = self.post("/portals/self", {'f' : 'json'}, add_token=False)
                 issaml = resp.get("samlEnabled", False)
                 isoauth = resp.get("supportsOAuth", False)
             else:
@@ -225,9 +231,20 @@ class Connection(object):
         self._session.stream = True
         self._session.headers.update(self._header)
         self._session.proxies = proxies
-        if self._referer is None:
+        
+        if self._referer is None and\
+           (self._portal_connection and \
+           str(self._portal_connection._auth).lower() == "home"):
             self._referer = "http"
-        self._session.headers.update({'Referer': self._referer})
+            self._session.headers.pop("Referer", None)
+        elif (self._portal_connection and str(self._portal_connection._auth).lower() == "home"):
+            self._referer = "http"
+            self._session.headers.pop("Referer", None)
+        elif self._referer is None:
+            self._referer = 'http'
+            self._session.headers.update({'Referer': self._referer})   
+        else:
+            self._session.headers.update({'Referer': self._referer})   
         if self._custom_auth:
             self._session.auth = self._custom_auth
             self._auth = "CUSTOM"
@@ -1019,6 +1036,8 @@ class Connection(object):
                                                                          p.path[1:].split('/')[0],)
         if self._portal_connection:
             #self._token_url = token_url
+            if self._portal_connection._auth.lower() == 'home':
+                self._referer = ""
             ptoken = self._portal_connection.token
             postdata = {'serverURL':self._baseurl,
                         'token': ptoken,
@@ -1045,8 +1064,11 @@ class Connection(object):
     #----------------------------------------------------------------------
     def _enterprise_token(self):
         """generates a portal/agol token"""
-        if self._referer is None:
+        if self._referer is None and self._portal_connection is None:
             self._referer = "http"
+        elif self._referer is None and self._portal_connection and \
+             self._portal_connection._auth.lower() == "home":
+            self._referer = ""
         postdata = { 'username': self._username, 'password': self._password,
                      'client': 'referer', 'referer': self._referer,
                      'expiration': self._expiration, 'f': 'json' }
@@ -1376,6 +1398,8 @@ class Connection(object):
                 except HTTPError as e:
                     res = ""
                 except json.decoder.JSONDecodeError:
+                    res = ""
+                except Exception as e:
                     res = ""
                 if isinstance(res, dict) and \
                    "currentVersion" in res and \

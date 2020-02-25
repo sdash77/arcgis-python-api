@@ -312,6 +312,7 @@ class GIS(object):
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
+                self._portal.con._session.headers.pop("Referer", None)
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
@@ -5404,7 +5405,7 @@ class ResourceManager(object):
         resp = self._portal.con.get(query_url, params)
         resp_resources = resp.get('resources')
         count = int(resp.get('num'))
-        next_start = int(resp.get('nextStart'))
+        next_start = int(resp.get('nextStart', -999)) # added for back support for portal (10.4.1)
 
         # loop through pages
         while next_start > 0:
@@ -5415,7 +5416,9 @@ class ResourceManager(object):
             resp2 = self._portal.con.get(query_url, params2)
             resp_resources.extend(resp2.get('resources'))
             count += int(resp2.get('num'))
-            next_start = int(resp2.get('nextStart'))
+            next_start = int(resp2.get('nextStart', -999))# added for back support for portal (10.4.1)
+            if next_start == -999:
+                break
 
         return resp_resources
 
