@@ -5919,7 +5919,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
         :return: numpy.ndarray. If self is a multidimensional raster, the array has shape (slices, height, width, bands)
         """
-        from . import Lerc
+        import lerc
 
         extent = self.extent
         xmin, ymin, xmax, ymax = extent['xmin'], extent['ymin'], extent['xmax'], extent['ymax']
@@ -5967,7 +5967,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
         if not isinstance(res, bytes):
             raise RuntimeError(res)
-        result, data, valid_mask = Lerc.decode(res)
+        result, data, valid_mask = lerc.decode(res)
         if result != 0:
             raise RuntimeError('decoding bytes from imagery service failed.')
 
