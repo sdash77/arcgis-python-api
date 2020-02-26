@@ -4324,7 +4324,7 @@ class Raster():
 
     ====================================     ====================================================================
     **Argument**                             **Description**
-    ------------------------------------     --------------------------------------------------------------------s
+    ------------------------------------     --------------------------------------------------------------------
     path                                     Required string. The input raster.
 
                                              Example:
@@ -4332,29 +4332,76 @@ class Raster():
 
                                                 path = "https://sample.arcgisonline.com/arcgis/rest/services/CharlotteLAS/ImageServer"
     ------------------------------------     --------------------------------------------------------------------
-    is_multidimensional                      Optional boolean. Determines whether the input raster will be treated as multidimensional. 
+    is_multidimensional                      Optional boolean. Determines whether the input raster will be 
+                                             treated as multidimensional. 
 
-                                             Specify True if the input is multidimensional and should be processed 
-                                             as multidimensional, where processing occurs for every slice in the dataset. 
-                                             Specify False if the input is not multidimensional, or if it is 
-                                             multidimensional and should not be processed as multidimensional.
+                                             Specify True if the input is multidimensional and should be
+                                             processed as multidimensional, where processing occurs for every 
+                                             slice in the dataset. Specify False if the input is not
+                                             multidimensional, or if it is multidimensional and should not be
+                                             processed as multidimensional.
 
                                              Default is False
     ------------------------------------     --------------------------------------------------------------------
+    extent                                   Optional dict. If the input raster's extent cannot be automatically
+                                             inferred, pass in a dictionary representing the raster's extent
+                                             for when viewing on a :class:`~arcgis.widgets.MapView` widget.
+
+                                             Example:
+                                                | { "xmin" : -74.22655,
+                                                |   "ymin" : 40.712216,
+                                                |   "xmax" : -74.12544,
+                                                |   "ymax" : 40.773941,
+                                                |   "spatialReference" :
+                                                |       { "wkid" : 4326 }
+                                                | }
+    ------------------------------------     --------------------------------------------------------------------
+    cmap                                     Optional str. When displaying a 1 band raster in a
+                                             :class:`~arcgis.widgets.MapView` widget, what matplotlib colormap
+                                             to apply to the raster. See ``arcgis.mapping.display_colormaps()`` for
+                                             a list of compatible values.
+    ------------------------------------     --------------------------------------------------------------------
+    opacity                                  Optional number. When displaying a raster in a 
+                                             :class:`~arcgis.widgets.MapView` widget, what opacity to apply. 0
+                                             is completely transparent, 1 is completely opaque.
+                                             Default: 1
+    ------------------------------------     --------------------------------------------------------------------
     engine                                   Optional string. The backend engine to be used.
                                              Possible options:
-                                                - "arcpy" : Raster class would use arcpy engine for processing. 
+                                                - "arcpy" : Use the arcpy engine for processing. 
 
-                                                - "image_server" : Raster class would use  image server engine
-                                                                   for processing.
+                                                - "image_server" : Use the Image Server engine for processing.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional. GIS of the Raster object. 
     ====================================     ====================================================================
 
+    .. code-block:: python
 
+        # Useage: Overlay local rasters on the `MapView` widget
+        map = gis.map()
+
+        # Overlay a local .tif file
+        raster = Raster(r"./data/Amberg.tif")
+        map.add_layer(raster)
+
+        # Overlay a 1-channel .gdb file with the "Orange Red" colormap at 85% opacity
+        raster = Raster("./data/madison_wi.gdb/Impervious_Surfaces",
+                        cmap = "OrRd",
+                        opacity = 0.85)
+        map.add_layer(raster)
+
+        # Overlay a local .jpg file by manually specifying its extent
+        raster = Raster("./data/newark_nj_1922.jpg",
+                        extent = {"xmin":-74.22655,
+                                  "ymin":40.712216,
+                                  "xmax":-74.12544,
+                                  "ymax":40.773941,
+                                  "spatialReference":{"wkid":4326}})
+        map.add_layer(raster)
 
     """
-    def __init__(self, path, is_multidimensional=False,  engine=None, gis=None):
+    def __init__(self, path, is_multidimensional=False, extent = None, cmap = None,
+                 opacity = None, engine=None, gis=None):
         self._engine_obj=None
         if not isinstance(is_multidimensional, bool):
             raise TypeError('is_multidimensional must be boolean type')
@@ -4379,6 +4426,13 @@ class Raster():
         if self._engine_obj is None and self._engine is not None:
             self._engine_obj=self._engine(path, is_multidimensional, gis)
 
+        if extent:
+            self.extent = extent
+        if cmap:
+            self.cmap = cmap
+        if opacity:
+            self.opacity = opacity
+
     #def __iter__(self):
     #    return(self._engine_obj.__iter__())
 
@@ -4396,6 +4450,41 @@ class Raster():
     def extent(self):
         """Area of interest. Used for displaying the imagery layer when queried"""
         return self._engine_obj.extent
+
+    @extent.setter
+    def extent(self, value):
+        self._engine_obj.extent = value
+
+    _cmap = None
+    @property
+    def cmap(self):
+        """When displaying a 1 band raster in a :class:`~arcgis.widgets.MapView`
+        widget, what matplotlib colormap to apply to the raster.
+
+        Value must be a `str`. See `~arcgis.mapping.display_colormaps()` for
+        a list of compatible values.
+        """
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, value):
+        if isinstance(value, str):
+            self._cmap = value
+        else:
+            raise Exception("`cmap` must be of type `str`")
+
+    _opacity = 1
+    @property
+    def opacity(self):
+        """When displaying in a :class:`~arcgis.widgets.MapView` widget, what
+        opacity to apply. 0 is completely transparent, 1 is completely opaque.
+        Default: 1
+        """
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, value):
+        self._opacity = value
 
     @property
     def pixel_type(self):
@@ -6179,10 +6268,17 @@ class _ArcpyRaster(Raster,ImageryLayer):
     def __setitem__(self, idx, value):
         return (self._raster.__setitem__(idx, value))
 
+    _extent_override = None
     @property
     def extent(self):
-        extent = json.loads(self._raster.extent.JSON)
-        return extent
+        if self._extent_override:
+            return self._extent_override
+        else:
+            return json.loads(self._raster.extent.JSON)
+
+    @extent.setter
+    def extent(self, value):
+        self._extent_override = value
 
     @property
     def pixel_type(self):
