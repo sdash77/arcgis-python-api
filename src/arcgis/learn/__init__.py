@@ -1145,7 +1145,7 @@ class Model:
         return job_values["uninstallSucceed"]
         """
 
-def las2h5(data_path, block_size, max_points, output_path, extra_features, **kwargs):
+def export_point_dataset(data_path, block_size, max_points, output_path, extra_features, **kwargs):
     """
     path: Folder containing two folders with las files.
           train/

@@ -77,6 +77,20 @@ def _raise_fastai_import_error():
     raise Exception("""This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies. 
 Install them using 'conda install -c pytorch -c fastai fastai=1.0.54 pytorch=1.1.0 torchvision scikit-image'""")
 
+class _ImagenetCollater():
+    def __init__(self, chip_size):
+        self.chip_size = chip_size
+    def __call__(self, batch):
+        _xb = []
+        for sample in batch:
+            data = sample[0].data
+            if data.shape[1] < self.chip_size or data.shape[2] < self.chip_size:
+                data = sample[0].resize(self.chip_size).data
+            _xb.append(data)
+        _xb = torch.stack(_xb)
+        _yb = torch.stack([torch.tensor(sample[1].data) for sample in batch])
+        return _xb, _yb
+
 def _bb_pad_collate(samples, pad_idx=0):
     "Function that collect `samples` of labelled bboxes and adds padding with `pad_idx`."
     if isinstance(samples[0][1], int):
@@ -320,7 +334,8 @@ def prepare_data(path,
                             the `dataset_type` on its own if it contains a 
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
-                            'RCNN_Masks' and 'Classified_Tiles'                    
+                            'RCNN_Masks', 'Classified_Tiles', 'Labeled_Tiles' and 
+                            'Imagenet'.                    
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
@@ -599,8 +614,18 @@ def prepare_data(path,
         if dataset_type == 'Labeled_Tiles':
             get_y_func = partial(_get_lbls, class_mapping=class_mapping)
         else:
+            # Imagenet
             def get_y_func(x):
                 return x.parent.stem
+            if collate_fn is not _bb_pad_collate:
+                databunch_kwargs['collate_fn'] = collate_fn
+            else:
+                databunch_kwargs['collate_fn'] = _ImagenetCollater(chip_size)
+            _images_folder = os.path.join(os.path.abspath(path), 'images')
+            if not os.path.exists(_images_folder):
+                raise Exception(f"""Could not find a folder "images" in "{os.path.abspath(path)}",
+                \na folder "images" should be present in the supplied path to work with "Imagenet" data_type. """
+                )
 
         if _is_multispectral:
             data = ArcGISMSImageList.from_folder(path/'images')\
@@ -613,11 +638,12 @@ def prepare_data(path,
                 .label_from_func(get_y_func)
 
         if dataset_type == 'Imagenet':
-            class_mapping = {}
-            index = 1
-            for class_name in data.classes:
-                class_mapping[index] = class_name
-                index = index + 1
+            if class_mapping is None:
+                class_mapping = {}
+                index = 1
+                for class_name in data.classes:
+                    class_mapping[index] = class_name
+                    index = index + 1
 
         if transforms is None:
             ranges = (0, 1)

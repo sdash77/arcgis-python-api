@@ -50,7 +50,7 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"This function requires {' '.join(modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy=1.6.0'")
+        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy=1.6.0'")
 
 def try_import(module):
     try:
@@ -206,10 +206,14 @@ def recenter(pc):
     return (pc - min_val[None])
 
 def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=False, **kwargs):
+    """
+    kwargs: ["mask_class", "width", "height" ]
+    """
     try_import("h5py")
     import h5py
     try_import('plotly')
     import plotly.graph_objects as go
+    mask_class = kwargs.get('mask_class', [0])
     rows = min(rows, self.batch_size)
     color_mapping = self.color_mapping if color_mapping is None else np.array(color_mapping) / 255
 
@@ -236,10 +240,11 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=
             
         if pc == []:
             continue         
-                
+       
         pc = np.concatenate(pc, axis=0)
-        labels = np.concatenate(labels, axis=0)
-        sample_idxs = labels!=0
+        labels = np.concatenate(labels, axis=0)          
+        sample_idxs = np.concatenate([(labels[None]!=mask) for mask in mask_class])
+        sample_idxs = sample_idxs.all(axis=0)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -624,6 +629,8 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.extra_dim = data.meta['num_extra_dim']
         data.extra_features = data.meta['extra_features']
         data.block_size = data.meta['block_size']
+        ## To accomodate save function to save in correct directory
+        data.path = data.path / 'train' 
     else:
         raise Exception("Could not infer dataset type.")
 
@@ -912,13 +919,16 @@ def inference_las(path, pointcnn_model, out_path=None):
     return out_path
 
 def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs):
+    """
+    kwargs: ["mask_class", "width", "height" ]
+    """
     try_import("h5py")
     try_import('plotly')
     import h5py    
     import plotly
     import plotly.graph_objects as go
     import random
-    
+    mask_class = kwargs.get('mask_class', [0])    
     save_html = kwargs.get('save_html', False)
     save_path = kwargs.get('save_path', False)
 
@@ -972,7 +982,8 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         pc = np.concatenate(pc, axis=0)
         labels = np.concatenate(labels, axis=0)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
-        sample_idxs = labels!=0
+        sample_idxs = np.concatenate([(labels[None]!=mask) for mask in mask_class])
+        sample_idxs = sample_idxs.all(axis=0)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -1001,8 +1012,10 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
             scene=scene,
             scene2=scene,
             title_text='Ground Truth / Predictions',
-            width=kwargs.get('width', 1024),
-            height=kwargs.get('width', 512)
+            width=kwargs.get('width', 750),
+            height=kwargs.get('width', 512),
+            showlegend=False,
+            title_x=0.5
         )
 
         if save_html:
