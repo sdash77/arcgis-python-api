@@ -1849,7 +1849,7 @@ class FeatureLayer(Layer):
         if 'deletes' not in params and 'updates' not in params and 'adds' not in params:
             print("Parameters not valid for edit_features")
             return None
-        return self._con.post(path=edit_url, postdata=params, token=self._token)
+        return self._con.post(path=edit_url, postdata=params)#, token=self._token)
 
     # ----------------------------------------------------------------------
     def calculate(self, where, calc_expression,
