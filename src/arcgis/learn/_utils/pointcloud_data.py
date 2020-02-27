@@ -215,7 +215,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=
     import plotly.graph_objects as go
     mask_class = kwargs.get('mask_class', [0])
     rows = min(rows, self.batch_size)
-    color_mapping = self.color_mapping if color_mapping is None else np.array(color_mapping) / 255
+    color_mapping = np.array(list(self.color_mapping.values()) if color_mapping is None else list(self.color_mapping.values())) / 255
 
     idx = 0
     import random
@@ -289,7 +289,7 @@ def read_xyzinumr_label_from_las(filename_las, extra_features):
     xyzirgb_num = h.point_records_count
     labels = file.Classification
     
-    xyz = np.concatenate([file.x[:, None], file.y[:, None], file.z[:, None]] + [np.clip(getattr(file, f[0]), None, f[1])[:, None] / f[1] for f in extra_features],
+    xyz = np.concatenate([file.x[:, None], file.y[:, None], file.z[:, None]] + [(np.clip(getattr(file, f[0]), None, f[1])[:, None] - f[2])/ (f[1] - f[2]) for f in extra_features],
                          axis=1)
     
     xyzirgb_num = len(xyz)
@@ -299,7 +299,7 @@ def prepare_las_data(root,
                        block_size,
                        max_point_num,
                        output_path,
-                       extra_features=[('intensity', 5000), ('num_returns', 5)],
+                       extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)],
                        grid_size=1.0,
                        blocks_per_file=2048,
                        folder_names=['train', 'val'],
@@ -623,7 +623,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.c = data.meta['num_classes']
         data.show_batch = types.MethodType(show_point_cloud_batch_TF, data)
         data.classes =  data.meta['classes']
-        data.color_mapping = np.array(kwargs.get('color_mapping', [np.random.randint(0, 255, 3) for i in range(data.c)]))/255
+        data.color_mapping = kwargs.get('color_mapping', {i:[random.choice(range(256)) for _ in range(3)]  for i in range(data.c)})
         data.class_mapping = class_mapping if class_mapping is not None else {v:k for k,v in enumerate(data.classes)}
         data.max_point = data.meta['max_point']
         data.extra_dim = data.meta['num_extra_dim']
@@ -927,23 +927,21 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
     import h5py    
     import plotly
     import plotly.graph_objects as go
+    from plotly.subplots import make_subplots    
     import random
     mask_class = kwargs.get('mask_class', [0])    
     save_html = kwargs.get('save_html', False)
     save_path = kwargs.get('save_path', False)
 
     rows = min(rows, self._data.batch_size)
-    color_mapping = self._data.color_mapping if color_mapping is None else np.array(color_mapping) / 255
+    color_mapping = np.array(list(self._data.color_mapping.values()) if color_mapping is None else list(self._data.color_mapping.values())) / 255
 
     idx = 0
     keys = list(self._data.meta['files'].keys()).copy()
     keys = [f for f in keys if Path(f).parent.stem == 'val']
     random.shuffle(keys)
 
-    for fn in keys:
-        from plotly.subplots import make_subplots
-        from plotly import tools
-        
+    for fn in keys:        
         fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'scene'}, {'type': 'scene'}]])        
 
         num_files = self._data.meta['files'][fn]['idxs']
@@ -957,7 +955,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         labels = []
         pred_class = []
         pred_confidence = []
-        for nn, i in enumerate(idxs):
+        for nn, i in enumerate(progress_bar(idxs)):
             # print(f'Running Show Results: Processing {nn+1} of {len(idxs)} blocks.', end='\r')
             current_block = i['unnormalized_data'][:, :3]
             data_num = i['data_num'][()] 
@@ -994,7 +992,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         else:
             ## all points
             mask = x > -9999999
-            
+        
         color_list_true =  color_mapping[labels[sample_idxs]][mask].tolist()
         color_list_pred = color_mapping[pred_class[sample_idxs]][mask].tolist()
         
@@ -1011,7 +1009,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         fig.update_layout(
             scene=scene,
             scene2=scene,
-            title_text='Ground Truth / Predictions',
+            title_text='Ground Truth / Predictions' if idx==0 else '',
             width=kwargs.get('width', 750),
             height=kwargs.get('width', 512),
             showlegend=False,
@@ -1029,5 +1027,3 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         if idx == rows-1:
             break
         idx += 1 
-
-    
