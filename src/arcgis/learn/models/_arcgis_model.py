@@ -295,9 +295,16 @@ class ArcGISModel(object):
     def _show_lr_plot(self, index, losses_skipped=losses_skipped, trailing_losses_skipped=trailing_losses_skipped):
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(1, 1)
+        losses = self.learn.recorder.losses
+        lrs = self.learn.recorder.lrs
+        final_losses_skipped = 0
+        if len(self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]) >= 5:
+            losses = self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
+            lrs = self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped]
+            final_losses_skipped = losses_skipped
         ax.plot(
-            self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped],
-            self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
+            lrs,
+            losses
         )
         ax.set_ylabel("Loss")
         ax.set_xlabel("Learning Rate")
@@ -314,8 +321,13 @@ class ArcGISModel(object):
         plt.show()
 
     def _find_lr(self, losses_skipped=losses_skipped, trailing_losses_skipped=trailing_losses_skipped, section_factor=3):
-        losses = self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
-        lrs = self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped]
+        losses = self.learn.recorder.losses
+        lrs = self.learn.recorder.lrs
+        final_losses_skipped = 0
+        if len(self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]) >=5:
+            losses = self.learn.recorder.losses[losses_skipped:-trailing_losses_skipped]
+            lrs = self.learn.recorder.lrs[losses_skipped:-trailing_losses_skipped]
+            final_losses_skipped = losses_skipped
 
         n = len(losses)
 
@@ -334,7 +346,7 @@ class ArcGISModel(object):
 
         sections = (max_end - max_start) / section_factor
         final_index = max_start + int(sections) + int(sections/2)
-        return lrs[final_index], losses_skipped + final_index
+        return lrs[final_index], final_losses_skipped + final_index
 
     @property
     def _model_metrics(self):
@@ -673,9 +685,12 @@ class ArcGISModel(object):
             os.mkdir(os.path.join(model_characteristics_dir, model_characteristics_dir))
 
         if hasattr(self.learn, 'recorder'):
-            self.learn.recorder.plot_losses()
-            plt.savefig(os.path.join(model_characteristics_dir, 'loss_graph.png'))
-            plt.close()
+            try:
+                self.learn.recorder.plot_losses()
+                plt.savefig(os.path.join(model_characteristics_dir, 'loss_graph.png'))
+                plt.close()
+            except:
+                plt.close()
 
         if self.__str__() == '<PointCNN>':
             self.show_results(save_html=True, save_path=model_characteristics_dir)
