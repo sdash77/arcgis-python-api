@@ -181,14 +181,18 @@ class PointCNN(ArcGISModel):
                                 The default value is 'False'.
         =====================   ===========================================
         """
-
+        iterations = kwargs.get('iters_per_epoch', None)
+        from ._pointcnn_utils import IterationStop
+        if iterations is not None:
+            del kwargs['iters_per_epoch']
+            stop_iteration_cb = IterationStop(self.learn, iterations)
         self._check_requisites()
 
         if lr is None:
             print('Finding optimum learning rate.')
             lr = self.lr_find(allow_plot=False)
         
-        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs)
+        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, callbacks=[stop_iteration_cb], **kwargs)
         
     @property
     def _model_metrics(self):
