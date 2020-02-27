@@ -2004,7 +2004,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Copy features from original item
                 if self.copy_data and not self.is_view:
-                    self._add_features(new_layers, relationships, layer_field_mapping, feature_service.properties['spatialReference'])
+                    spatial_reference = None
+                    if 'spatialReference' in feature_service.properties:
+                        spatial_reference = feature_service.properties['spatialReference']
+                    self._add_features(new_layers, relationships, layer_field_mapping, spatial_reference)
 
             # share items
             _share_item_with_groups(new_item, self.sharing,self._clone_mapping["Group IDs"])
