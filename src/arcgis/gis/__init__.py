@@ -2460,12 +2460,17 @@ class UserManager(object):
         try:
             with _DisableLogger():
                 user = self._portal.get_user(username)
+        
         except RuntimeError as re:
             if re.args[0].__contains__("User does not exist or is inaccessible"):
                 return None
             else:
                 raise re
-
+        except Exception as e:
+            if e.args[0].__contains__("User does not exist or is inaccessible"):
+                return None
+            else:
+                raise e            
         if user is not None:
             return User(self._gis, user['username'], user)
         return None
