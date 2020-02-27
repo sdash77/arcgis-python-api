@@ -5,7 +5,6 @@ import torch
 import numpy as np
 from matplotlib import pyplot as plt
 
-
 class ArcGISMSImage(Image):
 
     def show(self, ax=None, rgb_bands=None):
@@ -61,3 +60,14 @@ def get_multispectral_data_params_from_emd(data, emd):
             setattr(data, ('_'+_stat), normalization_stats[_stat])
         data._do_normalize = emd.get("DoNormalize")
     return data
+
+def _get_post_processed_model(arcgis_model, input_normalization=True):
+    from .object_detection import get_TFOD_post_processed_model
+    from .image_classification import get_TFIC_post_processed_model
+    if arcgis_model._backend == 'tensorflow':
+        from .fastai_tf_fit import _pytorch_to_tf
+        if arcgis_model.__class__.__name__ == 'SingleShotDetector':
+            return get_TFOD_post_processed_model(arcgis_model, input_normalization=input_normalization)
+        if arcgis_model.__class__.__name__ == 'FeatureClassifier':
+            return get_TFIC_post_processed_model(arcgis_model, input_normalization=input_normalization)
+    pass

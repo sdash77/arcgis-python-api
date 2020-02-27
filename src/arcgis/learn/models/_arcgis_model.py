@@ -6,6 +6,7 @@ import tempfile
 import json
 import logging
 from .._data import _raise_fastai_import_error
+from .._utils.env import HAS_TENSORFLOW, raise_tensorflow_import_error
 from warnings import warn
 import contextlib
 import io
@@ -17,7 +18,8 @@ HAS_FASTAI = True
 HAS_TENSORBOARDX = True
 
 try:
-    from fastai.callbacks import TrackerCallback, EarlyStoppingCallback, LearnerCallback
+    from fastai.callbacks import TrackerCallback, EarlyStoppingCallback
+    from fastai.basic_train import LearnerCallback
     from fastai.vision.learner import model_meta, _default_meta
     from torch import nn
     import torch
@@ -275,6 +277,11 @@ class ArcGISModel(object):
     def _check_requisites(self):
         if isinstance(self._data, _EmptyData) or getattr(self._data, '_is_empty', False):
             raise Exception("Can't call this function without data.")
+    
+    # function for checking if tensorflow is installed otherwise raise error.
+    def _check_tf(self):
+        if not HAS_TENSORFLOW:
+            raise_tensorflow_import_error()
 
     def lr_find(self, allow_plot=True):
         """
@@ -398,10 +405,13 @@ class ArcGISModel(object):
             lr = slice(lr/10, lr)
 
         self._learning_rate = lr
-
+        
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
         
+        if getattr(self, '_backend', 'tensorflow'):
+            checkpoint = False
+
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         kwargs.pop('callbacks', None)
         if early_stopping:
@@ -598,6 +608,9 @@ class ArcGISModel(object):
         file.close()
 
     def _save(self, name_or_path, framework='PyTorch', zip_files=True, save_html=True, publish=False, gis=None, **kwargs):
+        save_format = kwargs.get('save_format', 'default') # 'default', 'tflite'
+        post_processed = kwargs.get('post_processed', True) # True, False
+        quantized = kwargs.get('quantized', False) # True, False
         temp = self.learn.path
 
         if '\\' in name_or_path or '/' in name_or_path:
@@ -617,7 +630,22 @@ class ArcGISModel(object):
             name = name_or_path
 
         try:
-            saved_path = self.learn.save(name,  return_path=True)
+            _framework = framework.lower()
+            if self._backend == 'tensorflow' and _framework == 'tflite':
+                saved_path = self._save_tflite(name, post_processed=post_processed, quantized=quantized)
+            elif self._backend == 'tensorflow' and _framework != 'tflite':
+                _err_msg = """
+                Models initialized with parameter backend="tensorflow" are currently only supported to be saved into tflite framework
+                \nPlease set parameter framework="tflite"
+                """
+                raise Exception(_err_msg)
+            elif self._backend != 'tensorflow' and _framework == 'tflite':
+                _err_msg = """
+                Only models initialized with parameter backend="tensorflow" are supported to be saved into tflite framework
+                """
+                raise Exception(_err_msg)
+            else:
+                saved_path = self.learn.save(name,  return_path=True)
             # undoing changes to self.learn.path
         except Exception as e:
             raise e
@@ -640,8 +668,11 @@ class ArcGISModel(object):
         zip_name = saved_path.stem
 
         if save_html:
-            self._save_model_characteristics(saved_path.parent.absolute() / model_characteristics_folder)
-            ArcGISModel._create_html(saved_path)
+            try:
+                self._save_model_characteristics(saved_path.parent.absolute() / model_characteristics_folder)
+                ArcGISModel._create_html(saved_path)
+            except:
+                pass
 
         if _emd_template.get('InferenceFunction', False):
             with open(saved_path.parent / _emd_template['InferenceFunction'], 'w') as f:
@@ -657,6 +688,17 @@ class ArcGISModel(object):
             self._publish_dlpk((saved_path.parent/saved_path.stem).with_suffix('.dlpk'), gis=gis, overwrite=kwargs.get('overwrite', False))
 
         return saved_path.parent
+
+    def _save_tflite(self, name, post_processed=True, quantized=False):
+        if post_processed or quantized:
+            input_normalization = quantized is False
+            return self.learn._save_tflite(name, return_path=True, model_to_save=self._get_post_processed_model(input_normalization=input_normalization), quantized=quantized, data=self._data)
+        return self.learn._save_tflite(name)
+            
+
+    def _get_post_processed_model(self, input_normalization=True):
+        from .._utils.common import _get_post_processed_model
+        return _get_post_processed_model(self, input_normalization=input_normalization)
 
     def _save_model_characteristics(self, model_characteristics_dir):
 

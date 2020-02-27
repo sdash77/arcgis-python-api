@@ -1,5 +1,5 @@
 "Functions for calling the Deep Learning Tools."
-
+from . import _utils
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
      _analysis_job_status, _layer_input
 import json as _json

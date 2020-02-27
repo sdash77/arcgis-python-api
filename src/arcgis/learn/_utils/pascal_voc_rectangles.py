@@ -3,7 +3,7 @@ import math
 import numpy as np
 import torch
 from fastai.vision.data import ObjectItemList
-from . import ArcGISMSImage
+from .common import ArcGISMSImage
 from ..models._ssd_utils import SSDObjectCategoryList
 from matplotlib import pyplot as plt
 from matplotlib import patheffects

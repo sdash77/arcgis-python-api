@@ -3,7 +3,7 @@ from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
-from .._utils import ArcGISMSImage
+from .._utils.common import ArcGISMSImage
 import torch
 import warnings
 import PIL
