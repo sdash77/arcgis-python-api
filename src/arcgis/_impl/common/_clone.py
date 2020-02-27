@@ -2764,7 +2764,6 @@ class _FormDefinition(_ItemDefinition):
                 if table is not None:
                     deletes = table.query(where="name = 'form'")
                     table.edit_features(adds=[{'attributes' : {'name' : 'form', 'value' : form_json}}], deletes=deletes)
-                    time.sleep(1)
 
             # Zip the directory
             zip_file = zipfile.ZipFile(form_zip, 'w', zipfile.ZIP_DEFLATED)
