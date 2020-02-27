@@ -27,6 +27,7 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._isd import InsensitiveDict
 
 __version__ = "1.8.0"
 
@@ -368,6 +369,8 @@ class Connection(object):
                     params[k] = json.dumps(v)
                 elif isinstance(v, PropertyMap):
                     params[k] = json.dumps(dict(v))
+                elif isinstance(v, InsensitiveDict):
+                    params[k] = v.json
         try:
             if self._cert_file:
                 cert = (self._cert_file, self._key_file)
@@ -641,6 +644,8 @@ class Connection(object):
                     params[k] = json.dumps(v)
                 elif isinstance(v, PropertyMap):
                     params[k] = json.dumps(dict(v))
+                elif isinstance(v, InsensitiveDict):
+                    params[k] = v.json
             if post_json:  # edge case workflow
                 resp = self._session.post(url=url,
                                           json=json.dumps(params),
