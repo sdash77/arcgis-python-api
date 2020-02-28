@@ -1038,7 +1038,6 @@ class WebMap(collections.OrderedDict):
         View your portal's custom basemap group
         """
         if self._gis:
-            # If the only loaded gallery_basemaps is 'default', load the rest
             bmquery = self._gis.properties['basemapGalleryGroupQuery']
             basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
             if len(basemapsgrp) == 1:
