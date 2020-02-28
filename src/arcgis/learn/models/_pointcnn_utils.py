@@ -449,3 +449,13 @@ class AverageMetric(Callback):
     def on_epoch_end(self, last_metrics, **kwargs):
         "Set the final result in `last_metrics`."
         return add_metrics(last_metrics, self.val/self.count)
+
+## Iteration Stop Callback, i.e stops epoch after certain number of iterations.
+class IterationStop(LearnerCallback):
+    def __init__(self, learn, stop_iteration):
+        super().__init__(learn)
+        self.stop_iteration = stop_iteration
+
+    def on_batch_end(self, **kwargs):
+        if kwargs['iteration'] % self.stop_iteration==0:
+            return {'stop_epoch': True}

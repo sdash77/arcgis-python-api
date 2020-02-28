@@ -2,17 +2,17 @@ from fastai.vision import ImageSegment, Image
 from fastai.vision.image import open_image, show_image, pil2tensor
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
-from fastai.callbacks import LearnerCallback
+from fastai.basic_train import LearnerCallback
 import torch
 import warnings
 import PIL
 import numpy as np
 from skimage import io
 import matplotlib.pyplot as plt
-from fastprogress import progress_bar
+from fastprogress.fastprogress import progress_bar
 from torch import LongTensor
 import os
-from .._utils import ArcGISMSImage
+from .._utils.common import ArcGISMSImage
 
 class ArcGISImageSegment(Image):
     "Support applying transforms to segmentation masks data in `px`."

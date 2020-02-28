@@ -1,5 +1,5 @@
 "Functions for calling the Deep Learning Tools."
-
+from . import _utils
 from arcgis.geoprocessing._support import _analysis_job, _analysis_job_results, \
      _analysis_job_status, _layer_input
 import json as _json
@@ -1145,17 +1145,37 @@ class Model:
         return job_values["uninstallSucceed"]
         """
 
-def las2h5(data_path, block_size, max_points, output_path, extra_features, **kwargs):
+def export_point_dataset(data_path, output_path, block_size=50.0, max_points=8192, extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)], **kwargs):
+
     """
-    path: Folder containing two folders with las files.
-          train/
-            *.las
-          val/
-            *.las
-    block_size: Size of the block to contain in one exported file.
-                Block exported is of the size (block_size X block_size X block_size)
-    max_points: Maximum number of points to contain in each block.
+    Exports the las files into h5 blocks.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    data_path              Required string. Folder containing two folders with las files.
+                             Folder structure:
+                               train/
+                                 *.las
+                               val/
+                                 *.las
+    ------------------     --------------------------------------------------------------------
+    output_path            Required string. Path where exported files will be dumped.                                   
+    ------------------     --------------------------------------------------------------------
+    block_size             Optinal float. Size of the block to contain in one exported file.
+                           Default 50.0
+    ------------------     --------------------------------------------------------------------
+    max_points             Required integer. Maximum number of points to contain in each block.
+                           Default 8192
+    ------------------     --------------------------------------------------------------------
+    extra_features         Optional list of tuple. Extra features to read from las files.
+                           The first value of tuple is the key name of the features. The second
+                           value of the tuple is max value of the feature. The third value is
+                           the minimum value of that feature.
+                           Deafult: [('intensity', 5000, 0), ('num_returns', 5, 0)]                 
+    ==================     ====================================================================
     """
+
     from ._utils.pointcloud_data import  prepare_las_data
     prepare_las_data(data_path, block_size, max_points, output_path, **kwargs)
 

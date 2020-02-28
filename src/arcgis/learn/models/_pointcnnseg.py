@@ -18,10 +18,56 @@ except Exception as e:
     HAS_FASTAI = False
 
 class PointCNN(ArcGISModel):
+
     """
-    kwargs: {encoder_params, dropout, sample_point_num}
-    ADD DOC HERE
+    Model architecture from https://arxiv.org/abs/1801.07791.
+    Creates a Point Cloud Segmentation/ Point Classification model. 
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    data                    Required fastai Databunch. Returned data object from
+                            `prepare_data` function.
+    ---------------------   -------------------------------------------
+    pretrained_path         Optional string. Path where pre-trained PointCNN model is
+                            saved.                            
+    =====================   ===========================================
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    encoder_params          Optinal dictionary. The keys of the dictionary are 
+                            `out_channels`, `P`, `K`, `D` and `m`.
+
+                              Examples:
+                                {'out_channels':[16, 32, 64, 96],
+                                'P':[-1, 768, 384, 128],
+                                'K':[12, 16, 16, 16],
+                                'D':[1, 1, 2, 2],
+                                'm':8
+                                }  
+
+                            Length of `out_channels`, `P`, `K`, `D` should be same.
+                            The length denotes the number of layers in encoder.
+                              Parameter Explaination
+                                - 'out_channels': Number of channels in each layer multiplied by `m`,
+                                - 'P': Number of points in each layer,
+                                - 'K': Number of K-nearest neighbour in each layer,
+                                - 'D': Dilation in each layer,
+                                - 'm': Multiplier which is multiplied by each out_channel.
+    ---------------------   -------------------------------------------
+    dropout                 Optional float. This parameter will control overfitting.                          
+                            The range of this parameter is [0,1).
+    ---------------------   -------------------------------------------
+    sample_point_num        Optinal integer. The number of points that the models
+                            will actually process.     
+    =====================   ===========================================
+
+    :returns: `PointCNN` Object
     """
+
     def __init__(self, data, pretrained_path=None, **kwargs):
         super().__init__(data, None)
         
@@ -41,6 +87,24 @@ class PointCNN(ArcGISModel):
 
     @classmethod
     def from_model(cls, emd_path, data=None):
+        
+        """
+        Creates a PointCNN model from an Esri Model Definition (EMD) file.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        emd_path                Required string. Path to Esri Model Definition
+                                file.
+        ---------------------   -------------------------------------------
+        data                    Required fastai Databunch or None. Returned data
+                                object from `prepare_data` function or None for
+                                inferencing.
+        =====================   ===========================================
+
+        :returns: `PointCNN` Object
+        """      
+
         emd_path = Path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
@@ -80,6 +144,7 @@ class PointCNN(ArcGISModel):
         return '<%s>' % (type(self).__name__)
 
     def fit(self, epochs=10, lr=None, one_cycle=True, early_stopping=False, checkpoint=True, tensorboard=False, **kwargs):
+
         """
         Train the model for the specified number of epochs and using the
         specified learning rates
@@ -116,13 +181,18 @@ class PointCNN(ArcGISModel):
                                 The default value is 'False'.
         =====================   ===========================================
         """
+        iterations = kwargs.get('iters_per_epoch', None)
+        from ._pointcnn_utils import IterationStop
+        if iterations is not None:
+            del kwargs['iters_per_epoch']
+            stop_iteration_cb = IterationStop(self.learn, iterations)
         self._check_requisites()
 
         if lr is None:
             print('Finding optimum learning rate.')
             lr = self.lr_find(allow_plot=False)
         
-        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs)
+        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, callbacks=[stop_iteration_cb], **kwargs)
         
     @property
     def _model_metrics(self):
@@ -161,14 +231,37 @@ class PointCNN(ArcGISModel):
             class_data["Name"] = class_name
             color = [random.choice(range(256)) for i in range(3)] if is_no_color(self._data.color_mapping) else \
                 self._data.color_mapping[inverse_class_mapping[class_name]]
-            class_data["Color"] = (255 * color).astype(int).tolist()
+            class_data["Color"] = np.array(color).astype(int).tolist()
             _emd_template['Classes'].append(class_data.copy())
 
         return _emd_template
         
     def show_results(self, rows=2, **kwargs):
+
+        """
+        Displays the results of a trained model on a part of the validation set.
+        """        
+
         return show_results(self, rows, **kwargs)
 
     def predict_las(self, path, output_path=None, **kwargs):
+
+        """
+        Predicts and writes the resulting las file on the disk. 
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        path                    Required string. The path to folder where the las
+                                files which needs to be predicted are present.   
+        ---------------------   -------------------------------------------
+        output_path             Optional string. The path to folder where to dump
+                                the resulting las files. Defaults to `results` folder
+                                in input path.                                                    
+        =====================   ===========================================
+        
+        :returns: Path where files are dumped.
+        """
+        
         return inference_las(path, self, output_path)
         

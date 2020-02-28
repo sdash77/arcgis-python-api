@@ -98,42 +98,47 @@ class FeatureClassifier(ArcGISModel):
     :returns: `FeatureClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False):
+    def __init__(self, data, backbone=None, pretrained_path=None, mixup=False, oversample=False, backend='pytorch', **kwargs):
         
-        super().__init__(data, backbone)
+        self._backend = backend
+        if self._backend == 'tensorflow':
+            super().__init__(data, None)
+            self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
+        else:
+            super().__init__(data, backbone)
 
-        backbone_cut = None
-        backbone_split = None
+            backbone_cut = None
+            backbone_split = None
 
-        _backbone = self._backbone
-        if hasattr(self, '_orig_backbone'):
-            _backbone = self._orig_backbone
-            _backbone_meta = cnn_config(self._orig_backbone)
-            backbone_cut = _backbone_meta['cut']
-            backbone_split = _backbone_meta['split']
+            _backbone = self._backbone
+            if hasattr(self, '_orig_backbone'):
+                _backbone = self._orig_backbone
+                _backbone_meta = cnn_config(self._orig_backbone)
+                backbone_cut = _backbone_meta['cut']
+                backbone_split = _backbone_meta['split']
 
-        if _backbone == models.mobilenet_v2:
-            backbone_cut = -1
-            backbone_split = _mobilenet_split
+            if _backbone == models.mobilenet_v2:
+                backbone_cut = -1
+                backbone_split = _mobilenet_split
 
-        if not self._check_backbone_support(_backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            if not self._check_backbone_support(_backbone):
+                raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        self._code = feature_classifier_prf
-        self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
-        if oversample:
-            self.learn.callbacks.append(OverSamplingCallback(self.learn))
-        self._arcgis_init_callback() # make first conv weights learnable
+            self._code = feature_classifier_prf
+            self.learn = cnn_learner(data, self._backbone, metrics=accuracy, cut=backbone_cut, split_on=backbone_split)
+            if oversample:
+                self.learn.callbacks.append(OverSamplingCallback(self.learn))
+            self._arcgis_init_callback() # make first conv weights learnable
 
-        # Add Mixup data augmentation
-        if mixup:
-            self.learn = self.learn.mixup()
+            # Add Mixup data augmentation
+            if mixup:
+                self.learn = self.learn.mixup()
 
-        self.learn.model = self.learn.model.to(self._device)
+            self.learn.model = self.learn.model.to(self._device)
 
-        _set_multigpu_callback(self)
-        if pretrained_path is not None:
-            self.load(pretrained_path)
+            _set_multigpu_callback(self)
+            if pretrained_path is not None:
+                self.load(pretrained_path)
 
     def __str__(self):
         return self.__repr__()
@@ -163,118 +168,13 @@ class FeatureClassifier(ArcGISModel):
 
         self.learn.show_results(rows=rows, **kwargs)
    
-    def _show_results_multispectral(self, rows=5, **kwargs): # parameters adjusted in kwargs
-        import matplotlib.pyplot as plt
-
-        # Get Number of items
-        nrows = rows
-        ncols = kwargs.get('ncols', rows)
-
-        type_data_loader = kwargs.get('data_loader', 'validation') # options : traininig, validation, testing
-        if type_data_loader == 'training':
-            data_loader = self._data.train_dl
-        elif type_data_loader == 'validation':
-            data_loader = self._data.valid_dl
-        elif type_data_loader == 'testing':
-            data_loader = self._data.test_dl
-        else:
-            e = Exception(f'could not find {type_data_loader} in data.')
-            raise(e)
-
-        rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
-
-        nodata = kwargs.get('nodata', 0)
-
-        index = kwargs.get('start_index', 0)
-
-        imsize = kwargs.get('imsize', 5)
-
-        title_font_size = 16
-        _top = 1 - (math.sqrt(title_font_size)/math.sqrt(100*nrows*imsize))
-        top = kwargs.get('top', _top)
-
-        statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
-
-        e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
-        symbology_bands = []
-        if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
-            raise(e)
-        for b in rgb_bands:
-            if type(b) == str:
-                b_index = self._bands.index(b)
-            elif type(b) == int:
-                self._bands[b] # To check if the band index specified by the user really exists.
-                b_index = b
-            else:
-                raise(e)
-            b_index = self._data._extract_bands.index(b_index)
-            symbology_bands.append(b_index)
-
-        # Get Batch
-        x_batch, y_batch = [], []
-        i = 0
-        dl_iterater = iter(data_loader)
-        while i < nrows:
-            x, y = next(dl_iterater)
-            x_batch.append(x)
-            y_batch.append(y)
-            i+=self._data.batch_size
-        x_batch = torch.cat(x_batch)
-        # Denormalize X
-        y_batch = torch.cat(y_batch)
-
-        # Get Predictions
-        predictions_class_store = []
-        predictions_confidence_store = []
-        for i in range(0, x_batch.shape[0], self._data.batch_size):
-            _classes, _confidences = self._predict_batch(x_batch[i:i+self._data.batch_size])
-            predictions_class_store.extend(_classes)
-            predictions_confidence_store.extend(_confidences)
-
-        # Denormalize X
-        x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
-        
-        # Extract RGB Bands
-        symbology_x_batch = x_batch[:, symbology_bands]
-        if statistics_type == 'DRA':
-            shp = symbology_x_batch.shape
-            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
-        
-        # Channel first to channel last for plotting
-        symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
-        # Clamp float values to range 0 - 1
-        if symbology_x_batch.mean() < 1:
-            symbology_x_batch = symbology_x_batch.clamp(0, 1)
-
-        # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
-        if symbology_x_batch.shape[-1] == 1:
-            symbology_x_batch = symbology_x_batch.squeeze()
-
-        # Get color Array
-        color_array = self._data._multispectral_color_array
-
-        # Size for plotting
-        fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
-        fig.suptitle('Ground Truth\nPredictions', fontsize=title_font_size)
-        plt.subplots_adjust(top=top)
-        idx=0
-        for r in range(nrows):
-            for c in range(ncols):
-                if idx < symbology_x_batch.shape[0]:
-                    axi  = ax[r][c]
-                    axi.imshow(symbology_x_batch[idx])
-                    y = self._data.classes[y_batch[idx].item()]
-                    prediction = self._data.classes[predictions_class_store[idx]]
-                    # prediction_confidence = predictions_confidence_store[idx]
-                    # title = f"{y} \n {prediction} {prediction_confidence:0.f}%"
-                    title = f"{y}\n{prediction}"
-                    axi.set_title(title)
-                    axi.axis('off')
-                else:
-                    ax[r][c].axis('off')
-                idx+=1
+    def _show_results_multispectral(self, rows=5, **kwargs):
+        from .._utils.image_classification import IC_show_results
+        IC_show_results(
+            self,
+            nrows=rows,
+            **kwargs
+        )
 
     def predict(self, img_path):
         """
@@ -432,7 +332,10 @@ class FeatureClassifier(ArcGISModel):
         """
         self._check_requisites()
         interp = ClassificationInterpretation.from_learner(self.learn)
-        interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=True)
+        heatmap = True
+        if self._backend == 'tensorflow':
+            heatmap = False
+        interp.plot_top_losses(num_examples, figsize=(15,15), heatmap=heatmap)
 
     @staticmethod
     def _convert_to_degrees(value, reference):
@@ -1344,10 +1247,99 @@ class FeatureClassifier(ArcGISModel):
         else:
             e = Exception("Could not understand layer type")
             raise(e)
+     
+    ## Tensorflow specific functions start ##
+    def _intialize_tensorflow(self, data, backbone, drop, pretrained_path, kwargs):
+        self._check_tf()
 
+        from .._utils.fastai_tf_fit import TfLearner
+        import tensorflow as tf
+        from tensorflow.keras.losses import CategoricalCrossentropy
+        from tensorflow.keras.models import Model
+        from tensorflow.keras import applications
+        from tensorflow.keras.optimizers import Adam
+        from fastai.basics import defaults
+        from .._utils.image_classification import TF_IC_get_head_output
+
+        if data._is_multispectral:
+            raise Exception('Multispectral data is not supported with backend="tensorflow"')
+
+        # Pyramid Scheme in head
+        self._fpn = kwargs.get('fpn', True)
+
+        # prepare color array
+        alpha = 0.7
+        color_mapping = getattr(data, 'color_mapping', None)
+        if color_mapping is None:
+            color_array = torch.tensor([[1., 1., 1.]]).float()
+        else:
+            color_array = torch.tensor( list(color_mapping.values()) ).float() / 255
+        alpha_tensor = torch.tensor( [alpha]*len(color_array) ).view(-1, 1).float()
+        color_array = torch.cat( [ color_array, alpha_tensor ], dim=-1)
+        background_color = torch.tensor( [[0, 0, 0, 0]] ).float()
+        data._multispectral_color_array = torch.cat( [background_color, color_array] )
+
+        self.ssd_version = 1#ssd_version
+        if backbone is None:
+            backbone = 'ResNet50'
+        
+        if type(backbone) == str:
+            backbone = getattr(applications, backbone)
+            
+        self._backbone = backbone 
+        
+        x, y = next(iter(data.train_dl))
+        if tf.keras.backend.image_data_format() == 'channels_last':
+            in_shape = [x.shape[-1], x.shape[-1], 3]
+        else:
+            in_shape = [3, x.shape[-1],x.shape[-1]]
+
+        self._backbone_initalized = self._backbone(
+            input_shape=in_shape, 
+            include_top=False, 
+            weights='imagenet'
+        )
+        self._backbone_initalized.trainable = False
+
+        self._device = torch.device('cpu')
+        self._data = data
+
+        self._loss_function_tf_ = CategoricalCrossentropy(from_logits=True, reduction='sum')
+        self._loss_function_tf_noreduction = CategoricalCrossentropy(from_logits=True, reduction=tf.keras.losses.Reduction.NONE)
+        
+        output_layer = TF_IC_get_head_output(self)
+
+        model = Model(inputs=self._backbone_initalized.input, outputs=output_layer)
+
+        self.learn = TfLearner(
+            data, 
+            model,
+            opt_func=Adam,
+            loss_func=self._loss_function_tf,
+            true_wd=True, 
+            bn_wd=True, 
+            wd=defaults.wd, 
+            train_bn=True
+        )
+        
+        self.learn.unfreeze()
+        self.learn.freeze_to(len(self._backbone_initalized.layers))
+
+        self.show_results = self._show_results_multispectral
+
+        self._code = feature_classifier_prf
+
+    def _loss_function_tf(self, target, predictions, reduction=True):
+        import tensorflow as tf
+        target_masks = tf.gather(tf.eye(self._data.c), target)
+        if reduction:
+            return self._loss_function_tf_(target_masks, predictions)
+        else:
+            return self._loss_function_tf_noreduction(target_masks, predictions)
+            
+       
 if HAS_FASTAI:
     class OverSamplingCallback(LearnerCallback):
-
         """
         The OverSamplingCallback support handles unbalanced dataset (dataset with rare classes). It is used to oversample data during training.
         """

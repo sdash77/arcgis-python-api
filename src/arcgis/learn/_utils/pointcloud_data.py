@@ -50,7 +50,7 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"This function requires {' '.join(modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy=1.6.0'")
+        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy=1.6.0'")
 
 def try_import(module):
     try:
@@ -206,12 +206,16 @@ def recenter(pc):
     return (pc - min_val[None])
 
 def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=False, **kwargs):
+    """
+    kwargs: ["mask_class", "width", "height" ]
+    """
     try_import("h5py")
     import h5py
     try_import('plotly')
     import plotly.graph_objects as go
+    mask_class = kwargs.get('mask_class', [0])
     rows = min(rows, self.batch_size)
-    color_mapping = self.color_mapping if color_mapping is None else np.array(color_mapping) / 255
+    color_mapping = np.array(list(self.color_mapping.values()) if color_mapping is None else list(self.color_mapping.values())) / 255
 
     idx = 0
     import random
@@ -236,10 +240,11 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=
             
         if pc == []:
             continue         
-                
+       
         pc = np.concatenate(pc, axis=0)
-        labels = np.concatenate(labels, axis=0)
-        sample_idxs = labels!=0
+        labels = np.concatenate(labels, axis=0)          
+        sample_idxs = np.concatenate([(labels[None]!=mask) for mask in mask_class])
+        sample_idxs = sample_idxs.all(axis=0)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -284,7 +289,7 @@ def read_xyzinumr_label_from_las(filename_las, extra_features):
     xyzirgb_num = h.point_records_count
     labels = file.Classification
     
-    xyz = np.concatenate([file.x[:, None], file.y[:, None], file.z[:, None]] + [np.clip(getattr(file, f[0]), None, f[1])[:, None] / f[1] for f in extra_features],
+    xyz = np.concatenate([file.x[:, None], file.y[:, None], file.z[:, None]] + [(np.clip(getattr(file, f[0]), None, f[1])[:, None] - f[2])/ (f[1] - f[2]) for f in extra_features],
                          axis=1)
     
     xyzirgb_num = len(xyz)
@@ -294,7 +299,7 @@ def prepare_las_data(root,
                        block_size,
                        max_point_num,
                        output_path,
-                       extra_features=[('intensity', 5000), ('num_returns', 5)],
+                       extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)],
                        grid_size=1.0,
                        blocks_per_file=2048,
                        folder_names=['train', 'val'],
@@ -618,12 +623,14 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.c = data.meta['num_classes']
         data.show_batch = types.MethodType(show_point_cloud_batch_TF, data)
         data.classes =  data.meta['classes']
-        data.color_mapping = np.array(kwargs.get('color_mapping', [np.random.randint(0, 255, 3) for i in range(data.c)]))/255
+        data.color_mapping = kwargs.get('color_mapping', {i:[random.choice(range(256)) for _ in range(3)]  for i in range(data.c)})
         data.class_mapping = class_mapping if class_mapping is not None else {v:k for k,v in enumerate(data.classes)}
         data.max_point = data.meta['max_point']
         data.extra_dim = data.meta['num_extra_dim']
         data.extra_features = data.meta['extra_features']
         data.block_size = data.meta['block_size']
+        ## To accomodate save function to save in correct directory
+        data.path = data.path / 'train' 
     else:
         raise Exception("Could not infer dataset type.")
 
@@ -912,28 +919,29 @@ def inference_las(path, pointcnn_model, out_path=None):
     return out_path
 
 def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs):
+    """
+    kwargs: ["mask_class", "width", "height" ]
+    """
     try_import("h5py")
     try_import('plotly')
     import h5py    
     import plotly
     import plotly.graph_objects as go
+    from plotly.subplots import make_subplots    
     import random
-    
+    mask_class = kwargs.get('mask_class', [0])    
     save_html = kwargs.get('save_html', False)
     save_path = kwargs.get('save_path', False)
 
     rows = min(rows, self._data.batch_size)
-    color_mapping = self._data.color_mapping if color_mapping is None else np.array(color_mapping) / 255
+    color_mapping = np.array(list(self._data.color_mapping.values()) if color_mapping is None else list(self._data.color_mapping.values())) / 255
 
     idx = 0
     keys = list(self._data.meta['files'].keys()).copy()
     keys = [f for f in keys if Path(f).parent.stem == 'val']
     random.shuffle(keys)
 
-    for fn in keys:
-        from plotly.subplots import make_subplots
-        from plotly import tools
-        
+    for fn in keys:        
         fig = make_subplots(rows=1, cols=2, specs=[[{'type': 'scene'}, {'type': 'scene'}]])        
 
         num_files = self._data.meta['files'][fn]['idxs']
@@ -947,7 +955,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         labels = []
         pred_class = []
         pred_confidence = []
-        for nn, i in enumerate(idxs):
+        for nn, i in enumerate(progress_bar(idxs)):
             # print(f'Running Show Results: Processing {nn+1} of {len(idxs)} blocks.', end='\r')
             current_block = i['unnormalized_data'][:, :3]
             data_num = i['data_num'][()] 
@@ -972,7 +980,8 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         pc = np.concatenate(pc, axis=0)
         labels = np.concatenate(labels, axis=0)
         pred_class = np.concatenate(pred_class, axis=0).astype(int)
-        sample_idxs = labels!=0
+        sample_idxs = np.concatenate([(labels[None]!=mask) for mask in mask_class])
+        sample_idxs = sample_idxs.all(axis=0)
         sampled_pc = pc[sample_idxs]
         if sampled_pc.shape[0] == 0:
             continue
@@ -983,7 +992,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         else:
             ## all points
             mask = x > -9999999
-            
+        
         color_list_true =  color_mapping[labels[sample_idxs]][mask].tolist()
         color_list_pred = color_mapping[pred_class[sample_idxs]][mask].tolist()
         
@@ -1000,9 +1009,11 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         fig.update_layout(
             scene=scene,
             scene2=scene,
-            title_text='Ground Truth / Predictions',
-            width=kwargs.get('width', 1024),
-            height=kwargs.get('width', 512)
+            title_text='Ground Truth / Predictions' if idx==0 else '',
+            width=kwargs.get('width', 750),
+            height=kwargs.get('width', 512),
+            showlegend=False,
+            title_x=0.5
         )
 
         if save_html:
@@ -1016,5 +1027,3 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         if idx == rows-1:
             break
         idx += 1 
-
-    
