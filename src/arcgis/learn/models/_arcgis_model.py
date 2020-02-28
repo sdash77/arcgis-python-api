@@ -247,6 +247,7 @@ class ArcGISModel(object):
         self.learn = None
         self._data = data
         self._learning_rate = None
+        self._backend = getattr(self, '_backend', 'pytorch')
 
 
     def _check_backbone_support(self, backbone):
