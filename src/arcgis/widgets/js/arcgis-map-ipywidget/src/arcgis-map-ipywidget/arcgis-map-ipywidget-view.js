@@ -1276,6 +1276,17 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     overlay_this_image: function(image){
     if(Object.keys(image).length !== 0){
+        if(config.JupyterTarget === "lab"){
+            //JupyterLab handles URLs differently than classic notebook server.
+            //Change the image path to the full path prepended by `/tree/`
+            //See: https://jupyterlab.readthedocs.io/en/stable/user/urls.html
+            //TODO: consider using `ContentsManager` from `@jupyterlab/services`
+            //Ref: https://jupyterlab.github.io/jupyterlab/services/index.html
+            var nbPath = this.model.widget_manager.context.session.path;
+            var nbName = this.model.widget_manager.context.session.name;
+            var nbDir = nbPath.substring(0, nbPath.lastIndexOf(nbName));
+            image.src = "/tree/" + nbDir + image.src;}
+
         getImageOverlayLayerType().then((ImageOverlayLayer) => {
             var imageOverlayLayer = this.getActiveImageOverlayLayer(ImageOverlayLayer);
             imageOverlayLayer.tryOverlayImage(image).catch((err) => {
