@@ -996,6 +996,7 @@ class WebMap(collections.OrderedDict):
             wm.basemap = 'dark-gray'
             print(wm.gallery_basemaps)
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
+            wm.basemap = 'custom_dark_gray_canvas'
         """
         if value in self.basemaps:
             self._basemap = {'baseMapLayers':basemap_dict[value],
