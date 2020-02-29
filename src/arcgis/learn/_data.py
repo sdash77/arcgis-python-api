@@ -6,8 +6,10 @@ import math
 import sys
 import json 
 import logging      
-import types                                                                                                                                                       
+import types       
+import traceback                                                                                                                                                
 
+import_exception = None
 try:
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
@@ -26,7 +28,8 @@ try:
     from ._utils.pointcloud_data import pointcloud_prepare_data
     import random
     HAS_FASTAI = True
-except:
+except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
 
 band_abrevation_lib = {
@@ -73,9 +76,19 @@ imagery_type_lib = {
     }
 }
 
-def _raise_fastai_import_error():
-    raise Exception("""This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies. 
-Install them using 'conda install -c pytorch -c fastai fastai=1.0.54 pytorch=1.1.0 torchvision scikit-image'""")
+def get_installation_command():
+    installation_steps = "Install them using 'conda install -c esri -c fastai -c pytorch arcgis pillow scikit-image fastai=1.0.54 pytorch=1.1.0'"
+    if sys.platform == 'win32':
+        installation_steps = "Install them using 'conda install -c esri arcgis fastai pillow scikit-image'"
+    elif sys.platform in ['linux', 'darwin']:
+        pass
+            
+    return installation_steps 
+
+def _raise_fastai_import_error(import_exception=import_exception):
+    print(import_exception)
+    installation_steps = get_installation_command()
+    raise Exception(f"""This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies. \n{installation_steps}""")
 
 class _ImagenetCollater():
     def __init__(self, chip_size):

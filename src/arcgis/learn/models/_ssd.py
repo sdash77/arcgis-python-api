@@ -4,7 +4,8 @@ import json
 from ._codetemplate import code
 import warnings
 import math      
-from .._data import _raise_fastai_import_error
+from .._data import _raise_fastai_import_error  
+import traceback    
 
 import logging
 logger = logging.getLogger()
@@ -39,6 +40,7 @@ try:
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd
 except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     class NnModule():
         pass
     HAS_FASTAI = False
@@ -189,7 +191,6 @@ class SingleShotDetector(ArcGISModel):
                     # find grid size
 
                     grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
-                    print(grids)
                     grids = list(set(grids))
                     grids.sort(reverse = True)
                     if grids[-1] == 0:
@@ -289,7 +290,7 @@ class SingleShotDetector(ArcGISModel):
         :returns: `SingleShotDetector` Object
         """
         if not HAS_FASTAI:
-            _raise_fastai_import_error()
+            _raise_fastai_import_error(import_exception=import_exception)
             
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
