@@ -1,3 +1,5 @@
+# Note that these may change and need to be updated periodically
+
 basemap_dict = {'streets': [{'id': 'streets-base-layer',
                             'url': 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer',
                             'layerType': 'ArcGISTiledMapServiceLayer',

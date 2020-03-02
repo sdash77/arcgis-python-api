@@ -20,7 +20,7 @@ from arcgis.widgets import MapView
 
 from uuid import uuid4 #unique ids for layers in web map
 import datetime
-from arcgis.mapping.basemap_definitions import basemap_dict
+from arcgis.mapping._basemap_definitions import basemap_dict
 _log = logging.getLogger(__name__)
 ###########################################################################
 @contextmanager
