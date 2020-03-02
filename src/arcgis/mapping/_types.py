@@ -972,6 +972,17 @@ class WebMap(collections.OrderedDict):
                 }],
                 "title": "Topographic"
                 }
+                
+            # Usage example: Set the basemap used in the web map
+            from arcgis.mapping import WebMap
+            wm = WebMap(wm_item)
+            
+            print(wm.basemaps)
+            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
+            wm.basemap = 'dark-gray'
+            print(wm.gallery_basemaps)
+            >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
+            wm.basemap = 'custom_dark_gray_canvas'
         """
         if self._basemap:
             return PropertyMap(self._basemap)
@@ -984,19 +995,6 @@ class WebMap(collections.OrderedDict):
     def basemap(self, value):
         """What basemap you would like to apply to the map (‘topo’,
                 ‘national-geographic’, etc.). See `basemaps` and `gallery_basemaps` for a full list
-                
-        .. code-block:: python
-            # Usage example: Set the basemap used in the web map
-
-            from arcgis.mapping import WebMap
-            wm = WebMap(wm_item)
-            
-            print(wm.basemaps)
-            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
-            wm.basemap = 'dark-gray'
-            print(wm.gallery_basemaps)
-            >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
-            wm.basemap = 'custom_dark_gray_canvas'
         """
         if value in self.basemaps:
             self._basemap = {'baseMapLayers':basemap_dict[value],
