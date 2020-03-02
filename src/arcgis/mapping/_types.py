@@ -917,6 +917,7 @@ class WebMap(collections.OrderedDict):
     def layers(self):
         """
         Operational layers in the web map
+        
         :return: List of Layers as dictionaries
 
         .. code-block:: python
@@ -953,6 +954,7 @@ class WebMap(collections.OrderedDict):
     def basemap(self):
         """
         Base map layers in the web map
+        
         :return: List of layers as dictionaries
 
         .. code-block:: python
@@ -983,6 +985,7 @@ class WebMap(collections.OrderedDict):
             print(wm.gallery_basemaps)
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
             wm.basemap = 'custom_dark_gray_canvas'
+            
         """
         if self._basemap:
             return PropertyMap(self._basemap)
