@@ -19,7 +19,7 @@ requirements:
   - numpy >=1.16.2
   - pyshp
   - matplotlib
-  - keyring
+  - keyring >=19
   - pytest
   - pyshp >=2
   - requests
@@ -39,7 +39,7 @@ requirements:
   - numpy >=1.16.2
   - pyshp >=2
   - matplotlib
-  - keyring
+  - keyring >=19
   - pyshp
   - requests
   - requests-toolbelt
