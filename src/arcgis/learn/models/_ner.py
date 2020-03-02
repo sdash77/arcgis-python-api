@@ -145,7 +145,6 @@ class EntityRecognizer(ArcGISModel):
         if lr is None: #searching for the optimal learning rate when no learning rate is provided
             print('Finding optimum learning rate')
             lr = self.lr_find(allow_plot=False)
-            print(f'Optimal learning rate is {lr}')
 
         if self.train_ds==None:
             return logging.warning('Cannot fit the model on empty data.')
