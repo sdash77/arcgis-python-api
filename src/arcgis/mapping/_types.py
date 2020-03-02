@@ -958,7 +958,8 @@ class WebMap(collections.OrderedDict):
         :return: List of layers as dictionaries
 
         .. code-block:: python
-            # Usage example: Get the basemap used in the web map
+        
+            # Usage example 1: Get the basemap used in the web map
 
             from arcgis.mapping import WebMap
             wm = WebMap(wm_item)
@@ -975,7 +976,7 @@ class WebMap(collections.OrderedDict):
                 "title": "Topographic"
                 }
                 
-            # Usage example: Set the basemap used in the web map
+            # Usage example 2: Set the basemap used in the web map
             from arcgis.mapping import WebMap
             wm = WebMap(wm_item)
             
