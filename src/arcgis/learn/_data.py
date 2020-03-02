@@ -86,9 +86,8 @@ def get_installation_command():
     return installation_steps 
 
 def _raise_fastai_import_error(import_exception=import_exception):
-    print(import_exception)
     installation_steps = get_installation_command()
-    raise Exception(f"""This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies. \n{installation_steps}""")
+    raise Exception(f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies.\n{installation_steps}""")
 
 class _ImagenetCollater():
     def __init__(self, chip_size):
