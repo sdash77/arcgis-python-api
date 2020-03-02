@@ -59,11 +59,16 @@ def IC_show_results(self, nrows=5, **kwargs):
     x_batch, y_batch = [], []
     i = 0
     dl_iterater = iter(data_loader)
-    while i < nrows*ncols:
-        x, y = next(dl_iterater)
-        x_batch.append(x)
-        y_batch.append(y)
-        i+=self._data.batch_size
+    get_next = True
+    while i < nrows*ncols and get_next:
+        try:
+            x, y = next(dl_iterater)
+            x_batch.append(x)
+            y_batch.append(y)
+            i+=self._data.batch_size
+        except StopIteration:
+            get_next = False
+        
     x_batch = torch.cat(x_batch)
     # Denormalize X
     y_batch = torch.cat(y_batch)
