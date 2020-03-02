@@ -1,13 +1,30 @@
 import os
+import sys
+import traceback
 
-HAS_TENSORFLOW = False
+
 HAS_BACKEND_SET = False
 ARCGIS_ENABLE_TF_BACKEND = os.environ.get('ARCGIS_ENABLE_TF_BACKEND') is '1'
 
+HAS_TENSORFLOW = False
+tf_import_exception = None
 try:
     import tensorflow as tf
     HAS_TENSORFLOW = True
-except:
+except Exception as e:
+    tf_import_exception = traceback.format_exc()
+    pass
+
+HAS_FASTAI = False
+fastai_import_exception = None
+try:
+    import fastai
+    import torch
+    import torchvision
+    import skimage
+    HAS_FASTAI = True
+except Exception as e:
+    fastai_import_exception = traceback.format_exc()
     pass
 
 def enable_backend():
@@ -50,3 +67,20 @@ def raise_tensorflow_import_error():
 def tf_sample_op():
     a = tf.keras.layers.Conv2D(1, (3, 3))
     a = a(tf.zeros((1, 3, 224, 224)))
+
+def fastai_installation_command():
+    installation_steps = "Install them using 'conda install -c esri -c fastai -c pytorch arcgis pillow scikit-image fastai=1.0.54 pytorch=1.1.0'"
+    if sys.platform == 'win32':
+        installation_steps = "Install them using 'conda install -c esri arcgis fastai pillow scikit-image'"
+    elif sys.platform in ['linux', 'darwin']:
+        pass
+            
+    return installation_steps 
+
+def raise_fastai_import_error(import_exception=fastai_import_exception, installation_steps=None, message=None):
+    if installation_steps is None:
+        installation_steps = fastai_installation_command()
+    if message is None:
+        message = "This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies."
+    raise Exception(f"""{import_exception} \n\n{message}\n{installation_steps}""")
+

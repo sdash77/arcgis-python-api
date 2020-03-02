@@ -1,5 +1,7 @@
-from .._data import _raise_fastai_import_error
+import traceback
+from .._utils.env import raise_fastai_import_error
 
+import_exception = None
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
     from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero, AverageMetric
@@ -15,6 +17,7 @@ try:
     from pathlib import Path
     HAS_FASTAI = True
 except Exception as e:
+    import_exception = traceback.format_exc()
     HAS_FASTAI = False
 
 class PointCNN(ArcGISModel):
@@ -70,6 +73,9 @@ class PointCNN(ArcGISModel):
 
     def __init__(self, data, pretrained_path=None, **kwargs):
         super().__init__(data, None)
+
+        if not HAS_FASTAI:
+            raise_fastai_import_error(import_exception=import_exception, message="This model requires module 'torch_geometric' to be installed.", installation_steps=' ')
         
         self._backbone = None
         self.sample_point_num = kwargs.get('sample_point_num', data.max_point)
