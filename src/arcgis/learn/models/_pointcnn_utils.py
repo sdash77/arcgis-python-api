@@ -457,5 +457,5 @@ class IterationStop(LearnerCallback):
         self.stop_iteration = stop_iteration
 
     def on_batch_end(self, **kwargs):
-        if kwargs['iteration'] % self.stop_iteration==0:
+        if (kwargs['iteration'] + 1) % self.stop_iteration==0:
             return {'stop_epoch': True}

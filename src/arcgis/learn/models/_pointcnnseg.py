@@ -183,16 +183,19 @@ class PointCNN(ArcGISModel):
         """
         iterations = kwargs.get('iters_per_epoch', None)
         from ._pointcnn_utils import IterationStop
+        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         if iterations is not None:
             del kwargs['iters_per_epoch']
             stop_iteration_cb = IterationStop(self.learn, iterations)
+            callbacks.append(stop_iteration_cb)
+            kwargs['callbacks'] = callbacks
         self._check_requisites()
 
         if lr is None:
             print('Finding optimum learning rate.')
             lr = self.lr_find(allow_plot=False)
         
-        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, callbacks=[stop_iteration_cb], **kwargs)
+        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs)
         
     @property
     def _model_metrics(self):
