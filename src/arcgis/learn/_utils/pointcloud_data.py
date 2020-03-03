@@ -37,7 +37,10 @@ import arcgis
 import os
 import math
 from fastai.data_block import ItemList
-from fastprogress import master_bar, progress_bar
+try:
+    from fastprogress import master_bar, progress_bar
+except ImportError:
+    from fastprogress.fastprogress import master_bar, progress_bar
 import glob
 import importlib
 import random
