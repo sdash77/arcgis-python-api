@@ -2,7 +2,10 @@ try:
     import spacy
     from spacy.util import minibatch, compounding
     import pandas as pd
-    from fastprogress import master_bar, progress_bar
+    try:
+        from fastprogress import master_bar, progress_bar
+    except ImportError:
+        from fastprogress.fastprogress import master_bar, progress_bar
     from ._codetemplate import entity_recognizer_placeholder
     import numpy as np
     HAS_SPACY=True
