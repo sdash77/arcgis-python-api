@@ -2003,7 +2003,10 @@ class GeoAccessor(object):
                 stop = i + batch_size if i + batch_size < N else N
                 res = batch_geocode(list(df[start:stop][address_column]), geocoder=geocoder)
                 for index in range(len(res)):
-                    address = df.ix[start + index, address_column]
+                    try:
+                        address = df.loc[start + index, address_column]
+                    except: # for older versions, fall back to `df.ix`
+                        address = df.ix[start + index, address_column]
                     try:
                         loc = res[index]['location']
                         x = loc['x']
