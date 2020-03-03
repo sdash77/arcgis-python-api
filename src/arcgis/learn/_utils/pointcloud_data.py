@@ -351,8 +351,8 @@ def prepare_las_data(root,
     LOAD_FROM_EXT = '.las'
     os.makedirs(output_path, exist_ok=True)
 
-    if len(os.listdir(output_path)) > 0:
-        raise Exception(f"The given output path({output_path}) already contains some files. Either delete those files or pass in a new output path.")
+    if (Path(output_path) / 'meta.json').exists() or (Path(output_path) / 'Statistics.json').exists():
+        raise Exception(f"The given output path({output_path}) already contains exported data. Either delete those files or pass in a new output path.")
 
     folders = [os.path.join(root, folder) for folder in folder_names]  ## Folders are named train and val
     mb = master_bar(range(len(folders)))
@@ -816,7 +816,15 @@ def inference_las(path, pointcnn_model, out_path=None):
     import h5py    
     ## Export data
     path = Path(path)
-    out_path = Path(out_path)
+
+    if len(list(path.glob('*.las'))) == 0:
+        raise Exception(f"The given path({path}) contains no las files.")
+
+    if out_path is None:
+        out_path = path / 'results'
+    else:    
+        out_path = Path(out_path)
+        
     prepare_las_data(path.parent,
                      block_size=pointcnn_model._data.block_size[0],
                      max_point_num=pointcnn_model._data.max_point,
@@ -826,10 +834,6 @@ def inference_las(path, pointcnn_model, out_path=None):
                      segregate=False,
                      print_it=False
     )
-    
-    if out_path is None:
-        out_path = path / 'results'
-
     ## Predict and postprocess
     max_point_num = pointcnn_model._data.max_point
     sample_num = pointcnn_model.sample_point_num
