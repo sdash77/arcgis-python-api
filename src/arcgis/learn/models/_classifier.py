@@ -204,7 +204,10 @@ class FeatureClassifier(ArcGISModel):
     def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
         import fastai
-        import fastprogress
+        try:
+            from fastprogress import fastprogress
+        except ImportError:
+            import fastprogress
         fastprogress.fastprogress.NO_BAR = True
         fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.force_console_behavior()
         self.plot_confusion_matrix()
