@@ -205,10 +205,42 @@ def recenter(pc):
     max_val = np.amax(pc, axis=0)
     return (pc - min_val[None])
 
-def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=False, **kwargs):
+def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
+
     """
-    kwargs: ["mask_class", "width", "height" ]
+    It will plot 3d point cloud data you exported in the notebook.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional rows. Number of rows to show. Deafults
+                            value is 2.
+    ---------------------   -------------------------------------------
+    color_mapping           Optional dictionary. Mapping from class value
+                            to RGB values. Default value
+                            Example: {0:[220,220,220],
+                                        1:[255,0,0],
+                                        2:[0,255,0],
+                                        3:[0,0,255]}                                                         
+    =====================   ===========================================
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    mask_class              Optinal array of integers. Array containing
+                            class values to mask. Default value is [0].    
+    ---------------------   -------------------------------------------
+    width                   Optional integer. Width of the plot. Default 
+                            value is 750.
+    ---------------------   -------------------------------------------
+    height                  Optional integer. Height of the plot. Default
+                            value is 512
+    =====================   ===========================================
     """
+
+    filter_outliers = False
     try_import("h5py")
     import h5py
     try_import('plotly')
@@ -307,7 +339,7 @@ def prepare_las_data(root,
                        **kwargs
                        ):
     try_import("h5py")
-    import h5py                       
+    import h5py
     block_size_ = block_size
     batch_size= blocks_per_file
     data = np.zeros((batch_size, max_point_num, 3 + len(extra_features))) #XYZ, Intensity, NumReturns
@@ -318,6 +350,9 @@ def prepare_las_data(root,
     indices_split_to_full = np.zeros((batch_size, max_point_num), dtype=np.int32)
     LOAD_FROM_EXT = '.las'
     os.makedirs(output_path, exist_ok=True)
+
+    if (Path(output_path) / 'meta.json').exists() or (Path(output_path) / 'Statistics.json').exists():
+        raise Exception(f"The given output path({output_path}) already contains exported data. Either delete those files or pass in a new output path.")
 
     folders = [os.path.join(root, folder) for folder in folder_names]  ## Folders are named train and val
     mb = master_bar(range(len(folders)))
@@ -781,7 +816,15 @@ def inference_las(path, pointcnn_model, out_path=None):
     import h5py    
     ## Export data
     path = Path(path)
-    out_path = Path(out_path)
+
+    if len(list(path.glob('*.las'))) == 0:
+        raise Exception(f"The given path({path}) contains no las files.")
+
+    if out_path is None:
+        out_path = path / 'results'
+    else:    
+        out_path = Path(out_path)
+        
     prepare_las_data(path.parent,
                      block_size=pointcnn_model._data.block_size[0],
                      max_point_num=pointcnn_model._data.max_point,
@@ -791,10 +834,6 @@ def inference_las(path, pointcnn_model, out_path=None):
                      segregate=False,
                      print_it=False
     )
-    
-    if out_path is None:
-        out_path = path / 'results'
-
     ## Predict and postprocess
     max_point_num = pointcnn_model._data.max_point
     sample_num = pointcnn_model.sample_point_num
@@ -918,10 +957,43 @@ def inference_las(path, pointcnn_model, out_path=None):
 
     return out_path
 
-def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs):
+def show_results(self, rows, color_mapping=None, **kwargs):
+
     """
-    kwargs: ["mask_class", "width", "height" ]
+    It will plot results from your trained model with ground truth on the
+    left and predictions on the right.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional rows. Number of rows to show. Deafults
+                            value is 2.
+    ---------------------   -------------------------------------------
+    color_mapping           Optional dictionary. Mapping from class value
+                            to RGB values. Default value
+                            Example: {0:[220,220,220],
+                                        1:[255,0,0],
+                                        2:[0,255,0],
+                                        3:[0,0,255]}                                                         
+    =====================   ===========================================
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    mask_class              Optinal array of integers. Array containing
+                            class values to mask. Default value is [0].    
+    ---------------------   -------------------------------------------
+    width                   Optional integer. Width of the plot. Default 
+                            value is 750.
+    ---------------------   -------------------------------------------
+    height                  Optional integer. Height of the plot. Default
+                            value is 512
+    =====================   ===========================================
     """
+    
+    filter_outliers = False
     try_import("h5py")
     try_import('plotly')
     import h5py    
@@ -955,7 +1027,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         labels = []
         pred_class = []
         pred_confidence = []
-        for nn, i in enumerate(progress_bar(idxs)):
+        for i in idxs:
             # print(f'Running Show Results: Processing {nn+1} of {len(idxs)} blocks.', end='\r')
             current_block = i['unnormalized_data'][:, :3]
             data_num = i['data_num'][()] 
