@@ -1007,6 +1007,8 @@ class WebMap(collections.OrderedDict):
         elif value in self.gallery_basemaps:
             self._basemap = self._gallery_basemaps[value]
             self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, Item):
+            self._basemap = value.get_data()['baseMap']
         else:
             raise RuntimeError("Basemap '{}' isn't valid".format(value))
     
