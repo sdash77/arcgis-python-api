@@ -353,13 +353,15 @@ def prepare_data(path,
     =====================   ===========================================
 
     :returns: data object
-    """
-    """kwargs documentation
-    imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
-    bands=None # sepcify bands type for unknow imagery ['r', 'g', 'b', 'nir']
-    rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
-    norm_pct=0.3 # sample of images to calculate normalization stats on 
-    do_normalize=True # Normalize data 
+  
+    kwargs documentation
+
+    * imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
+    * bands=None # sepcify bands type for unknow imagery ['r', 'g', 'b', 'nir']
+    * rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
+    * norm_pct=0.3 # sample of images to calculate normalization stats on 
+    * do_normalize=True # Normalize data 
+
     """
 
     height_width = []
