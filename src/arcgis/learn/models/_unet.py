@@ -225,9 +225,12 @@ class UnetClassifier(ArcGISModel):
         if not hasattr(self.learn, 'recorder'):
             return 0.0
 
-        model_accuracy = self.learn.recorder.metrics[-1][0]
-        if checkpoint:
-            model_accuracy = np.max(self.learn.recorder.metrics)
+        try:
+            model_accuracy = self.learn.recorder.metrics[-1][0]
+            if checkpoint:
+                model_accuracy = np.max(self.learn.recorder.metrics)
+        except:
+            model_accuracy = 0.0
 
         return float(model_accuracy)
 
