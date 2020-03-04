@@ -53,7 +53,7 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy=1.6.0'")
+        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy==1.6.0'")
 
 def try_import(module):
     try:
@@ -745,10 +745,13 @@ def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes):
     classification = []
     for p in f:
         p = f[i]
-        false_positives[labels[i]] += int(p.classification != labels[i])
-        true_positives[labels[i]] += int(p.classification == labels[i])
-        false_negatives[p.classification] += int(p.classification != labels[i])
-        
+        try:
+            false_positives[labels[i]] += int(p.classification != labels[i])
+            true_positives[labels[i]] += int(p.classification == labels[i])
+            false_negatives[p.classification] += int(p.classification != labels[i])
+        except:
+            pass
+
         x.append(p.X)
         y.append(p.Y)
         z.append(p.Z)
@@ -814,7 +817,7 @@ def get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, b
         
     return predictions
 
-def inference_las(path, pointcnn_model, out_path=None):
+def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
     try_import("h5py")
     import h5py    
     ## Export data
@@ -948,7 +951,8 @@ def inference_las(path, pointcnn_model, out_path=None):
             global_false_positives = np.add(global_false_positives, false_positives)
             global_true_positives = np.add(global_true_positives, true_positives)
             global_false_negatives = np.add(global_false_negatives, false_negatives)
-    print('Overal per-class-metrics: \nPrecision:{}, \nRecall:   {}, \nF1 score: {}'.format(
+    if print_metrics: 
+        print('Overal per-class-metrics: \nPrecision:{}, \nRecall:   {}, \nF1 score: {}'.format(
         *calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)))
 
 
@@ -1101,4 +1105,45 @@ def show_results(self, rows, color_mapping=None, **kwargs):
 
         if idx == rows-1:
             break
-        idx += 1 
+        idx += 1
+
+def compute_precision_recall(self):
+    from ..models._pointcnn_utils import get_indices
+    import pandas as pd 
+
+    valid_dl = self._data.valid_dl
+    model = self.learn.model.eval()
+
+    false_positives = [0] * self._data.c
+    true_positives = [0] * self._data.c
+    false_negatives = [0] * self._data.c
+
+    all_y = []
+    all_pred = []
+    for x_in, y_in in progress_bar(iter(valid_dl)):
+        x_in, point_nums = x_in   ## (batch, total_points, num_features), (batch,)
+        batch, _, num_features = x_in.shape
+        indices = torch.tensor(get_indices(batch, self.sample_point_num, point_nums.long())).to(x_in.device)
+        indices = indices.view(-1, 2).long()
+        x_in = x_in[indices[:, 0], indices[:, 1]].view(batch, self.sample_point_num, num_features).contiguous()  ## batch, self.sample_point_num, num_features                
+        y_in = y_in[indices[:, 0], indices[:, 1]].view(batch, self.sample_point_num).contiguous().cpu().numpy() ## batch, self.sample_point_num        
+        with torch.no_grad():
+            preds = model(x_in).detach().cpu().numpy()
+        predicted_labels = preds.argmax(axis=-1)
+        all_y.append(y_in.reshape(-1))
+        all_pred.append(predicted_labels.reshape(-1))
+
+    all_y = np.concatenate(all_y)
+    all_pred = np.concatenate(all_pred)
+    
+    for i in range(len(all_y)):        
+        false_positives[all_pred[i]] += int(all_y[i] != all_pred[i])
+        true_positives[all_pred[i]] += int(all_y[i] == all_pred[i])
+        false_negatives[all_y[i]] += int(all_y[i] != all_pred[i])        
+    
+    
+    precision, recall, f_1 = calculate_metrics(false_positives, true_positives, false_negatives)
+    data = [precision, recall, f_1]
+    index = ['precision', 'recall', 'f_1 score']
+    df = pd.DataFrame(data, columns=list(range(self._data.c)), index=index) 
+    return df

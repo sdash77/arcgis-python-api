@@ -5,7 +5,7 @@ import_exception = None
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
     from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero, AverageMetric
-    from .._utils.pointcloud_data import get_device, inference_las, show_results
+    from .._utils.pointcloud_data import get_device, inference_las, show_results, compute_precision_recall
     from ._unet_utils import is_no_color
     from fastai.basic_train import Learner
     import torch
@@ -253,7 +253,7 @@ class PointCNN(ArcGISModel):
 
         return show_results(self, rows, **kwargs)
 
-    def predict_las(self, path, output_path=None, **kwargs):
+    def predict_las(self, path, output_path=None, print_metrics=False, **kwargs):
 
         """
         Predicts and writes the resulting las file on the disk. 
@@ -266,11 +266,22 @@ class PointCNN(ArcGISModel):
         ---------------------   -------------------------------------------
         output_path             Optional string. The path to folder where to dump
                                 the resulting las files. Defaults to `results` folder
-                                in input path.                                                    
+                                in input path.  
+        ---------------------   -------------------------------------------
+        print_metrics           Optional boolean. If True, print metrics such as precision,
+                                recall and f1_score. Defaults to False.
         =====================   ===========================================
         
         :returns: Path where files are dumped.
         """
         
-        return inference_las(path, self, output_path)
+        return inference_las(path, self, output_path, print_metrics)
+
+    def compute_precision_recall(self):
+        
+        """
+        Computes precision, recall and f1-score on the validation sets.
+        """
+
+        return compute_precision_recall(self)
         
