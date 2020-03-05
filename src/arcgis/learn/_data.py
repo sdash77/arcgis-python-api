@@ -11,6 +11,7 @@ import traceback
 
 import_exception = None
 try:
+    import arcgis
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
@@ -317,7 +318,12 @@ def prepare_data(path,
                             For dataset_type=IOB, BILUO or ner_json:
                                 Provide address field as class mapping
                                 in below format:
-                                class_mapping={'address_tag':'address_field'}
+                                class_mapping={'address_tag':'address_field'}.
+                                Field defined as 'address_tag' will be treated
+                                as a location. In cases where trained model extracts
+                                multiple locations from a single document, that 
+                                document will be replicated for each location.
+
     ---------------------   -------------------------------------------
     chip_size               Optional integer. Size of the image to train the
                             model.
@@ -353,13 +359,13 @@ def prepare_data(path,
     =====================   ===========================================
 
     :returns: data object
-    """
-    """kwargs documentation
-    imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
-    bands=None # sepcify bands type for unknow imagery ['r', 'g', 'b', 'nir']
-    rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
-    norm_pct=0.3 # sample of images to calculate normalization stats on 
-    do_normalize=True # Normalize data 
+  
+    kwargs documentation
+    * imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
+    * bands=None # specify bands type for unknown imagery ['r', 'g', 'b', 'nir']
+    * rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
+    * norm_pct=0.3 # sample of images to calculate normalization stats on 
+    * do_normalize=True # Normalize data 
     """
 
     height_width = []
@@ -375,6 +381,9 @@ def prepare_data(path,
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     databunch_kwargs['bs'] = batch_size
+
+    if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
+        databunch_kwargs["device"] = torch.device('cpu')
 
     kwargs_transforms = {}
     if resize_to:
