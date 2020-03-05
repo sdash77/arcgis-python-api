@@ -122,6 +122,8 @@ class InsensitiveDict(MutableMapping):
                 for i in v:
                     if isinstance(i, InsensitiveDict):
                         l.append(i._json())
+                    else:
+                        l.append(i)
                 if type(v) is tuple:
                     v = tuple(l)
                 else:
