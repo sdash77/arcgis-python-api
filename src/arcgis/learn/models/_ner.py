@@ -412,6 +412,11 @@ class EntityRecognizer(ArcGISModel):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
         
+        Field defined as 'address_tag' in `prepare_data()` function's class mapping
+        attribute will be treated as a location. In cases where trained model extracts 
+        multiple locations from a single document, that document will be replicated 
+        for each location in the resulting dataframe.
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------

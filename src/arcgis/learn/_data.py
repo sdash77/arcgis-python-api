@@ -318,7 +318,12 @@ def prepare_data(path,
                             For dataset_type=IOB, BILUO or ner_json:
                                 Provide address field as class mapping
                                 in below format:
-                                class_mapping={'address_tag':'address_field'}
+                                class_mapping={'address_tag':'address_field'}.
+                                Field defined as 'address_tag' will be treated
+                                as a location. In cases where trained model extracts
+                                multiple locations from a single document, that 
+                                document will be replicated for each location.
+
     ---------------------   -------------------------------------------
     chip_size               Optional integer. Size of the image to train the
                             model.
@@ -356,13 +361,11 @@ def prepare_data(path,
     :returns: data object
   
     kwargs documentation
-
     * imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
-    * bands=None # sepcify bands type for unknow imagery ['r', 'g', 'b', 'nir']
+    * bands=None # specify bands type for unknown imagery ['r', 'g', 'b', 'nir']
     * rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
     * norm_pct=0.3 # sample of images to calculate normalization stats on 
     * do_normalize=True # Normalize data 
-
     """
 
     height_width = []
