@@ -11,6 +11,7 @@ import traceback
 
 import_exception = None
 try:
+    import arcgis
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
     from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
@@ -377,6 +378,9 @@ def prepare_data(path,
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     databunch_kwargs['bs'] = batch_size
+
+    if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
+        databunch_kwargs["device"] = torch.device('cpu')
 
     kwargs_transforms = {}
     if resize_to:
