@@ -181,7 +181,7 @@ class WebMap(collections.OrderedDict):
             self.definition = pmap
             self._layers = None
             self._tables = None
-            self._basemap = None
+            self._basemap = self._webmapdict["baseMap"]
             self._extent = self.item.extent
 
         else:
@@ -201,7 +201,8 @@ class WebMap(collections.OrderedDict):
                 'title':'Topographic'
             }
             self._gallery_basemaps = {}
-            self._webmapdict = {'baseMap':self._basemap,
+            self._webmapdict = {'operationalLayers': [],
+                                'baseMap':self._basemap,
                                 'spatialReference':self._default_spatial_reference,
                                 'version':'2.10',
             'authoringApp': 'ArcGISPythonAPI',
@@ -987,6 +988,12 @@ class WebMap(collections.OrderedDict):
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
             wm.basemap = 'custom_dark_gray_canvas'
             
+            # Usage example 3: Set the basemap equal to an item
+            from arcgis.mapping import WebMap
+            wm = WebMap(wm_item)
+            wm.basemap = tiled_map_service_item
+            wm.basemap = image_layer_item
+            
         """
         if self._basemap:
             return PropertyMap(self._basemap)
@@ -995,6 +1002,21 @@ class WebMap(collections.OrderedDict):
                 self._basemap = self._webmapdict['baseMap']
             return PropertyMap(self._basemap)
 
+    def _determine_layer_type(self, item):
+        # this function determines the basemap layer type for the Web Map Specification
+        if item.type == "Image Service":
+            layer_type = "ArcGISImageServiceLayer"
+            layer = arcgis.raster.ImageryLayer(item.url, gis=self._gis)
+        else:
+            layer_type = "ArcGISMapServiceLayer"
+            layer = arcgis.mapping.MapImageLayer(item.url, gis=self._gis)
+        tiled = False
+        if "tileInfo" in layer.properties:
+            tiled = True
+        if tiled:
+            layer_type = "ArcGIS" + layer_type.replace("ArcGIS", "Tiled")
+        return layer_type
+        
     @basemap.setter
     def basemap(self, value):
         """What basemap you would like to apply to the map (‘topo’,
@@ -1007,8 +1029,21 @@ class WebMap(collections.OrderedDict):
         elif value in self.gallery_basemaps:
             self._basemap = self._gallery_basemaps[value]
             self._webmapdict['baseMap'] = self._basemap
-        elif isinstance(value, Item):
+        elif isinstance(value, Item) and value.type.title() == "Web Map":
             self._basemap = value.get_data()['baseMap']
+            self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, Item) and (value.type.title() == "Image Service" or value.type.title() == "Map Service"):
+            layer_type = self._determine_layer_type(value)
+            self._basemap = {
+                'baseMapLayers':[{'id': 'newBasemap',
+                                  'layerType': layer_type,
+                                  'url': value.url,
+                                  'visibility': True,
+                                  'opacity': 1,
+                                  'title': value.title}],
+                'title':value.title
+            }
+            self._webmapdict['baseMap'] = self._basemap
         else:
             raise RuntimeError("Basemap '{}' isn't valid".format(value))
     
