@@ -53,7 +53,7 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy==1.6.0'")
+        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly, laspy and h5py using 'conda install -c esri -c plotly laspy==1.6.0 plotly=4.5.0 plotly-orca psutil h5py=2.10.0'.")
 
 def try_import(module):
     try:
@@ -62,7 +62,7 @@ def try_import(module):
         if module == 'plotly':
             raise Exception("This function requires plotly. Install it using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil'")
         elif module == 'laspy':
-            raise Exception("This function requires laspy. Install it using 'pip install laspy==1.6.0'")
+            raise Exception("This function requires laspy. Install it using 'conda install -c esri laspy==1.6.0'")
         elif module == 'h5py':
             raise Exception(f"This function requires h5py. Install it using 'conda install h5py=2.10.0'")
         else:
