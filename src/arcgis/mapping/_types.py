@@ -991,6 +991,8 @@ class WebMap(collections.OrderedDict):
             # Usage example 3: Set the basemap equal to an item
             from arcgis.mapping import WebMap
             wm = WebMap(wm_item)
+            # Use basemap from another item as your own
+            wm.basemap = wm_item_2
             wm.basemap = tiled_map_service_item
             wm.basemap = image_layer_item
             
