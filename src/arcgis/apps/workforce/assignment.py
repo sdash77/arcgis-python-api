@@ -465,9 +465,9 @@ class Assignment(FeatureModel):
         """Returns a link to the assignment in the Workforce web app"""
         if self.project.gis.properties["isPortal"]:
             portal_url = self.project.gis.properties['portalHostname']
-            return f"https://{portal_url}/apps/workforce/#/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
+            return "https://" + portal_url + "/apps/workforce/#/projects/" + self.project.id + "/dispatch/assignments/" + str(self.object_id)
         else:
-            return f"https://workforce.arcgis.com/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
+            return "https://workforce.arcgis.com/projects/" + self.project.id + "/dispatch/assignments/" + str(self.object_id)
         
     @property
     def work_order_id(self):
