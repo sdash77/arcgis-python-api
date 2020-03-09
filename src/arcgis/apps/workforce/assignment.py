@@ -462,6 +462,7 @@ class Assignment(FeatureModel):
 
     @property
     def web_app_link(self):
+        """Returns a link to the assignment in the Workforce web app"""
         if self.project.gis.properties["isPortal"]:
             portal_url = self.project.gis.properties['portalHostname']
             return f"https://{portal_url}/apps/workforce/#/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
