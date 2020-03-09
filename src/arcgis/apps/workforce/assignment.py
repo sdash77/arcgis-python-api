@@ -212,14 +212,6 @@ class Assignment(FeatureModel):
     def delete(self):
         """Deletes the assignment from the server"""
         delete_assignments(self.project, [self])
-
-    @property
-    def app_link(self):
-        if self.project.gis.properties["isPortal"]:
-            portal_url = self.project.gis.properties['portalHostname']
-            return f"Assignment Link: https://{portal_url}/apps/workforce/#/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
-        else:
-            return f"Assignment Link: https://workforce.arcgis.com/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
     
     @property
     def attachments(self):
@@ -468,6 +460,14 @@ class Assignment(FeatureModel):
         else:
             raise ValidationError("Invalid status", self)
 
+    @property
+    def web_app_link(self):
+        if self.project.gis.properties["isPortal"]:
+            portal_url = self.project.gis.properties['portalHostname']
+            return f"https://{portal_url}/apps/workforce/#/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
+        else:
+            return f"https://workforce.arcgis.com/projects/{self.project.id}/dispatch/assignments/{self.object_id}"
+        
     @property
     def work_order_id(self):
         """Gets/Sets the work order id of the assignment"""
