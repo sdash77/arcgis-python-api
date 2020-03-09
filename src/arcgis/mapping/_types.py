@@ -995,6 +995,8 @@ class WebMap(collections.OrderedDict):
             wm.basemap = wm_item_2
             wm.basemap = tiled_map_service_item
             wm.basemap = image_layer_item
+            wm.basemap = wm2.basemap
+            wm.basemap = wm2
             
         """
         if self._basemap:
@@ -1024,7 +1026,13 @@ class WebMap(collections.OrderedDict):
         """What basemap you would like to apply to the map (‘topo’,
                 ‘national-geographic’, etc.). See `basemaps` and `gallery_basemaps` for a full list
         """
-        if value in self.basemaps:
+        if isinstance(value, MapView):
+            # get basemap from map widget
+            if value.basemap in self.basemaps:
+                self._basemap = {'baseMapLayers': basemap_dict[value.basemap],
+                                 'title': value.basemap.replace("-", " ").title()}
+                self._webmapdict['baseMap'] = self._basemap
+        elif value in self.basemaps:
             self._basemap = {'baseMapLayers':basemap_dict[value],
                              'title': value.replace("-"," ").title()}
             self._webmapdict['baseMap'] = self._basemap
@@ -1033,6 +1041,13 @@ class WebMap(collections.OrderedDict):
             self._webmapdict['baseMap'] = self._basemap
         elif isinstance(value, Item) and value.type.title() == "Web Map":
             self._basemap = value.get_data()['baseMap']
+            self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, WebMap):
+            self._basemap = value.basemap
+            self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, PropertyMap) and "baseMapLayers" in value:
+            # for map1.basemap = map2.basemap
+            self._basemap = value
             self._webmapdict['baseMap'] = self._basemap
         elif isinstance(value, Item) and (value.type.title() == "Image Service" or value.type.title() == "Map Service"):
             layer_type = self._determine_layer_type(value)
