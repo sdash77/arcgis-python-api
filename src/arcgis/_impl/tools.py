@@ -26,7 +26,7 @@ from arcgis._impl.common._utils import _DisableLogger
 from arcgis.geocoding import Geocoder
 from arcgis.geometry import Point, MultiPoint, Polygon, Envelope, Polyline, Geometry
 from arcgis.features import Feature, FeatureSet, FeatureCollection, FeatureLayer
-from six.moves.urllib.error import HTTPError
+from urllib.error import HTTPError
 from arcgis.geoprocessing import import_toolbox
 from arcgis.raster._util import _set_context as _set_raster_context
 _log = logging.getLogger(__name__)
@@ -260,8 +260,19 @@ class _GISService(object):
         with _DisableLogger():
             try:
                 # try as a federated server
-                if isinstance(self._con, arcgis._impl._ArcGISConnection):
-                    self._token = self._con.generate_portal_server_token(url)
+                if isinstance(self._con, arcgis.gis._impl._con.Connection) and self._con._auth.lower() != 'anon':
+                    try:
+                        self._token = self._con.generate_portal_server_token(url)
+                    except Exception as e: # GUESSED Auth Wrong, try anonymously 
+                        if str(e).find("'code': 201, 'message': 'Exception in generating token'") > -1:
+                            self._con._auth = "ANON"
+                        elif str(e).lower().find("unable to generate token for this server") > -1:
+                            raise RuntimeError(str(e))
+                        elif str(e).lower().find("exception in generating token") > -1 and self._con._auth == 'IWA':
+                            self._con._auth = "ANON"
+                        else:
+                            from requests.exceptions import RequestException
+                            raise RequestException(str(e))
                 else:
                     self._token = self._con.token
                 self._refresh()
@@ -3519,7 +3530,7 @@ class _PackagingTools(object):
     #----------------------------------------------------------------------
     def create_map_area(self, 
                         map_item_id, 
-                        bookmaark=None,
+                        bookmark=None,
                         extent=None,
                         area_type='BOOKMARK',
                         area=None,
@@ -4938,6 +4949,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         input_param = input_layer
 
         url = ""
+        from arcgis.raster import Raster
+        if isinstance(input_layer, Raster):
+            if hasattr(input_layer,"_engine_obj"):
+                input_layer=input_layer._engine_obj
         if isinstance(input_layer, arcgis.gis.Item):
             if input_layer.type == "Image Collection":
                 input_param = {"itemId": input_layer.itemid}
@@ -4957,7 +4972,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             input_param = input_layer._lyr_dict
             from arcgis.raster import ImageryLayer
             import json
-            if isinstance(input_layer, ImageryLayer):
+            if isinstance(input_layer, ImageryLayer) or isinstance(input_layer, Raster):
                 if 'options' in input_layer._lyr_json:
                     if isinstance(input_layer._lyr_json['options'], str): #sometimes the rendering info is a string
                         #load json
@@ -5011,15 +5026,15 @@ class _RasterAnalysisTools(BaseAnalytics):
             if "folder" in output_properties:
                 folder = output_properties["folder"]
         if folder is not None:
+            user = gis.properties.user.username
             if isinstance(folder, dict):
-                if "id" in folder:
+                if "id" in folder and "title" in folder:
                     folderId = folder["id"]
                     folder=folder["title"]
             else:
-                owner = gis.properties.user.username
-                folderId = gis._portal.get_folder_id(owner, folder)
+                folderId = gis._portal.get_folder_id(user, folder)
             if folderId is None:
-                folder_dict = gis.content.create_folder(folder, owner)
+                folder_dict = gis.content.create_folder(folder, user)
                 folder = folder_dict["title"]
                 folderId = folder_dict["id"]
 
@@ -5937,6 +5952,8 @@ class _RasterAnalysisTools(BaseAnalytics):
                                   output_type="Point",
                                   simplify_lines_or_polygons=True,
                                   context=None,
+                                  create_multipart_features=False,
+                                  max_vertices_per_feature=None,
                                   future=False,
                                   **kwargs):
         """
@@ -6014,14 +6031,28 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             output_name = json.dumps({"serviceProperties": {"name": output_service_name, "serviceUrl": output_service.url},
                                            "itemProperties": {"itemId": output_service.itemid}})
-        gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
-                                                    output_name=output_name,
-                                                    field=field,
-                                                    output_type=output_type,
-                                                    simplify_lines_or_polygons=simplify_lines_or_polygons,
-                                                    context=context,
-                                                    gis=self._gis,
-                                                    future=True)
+
+        if(('currentVersion' in self._gis._tools.rasteranalysis.properties.keys()) and self._gis._tools.rasteranalysis.properties["currentVersion"]<=10.8):
+            gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
+                                                        output_name=output_name,
+                                                        field=field,
+                                                        output_type=output_type,
+                                                        simplify_lines_or_polygons=simplify_lines_or_polygons,
+                                                        context=context,
+                                                        gis=self._gis,
+                                                        future=True)
+
+        else:
+            gpjob = self._tbx.convert_raster_to_feature(input_raster=input_raster,
+                                                        output_name=output_name,
+                                                        field=field,
+                                                        output_type=output_type,
+                                                        simplify_lines_or_polygons=simplify_lines_or_polygons,
+                                                        create_multipart_features=create_multipart_features,
+                                                        max_vertices_per_feature=max_vertices_per_feature,
+                                                        context=context,
+                                                        gis=self._gis,
+                                                        future=True)
         gpjob._is_ra = True
         gpjob._return_item = output_service
         gpjob._item_properties = True
@@ -8922,724 +8953,56 @@ class _RasterAnalysisTools(BaseAnalytics):
             return gpjob
         return gpjob.result()
 
-
-###########################################################################
-class _RasterAnalysisToolsOLD(_AsyncService):
-    "Exposes the Raster Analysis Tools. The RasterAnalysisTools service is used by ArcGIS Server to provide distributed raster analysis."
-
-    def __init__(self, url, gis):
+    def define_nodata(self,
+                      input_raster,
+                      nodata,
+                      query_filter=None,
+                      num_of_bands=None,
+                      composite_value=None,
+                      future=False,
+                      **kwargs):
         """
-        Constructs a client to the service given it's url from ArcGIS Online or Portal.
-        """
-        super(_RasterAnalysisTools, self).__init__(url, gis)
-
-    def _create_output_image_service(self, output_name, task):
-        ok = self._gis.content.is_service_name_available(output_name, "Image Service")
-        if not ok:
-            raise RuntimeError("An Image Service by this name already exists: " + output_name)
-
-        createParameters = {
-            "name": output_name,
-            "description": "",
-            "capabilities": "Image",
-                "properties": {
-                    "path": "@",
-                    "description": "",
-                    "copyright": ""
-                }
-        }
-
-        output_service = self._gis.content.create_service(output_name, create_params=createParameters, service_type="imageService")
-        description = "Image Service generated from running the " + task + " tool."
-        item_properties = {
-            "description" : description,
-            "tags" : "Analysis Result, " + task,
-            "snippet": "Analysis Image Service generated from " + task
-        }
-        output_service.update(item_properties)
-        return output_service
-
-    def generate_raster(self,
-                        raster_function,
-                        function_arguments=None,
-                        output_raster=None,
-                       output_raster_properties=None,
-                       context=None,
-                       num_instances=None):
-        """
-
-
         Parameters
         ----------
-        raster_function : Required, see http://resources.arcgis.com/en/help/rest/apiref/israsterfunctions.html
-
-        function_arguments : Optional,  for specifying input Raster alone, portal Item can be passed
-
-        output_raster : Optional. If not provided, an Image Service is created by the method and used as the output raster.
-            You can pass in an existing Image Service Item from your GIS to use that instead.
-            Alternatively, you can pass in the name of the output Image Service that should be created by this method to be used as the output for the tool.
-            A RuntimeError is raised if a service by that name already exists
-
-        output_raster_properties : Optional string
-
-        context : Optional
-
-        num_instances : Optional, number of instances to use
-
-
+        input_raster: inputRaster (str). Required parameter.  
+        nodata: nodata (str). Required parameter.  
+        query_filter: queryfilter (str). Optional parameter.  
+        num_of_bands: numOfBands (int). Optional parameter.  
+        composite_value: compositeValue (bool). Optional parameter.      
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        future: Optional, If True, a future object will be returns and the process will not wait for 
+                the task to complete. The default is False, which means wait for results.
         Returns
         -------
-        out_raster : Image Service item
+        output_raster : Image layer item
         """
+        task = "DefineNodata"
+        gis = self._gis
+
+        context_param = {}
+        context=None
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param['context']
+
+        input_raster = self._layer_input(input_raster)
+
+        if not isinstance(composite_value, bool):
+            raise RuntimeError('composite_value must be an instance of boolean')
+
+
+        gpjob = self._tbx.define_nodata(input_raster=input_raster,
+                                        nodata=nodata,
+                                        query_filter=query_filter,
+                                        num_of_bands=num_of_bands,
+                                        composite_value=composite_value,
+                                        gis=self._gis,
+                                        future=True)
+        gpjob._is_ra = True
+        if future:
+            return gpjob
+        return gpjob.result()
 
-        task ="GenerateRaster"
-
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        if isinstance(function_arguments, arcgis.gis.Item):
-            if function_arguments.type.lower() == 'image service':
-                function_arguments =  { "Raster":{"itemId": function_arguments.itemid } }
-            else:
-                raise TypeError("The item type of function_arguments must be an image service")
-
-        params = {}
-
-        params["rasterFunction"] = raster_function
-        params["outputRaster"] = output_raster
-        if function_arguments is not None:
-            params["functionArguments"] = function_arguments
-        if output_raster_properties is not None:
-            params["outputRasterProperties"] = output_raster_properties
-        if context is not None:
-            params["context"] = context
-        if num_instances is not None:
-            params["numInstances"] = num_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                "jobId": job_info['jobId'],
-                "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def rasterize(self,
-                  input_table,
-                  output_raster,
-                  raster_info,
-                       value_field=None,
-                       context=None,
-                       num_instances=None):
-        """
-
-
-        Parameters
-        ----------
-        input_table : Required string
-
-        output_raster : Required string
-
-        raster_info : Required string
-
-        value_field : Optional string
-
-        context : Optional string
-
-        num_instances : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer
-        """
-
-        task ="Rasterize"
-
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        params = {}
-
-        params["inputTable"] = input_table
-        params["outputRaster"] = output_raster
-        params["rasterInfo"] = raster_info
-        if value_field is not None:
-            params["valueField"] = value_field
-        if context is not None:
-            params["context"] = context
-        if num_instances is not None:
-            params["numInstances"] = num_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-
-    def interpolate(self,
-                    input_table,
-                    output_raster,
-                    raster_info,
-                       value_field=None,
-                       interpolation_method="Nearest",
-                       radius=None,
-                       context=None,
-                       num_instances=None):
-        """
-
-
-        Parameters
-        ----------
-        input_table : Required string
-
-        output_raster : Required string
-
-        raster_info : Required string
-
-        value_field : Optional string
-
-        interpolation_method : Optional string
-            One of the following: ['Nearest', 'Bilinear', 'Linear', 'NaturalNeighbor']
-        radius : Optional float
-
-        context : Optional string
-
-        num_instances : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer (Feature Service item)
-        """
-
-        task ="Interpolate"
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-
-        params = {}
-
-        params["inputTable"] = input_table
-        params["outputRaster"] = output_raster
-        params["rasterInfo"] = raster_info
-        if value_field is not None:
-            params["valueField"] = value_field
-        if interpolation_method is not None:
-            params["interpolationMethod"] = interpolation_method
-        if radius is not None:
-            params["radius"] = radius
-        if context is not None:
-            params["context"] = context
-        if num_instances is not None:
-            params["numInstances"] = num_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def copy_raster(self,
-                    input_raster,
-                    output_raster,
-                    output_cellsize=None,
-                       resampling_method="NEAREST",
-                       clipping_geometry=None,
-                       context=None,
-                       num_instances=None):
-        """
-
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        output_raster : Required string
-
-        output_cellsize : Optional string
-
-        resampling_method : Optional string
-            One of the following: ['NEAREST', 'BILINEAR', 'CUBIC', 'MAJORITY']
-        clipping_geometry : Optional string
-
-        context : Optional string
-
-        num_instances : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer
-        """
-
-        task ="CopyRaster"
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        params = {}
-
-        params["inputRaster"] = input_raster
-        params["outputRaster"] = output_raster
-        if output_cellsize is not None:
-            params["outputCellsize"] = output_cellsize
-        if resampling_method is not None:
-            params["resamplingMethod"] = resampling_method
-        if clipping_geometry is not None:
-            params["clippingGeometry"] = clipping_geometry
-        if context is not None:
-            params["context"] = context
-        if num_instances is not None:
-            params["numInstances"] = num_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-    def summarize_raster_within(self,
-                                input_zone_layer,
-                                zone_field,
-                                input_raster_layerto_summarize,
-                       output_name,
-                       statistic_type="Mean",
-                       ignore_missing_values=True,
-                       context=None):
-        """
-
-
-        Parameters
-        ----------
-        input_zone_layer : Required layer
-
-        zone_field : Required string
-
-        input_raster_layerto_summarize : Required string
-
-        output_name : Required string
-
-        statistic_type : Optional string
-            One of the following: ['Mean', 'Majority', 'Maximum', 'Median', 'Minimum', 'Minority', 'Range', 'STD', 'SUM', 'Variety']
-        ignore_missing_values : Optional bool
-
-        context : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer
-        """
-
-        task ="Summarize Raster Within"
-
-        output_service = None
-
-        if output_name is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_name, str):
-            output_service = self._create_output_image_service(output_name, task)
-        elif isinstance(output_name, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-
-        params = {}
-
-        params["inputZoneLayer"] = super()._feature_input(input_zone_layer)
-        params["zoneField"] = zone_field
-        params["inputRasterLayertoSummarize"] = input_raster_layerto_summarize
-
-        params["outputRaster"] = output_raster
-        params["outputName"] = json.dumps({"serviceProperties": {"name" : output_name, "serviceUrl" : output_service.url}, "itemProperties": {"itemId" : output_service.itemid}})
-        if statistic_type is not None:
-            params["statisticType"] = statistic_type
-        if ignore_missing_values is not None:
-            params["ignoreMissingValues"] = ignore_missing_values
-        if context is not None:
-            params["context"] = context
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def density(self,
-                input_feature_class,
-                output_raster,
-                value_field,
-                       raster_info=None,
-                       method="Point_Density",
-                       neighborhood=None,
-                       area_units="Square_map_units",
-                       context=None):
-        """
-
-
-        Parameters
-        ----------
-        input_feature_class : Required string
-
-        output_raster : Required string
-
-        value_field : Required string
-
-        raster_info : Optional string
-
-        method : Optional string
-            One of the following: ['Point_Density', 'Line_Density', 'Kernel_Density_Densities_Planar', 'Kernel_Density_Densities_Geodesic', 'Kernel_Density_Counts_Planar', 'Kernel_Density_Counts_Geodesic']
-        neighborhood : Optional string
-
-        area_units : Optional string
-            One of the following: ['Square_map_units', 'Square_miles', 'Square_kilometers', 'Arces', 'Hectares', 'Square_yards', 'Square_feet', 'Square_inches', 'Square_meters', 'Square_centimeters', 'Square_millimeters']
-        context : Optional string
-
-
-        Returns
-        -------
-        out_raster : layer (Feature Service item)
-        """
-
-        task ="Density"
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-
-        params = {}
-
-        params["inputFeatureClass"] = input_feature_class
-        params["outputRaster"] = output_raster
-        params["valueField"] = value_field
-        if raster_info is not None:
-            params["rasterInfo"] = raster_info
-        if method is not None:
-            params["method"] = method
-        if neighborhood is not None:
-            params["neighborhood"] = neighborhood
-        if area_units is not None:
-            params["areaUnits"] = area_units
-        if context is not None:
-            params["context"] = context
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                    "jobId": job_info['jobId'],
-                    "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def classify(self,
-                 input_raster,
-                 input_classifier_definition,
-                 output_raster,
-                 additional_input_raster=None,
-                 number_of_instances="4"):
-        """
-
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        input_classifier_definition : Required string
-
-        output_raster : Required string
-
-        additional_input_raster : Optional string
-
-        number_of_instances : Required string
-
-
-        Returns
-        -------
-        """
-
-        task ="Classify"
-
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        params = {}
-
-        params["Input_Raster"] = input_raster
-        params["Input_Classifier_Definition"] = input_classifier_definition
-        params["Output_Classified_Raster"] = output_raster
-        if additional_input_raster is not None:
-            params["Additional_Input_Raster"] = additional_input_raster
-        params["Number_of_Instances"] = number_of_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                "jobId": job_info['jobId'],
-                "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def segment_mean_shift(self,
-                           input_raster,
-                           output_raster,
-                           spectral_detail="15.5",
-                       spatial_detail="15",
-                       minimum_segment_size_in_pixels="20",
-                       band_indexes="1,2,3",
-                       remove_tiiling_artifacts="false",
-                       number_of_instances="4"):
-        """
-
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        output_raster : Required string
-
-        spectral_detail : Required string
-
-        spatial_detail : Required string
-
-        minimum_segment_size_in_pixels : Required string
-
-        band_indexes : Required string
-
-        remove_tiiling_artifacts : Required string
-
-        number_of_instances : Required string
-
-
-        Returns
-        -------
-        """
-
-        task ="Segment Mean Shift"
-
-        output_service = None
-
-        if output_raster is None:
-            output_ras_name = 'GeneratedRasterProduct' + '_' + _id_generator()
-            output_service = self._create_output_image_service(output_ras_name, task)
-        elif isinstance(output_raster, str):
-            output_service = self._create_output_image_service(output_raster, task)
-        elif isinstance(output_raster, Item):
-            output_service = output_raster
-        else:
-            raise TypeError("output_raster should be a string (service name) or Item")
-
-        output_raster =  { 'itemId' : output_service.itemid }
-
-        params = {}
-
-        params["Input_Raster"] = input_raster
-        params["Output_Raster_Dataset"] = output_raster
-        params["Spectral_Detail"] = spectral_detail
-        params["Spatial_Detail"] = spatial_detail
-        params["Minimum_Segment_Size_In_Pixels"] = minimum_segment_size_in_pixels
-        params["Band_Indexes"] = band_indexes
-        params["Remove_Tiiling_Artifacts"] = remove_tiiling_artifacts
-        params["Number_of_Instances"] = number_of_instances
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-        #print(job_values)
-        item_properties = {
-            "properties":{
-                "jobUrl": task_url + '/jobs/' + job_info['jobId'],
-                "jobType": "GPServer",
-                "jobId": job_info['jobId'],
-                "jobStatus": "completed"
-            }
-        }
-        output_service.update(item_properties)
-        return output_service
-
-
-    def train_classifier(self,
-                         input_raster,
-                         input_training_sample_json,
-                         segmented_raster,
-                         classifier_parameters,
-                         segment_attributes="COLOR;MEAN"):
-        """
-
-
-        Parameters
-        ----------
-        input_raster : Required string
-
-        input_training_sample_json : Required string
-
-        segmented_raster : Required string
-
-        classifier_parameters : Required string
-
-        segment_attributes : Required string
-
-
-        Returns
-        -------
-        output_classifier_definition : layer
-        """
-
-        task ="Train Classifier"
-
-        params = {}
-
-        params["Input_Raster"] = input_raster
-        params["Input_Training_Sample_JSON"] = input_training_sample_json
-        params["Segmented_Raster"] = segmented_raster
-        params["Classifier_Parameters"] = classifier_parameters
-        params["Segment_Attributes"] = segment_attributes
-
-        task_url, job_info, job_id = super()._analysis_job(task, params)
-
-        job_info = super()._analysis_job_status(task_url, job_info)
-        job_values = super()._analysis_job_results(task_url, job_info, job_id)
-
-        return job_values['Output_Classifier_Definition']
 
 ###########################################################################
 class _GeoanalyticsTools(_AsyncService):

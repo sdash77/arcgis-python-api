@@ -5,7 +5,8 @@ from ._codetemplate import code
 import random
 import statistics
 import warnings
-from .._data import _raise_fastai_import_error
+from .._data import _raise_fastai_import_error  
+import traceback    
 
 HAS_OPENCV = True
 HAS_FASTAI = True
@@ -29,11 +30,12 @@ try:
     from ._retinanet_utils import RetinaNetModel, RetinaNetFocalLoss, compute_class_AP
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
-    from ._arcgis_model import SaveModelCallback
+    from ._arcgis_model import SaveModelCallback, _resnet_family
     from .._image_utils import _get_image_chips, _get_transformed_predictions, _draw_predictions, _exclude_detection
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd
-except:
+except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
 
 try:
@@ -128,7 +130,11 @@ class RetinaNet(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """        
-        return [*self._resnet_family]
+        return RetinaNet._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family]
 
     def _get_emd_params(self):
         _emd_template = {}
@@ -176,7 +182,7 @@ class RetinaNet(ArcGISModel):
         :returns: `RetinaNet` Object
         """
         if not HAS_FASTAI:
-            _raise_fastai_import_error()
+            _raise_fastai_import_error(import_exception=import_exception)
             
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))

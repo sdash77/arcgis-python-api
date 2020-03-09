@@ -1,7 +1,7 @@
 import sys
 import copy
 import json
-from arcgis.gis import GIS, Item, User, Group
+
 #--------------------------------------------------------------------------
 def _search(gis, query, stype="content",
             max_items=100, bbox=None,
@@ -70,6 +70,7 @@ def _search(gis, query, stype="content",
     ================    ===============================================================
 
     """
+    from arcgis.gis import GIS, Item, User, Group
     if gis is None:
         import arcgis
         gis = arcgis.env.active_gis
@@ -139,6 +140,8 @@ def _search(gis, query, stype="content",
         results['results'].extend(res['results'])
         count += int(res['num'])
         nextstart = int(res['nextStart'])
+        if len(res['results']) == 0:
+            break
     if len(results['results']) > max_items and max_items != -1:
         results['results'] = results['results'][:max_items]
     ## Clean up Response
@@ -169,6 +172,7 @@ def _handle_response(res, stype, gis, as_dict):
     :returns: List
 
     """
+    from arcgis.gis import GIS, Item, User, Group
     if as_dict:
         return res['results']
     elif str(stype).lower() in {"content", "item", "items", "group_content"}:

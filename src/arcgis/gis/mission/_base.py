@@ -1,5 +1,4 @@
 from arcgis.gis import GIS
-from arcgis._impl.connection import _ArcGISConnection
 from arcgis._impl.common._mixins import PropertyMap
 
 class BaseMissionServer(object):

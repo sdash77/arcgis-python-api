@@ -1,3 +1,6 @@
+from distutils.version import LooseVersion
+
+
 import operator
 import json
 import numpy as np
@@ -8,134 +11,255 @@ from arcgis.geometry import Geometry
 import pandas as pd
 from .parser import _to_geo_array
 
+import numbers
+import operator
+import warnings
 
+import numpy as np
+import pandas as pd
+from pandas.api.extensions import ExtensionArray
 
-class NumPyBackedExtensionArrayMixin(ExtensionArray):
+from collections.abc import Iterable
+import json
+from arcgis.geometry import Geometry
+
+# -----------------------------------------------------------------------------
+# pandas version checker 
+# -----------------------------------------------------------------------------
+PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
+PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
+PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1")
+#--------------------------------------------------------------------------
+def _isna(value):
     """
-    Geo-Specific Extension Array Mixin
+    Check if scalar value is NA-like (None or np.nan).
+
+    Custom version that only works for scalars (returning True or False),
+    as `pd.isna` also works for array-like input returning a boolean array.
     """
-    @property
-    def dtype(self):
-        """The dtype for this extension array, GeoType"""
-        return self._dtype
+    if value is None:
+        return True
+    elif isinstance(value, float) and np.isnan(value):
+        return True
+    else:
+        return False
+#--------------------------------------------------------------------------
+def _unary_geo(op, left, *args, **kwargs):
+    """
+    Unary operation that returns new geometries
+    
+    **used for accessing properties on objects**
+    
+    :returns: GeoArray
+    """
+    data = np.empty(len(left), dtype=object)
+    data[:] = [getattr(geom, op, None) for geom in left]
+    return GeoArray(data)
+#--------------------------------------------------------------------------
+def _unary_op(op, left, null_value=False):
+    """
+    Unary operation that returns a Series
+    
+    **used for accessing properties on objects**
+    
+    :returns: pd.Series
+    
+    """
+    data = np.empty(len(left), dtype=object)
+    data[:] = [getattr(geom, op, null_value) for geom in left]
+    return data
+#--------------------------------------------------------------------------
+def _binary_predicate(name, left, right, *args, **kwargs):
+    """
+    
+    Binary operation performed on the GeoArray that returns only boolean ndarray.
+    
+    Supports:
+    -  contains
+    -  disjoint 
+    -  intersects
+    -  touches
+    -  crosses
+    -  within
+    -  overlaps
+    -  equals
+    
+    Parameters
+    ----------
+    
+         name: string
+         left : GeoArray
+         right: GeoArray or Geometry
+         
+    :returns: np.array (should be dtype bool)
+    
+    """
+    if isinstance(right, pd.Series):
+        right = right.values
+    if isinstance(right, Geometry):
+        data = np.empty(len(left), dtype=bool)
+        data[:] = [getattr(s, name)(right, *args, **kwargs) \
+                   if s is not None else left.na_value \
+                   for s in left]
+        return data
+    elif isinstance(right, GeoArray):
+        if len(left) != len(right):
+            msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
+                len(left), len(right)
+            )
+            raise ValueError(msg)
+        data = np.empty(len(left), dtype=bool)
+        data[:] = [
+            getattr(this_elem, name)(other_elem, *args, **kwargs)
+            if not (this_elem is None or other_elem is None)
+            else False
+            for this_elem, other_elem in zip(left, right)
+        ]
+        return data
+    else:
+        raise TypeError("Type not known: {0} vs {1}".format(type(left), type(right)))
+#--------------------------------------------------------------------------
+def _binary_op(name, left, right=None, *args, **kwargs):
+    """Binary operation on GeoArray that returns a ndarray of dtype object"""
+    
+    if isinstance(right, pd.Series):
+        right = right.values   
+    null_value = None
+    if right is None:
+        data = np.empty(len(left), dtype=object)
+        data[:] = [
+            getattr(s, name)(*args, **kwargs) \
+            if s is not None else null_value
+            for s in left]     
+        return data
+    elif isinstance(right, Geometry):
+        data = np.empty(len(left), dtype=object)
+        data[:] = [
+            getattr(s, name)(right, *args, **kwargs) \
+            if s is not None else null_value
+            for s in left]
+        return data
+    elif isinstance(right, GeoArray):
+        if len(left) != len(right):
+            msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
+                len(left), len(right)
+            )
+            raise ValueError(msg)
+        data = np.empty(len(left), dtype=object)
+        data[:] = [
+            getattr(this_elem, name)(other_elem, *args, **kwargs)
+            if not (this_elem is None or other_elem is None)
+            else null_value
+            for this_elem, other_elem in zip(left, right)]
+        return data
+    else:
+        raise TypeError("Type not known: {0} vs {1}".format(type(left), type(right)))
+#--------------------------------------------------------------------------    
+def _binary_op_geo(name, left, right=None, *args, **kwargs):
+    """Binary operation on GeoArray that returns a GeoArray"""
+    
+    if isinstance(right, pd.Series):
+        right = right.values   
+    null_value = None
+    if right is None:
+        data = np.empty(len(left), dtype=object)
+        data[:] = [
+            getattr(s, name)(*args, **kwargs) \
+            if s is not None else null_value
+            for s in left]     
+        return GeoArray(data)
+    elif isinstance(right, Geometry):
+        data = np.empty(len(left), dtype=object)
+        data[:] = [
+            getattr(s, name)(right, *args, **kwargs) \
+            if s is not None else null_value
+            for s in left]
+        return GeoArray(data)
+    elif isinstance(right, GeoArray):
+        if len(left) != len(right):
+            msg = "Lengths of inputs do not match. Left: {0}, Right: {1}".format(
+                len(left), len(right)
+            )
+            raise ValueError(msg)
+        data = np.empty(len(left), dtype=object)
+        data[:] = [
+            getattr(this_elem, name)(other_elem, *args, **kwargs)
+            if not (this_elem is None or other_elem is None)
+            else null_value
+            for this_elem, other_elem in zip(left, right)]
+        return GeoArray(data)
+    else:
+        raise TypeError("Type not known: {0} vs {1}".format(type(left), type(right)))
+#--------------------------------------------------------------------------
 
-    @classmethod
-    def _from_sequence(cls, scalars):
-        return cls(scalars)
 
-    @classmethod
-    def _constructor_from_sequence(cls, scalars):
-        return cls(scalars)
-
-    @classmethod
-    def _from_factorized(cls, values, original):
-        return cls(values)
-
-    @property
-    def shape(self):
-        return (len(self.data),)
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, *args):
-        result = operator.getitem(self.data, *args)
-        if isinstance(result, (dict, Geometry)):
-            return result
-        elif isinstance(result, type(None)) or \
-             isinstance(result, type(np.nan)):
-            return None
-        elif not isinstance(result, GeoArray):
-            return GeoArray(result)
-        return result
-
-
-    def setitem(self, indexer, value):
-        """Set the 'value' inplace.
-        """
-
-        self[indexer] = value
-        return self
-
-    @property
-    def nbytes(self):
-        return self._itemsize * len(self)
-
-    def _formatter(self, boxed=False):
-        # Defer to the formatter from the GenericArrayFormatter calling us.
-        # This will infer the correct formatter from the dtype of the values.
-        return None
-
-    #def _formatting_values(self):
-    #    return np.array(self._format_values(), dtype='object')
-
-    def copy(self, deep=False):
-        return type(self)(self.data.copy())
-
-    @classmethod
-    def _concat_same_type(cls, to_concat):
-        return cls(np.concatenate([array.data for array in to_concat]))
-
-    def tolist(self):
-        return self.data.tolist()
-
-    def argsort(self, axis=-1, kind='quicksort', order=None):
-        return self.data.argsort()
-
-    def unique(self):
-        _, indices = np.unique(self.data, return_index=True)
-        data = self.data.take(np.sort(indices))
-        return self._from_ndarray(data)
 
 class GeoType(ExtensionDtype):
-    name = 'geometry'
     type = Geometry
-    kind = 'O'
-    _record_type = np.dtype('O')
+    name = "geometry"
     na_value = None
+    #np.nan
 
     @classmethod
     def construct_from_string(cls, string):
         if string == cls.name:
             return cls()
         else:
-            raise TypeError("Cannot construct a '{}' from "
-                            "'{}'".format(cls, string))
-
-class GeoArray(NumPyBackedExtensionArrayMixin):
-    """Array for Geometry data.
-    """
-    _dtype = GeoType()
-    _itemsize = 8
-    ndim = 1
-    can_hold_na = True
-
-    def __init__(self, values, copy=True):
-        version = [int(i) for i in pd.__version__.split('.')]
-        if version < [0,24,0]:
-            self._formatting_values = self._formatting_values_backport
-        self.data = np.array(values, dtype='O', copy=copy)
+            raise TypeError(
+                "Cannot construct a '{}' from '{}'".format(cls.__name__, string)
+            )
 
     @classmethod
-    def _from_ndarray(cls, data, copy=False):
-        return cls(data, copy=copy)
+    def construct_array_type(cls):
+        return GeoArray
 
-    @property
-    def na_value(self):
-        return self.dtype.na_value
 
-    def __repr__(self):
-        formatted = self._format_values()
-        return "GeoArray({!r})".format(formatted)
+if PANDAS_GE_024:
+    from pandas.api.extensions import register_extension_dtype
 
-    def __str__(self):
-        return self.__repr__()
+    register_extension_dtype(GeoType)
 
+class GeoArray(ExtensionArray):
+    """
+    Class wrapping a numpy array of Shapely objects and
+    holding the array-based implementations.
+    """
+
+    _dtype = GeoType()
+
+    def __init__(self, values):
+        if isinstance(values, self.__class__):
+            data = values.data
+        elif isinstance(values, pd.Series):
+            data = values.values
+        elif isinstance(values, (list, tuple)):
+            data = np.array(values)
+        elif isinstance(values, np.ndarray):
+            data = values
+        elif not isinstance(values, np.ndarray):
+            raise TypeError(
+                "'data' should be array of geometry objects."
+            )
+        elif not values.ndim == 1:
+            raise ValueError(
+                "'data' should be a 1-dimensional array of geometry objects."
+            )
+        self.data = data
+
+    def _formatting_values_backport(self):
+        return np.array(self._format_values(), dtype='object')  
+    
     def _format_values(self):
         if self.data.ndim == 0:
             return ""
         return [_format(x) if x else None for x in self.data]
+    
+    @property
+    def dtype(self):
+        return self._dtype
 
+    def __len__(self):
+        return self.shape[0]
     @classmethod
     def from_geometry(cls, data, copy=False):
         """"""
@@ -144,198 +268,444 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         new = GeoArray([])
         new.data = np.array(data)
         return new
+    
+    def __getitem__(self, idx):
+        if isinstance(idx, numbers.Integral):
+            return self.data[idx]
+        # array-like, slice
+        if PANDAS_GE_10 and pd.api.types.is_list_like(idx):
+            # for pandas >= 1.0, validate and convert IntegerArray/BooleanArray
+            # to numpy array
+            if not pd.api.types.is_array_like(idx):
+                idx = pd.array(idx)
+            dtype = idx.dtype
+            if pd.api.types.is_bool_dtype(dtype):
+                idx = pd.api.indexers.check_array_indexer(self, idx)
+            elif pd.api.types.is_integer_dtype(dtype):
+                idx = np.asarray(idx, dtype="int")
+        if isinstance(idx, (Iterable, slice)):
+            return GeoArray(self.data[idx])
+        else:
+            raise TypeError("Index type not supported", idx)
 
     def __setitem__(self, key, value):
-        if value is None or  \
-           (isinstance(value, str) and value == ""):
-            self.data[key] = value
-        else:
+        if isinstance(value, pd.Series):
+            value = value.values
+        if isinstance(value, GeoArray):
+            if isinstance(key, numbers.Integral):
+                raise ValueError("cannot set a single element with an array")
+            self.data[key] = value.data
+        elif isinstance(value, Geometry) or _isna(value):
+            if _isna(value):
+                # internally only use None as missing value indicator
+                # but accept others
+                value = None
+            if isinstance(key, (list, np.ndarray)):
+                value_array = np.empty(1, dtype=object)
+                value_array[:] = [value]
+                self.data[key] = value_array
+            else:
+                self.data[key] = value
+        elif (isinstance(value, str) and value != ""):
             value = Geometry(value)
-            self.data[key] = value
-
-    def __iter__(self):
-        return iter(self.data.tolist())
-
-    def __eq__(self, other):
-        return self.data == other
-
-    def equals(self, other):
-        if not isinstance(other, type(self)):
-            raise TypeError
-        return (self.data == other.data).all()
-
-    def _values_for_factorize(self):
-        # Should hit pandas' UInt64Hashtable
-        return self, 0
-
-    def isna(self):
-        return (self.data == self._dtype.na_value)
+            self.data[key] = value            
+        else:
+            raise TypeError(
+                "Value should be either a Geometry or None, got %s" % str(value)
+            )    
+    # -------------------------------------------------------------------------
+    # general array like compat
+    # -------------------------------------------------------------------------
 
     @property
-    def _parser(self):
-        return lambda x: x
+    def size(self):
+        return self.data.size
 
-    def take(self, indexer, allow_fill=True, fill_value=None):
-        mask = indexer == -1
-        result = self.data.take(indexer)
-        result[mask] = self.dtype.na_value
-        return type(self)(result, copy=False)
+    @property
+    def shape(self):
+        return (self.size,)
+
+    @property
+    def ndim(self):
+        return len(self.shape)
+
+    def copy(self, *args, **kwargs):
+        # still taking args/kwargs for compat with pandas 0.24
+        return GeoArray(self.data.copy())
+
+    def take(self, indices, allow_fill=False, fill_value=None):
+        from pandas.api.extensions import take
+
+        if allow_fill:
+            if fill_value is None or pd.isna(fill_value):
+                fill_value = 0
+
+        result = take(self.data, indices, allow_fill=allow_fill, fill_value=fill_value)
+        if fill_value == 0:
+            result[result == 0] = None
+        return GeoArray(result)
+
+    def _fill(self, idx, value):
+        """ Fill index locations with value
+
+        Value should be a Geometry
+        """
+        if not (isinstance(value, Geometry) or value is None):
+            raise TypeError(
+                "Value should be either a Geometry or None, got %s" % str(value)
+            )
+        # self.data[idx] = value
+        self.data[idx] = np.array([value], dtype=object)
+        return self
+
+    def fillna(self, value=None, method=None, limit=None):
+        """ Fill NA/NaN values using the specified method.
+
+        Parameters
+        ----------
+        value : scalar, array-like
+            If a scalar value is passed it is used to fill all missing values.
+            Alternatively, an array-like 'value' can be given. It's expected
+            that the array-like have the same length as 'self'.
+        method : {'backfill', 'bfill', 'pad', 'ffill', None}, default None
+            Method to use for filling holes in reindexed Series
+            pad / ffill: propagate last valid observation forward to next valid
+            backfill / bfill: use NEXT valid observation to fill gap
+        limit : int, default None
+            If method is specified, this is the maximum number of consecutive
+            NaN values to forward/backward fill. In other words, if there is
+            a gap with more than this number of consecutive NaNs, it will only
+            be partially filled. If method is not specified, this is the
+            maximum number of entries along the entire axis where NaNs will be
+            filled.
+
+        Returns
+        -------
+        filled : ExtensionArray with NA/NaN filled
+        """
+        if method is not None:
+            raise NotImplementedError("fillna with a method is not yet supported")
+
+        if _isna(value):
+            value = None
+        elif not isinstance(value, Geometry):
+            raise NotImplementedError(
+                "fillna currently only supports filling with a scalar geometry"
+            )
+
+        mask = self.isna()
+        new_values = self.copy()
+
+        if mask.any():
+            # fill with value
+            new_values = new_values._fill(mask, value)
+
+        return new_values
+
+    def astype(self, dtype, copy=True):
+        """
+        Cast to a NumPy array with 'dtype'.
+
+        Parameters
+        ----------
+        dtype : str or dtype
+            Typecode or data-type to which the array is cast.
+        copy : bool, default True
+            Whether to copy the data, even if not necessary. If False,
+            a copy is made only if the old dtype does not match the
+            new dtype.
+
+        Returns
+        -------
+        array : ndarray
+            NumPy ndarray with 'dtype' for its dtype.
+        """
+        if isinstance(dtype, GeoType):
+            if copy:
+                return self.copy()
+            else:
+                return self
+        elif pd.api.types.is_string_dtype(dtype) and not pd.api.types.is_object_dtype(
+            dtype
+        ):
+            return np.array([g.JSON for g in self.data])
+        else:
+            return np.array(self, dtype=dtype, copy=copy)
+
+    @property
+    def na_value(self):
+        return self.dtype.na_value    
+
+    def isna(self):
+        """
+        Boolean NumPy array indicating if each value is missing
+        """
+        return np.array([g is self.na_value for g in self.data], dtype="bool")
+
+    def unique(self):
+        """Compute the ExtensionArray of unique values.
+
+        Returns
+        -------
+        uniques : ExtensionArray
+        """
+        from pandas import factorize
+
+        _, uniques = factorize(self)
+        return uniques
+
+    @property
+    def nbytes(self):
+        return self.data.nbytes
+
+    # -------------------------------------------------------------------------
+    # ExtensionArray specific
+    # -------------------------------------------------------------------------
+
+    @classmethod
+    def _from_sequence(cls, scalars, dtype=None, copy=False):
+        """
+        Construct a new ExtensionArray from a sequence of scalars.
+
+        Parameters
+        ----------
+        scalars : Sequence
+            Each element will be an instance of the scalar type for this
+            array, ``cls.dtype.type``.
+        dtype : dtype, optional
+            Construct for this particular dtype. This should be a Dtype
+            compatible with the ExtensionArray.
+        copy : boolean, default False
+            If True, copy the underlying data.
+
+        Returns
+        -------
+        ExtensionArray
+        """
+        data = np.empty(len(scalars), dtype=object)
+        data[:] = [Geometry(s) for s in scalars]
+        return cls(data)
+
+    def _values_for_factorize(self):
+        # type: () -> Tuple[np.ndarray, Any]
+        """Return an array and missing value suitable for factorization.
+
+        Returns
+        -------
+        values : ndarray
+            An array suitable for factoraization. This should maintain order
+            and be a supported dtype (Float64, Int64, UInt64, String, Object).
+            By default, the extension array is cast to object dtype.
+        na_value : object
+            The value in `values` to consider missing. This will be treated
+            as NA in the factorization routines, so it will be coded as
+            `na_sentinal` and not included in `uniques`. By default,
+            ``np.nan`` is used.
+        """
+        return self, 0
+
+    @classmethod
+    def _from_factorized(cls, values, original):
+        """
+        Reconstruct an ExtensionArray after factorization.
+
+        Parameters
+        ----------
+        values : ndarray
+            An integer ndarray with the factorized values.
+        original : ExtensionArray
+            The original ExtensionArray that factorize was called on.
+
+        See Also
+        --------
+        pandas.factorize
+        ExtensionArray.factorize
+        """
+        return cls(values)
+
+    def _values_for_argsort(self):
+        # type: () -> np.ndarray
+        """Return values for sorting.
+
+        Returns
+        -------
+        ndarray
+            The transformed values should maintain the ordering between values
+            within the array.
+
+        See Also
+        --------
+        ExtensionArray.argsort
+        """
+        # Note: this is used in `ExtensionArray.argsort`.
+        raise TypeError("geometries are not orderable")
 
     def _formatter(self, boxed=False):
-        # Defer to the formatter from the GenericArrayFormatter calling us.
-        # This will infer the correct formatter from the dtype of the values.
-        return None
+        """Formatting function for scalar values.
 
-    def _formatting_values_backport(self):
-        return np.array(self._format_values(), dtype='object')
+        This is used in the default '__repr__'. The returned formatting
+        function receives instances of your scalar type.
+
+        Parameters
+        ----------
+        boxed: bool, default False
+            An indicated for whether or not your array is being printed
+            within a Series, DataFrame, or Index (True), or just by
+            itself (False). This may be useful if you want scalar values
+            to appear differently within a Series versus on its own (e.g.
+            quoted or not).
+
+        Returns
+        -------
+        Callable[[Any], str]
+            A callable that gets instances of the scalar type and
+            returns a string. By default, :func:`repr` is used
+            when ``boxed=False`` and :func:`str` is used when
+            ``boxed=True``.
+        """
+        if boxed:
+            return json.dumps
+        return repr
 
     @classmethod
     def _concat_same_type(cls, to_concat):
-        return cls(np.concatenate([array.data for array in to_concat]))
+        """
+        Concatenate multiple array
 
-    def take_nd(self, indexer, allow_fill=True, fill_value=None):
-        return self.take(indexer, allow_fill=allow_fill, fill_value=fill_value)
+        Parameters
+        ----------
+        to_concat : sequence of this type
 
-    def copy(self, deep=False):
-        return type(self)(self.data.copy())
+        Returns
+        -------
+        ExtensionArray
+        """
+        data = np.concatenate([ga.data for ga in to_concat])
+        return GeoArray(data)
 
-    from arcgis.geometry import BaseGeometry
-    #----------------------------------------------------------------------
-    @property
-    def size(self):
-        """returns the length of the data"""
-        return len(self.data)
+    def _reduce(self, name, skipna=True, **kwargs):
+        # including the base class version here (that raises by default)
+        # because this was not yet defined in pandas 0.23
+        if name == "any" or name == "all":
+            return getattr(self.data, name)()
+        raise TypeError(
+            "cannot perform {name} with type {dtype}".format(
+                name=name, dtype=self.dtype
+            )
+        )
 
-    @property
-    def is_valid(self):
-        """Checks if the Geometry is Valid"""
-        return pd.Series([g.is_valid() for g in self])
+    def __array__(self, dtype=None):
+        """
+        The numpy array interface.
 
-    #----------------------------------------------------------------------
-    def _call_property(self, prop, as_ga=False):
-        """accesses a property on a dataframe"""
-        fn = lambda g: getattr(g, prop, None)
-        vals = np.vectorize(fn,otypes='O')(self.data)
-        if as_ga:
-            s = pd.Series(GeoArray(values=vals))
-        else:
-            s = pd.Series(vals)
-        s.name = prop
-        return s
-    #----------------------------------------------------------------------
-    def _call_method(self, name, is_ga=False, **kwargs):
-        """accesses a method on a dataframe"""
-        import warnings
-        warnings.simplefilter("ignore")
-        fn = lambda g, n: getattr(g, n, None)(**kwargs) \
-            if g is not None else None
-        vals = np.vectorize(fn, otypes='O')(self.data, name)
-        if is_ga:
-            s = pd.Series(GeoArray(values=vals, copy=False))
-        else:
-            s = pd.Series(vals)
-        s.name = name
-        return s
+        Returns
+        -------
+        values : numpy array
+        """
+        return self.data    
+    
     #----------------------------------------------------------------------
     @property
     def area(self):
         """returns the geometry area"""
-        return self._call_property('area')
+        return _unary_op('area', self.data, None)    
     #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
         """returns the geometry area"""
-        return self._call_property('as_arcpy')
+        return _unary_op('as_arcpy', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def as_shapely(self):
         """returns the geometry area"""
-        return self._call_property('as_shapely')
+        return _unary_op('as_shapely', self.data, None)
     #----------------------------------------------------------------------
     @property
     def centroid(self):
         """returns Geometry centroid"""
-        return self._call_property('centroid')
+        return _unary_op('centroid', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def extent(self):
         """returns the extent of the geometry"""
-        return self._call_property("extent")
+        return _unary_op('extent', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def first_point(self):
         """
         The first coordinate point of the geometry for each entry.
         """
-        return self._call_property("first_point", as_ga=True)
+        return _unary_geo('first_point', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def geoextent(self):
-        return self._call_property("geoextent")
+        return _unary_op('geoextent', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def geometry_type(self):
-        return self._call_property("geometry_type")
+        return _unary_op('geometry_type', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def hull_rectangle(self):
-        return self._call_property("hull_rectangle")
+        return _unary_op('hull_rectangle', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def is_empty(self):
-        return self._call_property("is_empty")
+        return _unary_op('is_empty', self.data, False) 
     #----------------------------------------------------------------------
     @property
     def is_multipart(self):
-        return self._call_property("is_multipart")
-    ##----------------------------------------------------------------------
-    #@property
-    #def is_valid(self):
-    #    return self._call_property("is_valid")
+        return _unary_op('is_multipart', self.data, False)
+    #----------------------------------------------------------------------
+    @property
+    def is_valid(self):
+        return _binary_op(name='is_valid', 
+                          left=self.data, 
+                          right=None)
     #----------------------------------------------------------------------
     @property
     def JSON(self):
-        return self._call_property("JSON")
+        return _unary_op('JSON', self.data, "")
     #----------------------------------------------------------------------
     @property
     def label_point(self):
-        return self._call_property("label_point", as_ga=True)
+        return _unary_geo('label_point', self.data, None)
     #----------------------------------------------------------------------
     @property
     def last_point(self):
-        return self._call_property("last_point", as_ga=True)
+        return _unary_geo('last_point', self.data, None)
     #----------------------------------------------------------------------
     @property
     def length(self):
-        return self._call_property("length", as_ga=False)
+        return _unary_op('length', self.data, None)
     #----------------------------------------------------------------------
     @property
     def length3D(self):
-        return self._call_property("length3D", as_ga=False)
+        return _unary_op('length3D', self.data, None)
     #----------------------------------------------------------------------
     @property
     def part_count(self):
-        return self._call_property("part_count")
+        return _unary_op('part_count', self.data, None)
     #----------------------------------------------------------------------
     @property
     def point_count(self):
-        return self._call_property("point_count")
+        return _unary_op('point_count', self.data, None)
     #----------------------------------------------------------------------
     @property
     def spatial_reference(self):
-        return self._call_property("spatial_reference")
+        return _unary_op('spatial_reference', self.data, None)
     #----------------------------------------------------------------------
     @property
     def true_centroid(self):
-        return self._call_property("true_centroid", as_ga=True)
+        return _unary_geo('true_centroid', self.data, None)
     #----------------------------------------------------------------------
     @property
     def WKB(self):
-        return self._call_property("WKB")
+        return _unary_op('WKB', self.data, None)
     #----------------------------------------------------------------------
     @property
     def WKT(self):
-        return self._call_property("WKT")
+        return _unary_op('WKT', self.data, None)
     #----------------------------------------------------------------------
     def angle_distance_to(self, second_geometry, method="GEODESIC"):
         """
@@ -356,10 +726,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
         :returns: a tuple of angle and distance to another point using a measurement type.
         """
-        return self._call_method(name='angle_distance_to',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'method' : method})
+        return _binary_op(name='angle_distance_to', 
+                          left=self.data, 
+                          right=second_geometry, 
+                          **{'method' : method})
     #----------------------------------------------------------------------
     def boundary(self):
         """
@@ -368,7 +738,7 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: arcgis.geometry.Polyline
         """
 
-        return self._call_method(name='boundary', is_ga=True)
+        return _binary_op_geo(name='boundary', left=self.data, right=None)
     #----------------------------------------------------------------------
     def buffer(self, distance):
         """
@@ -384,9 +754,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
         :returns: arcgis.geometry.Polygon
         """
-        return self._call_method(name='buffer',
-                                 is_ga=True,
-                                 **{'distance' : distance})
+        return _binary_op_geo(name='buffer',
+                              left=self.data,
+                              **{'distance' : distance})
     #----------------------------------------------------------------------
     def clip(self, envelope):
         """
@@ -402,9 +772,7 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: output geometry clipped to extent
 
         """
-        return self._call_method(name='clip',
-                                 is_ga=True,
-                                 **{'envelope' : envelope})
+        return _binary_op_geo(name='clip', left=self.data, **{'envelope' : envelope})
     #----------------------------------------------------------------------
     def contains(self, second_geometry, relation=None):
         """
@@ -424,18 +792,17 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
         :returns: boolean
         """
-        return self._call_method(name='contains',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'relation' : relation})
+        return _binary_predicate(name='contains',
+                                 left=self.data,
+                                 right=second_geometry,
+                                 **{'relation' : relation})
     #----------------------------------------------------------------------
     def convex_hull(self):
         """
         Constructs the geometry that is the minimal bounding polygon such
         that all outer angles are convex.
         """
-        return self._call_method(name='convex_hull',
-                                 is_ga=True)
+        return _binary_op_geo(name='convex_hull', left=self.data)
     #----------------------------------------------------------------------
     def crosses(self, second_geometry):
         """
@@ -451,9 +818,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: boolean
 
         """
-        return self._call_method(name='crosses',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_predicate(name='crosses', 
+                                 left=self.data, 
+                                 right=second_geometry)
     #----------------------------------------------------------------------
     def cut(self, cutter):
         """
@@ -469,9 +836,7 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: a list of two geometries
 
         """
-        return self._call_method(name='cut',
-                                 is_ga=True,
-                                 **{'cutter' : cutter})
+        return _binary_op_geo(name='cut', left=self.data, right=cutter)
     #----------------------------------------------------------------------
     def densify(self, method, distance, deviation):
         """
@@ -500,11 +865,11 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._call_method(name='densify',
-                                 is_ga=True,
-                                 **{'method' : method,
-                                    'distance' : distance,
-                                    'deviation' : deviation})
+        return _binary_op_geo(name='densify', 
+                              left=self.data, 
+                              **{'method' : method,
+                                 'distance' : distance,
+                                 'deviation' : deviation})
     #----------------------------------------------------------------------
     def difference(self, second_geometry):
         """
@@ -522,9 +887,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._call_method(name='difference',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_op_geo(name='difference', 
+                              left=self.data, 
+                              right=second_geometry)
     #----------------------------------------------------------------------
     def disjoint(self, second_geometry):
         """
@@ -540,9 +905,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: boolean
 
         """
-        return self._call_method(name='disjoint',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_predicate(name='disjoint',
+                                 left=self.data,
+                                 right=second_geometry,
+                                 **{})
     #----------------------------------------------------------------------
     def distance_to(self, second_geometry):
         """
@@ -559,9 +925,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: float
 
         """
-        return self._call_method(name='distance_to',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_op(name='distance_to', 
+                              left=self.data, 
+                              right=second_geometry,
+                              **{})
     #----------------------------------------------------------------------
     def equals(self, second_geometry):
         """
@@ -579,9 +946,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
 
         """
-        return self._call_method(name='equals',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_predicate(name='equals', 
+                                 left=self.data, 
+                                 right=second_geometry)
     #----------------------------------------------------------------------
     def generalize(self, max_offset):
         """
@@ -597,9 +964,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: arcgis.geometry.Geometry
 
         """
-        return self._call_method(name='generalize',
-                                 is_ga=True,
-                                 **{'max_offset' : max_offset})
+        return _binary_op_geo(name='generalize', 
+                              left=self.data, 
+                              **{'max_offset' : max_offset})
     #----------------------------------------------------------------------
     def get_area(self, method, units=None):
         """
@@ -623,10 +990,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: float
 
         """
-        return self._call_method(name='get_area',
-                                 is_ga=False,
-                                 **{'method' : method,
-                                    'units' : units})
+        return _binary_op(name='get_area', 
+                          left=self.data, 
+                          **{'method' : method,
+                             'units' : units})
     #----------------------------------------------------------------------
     def get_length(self, method, units):
         """
@@ -649,10 +1016,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: float
 
         """
-        return self._call_method(name='get_length',
-                                 is_ga=False,
-                                 **{'method' : method,
-                                    'units' : units})
+        return _binary_op(name='get_length', 
+                          left=self.data, 
+                          **{'method' : method,
+                             'units' : units})
     #----------------------------------------------------------------------
     def get_part(self, index=None):
         """
@@ -670,9 +1037,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :return: arcpy.Array
 
         """
-        return self._call_method(name='get_part',
-                                 is_ga=False,
-                                 **{'index' : index})
+        return _binary_op(name='get_part',
+                          left=self.data, 
+                          **{'index' : index})        
     #----------------------------------------------------------------------
     def intersect(self, second_geometry, dimension=1):
         """
@@ -696,13 +1063,13 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
         ===============     ====================================================================
 
-        :returns: boolean
+        :returns: boolean array
 
         """
-        return self._call_method(name='intersect',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry,
-                                    'dimension' : dimension})
+        return _binary_predicate(name='intersect', 
+                                 left=self.data, 
+                                 right=second_geometry,
+                                 **{'dimension' : dimension})
     #----------------------------------------------------------------------
     def measure_on_line(self, second_geometry, as_percentage=False):
         """
@@ -720,10 +1087,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :return: float
 
         """
-        return self._call_method(name='measure_on_line',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'as_percentage' : as_percentage})
+        return _binary_op(name='measure_on_line',
+                          left=self.data, 
+                          right=second_geometry,
+                          **{'as_percentage' : as_percentage})          
     #----------------------------------------------------------------------
     def overlaps(self, second_geometry):
         """
@@ -740,9 +1107,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :return: boolean
 
         """
-        return self._call_method(name='overlaps',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_predicate(name='overlaps', 
+                                 left=self.data, 
+                                 right=second_geometry)
     #----------------------------------------------------------------------
     def point_from_angle_and_distance(self, angle, distance, method='GEODESCIC'):
         """
@@ -767,11 +1134,11 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
 
         """
-        return self._call_method(name='point_from_angle_and_distance',
-                                 is_ga=True,
-                                 **{'angle' : angle,
-                                    'distance' : distance,
-                                    'method' : method})
+        return _binary_op_geo(name='point_from_angle_and_distance', 
+                              left=self.data, 
+                              **{'angle' : angle,
+                                 'distance' : distance,
+                                 'method' : method})
     #----------------------------------------------------------------------
     def position_along_line(self, value, use_percentage=False):
         """
@@ -793,10 +1160,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :return: arcgis.gis.Geometry
 
         """
-        return self._call_method(name='position_along_line',
-                                 is_ga=True,
-                                 **{'value' : value,
-                                    'use_percentage' : use_percentage})
+        return _binary_op_geo(name='position_along_line',
+                              left=self.data, 
+                              **{'value' : value,
+                                 'use_percentage' : use_percentage})
     #----------------------------------------------------------------------
     def project_as(self, spatial_reference, transformation_name=None):
         """
@@ -813,11 +1180,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
         :returns: arcgis.geometry.Geometry
         """
-        return self._call_method(name='project_as',
-                                 is_ga=True,
-                                 **{'spatial_reference' : spatial_reference,
-                                    'transformation_name' : transformation_name}
-                                 )
+        return _binary_op_geo(name='project_as',
+                              left=self.data, 
+                              **{'spatial_reference' : spatial_reference,
+                                 'transformation_name' : transformation_name})
     #----------------------------------------------------------------------
     def query_point_and_distance(self, second_geometry,
                                  use_percentage=False):
@@ -839,10 +1205,10 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :return: tuple
 
         """
-        return self._call_method(name='query_point_and_distance',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'use_percentage' : use_percentage})
+        return _binary_op(name='query_point_and_distance',
+                              left=self.data, 
+                              right=second_geometry,
+                              **{'use_percentage' : use_percentage})
     #----------------------------------------------------------------------
     def segment_along_line(self, start_measure,
                            end_measure, use_percentage=False):
@@ -869,11 +1235,11 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :returns: Geometry
 
         """
-        return self._call_method(name='segment_along_line',
-                                 is_ga=True,
-                                 **{'start_measure' : start_measure,
-                                    'end_measure' : end_measure,
-                                    'use_percentage' : use_percentage})
+        return _binary_op_geo(name='segment_along_line',
+                              left=self.data, 
+                              **{'start_measure' : start_measure,
+                                 'end_measure' : end_measure,
+                                 'use_percentage' : use_percentage})
     #----------------------------------------------------------------------
     def snap_to_line(self, second_geometry):
         """
@@ -888,9 +1254,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :return: arcgis.gis.Geometry
 
         """
-        return self._call_method(name='snap_to_line',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_op_geo(name='snap_to_line',
+                              left=self.data, 
+                              right=second_geometry)
     #----------------------------------------------------------------------
     def symmetric_difference (self, second_geometry):
         """
@@ -907,9 +1273,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
         :return: arcgis.gis.Geometry
         """
-        return self._call_method(name='symmetric_difference',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_op_geo(name='symmetric_difference',
+                              left=self.data, 
+                              right=second_geometry)        
     #----------------------------------------------------------------------
     def touches(self, second_geometry):
         """
@@ -924,9 +1290,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
         :return: boolean
         """
-        return self._call_method(name='touches',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_predicate(name='touches', 
+                                 left=self.data, 
+                                 right=second_geometry)
     #----------------------------------------------------------------------
     def union(self, second_geometry):
         """
@@ -942,9 +1308,9 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
 
         :return: arcgis.gis.Geometry
         """
-        return self._call_method(name='union',
-                                 is_ga=True,
-                                 **{'second_geometry' : second_geometry})
+        return _binary_op_geo(name='union',
+                              left=self.data, 
+                              right=second_geometry)        
     #----------------------------------------------------------------------
     def within(self, second_geometry, relation=None):
         """
@@ -966,10 +1332,11 @@ class GeoArray(NumPyBackedExtensionArrayMixin):
         :return: boolean
 
         """
-        return self._call_method(name='within',
-                                 is_ga=False,
-                                 **{'second_geometry' : second_geometry,
-                                    'relation' : relation})
+        return _binary_predicate(name='within', 
+                                 left=self.data, 
+                                 right=second_geometry,
+                                 **{'relation' : relation})
+
 
 def _format(g):
     if g in {None, np.nan}:

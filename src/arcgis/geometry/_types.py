@@ -14,6 +14,7 @@ _empty_value = [None, "NaN"]
 #--------------------------------------------------------------------------
 def _is_valid(value):
     """checks if the value is valid"""
+
     if not isinstance(
         value.get('spatialReference', None),
         (dict, SpatialReference)

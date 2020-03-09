@@ -3,6 +3,8 @@ import codecs
 import os
 import shutil
 import subprocess
+import tempfile
+from uuid import uuid4
 import logging
 log = logging.getLogger()
 
@@ -78,4 +80,17 @@ def recursive_file_copy(src_dir_root, dst_dir_root, files_to_ignore=[]):
 def _overwrite_copy(src, dst):
     log.debug("Copying {} to {}...".format(src, dst))
     shutil.copyfile(src, dst)
+
+class EmptyTmpDir:
+    """Use with "with" syntax like "with empty_temp_folder() as tmp:"
+    Creates a temporary folder and deletes it after finished being used
+    """
+    def __enter__(self):
+        self.temp_folder = os.path.join(tempfile.gettempdir(),
+                                        ".{}".format(uuid4()))
+        os.makedirs(self.temp_folder)
+        return self.temp_folder
+
+    def __exit__(self, type, value, traceback):
+        shutil.rmtree(self.temp_folder)
 

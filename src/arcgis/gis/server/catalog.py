@@ -1,9 +1,9 @@
 import os
 import ssl
 import logging
-from six.moves.urllib_parse import urlparse
+from urllib.parse import urlparse
 from ._common import BaseServer
-from ._common import ServerConnection
+from .._impl._con import Connection
 from ._service import Service
 from arcgis.gis import GIS
 
@@ -140,14 +140,14 @@ class ServicesDirectory(BaseServer):
         elif con:
             self._con = con
         else:
-            self._con = ServerConnection(baseurl=url,
-                                         username=username,
-                                         password=password,
-                                         key_file=key_file,
-                                         cert_file=cert_file,
-                                         portal_connection=self._portal_connection,
-                                         verify_cert=verify_cert,
-                                         **kwargs)
+            self._con = Connection(baseurl=url,
+                                   username=username,
+                                   password=password,
+                                   key_file=key_file,
+                                   cert_file=cert_file,
+                                   portal_connection=self._portal_connection,
+                                   verify_cert=verify_cert,
+                                   **kwargs)
         self._gis = kwargs.pop('gis', None)
         if self._is_agol == False and self._con._auth.lower() != "anon":
             try:

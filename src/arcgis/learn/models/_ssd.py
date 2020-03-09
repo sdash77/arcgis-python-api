@@ -3,8 +3,9 @@ from pathlib import Path
 import json
 from ._codetemplate import code
 import warnings
-import math
-from .._data import _raise_fastai_import_error
+import math      
+from .._data import _raise_fastai_import_error  
+import traceback    
 
 import logging
 logger = logging.getLogger()
@@ -31,7 +32,7 @@ try:
     from ._ssd_utils import SSDObjectCategoryList, compute_class_AP, SSDHeadv2, kmeans, avg_iou, show_results_multispectral
     from .._data import prepare_data
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _resnet_family, _vgg_family, _densenet_family
     from ._unet_utils import is_no_color
     from torch.nn import Module as NnModule
     import PIL
@@ -39,6 +40,7 @@ try:
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd
 except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     class NnModule():
         pass
     HAS_FASTAI = False
@@ -105,122 +107,128 @@ class SingleShotDetector(ArcGISModel):
     """
 
     def __init__(self, data, grids=None, zooms=[1.], ratios=[[1., 1.]],
-                 backbone=None, drop=0.3, bias=-4., focal_loss=False, pretrained_path=None, location_loss_factor=None, ssd_version=2):
+                 backbone=None, drop=0.3, bias=-4., focal_loss=False, 
+                 pretrained_path=None, location_loss_factor=None, 
+                 ssd_version=2, backend='pytorch'):
 
         super().__init__(data, backbone)
 
-        # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
-        if not ssd_version in [1, 2]:
-            raise Exception("ssd_version can be only [1,2]")
-
-        if location_loss_factor is not None:
-            if not ((location_loss_factor > 0) and (location_loss_factor < 1)):
-                raise Exception('`location_loss_factor` should be greater than 0 and less than 1')
-        self.location_loss_factor = location_loss_factor
-
-        self._code = code
-        self.ssd_version = ssd_version
-
-        backbone_cut = None
-        backbone_split = None
-
-        if hasattr(self, '_orig_backbone'):
-            self._backbone_ms = self._backbone
-            self._backbone = self._orig_backbone
-            _backbone_meta = cnn_config(self._orig_backbone)
-            backbone_cut = _backbone_meta['cut']
-            backbone_split = _backbone_meta['split']
-
-        if backbone is None:
-            self._backbone = models.resnet34
-            backbone_name = 'res'
-        elif type(backbone) is str:
-            self._backbone = getattr(models, backbone)
-            backbone_name = backbone[:3]
+        self._backend = backend
+        if self._backend == 'tensorflow':
+            self._intialize_tensorflow(data, grids, zooms, ratios, backbone, drop, bias, pretrained_path, location_loss_factor)
         else:
-            self._backbone = backbone
-            backbone_name = 'custom'
+            # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
+            if not ssd_version in [1, 2]:
+                raise Exception("ssd_version can be only [1,2]")
 
-        if not self._check_backbone_support(self._backbone):
-            raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            if location_loss_factor is not None:
+                if not ((location_loss_factor > 0) and (location_loss_factor < 1)):
+                    raise Exception('`location_loss_factor` should be greater than 0 and less than 1')
+            self.location_loss_factor = location_loss_factor
 
-        if self._backbone == models.mobilenet_v2:
-            backbone_cut = -1
-            backbone_split = _mobilenet_split
+            self._code = code
+            self.ssd_version = ssd_version
 
-        if ssd_version == 1:
-            if grids == None:
-                grids =[4,2,1]
-                
-            self._create_anchors(grids, zooms, ratios)
+            backbone_cut = None
+            backbone_split = None
 
-            feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
-            num_features = feature_sizes[-1][-1]
-            num_channels = feature_sizes[-1][1]
+            if hasattr(self, '_orig_backbone'):
+                self._backbone_ms = self._backbone
+                self._backbone = self._orig_backbone
+                _backbone_meta = cnn_config(self._orig_backbone)
+                backbone_cut = _backbone_meta['cut']
+                backbone_split = _backbone_meta['split']
 
-            ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
-        elif ssd_version == 2:
+            if backbone is None:
+                self._backbone = models.resnet34
+                backbone_name = 'res'
+            elif type(backbone) is str:
+                self._backbone = getattr(models, backbone)
+                backbone_name = backbone[:3]
+            else:
+                self._backbone = backbone
+                backbone_name = 'custom'
 
-            # find bounding boxes height and width
-        
-            if grids is None:
-                logger.info("Computing optimal grid size...")
-                hw = data.height_width
-                hw = np.array(hw)
-                
-                # find most suitable centroids for dataset
-                centroid = kmeans(hw , 1) 
-                avg = avg_iou(hw, centroid)
+            if not self._check_backbone_support(self._backbone):
+                raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-                for num_anchor in range(2, 5):
-                    new_centroid = kmeans(hw, num_anchor)
-                    new_avg = avg_iou(hw, new_centroid)
-                    if (new_avg - avg) < 0.05:
-                       break
-                    avg = new_avg
-                    centroid = new_centroid.copy()
+            if self._backbone == models.mobilenet_v2:
+                backbone_cut = -1
+                backbone_split = _mobilenet_split
 
-                # find grid size
+            if ssd_version == 1:
+                if grids == None:
+                    grids =[4,2,1]
+                    
+                self._create_anchors(grids, zooms, ratios)
 
-                grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
-                if grids[-1] == 0:
-                    grids[-1] = 1
+                feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                num_features = feature_sizes[-1][-1]
+                num_channels = feature_sizes[-1][1]
 
-                grids = list(set(grids))
-                grids.sort(reverse = True)
+                ssd_head = SSDHead(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+            elif ssd_version == 2:
+
+                # find bounding boxes height and width
             
-            self._create_anchors(grids, zooms, ratios)
+                if grids is None:
+                    logger.info("Computing optimal grid size...")
+                    hw = data.height_width
+                    hw = np.array(hw)
+                    
+                    # find most suitable centroids for dataset
+                    centroid = kmeans(hw , 1) 
+                    avg = avg_iou(hw, centroid)
 
-            feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
-            num_features = feature_sizes[-1][-1]
-            num_channels = feature_sizes[-1][1] 
+                    for num_anchor in range(2, 5):
+                        new_centroid = kmeans(hw, num_anchor)
+                        new_avg = avg_iou(hw, new_centroid)
+                        if (new_avg - avg) < 0.05:
+                            break
+                        avg = new_avg
+                        centroid = new_centroid.copy()
 
-            if grids[0] > 8 and abs(num_features - grids[0]) > 4 and backbone_name == 'res':
-                num_features = feature_sizes[-2][-1]
-                num_channels = feature_sizes[-2][1]
-                backbone_cut = -3
-            ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
+                    # find grid size
 
-        else:
-            raise Exception('SSDVersion can only be 1 or 2')
-        
-        if hasattr(self, '_backbone_ms'):
-            self._orig_backbone = self._backbone
-            self._backbone = self._backbone_ms
+                    grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
+                    grids = list(set(grids))
+                    grids.sort(reverse = True)
+                    if grids[-1] == 0:
+                        grids[-1] = 1
+                    grids = list(set(grids))
+                
+                self._create_anchors(grids, zooms, ratios)
 
-        self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
-        self._arcgis_init_callback() # make first conv weights learnable
-        self.learn.model = self.learn.model.to(self._device)
+                feature_sizes = model_sizes(create_body(self._backbone, cut=backbone_cut), size=(data.chip_size, data.chip_size))
+                num_features = feature_sizes[-1][-1]
+                num_channels = feature_sizes[-1][1] 
 
-        if focal_loss:
-            self._loss_f = FocalLoss(data.c)
-        else:
-            self._loss_f = BCE_Loss(data.c)
-        self.learn.loss_func = self._ssd_loss
+                if grids[0] > 8 and abs(num_features - grids[0]) > 4 and backbone_name == 'res':
+                    num_features = feature_sizes[-2][-1]
+                    num_channels = feature_sizes[-2][1]
+                    backbone_cut = -3
+                ssd_head = SSDHeadv2(grids, self._anchors_per_cell, data.c, num_features=num_features, drop=drop, bias=bias, num_channels=num_channels)
 
-        _set_multigpu_callback(self)
-        if pretrained_path is not None:
-            self.load(pretrained_path)        
+            else:
+                raise Exception('SSDVersion can only be 1 or 2')
+            
+            if hasattr(self, '_backbone_ms'):
+                self._orig_backbone = self._backbone
+                self._backbone = self._backbone_ms
+
+            self.learn = cnn_learner(data=data, base_arch=self._backbone, cut=backbone_cut, split_on=backbone_split, custom_head=ssd_head)
+            self._arcgis_init_callback() # make first conv weights learnable
+            self.learn.model = self.learn.model.to(self._device)
+
+            if focal_loss:
+                self._loss_f = FocalLoss(data.c)
+            else:
+                self._loss_f = BCE_Loss(data.c)
+            self.learn.loss_func = self._ssd_loss
+
+            _set_multigpu_callback(self)
+            if pretrained_path is not None:
+                self.load(pretrained_path)        
 
     def __str__(self):
         return self.__repr__()
@@ -232,20 +240,26 @@ class SingleShotDetector(ArcGISModel):
     def supported_backbones(self):
         """
         Supported torchvision backbones for this model.
-        """        
-        return [*self._resnet_family, *self._densenet_family, *self._vgg_family, models.mobilenet_v2.__name__]
+        """
+        return SingleShotDetector._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family, *_densenet_family, *_vgg_family, models.mobilenet_v2.__name__]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
 
         """
         Creates a Single Shot Detector from an Esri Model Definition (EMD) file.
+        
+        Note: Only supported for Pytorch models.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
-                                file.
+                                file. 
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from `prepare_data` function or None for
@@ -276,7 +290,7 @@ class SingleShotDetector(ArcGISModel):
         :returns: `SingleShotDetector` Object
         """
         if not HAS_FASTAI:
-            _raise_fastai_import_error()
+            _raise_fastai_import_error(import_exception=import_exception)
             
         emd_path = Path(emd_path)
         emd = json.load(open(emd_path))
@@ -461,11 +475,7 @@ class SingleShotDetector(ArcGISModel):
         return _emd_template
 
     def _get_tfonnx_emd_params(self):
-        _emd_template = self._get_emd_params()
-
-        _emd_template["ModelConfiguration"] = "_SSDTensorflow"
-
-        return _emd_template
+        return {"ModelConfiguration": "_SSDTensorflow"}
 
     def show_results(self, rows=5, thresh=0.5, nms_overlap=0.1):
 
@@ -782,3 +792,132 @@ class SingleShotDetector(ArcGISModel):
             return statistics.mean(aps)
         else:
             return dict(zip(self._data.classes[1:], aps))
+    
+    ## Tensorflow specific functions start ##
+    def _intialize_tensorflow(self, data, grids, zooms, ratios, backbone, drop, bias, pretrained_path, location_loss_factor):
+        self._check_tf()
+        
+        from .._utils.fastai_tf_fit import TfLearner
+        import tensorflow as tf
+        from tensorflow.keras.losses import BinaryCrossentropy
+        from tensorflow.keras.models import Model
+        from tensorflow.keras import applications
+        from tensorflow.keras.optimizers import Adam
+        from fastai.basics import defaults
+        from .._utils.object_detection import get_ssd_head_output
+
+        if data._is_multispectral:
+            raise Exception('Multispectral data is not supported with backend="tensorflow"')
+
+        # prepare color array
+        alpha = 0.7
+        color_mapping = getattr(data, 'color_mapping', None)
+        if color_mapping is None:
+            color_array = torch.tensor([[1., 1., 1.]]).float()
+        else:
+            color_array = torch.tensor( list(color_mapping.values()) ).float() / 255
+        alpha_tensor = torch.tensor( [alpha]*len(color_array) ).view(-1, 1).float()
+        color_array = torch.cat( [ color_array, alpha_tensor ], dim=-1)
+        background_color = torch.tensor( [[0, 0, 0, 0]] ).float()
+        data._multispectral_color_array = torch.cat( [background_color, color_array] )
+
+        self.ssd_version = 1#ssd_version
+        if backbone is None:
+            backbone = 'ResNet50'
+        
+        if type(backbone) == str:
+            backbone = getattr(applications, backbone)
+            
+        self._backbone = backbone 
+        
+        x, y = next(iter(data.train_dl))
+        if tf.keras.backend.image_data_format() == 'channels_last':
+            in_shape = [x.shape[-1], x.shape[-1], 3]
+        else:
+            in_shape = [3, x.shape[-1],x.shape[-1]]
+
+        self._backbone_initalized = self._backbone(
+            input_shape=in_shape, 
+            include_top=False, 
+            #weights='imagenet'
+        )
+        self._backbone_initalized.trainable = False
+
+        self._device = torch.device('cpu')
+        self._data = data
+
+        #self._loss_function_classification = BinaryCrossentropy(from_logits=True, reduction=Reduction.SUM) #2.0.0
+        self._loss_function_classification = BinaryCrossentropy(from_logits=True, reduction='sum')
+        self.location_loss_factor = location_loss_factor
+        
+        if grids is None:
+            # find most suitable centroids for dataset
+            height_width = np.array(data.height_width)
+            centroid = kmeans(height_width , 1) 
+            avg = avg_iou(height_width, centroid)
+
+            for num_anchor in range(2, 5):
+                new_centroid = kmeans(height_width, num_anchor)
+                new_avg = avg_iou(height_width, new_centroid)
+                if (new_avg - avg) < 0.05:
+                    break
+                avg = new_avg
+                centroid = new_centroid.copy()
+
+            # find grid size
+            grids = list(map(int, map(round, data.chip_size/np.sort(np.max(centroid, axis=1)))))
+            print(grids)
+            grids = list(set(grids))
+            grids.sort(reverse = True)
+            if grids[-1] == 0:
+                grids[-1] = 1
+            grids = list(set(grids))
+
+        self.grids = grids
+        self.zooms = zooms
+        self.ratios = ratios
+
+        self._create_anchors(grids, zooms, ratios)
+
+        output_layer = get_ssd_head_output(self)
+
+        model = Model(inputs=self._backbone_initalized.input, outputs=output_layer)
+
+        self.learn = TfLearner(
+            data, 
+            model,
+            opt_func=Adam,
+            loss_func=self._loss_func_tf,
+            true_wd=True, 
+            bn_wd=True, 
+            wd=defaults.wd, 
+            train_bn=True
+        )
+        
+        self.learn.unfreeze()
+        self.learn.freeze_to(len(self._backbone_initalized.layers))
+
+        self.show_results = self._show_results_multispectral
+
+        self._code = code
+
+
+    def _loss_func_tf(self, y_bboxes, y_classes, predictions):
+        from .._utils.object_detection import tf_loss_function_single_image
+        import tensorflow as tf
+        predicted_classes = predictions[0]
+        predicted_bboxes = predictions[1]
+        
+        localization_loss, classification_loss = tf.constant(0.), tf.constant(0.)
+        # Now we will iterate over each image and calculate loss for a single image
+        for image_y_bboxes, image_y_calsses, image_p_bboxes, image_p_classes in zip(y_bboxes, y_classes, predicted_bboxes, predicted_classes):
+            _localization_loss, _classification_loss = tf_loss_function_single_image(self, image_y_bboxes, image_y_calsses, image_p_bboxes, image_p_classes )
+            classification_loss += _classification_loss
+            localization_loss += _localization_loss
+        print(localization_loss, classification_loss)
+        if self.location_loss_factor is None:
+            return localization_loss + classification_loss
+        else:
+            return self.location_loss_factor * localization_loss + (1 - self.location_loss_factor) * classification_loss
+    
+    ## Tensorflow specific functions end ##

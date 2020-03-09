@@ -124,11 +124,15 @@ class LocationTrackingManager:
 
         :return: True if successful, False otherwise
         """
+        item = self.item
         if self.status == "disabled":
-            return False
-        self._validate_environment()
-        folder_id = self.item.ownerFolder
-        views = self.item.related_items("Service2Service", "forward")
+            possible_lts = self._gis.content.search(query='typekeywords:"Location Tracking Service" NOT typekeywords:"Location Tracking View"')
+            if len(possible_lts) == 0:
+                return False
+            else:
+                item = possible_lts[0]
+        folder_id = item.ownerFolder
+        views = item.related_items("Service2Service", "forward")
         for view in views:
             if hasattr(view, "properties") and view.properties is not None and "trackViewGroup" in view.properties:
                 group = self._gis.groups.get(view.properties["trackViewGroup"])
@@ -137,15 +141,15 @@ class LocationTrackingManager:
                     group.delete()
             view.protect(False)
             view.delete()
-        self.item.protect(False)
-        self.item.delete()
+        item.protect(False)
+        item.delete()
         self._gis.update_properties({
             "locationTrackingService": "null"
         })
-        if len(self._gis.content.search("""owner:"{}" ownerfolder:{}""".format(self.item.owner, folder_id))) == 0:
-            for folder in self._gis.users.get(self.item.owner).folders:
+        if len(self._gis.content.search("""owner:"{}" ownerfolder:{}""".format(item.owner, folder_id))) == 0:
+            for folder in self._gis.users.get(item.owner).folders:
                 if folder["title"] == "Location Tracking":
-                    self._gis.content.delete_folder(folder["title"], owner=self.item.owner)
+                    self._gis.content.delete_folder(folder["title"], owner=item.owner)
                     break
         return True
 
@@ -233,12 +237,12 @@ class LocationTrackingManager:
         self._validate_environment()
         if isinstance(value, str):
             if not value.isdigit():
-                raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0")
+                raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(value))
         elif isinstance(value, int):
             if value < 0:
-                raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0")
+                raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(value))
         else:
-            raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0")
+            raise LocationTrackingError("Invalid Retention Policy Setting: '{}' expected an integer greater than 0".format(value))
         self.tracks_layer.manager.update_definition({
             "tableMetadata": {
                 "dataRetentionStrategy": "{}".format(value)

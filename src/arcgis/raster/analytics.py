@@ -625,6 +625,13 @@ def generate_raster(raster_function,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -741,6 +748,13 @@ def convert_feature_to_raster(input_feature,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -823,6 +837,13 @@ def copy_raster(input_raster,
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                          results will be returned asynchronously.
+    --------------------------------     --------------------------------------------------------------------
+    folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                         not exist, with the given folder name and persists the output in this folder.
+                                         The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                         Example:
+                                            {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ================================     ====================================================================
 
     :return:
@@ -991,6 +1012,13 @@ def summarize_raster_within(input_zone_layer,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -1015,6 +1043,8 @@ def convert_raster_to_feature(input_raster,
                               simplify=True,
                               output_name=None,
                               context=None,
+                              create_multipart_features=False,
+                              max_vertices_per_feature=None,
                               *,
                               gis=None,
                               future=False,
@@ -1048,8 +1078,8 @@ def convert_raster_to_feature(input_raster,
 
                                              if False, then The features will follow exactly the cell boundaries of the raster dataset.
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Feature layer is created by the method and used as the output 
-    .
+    output_name                              Optional. If not provided, a Feature layer is created by the method and used as the output.
+
                                              You can pass in an existing Feature Service Item from your GIS to use that instead.
 
                                              Alternatively, you can pass in the name of the output Feature Service that should be created by this method
@@ -1078,11 +1108,27 @@ def convert_raster_to_feature(input_raster,
                                                 Example: 
                                                     {"outSR": {spatial reference}}
     ------------------------------------     --------------------------------------------------------------------
+    create_multipart_features                Optional boolean. Specifies whether the output polygons will consist of 
+                                             single-part or multipart features.
+
+                                             True: Specifies that multipart features will be created based on polygons that have the same value.
+
+                                             False: Specifies that individual features will be created for each polygon. This is the default.
+    ------------------------------------     --------------------------------------------------------------------
+    max_vertices_per_feature                 Optional int. The vertex limit used to subdivide a polygon into smaller polygons. 
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS object. If not speficied, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -1097,6 +1143,8 @@ def convert_raster_to_feature(input_raster,
                                                                output_name = output_name,
                                                                simplify_lines_or_polygons=simplify,
                                                                context=context,
+                                                               create_multipart_features=create_multipart_features,
+                                                               max_vertices_per_feature=max_vertices_per_feature,
                                                                future=future,
                                                                **kwargs)
 
@@ -1244,6 +1292,13 @@ def calculate_density(input_point_or_line_features,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -1464,6 +1519,13 @@ def create_viewshed(input_elevation_surface,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -1658,6 +1720,13 @@ def interpolate_points(input_point_features,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -1784,6 +1853,13 @@ def classify(input_raster,
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                          results will be returned asynchronously.
+    --------------------------------     --------------------------------------------------------------------
+    folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                         not exist, with the given folder name and persists the output in this folder.
+                                         The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                         Example:
+                                            {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ================================     ====================================================================
 
     :return:
@@ -1916,6 +1992,13 @@ def segment(input_raster, spectral_detail=15.5, spatial_detail=15, minimum_segme
     --------------------------------     --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                          results will be returned asynchronously.
+    --------------------------------     --------------------------------------------------------------------
+    folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                         not exist, with the given folder name and persists the output in this folder.
+                                         The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                         Example:
+                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ================================     ====================================================================
 
     :return:
@@ -2110,6 +2193,13 @@ def create_image_collection(image_collection,
     ------------------                   --------------------------------------------------------------------
     future                               Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                          results will be returned asynchronously.
+    ------------------                   --------------------------------------------------------------------
+    folder                               Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                         not exist, with the given folder name and persists the output in this folder.
+                                         The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                         Example:
+                                            {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ==================                   ====================================================================
 
     :returns: The imagery layer item
@@ -2576,6 +2666,13 @@ def optimum_travel_cost_network(input_regions_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -2897,6 +2994,13 @@ def determine_travel_costpath_as_polyline(input_source_data,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -3041,6 +3145,7 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
     """
     Computes the anomaly for each slice in a multidimensional raster to generate a multidimensional dataset.
     An anomaly is the deviation of an observation from its standard or mean value.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -3158,6 +3263,13 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     .. code-block:: python
@@ -3171,7 +3283,8 @@ def generate_multidimensional_anomaly(input_multidimensional_raster,
                                                              temporal_interval="YEARLY", 
                                                              output_name="temp_anomaly", 
                                                              ignore_nodata=True, 
-                                                             gis=gis)
+                                                             gis=gis,
+                                                             folder="generate_mdim_anomaly")
 
     :return:
     output_raster : Imagery Layer Item
@@ -3200,6 +3313,7 @@ def build_multidimensional_transpose(input_multidimensional_raster,
     """
     Transposes a multidimensional raster dataset, which chunks the multidimensional data along each dimension
     to optimize performance when accessing pixel values across all slices.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -3269,7 +3383,8 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                       future=False,
                                       **kwargs):
     """
-    Generates a multidimensional image service by aggregating existing multidimensional raster variables along a dimension..
+    Generates a multidimensional image service by aggregating existing multidimensional raster variables along a dimension.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -3486,6 +3601,13 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -3504,7 +3626,8 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                                           interval_value=None,
                                                           output_name="yearly_temp",
                                                           ignore_nodata=True,
-                                                          gis=gis)
+                                                          gis=gis,
+                                                          folder="aggregate_mdim_raster")
 
     .. code-block:: python
 
@@ -3519,7 +3642,8 @@ def aggregate_multidimensional_raster(input_multidimensional_raster,
                                                           interval_unit="HOURS", 
                                                           output_name="hourly_data",
                                                           ignore_nodata=True, 
-                                                          gis=gis)
+                                                          gis=gis,
+                                                          folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'aggregate_mdim_raster'})
 
     .. code-block:: python
         
@@ -3574,6 +3698,7 @@ def generate_trend_raster(input_multidimensional_raster,
                           **kwargs):
     """
     Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -3670,6 +3795,13 @@ def generate_trend_raster(input_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -3686,7 +3818,8 @@ def generate_trend_raster(input_multidimensional_raster,
                                                       frequency=2, 
                                                       ignore_nodata=True, 
                                                       output_name="polynomial_trend_coefficients", 
-                                                      gis=gis)
+                                                      gis=gis,
+                                                      folder="generate_trend_raster")
 
     """
 
@@ -3722,6 +3855,7 @@ def predict_using_trend_raster(input_multidimensional_raster,
                                **kwargs):
     """
     Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -3831,6 +3965,13 @@ def predict_using_trend_raster(input_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -3845,7 +3986,8 @@ def predict_using_trend_raster(input_multidimensional_raster,
                                                     dimension_definition='BY_VALUE',
                                                     dimension_values=["2050-01-01T00:00:00","2100-01-01T00:00:00"],
                                                     output_name="predicted_temp_precip",
-                                                    gis=gis)
+                                                    gis=gis.
+                                                    folder="predict_trend")
 
     .. code-block:: python
 
@@ -3859,7 +4001,8 @@ def predict_using_trend_raster(input_multidimensional_raster,
                                                     interval_value=1,
                                                     interval_unit="MONTHS",
                                                     output_name="predict_using_trend_raster", 
-                                                    gis=gis)
+                                                    gis=gis,
+                                                    folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'})
 
     """
 
@@ -3899,6 +4042,7 @@ def find_argument_statistics(input_raster,
                              **kwargs):
     """
     Extracts the dimension value at which a given statistic is attained for each pixel in a multidimensional raster.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -4027,6 +4171,13 @@ def find_argument_statistics(input_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -4044,7 +4195,8 @@ def find_argument_statistics(input_raster,
                                                                                   multiple_occurrence_value=99999, 
                                                                                   ignore_nodata=True, 
                                                                                   output_name="arg_stat_output", 
-                                                                                  gis=gis)
+                                                                                  gis=gis,
+                                                                                  folder="find_argument_statistics")
 
     .. code-block:: python
 
@@ -4058,7 +4210,8 @@ def find_argument_statistics(input_raster,
                                                    max_value=15, 
                                                    ignore_nodata=True, 
                                                    output_name="arg_stat_output", 
-                                                   gis=gis)
+                                                   gis=gis,
+                                                   folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'})
     """
     #task = "FindArgumentStatistics"
 
@@ -4091,6 +4244,7 @@ def linear_spectral_unmixing(input_raster,
                              **kwargs):
     """
     Performs subpixel classification and calculates the fractional abundance of endmembers for individual pixels.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -4166,6 +4320,13 @@ def linear_spectral_unmixing(input_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -4179,7 +4340,8 @@ def linear_spectral_unmixing(input_raster,
         unmixing_output = linear_spectral_unmixing(input_raster=input_layer, 
                                                    input_spectral_profile="/fileShares/Mdim/SpectralUnmixing_json.ecd",
                                                    output_name="linear_spectral_unmixing", 
-                                                   gis=gis)
+                                                   gis=gis,
+                                                   folder="linear_spectral_unmixing")
 
 
     .. code-block:: python
@@ -4195,7 +4357,8 @@ def linear_spectral_unmixing(input_raster,
                                                                             input_spectral_profile=input_spectral_profile_dict,
                                                                             value_option=["SUM_TO_ONE","NON_NEGATIVE"],
                                                                             output_name="linear_spectral_unmixing", 
-                                                                            gis=gis)
+                                                                            gis=gis,
+                                                                            folder={'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'})
 
     """
 
@@ -4227,6 +4390,7 @@ def subset_multidimensional_raster(input_multidimensional_raster,
                                    **kwargs):
     """
     Subsets a multidimensional raster by slicing data along defined variables and dimensions.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -4374,6 +4538,13 @@ def subset_multidimensional_raster(input_multidimensional_raster,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -4384,13 +4555,14 @@ def subset_multidimensional_raster(input_multidimensional_raster,
         # Usage Example 1: This creates a new multidimensional image service with variables cceiling and ccover for StdTime  dimensions
         values - 2012-01-15T03:00:00 and  2012-01-15T09:00:00
 
-        subset_output = linear_spectral_unmixing(input_multidimensional_raster=input_multidimensional_lyr, 
-                                                   variables=["cceiling","ccover"],
-                                                   dimension_definition='BY_VALUE',
-                                                   dimension_values=[{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},
-                                                                     {"dimension":"StdTime", "value":"2012-01-15T09:00:00"}]
-                                                   output_name="subset_op", 
-                                                   gis=gis)
+        subset_output = subset_multidimensional_raster(input_multidimensional_raster=input_multidimensional_lyr, 
+                                                       variables=["cceiling","ccover"],
+                                                       dimension_definition='BY_VALUE',
+                                                       dimension_values=[{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},
+                                                                         {"dimension":"StdTime", "value":"2012-01-15T09:00:00"}]
+                                                       output_name="subset_op", 
+                                                       gis=gis,
+                                                       folder="subset_multidimensional_raster")
 
     """
 
@@ -4427,6 +4599,7 @@ def costpath_as_polyline(input_destination_data,
     .. image:: _static/images/ra_costpath_as_polyline/ra_costpath_as_polyline.png 
 
     Calculates the least cost polyline path between sources and known destinations.
+    Function available in ArcGIS Image Server 10.8 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -4491,6 +4664,13 @@ def costpath_as_polyline(input_destination_data,
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and 
                                              results will be returned asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
+                                             not exist, with the given folder name and persists the output in this folder.
+                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+
+                                             Example:
+                                                {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     ====================================     ====================================================================
 
     :return:
@@ -4507,3 +4687,92 @@ def costpath_as_polyline(input_destination_data,
                                             context=context,
                                             future=future,
                                             **kwargs)
+
+
+def define_nodata(input_raster,
+                  nodata,
+                  query_filter=None,
+                  num_of_bands=None,
+                  composite_value=False,
+                  *,
+                  gis=None,
+                  future=False,
+                  **kwargs):
+
+    """
+    Function specifies one or more values to be represented as NoData.
+    Function available in ArcGIS Image Server 10.8 and higher.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_raster                             Required ImageryLayer object. Portal Item can be passed.
+    ------------------------------------     --------------------------------------------------------------------
+    nodata                                   Required dictionary. 
+                                             The value must be specified in dict form and can have keys - noDataValues, includedRanges
+                                             e.g. 
+                                                  {"noDataValues": [0]} 
+                                                  {"noDataValues": [0, 255, 0]} 
+                                                  {"includedRanges": [0, 255]} 
+                                                  {"includedRanges": [0, 255, 1, 255, 4, 250]}
+    ------------------------------------     --------------------------------------------------------------------
+    query_filter                             Optional str. An SQL statement to select specific raster in the image collection.
+                                             Only the selected rasters will have their NoData values changed.
+                                             Examples:
+                                                "OBJECTID > 3"
+    ------------------------------------     --------------------------------------------------------------------
+    num_of_bands                             Optional int. The number of bands in the input raster.
+                                             Example:
+                                                3
+    ------------------------------------     --------------------------------------------------------------------
+    composite_value                          Optional boolean. Choose whether all bands must be NoData in order 
+                                             for the pixel to be classified as NoData.
+                                              - False : If any of the bands have pixels of NoData, 
+                                                then the pixel is classified as NoData. This is the default.
+                                              - True : All of the bands must have pixels of NoData in 
+                                                order for the pixel to be classified as NoData.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS object. If not speficied, the currently active connection
+                                             is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return: The imagery layer url
+
+    .. code-block:: python
+
+            # Usage Example 1: To set no data values.
+            define_nodata_op = define_nodata(input_raster=image_collection,
+                                             composite_value=False,
+                                             nodata={"noDataValues": [110,105,101]},
+                                             num_of_bands=3,
+                                             query_filter="OBJECTID < 12",
+                                             future=False,
+                                             gis=gis,
+                                            )
+
+    .. code-block:: python
+
+            # Usage Example 2: To set included ranges.
+            define_nodata_op = define_nodata(input_raster=image_collection,
+                                             composite_value=True,
+                                             nodata={"includedRanges": [150, 200, 0, 200, 50, 200]},
+                                             num_of_bands=3,
+                                             query_filter="OBJECTID > 7",
+                                             future=True,
+                                             gis=gis,
+                                            )
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.define_nodata(input_raster=input_raster,
+                                                    nodata=nodata,
+                                                    query_filter=query_filter,
+                                                    num_of_bands=num_of_bands,
+                                                    composite_value=composite_value,
+                                                    future=future,
+                                                    **kwargs)
+

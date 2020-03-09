@@ -1,9 +1,10 @@
 import torch
 from torch import nn, LongTensor
 import torch.nn.functional as F
+from fastai.vision import imagenet_stats
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
-from fastprogress import progress_bar
+from fastprogress.fastprogress import progress_bar
 import numpy as np
 import random
 import math
@@ -461,8 +462,6 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
         e = Exception(f'could not find {type_data_loader} in data.')
         raise(e)
 
-    rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
-
     nodata = kwargs.get('nodata', 0)
 
     index = kwargs.get('start_index', 0)
@@ -475,22 +474,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
 
     statistics_type = kwargs.get('statistics_type', 'dataset') # Accepted Values `dataset`, `DRA`
     label_font_size = kwargs.get('label_font_size', 16)
-
-    e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
-    symbology_bands = []
-    if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
-        raise(e)
-    for b in rgb_bands:
-        if type(b) == str:
-            b_index = self._bands.index(b)
-        elif type(b) == int:
-            self._bands[b] # To check if the band index specified by the user really exists.
-            b_index = b
-        else:
-            raise(e)
-        b_index = self._data._extract_bands.index(b_index)
-        symbology_bands.append(b_index)
-
+    
     # Get Batch
     x_batch, y_batch = [], []
     i = 0
@@ -506,8 +490,8 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
     for yb in y_batch:
         y_bboxes.extend(yb[0])
         y_classes.extend(yb[1])
-
-    # Get Predictions
+    
+     # Get Predictions
     # predictions_class_store = []
     # predictions_confidence_store = []
     # predictions_activation_store = []
@@ -525,23 +509,54 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
     predictions_class_store = []
     predictions_activation_store = []
     for i in range(0, x_batch.shape[0], self._data.batch_size):
-        _classes_sparse, _activations = self.learn.model.eval()(x_batch[i:i+self._data.batch_size])
+        if self._backend == 'pytorch':
+            _classes_sparse, _activations = self.learn.model.eval()(x_batch[i:i+self._data.batch_size])
+        elif self._backend == 'tensorflow':
+            from .._utils.fastai_tf_fit import _pytorch_to_tf_batch
+            _classes_sparse, _activations = self.learn.model(_pytorch_to_tf_batch(x_batch[i:i+self._data.batch_size]))
+            _classes_sparse, _activations = _classes_sparse.detach().numpy(), _activations.detach().numpy()
+            _classes_sparse, _activations = torch.tensor(_classes_sparse), torch.tensor(_activations)
         predictions_class_store.append(_classes_sparse)
         predictions_activation_store.append(_activations)
     predictions_activation_store = torch.cat(predictions_activation_store)
     predictions_class_store = torch.cat(predictions_class_store)
     # predictions_bbox_store, predictions_class_store, predictions_confidence_store = _analyze_pred((predictions_class_store, predictions_activation_store), thresh=thresh, nms_overlap=nms_overlap, ssd=self, ret_scores=True, device=self._device)
 
-    # Denormalize X
-    x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
 
-    # Extract RGB Bands
-    symbology_x_batch = x_batch[:, symbology_bands]
-    if statistics_type == 'DRA':
-        shp = symbology_x_batch.shape
-        min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
-        max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
-        symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    if self._is_multispectral:
+
+        rgb_bands = kwargs.get('rgb_bands', self._data._symbology_rgb_bands)
+
+        e = Exception('`rgb_bands` should be a valid band_order, list or tuple of length 3 or 1.')
+        symbology_bands = []
+        if not ( len(rgb_bands) == 3 or len(rgb_bands) == 1 ):
+            raise(e)
+        for b in rgb_bands:
+            if type(b) == str:
+                b_index = self._bands.index(b)
+            elif type(b) == int:
+                self._bands[b] # To check if the band index specified by the user really exists.
+                b_index = b
+            else:
+                raise(e)
+            b_index = self._data._extract_bands.index(b_index)
+            symbology_bands.append(b_index)
+
+        # Denormalize X
+        x_batch = (self._data._scaled_std_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch) * x_batch ) + self._data._scaled_mean_values[self._data._extract_bands].view(1, -1, 1, 1).to(x_batch)
+
+        # Extract RGB Bands
+        symbology_x_batch = x_batch[:, symbology_bands]
+        if statistics_type == 'DRA':
+            shp = symbology_x_batch.shape
+            min_vals = symbology_x_batch.view(shp[0], shp[1], -1).min(dim=2)[0]
+            max_vals = symbology_x_batch.view(shp[0], shp[1], -1).max(dim=2)[0]
+            symbology_x_batch = symbology_x_batch / ( max_vals.view(shp[0], shp[1], 1, 1) - min_vals.view(shp[0], shp[1], 1, 1) + .001 )
+    else:
+        # normalization stats
+        norm_mean = torch.tensor(imagenet_stats[0]).to(x_batch).view(1, -1, 1, 1)
+        norm_std = torch.tensor(imagenet_stats[1]).to(x_batch).view(1, -1, 1, 1)
+        symbology_x_batch = (x_batch * norm_std) + norm_mean
 
     # Channel first to channel last for plotting
     symbology_x_batch = symbology_x_batch.permute(0, 2, 3, 1)
@@ -555,7 +570,7 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
 
     # Get color Array
     color_array = self._data._multispectral_color_array
-    color_array[1:, 3] = alpha
+    color_array[:, 3] = alpha
 
     # Size for plotting
     fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols*imsize, nrows*imsize))
@@ -575,8 +590,8 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
             xs = bbox[[1, 1, 3, 3, 1]]
             ys = bbox[[0, 2, 2, 0, 0]]
             color = self._data._multispectral_color_array[gt_classes[i]]
-            ax_ground_truth.plot(xs, ys, color=color, linewidth=2)
-            ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
+            ax_ground_truth.plot(xs, ys, color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
+            ax_ground_truth.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[gt_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
 
         # Plot Predictions
         ax_prediction  = ax[r][1]
@@ -599,8 +614,8 @@ def show_results_multispectral(self, nrows=5, thresh=0.3, nms_overlap=0.1, alpha
                     xs = bbox[[1, 1, 3, 3, 1]]
                     ys = bbox[[0, 2, 2, 0, 0]]
                     color = self._data._multispectral_color_array[predicted_classes[i]]
-                    ax_prediction.plot(xs, ys, color=color, linewidth=2)
-                    ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=.5, foreground='gray')])
+                    ax_prediction.plot(xs, ys, color=color, linewidth=2, path_effects=[patheffects.Stroke(linewidth=3, foreground='black'), patheffects.Normal()])
+                    ax_prediction.text(xs[0]+1, ys[0]+1+(label_font_size*(x_batch.shape[-1]-1)/256), self._data.classes[predicted_classes[i]], size=label_font_size, color=color, path_effects=[patheffects.Stroke(linewidth=1, foreground='black'), patheffects.Normal()])
             
         idx+=1
     return ax

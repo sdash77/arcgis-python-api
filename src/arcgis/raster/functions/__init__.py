@@ -13,7 +13,7 @@ Functions can be applied to various rasters (or images), including the following
 # Raster dataset layers
 # Mosaic datasets
 # Rasters within mosaic datasets
-from .._layer import ImageryLayer
+from .._layer import ImageryLayer, Raster, _ArcpyRaster
 from .utility import _raster_input, _get_raster, _replace_raster_url, _get_raster_url, _get_raster_ra, \
                      _pixel_type_string_to_long
 from arcgis.gis import Item
@@ -57,6 +57,9 @@ hidden_inputs = ["ToolName","PrimaryInputParameterName", "OutputRasterParameterN
 
 
 def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
+
+    if isinstance(layer, Raster):
+        return _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2, variable_name)
     if isinstance(layer, Item):
         layer = layer.layers[0]
 
@@ -102,6 +105,8 @@ def _clone_layer(layer, function_chain, raster_ra, raster_ra2=None, variable_nam
     return newlyr
 
 def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
+    if isinstance(layer, Raster):
+        return _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra)
     if isinstance(layer, Item):
         layer = layer.layers[0]
    
@@ -142,6 +147,70 @@ def _clone_layer_without_copy(layer, function_chain, function_chain_ra):
         newlyr._extent = newlyr.properties.extent
     return newlyr
 
+def _clone_layer_raster(layer, function_chain, raster_ra, raster_ra2=None, variable_name='Raster'):
+
+    function_chain_ra = copy.deepcopy(function_chain)
+    function_chain_ra['rasterFunctionArguments'][variable_name] = raster_ra
+    if raster_ra2 is not None:
+        function_chain_ra['rasterFunctionArguments']['Raster2'] = raster_ra2
+
+    if layer._datastore_raster:
+        newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+    else:
+        newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+
+    if layer._engine==_ArcpyRaster:
+        try:            
+            import arcpy, json
+            arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
+            newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+        except:
+            pass
+
+    #newlyr.properties = layer.properties
+    newlyr._engine_obj._fn = function_chain
+    newlyr._engine_obj._fnra = function_chain_ra
+    newlyr._engine_obj._where_clause = layer._where_clause
+    newlyr._engine_obj._spatial_filter = layer._spatial_filter
+    newlyr._engine_obj._temporal_filter = layer._temporal_filter
+    newlyr._engine_obj._mosaic_rule = layer._mosaic_rule
+    newlyr._engine_obj._filtered = layer._filtered
+    newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
+    newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+
+    if layer._do_not_hydrate:
+        newlyr._engine_obj.token = layer.token
+
+    return newlyr
+
+def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
+
+    if layer._datastore_raster:
+        newlyr= Raster(layer._uri, is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+    else:
+        newlyr = Raster(layer._url, is_multidimensional= layer._is_multidimensional, engine= layer._engine,  gis=layer._gis)
+
+    if layer._engine==_ArcpyRaster:
+        import arcpy, json
+        arcpylyr=arcpy.ia.Apply(layer._uri,json.dumps(function_chain_ra))
+        newlyr = Raster(str(arcpylyr), is_multidimensional= layer._is_multidimensional, engine= layer._engine, gis=layer._gis)
+
+
+    #newlyr.properties = layer.properties
+    newlyr._engine_obj._fn = function_chain
+    newlyr._engine_obj._fnra = function_chain_ra
+    newlyr._engine_obj._where_clause = layer._where_clause
+    newlyr._engine_obj._spatial_filter = layer._spatial_filter
+    newlyr._engine_obj._temporal_filter = layer._temporal_filter
+    newlyr._engine_obj._mosaic_rule = layer._mosaic_rule
+    newlyr._engine_obj._filtered = layer._filtered
+    newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
+    newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
+
+    if layer._do_not_hydrate:
+        newlyr._engine_obj.token = layer.token
+
+    return newlyr
 
 def arg_statistics(rasters, stat_type=None, min_value=None, max_value=None, undefined_class=None, astype=None):
     """
@@ -1164,10 +1233,11 @@ def extract_band(raster, band_ids=None, band_names=None, band_wavelengths=None, 
         template_dict["outputPixelType"] = astype.upper()
 
     if band_ids is not None:
+        band_ids_mod=[]
         if isinstance(band_ids,list):
             for index, item in enumerate(band_ids):
-                band_ids[index] = item-1
-            template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids
+                band_ids_mod.append(item-1)
+            template_dict["rasterFunctionArguments"]["BandIDs"] = band_ids_mod
         else:
             raise RuntimeError("band_ids should be of type list")
     if band_names is not None:
@@ -2409,10 +2479,36 @@ def con(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
     :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
     :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
     :param astype: output pixel type
-    :return: the output raster
+    :returns: the output raster  
+
+    .. code-block:: python
+
+        USAGE EXAMPLE: To extract raster from flow direction raster layer that only covers the watershed. 
+                       rasters: 
+                       ["Input raster representing the true or false result of the desired condition. It can be of integer or floating point type.", 
+                        "The input whose values will be used as the output cell values if the condition is true. It can be an integer or a floating point raster, or a constant value.", 
+                        "The input whose values will be used as the output cell values if the condition is false. It can be an integer or a floating point raster, or a constant value."]
+
+        con([stowe_watershed_lyr, Stowe_fill_flow_direction_lyr, 0])
 
     """
     return local(rasters, 78, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
+
+
+#def _pick(rasters, extent_type="FirstOf", cellsize_type="FirstOf", astype=None):
+#    """
+#    The value from a position raster is used to determine from which raster in 
+#    a list of input rasters the output cell value will be obtained.
+#    The arguments for this function are as follows:
+
+#    :param rasters: array of rasters. If a scalar is needed for the operation, the scalar can be a double or string
+#    :param extent_type: one of "FirstOf", "IntersectionOf", "UnionOf", "LastOf"
+#    :param cellsize_type: one of "FirstOf", "MinOf", "MaxOf, "MeanOf", "LastOf"
+#    :param astype: output pixel type
+#    :return: the output raster
+
+#    """
+#    return local(rasters, 84, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype)
 
 ###############################################  LOCAL FUNCTIONS  ######################################################
 
@@ -3980,7 +4076,6 @@ def lookup(raster, field=None):
 def raster_collection_function(raster, item_function, aggregation_function, processing_function):
     """
     Creates a new raster by applying item, aggregation and processing function
-
     :param raster: Input Imagery Layer. The image service the layer is based on should be a mosaic dataset
     :param item_function: The raster function template to be applied on each item of the mosaic dataset. 
                           Create an RFT object out of the raster function template item on the portal and 
@@ -3991,7 +4086,6 @@ def raster_collection_function(raster, item_function, aggregation_function, proc
     :param processing_function: The processing template to be applied on the imagery layer.
                                 Create an RFT object out of the raster function template item on the portal and 
                                 specify that as the input to processing_function 
-
     :return: the output raster with function applied on it
     """
 
@@ -4106,35 +4200,25 @@ def constant_raster(constant, raster_info, gis=None):
     :param constant: Required list. The value of the constant to be added to the virtual raster.
     :param raster_info: Required Raster info dictionary or ImageryLayer object to set the properties of the output raster.
                         if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified. 
+
                         Example for RasterInfo dict - 
-                        {'bandCount': 3, 
 
-                         'extent': {"xmin": 4488761.95,
-                                     "ymin": 5478609.805,
-                                     "xmax": 4489727.05,
-                                     "ymax": 5479555.305,
-                                     "spatialReference": {
-
-                                       "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-
-                                       GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-
-                                       SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
-
-                                       UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
-
-                                       PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
-
-                                       PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
-
-                                       PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
-
-                                     }}, 
-                         'pixelSizeX': 0.0999999999999614, 
-
-                         'pixelSizeY': 0.1, 
-
-                         'pixelType': 'U8'}
+                        {'bandCount': 3,'extent': {"xmin": 4488761.95,
+                        "ymin": 5478609.805,
+                        "xmax": 4489727.05,
+                        "ymax": 5479555.305,
+                        "spatialReference": {
+                        "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+                        GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\",DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+                        SPHEROID[\"Bessel_1841\",6377397.155,299.1528128]],PRIMEM[\"Greenwich\",0.0],
+                        UNIT[\"Degree\",0.0174532925199433]],PROJECTION[\"Transverse_Mercator\"],
+                        PARAMETER[\"false_easting\",4500000.0],PARAMETER[\"false_northing\",0.0],
+                        PARAMETER[\"central_meridian\",12.0],PARAMETER[\"scale_factor\",1.0],
+                        PARAMETER[\"latitude_of_origin\",0.0],UNIT[\"Meter\",1.0]]"
+                        }}, 
+                        'pixelSizeX': 0.0999999999999614, 
+                        'pixelSizeY': 0.1, 
+                        'pixelType': 'U8'}
 
 
     :param gis: Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
@@ -4340,6 +4424,107 @@ def random_raster(raster_info, distribution=1, min_uniform=0.0, max_uniform=1.0,
     newlyr._fnra = template_dict
     return newlyr
 
+def aggregate_cells(raster, cell_factor=2, aggregation_type=9, extent_handling=False, ignore_nodata=False):
+
+    """
+    Generates a reduced-resolution version of a raster.
+
+    :param raster: the input raster
+    :param cell_factor: The factor by which to multiply the cell size of the input raster to 
+                        obtain the desired resolution for the output raster.
+                        For example, a cell factor value of three would result in an output cell 
+                        size three times larger than that of the input raster.
+                        The value must be an integer greater than 1.
+    :param aggregation_type: Optional int. Establishes how the value for each output cell will be determined.
+                             The values of the input cells encompassed by the coarser output cell 
+                             are aggregated by one of the following statistics:
+
+                                - 2 (MAXIMUM) : The largest value of the input cells.
+                                - 3 (MEAN) : The average value of the input cells.
+                                - 4 (MEDIAN) : The median value of the input cells.
+                                - 5 (MINIMUM) : The smallest value of the input cells.
+                                - 9 (SUM) : The sum (total) of the input cell values.This is the default.
+
+    :param extent_handling: Optional boolean. Defines how to handle the boundaries of the input raster when its rows 
+                            or columns are not a multiple of the cell factor.
+                                - True : Expands the top or right boundaries of the input raster so 
+                                  the total number of cells in a row or column is a multiple 
+                                  of the cell factor. Those expanded cells are given a value 
+                                  of NoData. With this option, the output raster can cover a 
+                                  larger spatial extent than the input raster. This is the default.
+                                - False : Reduces the number of rows or columns in the output raster by 1. 
+                                  This will truncate the remaining cells on the top or right 
+                                  boundaries of the input raster, making the number of rows 
+                                  or columns in the input raster a multiple of the cell factor.
+                                  With this option, the output raster can cover a smaller 
+                                  spatial extent than the input raster.
+
+    :param ignore_nodata: Optional boolean. Denotes whether NoData values are ignored by the aggregation calculation.
+
+                          - True : Specifies that if NoData values exist for any of the cells that fall within the 
+                            spatial extent of a larger cell on the output raster, the NoData values will be 
+                            ignored when determining the value for output cell locations. Only input cells 
+                            within the extent of the output cell that have data values will be used in
+                            determining the value of the output cell. This is the default.
+                          - False : Specifies that if any cell that falls within the spatial extent of a larger 
+                            cell on the output raster has a value of NoData, the value for that output 
+                            cell location will be NoData.When the this option is used, it is implied 
+                            that when cells within an aggregation contain the NoData value, 
+                            there is insufficient information to perform the specified calculations 
+                            necessary to determine an output value.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "Aggregate",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+    
+    if cell_factor is not None:
+        template_dict["rasterFunctionArguments"]['CellFactor'] = cell_factor
+
+    if aggregation_type is not None:
+        template_dict["rasterFunctionArguments"]['AggregationType'] = aggregation_type
+
+    if extent_handling is not None:
+        template_dict["rasterFunctionArguments"]['ExpandHandling'] = extent_handling
+
+    if ignore_nodata is not None:
+        template_dict["rasterFunctionArguments"]['IgnoreNoData'] = ignore_nodata
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+def _raster_item(raster, raster_id=None):
+    """
+    :param raster: the input raster
+    :param conversion_parameters: array of double (A length of N array representing weights for each band, where N=band count.)
+    :return: the output raster with this function applied to it
+    """
+ 
+
+
+    template_dict = {
+        "rasterFunction" : "RasterItem",
+        "rasterFunctionArguments": {}
+    }
+    
+    if raster is not None and isinstance(raster, ImageryLayer):
+        template_dict["rasterFunctionArguments"]['URL'] = raster.url
+
+    if raster is not None and isinstance(raster, str):
+        template_dict["rasterFunctionArguments"]['URL'] = raster
+
+    if raster_id is not None:
+        template_dict["rasterFunctionArguments"]['RasterID'] = raster_id
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
 
 class RFT:
     def __init__(self, raster_function_template,gis=None):
@@ -4352,11 +4537,14 @@ class RFT:
                 _rft_json = self.to_json(self._gis)
             else:
                 file_path = self._rft.get_data()
-                f=open(file_path, "r")
-                file_content = f.read()
-                file_content = file_content.replace("false", "False")
-                file_content = file_content.replace("true", "True")
-                _rft_json = eval(file_content)
+                if isinstance(file_path, dict):
+                    _rft_json=file_path
+                else:
+                    f=open(file_path, "r")
+                    file_content = f.read()
+                    file_content = file_content.replace("false", "False")
+                    file_content = file_content.replace("true", "True")
+                    _rft_json = eval(file_content)
             self._rft_json = _find_object_ref(_rft_json, {}, self)
             global node, end_node 
             node = 0
@@ -4368,6 +4556,7 @@ class RFT:
                     self._rft_dict.pop(key,None)
             self._arguments=copy.deepcopy(self._rft_dict)
             self.arguments = copy.deepcopy(self._arguments)
+            self._local_raster=None
         except:
             _LOGGER.warning("Unable to find the arguments for the current raster function template. "
                   "This might be because the server could not process the template "
@@ -4403,6 +4592,12 @@ class RFT:
         return sig
 
 
+    @property
+    def template(self):
+        if self._template is None:
+            self._template=self._rft_json
+        return self._template
+
     def __call__(self,*args,**kwargs):
         try:
             i=0
@@ -4410,17 +4605,60 @@ class RFT:
             for pos_arg in args:
                 kwargs.update({key_list[i]:pos_arg})
                 i=i+1
+
+            for key in kwargs.keys():
+                if isinstance(kwargs[key], Raster):
+                    if(self._local_raster is None):
+                        self._local_raster = kwargs[key]._engine_obj
+                        break
             
             if(len(kwargs)==1):
                 for k,v in self._raster_dict.items():
                     self._raster_dict.update({k:kwargs[list(kwargs.keys())[0]]})	
-                return self._apply_rft(self._raster_dict, self._gis)	           
+                    layer = self._apply_rft(self._raster_dict, self._gis)
+                if isinstance(layer, Raster):
+                    self._template = layer._engine_obj._fnra
+                    if layer._engine_obj.url is None:
+                        return None
+                    if layer._engine==_ArcpyRaster:
+                        try:
+                            import arcpy, json
+                            arcpylyr=arcpy.ia.Apply(layer._engine_obj._uri,json.dumps(layer._engine_obj._fnra))
+                            layer = Raster(str(arcpylyr), is_multidimensional= layer._engine_obj._is_multidimensional, engine= layer._engine, gis=layer._engine_obj._gis)
+                            return layer
+
+                        except:
+                            raise
+                else:
+                    self._template = layer._fnra
+                    if layer.url is None:
+                        return None
+                return layer
+
 
             for key in kwargs.keys():
                 for k in self._arguments.keys():
                     if(k==key):
                         self._arguments[k]=kwargs[key]
-            return self._apply_rft(self._arguments, self._gis)
+            layer = self._apply_rft(self._arguments, self._gis)
+            if isinstance(layer, Raster):
+                self._template = layer._engine_obj._fnra
+                if layer._engine_obj.url is None:
+                    return None
+                if layer._engine==_ArcpyRaster:
+                    try:
+                        import arcpy, json
+                        arcpylyr=arcpy.ia.Apply(layer._engine_obj._uri,json.dumps(layer._engine_obj._fnra))
+                        layer = Raster(str(arcpylyr), is_multidimensional= layer._engine_obj._is_multidimensional, engine= layer._engine, gis=layer._engine_obj._gis)
+                        return layer
+                    except:
+                        raise
+            else:
+                self._template = layer._fnra
+                if layer.url is None:
+                    return None
+            return layer
+
         except:
             _LOGGER.warning("Unable to apply the current raster function template on the imagery layer. " 
                   "This might be because the server could not process the template, "
@@ -4481,7 +4719,7 @@ class RFT:
                 if(("type" in value) and value["type"]=="RasterFunctionVariable"):
                     for k,v in arg_dict.items():
                         if(value["name"]==k):
-                            if isinstance(v,ImageryLayer) or isinstance(v, _FeatureLayer):
+                            if isinstance(v,(ImageryLayer, Raster)) or isinstance(v, _FeatureLayer):
                                 raster = _raster_input_rft(v)
                                 v =_input_rft(raster)
                                 if isinstance(raster,str):
@@ -4569,7 +4807,7 @@ class RFT:
                             for k,v in arg_dict.items():
                                 if "name" in element:
                                     if(element["name"]==k):
-                                        if isinstance(v,ImageryLayer) or isinstance(v, _FeatureLayer):
+                                        if isinstance(v,(ImageryLayer, Raster)) or isinstance(v, _FeatureLayer):
                                             raster = _raster_input_rft(v)
                                             v =_input_rft(raster)
                                             if isinstance(raster,str):
@@ -4579,7 +4817,9 @@ class RFT:
                                                 if raster.keys() & {"mosaicRule"}:
                                                     element.update(v)
                                                 else:
-                                                    input_dict.update({key:v})
+                                                    element.clear()
+                                                    element.update(v)
+                                                    #input_dict.update({key:v})
                                             flag_rasters=1
                                         else:
                                             if("value" in element):
@@ -4827,10 +5067,16 @@ class RFT:
                     arg_dict_copy.pop(key,None)
             complete_rft_dict = self._apply_argument(rft_dict,arg_dict_copy)
 
-        newlyr = ImageryLayer(complete_rft_dict, self._gis)
+        if self._local_raster is not None:
+            newlyr = Raster(self._local_raster._url, is_multidimensional=self._local_raster._is_multidimensional,gis=self._local_raster._gis)
+            self._local_raster = None
+            newlyr._engine_obj._fn = complete_rft_dict
+            newlyr._engine_obj._fnra = complete_rft_dict
+        else:
+            newlyr = ImageryLayer(complete_rft_dict, self._gis)
         #_LOGGER.warning("""Set the desired extent on the output Imagery Layer before viewing it""")
-        newlyr._fn = complete_rft_dict
-        newlyr._fnra = complete_rft_dict
+            newlyr._fn = complete_rft_dict
+            newlyr._fnra = complete_rft_dict
         return newlyr
 
     def draw_graph(self,show_attributes=False, graph_size="14.25, 15.25"):

@@ -44,7 +44,7 @@ def get_available_device(max_memory=0.8):
 
     GPUs = GPUtil.getGPUs()
     freeMemory = 0
-    available=-1
+    available = 0
     for GPU in GPUs:
         if GPU.memoryUtil > max_memory:
             continue
@@ -160,6 +160,7 @@ class ArcGISObjectDetector:
                     import torch
                 except Exception:
                     raise Exception("PyTorch is not installed. Install it using conda install -c esri deep-learning-essentials")
+                torch.cuda.set_device(device)
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
@@ -292,7 +293,7 @@ def get_available_device(max_memory=0.8):
 
     GPUs = GPUtil.getGPUs()
     freeMemory = 0
-    available=-1
+    available = 0
     for GPU in GPUs:
         if GPU.memoryUtil > max_memory:
             continue
@@ -419,6 +420,7 @@ class ObjectClassifier:
                     import torch
                 except Exception:
                     raise Exception("PyTorch is not installed. Install it using conda install -c esri deep-learning-essentials")
+                torch.cuda.set_device(device)
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
@@ -609,7 +611,7 @@ def get_available_device(max_memory=0.8):
 
     GPUs = GPUtil.getGPUs()
     freeMemory = 0
-    available=-1
+    available = 0
     for GPU in GPUs:
         if GPU.memoryUtil > max_memory:
             continue
@@ -742,6 +744,7 @@ class ArcGISImageClassifier:
                     import torch
                 except Exception:
                     raise Exception("PyTorch is not installed. Install it using conda install -c esri deep-learning-essentials")
+                torch.cuda.set_device(device)
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:
@@ -873,7 +876,7 @@ def get_available_device(max_memory=0.8):
 
     GPUs = GPUtil.getGPUs()
     freeMemory = 0
-    available=-1
+    available = 0
     for GPU in GPUs:
         if GPU.memoryUtil > max_memory:
             continue
@@ -989,6 +992,7 @@ class ArcGISInstanceDetector:
                     import torch
                 except Exception:
                     raise Exception("PyTorch is not installed. Install it using conda install -c esri deep-learning-essentials")
+                torch.cuda.set_device(device)
                 arcpy.env.processorType = "GPU"
                 arcpy.env.gpuId = str(device)
             else:

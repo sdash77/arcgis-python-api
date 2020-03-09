@@ -47,12 +47,18 @@ else:
         'six',
         'ipywidgets >=7',
         'widgetsnbextension >=3',
-        'pandas >=0.23',
-        'numpy',
+        'pandas >=0.25',
+        'numpy >=1.16.2',
         'matplotlib',
-        'keyring',
+        'keyring >=19',
+        'lerc',
         'jupyterlab',
-        'pyshp >=1.2.11,<2',
+        'pyshp >=2',
+        'requests',
+        'requests-oauthlib',
+        'requests_toolbelt',
+        'requests_ntlm',
+        'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"' ]
 
 def _post_install():
@@ -152,7 +158,7 @@ kwargs = {
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    "version":'1.7.1',
+    "version":'1.8.0',
 
     "description":'ArcGIS API for Python',
     "long_description":long_description,
@@ -257,6 +263,9 @@ kwargs = {
     # package_data={
     #     'sample': ['package_data.dat'],
     # },
+    'package_data':{
+        'arcgis':['raster/*.dll', 'raster/*.so'],
+    },
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:

@@ -15,7 +15,7 @@ from arcgis.mapping import MapImageLayer
 from arcgis.geometry import *
 import copy
 import urllib
-
+import time
 _TEXT_BASED_ITEM_TYPES = ['Web Map', 'Feature Service', 'Map Service', 'Operation View', 'Dashboard',
                           'Image Service', 'Feature Collection', 'Feature Collection Template',
                           'Web Mapping Application', 'Mobile Application', 'Symbol Set', 'Color Set',
@@ -289,7 +289,10 @@ class _DeepCloner():
                 is_view = service_definition["isView"]
 
             # Get the item data, for example any popup definition associated with the item
-            data = item.get_data()
+            try:
+                data = item.get_data()
+            except:
+                data = {}
 
             # Get the definitions of the the layers and tables
             layers_definition = {'layers': [], 'tables': []}
@@ -1311,6 +1314,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             for features_chunk in [layer_features[i:i+chunk_size] for i in range(0, len(layer_features), chunk_size)]:
                 edits = layer.edit_features(adds=features_chunk)
                 add_results += edits['addResults']
+                time.sleep(1)
             layer_ids.remove(layer_id)
 
             # Create a mapping between the original global id and the new global id
@@ -1345,6 +1349,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 for features_chunk in [related_layer_features[i:i+chunk_size] for i in range(0, len(related_layer_features), chunk_size)]:
                     edits = layers[related_layer_id].edit_features(adds=features_chunk)
                     add_results += edits['addResults']
+                    time.sleep(1)
                 layer_ids.remove(related_layer_id)
                 object_id_field = layers[related_layer_id].properties['objectIdField']
                 object_id_mapping[related_layer_id] = {related_layer_features[i]['attributes'][object_id_field] : add_results[i]['objectId'] for i in range(0, len(related_layer_features))}
@@ -1356,8 +1361,18 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 continue
             add_results = []
             for features_chunk in [layer_features[i:i+chunk_size] for i in range(0, len(layer_features), chunk_size)]:
-                edits = layers[layer_id].edit_features(adds=features_chunk)
-                add_results += edits['addResults']
+                try:
+                    edits = layers[layer_id].edit_features(adds=features_chunk)
+                    add_results += edits['addResults']
+                    time.sleep(1)
+                except Exception as e:
+                    temp_chunk = 10
+                    if len(features_chunk) <= 10:
+                        temp_chunk = 1
+                    
+                    for chunk in [features_chunk[i:i+temp_chunk] for i in range(0, len(features_chunk), temp_chunk)]:
+                        edits = layers[layer_id].edit_features(adds=chunk)
+                        add_results += edits['addResults']
             object_id_field = layers[layer_id].properties['objectIdField']
             object_id_mapping[layer_id] = {layer_features[i]['attributes'][object_id_field] : add_results[i]['objectId'] for i in range(0, len(layer_features))}
 
@@ -2001,7 +2016,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Copy features from original item
                 if self.copy_data and not self.is_view:
-                    self._add_features(new_layers, relationships, layer_field_mapping, feature_service.properties['spatialReference'])
+                    spatial_reference = None
+                    if 'spatialReference' in feature_service.properties:
+                        spatial_reference = feature_service.properties['spatialReference']
+                    self._add_features(new_layers, relationships, layer_field_mapping, spatial_reference)
 
             # share items
             _share_item_with_groups(new_item, self.sharing,self._clone_mapping["Group IDs"])
@@ -2947,6 +2965,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                                     if len(features) == 0:
                                         features = [{"attributes" : {"name" : user.fullName, "userId" : user.username}}]
                                         feature_layer.edit_features(adds=features)
+                                        time.sleep(1)
                                 break
 
                 # Update the group reference

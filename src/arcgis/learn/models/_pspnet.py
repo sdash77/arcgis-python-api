@@ -5,7 +5,7 @@ from ._arcgis_model import ArcGISModel
 
 try:
     from fastai.basic_train import Learner
-    from ._arcgis_model import SaveModelCallback
+    from ._arcgis_model import SaveModelCallback, _resnet_family, _densenet_family, _vgg_family
     from ._unet_utils import is_no_color, predict_batch, show_results_multispectral
     import torch
     from torch import nn
@@ -19,6 +19,7 @@ try:
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
     from fastai.vision import flatten_model
+    from ._deeplab_utils import compute_miou
     HAS_FASTAI = True
 except Exception as e:
     HAS_FASTAI = False
@@ -96,13 +97,14 @@ class PSPNetClassifier(ArcGISModel):
             self.learn.loss_func = self._psp_loss
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
-        if pretrained_path is not None:
-            self.load(pretrained_path)
-
         self.learn.model = self.learn.model.to(self._device)
         
         self.freeze()
         self._arcgis_init_callback() # make first conv weights learnable
+
+        if pretrained_path is not None:
+            self.load(pretrained_path)
+
 
     def __str__(self):
         return self.__repr__()
@@ -116,7 +118,11 @@ class PSPNetClassifier(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """        
-        return [*self._resnet_family, *self._densenet_family, *self._vgg_family]
+        return PSPNetClassifier._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family, *_densenet_family, *_vgg_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -197,7 +203,8 @@ class PSPNetClassifier(ArcGISModel):
                 p.requires_grad = False
 
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])  ## Could also call self.learn.freeze after this line because layer groups are now present.      
-  
+        self.learn.create_opt(lr=3e-3)
+
     def unfreeze(self):
         """
         Unfreezes the earlier layers of the model for fine-tuning.
@@ -255,14 +262,42 @@ class PSPNetClassifier(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'accuracy': self._get_model_metrics()}
+        return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
 
     def _get_model_metrics(self, **kwargs):
         checkpoint = kwargs.get('checkpoint', True)
         if not hasattr(self.learn, 'recorder'):
             return 0.0
 
-        model_accuracy = self.learn.recorder.metrics[-1][0]
-        if checkpoint:
-            model_accuracy = np.max(self.learn.recorder.metrics)
+        try:
+            model_accuracy = self.learn.recorder.metrics[-1][0]
+            if checkpoint:
+                model_accuracy = np.max(self.learn.recorder.metrics)
+        except:
+            model_accuracy = 0.0
+
         return float(model_accuracy)
+
+    def mIOU(self, mean=False, show_progress=True):
+
+        """
+        Computes mean IOU on the validation set for each class.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        mean                    Optional bool. If False returns class-wise
+                                mean IOU, otherwise returns mean iou of all
+                                classes combined.   
+        ---------------------   -------------------------------------------
+        show_progress           Optional bool. Displays the prgress bar if
+                                True.                     
+        =====================   ===========================================
+        
+        :returns: `dict` if mean is False otherwise `float`
+        """
+        num_classes = torch.arange(self._data.c)
+        miou = compute_miou(self, self._data.valid_dl, mean, num_classes, show_progress)
+        if mean:
+            return np.mean(miou)
+        return dict(zip(['0'] + self._data.classes[1:], miou))

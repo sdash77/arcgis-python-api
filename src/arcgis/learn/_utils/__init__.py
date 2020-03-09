@@ -1,1 +1,2 @@
-from .common import ArcGISMSImage, ArcGISMSImageList
+from .env import enable_backend
+enable_backend()

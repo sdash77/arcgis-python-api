@@ -41,30 +41,56 @@ class ServerManager(object):
         :returns:
            A list of all servers found in the GIS.
         """
+        
         from . import ServicesDirectory
         if self._server_list is not None:
             return self._server_list
-
         self._server_list = []
         self._catalog_list = []
         res = self._portal.con.post("portals/self/servers", {"f": "json"})
         servers = res['servers']
         admin_url = None
+        public_url = None
         for server in servers:
+            admin_url = server['adminUrl']
+            public_url = server['url']            
             try:
-                admin_url = server['adminUrl']
+                
                 if server['serverFunction'] == 'NotebookServer':
-                    from arcgis.gis.nb import NotebookServer
-                    self._server_list.append(
-                          NotebookServer(url=admin_url, gis=self._gis)
-                     )
+                    try:
+                        from arcgis.gis.nb import NotebookServer
+                        nbs = NotebookServer(url=admin_url, gis=self._gis)
+                        nbs.info                    
+                        self._server_list.append(nbs)
+                    except:
+                        from arcgis.gis.nb import NotebookServer
+                        nbs = NotebookServer(url=public_url, gis=self._gis)
+                        nbs.info
+                        self._server_list.append(nbs)
                 elif server['serverFunction'] == 'MissionServer':
                     from arcgis.gis.mission import MissionServer
-                    self._server_list.append(MissionServer(url=admin_url, gis=self._gis))
+                    try:
+                        ms = MissionServer(url=admin_url, gis=self._gis)
+                        ms.info
+                        self._server_list.append(ms)
+                    except:
+                        ms = MissionServer(url=public_url, gis=self._gis)
+                        ms.info
+                        self._server_list.append(ms)                        
                 else:
-                    c = ServicesDirectory(url=admin_url, portal_connection=self._gis._portal.con, )
-                    self._server_list.append(c.admin)
-                    self._catalog_list.append(c)
+                    try:
+                        
+                        c = ServicesDirectory(url=admin_url, 
+                                              portal_connection=self._gis._portal.con)
+                        c.admin.logs
+                        self._server_list.append(c.admin)
+                        self._catalog_list.append(c)
+                    except:
+                        c = ServicesDirectory(url=public_url, 
+                                              portal_connection=self._gis._portal.con)
+                        self._server_list.append(c.admin)
+                        self._catalog_list.append(c)                        
+                    
             except:
                 _log.warning("Could not access the server at " + admin_url)
 
@@ -224,7 +250,7 @@ class ServerManager(object):
         else:
             function = functions[str(function).lower()]
         server_id = None
-        from six.moves.urllib.parse import urlparse
+        from urllib.parse import urlparse
         b = urlparse(url=server._admin_url).netloc.lower()
         for s in self._server_info:
             if b == urlparse(s['adminUrl'].lower()).netloc:
