@@ -10,7 +10,7 @@ def test_set_basemap_to_invalid_string():
     wm = WebMap()
     with pytest.raises(RuntimeError) as e:
         wm.basemap = 'hello'
-    assert "Basemap hello isn't valid"
+    assert "Basemap 'hello' isn't valid" in str(e.value)
 
 
 def test_set_basemap_to_valid_string():
