@@ -1106,7 +1106,7 @@ class WebMap(collections.OrderedDict):
             else:
                 return list(self._gallery_basemaps.keys())
         else:
-            return None
+            return []
             
     def remove_table(self, table):
         """
