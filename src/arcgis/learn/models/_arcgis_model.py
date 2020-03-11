@@ -412,7 +412,7 @@ class ArcGISModel(object):
         if arcgis.env.verbose:
             logger.info('Fitting the model.')        
         
-        if getattr(self, '_backend', 'tensorflow'):
+        if getattr(self, '_backend', 'pytorch') == 'tensorflow':
             checkpoint = False
 
         callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
