@@ -1,9 +1,11 @@
-from .._data import _raise_fastai_import_error
+import traceback
+from .._utils.env import raise_fastai_import_error
 
+import_exception = None
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
     from ._pointcnn_utils import PointCNNSeg, SamplePointsCallback, CrossEntropyPC, accuracy, accuracy_non_zero, AverageMetric
-    from .._utils.pointcloud_data import get_device, inference_las, show_results
+    from .._utils.pointcloud_data import get_device, inference_las, show_results, compute_precision_recall
     from ._unet_utils import is_no_color
     from fastai.basic_train import Learner
     import torch
@@ -15,6 +17,7 @@ try:
     from pathlib import Path
     HAS_FASTAI = True
 except Exception as e:
+    import_exception = traceback.format_exc()
     HAS_FASTAI = False
 
 class PointCNN(ArcGISModel):
@@ -70,6 +73,9 @@ class PointCNN(ArcGISModel):
 
     def __init__(self, data, pretrained_path=None, **kwargs):
         super().__init__(data, None)
+
+        if not HAS_FASTAI:
+            raise_fastai_import_error(import_exception=import_exception, message="This model requires module 'torch_geometric' to be installed.", installation_steps=' ')
         
         self._backbone = None
         self.sample_point_num = kwargs.get('sample_point_num', data.max_point)
@@ -183,16 +189,19 @@ class PointCNN(ArcGISModel):
         """
         iterations = kwargs.get('iters_per_epoch', None)
         from ._pointcnn_utils import IterationStop
+        callbacks = kwargs['callbacks'] if 'callbacks' in kwargs.keys() else []
         if iterations is not None:
             del kwargs['iters_per_epoch']
             stop_iteration_cb = IterationStop(self.learn, iterations)
+            callbacks.append(stop_iteration_cb)
+            kwargs['callbacks'] = callbacks
         self._check_requisites()
 
         if lr is None:
             print('Finding optimum learning rate.')
             lr = self.lr_find(allow_plot=False)
         
-        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, callbacks=[stop_iteration_cb], **kwargs)
+        super().fit(epochs, lr, one_cycle, early_stopping, checkpoint, tensorboard, **kwargs)
         
     @property
     def _model_metrics(self):
@@ -244,7 +253,7 @@ class PointCNN(ArcGISModel):
 
         return show_results(self, rows, **kwargs)
 
-    def predict_las(self, path, output_path=None, **kwargs):
+    def predict_las(self, path, output_path=None, print_metrics=False, **kwargs):
 
         """
         Predicts and writes the resulting las file on the disk. 
@@ -257,11 +266,22 @@ class PointCNN(ArcGISModel):
         ---------------------   -------------------------------------------
         output_path             Optional string. The path to folder where to dump
                                 the resulting las files. Defaults to `results` folder
-                                in input path.                                                    
+                                in input path.  
+        ---------------------   -------------------------------------------
+        print_metrics           Optional boolean. If True, print metrics such as precision,
+                                recall and f1_score. Defaults to False.
         =====================   ===========================================
         
         :returns: Path where files are dumped.
         """
         
-        return inference_las(path, self, output_path)
+        return inference_las(path, self, output_path, print_metrics)
+
+    def compute_precision_recall(self):
+        
+        """
+        Computes precision, recall and f1-score on the validation sets.
+        """
+
+        return compute_precision_recall(self)
         

@@ -37,7 +37,10 @@ import arcgis
 import os
 import math
 from fastai.data_block import ItemList
-from fastprogress import master_bar, progress_bar
+try:
+    from fastprogress import master_bar, progress_bar
+except ImportError:
+    from fastprogress.fastprogress import master_bar, progress_bar
 import glob
 import importlib
 import random
@@ -50,7 +53,7 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly and h5py using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil h5py=2.10.0'. Install laspy using 'pip install laspy=1.6.0'")
+        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly, laspy and h5py using 'conda install -c esri -c plotly laspy==1.6.0 plotly=4.5.0 plotly-orca psutil h5py=2.10.0'.")
 
 def try_import(module):
     try:
@@ -59,7 +62,7 @@ def try_import(module):
         if module == 'plotly':
             raise Exception("This function requires plotly. Install it using 'conda install -c plotly plotly=4.5.0 plotly-orca psutil'")
         elif module == 'laspy':
-            raise Exception("This function requires laspy. Install it using 'pip install laspy==1.6.0'")
+            raise Exception("This function requires laspy. Install it using 'conda install -c esri laspy==1.6.0'")
         elif module == 'h5py':
             raise Exception(f"This function requires h5py. Install it using 'conda install h5py=2.10.0'")
         else:
@@ -205,10 +208,42 @@ def recenter(pc):
     max_val = np.amax(pc, axis=0)
     return (pc - min_val[None])
 
-def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, filter_outliers=False, **kwargs):
+def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
+
     """
-    kwargs: ["mask_class", "width", "height" ]
+    It will plot 3d point cloud data you exported in the notebook.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional rows. Number of rows to show. Deafults
+                            value is 2.
+    ---------------------   -------------------------------------------
+    color_mapping           Optional dictionary. Mapping from class value
+                            to RGB values. Default value
+                            Example: {0:[220,220,220],
+                                        1:[255,0,0],
+                                        2:[0,255,0],
+                                        3:[0,0,255]}                                                         
+    =====================   ===========================================
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    mask_class              Optinal array of integers. Array containing
+                            class values to mask. Default value is [0].    
+    ---------------------   -------------------------------------------
+    width                   Optional integer. Width of the plot. Default 
+                            value is 750.
+    ---------------------   -------------------------------------------
+    height                  Optional integer. Height of the plot. Default
+                            value is 512
+    =====================   ===========================================
     """
+
+    filter_outliers = False
     try_import("h5py")
     import h5py
     try_import('plotly')
@@ -307,7 +342,7 @@ def prepare_las_data(root,
                        **kwargs
                        ):
     try_import("h5py")
-    import h5py                       
+    import h5py
     block_size_ = block_size
     batch_size= blocks_per_file
     data = np.zeros((batch_size, max_point_num, 3 + len(extra_features))) #XYZ, Intensity, NumReturns
@@ -318,6 +353,9 @@ def prepare_las_data(root,
     indices_split_to_full = np.zeros((batch_size, max_point_num), dtype=np.int32)
     LOAD_FROM_EXT = '.las'
     os.makedirs(output_path, exist_ok=True)
+
+    if (Path(output_path) / 'meta.json').exists() or (Path(output_path) / 'Statistics.json').exists():
+        raise Exception(f"The given output path({output_path}) already contains exported data. Either delete those files or pass in a new output path.")
 
     folders = [os.path.join(root, folder) for folder in folder_names]  ## Folders are named train and val
     mb = master_bar(range(len(folders)))
@@ -707,10 +745,13 @@ def write_resulting_las(in_las_filename, out_las_filename, labels, num_classes):
     classification = []
     for p in f:
         p = f[i]
-        false_positives[labels[i]] += int(p.classification != labels[i])
-        true_positives[labels[i]] += int(p.classification == labels[i])
-        false_negatives[p.classification] += int(p.classification != labels[i])
-        
+        try:
+            false_positives[labels[i]] += int(p.classification != labels[i])
+            true_positives[labels[i]] += int(p.classification == labels[i])
+            false_negatives[p.classification] += int(p.classification != labels[i])
+        except:
+            pass
+
         x.append(p.X)
         y.append(p.Y)
         z.append(p.Z)
@@ -776,12 +817,20 @@ def get_predictions(pointcnn_model, data, batch_idx, points_batch, sample_num, b
         
     return predictions
 
-def inference_las(path, pointcnn_model, out_path=None):
+def inference_las(path, pointcnn_model, out_path=None, print_metrics=False):
     try_import("h5py")
     import h5py    
     ## Export data
     path = Path(path)
-    out_path = Path(out_path)
+
+    if len(list(path.glob('*.las'))) == 0:
+        raise Exception(f"The given path({path}) contains no las files.")
+
+    if out_path is None:
+        out_path = path / 'results'
+    else:    
+        out_path = Path(out_path)
+        
     prepare_las_data(path.parent,
                      block_size=pointcnn_model._data.block_size[0],
                      max_point_num=pointcnn_model._data.max_point,
@@ -791,10 +840,6 @@ def inference_las(path, pointcnn_model, out_path=None):
                      segregate=False,
                      print_it=False
     )
-    
-    if out_path is None:
-        out_path = path / 'results'
-
     ## Predict and postprocess
     max_point_num = pointcnn_model._data.max_point
     sample_num = pointcnn_model.sample_point_num
@@ -906,7 +951,8 @@ def inference_las(path, pointcnn_model, out_path=None):
             global_false_positives = np.add(global_false_positives, false_positives)
             global_true_positives = np.add(global_true_positives, true_positives)
             global_false_negatives = np.add(global_false_negatives, false_negatives)
-    print('Overal per-class-metrics: \nPrecision:{}, \nRecall:   {}, \nF1 score: {}'.format(
+    if print_metrics: 
+        print('Overal per-class-metrics: \nPrecision:{}, \nRecall:   {}, \nF1 score: {}'.format(
         *calculate_metrics(global_false_positives, global_true_positives, global_false_negatives)))
 
 
@@ -918,10 +964,43 @@ def inference_las(path, pointcnn_model, out_path=None):
 
     return out_path
 
-def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs):
+def show_results(self, rows, color_mapping=None, **kwargs):
+
     """
-    kwargs: ["mask_class", "width", "height" ]
+    It will plot results from your trained model with ground truth on the
+    left and predictions on the right.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rows                    Optional rows. Number of rows to show. Deafults
+                            value is 2.
+    ---------------------   -------------------------------------------
+    color_mapping           Optional dictionary. Mapping from class value
+                            to RGB values. Default value
+                            Example: {0:[220,220,220],
+                                        1:[255,0,0],
+                                        2:[0,255,0],
+                                        3:[0,0,255]}                                                         
+    =====================   ===========================================
+
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    mask_class              Optinal array of integers. Array containing
+                            class values to mask. Default value is [0].    
+    ---------------------   -------------------------------------------
+    width                   Optional integer. Width of the plot. Default 
+                            value is 750.
+    ---------------------   -------------------------------------------
+    height                  Optional integer. Height of the plot. Default
+                            value is 512
+    =====================   ===========================================
     """
+    
+    filter_outliers = False
     try_import("h5py")
     try_import('plotly')
     import h5py    
@@ -955,7 +1034,7 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
         labels = []
         pred_class = []
         pred_confidence = []
-        for nn, i in enumerate(progress_bar(idxs)):
+        for i in idxs:
             # print(f'Running Show Results: Processing {nn+1} of {len(idxs)} blocks.', end='\r')
             current_block = i['unnormalized_data'][:, :3]
             data_num = i['data_num'][()] 
@@ -1026,4 +1105,45 @@ def show_results(self, rows, color_mapping=None, filter_outliers=False, **kwargs
 
         if idx == rows-1:
             break
-        idx += 1 
+        idx += 1
+
+def compute_precision_recall(self):
+    from ..models._pointcnn_utils import get_indices
+    import pandas as pd 
+
+    valid_dl = self._data.valid_dl
+    model = self.learn.model.eval()
+
+    false_positives = [0] * self._data.c
+    true_positives = [0] * self._data.c
+    false_negatives = [0] * self._data.c
+
+    all_y = []
+    all_pred = []
+    for x_in, y_in in progress_bar(iter(valid_dl)):
+        x_in, point_nums = x_in   ## (batch, total_points, num_features), (batch,)
+        batch, _, num_features = x_in.shape
+        indices = torch.tensor(get_indices(batch, self.sample_point_num, point_nums.long())).to(x_in.device)
+        indices = indices.view(-1, 2).long()
+        x_in = x_in[indices[:, 0], indices[:, 1]].view(batch, self.sample_point_num, num_features).contiguous()  ## batch, self.sample_point_num, num_features                
+        y_in = y_in[indices[:, 0], indices[:, 1]].view(batch, self.sample_point_num).contiguous().cpu().numpy() ## batch, self.sample_point_num        
+        with torch.no_grad():
+            preds = model(x_in).detach().cpu().numpy()
+        predicted_labels = preds.argmax(axis=-1)
+        all_y.append(y_in.reshape(-1))
+        all_pred.append(predicted_labels.reshape(-1))
+
+    all_y = np.concatenate(all_y)
+    all_pred = np.concatenate(all_pred)
+    
+    for i in range(len(all_y)):        
+        false_positives[all_pred[i]] += int(all_y[i] != all_pred[i])
+        true_positives[all_pred[i]] += int(all_y[i] == all_pred[i])
+        false_negatives[all_y[i]] += int(all_y[i] != all_pred[i])        
+    
+    
+    precision, recall, f_1 = calculate_metrics(false_positives, true_positives, false_negatives)
+    data = [precision, recall, f_1]
+    index = ['precision', 'recall', 'f_1 score']
+    df = pd.DataFrame(data, columns=list(range(self._data.c)), index=index) 
+    return df

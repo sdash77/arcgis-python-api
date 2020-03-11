@@ -12,7 +12,8 @@ import contextlib
 import io
 import sys
 import socket
-from functools import wraps
+from functools import wraps  
+import traceback    
 
 HAS_FASTAI = True
 HAS_TENSORBOARDX = True
@@ -26,7 +27,8 @@ try:
     from torchvision import models
     import math
     import warnings
-except ImportError:
+except ImportError as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
     class TrackerCallback():
         pass
@@ -211,7 +213,7 @@ class ArcGISModel(object):
     
     def __init__(self, data, backbone=None, **kwargs):
         if not HAS_FASTAI:
-            _raise_fastai_import_error()
+            _raise_fastai_import_error(import_exception=import_exception)
 
         if getattr(arcgis.env, "_processorType", "") == "GPU" and torch.cuda.is_available():
             self._device = torch.device("cuda")

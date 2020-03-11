@@ -267,7 +267,7 @@ class Country(object):
         analysis variables(analysisVariable)
         """
         import pandas as pd
-        df = pd.io.json.json_normalize((_data_collections(country=self.properties.id,
+        df = pd.json_normalize((_data_collections(country=self.properties.id,
                 out_fields=['id', 'dataCollectionID', 'alias', 'fieldCategory', 'vintage']))['DataCollections'], 'data', 'dataCollectionID')
         df['analysisVariable'] = df['dataCollectionID'] + '.' + df['id']
         df = df[['dataCollectionID', 'analysisVariable', 'alias', 'fieldCategory', 'vintage']]
@@ -336,7 +336,7 @@ class Country(object):
         """Returns the available reports for this country as a Pandas dataframe"""
         import pandas as pd
         rdf = _find_report(self.properties.id)
-        df = pd.io.json.json_normalize(rdf)
+        df = pd.json_normalize(rdf)
         df = df[['reportID', 'metadata.title', 'metadata.categories', 'formats']].rename(
             columns={'reportID': 'id', 'metadata.title': 'title', 'metadata.categories': 'categories'})
         return df

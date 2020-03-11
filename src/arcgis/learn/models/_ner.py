@@ -2,7 +2,10 @@ try:
     import spacy
     from spacy.util import minibatch, compounding
     import pandas as pd
-    from fastprogress import master_bar, progress_bar
+    try:
+        from fastprogress import master_bar, progress_bar
+    except ImportError:
+        from fastprogress.fastprogress import master_bar, progress_bar
     from ._codetemplate import entity_recognizer_placeholder
     import numpy as np
     HAS_SPACY=True
@@ -145,7 +148,6 @@ class EntityRecognizer(ArcGISModel):
         if lr is None: #searching for the optimal learning rate when no learning rate is provided
             print('Finding optimum learning rate')
             lr = self.lr_find(allow_plot=False)
-            print(f'Optimal learning rate is {lr}')
 
         if self.train_ds==None:
             return logging.warning('Cannot fit the model on empty data.')
@@ -409,6 +411,11 @@ class EntityRecognizer(ArcGISModel):
     def extract_entities(self, text_list,drop=True):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
+        
+        Field defined as 'address_tag' in `prepare_data()` function's class mapping
+        attribute will be treated as a location. In cases where trained model extracts 
+        multiple locations from a single document, that document will be replicated 
+        for each location in the resulting dataframe.
         
         =====================   ===========================================
         **Argument**            **Description**

@@ -4537,11 +4537,14 @@ class RFT:
                 _rft_json = self.to_json(self._gis)
             else:
                 file_path = self._rft.get_data()
-                f=open(file_path, "r")
-                file_content = f.read()
-                file_content = file_content.replace("false", "False")
-                file_content = file_content.replace("true", "True")
-                _rft_json = eval(file_content)
+                if isinstance(file_path, dict):
+                    _rft_json=file_path
+                else:
+                    f=open(file_path, "r")
+                    file_content = f.read()
+                    file_content = file_content.replace("false", "False")
+                    file_content = file_content.replace("true", "True")
+                    _rft_json = eval(file_content)
             self._rft_json = _find_object_ref(_rft_json, {}, self)
             global node, end_node 
             node = 0
@@ -4814,7 +4817,9 @@ class RFT:
                                                 if raster.keys() & {"mosaicRule"}:
                                                     element.update(v)
                                                 else:
-                                                    input_dict.update({key:v})
+                                                    element.clear()
+                                                    element.update(v)
+                                                    #input_dict.update({key:v})
                                             flag_rasters=1
                                         else:
                                             if("value" in element):

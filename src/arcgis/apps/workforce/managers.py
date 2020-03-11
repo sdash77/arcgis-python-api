@@ -896,7 +896,8 @@ class AssignmentIntegrationManager:
         if "prompt" not in integration:
             raise ValidationError("Assignment integration must contain a prompt", self)
         if "assignmentTypes" in integration:
-            for key, value in integration["assignmentTypes"].items():
+            copy_dict = integration["assignmentTypes"].copy()
+            for key, value in copy_dict.items():
                 if isinstance(key, str):
                     if "urlTemplate" not in value:
                         raise ValidationError("Assignment integration must contain a urlTemplate", self)

@@ -1160,7 +1160,8 @@ def export_point_dataset(data_path, output_path, block_size=50.0, max_points=819
                                val/
                                  *.las
     ------------------     --------------------------------------------------------------------
-    output_path            Required string. Path where exported files will be dumped.                                   
+    output_path            Required string. Path where exported files will be dumped. This directory
+                           either should be empty or be a totally new directory.                                
     ------------------     --------------------------------------------------------------------
     block_size             Optinal float. Size of the block to contain in one exported file.
                            Default 50.0

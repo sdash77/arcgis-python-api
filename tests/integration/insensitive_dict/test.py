@@ -1,7 +1,7 @@
 import pytest
 import unittest
-from _isd import InsensitiveDict
-
+from arcgis._impl.common._isd import InsensitiveDict
+import json
 class TestInsensitiveDict(unittest.TestCase):
     """Test Suite for the InsensitiveDict Class"""
     #----------------------------------------------------------------------
@@ -27,7 +27,11 @@ class TestInsensitiveDict(unittest.TestCase):
         i1 = InsensitiveDict({'a' : 1, 'b' : {'c': 'd'}})
         assert i1.json
         i1 = InsensitiveDict({'a' : 1, 'b' : {'c': {'d' : [{'fish' : 'duck'}]}}})
-        assert i1.json        
+        assert i1.json == json.dumps({'a' : 1, 'b' : {'c': {'d' : [{'fish' : 'duck'}]}}})
+        i1 = InsensitiveDict({'a' : 1, 'b' : {'c': {'d' : [{'fish' : 'duck'}]}}})
+        i1.b.c.d.append([1,2,3])
+        i1.b.c.d.append({'dog':'cat'})
+        assert i1.json == '{"a": 1, "b": {"c": {"d": [{"fish": "duck"}, [1, 2, 3], {"dog": "cat"}]}}}'
     #----------------------------------------------------------------------
     def test_dot_notation_settting(self):
         """tests the object ability to add new data using dot notation"""

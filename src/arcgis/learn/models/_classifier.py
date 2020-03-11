@@ -3,7 +3,8 @@ from ._arcgis_model import ArcGISModel
 from ..._impl.common._deprecate import deprecated
 from .._data import _check_esri_files, _raise_fastai_import_error
 import random
-import math
+import math  
+import traceback    
 try:
     import pandas
     import tempfile
@@ -39,6 +40,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd
     HAS_FASTAI = True
 except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     class NnModule():
         pass
     HAS_FASTAI = False
@@ -202,7 +204,10 @@ class FeatureClassifier(ArcGISModel):
     def _save_confusion_matrix(self, path):
         from matplotlib import pyplot as plt
         import fastai
-        import fastprogress
+        try:
+            from fastprogress import fastprogress
+        except ImportError:
+            import fastprogress
         fastprogress.fastprogress.NO_BAR = True
         fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.force_console_behavior()
         self.plot_confusion_matrix()
@@ -260,7 +265,7 @@ class FeatureClassifier(ArcGISModel):
         :returns: `FeatureClassifier` Object
         """
         if not HAS_FASTAI:
-            _raise_fastai_import_error()
+            _raise_fastai_import_error(import_exception=import_exception)
             
         emd_path = Path(emd_path)
         with open(emd_path) as f:
