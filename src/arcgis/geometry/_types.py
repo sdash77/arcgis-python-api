@@ -2525,9 +2525,7 @@ class MultiPoint(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr is None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
-        coordinates = data[coordkey]
+        coordinates = data['coordinates']
         return cls({'points' : [p for p in coordinates],
                     'spatialReference' : sr})
 ########################################################################
@@ -2596,9 +2594,7 @@ class Point(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr == None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
-        coordinates = data[coordkey]
+        coordinates = data['coordinates']
 
         return cls({
             "x" : coordinates[0],
@@ -2682,9 +2678,7 @@ class Polygon(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr is None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
-        coordinates = data[coordkey]
+        coordinates = data['coordinates']
         typekey = ([d for d in data if d.lower() == 'type']
                    or ['type']).pop()
         if data[typekey].lower() == "polygon":
@@ -2781,12 +2775,10 @@ class Polyline(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr is None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
         if data['type'].lower() == 'linestring':
-            coordinates = [data[coordkey]]
+            coordinates = [data['coordinates']]
         else:
-            coordinates = data[coordkey]
+            coordinates = data['coordinates']
 
         return cls(
             {'paths' : [[p for p in part] for part in coordinates],
