@@ -648,7 +648,7 @@ class Connection(object):
                     params[k] = v.json
             if post_json:  # edge case workflow
                 resp = self._session.post(url=url,
-                                          json=json.dumps(params),
+                                          json=params,
                                           cert=cert,
                                           files=files)                
             else:
