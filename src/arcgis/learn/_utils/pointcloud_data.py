@@ -1120,7 +1120,7 @@ def compute_precision_recall(self):
 
     all_y = []
     all_pred = []
-    for x_in, y_in in progress_bar(iter(valid_dl)):
+    for x_in, y_in in iter(valid_dl):
         x_in, point_nums = x_in   ## (batch, total_points, num_features), (batch,)
         batch, _, num_features = x_in.shape
         indices = torch.tensor(get_indices(batch, self.sample_point_num, point_nums.long())).to(x_in.device)
