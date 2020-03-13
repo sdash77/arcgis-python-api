@@ -559,6 +559,12 @@ def to_featureclass(geo,
        geo.validate(strict=True) == False:
         raise ValueError(("Mixed geometry types detected, "
                          "cannot export to feature class."))
+    columns = df.columns.tolist()
+    for col in columns[:]:
+        if not isinstance(col, str):
+            df.rename(columns={col: str(col)}, inplace=True)
+            col = str(col)
+
     if HASARCPY:
         # 1. Create the Save Feature Class
         #

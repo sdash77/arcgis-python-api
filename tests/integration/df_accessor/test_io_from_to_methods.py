@@ -241,6 +241,20 @@ def test_from_gpd_df_large_data_points():
 
     print('GPD->SeDF Points GCS success')
 
+def test_export_df_int_column():
+    """
+    Test to ensure we handle well when column names are not strings
+    :return:
+    """
+    df = pd.read_csv('usa_cities_few.csv')
+    sedf = pd.DataFrame.spatial.from_xy(df, 'Longitude', 'Latitude')
+
+    # add column name that is numeric
+    sedf[0] = list(range(0, sedf.shape[0]))  # column name is 0
+    assert isinstance(sedf.columns[-1], int)
+
+    # export without errors
+    sedf.spatial.to_featureclass('./cities.shp')
 
 # def test_from_gpd_df_massive_3m_points():
 #     """
@@ -296,3 +310,4 @@ if __name__ == "__main__":
     test_from_gpd_df_large_data_points()
     # test_from_gpd_df_massive_3m_points()
     #test_to_layer()  # SKIPPED
+    test_export_df_int_column()
