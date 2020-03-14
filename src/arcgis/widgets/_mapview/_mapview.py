@@ -578,7 +578,7 @@ class MapView(widgets.DOMWidget):
         self.mode = mode
         self._hashed_layers = OrderedDict()
         self._setup_js_cdn()
-        self._setup_default_basemap()
+        self._setup_default_basemap(kwargs.get('basemap', None))
 
         # Handle webmaps and webscenes
         self.webmap_item = None
@@ -784,12 +784,20 @@ class MapView(widgets.DOMWidget):
                     "Make sure you have a JSAPI4 compatible basemap " +
                     "set as the default basemap in your portal.")
 
-    def _setup_default_basemap(self):
+    def _setup_default_basemap(self, basemap=None):
         """This method gets called once on startup, it populates the 'default'
         basemap field and the corresponding JSON without loading the rest
         of the `gallery_basemaps` property (which has a long load time)
         """
-        if 'defaultBasemap' in self.gis.properties:
+        if basemap:
+            # takes PropertyMap object
+            self._gallery_basemaps['base'] = basemap
+            self._basemap = 'base'
+            # You need to re-write this dict to trigger the JS side change
+            copy_gallery = dict(self._gallery_basemaps)
+            self._gallery_basemaps = {}
+            self._gallery_basemaps = copy_gallery
+        elif 'defaultBasemap' in self.gis.properties:
             self._gallery_basemaps['default'] = \
                 self.gis.properties['defaultBasemap']
             self._basemap = 'default'
