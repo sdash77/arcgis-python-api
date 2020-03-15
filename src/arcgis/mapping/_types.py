@@ -20,6 +20,7 @@ from arcgis.widgets import MapView
 
 from uuid import uuid4 #unique ids for layers in web map
 import datetime
+from arcgis.mapping._basemap_definitions import basemap_dict
 _log = logging.getLogger(__name__)
 ###########################################################################
 @contextmanager
@@ -199,6 +200,7 @@ class WebMap(collections.OrderedDict):
                                               }],
                 'title':'Topographic'
             }
+            self._gallery_basemaps = {}
             self._webmapdict = {'baseMap':self._basemap,
                                 'spatialReference':self._default_spatial_reference,
                                 'version':'2.10',
@@ -210,6 +212,9 @@ class WebMap(collections.OrderedDict):
             self._gis = arcgis.env.active_gis
             if self._gis: #you can also have a case where there is no GIS obj
                 self._con = self._gis._con
+                if self._gis.properties["defaultBasemap"]:
+                    self._basemap = self._gis.properties["defaultBasemap"]
+                    self._webmapdict['baseMap'] = self._basemap
             else:
                 self._con = None
             self.item = None
@@ -912,6 +917,7 @@ class WebMap(collections.OrderedDict):
     def layers(self):
         """
         Operational layers in the web map
+        
         :return: List of Layers as dictionaries
 
         .. code-block:: python
@@ -948,10 +954,12 @@ class WebMap(collections.OrderedDict):
     def basemap(self):
         """
         Base map layers in the web map
+        
         :return: List of layers as dictionaries
 
         .. code-block:: python
-            # Usage example: Get the basemap used in the web map
+        
+            # Usage example 1: Get the basemap used in the web map
 
             from arcgis.mapping import WebMap
             wm = WebMap(wm_item)
@@ -967,6 +975,18 @@ class WebMap(collections.OrderedDict):
                 }],
                 "title": "Topographic"
                 }
+                
+            # Usage example 2: Set the basemap used in the web map
+            from arcgis.mapping import WebMap
+            wm = WebMap(wm_item)
+            
+            print(wm.basemaps)
+            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
+            wm.basemap = 'dark-gray'
+            print(wm.gallery_basemaps)
+            >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
+            wm.basemap = 'custom_dark_gray_canvas'
+            
         """
         if self._basemap:
             return PropertyMap(self._basemap)
@@ -975,6 +995,65 @@ class WebMap(collections.OrderedDict):
                 self._basemap = self._webmapdict['baseMap']
             return PropertyMap(self._basemap)
 
+    @basemap.setter
+    def basemap(self, value):
+        """What basemap you would like to apply to the map (‘topo’,
+                ‘national-geographic’, etc.). See `basemaps` and `gallery_basemaps` for a full list
+        """
+        if value in self.basemaps:
+            self._basemap = {'baseMapLayers':basemap_dict[value],
+                             'title': value.replace("-"," ").title()}
+            self._webmapdict['baseMap'] = self._basemap
+        elif value in self.gallery_basemaps:
+            self._basemap = self._gallery_basemaps[value]
+            self._webmapdict['baseMap'] = self._basemap
+        else:
+            raise RuntimeError("Basemap '{}' isn't valid".format(value))
+    
+    @property
+    def basemaps(self):
+        """
+        A list of possible basemaps to set for the map
+        """
+        basemaps = ['dark-gray',
+                    'dark-gray-vector',
+                    'gray',
+                    'gray-vector',
+                    'hybrid',
+                    'national-geographic',
+                    'oceans',
+                    'osm',
+                    'satellite',
+                    'streets',
+                    'streets-navigation-vector',
+                    'streets-night-vector',
+                    'streets-relief-vector',
+                    'streets-vector',
+                    'terrain',
+                    'topo',
+                    'topo-vector']
+        return basemaps
+
+    @property
+    def gallery_basemaps(self):
+        """
+        View your portal's custom basemap group
+        """
+        if self._gis:
+            bmquery = self._gis.properties['basemapGalleryGroupQuery']
+            basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
+            if len(basemapsgrp) == 1:
+                for bm in basemapsgrp[0].content():
+                    if bm.type.lower() == 'web map':  # Only use WebMaps
+                        item_data = bm.get_data()
+                        bm_title = bm.title.lower().replace(" ", "_")
+                        self._gallery_basemaps[bm_title] = item_data['baseMap']
+                return list(self._gallery_basemaps.keys())
+            else:
+                return list(self._gallery_basemaps.keys())
+        else:
+            return None
+            
     def remove_table(self, table):
         """
         Removes the specified table from the web map. You can get the list of tables in map using the 'tables' property
@@ -1420,22 +1499,26 @@ class OfflineMapAreaManager(object):
         creates one or more map area packages corresponding to each layer type in the extent.
 
         .. note::
-            - Offline map area functionality is only available if your GIS is ArcGIS Online.
             - There can be only 1 map area item for an extent or bookmark.
             - You need to be the owner of the web map or an administrator of your GIS.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        area                   Required object. You can specify the name of a web map bookmark or a
-                               desired extent.
+        area                   Required object.  Bookmark or extent. Specify as either:
 
-                               To get the bookmarks from a web map, query the `definition.bookmarks`
-                               property.
+                                   + bookmark name
+                                       `WebMap.definition.bookmarks` returns list of bookmarks.
+                                   + list of coordinate pairs:
+                                       [['xmin', 'ymin'], ['xmax', 'ymax']]
+                                   + dictionary:
+                                         {'xmin': <value>,
+                                         'ymin': <value>,
+                                         'xmax': <value>,
+                                         'ymax': <value>,
+                                         'spatialReference' : {'wkid' : <value>}}
 
-                               You can specify the extent as a list or dictionary of 'xmin', 'ymin',
-                               'xmax', 'ymax' and spatial reference. If spatial reference is not
-                               specified, it is assumed to be 'wkid' : 4326.
+                               If spatial reference is not specified, it is assumed 'wkid': 4326.
         ------------------     --------------------------------------------------------------------
         item_properties        Required dictionary. See table below for the keys and values.
         ------------------     --------------------------------------------------------------------

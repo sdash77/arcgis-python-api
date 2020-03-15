@@ -9,10 +9,13 @@ import datetime
 import tempfile
 import pandas as pd
 import numpy as np
+import logging
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
+
+_LOGGER = logging.getLogger(__name__)
 ############################################################################
 def _is_geoenabled(df):
     """
@@ -82,7 +85,7 @@ class GeoSeriesAccessor:
 
         :returns: shapely.Geometry in a series
         """
-        return pd.Series(self._data.as_shapely, name='as_arcpy', index=self._index)
+        return pd.Series(self._data.as_shapely, name='as_shapely', index=self._index)
     #----------------------------------------------------------------------
     @property
     def centroid(self):
@@ -2000,7 +2003,10 @@ class GeoAccessor(object):
                 stop = i + batch_size if i + batch_size < N else N
                 res = batch_geocode(list(df[start:stop][address_column]), geocoder=geocoder)
                 for index in range(len(res)):
-                    address = df.ix[start + index, address_column]
+                    try:
+                        address = df.loc[start + index, address_column]
+                    except: # for older versions, fall back to `df.ix`
+                        address = df.ix[start + index, address_column]
                     try:
                         loc = res[index]['location']
                         x = loc['x']
@@ -2092,7 +2098,7 @@ class GeoAccessor(object):
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
-        location                        Required string. Full path to the feature class
+        location                        Required string or pathlib.Path. Full path to the feature class
         ===========================     ====================================================================
 
         *Optional parameters when ArcPy library is available in the current environment*:
@@ -2125,7 +2131,8 @@ class GeoAccessor(object):
             ===============     ====================================================
             **Argument**        **Description**
             ---------------     ----------------------------------------------------
-            filename            Required string. The path to the table.
+            filename            Required string or pathlib.Path. The path to the
+                                table.
             ===============     ====================================================
 
             **Keyword Arguments**
@@ -2252,6 +2259,7 @@ class GeoAccessor(object):
         import arcgis
         cols_norm = [col for col in self._data.columns]
         cols_lower = [col.lower() for col in self._data.columns]
+        
         fields = []
         features = []
         date_fields = []
@@ -2274,6 +2282,10 @@ class GeoAccessor(object):
             "fields" : [],
             "features" : []
         }
+        # Ensure all number values are 0 so errors do not occur.
+        for c in self._data.select_dtypes(include='number').columns.tolist():
+            self._data[c].fillna(0, inplace=True)
+        
         if 'objectid' in cols_lower:
             fs['objectIdFieldName'] = cols_norm[cols_lower.index('objectid')]
             fs['displayFieldName'] = cols_norm[cols_lower.index('objectid')]
@@ -2664,7 +2676,95 @@ class GeoAccessor(object):
         if global_id_field is not None:
             layer['layerDefinition']['globalIdField'] = global_id_field
         return FeatureCollection(layer)
-    #----------------------------------------------------------------------
+
+    # ---------------------------------------------------------------------
+
+    @staticmethod
+    def from_geodataframe(geo_df, inplace=False, column_name="SHAPE"):
+        """
+        Import Geopandas GeoDataFrame into an ArcGIS Spatially enabled DataFrame.
+        Requires geopandas library be installed in current environment.
+
+        =====================  ===============================================================
+        **Argument**           **Description**
+        ---------------------  ---------------------------------------------------------------
+        geo_df                 GeoDataFrame object, created using GeoPandas library
+        ---------------------  ---------------------------------------------------------------
+        inplace                Optional Bool. When True, the existing GeoDataFrame is spatially
+                                enabled and returned. When False, a new Spatially Enabled
+                                DataFrame object is returned. Default is False.
+        ---------------------  ---------------------------------------------------------------
+        column_name            Optional String. Sets the name of the geometry column. Default
+                                is `SHAPE`.
+        =====================  ===============================================================
+
+        :return: ArcGIS Spatially Enabled DataFrame object.
+        """
+        try:
+            import geopandas as gpd
+        except ImportError:
+            raise ImportError('Requires Geopandas library installed for this functionality')
+
+        # import geometry libraries
+        from arcgis.geometry import Geometry as ags_geometry
+        from arcgis.features.geo._array import GeoArray
+
+        # import pandas
+        import pandas as pd
+        import numpy as np
+
+        # get wkid
+        try:
+            if geo_df.crs is not None and 'init' in geo_df.crs:
+                epsg_code = geo_df.crs['init'].split(':')[-1]
+                epsg_code = int(epsg_code) # convert string to number
+            elif geo_df.crs is not None:
+                # crs is present, but no epsg code. Try to reproject to 4326
+                geo_df.to_crs(epsg=4326, inplace=True)
+                epsg_code = 4326
+            else:
+                _LOGGER.info('Cannot acquire spatial reference from GeoDataFrame. Setting it a default of WKID 4326')
+                epsg_code = 4326 # set a safe default value
+
+        except Exception as proj_ex:
+            _LOGGER.warning('Error acquiring spatial reference from GeoDataFrame' \
+                            ' Spatial reference will not be set.' + str(proj_ex))
+            epsg_code = None
+
+        if epsg_code:
+            spatial_reference = {'wkid':epsg_code}
+        else:
+            spatial_reference = None
+
+        # convert geometry
+        def _converter(g):
+            if g is not None:
+                # return ags_geometry(shp_mapping(g))
+                return ags_geometry.from_shapely(g, spatial_reference=spatial_reference)
+            else:
+                return None
+
+        # vectorize converter so it will run efficiently on GeoSeries - avoids loops
+        v_func = np.vectorize(_converter, otypes='O')
+
+        # initialize empty array
+        ags_geom = np.empty(geo_df.shape[0], dtype="O")
+
+        ags_geom[:] = v_func(geo_df['geometry'].values)
+
+        if inplace:
+            geo_df[column_name] = GeoArray(ags_geom)
+        else:
+            geo_df = pd.DataFrame(geo_df.drop(columns='geometry'))
+            geo_df[column_name] = GeoArray(ags_geom)
+
+        geo_df.spatial.set_geometry(column_name)
+        geo_df.spatial.sr = spatial_reference
+
+        return geo_df
+
+    # ---------------------------------------------------------------------
+
     @property
     def full_extent(self):
         """

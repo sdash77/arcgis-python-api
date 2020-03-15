@@ -2,6 +2,7 @@ import urllib.parse
 import arcgis
 import json
 
+
 def build_collector_url(webmap=None, center=None, feature_layer=None, fields=None, search=None, portal=None,  action=None, geometry=None, callback=None, callback_prompt=None):
     """
     Creates a url that can be used to open Collector for ArcGIS
@@ -99,9 +100,9 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
             params.append("center=" + center)
         if feature_layer:
             feature_source_url = feature_layer
-        if isinstance(feature_layer, arcgis.features.FeatureLayer):
-            feature_source_url = feature_layer.url
-        params.append("featureSourceURL=" + feature_source_url)
+            if isinstance(feature_layer, arcgis.features.FeatureLayer):
+                feature_source_url = feature_layer.url
+            params.append("featureSourceURL=" + feature_source_url)
         if fields:
             attributes = []
             # unencoded format is featureAttributes={"fieldName":"value","fieldName2":"value2"}
@@ -111,10 +112,12 @@ def build_collector_url(webmap=None, center=None, feature_layer=None, fields=Non
 
     if params:
         url += "?" + "&".join(params)
-        return url
+    return url
+
 
 def _build_collector_url_for_open_action(params):
     return params
+
 
 def _build_collector_url_for_center_action(params, center):
     if center:
@@ -125,12 +128,14 @@ def _build_collector_url_for_center_action(params, center):
     else:
         raise ValueError("Invalid parameters -- Must specify a center parameter if action = center")
 
+
 def _build_collector_url_for_search_action(params, search):
     if search:
         params.append("search=" + _encode_string(search))
         return params
     else:
         raise ValueError("Invalid parameters -- Must specify a search parameter if action = search")
+
 
 def _build_collector_url_for_addFeature_action(params, feature_layer, geometry, fields, callback, callback_prompt):
     if feature_layer:
@@ -159,6 +164,7 @@ def _build_collector_url_for_addFeature_action(params, feature_layer, geometry, 
 
     return params
 
+
 def _validate_collector_url(webmap, center, feature_layer, fields):
     if webmap is not None and not any([isinstance(webmap, str), isinstance(webmap, arcgis.gis.Item), isinstance(webmap, arcgis.mapping.WebMap)]):
         raise ValueError("Invalid type for webmap parameter")
@@ -173,6 +179,7 @@ def _validate_collector_url(webmap, center, feature_layer, fields):
             raise ValueError("Invalid parameters -- Must specify a webmap if setting feature attributes")
         if not feature_layer:
             raise ValueError("Invalid parameters -- Must specify a webmap if setting feature layer")
+
 
 def build_explorer_url(webmap=None, search=None, bookmark=None, center=None, scale=None, wkid=None, rotation=None,
                        markup=None, url_type="Web"):

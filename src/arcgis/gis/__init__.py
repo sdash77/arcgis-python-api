@@ -312,6 +312,7 @@ class GIS(object):
             if self._is_hosted_nb_home:
                 # For GIS("home") objects, force no referer passed in
                 self._portal.con._referer = ""
+                self._portal.con._session.headers.pop("Referer", None)
             if not (self._utoken is None):
                 self._portal.con._token = self._utoken
                 self._portal.con.token = self._utoken
@@ -2459,12 +2460,17 @@ class UserManager(object):
         try:
             with _DisableLogger():
                 user = self._portal.get_user(username)
+        
         except RuntimeError as re:
             if re.args[0].__contains__("User does not exist or is inaccessible"):
                 return None
             else:
                 raise re
-
+        except Exception as e:
+            if e.args[0].__contains__("User does not exist or is inaccessible"):
+                return None
+            else:
+                raise e            
         if user is not None:
             return User(self._gis, user['username'], user)
         return None
@@ -3239,6 +3245,11 @@ class GroupManager(object):
                 return None
             else:
                 raise re
+        except Exception as re:
+            if re.args[0].__contains__("Group does not exist or is inaccessible"):
+                return None
+            else:
+                raise re
 
         if group is not None:
             return Group(self._gis, groupid, group)
@@ -3973,6 +3984,11 @@ class ContentManager(object):
                 return None
             else:
                 raise re
+        except Exception as e:
+            if e.args[0].__contains__("Item does not exist or is inaccessible"):
+                return None
+            else:
+                raise e
 
         if item is not None:
             return Item(self._gis, itemid, item)
@@ -5404,7 +5420,7 @@ class ResourceManager(object):
         resp = self._portal.con.get(query_url, params)
         resp_resources = resp.get('resources')
         count = int(resp.get('num'))
-        next_start = int(resp.get('nextStart'))
+        next_start = int(resp.get('nextStart', -999)) # added for back support for portal (10.4.1)
 
         # loop through pages
         while next_start > 0:
@@ -5415,7 +5431,9 @@ class ResourceManager(object):
             resp2 = self._portal.con.get(query_url, params2)
             resp_resources.extend(resp2.get('resources'))
             count += int(resp2.get('num'))
-            next_start = int(resp2.get('nextStart'))
+            next_start = int(resp2.get('nextStart', -999))# added for back support for portal (10.4.1)
+            if next_start == -999:
+                break
 
         return resp_resources
 
@@ -10282,7 +10300,7 @@ class _GISResource(object):
 
     def _refresh(self):
         params = {"f": "json"}
-        if type(self).__name__ == 'ImageryLayer':
+        if type(self).__name__ == 'ImageryLayer' or type(self).__name__ == '_ImageServerRaster':
             if self._fn is not None:
                 params['renderingRule'] = self._fn
             if hasattr(self, "_uri"):
@@ -10299,6 +10317,8 @@ class _GISResource(object):
             except Exception as e:
                 if hasattr(e, 'msg') and e.msg == "Method Not Allowed":
                     dictdata = self._con.get(self.url, params, token=self._lazy_token)
+                elif str(e).lower().find("token required") > -1:
+                    dictdata = self._con.get(self.url, params)
                 else:
                     raise e
 

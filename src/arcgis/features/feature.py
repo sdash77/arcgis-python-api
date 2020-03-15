@@ -731,7 +731,11 @@ class FeatureSet(object):
         features = []
         index = 0
         sr = None
-        df = df.fillna('')
+        try:
+            cols = [col for col in df.columns if col != df.spatial.name]
+            df = df.fillna('')
+        except:
+            pass
         old_idx = df.index
         df.reset_index(drop=True, inplace=True)
         if isinstance(df, SpatialDataFrame):

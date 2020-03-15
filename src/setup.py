@@ -47,12 +47,13 @@ else:
         'six',
         'ipywidgets >=7',
         'widgetsnbextension >=3',
-        'pandas >=0.23',
-        'numpy',
+        'pandas >=0.25',
+        'numpy >=1.16.2',
         'matplotlib',
-        'keyring',
+        'keyring >=19',
+        'lerc',
         'jupyterlab',
-        'pyshp >=1.2.11,<2',
+        'pyshp >=2',
         'requests',
         'requests-oauthlib',
         'requests_toolbelt',
@@ -262,6 +263,9 @@ kwargs = {
     # package_data={
     #     'sample': ['package_data.dat'],
     # },
+    'package_data':{
+        'arcgis':['raster/*.dll', 'raster/*.so'],
+    },
 
     # Although 'package_data' is the preferred approach, in some case you may
     # need to place data files outside of your packages. See:

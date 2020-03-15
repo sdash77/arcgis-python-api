@@ -15,18 +15,18 @@ requirements:
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
-  - pandas >=0.23
-  - numpy
-  - pyshp
+  - pandas >=0.25
+  - numpy >=1.16.2
   - matplotlib
-  - keyring
+  - keyring >=19
   - pytest
-  - pyshp <2
+  - pyshp >=2
   - requests
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
+  - lerc
   - winkerberos      [win]
   run:
   - python
@@ -34,17 +34,17 @@ requirements:
   - notebook
   - ipywidgets >=7
   - widgetsnbextension >=3
-  - pandas >=0.23
-  - numpy
-  - pyshp
+  - pandas >=0.25
+  - numpy >=1.16.2
+  - pyshp >=2
   - matplotlib
-  - keyring
-  - pyshp <2
+  - keyring >=19
   - requests
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
   - requests_ntlm
+  - lerc
   - winkerberos      [win]
 source:
   path: ../../src

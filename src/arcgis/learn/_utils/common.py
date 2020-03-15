@@ -5,7 +5,6 @@ import torch
 import numpy as np
 from matplotlib import pyplot as plt
 
-
 class ArcGISMSImage(Image):
 
     def show(self, ax=None, rgb_bands=None):
@@ -31,19 +30,21 @@ class ArcGISMSImage(Image):
     def _repr_jpeg_(self): 
         return self.show()
 
+    @classmethod
+    def open_gdal(cls, path):
+        import gdal
+        path = str(os.path.abspath(path))
+        x = gdal.Open(path).ReadAsArray()
+        x = torch.tensor(x.astype(np.float32))
+        if len(x.shape)==2:
+            x = x.unsqueeze(0)
+        return cls(x)
 
 class ArcGISMSImageList(ImageList):
     "`ImageList` suitable for classification tasks."
     _square_show_res = False
     def open(self, fn):
-        import gdal
-        path = str(os.path.abspath(fn))
-        x = gdal.Open(path).ReadAsArray()
-        x = torch.tensor(x.astype(np.float32))
-        if len(x.shape)==2:
-            x = x.unsqueeze(0)
-        x = ArcGISMSImage(x)
-        return x
+        return ArcGISMSImage.open_gdal(fn)
 
 def get_multispectral_data_params_from_emd(data, emd):
     data._is_multispectral = emd.get('IsMultispectral', False)
@@ -59,3 +60,14 @@ def get_multispectral_data_params_from_emd(data, emd):
             setattr(data, ('_'+_stat), normalization_stats[_stat])
         data._do_normalize = emd.get("DoNormalize")
     return data
+
+def _get_post_processed_model(arcgis_model, input_normalization=True):
+    from .object_detection import get_TFOD_post_processed_model
+    from .image_classification import get_TFIC_post_processed_model
+    if arcgis_model._backend == 'tensorflow':
+        from .fastai_tf_fit import _pytorch_to_tf
+        if arcgis_model.__class__.__name__ == 'SingleShotDetector':
+            return get_TFOD_post_processed_model(arcgis_model, input_normalization=input_normalization)
+        if arcgis_model.__class__.__name__ == 'FeatureClassifier':
+            return get_TFIC_post_processed_model(arcgis_model, input_normalization=input_normalization)
+    pass

@@ -6,12 +6,15 @@ import math
 import sys
 import json 
 import logging      
-import types                                                                                                                                                       
+import types       
+import traceback                                                                                                                                                
 
+import_exception = None
 try:
+    import arcgis
     import numpy as np
     from fastai.vision.data import imagenet_stats, ImageList, bb_pad_collate
-    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr
+    from fastai.vision.transform import crop, rotate, dihedral_affine, brightness, contrast, skew, rand_zoom, get_transforms, flip_lr, ResizeMethod
     from fastai.vision import ImageDataBunch
     from fastai.torch_core import data_collate
     import torch
@@ -19,13 +22,15 @@ try:
     from .models._unet_utils import ArcGISSegmentationItemList, ArcGISSegmentationMSItemList, _show_batch_unet_multispectral, is_no_color
     from .models._maskrcnn_utils import ArcGISInstanceSegmentationItemList, ArcGISInstanceSegmentationMSItemList
     from .models._ner_utils import ner_prepare_data
-    from ._utils import ArcGISMSImageList
+    from ._utils.common import ArcGISMSImageList
     from ._utils.labeled_tiles import show_batch_labeled_tiles
     from ._utils.rcnn_masks import show_batch_rcnn_masks
     from ._utils.pascal_voc_rectangles import SSDObjectMSItemList, show_batch_pascal_voc_rectangles
+    from ._utils.pointcloud_data import pointcloud_prepare_data
     import random
     HAS_FASTAI = True
-except:
+except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
 
 band_abrevation_lib = {
@@ -72,9 +77,32 @@ imagery_type_lib = {
     }
 }
 
-def _raise_fastai_import_error():
-    raise Exception("""This module requires fastai, PyTorch, torchvision and scikit-image as its dependencies. 
-Install them using 'conda install -c pytorch -c fastai fastai=1.0.54 pytorch=1.1.0 torchvision scikit-image'""")
+def get_installation_command():
+    installation_steps = "Install them using 'conda install -c esri -c fastai -c pytorch arcgis pillow scikit-image fastai=1.0.54 pytorch=1.1.0'"
+    if sys.platform == 'win32':
+        installation_steps = "Install them using 'conda install -c esri arcgis fastai pillow scikit-image'"
+    elif sys.platform in ['linux', 'darwin']:
+        pass
+            
+    return installation_steps 
+
+def _raise_fastai_import_error(import_exception=import_exception):
+    installation_steps = get_installation_command()
+    raise Exception(f"""{import_exception} \n\nThis module requires fastai, PyTorch, torchvision and scikit-image as its dependencies.\n{installation_steps}""")
+
+class _ImagenetCollater():
+    def __init__(self, chip_size):
+        self.chip_size = chip_size
+    def __call__(self, batch):
+        _xb = []
+        for sample in batch:
+            data = sample[0].data
+            if data.shape[1] < self.chip_size or data.shape[2] < self.chip_size:
+                data = sample[0].resize(self.chip_size).data
+            _xb.append(data)
+        _xb = torch.stack(_xb)
+        _yb = torch.stack([torch.tensor(sample[1].data) for sample in batch])
+        return _xb, _yb
 
 def _bb_pad_collate(samples, pad_idx=0):
     "Function that collect `samples` of labelled bboxes and adds padding with `pad_idx`."
@@ -94,10 +122,7 @@ def _bb_pad_collate(samples, pad_idx=0):
     return torch.cat(imgs,0), (bboxes,labels)    
 
 
-def _get_bbox_classes(xmlfile, class_mapping, not_label_count=[0], height_width=[]):
-    if not os.path.exists(xmlfile):
-        not_label_count[0] += 1
-        return [[[0, 0, 0, 0]], [list(class_mapping.values())[0]]]
+def _get_bbox_classes(xmlfile, class_mapping , height_width=[]):
 
     tree = ET.parse(xmlfile)
     xmlroot = tree.getroot()
@@ -129,9 +154,9 @@ def _get_bbox_classes(xmlfile, class_mapping, not_label_count=[0], height_width=
     return [bboxes, classes]
 
 
-def _get_bbox_lbls(imagefile, class_mapping, not_label_count, height_width):
+def _get_bbox_lbls(imagefile, class_mapping, height_width):
     xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
-    return _get_bbox_classes(xmlfile, class_mapping, not_label_count, height_width)
+    return _get_bbox_classes(xmlfile, class_mapping, height_width)
 
 
 def _get_lbls(imagefile, class_mapping):
@@ -293,7 +318,12 @@ def prepare_data(path,
                             For dataset_type=IOB, BILUO or ner_json:
                                 Provide address field as class mapping
                                 in below format:
-                                class_mapping={'address_tag':'address_field'}
+                                class_mapping={'address_tag':'address_field'}.
+                                Field defined as 'address_tag' will be treated
+                                as a location. In cases where trained model extracts
+                                multiple locations from a single document, that 
+                                document will be replicated for each location.
+
     ---------------------   -------------------------------------------
     chip_size               Optional integer. Size of the image to train the
                             model.
@@ -322,19 +352,20 @@ def prepare_data(path,
                             the `dataset_type` on its own if it contains a 
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
-                            'RCNN_Masks' and 'Classified_Tiles'                    
+                            'RCNN_Masks', 'Classified_Tiles', 'Labeled_Tiles' and 
+                            'Imagenet'.                    
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
 
     :returns: data object
-    """
-    """kwargs documentation
-    imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
-    bands=None # sepcify bands type for unknow imagery ['r', 'g', 'b', 'nir']
-    rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
-    norm_pct=0.3 # sample of images to calculate normalization stats on 
-    do_normalize=True # Normalize data 
+  
+    kwargs documentation
+    * imagery_type='RGB' # Change to known imagery_type or anything else to trigger multispectral
+    * bands=None # specify bands type for unknown imagery ['r', 'g', 'b', 'nir']
+    * rgb_bands=[0, 1, 2] # specify rgb bands indices for unknown imagery
+    * norm_pct=0.3 # sample of images to calculate normalization stats on 
+    * do_normalize=True # Normalize data 
     """
 
     height_width = []
@@ -351,9 +382,14 @@ def prepare_data(path,
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     databunch_kwargs['bs'] = batch_size
 
+    if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
+        databunch_kwargs["device"] = torch.device('cpu')
+
     kwargs_transforms = {}
     if resize_to:
         kwargs_transforms['size'] = resize_to
+        # Applying SQUISH ResizeMethod to avoid reflection padding
+        kwargs_transforms['resize_method'] = ResizeMethod.SQUISH
 
     has_esri_files = _check_esri_files(path)
     alter_class_mapping = False
@@ -549,21 +585,31 @@ def prepare_data(path,
         kwargs_transforms['tfm_y'] = True
         kwargs_transforms['size'] = chip_size
     elif dataset_type == 'PASCAL_VOC_rectangles':
+
+        def image_without_label(imagefile, not_label_count=[0]):
+            xmlfile = imagefile.parents[1] / 'labels' / imagefile.name.replace('{ims}'.format(ims=imagefile.suffix), '.xml')
+            if not os.path.exists(xmlfile):
+                not_label_count[0] += 1
+                return False
+            return True
+
         not_label_count = [0]
+        remove_image_without_label = partial(image_without_label, not_label_count=not_label_count)
         get_y_func = partial(
             _get_bbox_lbls,
             class_mapping=class_mapping,
-            not_label_count=not_label_count,
             height_width=height_width
         )
 
         if _is_multispectral:
             data = SSDObjectMSItemList.from_folder(path/'images')\
+            .filter_by_func(remove_image_without_label)\
             .split_by_rand_pct(val_split_pct, seed=seed)\
             .label_from_func(get_y_func)
             _show_batch_multispectral = show_batch_pascal_voc_rectangles
         else:
             data = SSDObjectItemList.from_folder(path/'images')\
+                .filter_by_func(remove_image_without_label)\
                 .split_by_rand_pct(val_split_pct, seed=seed)\
                 .label_from_func(get_y_func)
 
@@ -589,8 +635,18 @@ def prepare_data(path,
         if dataset_type == 'Labeled_Tiles':
             get_y_func = partial(_get_lbls, class_mapping=class_mapping)
         else:
+            # Imagenet
             def get_y_func(x):
                 return x.parent.stem
+            if collate_fn is not _bb_pad_collate:
+                databunch_kwargs['collate_fn'] = collate_fn
+            else:
+                databunch_kwargs['collate_fn'] = _ImagenetCollater(chip_size)
+            _images_folder = os.path.join(os.path.abspath(path), 'images')
+            if not os.path.exists(_images_folder):
+                raise Exception(f"""Could not find a folder "images" in "{os.path.abspath(path)}",
+                \na folder "images" should be present in the supplied path to work with "Imagenet" data_type. """
+                )
 
         if _is_multispectral:
             data = ArcGISMSImageList.from_folder(path/'images')\
@@ -603,11 +659,12 @@ def prepare_data(path,
                 .label_from_func(get_y_func)
 
         if dataset_type == 'Imagenet':
-            class_mapping = {}
-            index = 1
-            for class_name in data.classes:
-                class_mapping[index] = class_name
-                index = index + 1
+            if class_mapping is None:
+                class_mapping = {}
+                index = 1
+                for class_name in data.classes:
+                    class_mapping[index] = class_name
+                    index = index + 1
 
         if transforms is None:
             ranges = (0, 1)
@@ -621,7 +678,11 @@ def prepare_data(path,
             val_tfms = [crop(size=chip_size, p=1.0, row_pct=0.5, col_pct=0.5)]
             transforms = (train_tfms, val_tfms)
     elif dataset_type in ['ner_json','BIO','IOB','LBIOU','BILUO']:
-        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct)
+        if batch_size == 64:
+            batch_size = 8
+        return ner_prepare_data(dataset_type=dataset_type, path=path, class_mapping=class_mapping, val_split_pct=val_split_pct,batch_size=batch_size)
+    elif dataset_type == "PointCloud":
+        return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, **kwargs)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
     
@@ -740,8 +801,9 @@ def prepare_data(path,
             .databunch(**databunch_kwargs)
             .normalize(imagenet_stats))
 
-
-    data.chip_size = data.x[0].shape[-1] if transforms is False else chip_size
+    # Assigning chip size from training dataset and not data.x 
+    # to consider transforms and resizing
+    data.chip_size = data.train_ds[0][0].shape[-1]
 
     if alter_class_mapping:
         new_mapping = {}

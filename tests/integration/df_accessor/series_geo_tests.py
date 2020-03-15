@@ -439,7 +439,7 @@ def test_intersect():
     v = GeoArray([geoms[3]])
     df = pd.DataFrame({"SHAPE": v})
     r = df.SHAPE.geom.intersect(geoms[3], 4)
-    assert r.dtype.name.lower() == "geometry"
+    assert r.dtype.name.lower() == "bool"
 #--------------------------------------------------------------------------
 def test_touches():
     v = GeoArray([geoms[3]])

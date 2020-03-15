@@ -37,10 +37,20 @@ RUN conda install -y unzip \
     && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
 #RUN conda install jupyter_dashboards -c conda-forge -y
 
+# Install request packages
+RUN conda install -c esri -c defaults -c conda-forge requests-kerberos \
+                                                     requests-oauthlib \
+													 requests_toolbelt \
+													 requests_ntlm \
+	&& conda clean -tipsy \
+    && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
+
 # Install latest Python API from Conda
 RUN conda install -c esri arcgis -y \
     && conda clean -tipsy \
     && find $CONDA_DIR/pkgs -maxdepth 1 -mindepth 1 -type d -print -exec rm -r {} +
+
+
 
 # Fix needed for current jupyter notebook view
 #RUN sed -i  's/Out\[%d\]:/Out\[%s\]:/g' /opt/conda/lib/python3.6/site-packages/notebook/static/notebook/js/main.min.js

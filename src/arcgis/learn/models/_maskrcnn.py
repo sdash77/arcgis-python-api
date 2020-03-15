@@ -17,7 +17,7 @@ try:
     import numpy as np
     from .._data import prepare_data, _raise_fastai_import_error
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta, _resnet_family
     import torchvision
     from torchvision import models
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -51,7 +51,7 @@ class MaskRCNN(ArcGISModel):
     backbone                Optional function. Backbone CNN model to be used for
                             creating the base of the `MaskRCNN`, which
                             is `resnet50` by default. 
-                            Compatible backbones: 'resnet50'
+                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -61,20 +61,16 @@ class MaskRCNN(ArcGISModel):
     """
     def __init__(self, data, backbone=None, pretrained_path=None):
 
-        super().__init__(data, backbone)
+        # Set default backbone to be 'resnet50'
+        if backbone is None:
+            backbone = models.resnet50
 
+        super().__init__(data, backbone)
         if self._is_multispectral:
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
             scaled_mean_values = data._scaled_mean_values[data._extract_bands].tolist()
             scaled_std_values = data._scaled_std_values[data._extract_bands].tolist()
-
-        if backbone is None:
-            self._backbone = models.resnet50
-        elif type(backbone) is str:
-            self._backbone = getattr(models, backbone)
-        else:
-            self._backbone = backbone
 
         if not self._check_backbone_support(self._backbone):
             raise Exception (f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
@@ -89,7 +85,7 @@ class MaskRCNN(ArcGISModel):
                 model.transform.image_std = scaled_std_values
         elif self._backbone.__name__ in ['resnet18','resnet34']:
             if self._is_multispectral:
-                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(backbone_fn.__name__)['cut'])
+                backbone_small = create_body(self._backbone_ms, cut=_get_backbone_meta(self._backbone.__name__)['cut'])
                 backbone_small.out_channels = 512
                 model = models.detection.MaskRCNN(
                     backbone_small, 
@@ -171,7 +167,11 @@ class MaskRCNN(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """        
-        return [*self._resnet_family]
+        return MaskRCNN._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):

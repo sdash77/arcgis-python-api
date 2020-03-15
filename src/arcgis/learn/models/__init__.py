@@ -7,3 +7,4 @@ from ._classifier import FeatureClassifier
 from ._pspnet import PSPNetClassifier
 from ._maskrcnn import MaskRCNN
 from ._deeplab import DeepLab
+from ._pointcnnseg import PointCNN

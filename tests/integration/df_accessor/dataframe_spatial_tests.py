@@ -1,15 +1,22 @@
-import os, sys
-
-import shutil, datetime
-import tempfile
-from arcgis.features.geo._array import GeoArray, GeoType
-from arcgis.features.geo import from_featureclass
-from arcgis.geometry import Geometry
+import datetime
 import copy
-from arcgis.features.geo import _io
+import os
+import shutil
+import sys
+from pathlib import Path
+import tempfile
+
+
+from arcgis.features.geo import from_featureclass, _io
+from arcgis.features.geo._array import GeoArray, GeoType
+from arcgis.geometry import Geometry
 import pandas as pd
 from pandas.core.internals import ExtensionBlock
-import pandas.util.testing as tm
+try:
+    import pandas.util.testing as tm
+except:
+    import pandas.testing as tm
+
 try:
     import arcpy
     HASARCPY = True
@@ -191,6 +198,17 @@ def test_true_centroid():
 #### to/from geojson
 #### from_xy
 ##-------------------------------------------------------------------------
+def test_import_gis_content():
+    from arcgis.gis import GIS
+    gis = GIS(profile='your_online_profile')
+    g = [Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})] * len(geoms)
+    data = [[1,datetime.datetime.now(),True,"BLAHBLAH"]] * len(geoms)
+    df = pd.DataFrame(data=data, columns=['Alpha', 'Beta', "Gamma", "Delta"])
+    df.spatial.set_geometry(g)
+    item = gis.content.import_data(df)    
+    assert item
+    assert item.delete()
+    
 def test_to_feature_collection():
     from arcgis.features import FeatureCollection
     g = [Geometry({"x" : -118.15, "y" : 33.80, "spatialReference" : {"wkid" : 4326}})] * len(geoms)
@@ -325,6 +343,13 @@ def test_from_fc_arcpy():
     if arcpy.Exists(fc):
         sdf = from_featureclass(fc)
         assert sdf.spatial.geometry_type[0] == 'polygon'
+
+def test_from_fc_arcpy_path():
+    """tests reading a FGDB feature class using arcpy from a Path object"""
+    fc = Path(r"./testdata.gdb/world30")
+    if arcpy.Exists(fc):
+        sdf = from_featureclass(fc)
+        assert sdf.spatial.geometry_type[0] == 'polygon'
 #--------------------------------------------------------------------------
 def test_from_fc_fiona():
     """tests reading a SHP/FGDB from fiona"""
@@ -438,7 +463,7 @@ if __name__ == "__main__":
     test_true_centroid()
     print('End of Testing Dataset Properties')
     print('#######################################################')
-
+    test_import_gis_content()
     print('#######################################################')
     print("Testing IO/Data Converstion Operations")
     test_from_df()
@@ -448,7 +473,7 @@ if __name__ == "__main__":
     test_to_feature_collection()
     print("End of Testing IO/Data Converstion Operations")
     print('#######################################################')
-
+    
     print('#######################################################')
     print("Testing Package Specific Operations")
     if HASPYSHP and HASARCPY == False:

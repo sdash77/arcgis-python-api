@@ -28,7 +28,7 @@ from arcgis.geometry import Geometry
 # -----------------------------------------------------------------------------
 PANDAS_GE_024 = str(pd.__version__) >= LooseVersion("0.24.0")
 PANDAS_GE_025 = str(pd.__version__) >= LooseVersion("0.25.0")
-PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("0.26.0.dev")
+PANDAS_GE_10 = str(pd.__version__) >= LooseVersion("1")
 #--------------------------------------------------------------------------
 def _isna(value):
     """
@@ -197,7 +197,8 @@ def _binary_op_geo(name, left, right=None, *args, **kwargs):
 class GeoType(ExtensionDtype):
     type = Geometry
     name = "geometry"
-    na_value = np.nan
+    na_value = None
+    #np.nan
 
     @classmethod
     def construct_from_string(cls, string):
@@ -226,17 +227,20 @@ class GeoArray(ExtensionArray):
 
     _dtype = GeoType()
 
-    def __init__(self, data):
-        if isinstance(data, self.__class__):
-            data = data.data
-        elif isinstance(data, pd.Series):
-            data = data.values
-        elif not isinstance(data, np.ndarray):
+    def __init__(self, values):
+        if isinstance(values, self.__class__):
+            data = values.data
+        elif isinstance(values, pd.Series):
+            data = values.values
+        elif isinstance(values, (list, tuple)):
+            data = np.array(values)
+        elif isinstance(values, np.ndarray):
+            data = values
+        elif not isinstance(values, np.ndarray):
             raise TypeError(
-                "'data' should be array of geometry objects. Use the "
-                "from_geometries functions to construct a GeoArray."
+                "'data' should be array of geometry objects."
             )
-        elif not data.ndim == 1:
+        elif not values.ndim == 1:
             raise ValueError(
                 "'data' should be a 1-dimensional array of geometry objects."
             )
@@ -276,7 +280,7 @@ class GeoArray(ExtensionArray):
                 idx = pd.array(idx)
             dtype = idx.dtype
             if pd.api.types.is_bool_dtype(dtype):
-                idx = pd.api.indexers.check_bool_array_indexer(self, idx)
+                idx = pd.api.indexers.check_array_indexer(self, idx)
             elif pd.api.types.is_integer_dtype(dtype):
                 idx = np.asarray(idx, dtype="int")
         if isinstance(idx, (Iterable, slice)):
@@ -302,6 +306,9 @@ class GeoArray(ExtensionArray):
                 self.data[key] = value_array
             else:
                 self.data[key] = value
+        elif (isinstance(value, str) and value != ""):
+            value = Geometry(value)
+            self.data[key] = value            
         else:
             raise TypeError(
                 "Value should be either a Geometry or None, got %s" % str(value)
@@ -628,7 +635,7 @@ class GeoArray(ExtensionArray):
         """
         The first coordinate point of the geometry for each entry.
         """
-        return _unary_geo('extent', self.data, None) 
+        return _unary_geo('first_point', self.data, None) 
     #----------------------------------------------------------------------
     @property
     def geoextent(self):
@@ -649,6 +656,12 @@ class GeoArray(ExtensionArray):
     @property
     def is_multipart(self):
         return _unary_op('is_multipart', self.data, False)
+    #----------------------------------------------------------------------
+    @property
+    def is_valid(self):
+        return _binary_op(name='is_valid', 
+                          left=self.data, 
+                          right=None)
     #----------------------------------------------------------------------
     @property
     def JSON(self):
