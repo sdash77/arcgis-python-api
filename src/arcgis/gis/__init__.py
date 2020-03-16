@@ -3245,6 +3245,11 @@ class GroupManager(object):
                 return None
             else:
                 raise re
+        except Exception as re:
+            if re.args[0].__contains__("Group does not exist or is inaccessible"):
+                return None
+            else:
+                raise re
 
         if group is not None:
             return Group(self._gis, groupid, group)
@@ -3979,6 +3984,11 @@ class ContentManager(object):
                 return None
             else:
                 raise re
+        except Exception as e:
+            if e.args[0].__contains__("Item does not exist or is inaccessible"):
+                return None
+            else:
+                raise e
 
         if item is not None:
             return Item(self._gis, itemid, item)

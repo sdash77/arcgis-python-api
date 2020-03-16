@@ -2504,6 +2504,7 @@ class MultiPoint(Geometry):
                 coordkey = d
 
         coordinates = data[coordkey]
+
         return cls({'points' : [p for p in coordinates],
                     'spatialReference' : sr})
 ########################################################################
@@ -2572,6 +2573,7 @@ class Point(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr == None:
             sr = {'wkid' : 4326}
+
         coordkey = 'coordinates'
         for d in data:
             if d.lower() == 'coordinates':
@@ -2660,6 +2662,7 @@ class Polygon(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr is None:
             sr = {'wkid' : 4326}
+
         coordkey = 'coordinates'
         for d in data:
             if d.lower() == 'coordinates':
@@ -2762,12 +2765,10 @@ class Polyline(Geometry):
     def _from_geojson(cls, data, sr=None):
         if sr is None:
             sr = {'wkid' : 4326}
-        coordkey = ([d for d in data if d.lower() == 'coordinates']
-                    or ['coordinates']).pop()
         if data['type'].lower() == 'linestring':
-            coordinates = [data[coordkey]]
+            coordinates = [data['coordinates']]
         else:
-            coordinates = data[coordkey]
+            coordinates = data['coordinates']
 
         return cls(
             {'paths' : [[p for p in part] for part in coordinates],

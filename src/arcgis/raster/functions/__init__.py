@@ -901,6 +901,7 @@ def classify(raster1, raster2=None, classifier_definition=None, astype=None):
     """
 
     layer1, raster_1, raster_ra1 = _raster_input(raster1)
+    layer2=None
     if raster2 is not None:
         layer2, raster_2, raster_ra2 = _raster_input(raster1, raster2)
 
