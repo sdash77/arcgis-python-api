@@ -448,8 +448,11 @@ class Connection(object):
         if out_path and \
            os.path.isdir(out_path) == False:
             os.makedirs(out_path)
+        if out_path is None:
+            out_path = tempfile.gettempdir()
         if file_name is None and \
-           resp.headers['Content-Type'].lower().find('json') == -1:
+           (resp.headers['Content-Type'].lower().find('json') == -1 and \
+           resp.headers['Content-Type'].lower().find('text') == -1):
             file_name = _filename_from_url(url) or _filename_from_headers(
                 resp.headers) or None
         if force_bytes:
