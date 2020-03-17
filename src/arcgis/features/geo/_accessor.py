@@ -13,7 +13,7 @@ import logging
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass
-from ._tools import _metadata
+
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
@@ -993,6 +993,7 @@ class GeoAccessor(object):
         :returns: object/string
         
         """
+        from ._tools import _metadata
         if self._data_source != source and isinstance(source, _metadata._MetadataClass):
             self._data_source = source
             self._data.attrs['metadata'] = self._data_source
@@ -2674,46 +2675,8 @@ class GeoAccessor(object):
                 fld['defaultValue'] = None
                 fld['nullable'] = True
         if drawing_info is None:
-            di = {
-                'renderer' : {
-                    'labelingInfo' : None,
-                    'label' : "",
-                    'description' : "",
-                    'type' : 'simple',
-                    'symbol' : None
-
-                }
-            }
-            symbol = None
-            if symbol is None:
-                if fs['geometryType'] in ["esriGeometryPoint", "esriGeometryMultipoint"]:
-                    di['renderer']['symbol'] = {"color":[0,128,0,128],"size":18,"angle":0,
-                                                "xoffset":0,"yoffset":0,
-                                                "type":"esriSMS",
-                                                "style":"esriSMSCircle",
-                                                "outline":{"color":[0,128,0,255],"width":1,
-                                                           "type":"esriSLS","style":"esriSLSSolid"}}
-                elif fs['geometryType'] == 'esriGeometryPolyline':
-                    di['renderer']['symbol'] = {
-                        "type": "esriSLS",
-                        "style": "esriSLSDot",
-                        "color": [0,128,0,128],
-                        "width": 1
-                    }
-                elif fs['geometryType'] == 'esriGeometryPolygon':
-                    di['renderer']['symbol'] = {
-                        "type": "esriSFS",
-                        "style": "esriSFSSolid",
-                        "color": [0,128,0,128],
-                        "outline": {
-                            "type": "esriSLS",
-                            "style": "esriSLSSolid",
-                            "color": [110,110,110,255],
-                            "width": 1
-                        }
-                    }
-            else:
-                di['renderer']['symbol'] = symbol
+            import json
+            di = { 'renderer' : json.loads(self._data.spatial.renderer.json) }
         else:
             di = drawing_info
         layer = {'layerDefinition': {'currentVersion': 10.7,
@@ -2744,8 +2707,6 @@ class GeoAccessor(object):
                                      'supportsMultiScaleGeometry': True,
                                      'supportsReturningQueryGeometry': True,
                                      'hasGeometryProperties': True,
-                                     #'geometryProperties': {'shapeAreaFieldName': 'Shape__Area',
-                                     # 'shapeLengthFieldName': 'Shape__Length'},
                                      'advancedQueryCapabilities': {
                                          'supportsPagination': True,
                                          'supportsPaginationOnAggregatedQueries': True,
@@ -2791,9 +2752,11 @@ class GeoAccessor(object):
                                      'tileMaxRecordCount': 4000,
                                      'maxRecordCountFactor': 1,
                                      'capabilities': 'Query'},
-                 'featureSet':  {'features' : fs['features'],
-                            'geometryType' : fs['geometryType']}
-                }
+                 'featureSet':  {
+                     'features' : fs['features'],
+                     'geometryType' : fs['geometryType']
+                 }
+                 }
         if global_id_field is not None:
             layer['layerDefinition']['globalIdField'] = global_id_field
         return FeatureCollection(layer)

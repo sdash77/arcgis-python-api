@@ -307,6 +307,11 @@ class WebMap(collections.OrderedDict):
         """
         if options is None:
             options = {}
+        if isinstance(layer, arcgis.features.FeatureLayer) and \
+           'renderer' not in options:
+            options['renderer'] = json.loads(layer.renderer.json)
+        elif hasattr(layer, 'spatial'):
+            layer = layer.spatial.to_feature_collection()
         # region extact basic info from options
         title = options['title'] if options and 'title' in options else None
         opacity = options['opacity'] if options and 'opacity' in options else 1

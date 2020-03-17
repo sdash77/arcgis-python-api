@@ -15,7 +15,6 @@ from arcgis._impl.common import _utils
 from arcgis._impl.common._filters import StatisticFilter, TimeFilter, GeometryFilter
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._utils import _date_handler, chunks
-from arcgis._impl.common._isd import InsensitiveDict
 
 from .managers import AttachmentManager, SyncManager, FeatureLayerCollectionManager, FeatureLayerManager
 from .feature import Feature, FeatureSet
@@ -36,7 +35,7 @@ class FeatureLayer(Layer):
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
     _metadatamanager = None
-
+    _renderer = None
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a feature layer given a feature layer URL
@@ -61,6 +60,7 @@ class FeatureLayer(Layer):
         :returns: InsensitiveDict
         
         """
+        from arcgis._impl.common._isd import InsensitiveDict
         if self._renderer is None and "drawingInfo" in self.properties:
             self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
         return self._renderer
@@ -73,7 +73,7 @@ class FeatureLayer(Layer):
         :returns: InsensitiveDict
         
         """
-        
+        from arcgis._impl.common._isd import InsensitiveDict
         if isinstance(value, (dict, PropertyMap)):
             self._renderer = InsensitiveDict(dict(value))
         elif value is None:
