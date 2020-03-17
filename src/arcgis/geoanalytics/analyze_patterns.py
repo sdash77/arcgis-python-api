@@ -1142,6 +1142,7 @@ def create_space_time_cube(point_layer: _FeatureSet,
     to summarize the number of crimes in both space and time. You can calculate the 
     space-time cube for the dataset, and use the cube to further analyze trends 
     such as emerging hot and cold spots.
+
     ============================================================================     ===================================================================================================
     **Argument**                                                                     **Description**
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
@@ -1214,9 +1215,11 @@ def create_space_time_cube(point_layer: _FeatureSet,
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     future                                                                           Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
     ============================================================================     ===================================================================================================
+
     :returns: dict with url containing the path to Output Space Time Cube (netCDF) dataFile. When you browse to the output url, your netCDF will automatically download to your local machine.
     
     .. code-block:: python
+    
             # Usage Example: To aggregate Chicago homicides date layer into 3-dimensional cubes of 5 miles bin.
             create_space_time_cube(point_layer=lyr,
                                    bin_size=5,
