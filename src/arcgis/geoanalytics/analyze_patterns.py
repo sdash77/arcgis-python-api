@@ -462,10 +462,10 @@ def glr(input_layer,
       "process_info" : list
 
     else returns a feature layer of the results.
+
     .. code-block:: python
 
-            # Usage Example: To train a model for predicting 911 calls.
-            
+            # Usage Example: To train a model for predicting 911 calls.   
             result_predicted = glr(input_layer=911_calls_lyr,
                                    var_dependent='Calls',
                                    var_explanatory='Unemployed, AlcoholX, UnEmpRate, MedAge00',
