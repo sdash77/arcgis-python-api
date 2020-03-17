@@ -641,6 +641,7 @@ def join_features(target_layer,
         accident_count_in_each_parcel = join_features(target_layer=parcel_lyr,
                                                       join_layer=traffic_accidents_lyr,
                                                       spatial_relationship='intersects',
+                                                      summary_fields=[{"statisticType": "Mean", "onStatisticField": "Population"},
                                                       output_name='join features',
                                                       context={"extent":{"xmin":-9375809.87305117,"ymin":4031882.3806860778,"xmax":-9370182.196843527,"ymax":4034872.9794178144,"spatialReference":{"wkid":102100,"latestWkid":3857}}}, )
     """
