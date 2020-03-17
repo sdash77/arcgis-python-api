@@ -431,6 +431,7 @@ def from_featureclass(filename, **kwargs):
            .apply(geoms[gt])
         )
         df.spatial.set_geometry("SHAPE")
+        df.spatial._meta.source = filename
         return df
     elif HASARCPY == False and \
          HASPYSHP == True and\
@@ -453,6 +454,7 @@ def from_featureclass(filename, **kwargs):
         sdf.spatial.set_geometry('SHAPE')
         sdf['OBJECTID'] = range(sdf.shape[0])
         sdf.reset_index(inplace=True)
+        sdf.spatial._meta.source = filename
         return sdf
     elif HASARCPY == False and \
          HASFIONA == True and \
@@ -492,6 +494,7 @@ def from_featureclass(filename, **kwargs):
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
                     df.spatial.sr = sr
+                    df.spatial._meta.source = filename
                     return df
         else:
             with fiona.drivers():
@@ -507,6 +510,7 @@ def from_featureclass(filename, **kwargs):
                         del idx, row
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
+                    df.spatial._meta.source = filename
                     return df
     else:
         if os.path.dirname(filename).lower().find('.gdb') > -1:
