@@ -13,8 +13,10 @@ import logging
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass
+from ._tools import _metadata
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
-
+from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._isd import InsensitiveDict
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
 def _is_geoenabled(df):
@@ -939,10 +941,11 @@ class GeoAccessor(object):
     _data = None
     _name = None
     _index = None
+    _stype = None
     _kdtree = None
     _sindex = None
-    _stype = None
     _sfname = None
+    _renderer = None
     _HASARCPY = None
     _HASSHAPELY = None
     #----------------------------------------------------------------------
@@ -950,6 +953,124 @@ class GeoAccessor(object):
         self._data = obj
         self._index = obj.index
         self._name = None
+    #----------------------------------------------------------------------
+    @property
+    def _meta(self):
+        """
+        Users have the ability to store the source reference back to the 
+        dataframe.  This will allow the user to compare SeDF with source 
+        data such as FeatureLayers and Feature Classes.
+        
+        ===============   =======================================================
+        **Parameter**     **Description**
+        ---------------   -------------------------------------------------------
+        source            String/Object Reference to the source of the dataframe.
+        ===============   =======================================================
+        
+        :returns: object/string
+        
+        """
+        if 'metadata' in self._data.attrs and self._data.attrs['metadata']:
+            return self._data.attrs['metadata']     
+        else:
+            from arcgis.features.geo._tools import _metadata
+            self._data.attrs['metadata'] = _metadata._MetadataClass()
+            return self._data.attrs['metadata']   
+    #----------------------------------------------------------------------
+    @_meta.setter
+    def _meta(self, source):
+        """
+        Users have the ability to store the source reference back to the 
+        dataframe.  This will allow the user to compare SeDF with source 
+        data such as FeatureLayers and Feature Classes.
+        
+        ===============   =======================================================
+        **Parameter**     **Description**
+        ---------------   -------------------------------------------------------
+        source            String/Object Reference to the source of the dataframe.
+        ===============   =======================================================
+        
+        :returns: object/string
+        
+        """
+        if self._data_source != source and isinstance(source, _metadata._MetadataClass):
+            self._data_source = source
+            self._data.attrs['metadata'] = self._data_source
+    #----------------------------------------------------------------------
+    @property
+    def renderer(self):
+        """
+        Returns the renderer for the SeDF
+        
+        :returns: InsensitiveDict
+        """
+        if self._meta.renderer is None:
+            self._meta.renderer = self._build_renderer()
+        return self._meta.renderer
+    #----------------------------------------------------------------------
+    @renderer.setter
+    def renderer(self, renderer):
+        """
+        Define the renderer for the SeDF.  If none is given, then the value is reset.
+        
+        :returns: InsensitiveDict
+        """
+        
+        if renderer is None:
+            renderer = self._build_renderer()
+        if isinstance(renderer, dict):
+            renderer = InsensitiveDict.from_dict(renderer)
+        elif isinstance(renderer, PropertyMap):
+            renderer = InsensitiveDict.from_dict(dict(renderer))
+        elif isinstance(renderer, InsensitiveDict):
+            pass
+        else:
+            raise ValueError("renderer must be a dictionary type.")
+        self._meta.renderer = renderer
+    #----------------------------------------------------------------------
+    def _build_renderer(self):
+        """sets the default symbology"""
+        if self._meta.source and \
+           hasattr(self._meta.source, 'properties'):
+            return InsensitiveDict.from_dict(dict(self._meta.source.properties.drawingInfo.renderer))
+        gt = self.geometry_type[0]
+        base_renderer = {
+            'labelingInfo' : None,
+            'label' : "",
+            'description' : "",
+            'type' : 'simple',
+            'symbol' : None        
+        }        
+        if gt.lower() in ['point', 'multipoint']:
+            base_renderer['symbol'] = {"color":[0,128,0,128],
+                         "size":18,"angle":0,
+                         "xoffset":0,"yoffset":0,
+                         "type":"esriSMS",
+                         "style":"esriSMSCircle",
+                         "outline":{"color":[0,128,0,255],"width":1,
+                                    "type":"esriSLS","style":"esriSLSSolid"}
+                         }            
+            
+        elif gt.lower() =='polygon':
+            base_renderer['symbol'] = {
+                        "type": "esriSLS",
+                        "style": "esriSLSDot",
+                        "color": [0,128,0,128],
+                        "width": 1
+                    }
+        elif gt.lower() =='polyline':
+            base_renderer['symbol'] = {
+                        "type": "esriSFS",
+                        "style": "esriSFSSolid",
+                        "color": [0,128,0,128],
+                        "outline": {
+                            "type": "esriSLS",
+                            "style": "esriSLSSolid",
+                            "color": [110,110,110,255],
+                            "width": 1
+                        }
+                    }
+        return InsensitiveDict(base_renderer)
     #----------------------------------------------------------------------
     def _repr_svg_(self):
         """draws the dataframe as SVG features"""
