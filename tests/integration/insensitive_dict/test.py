@@ -1,3 +1,5 @@
+import sys
+#sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_viz_take_3\src")
 import pytest
 import unittest
 from arcgis._impl.common._isd import InsensitiveDict
@@ -91,6 +93,14 @@ class TestInsensitiveDict(unittest.TestCase):
         """tests the equal and copy method"""
         i1 = InsensitiveDict({'a' : 1, 'q' : {'2' : 'bee'}})
         assert list(i1.__dir__()) == ['a', 'q']
+    #----------------------------------------------------------------------
+    def test_pickle(self):
+        """tests the dumps/loads pickle operation"""
+        import pickle
+        i1 = InsensitiveDict({'a' : 1, 'q' : {'2' : 'bee'}})
+        o = pickle.dumps(i1)
+        i2 = pickle.loads(o)
+        assert i1 == i2
     #----------------------------------------------------------------------
     def test_del(self):
         """tests the delete operation method"""
