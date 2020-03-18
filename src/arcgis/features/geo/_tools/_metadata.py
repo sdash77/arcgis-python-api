@@ -2,9 +2,9 @@ import json
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 
-class _MetadataClass(object):
+class _Metadata(object):
     """
-    Internal `MetadataClass` that stores information about the source data
+    Internal `Metadata` that stores information about the source data
     """
     _source = None
     _renderer = None
@@ -45,6 +45,8 @@ class _MetadataClass(object):
         """gets/sets the renderer"""
         if isinstance(value, dict):
             value = InsensitiveDict.from_dict(value)
+        elif isinstance(value, PropertyMap):
+            value = InsensitiveDict.from_dict(dict(value))
         elif isinstance(value, InsensitiveDict):
             pass
         else:

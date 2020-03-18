@@ -1089,6 +1089,7 @@ class FeatureLayer(Layer):
                 df['SHAPE'] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
                 df.spatial.renderer = self.renderer
+                df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
@@ -1101,6 +1102,7 @@ class FeatureLayer(Layer):
                 if 'SHAPE' in df.columns:
                     df.spatial.set_geometry('SHAPE')
                     df.spatial.renderer = self.renderer
+                    df.spatial._meta.source = self
                 for fld in dt_fields:
                     try:
                         if fld in df.columns:
@@ -1172,6 +1174,7 @@ class FeatureLayer(Layer):
             if 'SHAPE' in df.columns:
                 df.spatial.set_geometry('SHAPE')
                 df.spatial.renderer = self.renderer
+                df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
                     df[fld] = pd.to_datetime(df[fld]/1000,

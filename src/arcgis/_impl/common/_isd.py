@@ -71,6 +71,15 @@ class InsensitiveDict(MutableMapping):
             in self._store.items()
         )
     #----------------------------------------------------------------------
+    def __setstate__(self, d):
+        """unpickle support """
+        self.__dict__.update(InsensitiveDict(d).__dict__)
+        self = InsensitiveDict(d)
+    #----------------------------------------------------------------------
+    def __getstate__(self):
+        """ pickle support """
+        return json.loads(self.json)    
+    #----------------------------------------------------------------------
     @classmethod
     def from_dict(cls, o):
         """Converts dict to a InsensitiveDict"""

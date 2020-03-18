@@ -343,7 +343,6 @@ class MapView(widgets.DOMWidget):
             return self._extent
     @extent.setter
     def extent(self, value):
-        print(value)
         try:
             if isinstance(value, dict):
                 if 'spatialReference' in value and 'spatialReference' in self._extent:
@@ -363,13 +362,12 @@ class MapView(widgets.DOMWidget):
                     "ymin": value[0][1],
                     "xmax": value[1][0],
                     "ymax": value[1][1]}
-            elif _is_iterable(value) and len(value) == 0:
+            elif len(value) == 0:
                 pass            
             else:
-                print(value)
                 raise Exception
         except Exception:
-            if _is_iterable(value) and len(value) > 0:
+            if _is_iterable(value) and len(value) == 0:
                 pass
             else:
                 log.warn("extent must be set to either a 2d list, spatially " \

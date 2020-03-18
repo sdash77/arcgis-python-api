@@ -970,12 +970,13 @@ class GeoAccessor(object):
         :returns: object/string
         
         """
-        if 'metadata' in self._data.attrs and self._data.attrs['metadata']:
+        from arcgis.features.geo._tools import _metadata
+        if 'metadata' in self._data.attrs and self._data.attrs['metadata'] and \
+           isinstance(self._data.attrs['metadata'], _metadata._Metadata):
             return self._data.attrs['metadata']     
         else:
-            from arcgis.features.geo._tools import _metadata
-            self._data.attrs['metadata'] = _metadata._MetadataClass()
-            return self._data.attrs['metadata']   
+            self._meta = _metadata._Metadata()
+            return self._meta   
     #----------------------------------------------------------------------
     @_meta.setter
     def _meta(self, source):
@@ -994,9 +995,15 @@ class GeoAccessor(object):
         
         """
         from ._tools import _metadata
-        if self._data_source != source and isinstance(source, _metadata._MetadataClass):
-            self._data_source = source
-            self._data.attrs['metadata'] = self._data_source
+        if not 'metadata' in self._data.attrs and \
+           isinstance(source, _metadata._Metadata): # creates the attrs entry
+            self._data.attrs['metadata'] = source
+        elif 'metadata' in self._data.attrs and \
+             isinstance(source, _metadata._Metadata) and \
+             source != self._data.attrs['metadata']: # sets the new metadata value
+            self._data.attrs['metadata'] = source
+        elif source is None: # resets/drops the source
+            self._data.attrs['metadata'] = _metadata._Metadata()
     #----------------------------------------------------------------------
     @property
     def renderer(self):
@@ -1033,7 +1040,7 @@ class GeoAccessor(object):
         """sets the default symbology"""
         if self._meta.source and \
            hasattr(self._meta.source, 'properties'):
-            return InsensitiveDict.from_dict(dict(self._meta.source.properties.drawingInfo.renderer))
+            return self._meta.renderer
         gt = self.geometry_type[0]
         base_renderer = {
             'labelingInfo' : None,
@@ -1071,7 +1078,8 @@ class GeoAccessor(object):
                             "width": 1
                         }
                     }
-        return InsensitiveDict(base_renderer)
+        self._meta.renderer = InsensitiveDict(base_renderer)
+        return self._meta.renderer
     #----------------------------------------------------------------------
     def _repr_svg_(self):
         """draws the dataframe as SVG features"""
