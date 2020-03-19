@@ -331,16 +331,16 @@ def read_xyzinumr_label_from_las(filename_las, extra_features):
     return xyz, labels, xyzirgb_num
 
 def prepare_las_data(root,
-                       block_size,
-                       max_point_num,
-                       output_path,
-                       extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)],
-                       grid_size=1.0,
-                       blocks_per_file=2048,
-                       folder_names=['train', 'val'],
-                       segregate=True,
-                       **kwargs
-                       ):
+                     block_size,
+                     max_point_num,
+                     output_path,
+                     extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)],
+                     grid_size=1.0,
+                     blocks_per_file=2048,
+                     folder_names=['train', 'val'],
+                     segregate=True,
+                     **kwargs
+                    ):
     try_import("h5py")
     import h5py
     block_size_ = block_size

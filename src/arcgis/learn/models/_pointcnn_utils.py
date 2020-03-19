@@ -166,7 +166,6 @@ class XConvDepthwise(nn.Module):
           - fts: Regional features (B, N, C)
         :return: Features aggregated into point rep_pt.
         """
-        _, _, nf = fts.shape
         B, N, _ = pts.size()
         
         if represent_pts is None:
@@ -185,6 +184,7 @@ class XConvDepthwise(nn.Module):
         fts_lifted = self.MLP_delta(group_pts)      # (B, C_delta, P, K)
         
         if fts is not None:
+            _, _, nf = fts.shape
             group_fts = fts.contiguous().view(-1, nf)
             group_fts = group_fts[k_ind].view(B, self.P, self.K * self.D, nf)
             group_fts = group_fts[:, :, rand_col, :]
