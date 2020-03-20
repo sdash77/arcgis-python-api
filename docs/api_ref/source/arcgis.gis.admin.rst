@@ -1,4 +1,4 @@
-arcgis\.gis\.admin module
+arcgis.gis.admin module
 ====================
 
 .. automodule:: arcgis.gis.admin
