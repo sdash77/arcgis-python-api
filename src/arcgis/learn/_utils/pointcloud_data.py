@@ -662,6 +662,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.show_batch = types.MethodType(show_point_cloud_batch_TF, data)
         data.classes =  data.meta['classes']
         data.color_mapping = kwargs.get('color_mapping', {i:[random.choice(range(256)) for _ in range(3)]  for i in range(data.c)})
+        data.color_mapping = {int(k):v for k, v in data.color_mapping.items()}
         data.class_mapping = class_mapping if class_mapping is not None else {v:k for k,v in enumerate(data.classes)}
         data.max_point = data.meta['max_point']
         data.extra_dim = data.meta['num_extra_dim']
