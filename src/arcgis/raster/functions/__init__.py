@@ -4527,6 +4527,70 @@ def _raster_item(raster, raster_id=None):
     return _clone_layer(layer, template_dict, raster_ra)
 
 
+def s1_radiometric_calibration(raster, calibration_type=None):
+
+    """
+    Performs different types of radiometric calibration on Sentinel-1 data.
+
+    :param raster: The input raster.
+                   The Sentinel-1 Level-1 GRD or SLC input raster you want to process.
+
+                   The function will use the LUT file either to apply the thermal correction or to 
+                   remove the correction, depending on the contents of the LUT.
+    :param calibration_type: Optional string or int. one of four calibration types: 
+                             "beta_nought" (0) - produces an output containing the radar brightness coefficient.
+                             "sigma_nought" (1) - the backscatter returned to the antenna from a unit area on the ground, related to ground range.
+                             "gamma" (2) - measurement of emitted and returned energy useful for determining antenna patterns.
+                              None - Specify None to not apply a correction. This is the default.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "S1RadiometricCalibration",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+    
+    calibration_type_dict = {"beta_nought":0, "sigma_nought":1, "gamma":2}
+    if calibration_type is not None:
+        if isinstance(calibration_type, str):
+            calibration_type= calibration_type_dict[calibration_type.upper()]
+            template_dict["rasterFunctionArguments"]['CalibrationType'] = calibration_type
+        else:
+            template_dict["rasterFunctionArguments"]['CalibrationType'] = calibration_type
+    else:
+        template_dict["rasterFunctionArguments"]['CalibrationType'] = 3
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
+
+def s1_thermal_noise_removal(raster, calibration_type=None):
+
+    """
+    Removes thermal noise from Sentinel-1 data.
+
+    :param raster: The input raster.
+                   The Sentinel-1 Level-1 GRD or SLC input raster you want to process.
+
+                   The function will use the LUT file either to apply the thermal correction or to 
+                   remove the correction, depending on the contents of the LUT.
+
+    :return: output raster 
+    """
+    layer, raster, raster_ra = _raster_input(raster)
+
+    template_dict = {
+        "rasterFunction" : "S1ThermalNoiseRemoval",
+        "rasterFunctionArguments": {
+            "Raster" : raster,            
+        }
+    }
+
+    return _clone_layer(layer, template_dict, raster_ra)
+
 class RFT:
     def __init__(self, raster_function_template,gis=None):
         try:
