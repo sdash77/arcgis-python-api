@@ -14,7 +14,7 @@ from collections import OrderedDict
 from urllib.parse import urlparse
 import os
 import shutil
-
+import ipywidgets
 try:
     import pandas as pd
     from arcgis.features.geo import _is_geoenabled
