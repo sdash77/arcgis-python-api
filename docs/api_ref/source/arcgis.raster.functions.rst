@@ -443,6 +443,14 @@ rtvi_core
 _________
 .. autofunction:: arcgis.raster.functions.rtvi_core
 
+s1_radiometric_calibration
+__________________________
+.. autofunction:: arcgis.raster.functions.s1_radiometric_calibration
+
+s1_thermal_noise_removal
+________________________
+.. autofunction:: arcgis.raster.functions.s1_thermal_noise_removal
+
 savi
 ____
 .. autofunction:: arcgis.raster.functions.savi

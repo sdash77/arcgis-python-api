@@ -1178,6 +1178,6 @@ def export_point_dataset(data_path, output_path, block_size=50.0, max_points=819
     """
 
     from ._utils.pointcloud_data import  prepare_las_data
-    prepare_las_data(data_path, block_size, max_points, output_path, **kwargs)
+    prepare_las_data(data_path, block_size, max_points, output_path, extra_features, **kwargs)
 
     

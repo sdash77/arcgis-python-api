@@ -8,8 +8,12 @@ from utils._common import *
 def run_integration_tests(config, paths, output_dir):
     if not paths:
         raise Exception("Must specify some paths to run!")
-    log.info("Running integration tests...")
     output_xml_path = os.path.join(output_dir,
                                    "integration_tests_output.xml")
-    run_pytest_on(paths, output_xml_path)
-    return output_xml_path
+    output_coverage_dir = os.path.join(output_dir, 
+                                       "integration_tests_coverage")
+    if os.path.exists(output_coverage_dir):
+        shutil.rmtree(output_coverage_dir)
+    run_pytest_on(paths, output_xml_path, output_coverage_dir)
+    output_coverage_file = os.path.join(output_coverage_dir, "index.html")
+    return output_xml_path, output_coverage_file

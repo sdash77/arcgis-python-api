@@ -5,6 +5,7 @@ from .feature_model import FeatureModel
 from .managers import *
 from ._schemas import AssignmentSchema
 from .assignment_type import AssignmentType
+import datetime
 
 
 class Assignment(FeatureModel):
@@ -437,26 +438,32 @@ class Assignment(FeatureModel):
 
     @status.setter
     def status(self, value):
-        if (isinstance(value, int) and value >=0 and value <= 6) or value is None:
-            self._feature.attributes[self._schema.status] = value
-        elif isinstance(value, str):
-            reduced_str = value.lower().replace(" ", "").replace("_", "")
-            if reduced_str == "unassigned":
-                self._feature.attributes[self._schema.status] = 0
-            elif reduced_str == "assigned":
-                self._feature.attributes[self._schema.status] = 1
-            elif reduced_str == "inprogress":
-                self._feature.attributes[self._schema.status] = 2
-            elif reduced_str == "completed":
-                self._feature.attributes[self._schema.status] = 3
-            elif reduced_str == "declined":
-                self._feature.attributes[self._schema.status] = 4
-            elif reduced_str == "paused":
-                self._feature.attributes[self._schema.status] = 5
-            elif reduced_str == "canceled":
-                self._feature.attributes[self._schema.status] = 6
-            else:
-                raise ValidationError("Invalid status", self)
+        if isinstance(value, str):
+            value = value.lower().replace(" ", "").replace("_", "")
+        if value == "unassigned" or value == 0:
+            self._feature.attributes[self._schema.status] = 0
+        elif value == "assigned" or value == 1:
+            self._feature.attributes[self._schema.status] = 1
+            if self.assigned_date is None:
+                self.assigned_date = datetime.datetime.now()
+        elif value == "inprogress" or value == 2:
+            self._feature.attributes[self._schema.status] = 2
+            if self.in_progress_date is None:
+                self.in_progress_date = datetime.datetime.now()
+        elif value == "completed" or value == 3:
+            self._feature.attributes[self._schema.status] = 3
+            if self.completed_date is None:
+                self.completed_date = datetime.datetime.now()
+        elif value == "declined" or value == 4:
+            self._feature.attributes[self._schema.status] = 4
+            if self.declined_date is None:
+                self.declined_date = datetime.datetime.now()
+        elif value == "paused" or value == 5:
+            self._feature.attributes[self._schema.status] = 5
+            if self.paused_date is None:
+                self.paused_date = datetime.datetime.now()
+        elif value == "canceled" or value == "cancelled" or value == 6:
+            self._feature.attributes[self._schema.status] = 6
         else:
             raise ValidationError("Invalid status", self)
 

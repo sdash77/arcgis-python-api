@@ -331,16 +331,16 @@ def read_xyzinumr_label_from_las(filename_las, extra_features):
     return xyz, labels, xyzirgb_num
 
 def prepare_las_data(root,
-                       block_size,
-                       max_point_num,
-                       output_path,
-                       extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)],
-                       grid_size=1.0,
-                       blocks_per_file=2048,
-                       folder_names=['train', 'val'],
-                       segregate=True,
-                       **kwargs
-                       ):
+                     block_size,
+                     max_point_num,
+                     output_path,
+                     extra_features=[('intensity', 5000, 0), ('num_returns', 5, 0)],
+                     grid_size=1.0,
+                     blocks_per_file=2048,
+                     folder_names=['train', 'val'],
+                     segregate=True,
+                     **kwargs
+                    ):
     try_import("h5py")
     import h5py
     block_size_ = block_size
@@ -662,6 +662,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
         data.show_batch = types.MethodType(show_point_cloud_batch_TF, data)
         data.classes =  data.meta['classes']
         data.color_mapping = kwargs.get('color_mapping', {i:[random.choice(range(256)) for _ in range(3)]  for i in range(data.c)})
+        data.color_mapping = {int(k):v for k, v in data.color_mapping.items()}
         data.class_mapping = class_mapping if class_mapping is not None else {v:k for k,v in enumerate(data.classes)}
         data.max_point = data.meta['max_point']
         data.extra_dim = data.meta['num_extra_dim']
