@@ -86,10 +86,14 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
         this.model.on('change:mode', this.mode_changed, this);
         this.model.on('change:_basemap', this.basemap_changed, this);
         this.model.on('change:_zoom', this.zoom_changed, this);
-        this.model.on('change:rotation', this.rotation_changed, this);
-        this.model.on('change:heading', this.heading_changed, this);
-        this.model.on('change:tilt', this.tilt_changed, this);
+        this.model.on('change:_rotation', this.rotation_changed, this);
+        this.model.on('change:_link_writeonly_rotation', this.link_rotation_changed, this);
+        this.model.on('change:_heading', this.heading_changed, this);
+        this.model.on('change:_link_writeonly_heading', this.link_heading_changed, this);
+        this.model.on('change:_tilt', this.tilt_changed, this);
+        this.model.on('change:_link_writeonly_tilt', this.link_tilt_changed, this);
         this.model.on('change:_extent', this.extent_changed, this);
+        this.model.on('change:_link_writeonly_extent', this.link_extent_changed, this);
         this.model.on('change:_center', this.center_changed, this);
         this.model.on('change:_center_long_lat', this.center_long_lat_changed, this);
         //start layer specific model types
@@ -264,7 +268,10 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
         var rotation = this.rotation;
         if(rotation >= 0){
-            widget_inst.model.set("rotation", rotation);
+            widget_inst.model.set("_readonly_rotation", rotation);
+            var heading = 360 - rotation;
+            widget_inst.model.set("_readonly_heading", heading);
+            widget_inst.apply_heading_to_view(heading);
         }
 
         widget_inst._commonStationaryCallback(widget_inst);
@@ -276,8 +283,11 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
         var camera = this.camera;
         if(camera){
-            widget_inst.model.set("heading", camera.heading);
-            widget_inst.model.set("tilt", camera.tilt);
+            widget_inst.model.set("_readonly_heading", camera.heading);
+            var rotation = 360 - camera.heading;
+            widget_inst.model.set("_readonly_rotation", rotation);
+            widget_inst.apply_rotation_to_view(rotation);
+            widget_inst.model.set("_readonly_tilt", camera.tilt);
         }
 
         widget_inst._commonStationaryCallback(widget_inst);
@@ -522,55 +532,89 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
 
     rotation_changed: function(){
         try{
-            var rotation = this.model.get("rotation");
-            this._2dMap.rotation = rotation
+            var rotation = this.model.get("_rotation");
+            this.model.set("_readonly_rotation", rotation);
+            this.model.save_changes();
+            this.apply_rotation_to_view(rotation);
         } catch(err){
             this._displayErrorBox("Error while modifying rotation");
             console.warn("Error on rotation"); console.warn(err);
         }
     },
 
+    link_rotation_changed: function(){
+        var rotation = this.model.get("_link_writeonly_rotation");
+        this.apply_rotation_to_view(rotation);
+    },
+
+    apply_rotation_to_view: function(rotation){
+        this._2dMap.rotation = rotation;
+    },
+
     heading_changed: function(){
-        ///TODO: Find more elegant way to implement this func and tilt_changed()
-        var _applyHeading = function(this_) {
+        var heading = this.model.get("_heading");
+        this.model.set("_readonly_heading", heading);
+        this.model.save_changes();
+        this.apply_heading_to_view(heading);
+    },
+
+    link_heading_changed: function(){
+        var heading = this.model.get("_link_writeonly_heading");
+        this.apply_heading_to_view(heading);
+    },
+
+    apply_heading_to_view: function(heading){
+        var _applyHeading = () => {
             //The actual function that is eventually called to apply the heading
-            var heading = this_.model.get("heading");
-            var camera = this_._3dMap.camera.clone();
-            camera.heading = heading;
-            this_._3dMap.camera = camera
+            this._3dMap.goTo({center: this._3dMap.center,
+                              heading: heading},
+                             {animate: false});
         };
         esriLoader.loadModules(["esri/core/watchUtils"],
         options).then(([watchUtils]) => {
             if(this._3dMap.camera){
                 //If the map is already initialized
-                _applyHeading(this);
+                _applyHeading();
             } else{
                 //set up the callback when the camera is ready for consumption
                 watchUtils.once(this._3dMap, "camera", () => {
-                    _applyHeading(this);
+                    _applyHeading();
                })
             }
         }).catch((err) =>{
             this._displayErrorBox("Error while modifying heading");
             console.warn("Error on heading"); console.warn(err);
         });
+
     },
 
     tilt_changed: function(){
-        var _applyTilt = function(this_){
-            //The actual function that is eventually called to apply the tilt
-            this_._3dMap.goTo({center: this_._3dMap.center,
-                              tilt: this_.model.get("tilt")});
-        };
+        var tilt = this.model.get("_tilt");
+        this.model.set("_readonly_tilt", tilt);
+        this.model.save_changes();
+        this.apply_tilt_to_view(tilt);
+    },
+
+    link_tilt_changed: function(){
+        var tilt = this.model.get("_link_writeonly_tilt");
+        this.apply_tilt_to_view(tilt);
+    },
+
+    apply_tilt_to_view: function(tilt){
+        var _applyTilt = () => {
+            this._3dMap.goTo({center: this._3dMap.center,
+                              tilt: tilt},
+                             {animate: false});
+         };
         esriLoader.loadModules(["esri/core/watchUtils"],
         options).then(([watchUtils]) => {
             if(this._3dMap.camera){
                 //If the map is already initialized
-                _applyTilt(this);
+                _applyTilt();
            } else {
                 //Set up the callback when the camera is ready for consuption
                 watchUtils.once(this._3dMap, "camera", () => {
-                    _applyTilt(this);
+                    _applyTilt();
                 });
             }
         }).catch((err) =>{
@@ -582,13 +626,22 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     },
 
     extent_changed: function(){
+        var extent = this.model.get("_extent");
+        this.apply_extent_to_view(extent);
+    },
+
+    link_extent_changed: function(){
+        var extent = this.model.get("_link_writeonly_extent");
+        this.apply_extent_to_view(extent);
+    },
+
+    apply_extent_to_view: function(extent){
         esriLoader.loadModules(['esri/geometry/Extent',
                                 "esri/geometry/SpatialReference",
                                 "esri/geometry/projection"],
         options).then(([Extent,
                         SpatialReference,
                         projection]) => {
-            var extent = this.model.get("_extent");
             if(extent.xmin){
                 //Prevents an error about a bad extent
                 this.activeView.extent = new Extent(extent);

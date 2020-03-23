@@ -92,11 +92,13 @@ def _run_tests(args):
         suite = read_suite(DEFAULT_EMPTY_SUITE_FILE_PATH)
     _add_to_suite_cmd_arg_tests(suite, args.tests)
     _parse_suite(suite)
-    output_xml_files = run_suite(suite, args.output_dir,
-        run_setup_env = False,
-        run_sanity_tests_before = not args.no_sanity)
+    output_xml_files, output_coverage_files = \
+        run_suite(suite, args.output_dir,
+            run_setup_env = False,
+            run_sanity_tests_before = not args.no_sanity)
     if not args.no_browser_output:
-        _display_results_in_browser(output_xml_files, args.output_dir)
+        _display_results_in_browser(output_xml_files, output_coverage_files,
+                                    args.output_dir)
 
 def _add_to_suite_cmd_arg_tests(suite, tests):
     for test in tests:
@@ -129,7 +131,6 @@ def _add_to_suite_if_notebook_test(suite, test):
     if NOTEBOOK_TESTS_DIR in test:
         if os.path.isdir(test):
             test = os.path.join(test, "**", "*.ipynb")
-        nbconvert_dir = os.path.join(NOTEBOOK_TESTS_DIR, "nbconvert")
         selenium_dir = os.path.join(NOTEBOOK_TESTS_DIR, "selenium")
         if selenium_dir in test:
             suite['selenium_notebook_tests_to_run']['paths'].append(test)
@@ -146,9 +147,13 @@ def _add_to_suite_if_widget_test(suite, test):
             test = os.path.join(test, "**", "*.js")
         suite['widget_unit_tests_to_run']['paths'].append(test)
 
-def _display_results_in_browser(output_xml_files, output_dir):
+def _display_results_in_browser(output_xml_files, output_coverage_files,
+                                output_dir):
     try:
         browser_urls_to_display = []
+        for coverage_file in output_coverage_files:
+            browser_urls_to_display.append(
+                pathlib.Path(os.path.abspath(coverage_file)).as_uri())
         for output_xml_file in [x for x in output_xml_files if x]:
             if "sanity" in output_xml_file:
                 continue
@@ -183,3 +188,4 @@ if __name__ == "__main__":
         log.exception(e)
         log.info("Program did not succesfully complete (unhandled exception)")
         sys.exit(1)
+
