@@ -214,7 +214,7 @@ class PointCNN(ArcGISModel):
 
         model_accuracy = self.learn.recorder.metrics[-1][0]
         if checkpoint:
-            model_accuracy = np.max(self.learn.recorder.metrics)
+            model_accuracy = np.max([i[0] for i in self.learn.recorder.metrics])
 
         return float(model_accuracy)
 

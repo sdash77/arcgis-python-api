@@ -448,6 +448,8 @@ class AverageMetric(Callback):
 
     def on_epoch_end(self, last_metrics, **kwargs):
         "Set the final result in `last_metrics`."
+        if self.count == 0:
+            return add_metrics(last_metrics, [None])
         return add_metrics(last_metrics, self.val/self.count)
 
 ## Iteration Stop Callback, i.e stops epoch after certain number of iterations.
