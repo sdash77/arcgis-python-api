@@ -646,6 +646,14 @@ class GeoArray(ExtensionArray):
         return _unary_op('geometry_type', self.data, None) 
     #----------------------------------------------------------------------
     @property
+    def has_z(self):
+        return _unary_op('has_z', self.data, None)     
+    #----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        return _unary_op('has_m', self.data, None)         
+    #----------------------------------------------------------------------
+    @property
     def hull_rectangle(self):
         return _unary_op('hull_rectangle', self.data, None) 
     #----------------------------------------------------------------------
