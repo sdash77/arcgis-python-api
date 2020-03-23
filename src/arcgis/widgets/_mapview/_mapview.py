@@ -64,7 +64,7 @@ def _flatten_list(*unpacked_list):
 
 def _get_extent(item):
     from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster
+    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
     from arcgis.gis import Layer
     from arcgis.gis import Item
     from arcgis._impl.common._mixins import PropertyMap
@@ -73,7 +73,9 @@ def _get_extent(item):
 
     if isinstance(item, Raster):
         if isinstance(item._engine_obj, _ImageServerRaster):
-            item=item._engine_obj
+            item = item._engine_obj
+        elif isinstance(item._engine_obj, _ArcpyRaster):
+            return dict(item.extent)
     if isinstance(item, Item):
         return list(map(_get_extent, item.layers))
     elif isinstance(item, list):
