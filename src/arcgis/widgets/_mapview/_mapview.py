@@ -14,8 +14,15 @@ from collections import OrderedDict
 from urllib.parse import urlparse
 import os
 import shutil
-
 import ipywidgets
+try:
+    import pandas as pd
+    from arcgis.features.geo import _is_geoenabled
+except:
+    def _is_geoenabled(**kwargs):
+        return False
+    pd = None
+    
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
 from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float, observe
@@ -387,10 +394,15 @@ class MapView(widgets.DOMWidget):
                     "ymin": value[0][1],
                     "xmax": value[1][0],
                     "ymax": value[1][1]}
+            elif len(value) == 0:
+                pass            
             else:
                 raise Exception
         except Exception:
-            log.warn("extent must be set to either a 2d list, spatially " \
+            if _is_iterable(value) and len(value) == 0:
+                pass
+            else:
+                log.warn("extent must be set to either a 2d list, spatially " \
                      "enabled data frame full_extent, or dict. Values specified " \
                 "must include xmin, ymin, xmax, ymax. Please see the API doc for " \
                 "more information")
@@ -966,6 +978,13 @@ class MapView(widgets.DOMWidget):
         """
         if options is None:
             options = {}
+        if isinstance(item, arcgis.features.FeatureLayer) and \
+           'renderer' not in options:
+            options['renderer'] = json.loads(item.renderer.json)
+        elif isinstance(item, pd.DataFrame) and \
+             'renderer' not in options and \
+             _is_geoenabled(item):
+            item = item.spatial.to_feature_collection()
         self._add_layer_to_widget(item, options)
 
     def _add_layer_to_webmap(self, item, options):
@@ -997,7 +1016,8 @@ class MapView(widgets.DOMWidget):
                         log.warning("Item.layers is a 'NoneType' object: nothing to be added to map")
                     else:
                         for layer in item.layers:
-                            self._add_layer_to_widget(layer, options)
+                            self.add_layer(layer, options)
+                            #self._add_layer_to_widget(layer, options)
             except KeyError:
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
