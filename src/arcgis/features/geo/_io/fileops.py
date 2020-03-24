@@ -527,7 +527,9 @@ def from_featureclass(filename, **kwargs):
 def to_featureclass(geo,
                     location,
                     overwrite=True,
-                    validate=False):
+                    validate=False,
+                    has_m=None,
+                    has_z=None):
     """
     Exports the DataFrame to a Feature class.
 
@@ -588,11 +590,23 @@ def to_featureclass(geo,
         }
         sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
         null_geom = null_geom[gt.lower()]
+        
+        if has_m == True:
+            has_m = "ENABLED"
+        else:
+            has_m = None
+        
+        if has_z == True:
+            has_z = "ENABLED"
+        else:
+            has_z = None
+            
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,
                                                  out_name=fc_name,
-                                                 )[0]
+                                                 has_m=has_m,
+                                                 has_z=has_z)[0]
 
         # 2. Add the Fields and Data Types
         oidfld = da.Describe(fc)['OIDFieldName']

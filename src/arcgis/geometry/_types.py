@@ -1093,6 +1093,26 @@ class Geometry(BaseGeometry):
         return
     #----------------------------------------------------------------------
     @property
+    def has_z(self):
+        """
+        Determines if the geometry has a `Z` value.  
+        
+        :returns: Boolean
+        
+        """
+        return self.get("hasZ", False)
+    #----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        """
+        Determines if the geometry has a `M` value.  
+        
+        :returns: Boolean
+        
+        """
+        return self.get("hasM", False)
+    #----------------------------------------------------------------------
+    @property
     def hull_rectangle(self):
         """
         A space-delimited string of the coordinate pairs of the convex hull

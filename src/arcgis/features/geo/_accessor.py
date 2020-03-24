@@ -146,6 +146,24 @@ class GeoSeriesAccessor:
         return pd.Series(self._data.hull_rectangle, name='hull_rectangle', index=self._index)
     #----------------------------------------------------------------------
     @property
+    def has_z(self):
+        """
+        Determines if the geometry has a Z value
+
+        :returns: Series of Boolean
+        """
+        return pd.Series(self._data.has_z, name='has_z', index=self._index)    
+    #----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        """
+        Determines if the geometry has a M value
+
+        :returns: Series of Boolean
+        """
+        return pd.Series(self._data.has_m, name='has_m', index=self._index)    
+    #----------------------------------------------------------------------
+    @property
     def is_empty(self):
         """
         Returns True/False if feature is empty
@@ -2021,11 +2039,38 @@ class GeoAccessor(object):
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
     #----------------------------------------------------------------------
-    def to_featureclass(self, location, overwrite=True):
-        """exports a geo enabled dataframe to a feature class."""
+    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None):
+        """
+        Exports a geo enabled dataframe to a feature class.
+        
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        location                        Required string. The output of the table.
+        ---------------------------     --------------------------------------------------------------------
+        overwrite                       Optional Boolean.  If True and if the feature class exists, it will be
+                                        deleted and overwritten.  This is default.  If False, the feature class
+                                        and the feature class exists, and exception will be raised.
+        ---------------------------     --------------------------------------------------------------------
+        has_z                           Optional Boolean.  If True, the dataset will be forced to have Z
+                                        based geometries.  If a geometry is missing a Z value when true, a
+                                        RuntimeError will be raised.  When False, the API will not use the 
+                                        Z value.  
+        ---------------------------     --------------------------------------------------------------------
+        has_m                           Optional Boolean.  If True, the dataset will be forced to have M
+                                        based geometries.  If a geometry is missing a M value when true, a
+                                        RuntimeError will be raised. When False, the API will not use the 
+                                        M value.  
+        ===========================     ====================================================================
+
+        :returns: String
+
+        """
         return to_featureclass(self,
                                location=location,
-                               overwrite=overwrite)
+                               overwrite=overwrite, 
+                               has_z=has_z, 
+                               has_m=has_m)
     #----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
         """
@@ -2940,6 +2985,24 @@ class GeoAccessor(object):
         """
         gt = self._data[self.name].geom.geometry_type
         return pd.unique(gt).tolist()
+    #----------------------------------------------------------------------
+    @property
+    def has_z(self):
+        """
+        Returns a boolean that determines if the datasets have `Z` values
+        
+        :returns: Boolean
+        """
+        return self._data[self.name].geom.has_z.all()
+    #----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        """
+        Returns a boolean that determines if the datasets have `Z` values
+        
+        :returns: Boolean
+        """
+        return self._data[self.name].geom.has_m.all() 
     #----------------------------------------------------------------------
     @property
     def bbox(self):
