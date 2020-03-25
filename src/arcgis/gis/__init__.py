@@ -295,10 +295,14 @@ class GIS(object):
         self._datastores_list = None
         self._utoken = kwargs.pop('token', None)
 
-        if self._url.lower() == "home":
+        if self._url.lower() == "home" and \
+           not os.getenv('NB_AUTH_FILE', None) is None:
             #configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
-        #from ._impl import _portalpy as portalpy
+        elif self._url.lower() == "home" and \
+             os.getenv('NB_AUTH_FILE', None) is None:
+            self._url = "pro"
+            url = "pro"
         try:
             self._portal = _portalpy.Portal(self._url, self._username,
                                            self._password, self._key_file,
