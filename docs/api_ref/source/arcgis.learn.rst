@@ -100,3 +100,9 @@ PointCNN
     :members:
     :inherited-members:
     :undoc-members:
+
+Transform3d
+------------------
+.. autoclass:: arcgis.learn.Transform3d
+    :members:
+    :undoc-members:

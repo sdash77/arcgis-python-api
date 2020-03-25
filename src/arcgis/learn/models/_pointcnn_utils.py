@@ -261,7 +261,9 @@ class SamplePointsCallback(LearnerCallback):
         last_target = last_target[indices[:, 0], indices[:, 1]].view(batch, self.sample_point_num).contiguous() ## batch, self.sample_point_num
         
         del indices
-        
+
+        if self.learn.data.transform_fn is not None and self.learn.model.training:
+            last_input[:, :, :3] = self.learn.data.transform_fn(last_input)  
         
         return {'last_input':last_input, 'last_target':last_target} 
 

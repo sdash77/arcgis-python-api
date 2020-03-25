@@ -22,30 +22,38 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
-import torch.nn.functional as F
-import torch
-import numpy as np
-from fastai.data_block import DataBunch
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+import glob
+import importlib
+import sys
+import warnings
+import os
+import math
 from pathlib import Path
 import json
 import types
 import random
-import arcgis
-import os
-import math
-from fastai.data_block import ItemList
+
 try:
-    from fastprogress import master_bar, progress_bar
+    from torch.utils.data import DataLoader, Dataset, SubsetRandomSampler
+    import torch.nn.functional as F
+    import torch
+    import numpy as np
+    from fastai.data_block import DataBunch
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    import arcgis
+    from fastai.data_block import ItemList
+    try:
+        from fastprogress import master_bar, progress_bar
+    except ImportError:
+        from fastprogress.fastprogress import master_bar, progress_bar
+    from transforms3d.euler import euler2mat
 except ImportError:
-    from fastprogress.fastprogress import master_bar, progress_bar
-import glob
-import importlib
-import random
-import sys
-import warnings
+    # To avoid breaking builds.
+    class Dataset():
+        pass
+    class ItemList():
+        pass
 
 def try_imports(list_of_modules):
     ## Not a generic function.
@@ -53,7 +61,7 @@ def try_imports(list_of_modules):
         for module in list_of_modules:
             importlib.import_module(module)
     except Exception as e:
-        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly, laspy and h5py using 'conda install -c esri -c plotly laspy==1.6.0 plotly=4.5.0 plotly-orca psutil h5py=2.10.0'.")
+        raise Exception(f"This function requires {' '.join(list_of_modules)}. Install plotly, laspy and h5py using 'conda install -c esri -c plotly -c owlas laspy==1.6.0 plotly=4.5.0 plotly-orca psutil h5py=2.10.0 transforms3d '.")
 
 def try_import(module):
     try:
@@ -610,7 +618,7 @@ PointCloudItemList._label_cls = PointCloudLabelList
 
 ## Prepare data called in _data.py
 
-def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type='PointCloud', **kwargs):
+def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type='PointCloud', transform_fn=None, **kwargs):
     try_imports(['h5py', 'plotly', 'laspy'])
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     if (path / 'Statistics.json').exists():
@@ -678,6 +686,7 @@ def pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, data
     data.chip_size = None
     data._image_space_used = None
     data.dataset_type = dataset_type
+    data.transform_fn = transform_fn
     return data
 
 def read_xyz_label_from_las(filename_las):
@@ -1148,3 +1157,107 @@ def compute_precision_recall(self):
     index = ['precision', 'recall', 'f_1 score']
     df = pd.DataFrame(data, columns=list(range(self._data.c)), index=index) 
     return df
+
+def gauss_clip(mu, sigma, clip):
+    v = random.gauss(mu, sigma)
+    v = max(min(v, mu + clip * sigma), mu - clip * sigma)
+    return v
+
+
+def uniform(bound):
+    return bound * (2 * random.random() - 1)
+
+
+def scaling_factor(scaling_param, method):
+    try:
+        scaling_list = list(scaling_param)
+        return random.choice(scaling_list)
+    except:
+        if method == 'g':
+            return gauss_clip(1.0, scaling_param, 3)
+        elif method == 'u':
+            return 1.0 + uniform(scaling_param)
+
+
+def rotation_angle(rotation_param, method):
+    try:
+        rotation_list = list(rotation_param)
+        return random.choice(rotation_list)
+    except:
+        if method == 'g':
+            return gauss_clip(0.0, rotation_param, 3)
+        elif method == 'u':
+            return uniform(rotation_param)
+
+
+def get_xforms(xform_num, rotation_range=(0, 0, 0, 'u'), scaling_range=(0.0, 0.0, 0.0, 'u'), order='rxyz'):
+    xforms = np.empty(shape=(xform_num, 3, 3))
+    rotations = np.empty(shape=(xform_num, 3, 3))
+    for i in range(xform_num):
+        rx = rotation_angle(rotation_range[0], rotation_range[3])
+        ry = rotation_angle(rotation_range[1], rotation_range[3])
+        rz = rotation_angle(rotation_range[2], rotation_range[3])
+        rotation = euler2mat(rx, ry, rz, order)
+
+        sx = scaling_factor(scaling_range[0], scaling_range[3])
+        sy = scaling_factor(scaling_range[1], scaling_range[3])
+        sz = scaling_factor(scaling_range[2], scaling_range[3])
+        scaling = np.diag([sx, sy, sz])
+
+        xforms[i, :] = scaling * rotation
+        rotations[i, :] = rotation
+    return xforms, rotations
+
+def augment(points, xforms, range=None):
+    points_xformed = points@xforms
+    if range is None:
+        return points_xformed
+    
+    jitter_data = range * points.new(np.random.randn(*points_xformed.shape))
+    jitter_clipped = torch.clamp(jitter_data, -5 * range, 5 * range)
+    return points_xformed + jitter_clipped
+
+class Transform3d(object):
+
+    """
+    Creates a Transform3d object which, when passed in prepare data will
+    apply data augmentation to the PointCloud data.
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    rotation_range          Optional tuple of length 4. It contains a list
+                            of angles(in radians) for X, Z and Y coordinates
+                            respectively. These angles will rotate the point
+                            cloud block according to the randomly selected angle.
+                            The fourth value in the tuple is the sampling method
+                            where 'u' means uniform and 'g' means gaussian.
+                            Deafult: [math.pi / 72, math.pi, math.pi / 72, 'u']
+    ---------------------   -------------------------------------------
+    scaling_range           Optional tuple of length 4. It contains a list
+                            of scaling ranges[0-1] which will scale the points.
+                            Please keep it a very small number otherwise,
+                            point cloud block may get distorted. The fourth
+                            value in the tuple is the sampling method
+                            where 'u' means uniform and 'g' means gaussian.
+                            Default: [0.05, 0.05, 0.05, 'g'] 
+    ---------------------   -------------------------------------------
+    jitter                  Optional float. The scale to which randomly
+                            jitter the points in the point cloud block.
+                            Default: 0.0
+    =====================   ===========================================
+    
+    :returns: `Transform3d` object
+    """
+
+    def __init__(self, rotation_range=[math.pi / 72, math.pi, math.pi / 72, 'u'],
+                 scaling_range=[0.05, 0.05, 0.05, 'g'], 
+                 jitter=0.):
+        self.rotation_range = rotation_range
+        self.scaling_range = scaling_range
+        self.order = 'rxyz'
+        self.jitter = jitter
+
+    def __call__(self, x_in):
+        xforms, _ = get_xforms(x_in.shape[0], rotation_range=self.rotation_range, scaling_range=self.scaling_range, order=self.order)
+        return augment(x_in[:, :, :3], x_in.new(xforms), x_in.new(np.array(self.jitter)))
