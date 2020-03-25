@@ -1,9 +1,22 @@
-from fastai.vision.data import ImageList
-from fastai.vision import Image
+
 import os
-import torch
-import numpy as np
-from matplotlib import pyplot as plt
+import traceback
+import json
+
+HAS_FASTAI = False
+try:
+    from .. import models
+    from .env import raise_fastai_import_error
+    from fastai.vision.data import ImageList
+    from fastai.vision import Image
+    import torch
+    import numpy as np
+    from matplotlib import pyplot as plt
+    HAS_FASTAI = True
+except Exception as e:
+    import_exception = traceback.format_exc()
+    pass
+
 
 class ArcGISMSImage(Image):
 
@@ -71,3 +84,23 @@ def _get_post_processed_model(arcgis_model, input_normalization=True):
         if arcgis_model.__class__.__name__ == 'FeatureClassifier':
             return get_TFIC_post_processed_model(arcgis_model, input_normalization=input_normalization)
     pass
+
+def load_model(emd_path, data=None):
+    # if not HAS_FASTAI:
+    #     raise_fastai_import_error(import_exception=import_exception)
+        
+    _emd_path = os.path.abspath(emd_path)
+    if not os.path.exists(emd_path):
+        raise Exception(f"Could not find an EMD file at the specified path does not exist '{emd_path}'")
+
+    with open(_emd_path) as f:
+        emd = json.load(f)
+    model_name = emd['ModelName']
+    model_cls = getattr(models, model_name, None)
+
+    if model_cls is None:
+        raise Exception(f"Failed to load model, Could not find class '{model_name}' in arcgis.learn.models")
+
+    model_obj = model_cls.from_model(_emd_path, data=data)
+
+    return model_obj
