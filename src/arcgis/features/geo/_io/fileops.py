@@ -523,7 +523,8 @@ def from_featureclass(filename, **kwargs):
 def to_featureclass(geo,
                     location,
                     overwrite=True,
-                    validate=False):
+                    validate=False,
+                    sanitize_columns=True):
     """
     Exports the DataFrame to a Feature class.
 
@@ -538,16 +539,18 @@ def to_featureclass(geo,
                         data will be deleted and replaced with the spatial
                         dataframe.
     ---------------     ----------------------------------------------------
-    validate            Optional Boolean. If true, the export will check if
+    validate            Optional Boolean. If True, the export will check if
                         all the geometry objects are correct upon export.
+    ---------------     ----------------------------------------------------
+    sanitize_columns    Optional Boolean. If True, column names will be
+                        converted to string, invalid characters removed and
+                        other checks will be performed. The default is True.
     ===============     ====================================================
 
 
     :returns: string
 
     """
-
-
     out_location= os.path.dirname(location)
     fc_name = os.path.basename(location)
     df = geo._data
@@ -559,6 +562,12 @@ def to_featureclass(geo,
        geo.validate(strict=True) == False:
         raise ValueError(("Mixed geometry types detected, "
                          "cannot export to feature class."))
+
+    # sanitize
+    if sanitize_columns:
+        # logic
+        _sanitize_column_names(geo, inplace=True)
+
     columns = df.columns.tolist()
     for col in columns[:]:
         if not isinstance(col, str):
@@ -897,3 +906,65 @@ def _pyshp2(df, out_path, out_name):
         del shpfile
         return out_fc
     return None
+
+
+def _sanitize_column_names(geo, preserve_original_col_names=True, convert_to_string=True,
+                           remove_special_char=True, inplace=False):
+    """
+    Cleans column names by converting them to string, removing special characters, renaming
+    duplicates with integer suffixes.
+
+    ==============================     ====================================================================
+    **Argument**                       **Description**
+    ------------------------------     --------------------------------------------------------------------
+    preserve_original_col_names        Optional Boolean. Default is True. Stores original column names in a
+                                       property called `original_col_names`
+    ------------------------------     --------------------------------------------------------------------
+    convert_to_string                  Optional Boolean. Default is True. Converts column names to string
+    ------------------------------     --------------------------------------------------------------------
+    remove_special_char                Optional Boolean. Default is True. Removes any characters in column
+                                        names that are not numeric or underscores.
+    ------------------------------     --------------------------------------------------------------------
+    inplace                            Optional Boolean. Default is False. If True, edits the DataFrame
+                                        in place and returns Nothing. If False, returns a new DataFrame object.
+    ==============================     ====================================================================
+
+    :returns: pd.DataFrame object if inplace=False. Else None.
+    """
+
+    original_col_names = list(geo._data.columns)
+
+    # make a deep copy
+    df = geo._data.copy()
+
+    if preserve_original_col_names:
+        geo.original_col_names = original_col_names
+
+    if convert_to_string:
+        df = df.rename(columns=lambda x: str(x))
+
+    # remove special characters
+    if remove_special_char:
+        # remove non alphanumeric characters (special chars)
+        df = df.rename(columns=lambda x: "".join(i for i in str(x) if i.isalnum() or "_" in i))
+
+    # since special char is removed, column names might be duplicated. De duplicate them
+    from copy import deepcopy
+    new_col_names = deepcopy(original_col_names)
+
+    for ind, val in enumerate(new_col_names):
+        if val == 'SHAPE':
+            pass
+        if new_col_names.count(val) > 1:
+            counter = 1
+            new_name = val + str(counter)  # adds a integer suffix to column name
+            while new_col_names.count(new_name) > 0:
+                counter += 1
+                new_name = val + str(counter)  # if a column with the suffix exists, increment suffix
+            new_col_names[ind] = new_name
+    df.columns = new_col_names
+
+    if inplace:
+        geo._data = df
+    else:
+        return df

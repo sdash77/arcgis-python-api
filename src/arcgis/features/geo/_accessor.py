@@ -12,7 +12,7 @@ import numpy as np
 import logging
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
-from ._io.fileops import to_featureclass, from_featureclass
+from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
 
 _LOGGER = logging.getLogger(__name__)
@@ -3118,3 +3118,30 @@ class GeoAccessor(object):
             return True
         except Exception as e:
             raise Exception(e)
+
+    def sanitize_column_names(self, preserve_original_col_names=True, convert_to_string=True,
+                               remove_special_char=True, inplace=False):
+        """
+        Cleans column names by converting them to string, removing special characters, renaming
+        duplicates with integer suffixes.
+
+        ==============================     ====================================================================
+        **Argument**                       **Description**
+        ------------------------------     --------------------------------------------------------------------
+        preserve_original_col_names        Optional Boolean. Default is True. Stores original column names in a
+                                           property called `original_col_names`
+        ------------------------------     --------------------------------------------------------------------
+        convert_to_string                  Optional Boolean. Default is True. Converts column names to string
+        ------------------------------     --------------------------------------------------------------------
+        remove_special_char                Optional Boolean. Default is True. Removes any characters in column
+                                            names that are not numeric or underscores.
+        ------------------------------     --------------------------------------------------------------------
+        inplace                            Optional Boolean. Default is False. If True, edits the DataFrame
+                                            in place and returns Nothing. If False, returns a new DataFrame object.
+        ==============================     ====================================================================
+
+        :returns: pd.DataFrame object if inplace=False. Else None.
+        """
+
+        return _sanitize_column_names(self, preserve_original_col_names, convert_to_string,
+                                      remove_special_char, inplace)
