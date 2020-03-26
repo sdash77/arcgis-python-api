@@ -908,7 +908,7 @@ def _pyshp2(df, out_path, out_name):
     return None
 
 
-def _sanitize_column_names(geo, preserve_original_col_names=True, convert_to_string=True,
+def _sanitize_column_names(geo, convert_to_string=True,
                            remove_special_char=True, inplace=False):
     """
     Cleans column names by converting them to string, removing special characters, renaming
@@ -916,9 +916,6 @@ def _sanitize_column_names(geo, preserve_original_col_names=True, convert_to_str
 
     ==============================     ====================================================================
     **Argument**                       **Description**
-    ------------------------------     --------------------------------------------------------------------
-    preserve_original_col_names        Optional Boolean. Default is True. Stores original column names in a
-                                       property called `original_col_names`
     ------------------------------     --------------------------------------------------------------------
     convert_to_string                  Optional Boolean. Default is True. Converts column names to string
     ------------------------------     --------------------------------------------------------------------
@@ -937,9 +934,6 @@ def _sanitize_column_names(geo, preserve_original_col_names=True, convert_to_str
     # make a deep copy
     df = geo._data.copy()
 
-    if preserve_original_col_names:
-        geo.original_col_names = original_col_names
-
     if convert_to_string:
         df = df.rename(columns=lambda x: str(x))
 
@@ -950,7 +944,7 @@ def _sanitize_column_names(geo, preserve_original_col_names=True, convert_to_str
 
     # since special char is removed, column names might be duplicated. De duplicate them
     from copy import deepcopy
-    new_col_names = deepcopy(original_col_names)
+    new_col_names = deepcopy(list(df.columns))
 
     for ind, val in enumerate(new_col_names):
         if val == 'SHAPE':
@@ -965,6 +959,6 @@ def _sanitize_column_names(geo, preserve_original_col_names=True, convert_to_str
     df.columns = new_col_names
 
     if inplace:
-        geo._data = df
+        geo._data.columns = df.columns
     else:
         return df

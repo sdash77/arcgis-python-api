@@ -3119,17 +3119,13 @@ class GeoAccessor(object):
         except Exception as e:
             raise Exception(e)
 
-    def sanitize_column_names(self, preserve_original_col_names=True, convert_to_string=True,
-                               remove_special_char=True, inplace=False):
+    def sanitize_column_names(self, convert_to_string=True, remove_special_char=True, inplace=False):
         """
         Cleans column names by converting them to string, removing special characters, renaming
         duplicates with integer suffixes.
 
         ==============================     ====================================================================
         **Argument**                       **Description**
-        ------------------------------     --------------------------------------------------------------------
-        preserve_original_col_names        Optional Boolean. Default is True. Stores original column names in a
-                                           property called `original_col_names`
         ------------------------------     --------------------------------------------------------------------
         convert_to_string                  Optional Boolean. Default is True. Converts column names to string
         ------------------------------     --------------------------------------------------------------------
@@ -3143,5 +3139,4 @@ class GeoAccessor(object):
         :returns: pd.DataFrame object if inplace=False. Else None.
         """
 
-        return _sanitize_column_names(self, preserve_original_col_names, convert_to_string,
-                                      remove_special_char, inplace)
+        return _sanitize_column_names(self, convert_to_string, remove_special_char, inplace)

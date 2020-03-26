@@ -241,6 +241,53 @@ def test_from_gpd_df_large_data_points():
 
     print('GPD->SeDF Points GCS success')
 
+
+def test_sanitize_column_names():
+    """
+    Test to ensure we handle well when column names are not strings
+    :return:
+    """
+    df = pd.read_csv('usa_cities_few.csv')
+    sedf = pd.DataFrame.spatial.from_xy(df, 'Longitude', 'Latitude')
+
+    # add column name that is numeric
+    sedf[0] = list(range(0, sedf.shape[0]))  # column name is 0
+    assert isinstance(sedf.columns[-1], int)
+
+    original_col_list = list(sedf.columns)
+
+    # sanitize column names
+    df2 = sedf.spatial.sanitize_column_names(inplace=False)
+    new_col_list = list(df2.columns)
+    # print(new_col_list)
+
+    assert original_col_list != new_col_list
+    assert len(original_col_list) == len(new_col_list)
+    assert sedf.shape == df2.shape
+
+
+def test_sanitize_column_names_inplace():
+    """
+    Test to ensure we handle well when column names are not strings
+    :return:
+    """
+    df = pd.read_csv('usa_cities_few.csv')
+    sedf = pd.DataFrame.spatial.from_xy(df, 'Longitude', 'Latitude')
+
+    # add column name that is numeric
+    sedf[0] = list(range(0, sedf.shape[0]))  # column name is 0
+    assert isinstance(sedf.columns[-1], int)
+
+    original_col_list = list(sedf.columns)
+
+    # sanitize column names
+    sedf.spatial.sanitize_column_names(inplace=True)
+    new_col_list = list(sedf.columns)
+    print(new_col_list)
+
+    assert original_col_list != new_col_list
+    assert len(original_col_list) == len(new_col_list)
+
 def test_export_df_int_column():
     """
     Test to ensure we handle well when column names are not strings
@@ -299,15 +346,17 @@ def test_export_df_int_column():
 
 if __name__ == "__main__":
     test_chunks()
-    test_from_layer()
-    test_from_gpd_df_sanity()
-    test_from_gpd_df_verify_crs_gcs_points()
-    test_from_gpd_df_verify_crs_pcs_points()
-    test_from_gpd_df_verify_crs_gcs_lines()
-    # test_from_gpd_df_verify_crs_pcs_lines()
-    test_from_gpd_df_verify_crs_gcs_polygons()
-    # test_from_gpd_df_verify_crs_pcs_polygons()
-    test_from_gpd_df_large_data_points()
-    # test_from_gpd_df_massive_3m_points()
-    #test_to_layer()  # SKIPPED
-    test_export_df_int_column()
+    # test_from_layer()
+    # test_from_gpd_df_sanity()
+    # test_from_gpd_df_verify_crs_gcs_points()
+    # test_from_gpd_df_verify_crs_pcs_points()
+    # test_from_gpd_df_verify_crs_gcs_lines()
+    # # test_from_gpd_df_verify_crs_pcs_lines()
+    # test_from_gpd_df_verify_crs_gcs_polygons()
+    # # test_from_gpd_df_verify_crs_pcs_polygons()
+    # test_from_gpd_df_large_data_points()
+    # # test_from_gpd_df_massive_3m_points()
+    # #test_to_layer()  # SKIPPED
+    # test_export_df_int_column()
+    test_sanitize_column_names()
+    test_sanitize_column_names_inplace()
