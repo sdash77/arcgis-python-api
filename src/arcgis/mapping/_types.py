@@ -226,7 +226,8 @@ class WebMap(collections.OrderedDict):
     # def _repr_html_(self):
     def _ipython_display_(self, **kwargs):
         # return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
-        mapwidget = MapView(gis=self._gis, item=self.item, basemap=self._basemap)
+        mapwidget = MapView(gis=self._gis, item=self.item)
+        mapwidget._setup_default_basemap(basemap=self._basemap)
         mapwidget.mode = "2D"
         mapwidget.hide_mode_switch = True
         return mapwidget._ipython_display_(**kwargs)

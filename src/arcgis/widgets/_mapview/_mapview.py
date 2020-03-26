@@ -578,7 +578,7 @@ class MapView(widgets.DOMWidget):
         self.mode = mode
         self._hashed_layers = OrderedDict()
         self._setup_js_cdn()
-        self._setup_default_basemap(kwargs.get('basemap', None))
+        self._setup_default_basemap()
 
         # Handle webmaps and webscenes
         self.webmap_item = None
