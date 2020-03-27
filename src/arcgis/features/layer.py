@@ -35,7 +35,7 @@ class FeatureLayer(Layer):
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
     _metadatamanager = None
-
+    _renderer = None
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a feature layer given a feature layer URL
@@ -51,7 +51,36 @@ class FeatureLayer(Layer):
         self._storage = container
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
-
+        
+    @property
+    def renderer(self):
+        """
+        Get/Set the Renderer of the Feature Layer.  This overrides the default symbology when displaying it on a webmap.
+        
+        :returns: InsensitiveDict
+        
+        """
+        from arcgis._impl.common._isd import InsensitiveDict
+        if self._renderer is None and "drawingInfo" in self.properties:
+            self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
+        return self._renderer
+    
+    @renderer.setter
+    def renderer(self, value):
+        """
+        Get/Set the Renderer of the Feature Layer.  This overrides the default symbology when displaying it on a webmap.
+        
+        :returns: InsensitiveDict
+        
+        """
+        from arcgis._impl.common._isd import InsensitiveDict
+        if isinstance(value, (dict, PropertyMap)):
+            self._renderer = InsensitiveDict(dict(value))
+        elif value is None:
+            self._renderer = None
+        elif not isinstance(value, InsensitiveDict):
+            raise ValueError("Invalid renderer type.")
+        self._refresh = value    
 
     @classmethod
     def fromitem(cls, item, layer_id=0):
@@ -1059,6 +1088,8 @@ class FeatureLayer(Layer):
             if 'SHAPE' in df.columns:
                 df['SHAPE'] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
+                df.spatial.renderer = self.renderer
+                df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
@@ -1070,6 +1101,8 @@ class FeatureLayer(Layer):
                              if fld['type'] == 'esriFieldTypeDate']
                 if 'SHAPE' in df.columns:
                     df.spatial.set_geometry('SHAPE')
+                    df.spatial.renderer = self.renderer
+                    df.spatial._meta.source = self
                 for fld in dt_fields:
                     try:
                         if fld in df.columns:
@@ -1140,6 +1173,8 @@ class FeatureLayer(Layer):
                 df.reset_index(drop=True, inplace=True)
             if 'SHAPE' in df.columns:
                 df.spatial.set_geometry('SHAPE')
+                df.spatial.renderer = self.renderer
+                df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
                     df[fld] = pd.to_datetime(df[fld]/1000,

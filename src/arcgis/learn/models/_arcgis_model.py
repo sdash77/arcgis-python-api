@@ -99,7 +99,9 @@ class _MultiGPUCallback(LearnerCallback):
             self.learn.model = self.learn.model.module
 
 def _set_multigpu_callback(model):
-    model.learn.callback_fns.append(_MultiGPUCallback)
+    if (not hasattr(arcgis.env, "_gpuid")) or \
+            (arcgis.env._gpuid >= torch.cuda.device_count()):
+        model.learn.callback_fns.append(_MultiGPUCallback)
 
 
 def _create_zip(zipname, path):

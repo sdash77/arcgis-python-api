@@ -431,6 +431,7 @@ def from_featureclass(filename, **kwargs):
            .apply(geoms[gt])
         )
         df.spatial.set_geometry("SHAPE")
+        df.spatial._meta.source = filename
         return df
     elif HASARCPY == False and \
          HASPYSHP == True and\
@@ -453,6 +454,7 @@ def from_featureclass(filename, **kwargs):
         sdf.spatial.set_geometry('SHAPE')
         sdf['OBJECTID'] = range(sdf.shape[0])
         sdf.reset_index(inplace=True)
+        sdf.spatial._meta.source = filename
         return sdf
     elif HASARCPY == False and \
          HASFIONA == True and \
@@ -492,6 +494,7 @@ def from_featureclass(filename, **kwargs):
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
                     df.spatial.sr = sr
+                    df.spatial._meta.source = filename
                     return df
         else:
             with fiona.drivers():
@@ -507,6 +510,7 @@ def from_featureclass(filename, **kwargs):
                         del idx, row
                     df = pd.DataFrame(data=atts, columns=cols)
                     df.spatial.set_geometry(geoms)
+                    df.spatial._meta.source = filename
                     return df
     else:
         if os.path.dirname(filename).lower().find('.gdb') > -1:
@@ -525,6 +529,8 @@ def to_featureclass(geo,
                     overwrite=True,
                     validate=False,
                     sanitize_columns=True):
+                    has_m=None,
+                    has_z=None):
     """
     Exports the DataFrame to a Feature class.
 
@@ -599,11 +605,23 @@ def to_featureclass(geo,
         }
         sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
         null_geom = null_geom[gt.lower()]
+        
+        if has_m == True:
+            has_m = "ENABLED"
+        else:
+            has_m = None
+        
+        if has_z == True:
+            has_z = "ENABLED"
+        else:
+            has_z = None
+            
         fc = arcpy.CreateFeatureclass_management(out_location,
                                                  spatial_reference=sr,
                                                  geometry_type=gt,
                                                  out_name=fc_name,
-                                                 )[0]
+                                                 has_m=has_m,
+                                                 has_z=has_z)[0]
 
         # 2. Add the Fields and Data Types
         oidfld = da.Describe(fc)['OIDFieldName']

@@ -14,7 +14,9 @@ from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import to_featureclass, from_featureclass, _sanitize_column_names
 from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
-
+from arcgis.geometry import Geometry, SpatialReference, Envelope, Point
+from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._isd import InsensitiveDict
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
 def _is_geoenabled(df):
@@ -142,6 +144,24 @@ class GeoSeriesAccessor:
         :returns: Series of strings
         """
         return pd.Series(self._data.hull_rectangle, name='hull_rectangle', index=self._index)
+    #----------------------------------------------------------------------
+    @property
+    def has_z(self):
+        """
+        Determines if the geometry has a Z value
+
+        :returns: Series of Boolean
+        """
+        return pd.Series(self._data.has_z, name='has_z', index=self._index)    
+    #----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        """
+        Determines if the geometry has a M value
+
+        :returns: Series of Boolean
+        """
+        return pd.Series(self._data.has_m, name='has_m', index=self._index)    
     #----------------------------------------------------------------------
     @property
     def is_empty(self):
@@ -939,10 +959,11 @@ class GeoAccessor(object):
     _data = None
     _name = None
     _index = None
+    _stype = None
     _kdtree = None
     _sindex = None
-    _stype = None
     _sfname = None
+    _renderer = None
     _HASARCPY = None
     _HASSHAPELY = None
     #----------------------------------------------------------------------
@@ -950,6 +971,133 @@ class GeoAccessor(object):
         self._data = obj
         self._index = obj.index
         self._name = None
+    #----------------------------------------------------------------------
+    @property
+    def _meta(self):
+        """
+        Users have the ability to store the source reference back to the 
+        dataframe.  This will allow the user to compare SeDF with source 
+        data such as FeatureLayers and Feature Classes.
+        
+        ===============   =======================================================
+        **Parameter**     **Description**
+        ---------------   -------------------------------------------------------
+        source            String/Object Reference to the source of the dataframe.
+        ===============   =======================================================
+        
+        :returns: object/string
+        
+        """
+        from arcgis.features.geo._tools import _metadata
+        if 'metadata' in self._data.attrs and self._data.attrs['metadata'] and \
+           isinstance(self._data.attrs['metadata'], _metadata._Metadata):
+            return self._data.attrs['metadata']     
+        else:
+            self._meta = _metadata._Metadata()
+            return self._meta   
+    #----------------------------------------------------------------------
+    @_meta.setter
+    def _meta(self, source):
+        """
+        Users have the ability to store the source reference back to the 
+        dataframe.  This will allow the user to compare SeDF with source 
+        data such as FeatureLayers and Feature Classes.
+        
+        ===============   =======================================================
+        **Parameter**     **Description**
+        ---------------   -------------------------------------------------------
+        source            String/Object Reference to the source of the dataframe.
+        ===============   =======================================================
+        
+        :returns: object/string
+        
+        """
+        from ._tools import _metadata
+        if not 'metadata' in self._data.attrs and \
+           isinstance(source, _metadata._Metadata): # creates the attrs entry
+            self._data.attrs['metadata'] = source
+        elif 'metadata' in self._data.attrs and \
+             isinstance(source, _metadata._Metadata) and \
+             source != self._data.attrs['metadata']: # sets the new metadata value
+            self._data.attrs['metadata'] = source
+        elif source is None: # resets/drops the source
+            self._data.attrs['metadata'] = _metadata._Metadata()
+    #----------------------------------------------------------------------
+    @property
+    def renderer(self):
+        """
+        Returns the renderer for the SeDF
+        
+        :returns: InsensitiveDict
+        """
+        if self._meta.renderer is None:
+            self._meta.renderer = self._build_renderer()
+        return self._meta.renderer
+    #----------------------------------------------------------------------
+    @renderer.setter
+    def renderer(self, renderer):
+        """
+        Define the renderer for the SeDF.  If none is given, then the value is reset.
+        
+        :returns: InsensitiveDict
+        """
+        
+        if renderer is None:
+            renderer = self._build_renderer()
+        if isinstance(renderer, dict):
+            renderer = InsensitiveDict.from_dict(renderer)
+        elif isinstance(renderer, PropertyMap):
+            renderer = InsensitiveDict.from_dict(dict(renderer))
+        elif isinstance(renderer, InsensitiveDict):
+            pass
+        else:
+            raise ValueError("renderer must be a dictionary type.")
+        self._meta.renderer = renderer
+    #----------------------------------------------------------------------
+    def _build_renderer(self):
+        """sets the default symbology"""
+        if self._meta.source and \
+           hasattr(self._meta.source, 'properties'):
+            return self._meta.renderer
+        gt = self.geometry_type[0]
+        base_renderer = {
+            'labelingInfo' : None,
+            'label' : "",
+            'description' : "",
+            'type' : 'simple',
+            'symbol' : None        
+        }        
+        if gt.lower() in ['point', 'multipoint']:
+            base_renderer['symbol'] = {"color":[0,128,0,128],
+                         "size":18,"angle":0,
+                         "xoffset":0,"yoffset":0,
+                         "type":"esriSMS",
+                         "style":"esriSMSCircle",
+                         "outline":{"color":[0,128,0,255],"width":1,
+                                    "type":"esriSLS","style":"esriSLSSolid"}
+                         }            
+            
+        elif gt.lower() =='polygon':
+            base_renderer['symbol'] = {
+                        "type": "esriSLS",
+                        "style": "esriSLSDot",
+                        "color": [0,128,0,128],
+                        "width": 1
+                    }
+        elif gt.lower() =='polyline':
+            base_renderer['symbol'] = {
+                        "type": "esriSFS",
+                        "style": "esriSFSSolid",
+                        "color": [0,128,0,128],
+                        "outline": {
+                            "type": "esriSLS",
+                            "style": "esriSLSSolid",
+                            "color": [110,110,110,255],
+                            "width": 1
+                        }
+                    }
+        self._meta.renderer = InsensitiveDict(base_renderer)
+        return self._meta.renderer
     #----------------------------------------------------------------------
     def _repr_svg_(self):
         """draws the dataframe as SVG features"""
@@ -1891,11 +2039,38 @@ class GeoAccessor(object):
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
     #----------------------------------------------------------------------
-    def to_featureclass(self, location, overwrite=True):
-        """exports a geo enabled dataframe to a feature class."""
+    def to_featureclass(self, location, overwrite=True, has_z=None, has_m=None):
+        """
+        Exports a geo enabled dataframe to a feature class.
+        
+        ===========================     ====================================================================
+        **Argument**                    **Description**
+        ---------------------------     --------------------------------------------------------------------
+        location                        Required string. The output of the table.
+        ---------------------------     --------------------------------------------------------------------
+        overwrite                       Optional Boolean.  If True and if the feature class exists, it will be
+                                        deleted and overwritten.  This is default.  If False, the feature class
+                                        and the feature class exists, and exception will be raised.
+        ---------------------------     --------------------------------------------------------------------
+        has_z                           Optional Boolean.  If True, the dataset will be forced to have Z
+                                        based geometries.  If a geometry is missing a Z value when true, a
+                                        RuntimeError will be raised.  When False, the API will not use the 
+                                        Z value.  
+        ---------------------------     --------------------------------------------------------------------
+        has_m                           Optional Boolean.  If True, the dataset will be forced to have M
+                                        based geometries.  If a geometry is missing a M value when true, a
+                                        RuntimeError will be raised. When False, the API will not use the 
+                                        M value.  
+        ===========================     ====================================================================
+
+        :returns: String
+
+        """
         return to_featureclass(self,
                                location=location,
-                               overwrite=overwrite)
+                               overwrite=overwrite, 
+                               has_z=has_z, 
+                               has_m=has_m)
     #----------------------------------------------------------------------
     def to_table(self, location, overwrite=True):
         """
@@ -2553,46 +2728,8 @@ class GeoAccessor(object):
                 fld['defaultValue'] = None
                 fld['nullable'] = True
         if drawing_info is None:
-            di = {
-                'renderer' : {
-                    'labelingInfo' : None,
-                    'label' : "",
-                    'description' : "",
-                    'type' : 'simple',
-                    'symbol' : None
-
-                }
-            }
-            symbol = None
-            if symbol is None:
-                if fs['geometryType'] in ["esriGeometryPoint", "esriGeometryMultipoint"]:
-                    di['renderer']['symbol'] = {"color":[0,128,0,128],"size":18,"angle":0,
-                                                "xoffset":0,"yoffset":0,
-                                                "type":"esriSMS",
-                                                "style":"esriSMSCircle",
-                                                "outline":{"color":[0,128,0,255],"width":1,
-                                                           "type":"esriSLS","style":"esriSLSSolid"}}
-                elif fs['geometryType'] == 'esriGeometryPolyline':
-                    di['renderer']['symbol'] = {
-                        "type": "esriSLS",
-                        "style": "esriSLSDot",
-                        "color": [0,128,0,128],
-                        "width": 1
-                    }
-                elif fs['geometryType'] == 'esriGeometryPolygon':
-                    di['renderer']['symbol'] = {
-                        "type": "esriSFS",
-                        "style": "esriSFSSolid",
-                        "color": [0,128,0,128],
-                        "outline": {
-                            "type": "esriSLS",
-                            "style": "esriSLSSolid",
-                            "color": [110,110,110,255],
-                            "width": 1
-                        }
-                    }
-            else:
-                di['renderer']['symbol'] = symbol
+            import json
+            di = { 'renderer' : json.loads(self._data.spatial.renderer.json) }
         else:
             di = drawing_info
         layer = {'layerDefinition': {'currentVersion': 10.7,
@@ -2623,8 +2760,6 @@ class GeoAccessor(object):
                                      'supportsMultiScaleGeometry': True,
                                      'supportsReturningQueryGeometry': True,
                                      'hasGeometryProperties': True,
-                                     #'geometryProperties': {'shapeAreaFieldName': 'Shape__Area',
-                                     # 'shapeLengthFieldName': 'Shape__Length'},
                                      'advancedQueryCapabilities': {
                                          'supportsPagination': True,
                                          'supportsPaginationOnAggregatedQueries': True,
@@ -2670,9 +2805,11 @@ class GeoAccessor(object):
                                      'tileMaxRecordCount': 4000,
                                      'maxRecordCountFactor': 1,
                                      'capabilities': 'Query'},
-                 'featureSet':  {'features' : fs['features'],
-                            'geometryType' : fs['geometryType']}
-                }
+                 'featureSet':  {
+                     'features' : fs['features'],
+                     'geometryType' : fs['geometryType']
+                 }
+                 }
         if global_id_field is not None:
             layer['layerDefinition']['globalIdField'] = global_id_field
         return FeatureCollection(layer)
@@ -2848,6 +2985,24 @@ class GeoAccessor(object):
         """
         gt = self._data[self.name].geom.geometry_type
         return pd.unique(gt).tolist()
+    #----------------------------------------------------------------------
+    @property
+    def has_z(self):
+        """
+        Returns a boolean that determines if the datasets have `Z` values
+        
+        :returns: Boolean
+        """
+        return self._data[self.name].geom.has_z.all()
+    #----------------------------------------------------------------------
+    @property
+    def has_m(self):
+        """
+        Returns a boolean that determines if the datasets have `Z` values
+        
+        :returns: Boolean
+        """
+        return self._data[self.name].geom.has_m.all() 
     #----------------------------------------------------------------------
     @property
     def bbox(self):

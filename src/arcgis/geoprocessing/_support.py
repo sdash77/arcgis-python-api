@@ -488,6 +488,8 @@ def _get_output_value(gptool, output_val, param_db, retParamName):
                 ret_val = arcgis.features.Table(jsondict['url'], gptool._gis)
             elif ret_type == FeatureSet and 'url' in jsondict:
                 ret_val = arcgis.features.FeatureLayer(jsondict['url'], gptool._gis)
+            elif len(jsondict) == 0 or jsondict == {}:
+                ret_val = None            
             else:
                 result = ret_type.from_dict(jsondict)
                 result._con = gptool._con

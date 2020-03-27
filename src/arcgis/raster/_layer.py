@@ -242,7 +242,6 @@ class ImageryLayerCacheManager(_GISResource):
             return self._con.post(url, params)
         return None
     #----------------------------------------------------------------------
-    @property
     def rerun_job(self, job_id, code):
         """
         The rerun job operation supports re-running a canceled job from a

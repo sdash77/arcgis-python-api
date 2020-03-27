@@ -1,6 +1,7 @@
 """
 Mapping Holds the Plot function for creating a FeatureCollection JSON plus the render options
 """
+import json
 import pandas as pd
 import arcgis
 from arcgis.mapping.renderer import generate_renderer
@@ -146,10 +147,16 @@ def plot(df,
 
     """
     renderer = kwargs.pop("renderer", None)
+    
     if not hasattr(df, 'spatial') and \
        not hasattr(df, 'geom'):
         raise ValueError("DataFrame or Series must be spatially enabled.")
-
+    
+    if renderer_type is None and \
+       renderer is None and \
+       df.spatial.renderer:
+        renderer = json.loads(df.spatial.renderer.json)    
+        
     if isinstance(df, pd.Series) and \
        df.dtype.name == 'geometry':
         fid = df.index.tolist()

@@ -139,7 +139,8 @@ def tf_loss_batch(model, xb, yb, loss_func=None, opt=None, cb_handler=None):
         yb = [yb]
 
     def forward():
-        out = model(*xb, training=True)
+        training = opt is not None
+        out = model(*xb, training=training)
         out = cb_handler.on_loss_begin(out)
         return out
 

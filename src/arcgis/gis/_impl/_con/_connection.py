@@ -19,7 +19,7 @@ import uuid
 import datetime
 import mimetypes
 import tempfile
-from urllib.request import urlparse, unquote
+from urllib.request import urlparse, unquote, urljoin
 import requests
 from requests import Session
 from requests_toolbelt.downloadutils import stream
@@ -448,8 +448,11 @@ class Connection(object):
         if out_path and \
            os.path.isdir(out_path) == False:
             os.makedirs(out_path)
+        if out_path is None:
+            out_path = tempfile.gettempdir()
         if file_name is None and \
-           resp.headers['Content-Type'].lower().find('json') == -1:
+           (resp.headers['Content-Type'].lower().find('json') == -1 and \
+           resp.headers['Content-Type'].lower().find('text') == -1):
             file_name = _filename_from_url(url) or _filename_from_headers(
                 resp.headers) or None
         if force_bytes:
@@ -1365,7 +1368,21 @@ class Connection(object):
                'authInfo' in res and \
                'tokenServicesUrl' in res['authInfo'] and \
                res['authInfo']['isTokenBasedSecurity']:
-                self._token_url = res['authInfo']['tokenServicesUrl']
+                parsed_from_system = urlparse(res['authInfo']['tokenServicesUrl'])
+                parsed = urlparse(baseurl)
+                if parsed.netloc.lower() != parsed_from_system.netloc.lower() and \
+                   parsed.netloc.find(":7443") > -1: # WA not being used for token url
+                    self._token_url = os.path.join(
+                        parsed_from_system.scheme + "://", 
+                        parsed.netloc  + "/arcgis/" + "/".join(parsed_from_system.path[1:].split("/")[1:])
+                    )
+                    url_test = self._session.post(self._token_url, {'f': 'json'}, allow_redirects=False)
+                    if url_test.status_code == 301:
+                        self._token_url = url_test.headers['location']
+                        if self._baseurl != os.path.dirname(url_test.headers['location']):
+                            self._baseurl = os.path.dirname(url_test.headers['location'])
+                else:
+                    self._token_url = res['authInfo']['tokenServicesUrl']
             elif self._token_url is None and \
                  res is not None and \
                  isinstance(res, dict) and \
