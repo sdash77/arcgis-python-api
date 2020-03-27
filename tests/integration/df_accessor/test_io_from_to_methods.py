@@ -263,7 +263,15 @@ def test_sanitize_column_names():
 
     assert original_col_list != new_col_list
     assert len(original_col_list) == len(new_col_list)
+    assert 'OWNER_dup1' in new_col_list
+    assert 'colnonnum' in new_col_list
+    assert '0' in new_col_list
     assert sedf.shape == df2.shape
+
+    # assert some spatial properties
+    assert sedf.spatial.sr == df2.spatial.sr
+    assert sedf.spatial.geometry_type == df2.spatial.geometry_type
+    assert sedf.spatial.bbox == df2.spatial.bbox
 
 
 def test_sanitize_column_names_inplace():
@@ -279,6 +287,9 @@ def test_sanitize_column_names_inplace():
     assert isinstance(sedf.columns[-1], int)
 
     original_col_list = list(sedf.columns)
+    original_sr = sedf.spatial.sr
+    original_bbox = sedf.spatial.bbox
+    original_geom_type = sedf.spatial.geometry_type
 
     # sanitize column names
     sedf.spatial.sanitize_column_names(inplace=True)
@@ -287,8 +298,14 @@ def test_sanitize_column_names_inplace():
 
     assert original_col_list != new_col_list
     assert len(original_col_list) == len(new_col_list)
+    assert sedf.spatial.bbox == original_bbox
+    assert sedf.spatial.geometry_type == original_geom_type
+    assert sedf.spatial.sr == original_sr
+    assert 'OWNER_dup1' in new_col_list
+    assert 'colnonnum' in new_col_list
+    assert '0' in new_col_list
 
-def test_export_df_int_column():
+def test_export_df_with_invalid_column_names():
     """
     Test to ensure we handle well when column names are not strings
     :return:
@@ -346,17 +363,17 @@ def test_export_df_int_column():
 
 if __name__ == "__main__":
     test_chunks()
-    # test_from_layer()
-    # test_from_gpd_df_sanity()
-    # test_from_gpd_df_verify_crs_gcs_points()
-    # test_from_gpd_df_verify_crs_pcs_points()
-    # test_from_gpd_df_verify_crs_gcs_lines()
-    # # test_from_gpd_df_verify_crs_pcs_lines()
-    # test_from_gpd_df_verify_crs_gcs_polygons()
-    # # test_from_gpd_df_verify_crs_pcs_polygons()
-    # test_from_gpd_df_large_data_points()
-    # # test_from_gpd_df_massive_3m_points()
-    # #test_to_layer()  # SKIPPED
-    # test_export_df_int_column()
+    test_from_layer()
+    test_from_gpd_df_sanity()
+    test_from_gpd_df_verify_crs_gcs_points()
+    test_from_gpd_df_verify_crs_pcs_points()
+    test_from_gpd_df_verify_crs_gcs_lines()
+    # test_from_gpd_df_verify_crs_pcs_lines()
+    test_from_gpd_df_verify_crs_gcs_polygons()
+    # test_from_gpd_df_verify_crs_pcs_polygons()
+    test_from_gpd_df_large_data_points()
+    # test_from_gpd_df_massive_3m_points()
+    #test_to_layer()  # SKIPPED
+    test_export_df_with_invalid_column_names()
     test_sanitize_column_names()
     test_sanitize_column_names_inplace()
