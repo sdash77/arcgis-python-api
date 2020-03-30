@@ -7501,6 +7501,7 @@ class Item(dict):
         """
         status_values = ['authoritative',
                          'org_authoritative',
+                         'public_authoritative',
                          'deprecated']
 
         if value is None:
