@@ -238,9 +238,11 @@ class Connection(object):
            str(self._portal_connection._auth).lower() == "home"):
             self._referer = "http"
             self._session.headers.pop("Referer", None)
+            self._session.headers['Referer'] = json.dumps("")
         elif (self._portal_connection and str(self._portal_connection._auth).lower() == "home"):
             self._referer = "http"
             self._session.headers.pop("Referer", None)
+            self._session.headers['Referer'] = json.dumps("")
         elif self._referer is None:
             self._referer = 'http'
             self._session.headers.update({'Referer': self._referer})   
