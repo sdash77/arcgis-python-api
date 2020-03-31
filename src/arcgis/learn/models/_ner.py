@@ -1,8 +1,13 @@
 try:
     import spacy
+    from spacy.util import minibatch, compounding
     import pandas as pd
-    from fastprogress import master_bar, progress_bar
+    try:
+        from fastprogress import master_bar, progress_bar
+    except ImportError:
+        from fastprogress.fastprogress import master_bar, progress_bar
     from ._codetemplate import entity_recognizer_placeholder
+    import numpy as np
     HAS_SPACY=True
 except:
     HAS_SPACY=False
@@ -13,6 +18,7 @@ from pathlib import Path
 import random,os
 from ._ner_utils import *
 from time import sleep
+from copy import deepcopy
 from collections.abc import Iterable
 
 def _raise_spacy_import_error():
@@ -46,7 +52,7 @@ class EntityRecognizer(ArcGISModel):
         super().__init__(data)
         self._code = entity_recognizer_placeholder
         self._emd_template = {}
-        self.model_dir=None
+        self.model_dir = None
         self.model = spacy.blank(lang)
         self.ner = self.model.create_pipe('ner')
         self.model.add_pipe(self.ner, last=True)
@@ -55,23 +61,62 @@ class EntityRecognizer(ArcGISModel):
         self._has_address = False #Flag to identify if the training data has any address  
         self._trained = False #Flag to check if model has been trained     
         self.lang = lang
+        self.optimizer = self.model.begin_training()
         if data:
-            self._address_tag=data._address_tag
-            self._has_address=data._has_address
+            self._address_tag = data._address_tag
+            self._has_address = data._has_address
             self.path = data.path
             self.data = data
             self.train_ds = data.train_ds
             self.val_ds = data.val_ds
+            for ent in data.entities:
+                if (ent not in self.ner.labels):
+                        self.model.entity.add_label(ent)
         else:
             self.train_ds = None
             self.val_ds = None
             self.path = '.'
+        self.learn = self
+        self.recorder = Recorder()
 
     def lr_find(self, allow_plot=True):
+    
         """
-        Not implemented for this model.
+        Runs the Learning Rate Finder, and displays the graph of it's output.
+        Helps in choosing the optimum learning rate for training the model.
         """
-        logging.error('lr_find() is not implemented for EntityRecognizer model.')
+
+        start_lr = 1e-6
+        end_lr = 10
+        num_it = 10
+        smoothening = 4
+
+        self.model.to_disk('tmp') #caches the current model state
+        if self._trained: 
+            temp_optimizer = self.optimizer #preserving the current state of the model for later load
+        trained = self._trained #preserving the current state of the model for later load
+        recorder = deepcopy(self.recorder) #preserving the current state of the model for later load
+        self.recorder.losses,self.recorder.val_loss,self.recorder.lrs = [],[],[] #resetting the recorder
+        lrs = even_mults(start_lr,end_lr,14)
+        epochs = int(np.ceil(num_it/(len(self.data.train_ds)/self.data.batch_size)))
+        self.fit(lr=list(lrs), epochs=epochs*len(lrs), from_lr_find=True)
+        from IPython.display import clear_output
+        clear_output()
+        
+        N = smoothening #smoothening factor
+        self.recorder.losses = np.convolve(self.recorder.losses, np.ones((N,))/N, mode='valid').tolist()
+        self.recorder.lrs = np.convolve(self.recorder.lrs, np.ones((N,))/N, mode='valid').tolist()
+        lr,index = self._find_lr(losses_skipped=0, trailing_losses_skipped=1, section_factor=2)
+
+        if allow_plot:
+            self._show_lr_plot(index, losses_skipped=0, trailing_losses_skipped=1)       
+        self._trained = trained    
+        self.recorder = recorder
+        import spacy,shutil
+        self.model = spacy.load('tmp')
+        shutil.rmtree('tmp', ignore_errors=True)
+        return(lr)
+    
     
     def unfreeze(self):
         """
@@ -100,6 +145,9 @@ class EntityRecognizer(ArcGISModel):
         early_stopping          Not implemented for this model.
         =====================   ===========================================
         """
+        if lr is None: #searching for the optimal learning rate when no learning rate is provided
+            print('Finding optimum learning rate')
+            lr = self.lr_find(allow_plot=False)
 
         if self.train_ds==None:
             return logging.warning('Cannot fit the model on empty data.')
@@ -112,47 +160,76 @@ class EntityRecognizer(ArcGISModel):
             # spacy.require_gpu()
             self.ner = nlp.create_pipe('ner') # nlp.create_pipe works for built-ins that are registered with spaCy
             nlp.add_pipe(self.ner, last=True)
-        i=0
+            
         for _, annotations in TRAIN_DATA: # adding labels
             for ent in annotations.get('entities'):
                 if (ent[2] not in self.ner.labels):
                     self.ner.add_label(ent[2])
-            i+=1
 
         
         other_pipes = [pipe for pipe in nlp.pipe_names if pipe != 'ner'] # get names of other pipes to disable them during training
         with nlp.disable_pipes(*other_pipes):  # only train NER
-            nlp.vocab.vectors.name = 'spacy_pretrained_vectors'
-            optimizer = nlp.begin_training()
-            if lr is not None:
-                if not isinstance(lr,(int,float)):
-                    raise Exception('lr needs to be an int or a floating point number.')
-                else:
-                    optimizer.alpha=lr
+            if not nlp.vocab.vectors.name:
+                nlp.vocab.vectors.name = 'spacy_pretrained_vectors'
+
+            batch_size = self.data.batch_size
+            n_iter = len(TRAIN_DATA)//batch_size
+            if 'from_lr_find' in kwargs: #'from_lr_find' kwarg specifies that the fit is call from lr_find.
+                epochs_per_lr = epochs/len(lr)
+                lr_find = True
+            else:
+                self.optimizer.alpha = lr
+                lr_find = False
             mb = master_bar(range(epochs))
-            mb.write(['Epoch','Train_loss','Val_loss'],table=True)
+            mb.write(['epoch','losses','val_loss'], table=True)
+            losses_list = []
+            
             for itn in mb:
+                if lr_find and (itn+1)%epochs_per_lr==0:
+                    self.optimizer.alpha=lr.pop(0)
+                    losses_list=[]
+                    update_recorder=True
                 random.shuffle(TRAIN_DATA)
+                batches = minibatch(TRAIN_DATA, size=batch_size)
                 losses = {}
-                val_losses = {}
-                for text, annotations in progress_bar(TRAIN_DATA, parent=mb):
-                    nlp.update(
-                        [text],  # batch of texts
-                        [annotations],  # batch of annotations
-                        drop = 0.2,  # dropout - make it harder to memorise data
-                        sgd = optimizer,  # callable to update weights
-                        losses = losses)  
+                for batch_index in progress_bar(range(n_iter),parent=mb):
+                    batch_index += 1
+                    batch = next(batches)
+                    texts, annotations = zip(*batch)
+                    nlp.update(texts, annotations, sgd=self.optimizer, drop=0.35, losses=losses)
+                    processed_len=(len(batch)*batch_index)
+                    train_loss=losses['ner']/processed_len
+                    if lr_find:
+                        losses_list.append(train_loss)
+                    else: # recording training loss per iteration.
+                        self.recorder.losses.append(train_loss)
                 if VAL_DATA:
-                    for val_text, val_annotations in (VAL_DATA):
-                        nlp.update([val_text],[val_annotations], sgd = None, losses = val_losses)
 
-                train_loss = losses['ner']/len(TRAIN_DATA)
-                val_loss = val_losses['ner']/len(VAL_DATA)
+                    val_batches = minibatch(VAL_DATA, size=batch_size)
+                    val_losses = {}
+                    val_loss_list = []
+                    for batch_index,val_batch in enumerate(val_batches):
+                        batch_index += 1
+                        processed_len_val = batch_size*(batch_index)
+                        val_text, val_annotations = zip(*val_batch)
+                        nlp.update(val_text,val_annotations, sgd = None, losses = val_losses)
+                        val_loss = val_losses['ner']/(processed_len_val)
+                        if lr_find:
+                            val_loss_list.append(val_loss)
+                        else: # recording validation loss per iteration.
+                            self.recorder.val_loss.append(val_loss)
+                if lr_find:  
+                    self.recorder.losses.append(np.min(losses_list))
+                    self.recorder.lrs.append(self.optimizer.alpha)
+                    self.recorder.val_loss.append(np.min(val_loss_list))
+                    update_recorder = False
+                    if np.mean(losses_list) > 3*np.min(self.recorder.losses): #break the epoch if loss overshoots
+                            return    
                 mb.write([itn,round(train_loss,2),round(val_loss,2)],table=True)
-
-        self._trained = True
-        self.model = nlp
-        self.entities = list({item[2:] for item in self.model.entity.move_names if item !='O'})
+        if  not lr_find:
+            self._trained = True
+            self.model = nlp
+            self.entities = list(self.model.entity.labels)
 
     def _create_emd(self, path):
         path=Path(path)
@@ -187,7 +264,7 @@ class EntityRecognizer(ArcGISModel):
         return self._save(name_or_path, **kwargs)
 
     def _save(self, name_or_path, zip_files=True):
-        temp=self.path
+        temp = self.path
         if not self._trained:
             return logging.error("Model needs to be fitted, before saving.")
 
@@ -222,7 +299,7 @@ class EntityRecognizer(ArcGISModel):
         name_or_path            Required string. Path of the emd file.
         =====================   ===========================================
         """
-        if '\\' in name_or_path or '/' in name_or_path:
+        if '\\' in str(name_or_path) or '/' in str(name_or_path):
             name_or_path=name_or_path
             model_path = Path(name_or_path).parent
         else:
@@ -276,9 +353,9 @@ class EntityRecognizer(ArcGISModel):
         processed_df = pd.DataFrame(columns = unprocessed_df.columns)
         for col in unprocessed_df.columns: ## converting all list columns to string
             if pd.Series(filter(lambda x: x != '',unprocessed_df[col])).apply(isinstance,args = ([str])).sum() == 0: ## split if this condition
-                processed_df[col] = unprocessed_df[col].apply(",".join)  #join the list to strind and copy to the processed df
-            else:
-                 processed_df[col] = unprocessed_df[col] #copy to the processed df
+                processed_df[col] = unprocessed_df[col].apply(",".join)  #join the list to string and copy to the processed df
+            else: 
+                processed_df[col] = unprocessed_df[col] #copy to the processed df
         return processed_df
 
     def _post_process_address_df(self, unprocessed_df,drop):
@@ -335,6 +412,11 @@ class EntityRecognizer(ArcGISModel):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
         
+        Field defined as 'address_tag' in `prepare_data()` function's class mapping
+        attribute will be treated as a location. In cases where trained model extracts 
+        multiple locations from a single document, that document will be replicated 
+        for each location in the resulting dataframe.
+        
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -381,7 +463,7 @@ class EntityRecognizer(ArcGISModel):
             #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
             #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
             
-            for i,item in item_list.iteritems():
+            for i,item in progress_bar(list(item_list.iteritems())):
                 df.loc[i] = None
                 doc = self._extract_entities_text(item) ## predicting entities using entity_extractor model
                 text = doc.text
@@ -443,3 +525,9 @@ class EntityRecognizer(ArcGISModel):
             return self.extract_entities(xs)
         else:
             print('Please provide a valid ds_type:[\'valid\'|\'train\']')
+
+class Recorder():
+    def __init__(self):
+        self.lrs = []
+        self.losses = []
+        self.val_loss = []

@@ -111,20 +111,14 @@ def run_python_script(code, layers=None, gis=None, context=None, future=False):
 
             # Usage Example: Execute calculate_density tool using run_python_script.
 
-            code = '''
-            import time 
-            r = geoanalytics.calculate_density(input_layer=layers[0],
-                            fields='Damage',
-                            weight='Uniform',
-                            bin_type='Square',
-                            bin_size=1,
-                            bin_size_unit='Meters',
-                            radius=2,
-                            radius_unit='Yards')        
-                            
-            r.write.format('webgis').save('RunPythonScriptTest_{0}'.format(time.time()))              
-            '''
-            run_python_script(code=code, layers=[lyr])
+            def density():
+                def code():
+                    import time
+                    res = geoanalytics.describe_dataset(input_layer=layers[0],
+                               extent_output=True,
+                               sample_size=1000)        
+                res.write.format('webgis').save('RunPythonScriptTest_{0}'.format(time.time()))              
+            run_python_script(code=code, layers=[lyr0]) 
     """
     if layers is None:
         layers = []

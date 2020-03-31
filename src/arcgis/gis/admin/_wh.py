@@ -247,7 +247,7 @@ class WebhookManager(object):
 
         elif isinstance(events, list):
             params['changes'] =  'manualChanges'
-            params['events'] = events
+            params['events'] = ",".join(events)
             res = self._con.post(purl, params)
         if 'success' in res and \
            res['success']:

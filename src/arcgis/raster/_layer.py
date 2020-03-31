@@ -2,17 +2,29 @@ import json
 import uuid
 import datetime
 import tempfile
+import numbers
+import warnings
 
 from arcgis._impl.common._utils import _date_handler
 from arcgis.gis import Layer
-from arcgis.geometry import Geometry
+from arcgis.geometry import Geometry, Envelope
 from arcgis.features import FeatureSet
 from arcgis.gis import _GISResource
 import logging
 import arcgis as _arcgis
 import base64
+from collections import defaultdict
+try:
+    import numpy as np
+except:
+    pass
 
 _LOGGER = logging.getLogger(__name__)
+
+try:
+    import arcpy
+except:
+    pass
 
 
 def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
@@ -230,7 +242,6 @@ class ImageryLayerCacheManager(_GISResource):
             return self._con.post(url, params)
         return None
     #----------------------------------------------------------------------
-    @property
     def rerun_job(self, job_id, code):
         """
         The rerun job operation supports re-running a canceled job from a
@@ -1155,10 +1166,15 @@ class ImageryLayer(Layer):
         return newlyr
 
     def _clone_layer(self):
-        if self._datastore_raster:
-            newlyr = ImageryLayer(self._uri, self._gis)
-        else:
-            newlyr = ImageryLayer(self._url, self._gis)
+
+        if type(self).__name__ == "Raster":
+            newlyr =  Raster(self._url, is_multidimensional= self._is_multidimensional, gis=self._gis)
+
+        elif type(self).__name__ == "ImageryLayer":
+            if self._datastore_raster:
+                newlyr = ImageryLayer(self._uri, self._gis)
+            else:
+                newlyr = ImageryLayer(self._url, self._gis)
         newlyr._lazy_properties = self.properties
         newlyr._hydrated = True
         newlyr._lazy_token = self._token
@@ -1681,7 +1697,6 @@ class ImageryLayer(Layer):
         if not out_statistics is None:
             params['outStatistics'] = out_statistics
 
-
         if self._temporal_filter is not None:
             time_filter = self._temporal_filter
 
@@ -1701,6 +1716,7 @@ class ImageryLayer(Layer):
         if self._spatial_filter is not None:
             geometry_filter = self._spatial_filter
 
+
         if not geometry_filter is None and \
            isinstance(geometry_filter, dict):
             gf = geometry_filter
@@ -1718,6 +1734,9 @@ class ImageryLayer(Layer):
             params['returnDistinctValues'] = return_distinct_values
         if out_sr is not None:
             params['outSR'] = out_sr
+        #if raster_query is not None:
+        #    params["rasterQuery"] = raster_query //add to sig for 10.8.1 release
+
         url = self._url + "/query"
         if return_all_records and \
            return_count_only == False:
@@ -1732,7 +1751,7 @@ class ImageryLayer(Layer):
                     n += 1
                 records = None
                 for i in range(n):
-                    oid_sub = [str(o) for o in oids['objectIds'][1000 * i :1000 * (i +1)]]
+                    oid_sub = [str(o) for o in oids['objectIds'][self.properties.maxRecordCount * i :self.properties.maxRecordCount * (i +1)]]
                     oid_joined = ",".join(oid_sub)
                     sql = "{name} in ({oids})".format(
                         name=oids['objectIdFieldName'],
@@ -1928,6 +1947,32 @@ class ImageryLayer(Layer):
         return self._con.post(path=url,
                               postdata=params)
 
+    def _slices(self,muldidef=None):
+        """
+        Operation to get the list of slice definitions of a multidimensional image service.
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        muldidef              optional array. multidemensional definition used for filtering by
+                              variable/dimensions.
+                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+        -----------------     --------------------------------------------------------------------
+        :returns: dictionary containing the list of slice definitions.
+        """
+        url = self._url + "/slices"
+
+        params={'f': 'json'}
+
+        if muldidef is not None:
+            params['multidimensionalDefinition'] = muldidef
+
+
+        if self._datastore_raster:
+            params["Raster"]=self._uri
+
+
+        return self._con.post(path=url,
+                              postdata=params)
     # ----------------------------------------------------------------------
     def _add_rasters(self,
                      raster_type,
@@ -3079,6 +3124,123 @@ class ImageryLayer(Layer):
 
         return self._con.post(path=url, postdata=params)
 
+    def _compute_multidimensional_info(self,
+                                      where=None,
+                                      object_ids=None,
+                                      time_filter=None,
+                                      geometry_filter=None,                                    
+                                      pixel_size=None,
+                                      raster_query=None,
+                                      variable_field_name=None,
+                                      dimension_field_names=None):
+
+        """ 
+        Opertion to get the multidimensional info.
+        ==============================  ====================================================================
+        **Arguments**                   **Description**
+        ------------------------------  --------------------------------------------------------------------
+        where                           optional string. A where clause on this layer to filter the imagery
+                                        layer by the selection sql statement. Any legal SQL where clause
+                                        operating on the fields in the raster
+        ------------------------------  --------------------------------------------------------------------
+        out_fields                      optional string. The attribute fields to return, comma-delimited
+                                        list of field names.
+        ------------------------------  --------------------------------------------------------------------
+        time_filter                     optional datetime.date, datetime.datetime or timestamp in
+                                        milliseconds. The time instant or the time extent of the exported
+                                        image.
+
+                                        Syntax: time_filter=<timeInstant>
+
+                                        Time extent specified as list of [<startTime>, <endTime>]
+                                        For time extents one of <startTime> or <endTime> could be None. A
+                                        None value specified for start time or end time will represent
+                                        infinity for start or end time respectively.
+                                        Syntax: time_filter=[<startTime>, <endTime>] ; specified as
+                                        datetime.date, datetime.datetime or timestamp in milliseconds
+        ------------------------------  --------------------------------------------------------------------
+        geometry_filter                 optional arcgis.geometry.filters. Spatial filter from
+                                        arcgis.geometry.filters module to filter results by a spatial
+                                        relationship with another geometry.
+        ------------------------------  --------------------------------------------------------------------
+        pixel_size                      optional dict or string. Query visible rasters at a given pixel size.
+                                        If pixel_size is not specified, rasters at all resolutions can be
+                                        queried.
+                                        Syntax:
+                                            - dictionary structure: pixel_size={point}
+                                            - Point simple syntax: pixel_size='<x>,<y>'
+                                        Examples:
+                                            - pixel_size={"x": 0.18, "y": 0.18}
+                                            - pixel_size='0.18,0.18'
+        ------------------------------  --------------------------------------------------------------------
+        variable_field_name             Variable names
+        ------------------------------  --------------------------------------------------------------------
+        dimension_field_names           Dimension Names
+        ==============================  ====================================================================
+
+        :returns: A dict representing the md info
+         """
+
+        url = self._url + "/computeMultidimensionalInfo"
+
+        if self._datastore_raster:
+            raise RuntimeError("This operation cannot be performed on a datastore raster")
+
+        params = {"f": "json"}
+        if object_ids:
+            params['objectIds'] = object_ids
+
+        if where is not None:
+            params['where'] = where
+        elif self._where_clause is not None:
+            params['where'] = self._where_clause
+        else:
+            params['where'] = '1=1'
+
+        if self._temporal_filter is not None:
+            time_filter = self._temporal_filter
+
+        if time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = 'null'
+                if endtime is None:
+                    endtime = 'null'
+                params['time'] = "%s,%s" % (starttime, endtime)
+            else:
+                params['time'] = _date_handler(time_filter)
+
+
+        if self._spatial_filter is not None:
+            geometry_filter = self._spatial_filter
+
+
+        if not geometry_filter is None and \
+           isinstance(geometry_filter, dict):
+            gf = geometry_filter
+            params['geometry'] = gf['geometry']
+            params['geometryType'] = gf['geometryType']
+            params['spatialRel'] = gf['spatialRel']
+            if 'inSR' in gf:
+                params['inSR'] = gf['inSR']
+
+        if pixel_size is not None:
+            params['pixelSize'] = pixel_size
+
+        if variable_field_name is not None:
+            params['variableFieldName'] = variable_field_name
+
+        if dimension_field_names is not None:
+            params['dimensionFieldNames'] = dimension_field_names
+      
+        res = self._con.post(path=url,
+                            postdata=params,
+                            token=self._token)["multidimensionalInfo"]
+        return res
+   
+
     @property
     def mosaic_rule(self):
         """The mosaic rule used by the imagery layer to define:
@@ -3248,7 +3410,11 @@ class ImageryLayer(Layer):
             if self._fnra is None:
                 from .functions import identity
                 identity_layer = identity(self)
-                self._fnra = identity_layer._fnra
+                if isinstance(identity_layer, Raster):
+                    if hasattr(identity_layer,"_engine_obj"):
+                        self._fnra = identity_layer._engine_obj._fnra
+                else:
+                    self._fnra = identity_layer._fnra
 
             if is_supported(g):
                 if self._extent is not None and _arcgis.env.analysis_extent is None:
@@ -3830,6 +3996,93 @@ class ImageryLayer(Layer):
         return _draw_graph(self, show_attributes,function_dictionary,G)
 
 
+    def temporal_profile(self, points=[], time_field=None, variables=[],  bands=[0], time_extent=None, dimension=None, dimension_values=[], 
+                     show_values=False, trend_type=None, trend_order=None, plot_properties={}):
+
+        '''
+        A temporal profile serves as a basic analysis tool for imagery data in a time series. 
+        Visualizing change over time with the temporal profile allows trends to be displayed 
+        and compared with variables, bands, or values from other dimensions simultaneously.
+
+        Using the functionality in temporal profile charts, you can perform trend analysis, gain insight into 
+        multidimensional raster data at given locations, and plot values that are changing over time 
+        in the form of a line graph.
+
+        Temporal profile charts can be used in various scientific applications involving time series 
+        analysis of raster data, and the graphical output of results can be used directly as 
+        input for strategy management and decision making.
+
+        The x-axis of the temporal profile displays the time in continuous time intervals. The time field is 
+        obtained from the timeInfo of the image service.
+    
+        The y-axis of the temporal profile displays the variable value.
+
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of point Geometry objects. 
+        ------------------------------------     --------------------------------------------------------------------
+        time_field                               Required string. The time field that will be used for plotting 
+                                                 temporal profile.
+                                             
+                                                 If not specified the time field is obtained from the timeInfo of 
+                                                 the image service.
+        ------------------------------------     --------------------------------------------------------------------
+        variables                                Required list of variable names. 
+                                                 For non multidimensional data, the variable would be name of the Sensor.
+                                                 To plot the graph against all sensors specify - "ALL_SENSORS" 
+        ------------------------------------     --------------------------------------------------------------------
+        bands                                    Optional list of band indices. By default takes the 
+                                                 first band (band index - 0). 
+                                                 For a multiband data, you can compare the time change of different 
+                                                 bands over different locations.
+        ------------------------------------     --------------------------------------------------------------------
+        time_extent                              Optional list of date time object. This represents the time extent
+        ------------------------------------     --------------------------------------------------------------------
+        dimension                                Optional list of dimension names. This option works specifically on 
+                                                 multidimensional data containing a time dimension and other dimensions.
+
+                                                 The temporal profile is created based on the specific values in other 
+                                                 dimensions, such as depth at the corresponding time value. For example, 
+                                                 soil moisture data usually includes both a time dimension and vertical 
+                                                 dimension below the earth's surface, resulting in a temporal profile 
+                                                 at 0.1, 0.2, and 0.3 meters below the ground.
+        ------------------------------------     --------------------------------------------------------------------
+        dimension_values                         Optional list of dimension values. This parameter can be used to specify
+                                                 the values of dimension parameter other than the time dimension (dimension
+                                                 name specified using dimension parameter)
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional bool. Default False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+        ------------------------------------     --------------------------------------------------------------------
+        trend_type                               Optional string. Default None.
+                                                 Set the trend_type parameter eith with linear or harmonic to draw the trend line
+                                                 linear : Fits the pixel values for a variable along a linear trend line.
+                                                 harmonic : Fits the pixel values for a variable along a harmonic trend line.
+        ------------------------------------     --------------------------------------------------------------------
+        trend_order                              optional number. The frequency number to use in the trend fitting. 
+                                                 This parameter specifies the frequency of cycles in a year. 
+                                                 The default value is 1, or one harmonic cycle per year.
+
+                                                 This parameter is only included in the trend analysis for a harmonic regression.
+        ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dict. This parameter can be used to set the figure 
+                                                 properties. These are the matplotlib.pyplot.figure() parameters and values
+                                                 specified in dict format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        '''
+        from arcgis.raster._charts import temporal_profile
+        return temporal_profile(self, points=points, time_field=time_field, variables=variables,  bands=bands, time_extent=time_extent, dimension=dimension, dimension_values=dimension_values, 
+                     show_values=show_values, trend_type=trend_type, trend_order=trend_order, plot_properties=plot_properties)
+
+
     def _repr_jpeg_(self):
         bbox_sr = None
         if 'spatialReference' in self.extent:
@@ -4019,6 +4272,4230 @@ class ImageryLayer(Layer):
 # Raster.Raster.__iand__      = returnNotImplemented # &=
 # Raster.Raster.__ixor__      = returnNotImplemented # ^=
 # Raster.Raster.__ior__       = returnNotImplemented # |=
+
+from .. import raster
+
+from arcgis.raster._util import _to_datetime, _datetime2ole, _ole2datetime, _iso_to_datetime, _check_if_iso_format, _epoch_to_iso
+
+
+#def _get_class(path, is_multidimensional=False,  format="server", gis=None):
+#    if format == 'server':
+#        return _ImageServerRaster(path, is_multidimensional, format, gis)
+#    elif format == 'arcpy':
+#        return _ArcpyRaster(path, is_multidimensional, format, gis)
+#    else:
+#        raise ValueError(format)
+
+
+def _get_engine(engine):
+
+    """
+    Function to get the engine that will be used to process the Raster object.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    engine                                   Required string. 
+                                                Possible options:
+                                                "arcpy" : Returns arcpy engine
+                                                "image_server" : Returns image server engine
+    ------------------------------------     --------------------------------------------------------------------
+    """
+    
+    engine_dict={
+    "arcpy":_ArcpyRaster,
+    "image_server":_ImageServerRaster
+    }
+    if isinstance(engine, str):
+        return engine_dict[engine]
+    return engine
+
+
+class Raster():
+    """
+    A raster object is a variable that references a raster. It can be used to query the properties of the raster dataset.
+
+    Usage: arcgis.raster.Raster(path, is_multidimensional=False,  engine=None, gis=None)
+
+    The Raster class can work with arcpy engine or image server engine. By default, 
+    if the path is an image service url, then the Raster class uses the image server engine 
+    for processing and if it is a local path it uses the arcpy engine.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    path                                     Required string. The input raster.
+
+                                             Example:
+                                                path = r"/path/to/raster"
+
+                                                path = "https://sample.arcgisonline.com/arcgis/rest/services/CharlotteLAS/ImageServer"
+    ------------------------------------     --------------------------------------------------------------------
+    is_multidimensional                      Optional boolean. Determines whether the input raster will be 
+                                             treated as multidimensional. 
+
+                                             Specify True if the input is multidimensional and should be
+                                             processed as multidimensional, where processing occurs for every 
+                                             slice in the dataset. Specify False if the input is not
+                                             multidimensional, or if it is multidimensional and should not be
+                                             processed as multidimensional.
+
+                                             Default is False
+    ------------------------------------     --------------------------------------------------------------------
+    extent                                   Optional dict. If the input raster's extent cannot be automatically
+                                             inferred, pass in a dictionary representing the raster's extent
+                                             for when viewing on a :class:`~arcgis.widgets.MapView` widget.
+
+                                             Example:
+                                                | { "xmin" : -74.22655,
+                                                |   "ymin" : 40.712216,
+                                                |   "xmax" : -74.12544,
+                                                |   "ymax" : 40.773941,
+                                                |   "spatialReference" :
+                                                |       { "wkid" : 4326 }
+                                                | }
+    ------------------------------------     --------------------------------------------------------------------
+    cmap                                     Optional str. When displaying a 1 band raster in a
+                                             :class:`~arcgis.widgets.MapView` widget, what matplotlib colormap
+                                             to apply to the raster. See ``arcgis.mapping.display_colormaps()`` for
+                                             a list of compatible values.
+    ------------------------------------     --------------------------------------------------------------------
+    opacity                                  Optional number. When displaying a raster in a 
+                                             :class:`~arcgis.widgets.MapView` widget, what opacity to apply. 0
+                                             is completely transparent, 1 is completely opaque.
+                                             Default: 1
+    ------------------------------------     --------------------------------------------------------------------
+    engine                                   Optional string. The backend engine to be used.
+                                             Possible options:
+                                                - "arcpy" : Use the arcpy engine for processing. 
+
+                                                - "image_server" : Use the Image Server engine for processing.
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional. GIS of the Raster object. 
+    ====================================     ====================================================================
+
+    .. code-block:: python
+
+        # Useage: Overlay local rasters on the `MapView` widget
+        map = gis.map()
+
+        # Overlay a local .tif file
+        raster = Raster(r"./data/Amberg.tif")
+        map.add_layer(raster)
+
+        # Overlay a 1-channel .gdb file with the "Orange Red" colormap at 85% opacity
+        raster = Raster("./data/madison_wi.gdb/Impervious_Surfaces",
+                        cmap = "OrRd",
+                        opacity = 0.85)
+        map.add_layer(raster)
+
+        # Overlay a local .jpg file by manually specifying its extent
+        raster = Raster("./data/newark_nj_1922.jpg",
+                        extent = {"xmin":-74.22655,
+                                  "ymin":40.712216,
+                                  "xmax":-74.12544,
+                                  "ymax":40.773941,
+                                  "spatialReference":{"wkid":4326}})
+        map.add_layer(raster)
+
+    """
+    def __init__(self, path, is_multidimensional=False, extent = None, cmap = None,
+                 opacity = None, engine=None, gis=None):
+        self._engine_obj=None
+        if not isinstance(is_multidimensional, bool):
+            raise TypeError('is_multidimensional must be boolean type')
+        if engine is not None:
+             engine = _get_engine(engine)
+             self._engine=engine
+        else:
+            if isinstance(path, str):
+                if "https://" not in path and "http://" not in path and  '/fileShares/' not in path and '/rasterStores/' not in path and '/cloudStores/' not in path and not isinstance(path,dict) and '/vsi' not in path: #local raster case
+                    if engine is None:
+                        engine=_ArcpyRaster
+            elif not isinstance(path, Raster):
+                try:
+                    import arcpy
+                    if isinstance(path, arcpy.Raster):
+                        engine=_ArcpyRaster
+                except:
+                    pass
+            if engine is None:
+                engine=_ImageServerRaster
+            self._engine=engine
+        if self._engine_obj is None and self._engine is not None:
+            self._engine_obj=self._engine(path, is_multidimensional, gis)
+
+        if extent:
+            self.extent = extent
+        if cmap:
+            self.cmap = cmap
+        if opacity:
+            self.opacity = opacity
+
+    #def __iter__(self):
+    #    return(self._engine_obj.__iter__())
+
+    def __getitem__(self, item):
+        return (self._engine_obj.__getitem__(item))
+
+    def __setitem__(self, idx, value):
+        return (self._engine_obj.__setitem__(idx, value))
+
+    def set_engine(self, engine):
+        """Can be used to change the back end engine"""
+        return Raster(path=self._engine_obj._path, is_multidimensional=self._engine_obj._is_multidimensional,  engine=engine, gis=self._engine_obj._gis)
+
+    @property
+    def extent(self):
+        """Area of interest. Used for displaying the imagery layer when queried"""
+        return self._engine_obj.extent
+
+    @extent.setter
+    def extent(self, value):
+        self._engine_obj.extent = value
+
+    _cmap = None
+    @property
+    def cmap(self):
+        """When displaying a 1 band raster in a :class:`~arcgis.widgets.MapView`
+        widget, what matplotlib colormap to apply to the raster.
+
+        Value must be a `str`. See `~arcgis.mapping.display_colormaps()` for
+        a list of compatible values.
+        """
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, value):
+        if isinstance(value, str):
+            self._cmap = value
+        else:
+            raise Exception("`cmap` must be of type `str`")
+
+    _opacity = 1
+    @property
+    def opacity(self):
+        """When displaying in a :class:`~arcgis.widgets.MapView` widget, what
+        opacity to apply. 0 is completely transparent, 1 is completely opaque.
+        Default: 1
+        """
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, value):
+        self._opacity = value
+
+    @property
+    def pixel_type(self):
+        """returns pixel type of the imagery layer"""
+        return self._engine_obj.pixel_type
+
+    @property
+    def width(self):
+        """returns width of the raster in the units of its spatial reference """
+        return self._engine_obj.width
+
+    @property
+    def height(self):
+        """returns height of the raster in the units of its spatial reference"""
+        return self._engine_obj.height
+
+    @property
+    def columns(self):
+        """returns number of columns in the raster"""
+        return self._engine_obj.columns
+
+    @property
+    def rows(self):
+        """returns number of rows in the raster"""
+        return self._engine_obj.rows
+
+    @property
+    def band_count(self):
+        """returns the band count of the raster"""
+        return self._engine_obj.band_count
+
+    @property
+    def catalog_path(self):
+        """The full path and the name of the referenced raster."""
+        return self._engine_obj.catalog_path
+
+    @property
+    def path(self):
+        """The full path and name of the referenced raster."""
+        return self._engine_obj.path
+
+    @property
+    def name(self):
+        """returns the name of the raster"""
+        return self._engine_obj.name
+
+    @property
+    def has_RAT(self):
+        """Identifies if there is an associated attribute table: True if an attribute table exists, or False if no attribute table exists."""
+        return self._engine_obj.has_RAT
+
+    @property
+    def is_multidimensional(self):
+        """returns True if the raster is multidimensional."""
+        return self._engine_obj.is_multidimensional
+
+    @property
+    def is_temporary(self):
+        """returns True if the raster is temporary, or False if it is permanent."""
+        return self._engine_obj.is_temporary
+
+    @property
+    def mean_cell_width(self):
+        """returns the cell size in the x direction."""
+        return self._engine_obj.mean_cell_width
+
+    @property
+    def mean_cell_height(self):
+        """returns the cell size in the y direction."""
+        return self._engine_obj.mean_cell_height
+
+    @property
+    def multidimensional_info(self):
+        """returns the multidimensional information of the raster dataset, including variable names, descriptions and units, and dimension names, units, intervals, units, and ranges."""
+        return self._engine_obj.multidimensional_info
+
+    @property
+    def minimum(self):
+        """returns minimum value in the referenced raster."""
+        return self._engine_obj.minimum
+
+    @property
+    def maximum(self):
+        """returns the maximum value in the referenced raster."""
+        return self._engine_obj.maximum
+
+    @property
+    def mean(self):
+        """returns the mean value in the referenced raster."""
+        return self._engine_obj.mean
+
+    @property
+    def standard_deviation(self):
+        """returns the standard deviation of the values in the referenced raster."""
+        return self._engine_obj.standard_deviation
+
+    @property
+    def spatial_reference(self):
+        """returns the spatial reference of the referenced raster."""
+        return self._engine_obj.spatial_reference
+
+    @property
+    def variable_names(self):
+        """returns the variable names in the multidimensional raster"""
+        return self._engine_obj.variable_names
+
+    @property
+    def variables(self):
+        """returns the variable names and their dimensions in the multidimensional raster dataset. 
+        For example, a multidimensional raster containing temperature data over 24 months would 
+        return the following: ['temp(StdTime=24)']"""
+        return self._engine_obj.variables
+
+    #@property
+    #def slices(self):
+    #    return self._engine_obj.slices
+
+    #@property
+    #def band_names(self):
+    #    return self._engine_obj.band_names
+
+    #@property
+    #def block_size(self):
+    #    return self._engine_obj.block_size
+
+    #@property
+    #def compression_type(self):
+    #    return self._engine_obj.compression_type
+
+
+    #@property
+    #def format(self):
+    #    return self._engine_obj.format
+
+    #@property
+    #def no_data_value(self):
+    #    return self._engine_obj.no_data_value
+
+    #@property
+    #def no_data_values(self):
+    #    return self._engine_obj.no_data_values
+
+    #@property
+    #def uncompressed_size(self):
+    #    return self._engine_obj.uncompressed_size
+
+
+    @property
+    def is_integer(self):
+        """returns True if the raster has integer type."""
+        return self._engine_obj.is_integer
+
+    @property
+    def properties(self):
+        """returns the property name and value pairs in the referenced raster"""
+        return self._engine_obj.key_properties
+
+    @property
+    def read_only(self):
+        """returns whether the raster cell values are writable or not using the [row, column] notation. 
+        When this property is True, they are not writable. Otherwise, they are writable. """
+        return self._engine_obj.read_only
+
+    def get_raster_bands(self, band_ids_or_names=None):
+        """
+        Returns a Raster object for each band specified in a multiband raster.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        band_ids_or_names     required list. The index number or names of the bands to return as 
+                              Raster objects. If not specified, all bands will be extracted.
+        =================     ====================================================================
+
+        :returns: Raster object
+
+
+        """
+        return self._engine_obj.get_raster_bands(band_ids_or_names)
+
+    def get_variable_attributes(self, variable_name):
+        """
+        Returns the attribute information of a variable, e.g., description, unit, etc.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable_name         required string. the name of the variable
+        =================     ====================================================================
+
+        :returns: dict. The attribute information of the given variable.
+        """
+        return self._engine_obj.get_variable_attributes(variable_name)
+
+    def get_dimension_names(self, variable_name):
+        """
+        Returns a list of the dimension names that the variable contains.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable_name         required string. the name of the variable
+        =================     ====================================================================
+
+        :returns: list. The dimension names that the given variable contains
+        """
+        return self._engine_obj.get_dimension_names(variable_name)
+
+    def get_dimension_values(self, variable_name, dimension_name, return_as_datetime_object=False):
+        """
+        Returns a list of the dimension names that the variable contains.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable_name                            Required string. the name of the variable
+        ------------------------------------     --------------------------------------------------------------------
+        dimension_name                           Required string. the name of the dimension
+        ------------------------------------     --------------------------------------------------------------------
+        return_as_datetime_object                Set to  True, to return the dimension values as datetime object.
+                                                 Valid only if the dimension name is 
+        ====================================     ====================================================================
+
+        :returns: list. The dimension values along the given dimension within the given variable.
+        """
+        return self._engine_obj.get_dimension_values(variable_name, dimension_name, return_as_datetime_object)
+
+    def get_dimension_attributes(self, variable_name, dimension_name):
+        """
+         Returns the attribute information of a dimension within a variable, e.g., min value, max value, unit, etc.
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable_name         required string. the name of the variable
+        -----------------     --------------------------------------------------------------------
+        dimension_name        required string. the name of the dimension
+        =================     ====================================================================
+
+        :returns: dict. The attribute information of the given dimension within the given variable.
+        """
+        return self._engine_obj.get_dimension_attributes(variable_name, dimension_name)
+
+    def rename_variable(self, current_variable_name, new_variable_name):
+        """
+        Rename the given variable name.
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        current_variable_name                    Required string. the name of the variable to be renamed
+        ------------------------------------     --------------------------------------------------------------------
+        new_variable_name                        Required string. the new variable name
+        ====================================     ====================================================================
+
+        :returns: list. The dimension names that the given variable contains
+        """
+        return self._engine_obj.rename_variable(current_variable_name, new_variable_name)
+
+    def set_property(self, property_name, property_value):
+        """
+        Add a customized property to the raster. If the property name exists, 
+        the existing property value will be overwritten.
+
+        (Operation is not supported on image services)
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        property_name         required string. The property name of the raster
+        -----------------     --------------------------------------------------------------------
+        property_value         required string. The value to assign to the property.
+        =================     ====================================================================
+
+        :returns: None
+        """
+        return self._engine_obj.set_property(property_name, property_value)
+
+    def get_property(self, property_name):
+        """
+        Returns the value of the given property. 
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable_name         required string. the name of the variable
+        =================     ====================================================================
+
+        :returns: string.
+        """
+        return self._engine_obj.get_property(property_name)
+
+    def read(self, upper_left_corner=(0, 0), origin_coordinate=None, ncols=0, nrows=0, nodata_to_value=None,
+             cell_size=None):
+        """
+        read a numpy array from the calling raster
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        upper_left_corner     2-D tuple. a tuple with 2 values representing the number of pixels along x and y
+                              direction relative to the origin_coordinate. E.g., (2, 0), means that 
+                              the real origin to extract the array is 2 pixels away in x 
+                              direction from the origin_coordinate
+        -----------------     --------------------------------------------------------------------
+        origin_coordinate     2-d tuple (X, Y). The x and y values are in map units.
+                              If no value is specified, the top left corner of the calling raster,
+        -----------------     --------------------------------------------------------------------
+        ncols                 integer. the number of columns from the real origin in the calling 
+                              raster to convert to the NumPy array.
+                              If no value is specified, the number of columns of the calling raster 
+                              will be used. Default: None
+        -----------------     --------------------------------------------------------------------
+        nrows                 integer. the number of rows from the real origin in the calling 
+                              raster to convert to the NumPy array.
+                              If no value is specified, the number of rows of the calling raster 
+                              will be used. Default: None
+        -----------------     --------------------------------------------------------------------
+        nodata_to_value       numeric. pixels with nodata values in the raster would be assigned 
+                              with the given value in  the NumPy array. If no value is specified, 
+                              the NoData value of the calling raster will be used. Default: None
+        -----------------     --------------------------------------------------------------------
+        cell_size             2-D tuple. a tuple with 2 values shows the x_cell_size and y_cell_size, 
+                              e.g., cell_size = (2, 2).
+                              if no value is specified, the original cell size of the calling raster 
+                              will be used. Otherwise, pixels would be resampled to the requested cell_size
+        =================     ====================================================================
+
+        :return: numpy.ndarray. If self is a multidimensional raster, the array has shape (slices, height, width, bands)
+        """
+        return self._engine_obj.read(upper_left_corner, origin_coordinate, ncols, nrows, nodata_to_value,
+             cell_size)
+
+    def write(self, array, upper_left_corner=(0, 0), origin_coordinate=None, value_to_nodata=None):
+        """
+        write a numpy array to the calling raster.
+
+        (Operation is not supported on image services)
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        array                 required numpy.ndarray. the array must be in the shape of (slices, 
+                              height, width, bands) for writing a multidimensional raster and 
+                              (height, width bands) for writing a normal raster
+        -----------------     --------------------------------------------------------------------
+        upper_left_corner     2-D tuple.a tuple with 2 values representing the number of pixels 
+                              along x and y direction that shows the position relative to the 
+                              origin_coordinate. E.g., (2, 0), means that the position from which the
+                              numpy array will be written into the calling Raster is 2 pixels away 
+                              in x direction from the origin_coordinate.
+                              Default value is (0, 0)
+        -----------------     --------------------------------------------------------------------
+        origin_coordinate     2-d tuple (X, Y) from where the numpy array will be written
+                              into the calling Raster. The x- and y-values are in map units. 
+                              If no value is specified, the top left corner of the
+                              calling raster, 
+        -----------------     --------------------------------------------------------------------
+        value_to_nodata       numeric. The value in the numpy array assigned to be the 
+                              NoData values in the calling Raster.
+
+
+                              If no value is specified, the NoData value of the calling Raster will 
+                              be used. Default None
+        =================     ====================================================================
+
+        :returns: None
+        """
+        return self._engine_obj.write(array, upper_left_corner, origin_coordinate, value_to_nodata)
+
+    def remove_variables(self, variable_names):
+        """
+        Removes the given variables.
+
+        (Operation is not supported on image services)
+
+        =================     ====================================================================
+        **Arguments**         **Description**
+        -----------------     --------------------------------------------------------------------
+        variable_names        required list. the list of variables to be removed
+        =================     ====================================================================
+
+        :returns: list. a list of all variables.
+        """
+        return self._engine_obj.remove_variables(variable_names)
+
+    def add_dimension(self, variable, new_dimension_name, dimension_value, dimension_attributes=None):
+        """
+        Adds a new dimension to a given variable.
+
+        (Operation is not supported on image services)
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        variable                                 Required string. variable to which the new dimesnion is to be added
+        ------------------------------------     --------------------------------------------------------------------
+        new_dimension_name                       Required string. name of the new dimesnion to be added
+        ------------------------------------     --------------------------------------------------------------------
+        dimension_value                          Required string. dimension value
+        ------------------------------------     --------------------------------------------------------------------
+        dimension_attributes                     optional attributes of the new dimension like Description, Unit etc.
+        ====================================     ====================================================================
+
+        :returns: The variable names and their dimensions in the multidimensional raster
+        """
+        return self._engine_obj.add_dimension(variable, new_dimension_name, dimension_value, dimension_attributes)
+
+    #def append_slices(md_raster=None):
+    #    """
+    #    Returns a list of the dimension names that the variable contains.
+
+    #    =================     ====================================================================
+    #    **Arguments**         **Description**
+    #    -----------------     --------------------------------------------------------------------
+    #    variable_name         required string. the name of the variable
+    #    =================     ====================================================================
+
+    #    :returns: list. The dimension names that the given variable contains
+    #    """
+    #    return self._engine_obj.append_slices(md_raster)
+
+    #def set_variable_attributes(self, variable_name, variable_attributes):
+    #    """
+    #    Returns a list of the dimension names that the variable contains.
+
+    #    =================     ====================================================================
+    #    **Arguments**         **Description**
+    #    -----------------     --------------------------------------------------------------------
+    #    variable_name         required string. the name of the variable
+    #    =================     ====================================================================
+
+    #    :returns: list. The dimension names that the given variable contains
+    #    """
+    #    return self._engine_obj.set_variable_attributes(variable_name, variable_attributes)
+
+
+    @property
+    def _lyr_json(self):
+        return self._engine_obj._lyr_json
+
+    def save(self, output_name=None, for_viz=False, process_as_multidimensional=None,
+            build_transpose=None, gis=None, future=False, **kwargs):
+        """
+        When run using image_server engine, save() persists this raster to the GIS as an Imagery Layer item. 
+        If for_viz is True, a new Item is created that uses the applied raster functions for visualization at 
+        display resolution using on-the-fly image processing.
+        If for_viz is False, distributed raster analysis is used for generating a new raster information product by
+        applying raster functions at source resolution across the extent of the output imagery layer.
+
+        When run using arcpy engine, save() Persists this raster to location specified in output_name.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        output_name                              optional string. 
+        
+                                                 When run using image_server engine, specify output name.
+                                                 If not provided, an Imagery Layer item is created
+                                                 by the method and used as the output.
+                                                 You can pass in the name of the output raster that should be
+                                                 created by this method to be used as the output for the tool.
+                                                 Alternatively, if for_viz is False, you can pass in an existing
+                                                 Image Layer Item from your GIS to use that instead.
+                                                 A RuntimeError is raised if a layer by that name already exists
+
+                                                 When run using arcpy engine, output_name is the name string 
+                                                 representing the output location.
+        ------------------------------------     --------------------------------------------------------------------
+        for_viz                                  optional boolean. If True, a new Item is created that uses the
+                                                 applied raster functions for visualization at display resolution
+                                                 using on-the-fly image processing.
+                                                 If for_viz is False, distributed raster analysis is used for
+                                                 generating a new raster information product for use in analysis and
+                                                 visualization by applying raster functions at source resolution
+                                                 across the extent of the output raster.
+
+                                                 (Available only when image_server engine is used)
+        ------------------------------------     --------------------------------------------------------------------
+        process_as_multidimensional              Optional bool.  If the input is multidimensional raster, the output
+                                                 will be processed as multidimensional if set to True
+        ------------------------------------     --------------------------------------------------------------------
+        build_transpose                          Optional bool, if set to true, transforms the output
+                                                 multidimensional raster. Valid only if process_as_multidimensional
+                                                 is set to True
+        ------------------------------------     --------------------------------------------------------------------
+        gis                                      optional arcgis.gis.GIS object. The GIS to be used for saving the
+                                                 output. Keyword only parameter.
+
+                                                 (Available only when image_server engine is used)
+        ------------------------------------     --------------------------------------------------------------------
+        future                                   Optional boolean. If True, the result will be a GPJob object and
+                                                 results will be returned asynchronously. Keyword only parameter.
+
+                                                 (Available only when image_server engine is used)
+        ====================================     ====================================================================
+
+        :return: String representing the location of the output data
+        """
+        return self._engine_obj.save(output_name,for_viz, process_as_multidimensional, build_transpose, gis, future, **kwargs)
+
+    def _repr_png_(self):
+        return self._engine_obj._repr_png_()
+
+    def _repr_jpeg_(self):
+        return self._engine_obj._repr_jpeg_()
+
+
+
+    def export_image(self, bbox=None, image_sr=None, bbox_sr=None, size=None, time=None, export_format='jpgpng',
+                     pixel_type=None, no_data=None, no_data_interpretation='esriNoDataMatchAny', interpolation=None,
+                     compression=None, compression_quality=None, band_ids=None, mosaic_rule=None, rendering_rule=None,
+                     f='image', save_folder=None, save_file=None, compression_tolerance=None, adjust_aspect_ratio=None,
+                     lerc_version=None):
+        """
+        The export_image operation is performed on a raster layer to visualise it.
+
+        ======================  ====================================================================
+        **Arguments**           **Description**
+        ----------------------  --------------------------------------------------------------------
+        bbox                    Optional dict or string. The extent (bounding box) of the exported
+                                image. Unless the bbox_sr parameter has been specified, the bbox is
+                                assumed to be in the spatial reference of the raster layer.
+                                The bbox should be specified as an arcgis.geometry.Envelope object,
+                                it's json representation or as a list or string with this
+                                format: '<xmin>, <ymin>, <xmax>, <ymax>'
+                                If omitted, the extent of the raster layer is used
+        ----------------------  --------------------------------------------------------------------
+        image_sr                optional string, SpatialReference. The spatial reference of the
+                                exported image. The spatial reference can be specified as either a
+                                well-known ID, it's json representation or as an
+                                arcgis.geometry.SpatialReference object.
+                                If the image_sr is not specified, the image will be exported in the
+                                spatial reference of the raster.
+        ----------------------  --------------------------------------------------------------------
+        bbox_sr                 optional string, SpatialReference. The spatial reference of the
+                                bbox.
+                                The spatial reference can be specified as either a well-known ID,
+                                it's json representation or as an arcgis.geometry.SpatialReference
+                                object.
+                                If the image_sr is not specified, bbox is assumed to be in the
+                                spatial reference of the raster. 
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        size                    optional list. The size (width * height) of the exported image in
+                                pixels. If size is not specified, an image with a default size of
+                                400*450 will be exported.
+                                Syntax: list of [width, height]
+        ----------------------  --------------------------------------------------------------------
+        time                    optional datetime.date, datetime.datetime or timestamp string. The
+                                time instant or the time extent of the exported image.
+                                Time instant specified as datetime.date, datetime.datetime or
+                                timestamp in milliseconds since epoch
+                                Syntax: time=<timeInstant>
+                                Time extent specified as list of [<startTime>, <endTime>]
+                                For time extents one of <startTime> or <endTime> could be None. A
+                                None value specified for start time or end time will represent
+                                infinity for start or end time respectively.
+                                Syntax: time=[<startTime>, <endTime>] ; specified as
+                                datetime.date, datetime.datetime or timestamp
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        export_format           optional string. The format of the exported image. The default
+                                format is jpgpng. The jpgpng format returns a JPG if there are no
+                                transparent pixels in the requested extent; otherwise, it returns a
+                                PNG (png32).
+                                Values: jpgpng,png,png8,png24,jpg,bmp,gif,tiff,png32,bip,bsq,lerc
+        ----------------------  --------------------------------------------------------------------
+        pixel_type              optional string. The pixel type, also known as data type, pertains
+                                to the type of values stored in the raster, such as signed integer,
+                                unsigned integer, or floating point. Integers are whole numbers,
+                                whereas floating points have decimals.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        no_data                 optional float. The pixel value representing no information.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        no_data_interpretation  optional string. Interpretation of the no_data setting. The default
+                                is NoDataMatchAny when no_data is a number, and NoDataMatchAll when
+                                no_data is a comma-delimited string: NoDataMatchAny,NoDataMatchAll.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        interpolation           optional string. The resampling process of extrapolating the pixel
+                                values while transforming the raster dataset when it undergoes
+                                warping or when it changes coordinate space.
+                                One of: RSP_BilinearInterpolation, RSP_CubicConvolution,
+                                RSP_Majority, RSP_NearestNeighbor
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        compression             optional string. Controls how to compress the image when exporting
+                                to TIFF format: None, JPEG, LZ77. It does not control compression on
+                                other formats.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        compression_quality     optional integer. Controls how much loss the image will be subjected
+                                to by the compression algorithm. Valid value ranges of compression
+                                quality are from 0 to 100.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        band_ids                optional list. If there are multiple bands, you can specify a single
+                                band to export, or you can change the band combination (red, green,
+                                blue) by specifying the band number. Band number is 0 based.
+                                Specified as list of ints, eg [2,1,0]
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        mosaic_rule             optional dict. Specifies the mosaic rule when defining how
+                                individual images should be mosaicked. When a mosaic rule is not
+                                specified, the default mosaic rule of the image layer will be used
+                                (as advertised in the root resource: defaultMosaicMethod,
+                                mosaicOperator, sortField, sortValue).
+        ----------------------  --------------------------------------------------------------------
+        rendering_rule          optional dict. Specifies the rendering rule for how the requested
+                                image should be rendered.
+        ----------------------  --------------------------------------------------------------------
+        f                       optional string. The response format.  default is json
+                                Values: json,image,kmz
+                                If image format is chosen, the bytes of the exported image are
+                                returned unless save_folder and save_file parameters are also
+                                passed, in which case the image is written to the specified file
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        save_folder             optional string. The folder in which the exported image is saved
+                                when f=image
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        save_file               optional string. The file in which the exported image is saved when
+                                f=image
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        compression_tolerance   optional float. Controls the tolerance of the lerc compression
+                                algorithm. The tolerance defines the maximum possible error of pixel
+                                values in the compressed image.
+                                Example: compression_tolerance=0.5 is loseless for 8 and 16 bit
+                                images, but has an accuracy of +-0.5 for floating point data. The
+                                compression tolerance works for the LERC format only.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        adjust_aspect_ratio     optional boolean. Indicates whether to adjust the aspect ratio or
+                                not. By default adjust_aspect_ratio is true, that means the actual
+                                bbox will be adjusted to match the width/height ratio of size
+                                paramter, and the response image has square pixels.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        lerc_version            optional integer. The version of the Lerc format if the user sets
+                                the format as lerc.
+                                Values: 1 or 2
+                                If a version is specified, the server returns the matching version,
+                                or otherwise the highest version available.
+                                (Available only when image_server engine is used)
+        ======================  ====================================================================
+
+        :returns: The raw raster data
+        """
+
+        return self._engine_obj.export_image(bbox,image_sr, bbox_sr, size, time, export_format,
+                     pixel_type, no_data, no_data_interpretation, interpolation,
+                     compression, compression_quality, band_ids, mosaic_rule, rendering_rule,
+                     f, save_folder, save_file, compression_tolerance, adjust_aspect_ratio,
+                     lerc_version)
+
+
+    def __sub__(self, other):
+        return self._engine_obj.__sub__(other)
+
+    def __rsub__(self, other):
+        return self._engine_obj.__rsub__(other)
+
+    def __add__(self, other):
+        return self._engine_obj.__add__(other)
+
+    def __radd__(self, other):
+        return self._engine_obj.__radd__(other)
+
+    def __mul__(self, other):
+        return self._engine_obj.__mul__(other)
+
+    def __rmul__(self, other):
+        return self._engine_obj.__rmul__(other)
+
+    def __div__(self, other):
+        return self._engine_obj.__div__(other)
+
+    def __rdiv__(self, other):
+        return self._engine_obj.__rdiv__(other)
+
+    def __pow__(self, other):
+        return self._engine_obj.__pow__(other)
+
+    def __rpow__(self, other):
+        return self._engine_obj.__rpow__(other)
+
+    def __abs__(self):
+        return self._engine_obj.__abs__(other)
+
+    def __lshift__(self, other):
+        return self._engine_obj.__lshift__(other)
+
+
+    def __rlshift__(self, other):
+        return self._engine_obj.__rlshift__(other)
+
+    def __rshift__(self, other):
+        return self._engine_obj.__rshift__(other)
+
+    def __rrshift__(self, other):
+        return self._engine_obj.__rrshift__(other)
+
+    def __floordiv__(self, other):
+        return self._engine_obj.__floordiv__(other)
+
+    def __rfloordiv__(self, other):
+        return self._engine_obj.__rfloordiv__(other)
+
+    def __truediv__(self, other):
+        return self._engine_obj.__truediv__(other)
+
+    def __rtruediv__(self, other):
+        return self._engine_obj.__rtruediv__(other)
+
+    def __mod__(self, other):
+        return self._engine_obj.__mod__(other)
+
+    def __rmod__(self, other):
+        return self._engine_obj.__rmod__(other)
+
+    def __neg__(self):
+        return self._engine_obj.__neg__(other)
+
+    def __invert__(self):
+        return self._engine_obj.__invert__(other)
+
+    def __and__(self, other):
+        return self._engine_obj.__and__(other)
+
+    def __rand__(self, other):
+        return self._engine_obj.__rand__(other)
+
+    def __xor__(self, other):
+        return self._engine_obj.__xor__(other)
+
+    def __rxor__(self, other):
+        return self._engine_obj.__rxor__(other)
+
+    def __or__(self, other):
+        return self._engine_obj.__or__(other)
+
+    def __ror__(self, other):
+        return self._engine_obj.__ror__(other)
+
+        # bbox_sr = None
+        # if not isinstance(bbox, arcpy.arcobjects.Extent):
+        #     bbox_list = []
+        #     arcpy_sr = None
+        #     if bbox is not None:
+        #         if type(bbox) == str:
+        #             bbox_list = bbox.split(",")
+        #         elif isinstance(bbox, list):
+        #             bbox_list = bbox
+        #         elif isinstance(bbox, dict):
+        #             bbox_list.append(bbox['xmin'])
+        #             bbox_list.append(bbox['ymin'])
+        #             bbox_list.append(bbox['xmax'])
+        #             bbox_list.append(bbox['ymax'])
+        #
+        #             if ('spatialReference' in bbox.keys()):
+        #                 if 'wkt' in bbox['spatialReference'].keys():
+        #                     bbox_sr = bbox['spatialReference']['wkt']
+        #                 elif 'wkid' in bbox['spatialReference'].keys():
+        #                     bbox_sr = bbox['spatialReference']['wkid']
+        #     if bbox_sr is not None:
+        #         if not isinstance(bbox_sr, arcpy.arcobjects.SpatialReference):
+        #             try:
+        #                 arcpy_sr = arcpy.SpatialReference(bbox_sr)
+        #             except:
+        #                 arcpy_sr = arcpy.SpatialReference()
+        #                 arcpy_sr.loadFromString(bbox_sr)
+        #         else:
+        #             arcpy_sr = bbox_sr
+        #     if (bbox_list and arcpy_sr):
+        #         bbox = arcpy.Extent(bbox_list[0], bbox_list[1], bbox_list[2], bbox_list[3], spatial_reference=arcpy_sr)
+        #     elif bbox_list:
+        #         bbox = arcpy.Extent(bbox_list[0], bbox_list[1], bbox_list[2], bbox_list[3])
+        #
+        # columns = 400
+        # rows = 400
+        #
+        # if size is not None and isinstance(size, list):
+        #     columns = size[0]
+        #     rows = size[1]
+        #
+        # if mosaic_rule is not None:
+        #     mosaic_rule = mosaic_rule
+        # elif self._mosaic_rule is not None:
+        #     mosaic_rule = self._mosaic_rule
+        #
+        # __allowedFormat = ["jpgpng", "png",
+        #                    "png8", "png24",
+        #                    "jpg", "bmp",
+        #                    "gif", "tiff",
+        #                    "png32", "bip", "bsq", "lerc"]
+        #
+        # if export_format in __allowedFormat:
+        #     export_format = export_format
+        #
+        # if rendering_rule is not None:
+        #     if 'function_chain' in rendering_rule:
+        #         rendering_rule = rendering_rule['function_chain']
+        #     else:
+        #         rendering_rule = rendering_rule
+        # elif self._fn is not None:
+        #     if not self._uses_gbl_function:
+        #         rendering_rule = self._fn
+        #     else:
+        #         _LOGGER.warning("""Imagery layer object containing global functions in the function chain cannot be used for dynamic visualization.
+        #                             \nThe layer output must be saved as a new image service before it can be visualized. Use save() method of the layer object to create the processed output.""")
+        #         return None
+        #
+        # return self._raster.export(w=columns, h=rows, bbox=bbox, sr=image_sr, rr=rendering_rule, mr=mosaic_rule,
+        #                            f=export_format)
+
+    '''
+    def _repr_jpeg_(self):
+        if self._remote:
+            bbox_sr = None
+            if 'spatialReference' in self.extent:
+                bbox_sr = self.extent['spatialReference']
+            if not self._uses_gbl_function:
+                return super().export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450],
+                                            export_format='jpgpng', f='image')
+        return self.export_image(bbox=self._extent, size=[400, 400], export_format='jpgpng')
+
+    def mosaic_by(self, method=None, sort_by=None, sort_val=None, lock_rasters=None, viewpt=None, asc=True, where=None,
+                  fids=None,
+                  muldidef=None, op="first", item_rendering_rule=None):
+        """
+        Defines how individual images in this layer should be mosaicked. It specifies selection,
+        mosaic method, sort order, overlapping pixel resolution, etc. Mosaic rules are for mosaicking rasters in
+        the mosaic dataset. A mosaic rule is used to define:
+        * The selection of rasters that will participate in the mosaic (using where clause).
+        * The mosaic method, e.g. how the selected rasters are ordered.
+        * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        method                optional string. Determines how the selected rasters are ordered.
+                              str, can be none,center,nadir,northwest,seamline,viewpoint,
+                              attribute,lock-raster
+                              required if method is: center,nadir,northwest,seamline, optional
+                              otherwise. If no method is passed "none" method is used, which uses
+                              the order of records to sort
+                              If sort_by and optionally sort_val parameters are specified,
+                              "attribute" method is used
+                              If lock_rasters are specified, "lock-raster" method is used
+                              If a viewpt parameter is passed, "viewpoint" method is used.
+        -----------------     --------------------------------------------------------------------
+        sort_by               optional string. field name when sorting by attributes
+        -----------------     --------------------------------------------------------------------
+        sort_val              optional string. A constant value defining a reference or base value
+                              for the sort field when sorting by attributes
+        -----------------     --------------------------------------------------------------------
+        lock_rasters          optional, an array of raster Ids. All the rasters with the given
+                              list of raster Ids are selected to participate in the mosaic. The
+                              rasters will be visible at all pixel sizes regardless of the minimum
+                              and maximum pixel size range of the locked rasters.
+        -----------------     --------------------------------------------------------------------
+        viewpt                optional point, used as view point for viewpoint mosaicking method
+        -----------------     --------------------------------------------------------------------
+        asc                   optional bool, indicate whether to use ascending or descending
+                              order. Default is ascending order.
+        -----------------     --------------------------------------------------------------------
+        where                 optional string. where clause to define a subset of rasters used in
+                              the mosaic, be aware that the rasters may not be visible at all
+                              scales
+        -----------------     --------------------------------------------------------------------
+        fids                  optional list of objectids, use the raster id list to define a
+                              subset of rasters used in the mosaic, be aware that the rasters may
+                              not be visible at all scales.
+        -----------------     --------------------------------------------------------------------
+        muldidef              optional array. multidemensional definition used for filtering by
+                              variable/dimensions.
+                              See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r300000290000000
+        -----------------     --------------------------------------------------------------------
+        op                    optional string, first,last,min,max,mean,blend,sum mosaic operation
+                              to resolve overlap pixel values: from first or last raster, use the
+                              min, max or mean of the pixel values, or blend them.
+        -----------------     --------------------------------------------------------------------
+        item_rendering_rule   optional item rendering rule, applied on items before mosaicking.
+        =================     ====================================================================
+        :return: a mosaic rule defined in the format at
+            http://resources.arcgis.com/en/help/arcgis-rest-api/#/Mosaic_rule_objects/02r3000000s4000000/
+        Also see http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/understanding-the-mosaicking-rules-for-a-mosaic-dataset.htm#ESRI_SECTION1_ABDC9F3F6F724A4F8079051565DC59E
+        """
+        if self._datastore_raster:
+            raise RuntimeError("This operation cannot be performed on a datastore raster")
+        mosaic_rule = {
+            "mosaicMethod": "esriMosaicNone",
+            "ascending": asc,
+            "mosaicOperation": 'MT_' + op.upper()
+        }
+
+        if where is not None:
+            mosaic_rule['where'] = where
+
+        if fids is not None:
+            mosaic_rule['fids'] = fids
+
+        if muldidef is not None:
+            mosaic_rule['multidimensionalDefinition'] = muldidef
+
+        if method in ['none', 'center', 'nadir', 'northwest', 'seamline']:
+            mosaic_rule['mosaicMethod'] = 'esriMosaic' + method.title()
+
+        if viewpt is not None:
+            if not isinstance(viewpt, Geometry):
+                viewpt = Geometry(viewpt)
+            mosaic_rule['mosaicMethod'] = 'esriMosaicViewpoint'
+            mosaic_rule['viewpoint'] = viewpt
+
+        if sort_by is not None:
+            mosaic_rule['mosaicMethod'] = 'esriMosaicAttribute'
+            mosaic_rule['sortField'] = sort_by
+            if sort_val is not None:
+                mosaic_rule['sortValue'] = sort_val
+
+        if lock_rasters is not None:
+            mosaic_rule['mosaicMethod'] = 'esriMosaicLockRaster'
+            mosaic_rule['lockRasterIds'] = lock_rasters
+
+        if item_rendering_rule is not None:
+            mosaic_rule['itemRenderingRule'] = item_rendering_rule
+
+        if self._fnra is not None:
+            self._fnra["rasterFunctionArguments"] = _find_and_replace_mosaic_rule(self._fnra["rasterFunctionArguments"],
+                                                                                  mosaic_rule, self._url)
+        self._mosaic_rule = mosaic_rule
+    '''
+
+class _ImageServerRaster(ImageryLayer, Raster):
+    def __init__(self, path, is_multidimensional=None, gis=None):
+        ImageryLayer.__init__(self, path, gis=gis)
+        self._gis = gis
+        #self._url = path
+        self._is_multidimensional = is_multidimensional
+        self._engine=_ImageServerRaster
+        self._path=path
+        self._do_not_hydrate=False
+        self._created_from_collection=False
+        self._mdinfo=None
+        
+    @property
+    def extent(self):
+        return super().extent
+
+    @property
+    def pixel_type(self):
+        """returns pixel type of the imagery layer"""
+        return super().pixel_type
+
+    @property
+    def width(self):
+        """returns width of the raster in the units of its spatial reference """
+        return super().width
+
+    @property
+    def height(self):
+        """returns height of the raster in the units of its spatial reference"""
+        return super().height
+
+
+    @property
+    def columns(self):
+        """returns number of columns in the raster"""
+        return super().columns
+
+    @property
+    def rows(self):
+        """returns number of rows in the raster"""
+        return super().rows
+
+
+    @property
+    def band_count(self):
+        """returns the band count of the raster"""
+        return super().band_count
+
+
+    @property
+    def catalog_path(self):
+        return self._url
+
+
+    @property
+    def path(self):
+        return self._url.rsplit('/', 1)[0]
+
+
+    @property
+    def name(self):
+        return super().properties.contents.name
+
+
+    @property
+    def has_RAT(self):
+        return super().properties.hasRasterAttributeTable
+
+
+    @property
+    def is_multidimensional(self):
+        if "hasMultidimensions" in super().properties:
+            return super().properties['hasMultidimensions']
+
+
+    @property
+    def is_temporary(self):
+        if self._fn is not None:
+            return True
+        else:
+            return False
+
+
+    @property
+    def mean_cell_width(self):
+        return super().properties.pixelSizeX
+
+
+    @property
+    def mean_cell_height(self):
+        return super().properties.pixelSizeY
+
+
+    @property
+    def multidimensional_info(self):
+        if self._created_from_collection is True:
+            return self._mdinfo
+        else:
+            mdinfo=super().multidimensional_info
+            if mdinfo is not None:
+                for index, ele in enumerate(mdinfo['multidimensionalInfo']['variables']):
+                    #if (ele['name'] == variable_name):
+                    for index_dim, ele_dim in enumerate(ele['dimensions']):
+                        if ele_dim['name'] == 'StdTime' or ele_dim['name'].lower() == 'time' or ele_dim['name'].lower() == 'date' or  ele_dim['name'].lower() == 'acquisitiondate' or ele_dim['unit'] == 'ISO8601':
+                            val = ele_dim['values']
+                            #if (('unit' in ele_dim.keys()) and ele_dim['unit'] == 'ISO8601'):
+                            val_list=[]
+                            for val_ele in val:
+                                if isinstance(val_ele, list):
+                                    val_list.append([_epoch_to_iso(val_ele[0]), _epoch_to_iso(val_ele[1])])
+                                else:
+                                    val_list.append(_epoch_to_iso(val_ele))
+                            ele['dimensions'][index_dim]['values']=val_list
+                            if "extent" in ele_dim.keys():
+                                ele['dimensions'][index_dim]['extent']=[_epoch_to_iso(ele_dim['extent'][0]), _epoch_to_iso(ele_dim['extent'][1])]
+                        break
+
+            return mdinfo
+                
+
+    @property
+    def minimum(self):
+        if super().properties.minValues != []:
+            return super().properties.minValues[0]
+        else:
+            return None
+
+
+    @property
+    def maximum(self):
+        if super().properties.maxValues != []:
+            return super().properties.maxValues[0]
+        else:
+            return None
+
+
+    @property
+    def mean(self):
+        if super().properties.meanValues != []:
+            return super().properties.meanValues[0]
+        else:
+            return None
+
+
+    @property
+    def standard_deviation(self):
+        if super().properties.stdvValues != []:
+            return super().properties.stdvValues[0]
+        else:
+            return None
+
+
+    @property
+    def spatial_reference(self):
+        return super().properties.spatialReference
+
+    @property
+    def variable_names(self):
+        if "hasMultidimensions" in super().properties:
+            variable_names_list = []
+            for ele in super().multidimensional_info['multidimensionalInfo']['variables']:
+                variable_names_list.append(ele['name'])
+            return variable_names_list
+        else:
+            return None
+
+
+    @property
+    def variables(self):
+        if "hasMultidimensions" in super().properties:
+            variable_list = []
+            for ele in self.multidimensional_info['multidimensionalInfo']['variables']:
+                if "dimensions" in ele.keys() and "name" in ele.keys():
+                    for dim_ele in (ele["dimensions"]):
+                        variable_list.append(
+                            ele['name'] + "(" + dim_ele['name'] + "=" + str(len(dim_ele["values"])) + ")")
+            return variable_list
+        else:
+            return None
+
+    @property
+    def slices(self):
+        #if "hasMultidimensions" in super().properties:
+        #    mdim_slices=super().slices()
+        #    slice_list = []
+        #    for slice in mdim_slices["slices"]:
+        #        slice_list.append({"variable":slice["elements"][0]["variableName"]})
+        #    i=0
+        #    for slice in mdim_slices["slices"]:
+        #        for ele in slice["elements"]:
+        #            if ele["values"][0][0]==ele["values"][0][1]:
+        #                if ele['dimensionName'] == 'StdTime' or ele['dimensionName'].lower() == 'time' or ele['dimensionName'].lower() == 'date' or  ele['dimensionName'].lower() == 'acquisitiondate' or ele['dimensionName'] == 'ISO8601':                
+        #                    slice_list[i].update({ele["dimensionName"]:_epoch_to_iso(ele["values"][0][0])})
+        #                else:
+        #                    slice_list[i].update({ele["dimensionName"]:ele["values"][0][0]})
+        #            else:
+        #                if ele['dimensionName'] == 'StdTime' or ele_dim['name'].lower() == 'time':
+        #                    values = ele["values"]
+        #                    if isinstance(values[0],list):
+        #                        values=values[0]
+        #                    for j in range(0,len(values)):
+        #                        values[j]=_epoch_to_iso(values[j])
+        #                    slice_list[i].update({ele["dimensionName"]:values})
+        #                else:
+        #                    slice_list[i].update({ele["dimensionName"]:ele["values"]})
+        #        i=i+1
+        #    return slice_list
+        #    #slice_list = []
+        #    #for ele in self.multidimensional_info['multidimensionalInfo']['variables']:
+        #    #    if "dimensions" in ele.keys() and "name" in ele.keys():
+        #    #        for dim_ele in (ele["dimensions"]):
+        #    #            for dim_slice in dim_ele["values"]:
+        #    #                slice_list.append({"variable": ele['name'], dim_ele["name"]: dim_slice})
+        #    #return slice_list
+        #else:
+        #    return None
+        if "hasMultidimensions" in super().properties:
+            mdim_slices=super().slices()
+            slice_list = []
+            for slice in mdim_slices["slices"]:
+                slice_list.append({"variable":slice["multidimensionalDefinition"][0]["variableName"]})
+            i=0
+            for slice in mdim_slices["slices"]:
+                for ele in slice["multidimensionalDefinition"]:
+
+                    #if ele["values"][0][0]==ele["values"][0][1]:
+                    #    if ele['dimensionName'] == 'StdTime' or ele['dimensionName'].lower() == 'time' or ele['dimensionName'].lower() == 'date' or  ele['dimensionName'].lower() == 'acquisitiondate' or ele['dimensionName'] == 'ISO8601':                
+                    #        slice_list[i].update({ele["dimensionName"]:_epoch_to_iso(ele["values"][0][0])})
+                    #    else:
+                    #        slice_list[i].update({ele["dimensionName"]:ele["values"][0][0]})
+                    #else:
+                    if ele['dimensionName'] == 'StdTime' or ele['dimensionName'].lower() == 'time' or ele['dimensionName'].lower() == 'date' or  ele['dimensionName'].lower() == 'acquisitiondate':
+                    #if ele['dimensionName'] == 'StdTime' or ele['dimensionName'].lower() == 'time':
+                        values = ele["values"]
+                        if isinstance(values[0],list):
+                            values=values[0]
+                        for j in range(0,len(values)):
+                            values[j]=_epoch_to_iso(values[j])
+                        if (isinstance(values, list)) and len(values)==1:
+                            slice_list[i].update({ele["dimensionName"]:(values[0], )})
+                        else:
+                            slice_list[i].update({ele["dimensionName"]:tuple(values)})
+                    else:
+                        values=ele["values"]
+                        if (isinstance(values, list)) and len(values)==1:
+                            slice_list[i].update({ele["dimensionName"]:(values[0], )})
+                        else:
+                            slice_list[i].update({ele["dimensionName"]:tuple(values)})
+                        
+                i=i+1
+            return slice_list
+            #slice_list = []
+            #for ele in self.multidimensional_info['multidimensionalInfo']['variables']:
+            #    if "dimensions" in ele.keys() and "name" in ele.keys():
+            #        for dim_ele in (ele["dimensions"]):
+            #            for dim_slice in dim_ele["values"]:
+            #                slice_list.append({"variable": ele['name'], dim_ele["name"]: dim_slice})
+            #return slice_list
+        else:
+            return None
+
+
+    @property
+    def band_names(self):
+        if "bandNames" in  super().properties:
+            return super().properties.bandNames
+        else:
+            return None
+
+
+    @property
+    def block_size(self):
+        block_width=None
+        block_height=None
+        if "blockWidth" in  super().properties:
+            block_width = super().properties.blockWidth
+        if "blockHeight" in  super().properties:
+            block_height = super().properties.blockHeight
+        return (block_width,block_height)
+
+    @property
+    def compression_type(self):
+        if "compressionType" in  super().properties:
+            return super().properties.compressionType
+        else:
+            return None
+
+
+    @property
+    def is_integer(self):
+        if "pixelType" in super().properties:
+            pixel_type=super().properties.pixelType
+            if(pixel_type=="U1" or pixel_type=="U2" or pixel_type=="U4" 
+                or pixel_type=="U8" or pixel_type=="S8" or pixel_type=="U16"
+                or pixel_type=="S16" or pixel_type=="U32" or pixel_type=="S32"):
+                return True
+            else:
+                return False
+
+    @property
+    def format(self):
+        if "format" in super().properties:
+            return super().properties.format
+        else:
+            return None
+
+
+    @property
+    def no_data_value(self):
+        if "noDataValue" in super().properties:
+            return super().properties.noDataValue
+        else:
+            return None
+
+
+    @property
+    def no_data_values(self):
+        if "noDataValues" in super().properties:
+            return super().properties.noDataValues
+        else:
+            return None
+
+
+    @property
+    def uncompressed_size(self):
+        if "uncompressedSize" in super().properties:
+            return super().properties.uncompressedSize
+        else:
+            return None
+
+    @property
+    def key_properties(self):
+        return super().key_properties()
+
+    @property
+    def read_only(self):
+        return True
+
+    def get_raster_bands(self, band_ids_or_names=None):
+        from arcgis.raster.functions import extract_band
+        return_list=[]
+        if isinstance(band_ids_or_names, list):
+            for ele in band_ids_or_names:
+                if isinstance(ele, int):
+                    return_list.append(extract_band(self, band_ids=[ele]))
+                else:
+                    return_list.append(extract_band(self, band_names=[ele]))
+            return return_list[0] if len(return_list) == 1 else return_list
+        else:
+            raise RuntimeError("band_ids_or_names should be of type list")
+
+
+    def get_variable_attributes(self, variable_name):
+        attribute_info = {}
+        for ele in self.multidimensional_info['multidimensionalInfo']['variables']:
+            if (ele['name'] == variable_name):
+                if "description" in ele.keys():
+                    attribute_info.update({"Description": ele['description']})
+                if "unit" in ele.keys():
+                    attribute_info.update({"Unit": ele['unit']})
+                #attribute_info.update({"Unit": ele['unit'], "Description": ele['description']})
+                break
+        return attribute_info
+
+
+    def get_dimension_names(self, variable_name):
+        dim_list = []
+        for ele in self.multidimensional_info['multidimensionalInfo']['variables']:
+            if (ele['name'] == variable_name):
+                for ele_dim in ele['dimensions']:
+                    dim_list.append(ele_dim['name'])
+        return dim_list
+
+
+    def get_dimension_values(self, variable_name, dimension_name, return_as_datetime_object=False):
+        val=[]
+        val_list=[]
+        for index, ele in enumerate(self.multidimensional_info['multidimensionalInfo']['variables']):
+            if (ele['name'] == variable_name):
+                for ele_dim in ele['dimensions']:
+                    if ele_dim['name'] == dimension_name:
+                        val = ele_dim['values']
+                        if isinstance(val,list):
+                            for ele in val:
+                                if isinstance(ele,list):
+                                    val_list.append(tuple(ele))
+                                else:
+                                    val_list.append(ele)
+                        else:
+                            val_list=val
+                        break
+        #unit=''
+        #if ('Unit' in self.get_dimension_attributes(variable_name, dimension_name).keys()):
+        #    unit = self.get_dimension_attributes(variable_name, dimension_name)["Unit"]
+        if ((dimension_name == 'StdTime' or dimension_name.lower() == 'time' or dimension_name.lower() == 'date' or  dimension_name.lower() == 'acquisitiondate') and return_as_datetime_object is True):
+        #if (dimension_name == 'StdTime' and return_as_datetime_object is True):
+            val_list=[]
+            for val_ele in val:
+                if isinstance(val_ele, list):
+                    val_list.append((_iso_to_datetime(val_ele[0]), _iso_to_datetime(val_ele[1])))
+                else:
+                    val_list.append(_iso_to_datetime(val_ele))
+        return val_list
+
+
+
+
+    def get_dimension_attributes(self, variable_name, dimension_name):
+        attribute_info = {}
+        for index, ele in enumerate(self.multidimensional_info['multidimensionalInfo']['variables']):
+            if (ele['name'] == variable_name):
+                for ele_dim in ele['dimensions']:
+                    if ele_dim['name'] == dimension_name:
+                        if 'interval' in ele_dim.keys():
+                            attribute_info['Interval']=ele_dim["interval"]
+                        else:
+                            attribute_info['Interval']=""
+                        if 'intervalUnit' in ele_dim.keys():
+                            attribute_info['IntervalUnit']=ele_dim["intervalUnit"]
+                        else:
+                            attribute_info['IntervalUnit']=""
+                        if 'hasRegularIntervals' in ele_dim.keys():
+                            attribute_info['HasRegularIntervals']=ele_dim["hasRegularIntervals"]
+                        else:
+                            attribute_info['HasRegularIntervals']=""
+                        if 'hasRanges' in ele_dim.keys():
+                            attribute_info['HasRanges']=ele_dim["hasRanges"]
+                        else:
+                            attribute_info['HasRanges']=""
+                        if 'extent' in ele_dim.keys():
+                            attribute_info.update({"Minimum": ele_dim["extent"][0],
+                                                "Maximum": ele_dim["extent"][1]})
+                        else:
+                            attribute_info['Minimum']=""
+                            attribute_info['Maximum']=""
+                        #attribute_info.update({"Interval": ele_dim["interval"],
+                        #                        "IntervalUnit": ele_dim["intervalUnit"],
+                        #                        "HasRegularIntervals": ele_dim["hasRegularIntervals"],
+                        #                        "hasRanges": ele_dim["hasRanges"], "Minimum": ele_dim["extent"][0],
+                        #                        "Maximum": ele_dim["extent"][1]})
+                        if ('unit' in ele_dim.keys()):
+                            attribute_info.update({"Unit": ele_dim['unit']})
+                        else:
+                            attribute_info['Unit']=""
+                        if ('description' in ele_dim.keys()):
+                            attribute_info.update({"Description": ele_dim['description']})
+                        else:
+                            attribute_info['Description']=""
+        return attribute_info
+
+
+    def rename_variable(self, current_variable_name, new_variable_name):
+        raise RuntimeError('Not available on image service')
+
+
+    def set_property(self, property_name, property_value):
+        raise RuntimeError('Not available on image service')
+
+
+    def get_property(self, property_name):
+        key_properties = self.key_properties
+        if key_properties is not None:
+            if property_name in key_properties.keys():
+                return key_properties[property_name]
+        else:
+            return None
+
+
+    def read(self, upper_left_corner=(0, 0), origin_coordinate=None, ncols=0, nrows=0, nodata_to_value=None,
+             cell_size=None):
+        """
+        read a numpy array from the calling raster
+
+        :param upper_left_corner: 2-D tuple. a tuple with 2 values representing the number of pixels along x and y
+        direction relative to the origin_coordinate. E.g., (2, 0), means that the real origin to extract the array
+        is 2 pixels away in x direction from the origin_coordinate
+
+        :param origin_coordinate: arcpy.Point or 2-d tuple (X, Y). The x and y values are in map units.
+        If no value is specified, the top left corner of the calling raster, i.e., arcpy.Point(XMin, YMax) will be used
+
+        :param ncols: integer. the number of columns from the real origin in the calling raster to convert to the NumPy array.
+        If no value is specified, the number of columns of the calling raster will be used. Default: None
+
+        :param nrows: integer. the number of rows from the real origin in the calling raster to convert to the NumPy array.
+        If no value is specified, the number of rows of the calling raster will be used. Default: None
+
+        :param nodata_to_value: numeric. pixels with nodata values in the raster would be assigned with the given value in
+        the NumPy array. If no value is specified, the NoData value of the calling raster will be used. Default: None
+
+        :param cell_size: 2-D tuple. a tuple with 2 values shows the x_cell_size and y_cell_size, e.g., cell_size = (2, 2).
+        if no value is specified, the original cell size of the calling raster will be used. Otherwise, pixels would be
+        resampled to the requested cell_size
+
+        :return: numpy.ndarray. If self is a multidimensional raster, the array has shape (slices, height, width, bands)
+        """
+        import lerc
+
+        extent = self.extent
+        xmin, ymin, xmax, ymax = extent['xmin'], extent['ymin'], extent['xmax'], extent['ymax']
+        if cell_size is None:
+            cell_size = (self.mean_cell_width, self.mean_cell_height)
+        if origin_coordinate is None:
+            origin_coordinate = (xmin, ymax)
+        if nrows == 0:
+            nrows = self.height
+        if ncols == 0:
+            ncols = self.width
+
+        xmin = origin_coordinate[0]
+        ymin = origin_coordinate[1] - cell_size[1] * nrows
+        xmax = origin_coordinate[0] + cell_size[0] * ncols
+        ymax = origin_coordinate[1]
+        size = (round((xmax - xmin) / cell_size[0]), round((ymax - ymin) / cell_size[1]))
+
+        if self.is_multidimensional:
+            multidimensional_info = super().multidimensional_info['multidimensionalInfo']
+            mosaic_rule = {'multidimensionalDefinition': []}
+            for variable in multidimensional_info['variables']:
+                variable_name = variable['name']
+                for dimension in variable['dimensions']:
+                    dimension_name = dimension['name']
+                    extent = dimension['extent']
+
+                    mosaic_rule['multidimensionalDefinition'].append({
+                        'variable_name': variable_name,
+                        'dimensionaName': dimension_name,
+                        'values': [
+                            extent
+                        ]
+                    })
+        else:
+            mosaic_rule = None
+
+        res = super().export_image(bbox=','.join(map(str, [xmin, ymin, xmax, ymax])),
+                                   f='image', export_format='lerc',
+                                   size=size,
+                                   no_data=nodata_to_value,
+                                   mosaic_rule=mosaic_rule,
+                                   lerc_version=2
+                                   )
+
+        if not isinstance(res, bytes):
+            raise RuntimeError(res)
+        result, data, valid_mask = lerc.decode(res)
+        if result != 0:
+            raise RuntimeError('decoding bytes from imagery service failed.')
+
+        # transpose
+        if self.is_multidimensional:
+            if len(data) == 2:
+                data = np.expand_dims(np.expand_dims(data, axis=2), axis=0)
+            elif len(data) == 3:
+                if len(self.slices) == 1:
+                    data = np.expand_dims(np.transpose(data, [1, 2, 0]), axis=0)
+                else:
+                    data = np.expand_dims(np.transpose(data, [2, 0, 1]), axis=3)
+            else:
+                assert (len(data.shape) == 4)
+                data = np.transpose(data, [3, 1, 2, 0])
+        else:
+            if len(data) == 2:
+                data = np.expand_dims(data, axis=2)
+            else:
+                data = np.transpose(data, axes=[1, 2, 0])
+
+        return data
+
+
+    def write(self, array, upper_left_corner=(0, 0), origin_coordinate=None, value_to_nodata=None):
+        raise RuntimeError('Operation is not supported on image services')
+
+
+    def remove_variables(self, variable_names):
+        raise RuntimeError('Operation is not supported on image services')
+
+
+    def add_dimension(self, variable, new_dimension_name, dimension_value, dimension_attributes=None):
+        raise RuntimeError('Operation is not supported on image services')
+
+    def append_slices(md_raster=None):
+        raise RuntimeError('Operation is not supported on image services')
+
+    def set_variable_attributes(self, variable_name, variable_attributes):
+        raise RuntimeError('Operation is not supported on image services')
+
+
+
+    @property
+    def _lyr_json(self):
+        _lyr_json = super()._lyr_json
+        _lyr_json['type'] = "ImageryLayer"
+        return _lyr_json
+
+    def save(self, output_name=None, for_viz=False, process_as_multidimensional=None,
+            build_transpose=None, gis=None, future=False, **kwargs):
+        """
+        Persists this imagery layer to location specified in outpath as an Imagery Layer item.
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        outpath               Required string.
+        -----------------     --------------------------------------------------------------------
+        for_viz               The output raster format. The default format will be derived from
+                              the file extension that was specified in the outpath.
+        =================     ====================================================================
+        :return: String representing the location of the output data
+        """
+        return super().save(output_name=output_name, for_viz=for_viz,
+                                process_as_multidimensional=process_as_multidimensional,
+                                build_transpose=build_transpose, gis=gis, future=future)
+
+
+
+    def _repr_png_(self):
+        bbox_sr = None
+        if 'spatialReference' in self.extent:
+            bbox_sr = self.extent['spatialReference']
+      
+        if not self._uses_gbl_function:
+            return super().export_image(bbox=self._extent, bbox_sr=bbox_sr, size=[1200, 450],
+                                        export_format='png32', f='image')
+
+    def _repr_jpeg_(self):
+        return None
+
+
+
+    def export_image(self, bbox=None, image_sr=None, bbox_sr=None, size=None, time=None, export_format='jpgpng',
+                     pixel_type=None, no_data=None, no_data_interpretation='esriNoDataMatchAny', interpolation=None,
+                     compression=None, compression_quality=None, band_ids=None, mosaic_rule=None, rendering_rule=None,
+                     f='image', save_folder=None, save_file=None, compression_tolerance=None, adjust_aspect_ratio=None,
+                     lerc_version=None):
+        """
+        The export_image operation is performed on a raster layer to visualise it.
+        ======================  ====================================================================
+        **Arguments**           **Description**
+        ----------------------  --------------------------------------------------------------------
+        bbox                    Optional dict or string. The extent (bounding box) of the exported
+                                image. Unless the bbox_sr parameter has been specified, the bbox is
+                                assumed to be in the spatial reference of the raster layer.
+                                The bbox should be specified as an arcgis.geometry.Envelope object,
+                                it's json representation or as a list or string with this
+                                format: '<xmin>, <ymin>, <xmax>, <ymax>'
+                                If omitted, the extent of the raster layer is used
+        ----------------------  --------------------------------------------------------------------
+        image_sr                optional string, SpatialReference. The spatial reference of the
+                                exported image. The spatial reference can be specified as either a
+                                well-known ID, it's json representation or as an
+                                arcgis.geometry.SpatialReference object.
+                                If the image_sr is not specified, the image will be exported in the
+                                spatial reference of the imagery layer.
+        ----------------------  --------------------------------------------------------------------
+        size                    optional list. The size (width * height) of the exported image in
+                                pixels. If size is not specified, an image with a default size of
+                                400*450 will be exported.
+                                Syntax: list of [width, height]
+        ----------------------  --------------------------------------------------------------------
+        export_format           optional string. The format of the exported image. The default
+                                format is jpgpng. The jpgpng format returns a JPG if there are no
+                                transparent pixels in the requested extent; otherwise, it returns a
+                                PNG (png32).
+                                Values: jpgpng,png,png8,png24,jpg,bmp,gif,tiff,png32,bip,bsq,lerc
+        ----------------------  --------------------------------------------------------------------
+        mosaic_rule             optional dict. Specifies the mosaic rule when defining how
+                                individual images should be mosaicked. When a mosaic rule is not
+                                specified, the default mosaic rule of the image layer will be used
+                                (as advertised in the root resource: defaultMosaicMethod,
+                                mosaicOperator, sortField, sortValue).
+        ----------------------  --------------------------------------------------------------------
+        rendering_rule          optional dict. Specifies the rendering rule for how the requested
+                                image should be rendered.
+        ----------------------  --------------------------------------------------------------------
+        :returns: The raw raster data
+        """
+        result = super().export_image(bbox, image_sr, bbox_sr, size, time, export_format, pixel_type,
+                                    no_data, no_data_interpretation, interpolation, compression,
+                                    compression_quality, band_ids, mosaic_rule, rendering_rule, f,
+                                    save_folder, save_file, compression_tolerance, adjust_aspect_ratio, lerc_version)
+        if f=="image":
+            from IPython.display import Image
+            return Image(result)
+        else:
+            return result
+
+
+    def __sub__(self, other):
+        from arcgis.raster.functions import minus
+        return minus([self, other])
+
+    def __rsub__(self, other):
+        from arcgis.raster.functions import minus
+        return minus([other, self])
+
+    def __add__(self, other):
+        from arcgis.raster.functions import plus
+        return plus([self, other])
+
+    def __radd__(self, other):
+        from arcgis.raster.functions import plus
+        return plus([other, self])
+
+    def __mul__(self, other):
+        from arcgis.raster.functions import times
+        return times([self, other])
+
+    def __rmul__(self, other):
+        from arcgis.raster.functions import times
+        return times([other, self])
+
+    def __div__(self, other):
+        from arcgis.raster.functions import divide
+        return divide([self, other])
+
+    def __rdiv__(self, other):
+        from arcgis.raster.functions import divide
+        return divide([other, self])
+
+    def __pow__(self, other):
+        from arcgis.raster.functions import power
+        return power([self, other])
+
+    def __rpow__(self, other):
+        from arcgis.raster.functions import power
+        return power([other, self])
+
+    def __abs__(self):
+        from arcgis.raster.functions import abs
+        return abs([self])
+
+    def __lshift__(self, other):
+        from arcgis.raster.functions import bitwise_left_shift
+        return bitwise_left_shift([self, other])
+
+    def __rlshift__(self, other):
+        from arcgis.raster.functions import bitwise_left_shift
+        return bitwise_left_shift([other, self])
+
+    def __rshift__(self, other):
+        from arcgis.raster.functions import bitwise_right_shift
+        return bitwise_right_shift([self, other])
+
+    def __rrshift__(self, other):
+        from arcgis.raster.functions import bitwise_right_shift
+        return bitwise_right_shift([other, self])
+
+    def __floordiv__(self, other):
+        from arcgis.raster.functions import floor_divide
+        return floor_divide([self, other])
+
+    def __rfloordiv__(self, other):
+        from arcgis.raster.functions import floor_divide
+        return floor_divide([other, self])
+
+    def __truediv__(self, other):
+        from arcgis.raster.functions import float_divide
+        return float_divide([self, other])
+
+    def __rtruediv__(self, other):
+        from arcgis.raster.functions import float_divide
+        return float_divide([other, self])
+
+    def __mod__(self, other):
+        from arcgis.raster.functions import mod
+        return mod([self, other])
+
+    def __rmod__(self, other):
+        from arcgis.raster.functions import mod
+        return mod([other, self])
+
+    def __neg__(self):
+        from arcgis.raster.functions import negate
+        return negate([self])
+
+    def __invert__(self):
+        from arcgis.raster.functions import boolean_not
+        return boolean_not(self)
+
+    def __and__(self, other):
+        from arcgis.raster.functions import boolean_and
+        return boolean_and([self, other])
+
+    def __rand__(self, other):
+        from arcgis.raster.functions import boolean_and
+        return boolean_and([other, self])
+
+    def __xor__(self, other):
+        from arcgis.raster.functions import boolean_xor
+        return boolean_xor([self, other])
+
+    def __rxor__(self, other):
+        from arcgis.raster.functions import boolean_xor
+        return boolean_xor([other, self])
+
+    def __or__(self, other):
+        from arcgis.raster.functions import boolean_or
+        return boolean_or([self, other])
+
+    def __ror__(self, other):
+        from arcgis.raster.functions import boolean_or
+        return boolean_or([other, self])
+
+
+class _ArcpyRaster(Raster,ImageryLayer):
+    def __init__(self, path, is_multidimensional=None, gis=None):
+        ImageryLayer.__init__(self, str(path), gis=gis)
+        self._gis = gis
+        self._is_multidimensional = is_multidimensional
+        self._engine=_ArcpyRaster
+        import arcpy
+        if isinstance(path, str):
+            if ("https://"  in path or "http://"  in path): #To provide access to secured service
+                if self._token is not None:
+                    self._raster = arcpy.ia.Raster(path+"?token="+self._token, is_multidimensional)
+                else:
+                    self._raster = arcpy.ia.Raster(path, is_multidimensional)
+            else:
+                self._raster = arcpy.ia.Raster(path, is_multidimensional)
+        else:
+            self._raster = path
+        self._datastore_raster=True
+        self._do_not_hydrate=False
+        self._uri=path
+        self._path = path
+
+    @property
+    def _lyr_dict(self):
+        url = self._path
+
+        lyr_dict =  { 'type' : type(self).__name__, 'url' : url }
+        if ("https://"  in url or "http://"  in url):
+            if self._token is not None:
+                lyr_dict['serviceToken'] = self._token
+
+        return lyr_dict
+
+    def __iter__(self):
+        return(self._raster.__iter__())
+
+    def __getitem__(self, item):
+        return (self._raster.__getitem__(item))
+
+    def __setitem__(self, idx, value):
+        return (self._raster.__setitem__(idx, value))
+
+    _extent_override = None
+    @property
+    def extent(self):
+        if self._extent_override:
+            return self._extent_override
+        else:
+            return json.loads(self._raster.extent.JSON)
+
+    @extent.setter
+    def extent(self, value):
+        self._extent_override = value
+
+    @property
+    def pixel_type(self):
+        """returns pixel type of the imagery layer"""
+        pixel_type = self._raster.pixelType
+        return pixel_type
+
+    @property
+    def width(self):
+        """returns width of the raster in the units of its spatial reference """
+        width = self._raster.extent.width
+        return width
+
+    @property
+    def height(self):
+        """returns height of the raster in the units of its spatial reference"""
+        return self._raster.extent.height
+
+    @property
+    def columns(self):
+        """returns number of columns in the raster"""
+        return self._raster.width
+
+    @property
+    def rows(self):
+        """returns number of rows in the raster"""
+        return self._raster.height
+
+    @property
+    def band_count(self):
+        """returns the band count of the raster"""
+        return self._raster.bandCount
+
+    @property
+    def catalog_path(self):
+        return self._raster.catalogPath
+
+    @property
+    def path(self):
+        return self._raster.path
+
+    @property
+    def name(self):
+        return self._raster.name
+
+    @property
+    def has_RAT(self):
+        return self._raster.hasRAT
+
+    @property
+    def is_multidimensional(self):
+        return self._raster.isMultidimensional
+
+    @property
+    def is_temporary(self):
+        return self._raster.isTemporary
+
+    @property
+    def mean_cell_width(self):
+        return self._raster.meanCellWidth
+
+    @property
+    def mean_cell_height(self):
+        return self._raster.meanCellHeight
+
+    @property
+    def multidimensional_info(self):
+        if self._raster.mdinfo is not None:
+            return json.loads(self._raster.mdinfo)
+        else:
+            return None
+
+    @property
+    def minimum(self):
+        return self._raster.minimum
+
+    @property
+    def maximum(self):
+        return self._raster.maximum
+
+    @property
+    def mean(self):
+        return self._raster.mean
+
+    @property
+    def standard_deviation(self):
+        return self._raster.standardDeviation
+
+    @property
+    def spatial_reference(self):
+        return self._raster.spatialReference.exportToString()
+
+    @property
+    def variable_names(self):
+        return self._raster.variableNames
+
+    @property
+    def variables(self):
+        return self._raster.variables
+
+    @property
+    def slices(self):
+        return self._raster.slices
+
+    @property
+    def band_names(self):
+        return self._raster.bandNames
+
+    @property
+    def block_size(self):
+        return self._raster.blockSize
+
+    @property
+    def compression_type(self):
+        return self._raster.compressionType
+
+    @property
+    def is_integer(self):
+        return self._raster.isInteger
+
+    @property
+    def format(self):
+        return self._raster.format
+
+    @property
+    def no_data_value(self):
+        return self._raster.noDataValue
+
+    @property
+    def no_data_values(self):
+        return self._raster.noDataValues
+
+    @property
+    def uncompressed_size(self):
+        return self._raster.uncompressedSize
+
+    @property
+    def key_properties(self):
+        return self._raster.properties
+
+    @property
+    def read_only(self):
+        return self._raster.readOnly
+
+    def get_raster_bands(self, band_ids_or_names=None):
+        raster_bands = self._raster.getRasterBands(band_ids_or_names)
+        if isinstance(raster_bands, list):
+            return [Raster(r) for r in raster_bands]
+        return Raster(raster_bands)
+
+    def get_variable_attributes(self, variable_name):
+        return self._raster.getVariableAttributes(variable_name)
+
+    def get_dimension_names(self, variable_name):
+        return self._raster.getDimensionNames(variable_name)
+
+    def get_dimension_values(self, variable_name, dimension_name, return_as_datetime_object=False):
+        val_list = []
+        #unit = None
+        
+        val = (self._raster.getDimensionValues(variable_name, dimension_name))
+        #if ("Unit" in self._raster.getDimensionAttributes(variable_name, dimension_name).keys()):
+        #    unit = self._raster.getDimensionAttributes(variable_name, dimension_name)["Unit"]
+        if ((dimension_name == 'StdTime' or dimension_name.lower() == 'time' or dimension_name.lower() == 'date' or  dimension_name.lower() == 'acquisitiondate') and return_as_datetime_object is True):
+            val_list=[]
+            for val_ele in val:
+                if isinstance(val_ele, list) or isinstance(val_ele, tuple):
+                    val_list.append((_iso_to_datetime(val_ele[0]), _iso_to_datetime(val_ele[1])))
+                else:
+                    val_list.append(_iso_to_datetime(val_ele))
+            return val_list
+        else:
+            return val
+
+    def get_dimension_attributes(self, variable_name, dimension_name):
+        return (self._raster.getDimensionAttributes(variable_name, dimension_name))
+
+    def rename_variable(self, current_variable_name, new_variable_name):
+        return (self._raster.renameVariable(current_variable_name, new_variable_name))
+
+    def set_property(self, property_name, property_value):
+        return (self._raster.setProperty(property_name, property_value))
+
+    def get_property(self, property_name):
+        return self._raster.getProperty(property_name)
+
+    def read(self, upper_left_corner=(0, 0), origin_coordinate=None, ncols=0, nrows=0, nodata_to_value=None,
+             cell_size=None):
+        """
+        read a numpy array from the calling raster
+
+        :param upper_left_corner: 2-D tuple. a tuple with 2 values representing the number of pixels along x and y
+        direction relative to the origin_coordinate. E.g., (2, 0), means that the real origin to extract the array
+        is 2 pixels away in x direction from the origin_coordinate
+
+        :param origin_coordinate: arcpy.Point or 2-d tuple (X, Y). The x and y values are in map units.
+        If no value is specified, the top left corner of the calling raster, i.e., arcpy.Point(XMin, YMax) will be used
+
+        :param ncols: integer. the number of columns from the real origin in the calling raster to convert to the NumPy array.
+        If no value is specified, the number of columns of the calling raster will be used. Default: None
+
+        :param nrows: integer. the number of rows from the real origin in the calling raster to convert to the NumPy array.
+        If no value is specified, the number of rows of the calling raster will be used. Default: None
+
+        :param nodata_to_value: numeric. pixels with nodata values in the raster would be assigned with the given value in
+        the NumPy array. If no value is specified, the NoData value of the calling raster will be used. Default: None
+
+        :param cell_size: 2-D tuple. a tuple with 2 values shows the x_cell_size and y_cell_size, e.g., cell_size = (2, 2).
+        if no value is specified, the original cell size of the calling raster will be used. Otherwise, pixels would be
+        resampled to the requested cell_size
+
+        :return: numpy.ndarray. If self is a multidimensional raster, the array has shape (slices, height, width, bands)
+        """
+        return self._raster.read(upper_left_corner=upper_left_corner, origin_coordinate=origin_coordinate, ncols=ncols,
+                              nrows=nrows, nodata_to_value=nodata_to_value, cell_size=cell_size)
+
+    def write(self, array, upper_left_corner=(0, 0), origin_coordinate=None, value_to_nodata=None):
+        return self._raster.write(array=array, upper_left_corner=upper_left_corner,
+                                   origin_coordinate=origin_coordinate, value_to_nodata=value_to_nodata)
+
+    def remove_variables(self, variable_names):
+        return self._raster.removeVariables(variable_names)
+
+    def add_dimension(self, variable, new_dimension_name, dimension_value, dimension_attributes=None):
+        return self._raster.addDimension(variable, new_dimension_name, dimension_value, dimension_attributes)
+
+    @property
+    def _lyr_json(self):
+        _lyr_json = super()._lyr_json
+        _lyr_json['type'] = "ImageryLayer"
+        return _lyr_json
+
+    def save(self, output_name=None, for_viz=False, process_as_multidimensional=None,
+            build_transpose=None, gis=None, future=False, **kwargs):
+        """
+        Persists this imagery layer to location specified in outpath as an Imagery Layer item.
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        outpath               Required string.
+        -----------------     --------------------------------------------------------------------
+        for_viz               The output raster format. The default format will be derived from
+                              the file extension that was specified in the outpath.
+        =================     ====================================================================
+        :return: String representing the location of the output data
+        """
+
+        fnra_set = False
+        if self._fnra is None:
+            from .functions import identity
+            identity_layer = identity(self)
+            self._fnra = identity_layer._engine_obj._fnra
+            fnra_set=True
+        #use arcpy generate raster to save the raster with the function chain
+
+        if process_as_multidimensional is not None:
+            if type(process_as_multidimensional) == bool and not process_as_multidimensional:
+                process_as_multidimensional = "CURRENT_SLICE"
+            else:
+                process_as_multidimensional = "ALL_SLICES"
+        else:
+            process_as_multidimensional = "ALL_SLICES"
+
+        if build_transpose is not None:
+            if build_transpose and type(build_transpose) == bool:
+                build_transpose = "TRANSPOSE"
+            else:
+                build_transpose = "NO_TRANSPOSE"
+        else:
+            build_transpose = "NO_TRANSPOSE"
+        result = arcpy.GenerateRasterFromRasterFunction_management(json.dumps(self._fnra), output_name) 
+        uri = result.getOutput(0)
+        if uri and process_as_multidimensional == "ALL_SLICES" and build_transpose == "TRANSPOSE":
+            arcpy.management.BuildMultidimensionalTranspose(uri)
+        if fnra_set == True:
+            self._fnra= None
+        return uri
+
+    def _repr_png_(self):
+        bbox_sr = None
+        if 'spatialReference' in self.extent:
+            bbox_sr = self.extent['spatialReference']
+        if self._fn is None:
+            return (self.export_image(bbox=self.extent, bbox_sr=bbox_sr, size=[400, 400], export_format='png32').data)
+        else:
+            #rendered_ras= Raster(arcpy.ia.Render(self._raster,{"rft":self._fn}), engine=_ArcpyRaster, is_multidimensional= self._is_multidimensional, gis=self._gis)
+            
+            return (self.export_image(bbox=self.extent, bbox_sr=bbox_sr, size=[400, 400], export_format='png32').data)
+
+    def _repr_jpeg_(self):
+        return None
+
+
+
+    def export_image(self, bbox=None, image_sr=None, bbox_sr=None, size=None, time=None, export_format='jpgpng',
+                     pixel_type=None, no_data=None, no_data_interpretation='esriNoDataMatchAny', interpolation=None,
+                     compression=None, compression_quality=None, band_ids=None, mosaic_rule=None, rendering_rule=None,
+                     f='json', save_folder=None, save_file=None, compression_tolerance=None, adjust_aspect_ratio=None,
+                     lerc_version=None):
+        """
+        The export_image operation is performed on a raster layer to visualise it.
+        ======================  ====================================================================
+        **Arguments**           **Description**
+        ----------------------  --------------------------------------------------------------------
+        bbox                    Optional dict or string. The extent (bounding box) of the exported
+                                image. Unless the bbox_sr parameter has been specified, the bbox is
+                                assumed to be in the spatial reference of the raster layer.
+                                The bbox should be specified as an arcgis.geometry.Envelope object,
+                                it's json representation or as a list or string with this
+                                format: '<xmin>, <ymin>, <xmax>, <ymax>'
+                                If omitted, the extent of the raster layer is used
+        ----------------------  --------------------------------------------------------------------
+        image_sr                optional string, SpatialReference. The spatial reference of the
+                                exported image. The spatial reference can be specified as either a
+                                well-known ID, it's json representation or as an
+                                arcgis.geometry.SpatialReference object.
+                                If the image_sr is not specified, the image will be exported in the
+                                spatial reference of the raster.
+        ----------------------  --------------------------------------------------------------------
+        bbox_sr                 optional string, SpatialReference. The spatial reference of the
+                                bbox.
+                                The spatial reference can be specified as either a well-known ID,
+                                it's json representation or as an arcgis.geometry.SpatialReference
+                                object.
+                                If the image_sr is not specified, bbox is assumed to be in the
+                                spatial reference of the raster. 
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        size                    optional list. The size (width * height) of the exported image in
+                                pixels. If size is not specified, an image with a default size of
+                                400*450 will be exported.
+                                Syntax: list of [width, height]
+        ----------------------  --------------------------------------------------------------------
+        time                    optional datetime.date, datetime.datetime or timestamp string. The
+                                time instant or the time extent of the exported image.
+                                Time instant specified as datetime.date, datetime.datetime or
+                                timestamp in milliseconds since epoch
+                                Syntax: time=<timeInstant>
+                                Time extent specified as list of [<startTime>, <endTime>]
+                                For time extents one of <startTime> or <endTime> could be None. A
+                                None value specified for start time or end time will represent
+                                infinity for start or end time respectively.
+                                Syntax: time=[<startTime>, <endTime>] ; specified as
+                                datetime.date, datetime.datetime or timestamp
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        export_format           optional string. The format of the exported image. The default
+                                format is jpgpng. The jpgpng format returns a JPG if there are no
+                                transparent pixels in the requested extent; otherwise, it returns a
+                                PNG (png32).
+                                Values: jpgpng,png,png8,png24,jpg,bmp,gif,tiff,png32,bip,bsq,lerc
+        ----------------------  --------------------------------------------------------------------
+        pixel_type              optional string. The pixel type, also known as data type, pertains
+                                to the type of values stored in the raster, such as signed integer,
+                                unsigned integer, or floating point. Integers are whole numbers,
+                                whereas floating points have decimals.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        no_data                 optional float. The pixel value representing no information.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        no_data_interpretation  optional string. Interpretation of the no_data setting. The default
+                                is NoDataMatchAny when no_data is a number, and NoDataMatchAll when
+                                no_data is a comma-delimited string: NoDataMatchAny,NoDataMatchAll.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        interpolation           optional string. The resampling process of extrapolating the pixel
+                                values while transforming the raster dataset when it undergoes
+                                warping or when it changes coordinate space.
+                                One of: RSP_BilinearInterpolation, RSP_CubicConvolution,
+                                RSP_Majority, RSP_NearestNeighbor
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        compression             optional string. Controls how to compress the image when exporting
+                                to TIFF format: None, JPEG, LZ77. It does not control compression on
+                                other formats.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        compression_quality     optional integer. Controls how much loss the image will be subjected
+                                to by the compression algorithm. Valid value ranges of compression
+                                quality are from 0 to 100.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        band_ids                optional list. If there are multiple bands, you can specify a single
+                                band to export, or you can change the band combination (red, green,
+                                blue) by specifying the band number. Band number is 0 based.
+                                Specified as list of ints, eg [2,1,0]
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        mosaic_rule             optional dict. Specifies the mosaic rule when defining how
+                                individual images should be mosaicked. When a mosaic rule is not
+                                specified, the default mosaic rule of the image layer will be used
+                                (as advertised in the root resource: defaultMosaicMethod,
+                                mosaicOperator, sortField, sortValue).
+        ----------------------  --------------------------------------------------------------------
+        rendering_rule          optional dict. Specifies the rendering rule for how the requested
+                                image should be rendered.
+        ----------------------  --------------------------------------------------------------------
+        f                       optional string. The response format.  default is json
+                                Values: json,image,kmz
+                                If image format is chosen, the bytes of the exported image are
+                                returned unless save_folder and save_file parameters are also
+                                passed, in which case the image is written to the specified file
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        save_folder             optional string. The folder in which the exported image is saved
+                                when f=image
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        save_file               optional string. The file in which the exported image is saved when
+                                f=image
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        compression_tolerance   optional float. Controls the tolerance of the lerc compression
+                                algorithm. The tolerance defines the maximum possible error of pixel
+                                values in the compressed image.
+                                Example: compression_tolerance=0.5 is loseless for 8 and 16 bit
+                                images, but has an accuracy of +-0.5 for floating point data. The
+                                compression tolerance works for the LERC format only.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        adjust_aspect_ratio     optional boolean. Indicates whether to adjust the aspect ratio or
+                                not. By default adjust_aspect_ratio is true, that means the actual
+                                bbox will be adjusted to match the width/height ratio of size
+                                paramter, and the response image has square pixels.
+                                (Available only when image_server engine is used)
+        ----------------------  --------------------------------------------------------------------
+        lerc_version            optional integer. The version of the Lerc format if the user sets
+                                the format as lerc.
+                                Values: 1 or 2
+                                If a version is specified, the server returns the matching version,
+                                or otherwise the highest version available.
+                                (Available only when image_server engine is used)
+        ======================  ====================================================================
+
+        :returns: The raw raster data
+        """
+
+        (width, height) = (0, 0) if size is None else (size[0], size[1])
+
+        # convert extent and spatial reference
+        extent, spatial_reference = None, None
+        if bbox_sr is not None and not isinstance(bbox_sr, _arcgis.geometry.SpatialReference):
+            bbox_sr = _arcgis.geometry.SpatialReference(bbox_sr)
+            bbox_sr = bbox_sr.as_arcpy
+
+        if bbox is not None:
+            if isinstance(bbox, dict):
+                bbox = _arcgis.geometry.Envelope(bbox)
+            if isinstance(bbox, _arcgis.geometry.Envelope):
+                coordinates = bbox.coordinates()
+                if bbox_sr is not None:
+                    extent = arcpy.Extent(coordinates[0], coordinates[1], coordinates[2], coordinates[3],
+                                          spatial_reference=bbox_sr)
+                else:
+                    extent = arcpy.Extent(coordinates[0], coordinates[1], coordinates[2], coordinates[3])
+            elif isinstance(bbox, list):
+                extent = arcpy.Extent(bbox[0], bbox[1], bbox[2], bbox[3], spatial_reference=bbox_sr)
+            elif isinstance(bbox, str):
+                xmin, ymin, xmax, ymax = tuple(map(float, bbox.split(',')))
+                extent = arcpy.Extent(xmin, ymin, xmax, ymax, spatial_reference=bbox_sr)
+            else:
+                raise TypeError('invalid bbox type')
+
+        if image_sr is not None and not isinstance(image_sr, _arcgis.geometry.SpatialReference):
+            spatial_reference = _arcgis.geometry.SpatialReference(image_sr).as_arcpy
+
+
+        return self._raster.exportImage(width, height, format=export_format, extent=extent,
+                                        spatial_reference=spatial_reference, mosaic_rule=mosaic_rule)
+
+    def append_slices(md_raster=None):
+        return self._raster.appendSlices(md_raster)
+
+    def set_variable_attributes(self, variable_name, variable_attributes):
+        return self._raster.setVariableAttributes(variable_name,variable_attributes)
+
+
+    def __sub__(self, other):
+        from arcgis.raster.functions import minus
+        return minus([self, other])
+
+    def __rsub__(self, other):
+        from arcgis.raster.functions import minus
+        return minus([other, self])
+
+    def __add__(self, other):
+        from arcgis.raster.functions import plus
+        return plus([self, other])
+
+    def __radd__(self, other):
+        from arcgis.raster.functions import plus
+        return plus([other, self])
+
+    def __mul__(self, other):
+        from arcgis.raster.functions import times
+        return times([self, other])
+
+    def __rmul__(self, other):
+        from arcgis.raster.functions import times
+        return times([other, self])
+
+    def __div__(self, other):
+        from arcgis.raster.functions import divide
+        return divide([self, other])
+
+    def __rdiv__(self, other):
+        from arcgis.raster.functions import divide
+        return divide([other, self])
+
+    def __pow__(self, other):
+        from arcgis.raster.functions import power
+        return power([self, other])
+
+    def __rpow__(self, other):
+        from arcgis.raster.functions import power
+        return power([other, self])
+
+    def __abs__(self):
+        from arcgis.raster.functions import abs
+        return abs([self])
+
+    def __lshift__(self, other):
+        from arcgis.raster.functions import bitwise_left_shift
+        return bitwise_left_shift([self, other])
+
+    def __rlshift__(self, other):
+        from arcgis.raster.functions import bitwise_left_shift
+        return bitwise_left_shift([other, self])
+
+    def __rshift__(self, other):
+        from arcgis.raster.functions import bitwise_right_shift
+        return bitwise_right_shift([self, other])
+
+    def __rrshift__(self, other):
+        from arcgis.raster.functions import bitwise_right_shift
+        return bitwise_right_shift([other, self])
+
+    def __floordiv__(self, other):
+        from arcgis.raster.functions import floor_divide
+        return floor_divide([self, other])
+
+    def __rfloordiv__(self, other):
+        from arcgis.raster.functions import floor_divide
+        return floor_divide([other, self])
+
+    def __truediv__(self, other):
+        from arcgis.raster.functions import float_divide
+        return float_divide([self, other])
+
+    def __rtruediv__(self, other):
+        from arcgis.raster.functions import float_divide
+        return float_divide([other, self])
+
+    def __mod__(self, other):
+        from arcgis.raster.functions import mod
+        return mod([self, other])
+
+    def __rmod__(self, other):
+        from arcgis.raster.functions import mod
+        return mod([other, self])
+
+    def __neg__(self):
+        from arcgis.raster.functions import negate
+        return negate([self])
+
+    def __invert__(self):
+        from arcgis.raster.functions import boolean_not
+        return boolean_not(self)
+
+    def __and__(self, other):
+        from arcgis.raster.functions import boolean_and
+        return boolean_and([self, other])
+
+    def __rand__(self, other):
+        from arcgis.raster.functions import boolean_and
+        return boolean_and([other, self])
+
+    def __xor__(self, other):
+        from arcgis.raster.functions import boolean_xor
+        return boolean_xor([self, other])
+
+    def __rxor__(self, other):
+        from arcgis.raster.functions import boolean_xor
+        return boolean_xor([other, self])
+
+    def __or__(self, other):
+        from arcgis.raster.functions import boolean_or
+        return boolean_or([self, other])
+
+    def __ror__(self, other):
+        from arcgis.raster.functions import boolean_or
+        return boolean_or([other, self])
+
+#from ._util import _local_function_template, _get_geometry
+
+#class RasterCollectionEngineFactory():
+#    def get_engine(self, engine):
+#        engine_dict={
+#		"arcpy":_ArcpyRaster,
+#		"image_server":_ImageServerRaster,
+#        "local_datastore_raster": _LocalRasterCollection
+#		}
+#        return engine_dict[engine]
+
+#class RasterCollection():
+#    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+#        #self._remote = raster.use_server_engine
+#        #super().__init__(rasters, gis)
+
+#        #self._do_not_hydrate=False
+#        local_class=True
+
+#        if (engine is not None) and engine!= _ArcpyRasterCollection and engine !=_ImageServerRasterCollection and engine !=_LocalRasterCollection:
+#            self._ras_coll_engine = engine
+#            self._ras_coll_engine_obj=engine(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=engine, gis=gis)
+#        else:
+#            if isinstance(rasters, str):
+#                if ("https://"  in rasters or "http://"  in rasters):
+#                    self._ras_coll_engine = _ImageServerRasterCollection
+#                    self._ras_coll_engine_obj=_ImageServerRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine= _ImageServerRasterCollection, gis=gis)
+#                else:
+#                    self._ras_coll_engine = _ArcpyRasterCollection
+#                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_ArcpyRasterCollection,  gis=gis)
+    
+#            elif isinstance(rasters,list):
+#                for ele in rasters:
+#                    if isinstance(ele, Raster):
+#                        continue
+#                    elif isinstance(ele, str):
+#                        if '/fileShares/' in ele or '/rasterStores/' in ele or '/cloudStores/' in ele or '/vsi' in ele:
+#                            continue
+#                    else:
+#                        local_class = False
+
+#                if local_class == True:
+#                    self._ras_coll_engine = _LocalRasterCollection
+#                    self._ras_coll_engine_obj=_LocalRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry, engine=_LocalRasterCollection, gis=gis)
+#                else:
+#                    self._ras_coll_engine = _ArcpyRasterCollection
+#                    self._ras_coll_engine_obj=_ArcpyRasterCollection(rasters=rasters, attribute_dict=attribute_dict, where_clause=where_clause, query_geometry=query_geometry,engine=_ArcpyRasterCollection, gis=gis)
+           
+
+#    def set_engine(self, engine):
+#        return RasterCollection(rasters=self._ras_coll_engine_obj._rasters, attribute_dict=self._ras_coll_engine_obj._attribute_dict,  
+#                                where_clause=self._ras_coll_engine_obj._where_clause, query_geometry= self._ras_coll_engine_obj._spatial_filter, 
+#                                engine=engine, gis=self._ras_coll_engine_obj._gis)
+
+#    @property
+#    def count(self):
+#        return self._ras_coll_engine_obj.count
+
+#    @property
+#    def fields(self):
+#        return self._ras_coll_engine_obj.fields
+
+#    @property
+#    def _rasters_list(self):
+#        return self._ras_coll_engine_obj._rasters_list
+
+#    def __iter__(self):
+#        return self._ras_coll_engine_obj.__iter__()
+
+#    def __next__(self):
+#        return self._ras_coll_engine_obj.__next__()
+
+#    def __len__(self):
+#        return self._ras_coll_engine_obj.__len__()
+
+#    def __getitem__(self, item):
+#        return self._ras_coll_engine_obj.__getitem__(item)
+
+#    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
+#        return self._ras_coll_engine_obj.filter_by(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent,raster_query=raster_query )
+
+
+#    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+#        return self._ras_coll_engine_obj.filter_by_time(start_time=start_time, end_time=end_time, time_field_name=time_field_name, date_time_format=date_time_format)
+
+#    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+#        """
+#        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
+#        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
+#        end to 1.
+
+#        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
+#         'DAY_OF_WEEK', 'HOUR'
+#        :param start: integer, the start time. inclusive.
+#        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
+#        :param time_field_name: string, the time field anme, default is 'StdTime'.
+#        :param date_time_format: the time format that is used to format the time field values. Please ref the python
+#                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+#                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
+#                                and ignoring the following sub-second.
+
+#        :return: a filtered raster collection.
+#        """
+#        # validation
+#        return self._ras_coll_engine_obj.filter_by_calendar_range(calendar_field=calendar_field, start=start,end=end,time_field_name=time_field_name,date_time_format=date_time_format)
+
+#    def filter_by_geometry(self, query_geometry_or_extent):
+#        return self._ras_coll_engine_obj.filter_by_geometry(query_geometry_or_extent=query_geometry_or_extent)
+
+#    def filter_by_attribute(self, field_name, operator, field_values):
+#        return self._ras_coll_engine_obj.filter_by_attribute(field_name=field_name, operator=operator, field_values=field_values)
+
+#    def filter_by_raster_property(self, property_name, operator, property_values):
+#        return self._ras_coll_engine_obj.filter_by_raster_property(property_name=property_name, operator=operator, property_values=property_values)
+
+#    def sort(self, field_name, ascending=True):
+#        return self._ras_coll_engine_obj.sort(field_name=field_name, ascending=ascending)
+
+
+#    def get_field_values(self, field_name, max_count=0):
+#        return self._ras_coll_engine_obj.get_field_values(field_name=field_name, max_count=max_count)
+
+#    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+#        return self._ras_coll_engine_obj.to_multidimensional_raster(variable_field_name=variable_field_name, dimension_field_names=dimension_field_names)
+
+#    def max(self):
+#        return self._ras_coll_engine_obj.max()
+
+#    def min(self):
+#        return self._ras_coll_engine_obj.min()
+
+#    def median(self):
+#        return self._ras_coll_engine_obj.median()
+
+
+#    def mean(self):
+#        return self._ras_coll_engine_obj.mean()
+
+#    def majority(self):
+#        return self._ras_coll_engine_obj.majority()
+
+#    def sum(self):
+#        return self._ras_coll_engine_obj.sum()
+
+#    def mosaic(self, mosaic_method):
+#        return self._ras_coll_engine_obj.mosaic(mosaic_method=mosaic_method)
+
+#    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
+#        return self._ras_coll_engine_obj.quality_mosaic(quality_rc_or_list=quality_rc_or_list, statistic_type=statistic_type)
+
+#    def select_bands(self, band_ids_or_names):
+#        return self._ras_coll_engine_obj.select_bands(band_ids_or_names=band_ids_or_names)
+
+
+#    def map(self, func):
+#        return self._ras_coll_engine_obj.map(func=func)
+
+
+#    def as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
+#        return self._ras_coll_engine_obj.as_df(result_offset=result_offset, result_record_count=result_record_count, return_all_records=return_all_records)
+
+#    #def display_image(self, item=None):
+#    #    if not raster.use_server:
+#    #        raise RuntimeError('Not available in non server env')
+#    #    else:
+#    #        if item is not None:
+#    #            newcollection = self._clone_raster_collection()
+#    #            newcollection._mosaic_rule = {
+#    #                "mosaicMethod": "esriMosaicLockRaster",
+#    #                "lockRasterIds": [item],
+#    #                "ascending": True,
+#    #                "mosaicOperation": "MT_FIRST"
+#    #            }
+#    #        else:
+#    #            newcollection = self
+
+#    #        bbox_sr = None
+#    #        if 'spatialReference' in newcollection.extent:
+#    #            bbox_sr = newcollection.extent['spatialReference']
+#    #        if not newcollection._uses_gbl_function:
+#    #            byte_array = (newcollection.export_image(bbox=newcollection._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image'))
+#    #            try:
+#    #                from IPython.display import Image
+#    #                return Image(byte_array)
+#    #            except:
+#    #                return byte_array
+
+#    #def _clone_raster_collection(self):
+#    #    return self._ras_coll_engine_obj.filter_by(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent)
+
+#    #def _object_id_name(self):
+#    #    for ele in self.properties.fields:
+#    #        if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
+#    #            return ele["name"]
+
+#    def _repr_html_(self):
+#        return self._ras_coll_engine_obj._repr_html_()
+
+#    def _repr_jpeg_(self):
+#        return None
+
+#class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
+#    def __init__(self, rasters, attribute_dict=None,where_clause=None, query_geometry=None, engine=None, gis=None):
+#        ImageryLayer.__init__(self, str(rasters), gis=gis)
+
+#        self._mosaic_rule = None
+#        if gis is not None:
+#            self._gis = gis
+#        else:
+#            self._gis=None
+#        if where_clause is None:
+#            self._where_clause = '1=1'
+#        else:
+#            self._where_clause = where_clause
+#        if query_geometry is None:
+#            self._spatial_filter = None
+#        else:
+#            self._spatial_filter = query_geometry
+
+#        self._attribute_dict = attribute_dict
+
+
+#        self._local=False
+#        #self._do_not_hydrate=False
+#        self._rasters=rasters
+#        #self._ras_coll_engine=_ArcpyRasterCollection
+#        #self._engine=_ArcpyRaster
+#        #self._engine_obj=_ArcpyRaster(rasters, False, gis)
+#        self._ras_coll_engine = engine
+#        import arcpy
+#        try:
+#            arcpy.CheckOutExtension("ImageAnalyst")
+#            arcpy.CheckOutExtension("Spatial")
+#        except:
+#            pass
+#        if isinstance(rasters, str):
+#            if ("https://"  in rasters or "http://"  in rasters): #To provide access to secured service
+#                if self._token is not None:
+#                    self._raster_collection = arcpy.ia.RasterCollection(rasters+"?token="+self._token, attribute_dict)
+#                else:
+#                    self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+#            else:
+#                self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+#        self._raster_collection = arcpy.ia.RasterCollection(rasters, attribute_dict)
+#        self._df=self.as_df()
+
+
+#    @property
+#    def count(self):
+#        count = len(self._df.index)            
+#        return count
+
+#    @property
+#    def fields(self):
+#        fields = self._raster_collection.fields
+#        return fields
+
+#    @property
+#    def _rasters_list(self):
+#        ras_list=self.get_field_values("Raster")
+#        return ras_list
+
+#    def __iter__(self):
+#        return iter(self._df.to_dict('records', into=dict))
+
+
+#    def __next__(self):
+#        return self._df.to_dict('records', into=dict)[item]
+
+
+#    def __len__(self):
+#        return (self._df.to_dict('records', into=dict)).__len__
+
+#    def __getitem__(self, item):
+#        return self._df.to_dict('records', into=dict)[item]
+
+#    #@property
+#    #def count(self):
+#    #    count = self._raster_collection.count            
+#    #    return count
+
+#    #@property
+#    #def fields(self):
+#    #    fields = self._raster_collection.fields
+#    #    return fields
+
+#    #@property
+#    #def _rasters_list(self):
+#    #    ras_list=self.get_field_values("Raster")
+#    #    return ras_list
+
+#    #def __iter__(self):
+#    #    return(self._raster_collection.__iter__())
+
+
+#    #def __next__(self):
+#    #    return (self._raster_collection.__next__())
+
+
+#    #def __len__(self):
+#    #    return (self._raster_collection.__len__())
+
+
+#    #def __getitem__(self, item):
+#    #    return (self._raster_collection.__getitem__(item))
+
+
+#    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
+#        newcollection = self._clone_raster_collection()
+#        if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
+#            query_geometry_or_extent = query_geometry_or_extent.as_arcpy
+#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filter(where_clause=where_clause, query_geometry_or_extent=query_geometry_or_extent, raster_query=raster_query)
+#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
+#        return newcollection
+
+
+
+
+#    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+#        newcollection = self._clone_raster_collection()
+#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(start_time=start_time, end_time=end_time, time_field_name=time_field_name)
+#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
+#        return newcollection
+
+
+#    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+#        """
+#        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
+#        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
+#        end to 1.
+
+#        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
+#         'DAY_OF_WEEK', 'HOUR'
+#        :param start: integer, the start time. inclusive.
+#        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
+#        :param time_field_name: string, the time field anme, default is 'StdTime'.
+#        :param date_time_format: the time format that is used to format the time field values. Please ref the python
+#                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+#                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
+#                                and ignoring the following sub-second.
+
+#        :return: a filtered raster collection.
+#        """
+#        # validation
+#        newcollection = self._clone_raster_collection()
+#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByTime(self._raster_collection.filterByCalendarRange(calendar_field=calendar_field, start=start, end=end,time_field_name=time_field_name,date_time_format=date_time_format))
+#        bnewcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
+#        return newcollection
+    
+#    def filter_by_geometry(self, query_geometry_or_extent):
+#        newcollection = self._clone_raster_collection()
+#        if isinstance(query_geometry_or_extent, _arcgis.geometry.Geometry):
+#            query_geometry_or_extent = query_geometry_or_extent.as_arcpy
+#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByGeometry(query_geometry_or_extent=query_geometry_or_extent)
+#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
+#        return newcollection
+
+
+#    def filter_by_attribute(self, field_name, operator, field_values):
+#        newcollection = self._clone_raster_collection()
+#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByAttribute(field_name=field_name, operator=operator,field_values=field_values)
+#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
+#        return newcollection
+
+#    def filter_by_raster_property(self, property_name, operator, property_values):
+#        newcollection = self._clone_raster_collection()
+#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.filterByRasterProperty(property_name=property_name, operator=operator, property_values=property_values)
+#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
+#        return newcollection
+
+#    def sort(self, field_name, ascending=True):
+#        newcollection = self._clone_raster_collection()
+#        newcollection._ras_coll_engine_obj._raster_collection = self._raster_collection.sort(field_name=field_name, ascending=ascending)
+#        newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.as_df()
+#        return newcollection
+    
+
+#    def get_field_values(self, field_name, max_count=0):
+#        return self._raster_collection.getFieldValues(field_name=field_name, max_count=max_count)
+
+
+#    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+#        return Raster(self._raster_collection.toMultidimensionalRaster(variable_field_name=variable_field_name, dimension_field_names=dimension_field_names))
+
+#    def max(self):
+#        return Raster(self._raster_collection.max())
+
+
+#    def min(self):
+#        return Raster(self._raster_collection.min())
+
+
+#    def median(self):
+#        return Raster(self._raster_collection.median())
+
+#    def mean(self):
+#        return Raster(self._raster_collection.mean())
+
+#    def majority(self):
+#        return Raster(self._raster_collection.majority())
+
+#    def sum(self):
+#        return Raster(self._raster_collection.sum())
+
+#    def mosaic(self, mosaic_method):
+#        return Raster(self._raster_collection.mosaic(mosaic_method=mosaic_method))
+
+#    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
+#        return Raster(self._raster_collection.quality_mosaic(quality_rc_or_list=quality_rc_or_list,statistic_type=statistic_type))
+
+#    def select_bands(self, band_ids_or_names):
+#        return RasterCollection(self._raster_collection.selectBands(band_ids_or_names))
+
+
+#    def map(self, func):
+#        res = map(func, iter(self))
+#        rasters = []
+#        attribute_dict = defaultdict(list)
+#        for item in res:
+#            rasters.append(item['raster'])
+#            for key, value in item.items():
+#                if key != 'raster':
+#                    attribute_dict[key].append(value)
+
+#        return RasterCollection(rasters, attribute_dict)                
+          
+
+#    def as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
+#        import pandas as pd
+#        data = {}
+#        value_rasters=[]
+#        for field in self.fields:
+#            try:
+#                value = self.get_field_values(field)
+#                if field=="Raster":
+#                    for ele in value:
+#                        value_rasters.append(Raster(ele))
+#                    data[field] = value_rasters
+#                else:
+#                    data[field] = self.get_field_values(field)
+#            except:
+#                continue
+#        return pd.DataFrame(data=data)
+
+#    def display_image(self, item=None):
+#        raise RuntimeError('Not available in non server env')
+
+#    def _clone_raster_collection(self):
+#        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+#        new_raster_collection._fn = self._fn
+#        new_raster_collection._fnra = self._fnra
+#        new_raster_collection._mosaic_rule = self._mosaic_rule
+#        new_raster_collection._extent = self._extent
+#        return new_raster_collection
+
+#    def _object_id_name(self):
+#        for ele in self.properties.fields:
+#            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
+#                return ele["name"]
+
+#    def _repr_html_(self):
+#        return self._df._repr_html_()
+
+
+#    def _repr_jpeg_(self):
+#        return None
+
+
+#class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
+#    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+#        #self._remote = raster.use_server_engine
+#        ImageryLayer.__init__(self, rasters, gis=gis)
+#        self._mosaic_rule = None
+#        if gis is not None:
+#            self._gis = gis
+#        else:
+#            self._gis=None
+#        if where_clause is None:
+#            self._where_clause = '1=1'
+#        else:
+#            self._where_clause = where_clause
+#        if query_geometry is None:
+#            self._spatial_filter = None
+#        else:
+#            self._spatial_filter = query_geometry
+#        self._rasters=rasters
+#        self._attribute_dict = attribute_dict
+
+#        self._object_ids=None
+#        self._raster_query=None
+#        self._order_by_fields=None
+        
+#        self._do_not_hydrate=False
+#        #self._ras_coll_engine=_ImageServerRasterCollection
+#        self._is_multidimensional=False
+#        self._engine=_ImageServerRaster
+#        self._engine_obj=_ImageServerRaster(rasters, False, gis)
+#        self._ras_coll_engine = engine
+#        self._df=None
+
+#        if str(self.properties['capabilities']).lower().find('catalog') == -1:
+#            raise RuntimeError("Image Service should have 'Catalog' capability to create a RasterCollection object.")
+#        self._df=self.as_df()
+#        self._start=0
+#        self._lower_limit=self.properties.maxRecordCount
+#        self._upper_limit=0
+#        self._max_rec_count=self.properties.maxRecordCount
+#        self._rep_df=None
+#        self._order_by_fields=self._object_id_name() +" ASC"
+#        self._count=None
+
+
+
+#    @property
+#    def count(self):
+#        if self._count is None:
+#            count = self.query(where=self._where_clause, geometry_filter=self._spatial_filter,
+#                                        object_ids=self._object_ids, return_count_only=True, raster_query=self._raster_query)   
+#            self._count=count
+#        else:
+#            count=self._count
+#        return count
+
+#    @property
+#    def fields(self):
+#        return tuple(self._df.columns.tolist())
+
+#    @property
+#    def _rasters_list(self):
+#        ras_list=self.get_field_values("Raster")
+#        return ras_list
+
+#    def __iter__(self):
+#        return self
+
+#    def __next__(self):
+#        try:
+#            item = self[self._start]
+#        except IndexError:
+
+#            self._start=0
+#            raise StopIteration
+#        self._start += 1
+#        return item
+
+#    def __len__(self):
+#        return (self._df.to_dict('records', into=dict)).__len__
+
+#    def __getitem__(self, item):
+#        if item<self._max_rec_count:
+#            return self._df.to_dict('records', into=dict)[item]
+#        offset=self._max_rec_count
+#        i=2            
+#        while(item>=offset):
+#            offset=self._max_rec_count*i
+#            i=i+1
+#        offset=offset-self._max_rec_count
+#        if item>=self._upper_limit or item<self._lower_limit:
+#            self._rep_df=self.as_df(result_offset=offset, result_record_count=self._max_rec_count)
+#            self._upper_limit=offset+self._max_rec_count
+#            self._lower_limit=offset
+#        return(self._rep_df.to_dict('records', into=dict))[item-offset]
+
+#    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):
+#            from arcgis.geometry.filters import intersects
+#            geometry_filter=None
+#            if query_geometry_or_extent is not None:
+#                query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
+#                geometry_filter = intersects(query_geometry_or_extent)
+#            #newcollection = self._clone_raster_collection()
+#            if where_clause is not None:
+#                where_clause = self._where_clause+" AND ("+ where_clause+")"
+#            else:
+#                where_clause=self._where_clause
+
+
+#            if raster_query is not None and self._raster_query is not None:
+#                raster_query = self._raster_query+" AND ("+ raster_query+")"
+#            elif raster_query is None:
+#                raster_query=self._raster_query
+#            oids = super().query(where=where_clause,
+#                                 geometry_filter=geometry_filter,
+#                                 return_ids_only=True,
+#                                 raster_query=raster_query)['objectIds']
+
+#            newcollection = RasterCollection(rasters=self._url, attribute_dict=self._attribute_dict, where_clause=where_clause, query_geometry=geometry_filter, gis=self._gis)
+#            newcollection._ras_coll_engine_obj._mosaic_rule = {
+#                "mosaicMethod": "esriMosaicLockRaster",
+#                "lockRasterIds": oids,
+#                "ascending": True,
+#                "mosaicOperation": "MT_FIRST"
+#            }
+#            newcollection._ras_coll_engine_obj._raster_query=raster_query
+#            newcollection._ras_coll_engine_obj._object_ids=oids
+#            #newcollection._where_clause=where_clause
+#            #newcollection._spatial_filter=geometry_filter
+#            #newcollection._filtered =True
+#            newcollection._ras_coll_engine_obj._df= newcollection.as_df()
+#            return newcollection
+
+
+#    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+#        if time_field_name not in self.fields:
+#            raise ValueError('the time_field_name is not existed. Please input a valid name for time field.')
+
+#        sql_query1 = time_field_name + ' >= timestamp \'' + start_time + '\'' if start_time else ''
+#        sql_query2 = time_field_name + ' <= timestamp \'' + end_time + '\'' if end_time else ''
+
+#        if sql_query1 and sql_query2:
+#            sql_query = sql_query1 + ' AND ' + sql_query2
+#        else:
+#            sql_query = sql_query1 if sql_query1 else sql_query2
+
+#        return self.filter_by(sql_query)
+
+#    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+#        """
+#        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
+#        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
+#        end to 1.
+
+#        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
+#         'DAY_OF_WEEK', 'HOUR'
+#        :param start: integer, the start time. inclusive.
+#        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
+#        :param time_field_name: string, the time field anme, default is 'StdTime'.
+#        :param date_time_format: the time format that is used to format the time field values. Please ref the python
+#                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+#                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
+#                                and ignoring the following sub-second.
+
+#        :return: a filtered raster collection.
+#        """
+#        # validation
+
+#        calendar_field_types = ['YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH', 'DAY_OF_WEEK', 'HOUR']
+#        if not isinstance(calendar_field, str):
+#            raise TypeError('calender_field must be string type')
+
+#        if calendar_field not in calendar_field_types:
+#            raise ValueError('invalid calender_field, must be one of ' + ', '.join(calendar_field_types))
+
+#        if time_field_name not in self.fields:
+#            raise ValueError('the time_field_name does not exist. Please input a valid name for time field.')
+
+#        if end is None:
+#            end = start
+#        # validate start and end type
+#        if not isinstance(start, int) or not isinstance(end, int):
+#            raise TypeError('start and end must be numeric.')
+#        if end < start:
+#            raise ValueError('end must be equal or larger than start.')
+#        # validate start and end value
+#        if calendar_field == 'MONTH':
+#            if start < 1 or start > 12 or end < 1 or end > 12:
+#                raise ValueError('start and end must be between [1, 12] for MONTH filter.')
+#        elif calendar_field == 'QUARTER':
+#            if start < 1 or start > 4 or end < 1 or end > 4:
+#                raise ValueError('start and end must be between [1, 4] for QUARTER filter.')
+#        elif calendar_field == 'WEEK_OF_YEAR':
+#            if start < 1 or start > 53 or end < 1 or end > 53:
+#                raise ValueError('start and end must be between [1, 53] for WEEK_OF_YEAR filter.')
+#        elif calendar_field == 'DAY_OF_YEAR':
+#            if start < 1 or start > 366 or end < 1 or end > 366:
+#                raise ValueError('start and end must be between [1, 366] for DAY_OF_YEAR filter.')
+#        elif calendar_field == 'DAY_OF_MONTH':
+#            if start < 1 or start > 31 or end < 1 or end > 31:
+#                raise ValueError('start and end must be between [1, 31] for DAY_OF_MONTH filter.')
+#        elif calendar_field == 'DAY_OF_WEEK':
+#            if start < 1 or start > 7 or end < 1 or end > 7:
+#                raise ValueError('start and end must be between [1, 7] for DAY_OF_WEEK filter.')
+#        elif calendar_field == 'HOUR':
+#            if start < 1 or start > 24 or end < 1 or end > 24:
+#                raise ValueError('start and end must be between [1, 24] for HOUR filter.')
+
+#        oids_dict = super().query(where=self._where_clause,
+#                                    geometry_filter=self._spatial_filter,
+#                                    return_ids_only=True,
+#                                    raster_query=self._raster_query)
+#        oid_name = oids_dict["objectIdFieldName"]
+#        oids = oids_dict["objectIds"]
+#        df = self.as_df()
+#        filtered_rasters_oids=[]
+#        newcollection = self._clone_raster_collection()
+#        for index, row in df.iterrows():
+#            if date_time_format is None:
+#                date_time = datetime.datetime.strptime(row[time_field_name], '%Y-%m-%dT%H:%M:%S')
+#            else:
+#                date_time = datetime.datetime.strptime(row[time_field_name], date_time_format)
+
+#            selected = False
+#            if calendar_field == 'YEAR':
+#                if start <= date_time.year <= end:
+#                    selected = True
+#            elif calendar_field == 'MONTH':
+#                if start <= date_time.month <= end:
+#                    selected = True
+#            elif calendar_field == 'QUARTER':
+#                if start-1 <= (date_time.month - 1)//3 <= end-1:
+#                    selected = True
+#            elif calendar_field == 'WEEK_OF_YEAR':
+#                week_number = int(date_time.strftime('%U'))
+#                if start <= week_number+1 <= end:
+#                    selected = True
+#            elif calendar_field == 'DAY_OF_YEAR':
+#                yday = date_time.timetuple().tm_yday
+#                if start <= yday <= end:
+#                    selected = True
+#            elif calendar_field == 'DAY_OF_MONTH':
+#                mday = date_time.timetuple().tm_mday
+#                if start <= mday <= end:
+#                    selected = True
+#            elif calendar_field == 'DAY_OF_WEEK':
+#                wday = date_time.isoweekday()
+#                if start<= wday%7+1<=end:
+#                    selected = True
+#            elif calendar_field == 'HOUR':
+#                hour = date_time.timetuple().tm_hour
+#                if start <= hour <= end:
+#                    selected = True
+
+#            if selected is True:
+#                filtered_rasters_oids.append(row[oid_name])
+
+#        where_clause = ""
+#        for ele in filtered_rasters_oids:
+#            where_clause += (oid_name+ " = "+str(ele)+" OR ")
+#        newcollection._ras_coll_engine_obj._where_clause = where_clause[:-4]
+#        newcollection._ras_coll_engine_obj._mosaic_rule = {
+#            "mosaicMethod": "esriMosaicLockRaster",
+#            "lockRasterIds": filtered_rasters_oids,
+#            "ascending": True,
+#            "mosaicOperation": "MT_FIRST"
+#        }
+#        newcollection._ras_coll_engine_obj._filtered =True
+#        newcollection._ras_coll_engine_obj._df= newcollection.as_df()
+#        return newcollection
+
+#    def filter_by_geometry(self, query_geometry_or_extent):
+#        return self.filter_by(query_geometry_or_extent = query_geometry_or_extent)
+
+#    def filter_by_attribute(self, field_name, operator, field_values):
+#        if not isinstance(field_name, str):
+#            raise TypeError("field_name should be string")
+
+#        from arcgis.raster._util import build_query_string
+
+#        query_string = build_query_string(field_name, operator.lower(), field_values)
+#        return self.filter_by(query_string)
+
+#    def filter_by_raster_property(self, property_name, operator, property_values):
+#        if not isinstance(property_name, str):
+#            raise TypeError("property_name should be string")
+#        from arcgis.raster._util import build_query_string
+#        raster_query  = build_query_string(property_name, operator.lower(), property_values)
+#        return self.filter_by(raster_query = raster_query)
+
+
+#    def sort(self, field_name, ascending=True):
+#        if ascending is True:
+#            order_by_fields_string = str(field_name)+" "+"ASC"
+#        else:
+#            order_by_fields_string = str(field_name)+" "+"DESC"
+#        newcollection = self._clone_raster_collection()
+#        newcollection._ras_coll_engine_obj._order_by_fields = order_by_fields_string
+#        newcollection._ras_coll_engine_obj._df= newcollection.as_df()
+
+#        return newcollection
+
+
+#    def get_field_values(self, field_name, max_count=0):
+#        #if max_count ==0:
+#        #    max_count = self.count
+            
+#        df = self._df
+#        if max_count!=0:
+#            return df[field_name].tolist()[0:max_count]
+#        else:
+#            return df[field_name].tolist()
+
+
+#    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+#        md_info=super()._compute_multidimensional_info(where=self._where_clause,
+#                                                    geometry_filter=self._spatial_filter,
+#                                                    object_ids=self._object_ids,
+#                                                    raster_query=self._raster_query,
+#                                                    variable_field_name=variable_field_name,
+#                                                    dimension_field_names=dimension_field_names)
+
+#        from arcgis.raster.functions import identity
+#        lyr = identity(self)
+#        lyr._engine_obj._fnra["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
+#        lyr._engine_obj._fn["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
+#        lyr._engine_obj._created_from_collection=True
+#        lyr._engine_obj._mdinfo=md_info
+#        return lyr
+
+
+#    def max(self):
+#        from arcgis.raster.functions import raster_collection_function
+#        raster_function_json = _local_function_template(67)
+#        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+
+
+#    def min(self):
+#        from arcgis.raster.functions import raster_collection_function
+#        raster_function_json = _local_function_template(70)
+#        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+#    def median(self):
+#        from arcgis.raster.functions import raster_collection_function
+#        raster_function_json = _local_function_template(69)
+#        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+
+#    def mean(self):
+#        from arcgis.raster.functions import raster_collection_function
+#        raster_function_json = _local_function_template(68)
+#        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+#    def majority(self):
+#        from arcgis.raster.functions import raster_collection_function
+#        raster_function_json = _local_function_template(66)
+#        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+#    def sum(self):
+#        from arcgis.raster.functions import raster_collection_function
+#        raster_function_json = _local_function_template(74)
+#        return raster_collection_function(self, aggregation_function=raster_function_json)
+
+
+#    def mosaic(self, mosaic_method):
+#        return (super().mosaic_by(op=mosaic_method))
+
+#    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
+#        from arcgis.raster.functions import arg_statistics, _pick
+#        if not isinstance(statistic_type, str) or statistic_type.upper() not in ['MAX', 'MIN', 'MEDIAN']:
+#            raise ValueError('invalid statistic_type value')
+
+#        statistic_type = statistic_type.upper()
+
+#        #statistics_type_code = {'MAX': 0, 'MIN': 1, 'MEDIAN': 2}
+
+#        if isinstance(quality_rc_or_list, RasterCollection):
+#            if quality_rc_or_list.count != self.count:
+#                raise ValueError('the quality collection must have same number of items with the calling collection')
+
+#            if 'Raster' in quality_rc_or_list.fields:
+#                rasters = quality_rc_or_list.get_field_values('Raster')
+#            #elif 'Path' in quality_rc_or_list.fields:
+#                #rasters = [arcpy.Raster(path) for path in quality_rc_or_list.getFieldValues('Path')]
+#        elif isinstance(quality_rc_or_list, list):
+#            if len(quality_rc_or_list) != self.count:
+#                raise ValueError('the quality raster list must have same number of items with the calling collection')
+#            rasters = quality_rc_or_list
+#        else:
+#            raise ValueError('invalid quality_rc parameter')
+
+#        arg_statistics_result = arg_statistics(rasters, stat_type=statistic_type)
+#        arg_statistics_result = arg_statistics_result + 1  # the index in argstatistics output counts from 0, but Pick counts from 1
+
+#        if 'Raster' in self.fields:
+#            rasters = self.get_field_values('Raster')
+#        elif 'Path' in self.fields:
+#            rasters = self.get_field_values('Path')
+#        else:
+#            raise ValueError('invalid raster collection')
+
+#        inp_list = [arg_statistics_result]
+#        for ele in rasters:
+#            inp_list.append(ele)
+#        return _pick(inp_list)
+
+#    def select_bands(self, band_ids_or_names):
+#        from arcgis.raster.functions import raster_collection_function, extract_band
+#        by_bandID_or_bandName = 0  # 1: by band id; 2: by band name
+#        if not (isinstance(band_ids_or_names, list) or isinstance(band_ids_or_names, str) or isinstance(
+#                band_ids_or_names, int)):
+#            raise TypeError('bands must be either a list, a single band ID or a single band Name')
+#        if isinstance(band_ids_or_names, list):
+#            for band in band_ids_or_names:
+#                if not (isinstance(band, int) or isinstance(band, str)):
+#                    raise TypeError('elements in band_ids_or_names must be integer or string type')
+#                if isinstance(band, int) and by_bandID_or_bandName == 0:
+#                    by_bandID_or_bandName = 1
+#                elif isinstance(band, int) and by_bandID_or_bandName == 2:
+#                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
+#                if isinstance(band, str) and by_bandID_or_bandName == 0:
+#                    by_bandID_or_bandName = 2
+#                elif isinstance(band, str) and by_bandID_or_bandName == 1:
+#                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
+
+#        elif isinstance(band_ids_or_names, str):
+#            by_bandID_or_bandName = 2
+#        else:
+#            by_bandID_or_bandName = 1
+
+#        rasters=self.get_field_values("Raster")
+#        from arcgis.raster.functions import extract_band
+#        if by_bandID_or_bandName == 1:
+#            new_rasters = [extract_band(raster, band_ids=band_ids_or_names) for raster in rasters]
+#        elif by_bandID_or_bandName == 2:
+#            new_rasters = [extract_band(raster, band_names=band_ids_or_names) for raster in rasters]
+
+#        in_raster_collection_dict = {}
+#        for field_name in self.fields:
+#            if field_name == 'Raster' or field_name == 'Path':
+#                continue
+#            in_raster_collection_dict[field_name] = self.get_field_values(field_name)
+
+#        return RasterCollection(new_rasters, in_raster_collection_dict)
+
+
+#    def map(self, func):
+#        if isinstance(func, _arcgis.raster.functions.RFT) or isinstance(func, dict):
+#            from arcgis.raster.functions import raster_collection_function
+#            layer = raster_collection_function(self, item_function=func)
+
+#            newcollection = self._clone_raster_collection()
+#            newcollection._fn = layer._fn
+#            newcollection._fnra = layer._fnra
+#            return newcollection   
+#        else:
+#            res = map(func, iter(self))
+#            rasters = []
+#            attribute_dict = defaultdict(list)
+#            for item in res:
+#                rasters.append(item['raster'])
+#                for key, value in item.items():
+#                    if key != 'raster':
+#                        attribute_dict[key].append(value)
+
+#            return RasterCollection(rasters, attribute_dict)
+          
+
+#    def as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
+#        import pandas as pd
+#        df=super().query(where=self._where_clause,
+#                        geometry_filter=self._spatial_filter,
+#                        object_ids=self._object_ids,
+#                        order_by_fields=self._order_by_fields,
+#                        return_all_records=return_all_records,
+#                        result_offset=result_offset,
+#                        result_record_count=result_record_count,
+#                        return_geometry=True,
+#                        as_df=True,
+#                        raster_query=self._raster_query)
+#        date_field_names=[]
+#        if len(df.index)>0:
+#            for ele in self.properties.fields:
+#                if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeDate":
+#                    if "name" in ele.keys():
+#                        date_field_names.append(ele["name"])
+#            for ele in date_field_names:
+#                df[ele] = pd.to_datetime(df[ele], unit='ms').dt.strftime('%Y-%m-%dT%H:%M:%S')
+
+#            #pos = self.url.find("/ImageServer",0)
+#            #for i in range (0, len(df.index)):
+#                #df.loc[i, "Raster"] = self.url[0:(pos+12)]+"/"+str(df["OBJECTID"].loc[i])+self.url[(pos+12):]
+
+#            from arcgis.raster.functions import raster_item
+#            oid_name=self._object_id_name()
+#            for i in range (0, len(df.index)):
+#                #self._do_not_hydrate=True
+#                df.loc[i, "Raster"] = raster_item(self,int(df[oid_name].loc[i]))
+#                df.loc[i, "Raster"].token = self._token
+#                df.loc[i, "Raster"]._do_not_hydrate = True
+
+#        return df
+
+#    def display_image(self, item=None):
+#        if item is not None:
+#            newcollection = self._clone_raster_collection()
+#            newcollection._mosaic_rule = {
+#                "mosaicMethod": "esriMosaicLockRaster",
+#                "lockRasterIds": [item],
+#                "ascending": True,
+#                "mosaicOperation": "MT_FIRST"
+#            }
+#        else:
+#            newcollection = self
+
+#        bbox_sr = None
+#        if 'spatialReference' in newcollection.extent:
+#            bbox_sr = newcollection.extent['spatialReference']
+#        if not newcollection._uses_gbl_function:
+#            byte_array = (newcollection.export_image(bbox=newcollection._extent, bbox_sr=bbox_sr, size=[1200, 450], export_format='jpeg', f='image'))
+#            try:
+#                from IPython.display import Image
+#                return Image(byte_array)
+#            except:
+#                return byte_array
+
+#    def _clone_raster_collection(self):
+#        new_raster_collection = RasterCollection(self._url, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+
+#        new_raster_collection._lazy_token = self._token
+#        new_raster_collection._fn = self._fn
+#        new_raster_collection._fnra = self._fnra
+#        new_raster_collection._mosaic_rule = self._mosaic_rule
+#        new_raster_collection._extent = self._extent
+#        new_raster_collection._raster_query=self._raster_query
+
+#        return new_raster_collection
+
+#    def _object_id_name(self):
+#        for ele in self.properties.fields:
+#            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
+#                return ele["name"]
+
+#    def _repr_html_(self):
+#        return self._df._repr_html_()
+
+#    def _repr_jpeg_(self):
+#        return None
+
+#def _get_shape(ele):
+#    boundary=Geometry(ele._engine_obj.query_boundary()["shape"])
+#    if isinstance(boundary, Envelope):
+#        boundary=boundary.polygon
+#    return boundary
+
+#class _LocalRasterCollection(ImageryLayer, RasterCollection):
+#    def __init__(self, rasters=None, attribute_dict=None, where_clause=None, query_geometry=None, engine=None, gis=None):
+#        #self._remote = raster.use_server_engine
+#        ImageryLayer.__init__(self, rasters, gis=gis)
+#        self._mosaic_rule = None
+#        if gis is not None:
+#            self._gis = gis
+#        else:
+#            self._gis=None
+#        if where_clause is None:
+#            self._where_clause = '1=1'
+#        else:
+#            self._where_clause = where_clause
+#        if query_geometry is None:
+#            self._spatial_filter = None
+#        else:
+#            self._spatial_filter = query_geometry
+
+#        #self._attribute_dict = attribute_dict
+#        self._rasters=rasters
+#        self._object_ids=None
+#        self._order_by_fields=None
+#        self._is_multidimensional=False
+#        #self._do_not_hydrate=False
+#        self._engine=_ImageServerRaster
+#        self._engine_obj=_ImageServerRaster(rasters, False, gis)
+
+#        self._ras_coll_engine=engine
+#       #self._engine=_ImageServerRaster
+#        #self._engine_obj=_ImageServerRaster(rasters, False, gis)
+#        ids = list(range(1,len(rasters)+1))
+#        arcgis_rasters=[]
+#        if attribute_dict is not None:
+#            if not isinstance(attribute_dict, dict):
+#                raise TypeError('attribute_dict must be dict type')
+
+#        shapes=[]
+#        for ele in rasters:
+#            if not isinstance(ele, Raster):
+#                ele = Raster(ele)
+#                ele._do_not_hydrate = True
+#            arcgis_rasters.append(ele)
+#        data = {"Raster":arcgis_rasters, "ID":ids}
+
+#        if "SHAPE" not in attribute_dict.keys():
+#            if not isinstance(ele._engine_obj, _ArcpyRaster):
+#                import concurrent.futures
+#                with concurrent.futures.ThreadPoolExecutor(max_workers=len(rasters)) as executor:
+    
+#                    future_to_url = (executor.submit(_get_shape,ele) for ele in arcgis_rasters)
+#                    for future in concurrent.futures.as_completed(future_to_url):
+#                        shapes.append(future.result())
+
+#            if shapes !=[]:
+#                data.update({"SHAPE":shapes})
+#        data.update(attribute_dict)
+#        self._attribute_dict = data
+#        import pandas as pd
+#        df_obj = pd.DataFrame(data)
+#        self._df = df_obj
+
+
+#    @property
+#    def count(self):
+#        count = len(self._df.index)            
+#        return count
+
+#    @property
+#    def fields(self):
+#        return tuple(self._df.columns.tolist())
+
+#    @property
+#    def _rasters_list(self):
+#        ras_list=self.get_field_values("Raster")
+#        return ras_list
+
+#    def __iter__(self):
+#        return iter(self._df.to_dict('records', into=dict))
+
+
+#    def __next__(self):
+#        return self._df.to_dict('records', into=dict)[item]
+
+
+#    def __len__(self):
+#        return (self._df.to_dict('records', into=dict)).__len__
+
+#    def __getitem__(self, item):
+#        return self._df.to_dict('records', into=dict)[item]
+
+
+#    def filter_by(self, where_clause=None, query_geometry_or_extent=None, raster_query=None):        
+#        newcollection = self._clone_raster_collection()
+#        if where_clause is not None:
+#            if "LIKE" in where_clause or "NOT LIKE" in where_clause:
+#                raise RuntimeError("Local RasterCollection does not support LIKE or NOT LIKE in where_clause.")
+#            newcollection._ras_coll_engine_obj._df = self._df.query(where_clause)
+#        if query_geometry_or_extent is not None:
+#            newcollection._ras_coll_engine_obj._df = newcollection._ras_coll_engine_obj.filter_by_geometry(query_geometry_or_extent).as_df()
+#        if raster_query is not None:
+#            props_list=[]
+#            for ele in self:
+#                props_list.append(ele["Raster"].properties)
+#            import pandas as pd
+#            new_pd=pd.DataFrame.from_dict(props_list)
+#            df=self.as_df()
+#            frames=[df, new_pd]
+#            result = pd.concat(frames, axis=1)
+#            result.query(raster_query)
+#            #newcollection=self.filter_by_attribute("ID", "contains", list(result['ID']) )
+#            filtered_rasters = []
+#            attribute_dict = defaultdict(list)
+
+#            for item in iter(self):
+#                raster = self._get_raster_from_item(item)
+
+#                field_value = item["ID"]
+#                selected = False
+#                selected = (field_value in list(result['ID']))
+#                if selected:
+#                    filtered_rasters.append(raster)
+#                    for key, value in item.items():
+#                        if key not in ['Raster', 'Path']:
+#                            attribute_dict[key].append(value)
+#            newcollection= RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+#        return newcollection
+
+
+#    def filter_by_time(self, start_time="", end_time="", time_field_name="StdTime", date_time_format=None):
+#        if date_time_format is None:
+#            if start_time:
+#                start_time = datetime.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%S')
+#            if end_time:
+#                end_time = datetime.datetime.strptime(end_time, '%Y-%m-%dT%H:%M:%S')
+#        else:
+#            if start_time:
+#                start_time = datetime.datetime.strptime(start_time, date_time_format)
+#            if end_time:
+#                end_time = datetime.datetime.strptime(end_time, date_time_format)
+
+#        filtered_rasters = []
+#        attribute_dict = defaultdict(list)
+
+#        for item in iter(self):
+#            raster = self._get_raster_from_item(item)
+
+#            if date_time_format is None:
+#                date_time = datetime.datetime.strptime(item[time_field_name], '%Y-%m-%dT%H:%M:%S')
+#            else:
+#                date_time = datetime.datetime.strptime(item[time_field_name], date_time_format)
+
+#            if start_time and date_time < start_time:
+#                continue
+#            elif end_time and date_time > end_time:
+#                continue
+#            else:
+#                filtered_rasters.append(raster)
+#                for key, value in item.items():
+#                    if key not in ['Raster', 'Path']:
+#                        attribute_dict[key].append(value)
+
+#        if not filtered_rasters:
+#            warnings.warn(
+#                "Warning: the output is None because no items have raster properties satisfying the query")
+
+#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+
+#    def filter_by_calendar_range(self, calendar_field, start, end=None, time_field_name='StdTime', date_time_format=None):
+#        """
+#        filter the raster collection by a calendar_field and its start and end value (inclusive). i.e. if you would like
+#        to select all the rasters that have the time stamp on Monday, specify calendar_field as 'DAY_OF_WEEK' and put start and
+#        end to 1.
+
+#        :param calendar_field: string, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR', 'DAY_OF_YEAR', 'DAY_OF_MONTH',
+#         'DAY_OF_WEEK', 'HOUR'
+#        :param start: integer, the start time. inclusive.
+#        :param end: integer, default is None, if default is used, the end is set equal to start. inclusive.
+#        :param time_field_name: string, the time field anme, default is 'StdTime'.
+#        :param date_time_format: the time format that is used to format the time field values. Please ref the python
+#                                date time standard for this argument. https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+#                                Default is None and this means using the Pro standard time format '%Y-%m-%dT%H:%M:%S'
+#                                and ignoring the following sub-second.
+
+#        :return: a filtered raster collection.
+#        """
+#        # validation
+#        filtered_rasters = []
+#        attribute_dict = defaultdict(list)
+
+#        for item in iter(self):
+#            raster = self._get_raster_from_item(item)
+
+#            if date_time_format is None:
+#                date_time = datetime.datetime.strptime(item[time_field_name], '%Y-%m-%dT%H:%M:%S')
+#            else:
+#                date_time = datetime.datetime.strptime(item[time_field_name], date_time_format)
+
+#            selected = False
+#            if calendar_field == 'YEAR':
+#                if start <= date_time.year <= end:
+#                    selected = True
+#            elif calendar_field == 'MONTH':
+#                if start <= date_time.month <= end:
+#                    selected = True
+#            elif calendar_field == 'QUARTER':
+#                if start-1 <= (date_time.month - 1)//3 <= end-1:
+#                    selected = True
+#            elif calendar_field == 'WEEK_OF_YEAR':
+#                week_number = int(date_time.strftime('%U'))
+#                if start <= week_number+1 <= end:
+#                    selected = True
+#            elif calendar_field == 'DAY_OF_YEAR':
+#                yday = date_time.timetuple().tm_yday
+#                if start <= yday <= end:
+#                    selected = True
+#            elif calendar_field == 'DAY_OF_MONTH':
+#                mday = date_time.timetuple().tm_mday
+#                if start <= mday <= end:
+#                    selected = True
+#            elif calendar_field == 'DAY_OF_WEEK':
+#                wday = date_time.isoweekday()
+#                if start<= wday%7+1<=end:
+#                    selected = True
+#            elif calendar_field == 'HOUR':
+#                hour = date_time.timetuple().tm_hour
+#                if start <= hour <= end:
+#                    selected = True
+
+#            if selected is True:
+#                filtered_rasters.append(raster)
+#                for key, value in item.items():
+#                    if key not in ['Raster', 'Path']:
+#                        attribute_dict[key].append(value)
+
+#        if not filtered_rasters:
+#            warnings.warn(
+#                "Warning: the output is None because no items have raster properties satisfying the query")
+
+#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+#    def filter_by_geometry(self, query_geometry_or_extent):
+#        filtered_rasters = []
+#        attribute_dict = defaultdict(list)
+
+#        for item in iter(self):
+#            raster = self._get_raster_from_item(item)
+
+#            field_value = item["SHAPE"]
+#            if query_geometry_or_extent is not None:
+#                query_geometry_or_extent = _get_geometry(query_geometry_or_extent)
+#            selected = False
+#            selected = query_geometry_or_extent.contains(field_value, 'BOUNDARY')
+
+#            if selected and isinstance(selected, bool):
+#                filtered_rasters.append(raster)
+#                for key, value in item.items():
+#                    if key not in ['Raster', 'Path']:
+#                        attribute_dict[key].append(value)
+
+#        if not filtered_rasters:
+#            warnings.warn(
+#                "Warning: the output is None because no items have raster properties satisfying the query")
+#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+#    def filter_by_raster_property(self, property_name, operator, property_values):
+#        values = property_values
+#        if not isinstance(values, str) and not isinstance(values, list):
+#            raise TypeError('values must be string of list of string')
+
+#        if isinstance(values, list):
+#            for v in values:
+#                if not isinstance(v, str):
+#                    raise TypeError('values must be string of list of string')
+
+#        filtered_rasters = []
+#        attribute_dict = defaultdict(list)
+
+#        for item in iter(self):
+#            raster = self._get_raster_from_item(item)
+
+#            raster_properties = raster.properties
+#            if property_name not in raster_properties:
+#                continue
+#            property_value = raster.get_property(property_name)
+
+#            operator = operator.lower()
+#            selected = False
+#            if operator == 'equals':
+#                selected = (property_value == values)
+#            elif operator == 'less_than':
+#                selected = (property_value < values)
+#            elif operator == 'greater_than':
+#                selected = (property_value > values)
+#            elif operator == 'not_equals':
+#                selected = (property_value != values)
+#            elif operator == 'not_less_than':
+#                selected = (property_value >= values)
+#            elif operator == 'not_greater_than':
+#                selected = (property_value <= values)
+#            elif operator == 'starts_with':
+#                selected = (property_value.startswith(values))
+#            elif operator == 'ends_with':
+#                selected = (property_value.endswith(values))
+#            elif operator == 'not_starts_with':
+#                selected = (not property_value.startswith(values))
+#            elif operator == 'not_ends_with':
+#                selected = (not property_value.endswith(values))
+#            elif operator == 'contains':
+#                selected = (values in property_value)
+#            elif operator == 'not_contains':
+#                selected = (values not in property_value)
+#            elif operator == 'in':
+#                if not isinstance(values, list):
+#                    raise TypeError("Invalid values. Notet that values must be a list when operator is 'in'")
+#                selected = (property_value in values)
+#            elif operator == 'not_in':
+#                if not isinstance(values, list):
+#                    raise TypeError("Invalid values. Notet that values must be a list when operator is 'not_in'")
+#                selected = (property_value not in values)
+#            else:
+#                raise ValueError('invalid operator')
+
+#            if selected:
+#                filtered_rasters.append(raster)
+#                for key, value in item.items():
+#                    if key not in ['Raster', 'Path']:
+#                        attribute_dict[key].append(value)
+
+#        if not filtered_rasters:
+#            warnings.warn("Warning: the output is None because no items have raster properties satisfying the query")
+#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+#    def filter_by_attribute(self, field_name, operator, field_values):
+#        filtered_rasters = []
+#        attribute_dict = defaultdict(list)
+
+#        for item in iter(self):
+#            raster = self._get_raster_from_item(item)
+
+#            field_value = item[field_name]
+
+#            selected = False
+#            if operator == 'equals':
+#                selected = (field_value == field_values)
+#            elif operator == 'less_than':
+#                selected = (field_value < field_values)
+#            elif operator == 'greater_than':
+#                selected = (field_value > field_values)
+#            elif operator == 'not_equals':
+#                selected = (field_value != field_values)
+#            elif operator == 'not_less_than':
+#                selected = (field_value >= field_values)
+#            elif operator == 'not_greater_than':
+#                selected = (field_value <= field_values)
+#            elif operator == 'starts_with':
+#                selected = (field_value.startswith(field_values))
+#            elif operator == 'ends_with':
+#                selected = (field_value.endswith(field_values))
+#            elif operator == 'not_starts_with':
+#                selected = (not field_value.startswith(field_values))
+#            elif operator == 'not_ends_with':
+#                selected = (not field_value.endswith(field_values))
+#            elif operator == 'contains':
+#                selected = (field_values in field_value)
+#            elif operator == 'not_contains':
+#                selected = (field_values not in field_value)
+#            elif operator == 'in':
+#                if not isinstance(field_values, list):
+#                    raise TypeError(
+#                        "Invalid field_values. Notet that field_values must be a list when operator is 'in'")
+#                selected = (field_value in field_values)
+#            elif operator == 'not_in':
+#                if not isinstance(field_values, list):
+#                    raise TypeError(
+#                        "Invalid field_values. Notet that field_values must be a list when operator is 'not_in'")
+#                selected = (field_value not in field_values)
+#            else:
+#                raise ValueError('invalid operator')
+
+#            if selected:
+#                filtered_rasters.append(raster)
+#                for key, value in item.items():
+#                    if key not in ['Raster', 'Path']:
+#                        attribute_dict[key].append(value)
+
+#        if not filtered_rasters:
+#            warnings.warn(
+#                "Warning: the output is None because no items have raster properties satisfying the query")
+#        return RasterCollection(filtered_rasters, attribute_dict) if filtered_rasters else None
+
+
+#    def sort(self, field_name, ascending=True):
+#        newcollection = self._clone_raster_collection()
+#        newcollection._ras_coll_engine_obj._df = self._df.sort_values(by=field_name, ascending=ascending)
+
+#        return newcollection
+
+
+#    def get_field_values(self, field_name, max_count=0):
+#        if max_count ==0:
+#            max_count = self.count
+            
+#        df = self._df
+#        return df[field_name].tolist()[0:max_count]
+
+
+#    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+#        if variable_field_name not in self.fields:
+#            raise ValueError('variable_field_name does not exist')
+
+#        if isinstance(dimension_field_names, list):
+#            for dimension_field_name in dimension_field_names:
+#                if dimension_field_name not in self.fields:
+#                    raise ValueError('the given dimension_field_name does not exist')
+#            dimension_field_names = ','.join(dimension_field_names)
+#        else:
+#            if dimension_field_names not in self.fields:
+#                raise ValueError('the given dimension_field_names does not exist')
+#        from arcgis.raster.functions import identity
+#        lyr=identity(self._rasters_list)
+#        rasters = lyr._engine_obj._fnra['rasterFunctionArguments']['Raster']
+#        lyr._engine_obj._fn['rasterFunctionArguments']['Raster']={}
+#        lyr._engine_obj._fnra['rasterFunctionArguments']['Raster']={}
+
+#        lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({"raster":rasters})
+#        lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({"raster":rasters})
+#        for ele_field in self.fields:
+#            if (ele_field=="Raster"):
+#                continue
+#            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({ele_field:[]})
+#            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({'variable':variable_field_name})
+#            lyr._engine_obj._fn['rasterFunctionArguments']['Raster'].update({'dimensions':dimension_field_names})
+#            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({ele_field:[]})
+#            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({'variable':variable_field_name})
+#            lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'].update({'dimensions':dimension_field_names})
+#            for ele in self[0:self.count]:
+#                lyr._engine_obj._fn['rasterFunctionArguments']['Raster'][ele_field].append(ele[ele_field])
+#                lyr._engine_obj._fnra['rasterFunctionArguments']['Raster'][ele_field].append(ele[ele_field])
+#        return lyr
+
+#    def max(self):        
+#        from arcgis.raster.functions import max
+#        return max(self._rasters_list)
+
+
+
+#    def min(self):
+#        from arcgis.raster.functions import min
+#        return min(self._rasters_list)
+
+#    def median(self):        
+#        from arcgis.raster.functions import median
+#        return median(self._rasters_list)
+
+
+#    def mean(self):
+#        from arcgis.raster.functions import mean
+#        return mean(self._rasters_list)
+
+#    def majority(self):
+#        from arcgis.raster.functions import majority
+#        return majority(self._rasters_list)
+
+#    def sum(self):
+#        from arcgis.raster.functions import sum
+#        return sum(self._rasters_list)
+
+#    def mosaic(self, mosaic_method):
+#        raise RuntimeError("Local RasterCollection does not support mosaic function")
+
+#    def quality_mosaic(self, quality_rc_or_list, statistic_type=None):
+#        from arcgis.raster.functions import arg_statistics, _pick
+#        if not isinstance(statistic_type, str) or statistic_type.upper() not in ['MAX', 'MIN', 'MEDIAN']:
+#            raise ValueError('invalid statistic_type value')
+
+#        statistic_type = statistic_type.upper()
+
+#        #statistics_type_code = {'MAX': 0, 'MIN': 1, 'MEDIAN': 2}
+
+#        if isinstance(quality_rc_or_list, RasterCollection):
+#            if quality_rc_or_list.count != self.count:
+#                raise ValueError('the quality collection must have same number of items with the calling collection')
+
+#            if 'Raster' in quality_rc_or_list.fields:
+#                rasters = quality_rc_or_list.get_field_values('Raster')
+#            #elif 'Path' in quality_rc_or_list.fields:
+#                #rasters = [arcpy.Raster(path) for path in quality_rc_or_list.getFieldValues('Path')]
+#        elif isinstance(quality_rc_or_list, list):
+#            if len(quality_rc_or_list) != self.count:
+#                raise ValueError('the quality raster list must have same number of items with the calling collection')
+#            rasters = quality_rc_or_list
+#        else:
+#            raise ValueError('invalid quality_rc parameter')
+
+#        arg_statistics_result = arg_statistics(rasters, stat_type=statistic_type)
+#        arg_statistics_result = arg_statistics_result + 1  # the index in argstatistics output counts from 0, but Pick counts from 1
+
+#        rasters=self._rasters_list
+
+#        inp_list = [arg_statistics_result]
+#        for ele in rasters:
+#            inp_list.append(ele)
+#        return _pick(inp_list)
+
+#    def select_bands(self, band_ids_or_names):
+#        from arcgis.raster.functions import raster_collection_function, extract_band
+#        by_bandID_or_bandName = 0  # 1: by band id; 2: by band name
+#        if not (isinstance(band_ids_or_names, list) or isinstance(band_ids_or_names, str) or isinstance(
+#                band_ids_or_names, int)):
+#            raise TypeError('bands must be either a list, a single band ID or a single band Name')
+#        if isinstance(band_ids_or_names, list):
+#            for band in band_ids_or_names:
+#                if not (isinstance(band, int) or isinstance(band, str)):
+#                    raise TypeError('elements in band_ids_or_names must be integer or string type')
+#                if isinstance(band, int) and by_bandID_or_bandName == 0:
+#                    by_bandID_or_bandName = 1
+#                elif isinstance(band, int) and by_bandID_or_bandName == 2:
+#                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
+#                if isinstance(band, str) and by_bandID_or_bandName == 0:
+#                    by_bandID_or_bandName = 2
+#                elif isinstance(band, str) and by_bandID_or_bandName == 1:
+#                    raise TypeError('elements in band_ids_or_names should either all be integer or string type')
+
+#        elif isinstance(band_ids_or_names, str):
+#            by_bandID_or_bandName = 2
+#        else:
+#            by_bandID_or_bandName = 1
+
+#        rasters=self._rasters_list
+
+#        from arcgis.raster.functions import extract_band
+#        if by_bandID_or_bandName == 1:
+#            new_rasters = [extract_band(raster, band_ids=band_ids_or_names) for raster in rasters]
+#        elif by_bandID_or_bandName == 2:
+#            new_rasters = [extract_band(raster, band_names=band_ids_or_names) for raster in rasters]
+
+#        in_raster_collection_dict = {}
+#        for field_name in self.fields:
+#            if field_name == 'Raster' or field_name == 'Path':
+#                continue
+#            in_raster_collection_dict[field_name] = self.get_field_values(field_name)
+
+#        return RasterCollection(new_rasters, in_raster_collection_dict)
+
+
+#    def map(self, func):
+#        res = map(func, iter(self))
+#        rasters = []
+#        attribute_dict = defaultdict(list)
+#        for item in res:
+#            rasters.append(item['raster'])
+#            for key, value in item.items():
+#                if key != 'raster':
+#                    attribute_dict[key].append(value)
+
+#        return RasterCollection(rasters, attribute_dict)
+
+
+
+                
+          
+
+#    def as_df(self, result_offset=None, result_record_count=None, return_all_records=False):
+#        return self._df
+
+
+#    #def display_image(self, item=None):
+#    #    if not raster.use_server:
+#    #        raise RuntimeError('Not available in non server env')
+
+#    def _get_raster_from_item(self, item):
+#        if 'Raster' in item:
+#            raster = item["Raster"]
+#        else:
+#            raise RuntimeError('invalid raster collection')
+#        return raster
+
+#    def _clone_raster_collection(self):
+#        new_raster_collection = RasterCollection(self._rasters, self._attribute_dict, self._where_clause, self._spatial_filter, self._ras_coll_engine, self._gis)
+#        return new_raster_collection
+
+#    def _object_id_name(self):
+#        for ele in self.properties.fields:
+#            if ("type" in ele.keys()) and ele["type"]=="esriFieldTypeOID":
+#                return ele["name"]
+
+#    def _repr_html_(self):
+#        return self._df._repr_html_()
+
+#    def _repr_jpeg_(self):
+#        return None
+
+
+
+
 
 ########################################################################
 class ImageryTileManager(object):

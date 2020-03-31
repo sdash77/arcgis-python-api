@@ -1154,6 +1154,15 @@ class FeatureLayerCollectionManager(_GISResource):
                         _log.error('Unable to parse the view_tables parameter')
 
         fs_view.manager.add_to_definition(add_def)
+        if view_layers:
+            item_upd_dict = {
+                'layers': [ilyr
+                           for ilyr in item.get_data()['layers']
+                           for lyr in view_layers
+                           if int(lyr.url[-1]) == ilyr['id']]}
+            view.update(data=item_upd_dict)
+        else:
+            view.update(data=item.get_data())
         return content.get(res['itemId'])
     # ----------------------------------------------------------------------
     def add_to_definition(self, json_dict):
@@ -1183,11 +1192,8 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": json.dumps(False)
         }
         adddefn_url = self._url + "/addToDefinition"
-        old_ref = self._con._referer
-        self._con._referer = "http"
         res = self._con.post(adddefn_url, params)
         self.refresh()
-        self._con._referer = old_ref
         return res
 
     # ----------------------------------------------------------------------
@@ -1258,10 +1264,7 @@ class FeatureLayerCollectionManager(_GISResource):
             "async": False
         }
         u_url = self._url + "/updateDefinition"
-        old_ref = self._con._referer
-        self._con._referer = "http"
         res = self._con.post(u_url, params)
-        self._con._referer = old_ref
         self.refresh()
         return res
 

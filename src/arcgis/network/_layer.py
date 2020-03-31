@@ -464,7 +464,7 @@ class RouteLayer(NetworkLayer):
         stops = _handle_spatial_inputs(data=stops)
         params['stops'] = stops
         if directions_output_type is None:
-            directions_output_type = "esriDOTStandard"
+            directions_output_type = "esriDOTInstructionsOnly"
         if not barriers is None:
             params['barriers'] = _handle_spatial_inputs(data=barriers)
         if not polyline_barriers is None:

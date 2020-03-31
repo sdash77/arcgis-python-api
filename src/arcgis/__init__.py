@@ -11,7 +11,7 @@ from .geocoding import geocode
 try:
     import pandas as pd
     from .features.geo import GeoAccessor, GeoSeriesAccessor
-except:
+except ImportError as e:
     pass
 
 __all__ = ['GIS', 'geocode', 'features',

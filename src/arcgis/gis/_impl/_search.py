@@ -140,6 +140,8 @@ def _search(gis, query, stype="content",
         results['results'].extend(res['results'])
         count += int(res['num'])
         nextstart = int(res['nextStart'])
+        if len(res['results']) == 0:
+            break
     if len(results['results']) > max_items and max_items != -1:
         results['results'] = results['results'][:max_items]
     ## Clean up Response

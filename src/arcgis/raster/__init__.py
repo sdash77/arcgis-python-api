@@ -9,7 +9,8 @@ an elevation surface.
 Use arcgis.raster.analytics.is_supported(gis) to check if raster analysis is supported in your GIS.
 """
 
-from ._layer import ImageryLayer, RasterManager, ImageryTileManager, RasterCatalogItem
+from ._layer import ImageryLayer, RasterManager, ImageryTileManager, RasterCatalogItem, Raster, _ImageServerRaster, _ArcpyRaster
 from .analytics import *
 from .functions import *
 from .orthomapping import *
+#from .charts import *

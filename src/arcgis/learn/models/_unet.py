@@ -4,10 +4,11 @@ from ._codetemplate import image_classifier_prf
 from ._arcgis_model import _EmptyData
 from functools import partial
 import math
-from .._data import _raise_fastai_import_error
+from .._data import _raise_fastai_import_error  
+import traceback    
 
 try:
-    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback
+    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family
     import torch
     from torchvision import models
     from fastai.vision.learner import unet_learner, cnn_config
@@ -20,6 +21,7 @@ try:
     from ._deeplab_utils import compute_miou
     HAS_FASTAI = True
 except Exception as e:
+    import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     class NnModule():
         pass
     HAS_FASTAI = False
@@ -88,7 +90,11 @@ class UnetClassifier(ArcGISModel):
         """
         Supported torchvision backbones for this model.
         """        
-        return [*self._resnet_family]
+        return UnetClassifier._supported_backbones()
+
+    @staticmethod
+    def _supported_backbones():
+        return [*_resnet_family]
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -129,7 +135,7 @@ class UnetClassifier(ArcGISModel):
         :returns: `UnetClassifier` Object
         """
         if not HAS_FASTAI:
-            _raise_fastai_import_error()
+            _raise_fastai_import_error(import_exception=import_exception)
             
         emd_path = Path(emd_path)
         with open(emd_path) as f:
@@ -167,8 +173,8 @@ class UnetClassifier(ArcGISModel):
 
     @property
     def _model_metrics(self):
-        return {'accuracy': self._get_model_metrics()}
-
+        return {'accuracy': '{0:1.4e}'.format(self._get_model_metrics())}
+        
     def _get_emd_params(self):
         import random
         _emd_template = {}
@@ -219,9 +225,12 @@ class UnetClassifier(ArcGISModel):
         if not hasattr(self.learn, 'recorder'):
             return 0.0
 
-        model_accuracy = self.learn.recorder.metrics[-1][0]
-        if checkpoint:
-            model_accuracy = np.max(self.learn.recorder.metrics)
+        try:
+            model_accuracy = self.learn.recorder.metrics[-1][0]
+            if checkpoint:
+                model_accuracy = np.max(self.learn.recorder.metrics)
+        except:
+            model_accuracy = 0.0
 
         return float(model_accuracy)
 

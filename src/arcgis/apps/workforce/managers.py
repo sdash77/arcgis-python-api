@@ -874,7 +874,8 @@ class AssignmentIntegrationManager:
         if "prompt" not in integration:
             raise ValidationError("Assignment integration must contain a prompt", self)
         if "assignmentTypes" in integration:
-            for key, value in integration["assignmentTypes"].items():
+            copy_dict = integration["assignmentTypes"].copy()
+            for key, value in copy_dict.items():
                 if isinstance(key, str):
                     if key not in [at.name for at in self.project.assignment_types.search()]:
                         raise ValidationError("Invalid assignment type in integration", self)

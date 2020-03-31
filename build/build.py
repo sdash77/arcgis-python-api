@@ -31,14 +31,14 @@ BASE_UPLOAD_CMD = "anaconda upload -f {conda_package}"
 #Note that this command alone will place pkgs in src/dist, not build/output
 BASE_PIP_BUILD_CMD = "cd {src_dir} && python setup.py sdist"
 
-SUPPORTED_WIN = ['win-32', 'win-64']
-SUPPORTED_LINUX = ['linux-32', 'linux-64']
+SUPPORTED_WIN = ['win-64']
+SUPPORTED_LINUX = ['linux-64']
 SUPPORTED_OSX = ['osx-64']
 SUPPORTED_UNIX = SUPPORTED_LINUX + SUPPORTED_OSX
 SUPPORTED_OSES = SUPPORTED_WIN +\
                  SUPPORTED_LINUX +\
                  SUPPORTED_OSX
-SUPPORTED_PYS = ['3.6', '3.7']
+SUPPORTED_PYS = ['3.6', '3.7', '3.8']
 DEFAULT_PYS = SUPPORTED_PYS
 
 GEOSAURUS_ROOT_DIR = os.path.abspath(os.path.join(

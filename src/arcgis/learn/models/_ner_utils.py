@@ -3,13 +3,14 @@ try:
     from spacy.gold import offsets_from_biluo_tags as _offsets_from_biluo_tags
     from spacy.gold import iob_to_biluo as _iob_to_biluo
     import pandas as pd
+    import numpy as np
     HAS_SPACY = True
 except:
     HAS_SPACY = False
 from pathlib import Path
 import json,random,os,tempfile,logging
 
-__all__=["_from_iob_tags","_from_json","ner_prepare_data","_create_zip"]
+__all__=["_from_iob_tags","_from_json","ner_prepare_data","_create_zip","even_mults"]
 
 def _raise_spacy_import_error():
     raise Exception('This module requires pandas and spacy version 2.1.8. Install it using \"pip install pandas spacy==2.1.8\"')
@@ -25,6 +26,11 @@ def _create_zip(zipname, path):
     
     shutil.move(zip_file, path)
 
+def even_mults(start:float, stop:float, n:int): #Taken from FastAI(https://github.com/fastai/fastai/blob/master/fastai/core.py#L150)
+    "Build log-stepped array from `start` to `stop` in `n` steps."
+    mult = stop/start
+    step = mult**(1/(n-1))
+    return np.array([start*(step**i) for i in range(n)])
 
 def _from_iob_tags(tokens_collection, tags_collection):
     """
@@ -98,7 +104,7 @@ def _from_json(path, text_key='text', offset_key='labels'):
         
     return train_data
 
-def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
+def ner_prepare_data(dataset_type, path, batch_size, class_mapping=None, val_split_pct=0.1):
 
     """
     Prepares a data object
@@ -176,7 +182,7 @@ def ner_prepare_data(dataset_type, path, class_mapping=None, val_split_pct=0.1):
                 train_data.append((text,{'entities':tags}))
             except:
                 pass        
-    data=DatabunchNER(train_data, val_split_pct=val_split_pct, address_tag=address_tag, test_ds=None)
+    data=DatabunchNER(train_data, val_split_pct=val_split_pct,batch_size=batch_size,address_tag=address_tag, test_ds=None)
     data.path=path
     return data
 
@@ -187,7 +193,7 @@ class _NERItemlist():
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    bs                      Batch size. 
+    batch_size              Batch size. 
     ---------------------   -------------------------------------------
     data                    Required:DatabunchNER. 
     =====================   ===========================================
@@ -196,9 +202,9 @@ class _NERItemlist():
     """
 
     
-    def __init__(self, bs, data):
-        self.bs = bs
-        self.entities = ['TEXT']+list({i[2] for i in pd.concat([pd.Series(i['entities']) for i in [o[1] for o in data]])}) ##Extracting all the unique entity names from input json
+    def __init__(self, batch_size, data):
+        self.batch_size = batch_size
+        self.entities = list({i[2] for i in pd.concat([pd.Series(i['entities']) for i in [o[1] for o in data]])}) ##Extracting all the unique entity names from input json
         self.data = data
         self.x = [o[0] for o in data]
         self.y = [o[1] for o in data]
@@ -211,7 +217,7 @@ class _NERItemlist():
 
     def _random_batch(self, data):
         res = []
-        for j in range(self.bs): 
+        for j in range(self.batch_size): 
             res.append(random.choice(data)) 
         return res    
     
@@ -266,20 +272,23 @@ class DatabunchNER():
                             as validation.
                             The default Value is 0.1.
     ---------------------   -------------------------------------------
-    bs                      Optional integer. Batch size
+    batch_size              Optional integer. Batch size
                             The default value is 5.                       
     =====================   ===========================================
 
     :returns: dataset
     """
 
-    def __init__(self, ds, val_split_pct, bs=5, test_ds=None,address_tag=None):
+    def __init__(self, ds, val_split_pct, batch_size, test_ds=None,address_tag=None):
         random.shuffle(ds)
-        self.train_ds = _NERItemlist(bs,data = ds[:int(len(ds)*(1-val_split_pct))]) #creating an _NERItemlist with training dataset
-        self.val_ds = _NERItemlist(bs,data = ds[int(len(ds)*(1-val_split_pct)):]) #creating an _NERItemlist with validation dataset
+        self.train_ds = _NERItemlist(batch_size,data = ds[:int(len(ds)*(1-val_split_pct))]) #creating an _NERItemlist with training dataset
+        self.val_ds = _NERItemlist(batch_size,data = ds[int(len(ds)*(1-val_split_pct)):]) #creating an _NERItemlist with validation dataset
         self.entities=list(set(self.train_ds.entities).union(set(self.val_ds.entities)))
         self._address_tag=address_tag
         self._has_address=True
+        self.batch_size=batch_size
+        if self.batch_size>len(self.train_ds):
+            return logging.error(f"Number of training data items ({len(self.train_ds)}) is less than the batch size ({self.batch_size}). Please get more training data or lower the batch size")        
         if self._address_tag not in self.entities:
             self._has_address=False
             return logging.warning("No Address tag found in your data.\n\

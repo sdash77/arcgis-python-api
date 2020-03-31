@@ -35,7 +35,7 @@ class FeatureLayer(Layer):
     GIS. Feature layer objects can be obtained through the layers attribute on feature layer Items in the GIS.
     """
     _metadatamanager = None
-
+    _renderer = None
     def __init__(self, url, gis=None, container=None, dynamic_layer=None):
         """
         Constructs a feature layer given a feature layer URL
@@ -51,7 +51,36 @@ class FeatureLayer(Layer):
         self._storage = container
         self._dynamic_layer = dynamic_layer
         self.attachments = AttachmentManager(self)
-
+        
+    @property
+    def renderer(self):
+        """
+        Get/Set the Renderer of the Feature Layer.  This overrides the default symbology when displaying it on a webmap.
+        
+        :returns: InsensitiveDict
+        
+        """
+        from arcgis._impl.common._isd import InsensitiveDict
+        if self._renderer is None and "drawingInfo" in self.properties:
+            self._renderer = InsensitiveDict(dict(self.properties.drawingInfo.renderer))
+        return self._renderer
+    
+    @renderer.setter
+    def renderer(self, value):
+        """
+        Get/Set the Renderer of the Feature Layer.  This overrides the default symbology when displaying it on a webmap.
+        
+        :returns: InsensitiveDict
+        
+        """
+        from arcgis._impl.common._isd import InsensitiveDict
+        if isinstance(value, (dict, PropertyMap)):
+            self._renderer = InsensitiveDict(dict(value))
+        elif value is None:
+            self._renderer = None
+        elif not isinstance(value, InsensitiveDict):
+            raise ValueError("Invalid renderer type.")
+        self._refresh = value    
 
     @classmethod
     def fromitem(cls, item, layer_id=0):
@@ -1059,6 +1088,8 @@ class FeatureLayer(Layer):
             if 'SHAPE' in df.columns:
                 df['SHAPE'] = GeoArray([])
                 df.spatial.set_geometry("SHAPE")
+                df.spatial.renderer = self.renderer
+                df.spatial._meta.source = self
             return df
         elif record_count <= max_records:
             if supports_pagination and record_count > 0:
@@ -1070,6 +1101,8 @@ class FeatureLayer(Layer):
                              if fld['type'] == 'esriFieldTypeDate']
                 if 'SHAPE' in df.columns:
                     df.spatial.set_geometry('SHAPE')
+                    df.spatial.renderer = self.renderer
+                    df.spatial._meta.source = self
                 for fld in dt_fields:
                     try:
                         if fld in df.columns:
@@ -1140,6 +1173,8 @@ class FeatureLayer(Layer):
                 df.reset_index(drop=True, inplace=True)
             if 'SHAPE' in df.columns:
                 df.spatial.set_geometry('SHAPE')
+                df.spatial.renderer = self.renderer
+                df.spatial._meta.source = self
             for fld in dt_fields:
                 try:
                     df[fld] = pd.to_datetime(df[fld]/1000,
@@ -1729,6 +1764,13 @@ class FeatureLayer(Layer):
         
         
         """
+        try:
+            import pandas as pd
+            from arcgis.features.geo import _is_geoenabled
+            HAS_PANDAS = True
+        except:
+            HAS_PANDAS = False
+            
         if adds is None:
             adds = []
         if updates is None:
@@ -1741,9 +1783,24 @@ class FeatureLayer(Layer):
         }
         if gdb_version is not None:
             params['gdbVersion'] = gdb_version
-        if isinstance(adds, FeatureSet):
+        if HAS_PANDAS and \
+           isinstance(adds, pd.DataFrame) and \
+           _is_geoenabled(adds):
+            cols = [c for c in adds.columns.tolist() if c.lower() not in ['objectid', 'fid']]
+            params['adds'] = json.dumps(adds[cols].spatial.__feature_set__['features'], 
+                                        default=_date_handler)
+        elif HAS_PANDAS and \
+           isinstance(adds, pd.DataFrame) and \
+           _is_geoenabled(adds) == False:
+            # we have a regular panadas dataframe
+            cols = [c for c in adds.columns.tolist() if c.lower() not in ['objectid', 'fid']]
+            params['adds'] = json.dumps([{"attributes" : row } for \
+                                         row in adds[cols].to_dict(orient='record')], 
+                                        default=_date_handler)
+        elif isinstance(adds, FeatureSet):
             params['adds'] = json.dumps([f.as_dict for f in adds.features],
                                         default=_date_handler)
+        
         elif len(adds) > 0:
             if isinstance(adds[0], dict):
                 params['adds'] = json.dumps([f for f in adds],
@@ -1759,6 +1816,19 @@ class FeatureLayer(Layer):
         if isinstance(updates, FeatureSet):
             params['updates'] = json.dumps([f.as_dict for f in updates.features],
                                            default=_date_handler)
+        elif HAS_PANDAS and \
+               isinstance(updates, pd.DataFrame) and \
+               _is_geoenabled(updates):
+            params['updates'] = json.dumps(updates.spatial.__feature_set__['features'], 
+                                           default=_date_handler)
+        elif HAS_PANDAS and \
+             isinstance(updates, pd.DataFrame) and \
+             _is_geoenabled(updates) == False:
+            # we have a regular panadas dataframe
+            cols = [c for c in updates.columns.tolist() if c.lower() not in ['objectid', 'fid']]
+            params['updates'] = json.dumps([{"attributes" : row } for \
+                                            row in updates[cols].to_dict(orient='record')], 
+                                           default=_date_handler)
         elif len(updates) > 0:
             if isinstance(updates[0], dict):
                 params['updates'] = json.dumps([f for f in updates],
@@ -1772,14 +1842,20 @@ class FeatureLayer(Layer):
             else:
                 print('pass in features as list of Features, dicts or PropertyMap')
         if deletes is not None and \
-                isinstance(deletes, str):
+           isinstance(deletes, str):
             params['deletes'] = deletes
         elif deletes is not None and \
-                isinstance(deletes, PropertyMap):
+             isinstance(deletes, PropertyMap):
             print('pass in delete, unable to convert PropertyMap to string list of OIDs')
-
         elif deletes is not None and \
-                isinstance(deletes, FeatureSet):
+             isinstance(deletes, pd.DataFrame):
+            cols = [c for c in deletes.columns.tolist() if c.lower() in ['objectid', 'fid']]
+            if len(cols) > 0:
+                params['deletes'] = ",".join([str(d) for d in deletes[cols[0]]])
+            else:
+                raise Exception("Could not find ObjectId or FID field.")
+        elif deletes is not None and \
+             isinstance(deletes, FeatureSet):
 
             field_name = None
             if deletes.object_id_field_name:
@@ -1791,6 +1867,8 @@ class FeatureLayer(Layer):
 
             if field_name:
                 params['deletes'] = ",".join([str(feat.get_value(field_name=field_name)) for feat in deletes.features])
+        elif isinstance(deletes, (list, tuple)):
+            params['deletes'] = ",".join([str(d) for d in deletes])
         if not return_edit_moment is None:
             params['returnEditMoment'] = return_edit_moment
         if not attachments is None and isinstance(attachments, dict):
@@ -1806,7 +1884,7 @@ class FeatureLayer(Layer):
         if 'deletes' not in params and 'updates' not in params and 'adds' not in params:
             print("Parameters not valid for edit_features")
             return None
-        return self._con.post(path=edit_url, postdata=params, token=self._token)
+        return self._con.post(path=edit_url, postdata=params)#, token=self._token)
 
     # ----------------------------------------------------------------------
     def calculate(self, where, calc_expression,

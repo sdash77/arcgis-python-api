@@ -19,7 +19,7 @@ import uuid
 import datetime
 import mimetypes
 import tempfile
-from urllib.request import urlparse, unquote
+from urllib.request import urlparse, unquote, urljoin
 import requests
 from requests import Session
 from requests_toolbelt.downloadutils import stream
@@ -27,8 +27,9 @@ from requests_toolbelt.multipart.encoder import MultipartEncoder
 from ._helpers import _filename_from_headers, _filename_from_url
 from ._authguess import GuessAuth
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis._impl.common._isd import InsensitiveDict
 
-__version__ = "2.0.0"
+__version__ = "1.8.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 
@@ -103,7 +104,13 @@ class Connection(object):
         self._portal_connection = kwargs.pop('portal_connection', None) # For Federated Objects (Portal Connection)
         if isinstance(self._portal_connection, GIS):
             self._portal_connection = self._portal_connection._con
-        self._referer = kwargs.pop('referer', 'http')
+        
+        if (self._referer or self._referer is None) and \
+           self._portal_connection and \
+           str(self._portal_connection._auth).lower() == "home":
+            self._referer = None
+        else:
+            self._referer = kwargs.pop('referer', 'http')
 
         self._verify_cert = kwargs.pop("verify_cert", False)#True)
         if self._verify_cert == False:
@@ -154,7 +161,7 @@ class Connection(object):
         elif self._client_id:
             self._product = self._check_product()
             if self._product in ['PORTAL', "AGOL"]:
-                resp = self._session.post("/portals/self", {'f' : 'json'}, add_token=False)
+                resp = self.post("/portals/self", {'f' : 'json'}, add_token=False)
                 issaml = resp.get("samlEnabled", False)
                 isoauth = resp.get("supportsOAuth", False)
             else:
@@ -225,9 +232,22 @@ class Connection(object):
         self._session.stream = True
         self._session.headers.update(self._header)
         self._session.proxies = proxies
-        if self._referer is None:
+        
+        if self._referer is None and\
+           (self._portal_connection and \
+           str(self._portal_connection._auth).lower() == "home"):
             self._referer = "http"
-        self._session.headers.update({'Referer': self._referer})
+            self._session.headers.pop("Referer", None)
+            self._session.headers['Referer'] = json.dumps("")
+        elif (self._portal_connection and str(self._portal_connection._auth).lower() == "home"):
+            self._referer = "http"
+            self._session.headers.pop("Referer", None)
+            self._session.headers['Referer'] = json.dumps("")
+        elif self._referer is None:
+            self._referer = 'http'
+            self._session.headers.update({'Referer': self._referer})   
+        else:
+            self._session.headers.update({'Referer': self._referer})   
         if self._custom_auth:
             self._session.auth = self._custom_auth
             self._auth = "CUSTOM"
@@ -337,9 +357,13 @@ class Connection(object):
             params['f'] = 'json'
         if params == {}:
             params = None
-
-        out_path = kwargs.pop('out_path',
-                              tempfile.gettempdir())
+        
+        if 'out_folder' in kwargs:
+            out_path = kwargs.pop('out_folder',
+                                  tempfile.gettempdir())            
+        else:
+            out_path = kwargs.pop('out_path',
+                                  tempfile.gettempdir())
         file_name = kwargs.pop('file_name', None)
         if params:
             for k, v in copy.copy(params).items():
@@ -347,6 +371,8 @@ class Connection(object):
                     params[k] = json.dumps(v)
                 elif isinstance(v, PropertyMap):
                     params[k] = json.dumps(dict(v))
+                elif isinstance(v, InsensitiveDict):
+                    params[k] = v.json
         try:
             if self._cert_file:
                 cert = (self._cert_file, self._key_file)
@@ -421,10 +447,14 @@ class Connection(object):
 
         data = None
         url = resp.url
-        if os.path.isdir(out_path) == False:
+        if out_path and \
+           os.path.isdir(out_path) == False:
             os.makedirs(out_path)
+        if out_path is None:
+            out_path = tempfile.gettempdir()
         if file_name is None and \
-           resp.headers['Content-Type'].lower().find('json') == -1:
+           (resp.headers['Content-Type'].lower().find('json') == -1 and \
+           resp.headers['Content-Type'].lower().find('text') == -1):
             file_name = _filename_from_url(url) or _filename_from_headers(
                 resp.headers) or None
         if force_bytes:
@@ -619,9 +649,11 @@ class Connection(object):
                     params[k] = json.dumps(v)
                 elif isinstance(v, PropertyMap):
                     params[k] = json.dumps(dict(v))
+                elif isinstance(v, InsensitiveDict):
+                    params[k] = v.json
             if post_json:  # edge case workflow
                 resp = self._session.post(url=url,
-                                          json=json.dumps(params),
+                                          json=params,
                                           cert=cert,
                                           files=files)                
             else:
@@ -1014,6 +1046,8 @@ class Connection(object):
                                                                          p.path[1:].split('/')[0],)
         if self._portal_connection:
             #self._token_url = token_url
+            if self._portal_connection._auth.lower() == 'home':
+                self._referer = ""
             ptoken = self._portal_connection.token
             postdata = {'serverURL':self._baseurl,
                         'token': ptoken,
@@ -1025,7 +1059,7 @@ class Connection(object):
             postdata = { 'username': self._username,
                          'password': self._password,
                          #'client': 'requestip',
-                         'referer' : 'http',
+                         'referer' : self._referer,
                          'expiration': self._expiration,
                          'f': 'json' }
         res = self.post(path=self._token_url,
@@ -1040,8 +1074,11 @@ class Connection(object):
     #----------------------------------------------------------------------
     def _enterprise_token(self):
         """generates a portal/agol token"""
-        if self._referer is None:
+        if self._referer is None and self._portal_connection is None:
             self._referer = "http"
+        elif self._referer is None and self._portal_connection and \
+             self._portal_connection._auth.lower() == "home":
+            self._referer = ""
         postdata = { 'username': self._username, 'password': self._password,
                      'client': 'referer', 'referer': self._referer,
                      'expiration': self._expiration, 'f': 'json' }
@@ -1333,7 +1370,21 @@ class Connection(object):
                'authInfo' in res and \
                'tokenServicesUrl' in res['authInfo'] and \
                res['authInfo']['isTokenBasedSecurity']:
-                self._token_url = res['authInfo']['tokenServicesUrl']
+                parsed_from_system = urlparse(res['authInfo']['tokenServicesUrl'])
+                parsed = urlparse(baseurl)
+                if parsed.netloc.lower() != parsed_from_system.netloc.lower() and \
+                   parsed.netloc.find(":7443") > -1: # WA not being used for token url
+                    self._token_url = os.path.join(
+                        parsed_from_system.scheme + "://", 
+                        parsed.netloc  + "/arcgis/" + "/".join(parsed_from_system.path[1:].split("/")[1:])
+                    )
+                    url_test = self._session.post(self._token_url, {'f': 'json'}, allow_redirects=False)
+                    if url_test.status_code == 301:
+                        self._token_url = url_test.headers['location']
+                        if self._baseurl != os.path.dirname(url_test.headers['location']):
+                            self._baseurl = os.path.dirname(url_test.headers['location'])
+                else:
+                    self._token_url = res['authInfo']['tokenServicesUrl']
             elif self._token_url is None and \
                  res is not None and \
                  isinstance(res, dict) and \
@@ -1371,6 +1422,8 @@ class Connection(object):
                 except HTTPError as e:
                     res = ""
                 except json.decoder.JSONDecodeError:
+                    res = ""
+                except Exception as e:
                     res = ""
                 if isinstance(res, dict) and \
                    "currentVersion" in res and \

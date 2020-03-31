@@ -13,6 +13,8 @@ from automation._common import *
 FTP_SITE = "zion"
 ESRI_CHANNEL_DEV = "http://zion/conda/esri_channel_dev/"
 NUM_BUILDS_TO_KEEP = 100
+MASTER_ARCHS = ["win-64", "noarch"]
+SLAVE_ARCHS = ["linux-64", "osx-64"]
 
 def publish_to_ftp_site(username, password, automation_type, build_number,
                         ftp_folder_name, *args, **kwargs):
@@ -21,90 +23,61 @@ def publish_to_ftp_site(username, password, automation_type, build_number,
               passwd = password)
 
     if re.match(MASTER_REGEX, automation_type):
-        _publish_conda_to_ftp_master(ftp = ftp,
-                                     build_number = build_number)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  build_number = build_number)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  ftp_folder_name = "master")
+        _publish_archs_to_ftp_site(ftp, f"master", MASTER_ARCHS)
+        _publish_archs_to_ftp_site(ftp, f"master/{build_number}", MASTER_ARCHS)
         _publish_pip_to_ftp_packages(ftp = ftp,
                                      build_number = build_number)
         _remove_old_builds_from_ftp_server(ftp = ftp,
-                                     build_number = build_number)
+                                           build_number = build_number)
 
     if re.match(LINUX_SLAVE_REGEX, automation_type):
-        _publish_conda_to_ftp_master(ftp = ftp,
-                                     build_number = build_number)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  build_number = build_number)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  ftp_folder_name = "master")
+        _publish_archs_to_ftp_site(ftp, f"master", SLAVE_ARCHS)
+        _publish_archs_to_ftp_site(ftp, f"master/{build_number}", SLAVE_ARCHS)
+
     if re.match(PUBLISH_REGEX, automation_type):
-        _publish_conda_to_ftp_branch(ftp = ftp,
-                               ftp_folder_name = ftp_folder_name)
-        _copy_esri_channel_dev_to(ftp = ftp,
-                                  ftp_folder_name = ftp_folder_name)
+        if os.name == "nt":
+            # Hacky way to figure out if we're the master
+            _publish_archs_to_ftp_site(ftp, ftp_folder_name, MASTER_ARCHS)
+        if os.name == "posix":
+            # Hacky way to figure out if we're the slave
+            _publish_archs_to_ftp_site(ftp, ftp_folder_name, SLAVE_ARCHS)
 
-def _publish_conda_to_ftp_master(ftp, build_number):
-    """Pushes any files in staging/conda_builds to ftp://zion/master"""
-    src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
-    # conda packages for the specific build number, installable via:
-    # conda install -c ftp://zion/master/{build_num}
-    buildnum_dst_dir_path = "master/{}".format(build_number)
-    # conda packages for the most recent master, overwritten. installable via:
-    # conda install -c ftp://zion/master
-    rootmaster_dst_dir_path = "master"  
+def _publish_archs_to_ftp_site(ftp, dst, archs):
+    src = os.path.join(STAGING_DIR, "conda_builds")
+    for arch in archs:
+        src_dir_path = f"{src}/{arch}"
+        dst_dir_path = f"{dst}/{arch}"
+        _delete_directory_recursive(ftp, dst_dir_path, ignore_if_exists = True)
+        _make_dir_ignore_if_exists(ftp, dst_dir_path)
+        _merge_w_esri_channel_dev_and_upload(ftp = ftp,
+                                            src_dir_path = src_dir_path,
+                                            dst_dir_path = dst_dir_path,
+                                            arch = arch)
 
-    _make_dir_ignore_if_exists(ftp, buildnum_dst_dir_path)
-    _upload_directory_recursive(ftp = ftp,
-                                src_dir_path = src_dir_path,
-                                dst_dir_path = buildnum_dst_dir_path)
-    _upload_directory_recursive(ftp = ftp,
-                                src_dir_path = src_dir_path,
-                                dst_dir_path = rootmaster_dst_dir_path)
-
-def _publish_conda_to_ftp_branch(ftp, ftp_folder_name):
-    """Pushes any files in staging/conda_builds to ftp://zion/ftp_fold_name"""
-    src_dir_path = os.path.join(STAGING_DIR, "conda_builds")
-    _make_dir_ignore_if_exists(ftp, ftp_folder_name) 
-    _upload_directory_recursive(ftp = ftp,
-                                src_dir_path = src_dir_path,
-                                dst_dir_path = ftp_folder_name)
-
-def _copy_esri_channel_dev_to(ftp, build_number=None, ftp_folder_name=None):
-    if build_number and ftp_folder_name:
-        raise Exception("Can't specify build_number & ftp_folder_name (use 1)")
-    ext = '.tar.bz2'
-    dst_dir_path = None
-    if build_number:
-        dst_dir_path = "master/{}".format(build_number)
-    if ftp_folder_name:
-        dst_dir_path = ftp_folder_name
-
-    def get_files_recurs(url, ext=''):
+def _merge_w_esri_channel_dev_and_upload(ftp, src_dir_path, dst_dir_path, arch):
+    log.debug(f"Uploading {src_dir_path} -> {dst_dir_path} after downloading "\
+              f" and merging with esri_chanel_dev...")
+    def get_package_urls_from(channel_url, arch):
+        channel_arch_url = f"{channel_url}/{arch}/"
+        ext = '.tar.bz2'
         output = []
-        page = requests.get(url).text
+        page = requests.get(channel_arch_url).text
         soup = BeautifulSoup(page, 'html.parser')
-        for url2 in [url + '/' + node.get('href') for node in soup.find_all('a')]:
-            if url2.endswith(ext):
-                output.append(url2)
-            output += get_files_recurs(url2, ext)
+        for url in [f"{channel_arch_url}/{node.get('href')}" \
+                    for node in soup.find_all('a')]:
+            if url.endswith(ext):
+                output.append(url)
         return output
 
-    with EmptyTmpDir() as src_dir_path:
-        for file_url in get_files_recurs(ESRI_CHANNEL_DEV, ext):
-            filename = os.path.basename(file_url)
-            arch_dir = os.path.join(src_dir_path, 
-                                    os.path.dirname(file_url).split("/")[-1])
-            download_file_dst = os.path.join(arch_dir, filename)
-            if not os.path.exists(arch_dir):
-                os.mkdir(arch_dir)
-            urllib.request.urlretrieve(file_url, download_file_dst)
+    for file_url in get_package_urls_from(ESRI_CHANNEL_DEV, arch):
+        filename = os.path.basename(file_url)
+        download_file_dst = os.path.join(src_dir_path, filename)
+        urllib.request.urlretrieve(file_url, download_file_dst)
 
-        run_shell_command(f"conda index {src_dir_path}")
-        _upload_directory_recursive(ftp = ftp,
-                                    src_dir_path = src_dir_path,
-                                    dst_dir_path = dst_dir_path)
+    run_shell_command(f"conda index {src_dir_path}")
+    _upload_directory_recursive(ftp = ftp,
+                                src_dir_path = src_dir_path,
+                                dst_dir_path = dst_dir_path)
 
 def _publish_pip_to_ftp_packages(ftp, build_number):
     """Pushes any files in staging/pip_builds to ftp://zion/packages"""
@@ -142,19 +115,26 @@ def _upload_directory_recursive(ftp, src_dir_path, dst_dir_path):
             _make_dir_overwrite_if_exists(ftp, curr_dst_path)
             _upload_directory_recursive(ftp, curr_src_path, curr_dst_path)
 
-def _delete_directory_recursive(ftp, dst_dir_path):
+def _delete_directory_recursive(ftp, dst_dir_path, ignore_if_exists = False):
     """Delete everything in a directory"""
-    _del_dir_recurs_helper(ftp, dst_dir_path)
-    ftp.rmd(dst_dir_path)
-    log.info("ftp://{}/{}/ deleted recursively".format(FTP_SITE, dst_dir_path))
+    try:
+        _del_dir_recurs_helper(ftp, dst_dir_path, ignore_if_exists)
+        ftp.rmd(dst_dir_path)
+        log.info("ftp://{}/{}/ deleted recursively".format(FTP_SITE, dst_dir_path))
+    except error_perm as e:
+        if e.args[0].startswith('550') and ignore_if_exists:
+            log.debug(f"{dst_dir_path} threw 550, ignoring...")
+            log.debug(e)
+        else:
+            raise e
 
-def _del_dir_recurs_helper(ftp, dst_dir_path):
+def _del_dir_recurs_helper(ftp, dst_dir_path, ignore_if_exists):
     for curr_path in ftp.nlst(dst_dir_path):
         try: # will not throw exception if durr_path is a file
             ftp.delete(curr_path)
-        except error_perm as e: # will throw exception if curr_path is a dir
+        except error_perm as e: # will throw exc if curr_path is a dir
             if e.args[0].startswith('550'):
-                _del_dir_recurs_helper(ftp, curr_path)
+                _del_dir_recurs_helper(ftp, curr_path, ignore_if_exists)
                 ftp.rmd(curr_path)
 
 def _remove_old_builds_from_ftp_server(ftp, build_number):
@@ -219,3 +199,4 @@ def _remove_dir_ignore_if_doesnt_exist(ftp, dir_):
     except error_perm as e:
         if not e.args[0].startswith('550'):
             raise e
+

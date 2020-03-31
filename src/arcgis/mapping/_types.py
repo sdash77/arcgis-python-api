@@ -20,6 +20,7 @@ from arcgis.widgets import MapView
 
 from uuid import uuid4 #unique ids for layers in web map
 import datetime
+from arcgis.mapping._basemap_definitions import basemap_dict
 _log = logging.getLogger(__name__)
 ###########################################################################
 @contextmanager
@@ -180,7 +181,7 @@ class WebMap(collections.OrderedDict):
             self.definition = pmap
             self._layers = None
             self._tables = None
-            self._basemap = None
+            self._basemap = self._webmapdict["baseMap"]
             self._extent = self.item.extent
 
         else:
@@ -199,7 +200,9 @@ class WebMap(collections.OrderedDict):
                                               }],
                 'title':'Topographic'
             }
-            self._webmapdict = {'baseMap':self._basemap,
+            self._gallery_basemaps = {}
+            self._webmapdict = {'operationalLayers': [],
+                                'baseMap':self._basemap,
                                 'spatialReference':self._default_spatial_reference,
                                 'version':'2.10',
             'authoringApp': 'ArcGISPythonAPI',
@@ -210,6 +213,9 @@ class WebMap(collections.OrderedDict):
             self._gis = arcgis.env.active_gis
             if self._gis: #you can also have a case where there is no GIS obj
                 self._con = self._gis._con
+                if self._gis.properties["defaultBasemap"]:
+                    self._basemap = self._gis.properties["defaultBasemap"]
+                    self._webmapdict['baseMap'] = self._basemap
             else:
                 self._con = None
             self.item = None
@@ -221,6 +227,7 @@ class WebMap(collections.OrderedDict):
     def _ipython_display_(self, **kwargs):
         # return '<iframe width=960 height=600 src="'+self.item._portal.url  + "/home/webmap/viewer.html?webmap=" + self.item.itemid + '"/>'
         mapwidget = MapView(gis=self._gis, item=self.item)
+        mapwidget._setup_default_basemap(basemap=self._basemap)
         mapwidget.mode = "2D"
         mapwidget.hide_mode_switch = True
         return mapwidget._ipython_display_(**kwargs)
@@ -302,6 +309,11 @@ class WebMap(collections.OrderedDict):
         """
         if options is None:
             options = {}
+        if isinstance(layer, arcgis.features.FeatureLayer) and \
+           'renderer' not in options:
+            options['renderer'] = json.loads(layer.renderer.json)
+        elif hasattr(layer, 'spatial'):
+            layer = layer.spatial.to_feature_collection()
         # region extact basic info from options
         title = options['title'] if options and 'title' in options else None
         opacity = options['opacity'] if options and 'opacity' in options else 1
@@ -912,6 +924,7 @@ class WebMap(collections.OrderedDict):
     def layers(self):
         """
         Operational layers in the web map
+        
         :return: List of Layers as dictionaries
 
         .. code-block:: python
@@ -948,10 +961,12 @@ class WebMap(collections.OrderedDict):
     def basemap(self):
         """
         Base map layers in the web map
+        
         :return: List of layers as dictionaries
 
         .. code-block:: python
-            # Usage example: Get the basemap used in the web map
+        
+            # Usage example 1: Get the basemap used in the web map
 
             from arcgis.mapping import WebMap
             wm = WebMap(wm_item)
@@ -967,6 +982,28 @@ class WebMap(collections.OrderedDict):
                 }],
                 "title": "Topographic"
                 }
+                
+            # Usage example 2: Set the basemap used in the web map
+            from arcgis.mapping import WebMap
+            wm = WebMap(wm_item)
+            
+            print(wm.basemaps)
+            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
+            wm.basemap = 'dark-gray'
+            print(wm.gallery_basemaps)
+            >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
+            wm.basemap = 'custom_dark_gray_canvas'
+            
+            # Usage example 3: Set the basemap equal to an item
+            from arcgis.mapping import WebMap
+            wm = WebMap(wm_item)
+            # Use basemap from another item as your own
+            wm.basemap = wm_item_2
+            wm.basemap = tiled_map_service_item
+            wm.basemap = image_layer_item
+            wm.basemap = wm2.basemap
+            wm.basemap = wm2
+            
         """
         if self._basemap:
             return PropertyMap(self._basemap)
@@ -975,6 +1012,108 @@ class WebMap(collections.OrderedDict):
                 self._basemap = self._webmapdict['baseMap']
             return PropertyMap(self._basemap)
 
+    def _determine_layer_type(self, item):
+        # this function determines the basemap layer type for the Web Map Specification
+        if item.type == "Image Service":
+            layer_type = "ArcGISImageServiceLayer"
+            layer = arcgis.raster.ImageryLayer(item.url, gis=self._gis)
+        else:
+            layer_type = "ArcGISMapServiceLayer"
+            layer = arcgis.mapping.MapImageLayer(item.url, gis=self._gis)
+        tiled = False
+        if "tileInfo" in layer.properties:
+            tiled = True
+        if tiled:
+            layer_type = "ArcGIS" + layer_type.replace("ArcGIS", "Tiled")
+        return layer_type
+        
+    @basemap.setter
+    def basemap(self, value):
+        """What basemap you would like to apply to the map (‘topo’,
+                ‘national-geographic’, etc.). See `basemaps` and `gallery_basemaps` for a full list
+        """
+        if isinstance(value, MapView):
+            # get basemap from map widget
+            if value.basemap in self.basemaps:
+                self._basemap = {'baseMapLayers': basemap_dict[value.basemap],
+                                 'title': value.basemap.replace("-", " ").title()}
+                self._webmapdict['baseMap'] = self._basemap
+        elif value in self.basemaps:
+            self._basemap = {'baseMapLayers':basemap_dict[value],
+                             'title': value.replace("-"," ").title()}
+            self._webmapdict['baseMap'] = self._basemap
+        elif value in self.gallery_basemaps:
+            self._basemap = self._gallery_basemaps[value]
+            self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, Item) and value.type.title() == "Web Map":
+            self._basemap = value.get_data()['baseMap']
+            self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, WebMap):
+            self._basemap = value.basemap
+            self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, PropertyMap) and "baseMapLayers" in value:
+            # for map1.basemap = map2.basemap
+            self._basemap = value
+            self._webmapdict['baseMap'] = self._basemap
+        elif isinstance(value, Item) and (value.type.title() == "Image Service" or value.type.title() == "Map Service"):
+            layer_type = self._determine_layer_type(value)
+            self._basemap = {
+                'baseMapLayers':[{'id': 'newBasemap',
+                                  'layerType': layer_type,
+                                  'url': value.url,
+                                  'visibility': True,
+                                  'opacity': 1,
+                                  'title': value.title}],
+                'title':value.title
+            }
+            self._webmapdict['baseMap'] = self._basemap
+        else:
+            raise RuntimeError("Basemap '{}' isn't valid".format(value))
+    
+    @property
+    def basemaps(self):
+        """
+        A list of possible basemaps to set for the map
+        """
+        basemaps = ['dark-gray',
+                    'dark-gray-vector',
+                    'gray',
+                    'gray-vector',
+                    'hybrid',
+                    'national-geographic',
+                    'oceans',
+                    'osm',
+                    'satellite',
+                    'streets',
+                    'streets-navigation-vector',
+                    'streets-night-vector',
+                    'streets-relief-vector',
+                    'streets-vector',
+                    'terrain',
+                    'topo',
+                    'topo-vector']
+        return basemaps
+
+    @property
+    def gallery_basemaps(self):
+        """
+        View your portal's custom basemap group
+        """
+        if self._gis:
+            bmquery = self._gis.properties['basemapGalleryGroupQuery']
+            basemapsgrp = self._gis.groups.search(bmquery, outside_org=True)
+            if len(basemapsgrp) == 1:
+                for bm in basemapsgrp[0].content():
+                    if bm.type.lower() == 'web map':  # Only use WebMaps
+                        item_data = bm.get_data()
+                        bm_title = bm.title.lower().replace(" ", "_")
+                        self._gallery_basemaps[bm_title] = item_data['baseMap']
+                return list(self._gallery_basemaps.keys())
+            else:
+                return list(self._gallery_basemaps.keys())
+        else:
+            return []
+            
     def remove_table(self, table):
         """
         Removes the specified table from the web map. You can get the list of tables in map using the 'tables' property
