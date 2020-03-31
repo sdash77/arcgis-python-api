@@ -3276,8 +3276,8 @@ class GeoAccessor(object):
 
     def sanitize_column_names(self, convert_to_string=True, remove_special_char=True, inplace=False):
         """
-        Cleans column names by converting them to string, removing special characters, renaming
-        duplicates with integer suffixes.
+        Cleans column names by converting them to string, removing special characters, renaming columns without
+        column names to 'noname' and renaming duplicates with integer suffixes.
 
         ==============================     ====================================================================
         **Argument**                       **Description**
@@ -3285,10 +3285,10 @@ class GeoAccessor(object):
         convert_to_string                  Optional Boolean. Default is True. Converts column names to string
         ------------------------------     --------------------------------------------------------------------
         remove_special_char                Optional Boolean. Default is True. Removes any characters in column
-                                            names that are not numeric or underscores.
+                                           names that are not numeric or underscores.
         ------------------------------     --------------------------------------------------------------------
         inplace                            Optional Boolean. Default is False. If True, edits the DataFrame
-                                            in place and returns Nothing. If False, returns a new DataFrame object.
+                                           in place and returns Nothing. If False, returns a new DataFrame object.
         ==============================     ====================================================================
 
         :returns: pd.DataFrame object if inplace=False. Else None.
