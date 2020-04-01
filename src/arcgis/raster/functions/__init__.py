@@ -2827,7 +2827,7 @@ def segment_mean_shift(raster, spectral_detail=None, spatial_detail=None, spectr
 
 
 def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=None, slope_type=None, ps_power=None,
-                  psz_factor=None, remove_edge_effect=None, astype=None):
+                  psz_factor=None, remove_edge_effect=None, astype=None, colorramp=None, hillshade_type=0):
     """
     Shaded relief is a color 3D model of the terrain, created by merging the images from the Elevation-coded and
     Hillshade methods. For more information, see
@@ -2845,6 +2845,11 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
     :param psz_factor: double, used together with SCALED slope type
     :param remove_edge_effect: boolean, True or False
     :param astype: output pixel type
+    :param colorramp: string, specifying color ramp name like <Black To White|Yellow To Red|Slope|more..>
+                      or a color ramp object. 
+                      For more information about colorramp object, see color ramp object at
+                      http://resources.arcgis.com/en/help/arcgis-rest-api/#/Color_ramp_objects/02r3000001m0000000/)
+    :param hillshade_type: new at 10.8.1. int, 0 = traditional, 1 = multi - directional; default is 0
     :return: the output raster
 
     """
@@ -2870,6 +2875,8 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
         template_dict["rasterFunctionArguments"]["ZFactor"] = z_factor
     if colormap is not None:
         template_dict["rasterFunctionArguments"]["Colormap"] = colormap
+    if colorramp is not None:
+        template_dict["rasterFunctionArguments"]['Colorramp'] = colorramp
     if slope_type is not None:
         template_dict["rasterFunctionArguments"]["SlopeType"] = slope_type
     if ps_power is not None:
@@ -2878,6 +2885,8 @@ def shaded_relief(raster, azimuth=None, altitude=None, z_factor=None, colormap=N
         template_dict["rasterFunctionArguments"]["PSZFactor"] = psz_factor
     if remove_edge_effect is not None:
         template_dict["rasterFunctionArguments"]["RemoveEdgeEffect"] = remove_edge_effect
+    if hillshade_type is not None:
+        template_dict["rasterFunctionArguments"]["HillshadeType"] = hillshade_type
 
     return _clone_layer(layer, template_dict, raster_ra)
 
