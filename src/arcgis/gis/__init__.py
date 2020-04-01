@@ -4705,7 +4705,7 @@ class ContentManager(object):
         res = self._portal.con.post(path, postdata)
         return res['available']
 
-    def clone_items(self, items, folder=None, item_extent=None, use_org_basemap=False, copy_data=True, search_existing_items=True, item_mapping=None, group_mapping=None, owner=None):
+    def clone_items(self, items, folder=None, item_extent=None, use_org_basemap=False, copy_data=True, copy_global_ids=False, search_existing_items=True, item_mapping=None, group_mapping=None, owner=None):
         """ Clone content to the GIS by creating new items.
 
         .. note::
@@ -4739,6 +4739,9 @@ class ContentManager(object):
         copy_data                 Optional boolean. Indicating whether the data should be copied with any
                                   feature layer or feature collections. Default is True, data will be copied.
         ---------------------     --------------------------------------------------------------------
+        copy_global_ids           Optional boolean. Assumes previous parameter is set to True. If True,
+                                  features copied will preserve their global IDs. Default is False
+        ---------------------     --------------------------------------------------------------------
         search_existing_items     Optional boolean. Indicating whether items that have already been cloned
                                   should be searched for in the GIS and reused rather than cloned again.
         ---------------------     --------------------------------------------------------------------
@@ -4768,7 +4771,7 @@ class ContentManager(object):
             owner_name = self._gis.users.me.username
         if isinstance(owner, User):
             owner_name = owner.username
-        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, search_existing_items, item_mapping, group_mapping, owner_name)
+        deep_cloner = clone._DeepCloner(self._gis, items, folder, wgs84_extent, service_extent, use_org_basemap, copy_data, copy_global_ids, search_existing_items, item_mapping, group_mapping, owner_name)
         return deep_cloner.clone()
 
     def bulk_update(self, itemids, properties):
