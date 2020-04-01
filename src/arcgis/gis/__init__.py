@@ -2209,6 +2209,18 @@ class UserManager(object):
 
         """
         #map role parameter of a viewer to the internal value for org viewer.
+        if self._gis.verion >= [7,2]:
+            if self._gis._is_agol:
+                if user_type is None and role is None:
+                    if 'userLicenseType' in self.user_settings:
+                        user_type = self.user_settings['userLicenseType']
+                        role = self.user_settings['role']
+        else:
+            if self._gis.version >= [7,1]:
+                if user_type is None and role is None:
+                    if 'defaultUserTypeIdForUser' in self._gis.admin.security.config:
+                        user_type = self._gis.admin.security.config['defaultUserTypeIdForUser']
+                        role = self._gis.admin.security.config['defaultRoleForUser']
         if level == 2 and user_type is None and role is None:
             user_type = "creator"
             role = 'publisher'
@@ -2239,6 +2251,7 @@ class UserManager(object):
 
         if groups is None:
             groups = []
+
         if user_type.lower() in levels:
             user_type = levels[user_type.lower()]
 
@@ -2259,11 +2272,15 @@ class UserManager(object):
 <p>This link will expire in two weeks.</p>
 <p style="color:gray;">This is an automated email. Please do not reply.</p>
 </body></html>'''
-            if credits is None:
-                credits = -1
+            if credits == -1 and self._gis.version >= [7,2] and \
+                self._gis.properties['defaultUserCreditAssignment'] != -1:
+                credits = self._gis.properties['defaultUserCreditAssignment']
+            if not groups and self.user_settings['groups']:
+                groups = [self._gis.groups.get(g)
+                          for g in self.user_settings['groups']]
             params = {
                 'f': 'json',
-                'invitationList' : {'invitations' : [
+                'invitationList': {'invitations': [
                     {
                     'username': username,
                     'firstname': firstname,
@@ -2282,8 +2299,6 @@ class UserManager(object):
                 },
                 #'message' : email_text
             }
-            if self._gis._portal.is_arcgisonline:
-                params['invitationList']['invitations'][0]['userType'] = 'arcgisonly'
             if idp_username is not None:
                 if provider is None:
                     provider = 'enterprise'
@@ -2299,7 +2314,16 @@ class UserManager(object):
                     _log.error('Unable to create ' + username)
                     return None
                 else:
-                    return self.get(username)
+                    new_user = self.get(username)
+                    if not self.user_settings['userType'] == 'arcgisonly':
+                        update_url = "community/users/" + username + "/update"
+                        user_params = {"f":"json",
+                                       "token":"token",
+                                       "userType": self.user_settings['userType']}
+                        self._portal.con.post(update_url, user_params, ssl=True)
+                        return new_user
+                    else:
+                        return new_user
         else:
             createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
             params = {
