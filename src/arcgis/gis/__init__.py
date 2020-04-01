@@ -9892,7 +9892,8 @@ class Item(dict):
                 'f' : 'json',
                 'item' : item.title.replace(" ", "_") + "-_copy_%s" % int(now.timestamp() * 1000),
                 'type' :item.type,
-                'url' : item.url
+                'url' : item.url,
+                'typeKeywords' : ",".join(item.typeKeywords)
             }
 
             params['title'] = title
@@ -9938,6 +9939,7 @@ class Item(dict):
                 'tags' : ",".join(item.tags),
                 'snippet' : snippet,
                 'description' : description,
+                'typeKeywords' : ",".join(item.typeKeywords),
                 'title' : title
             }
             item = self._gis.content.add(item_properties=ip, data=nfp)
@@ -9948,12 +9950,17 @@ class Item(dict):
             ip = {
                 'type' : item.type,
                 'tags' : ",".join(item.tags),
+                'typeKeywords' : ",".join(item.typeKeywords),
                 'snippet' : snippet,
                 'description' : description,
                 'text' : data,
                 'title' : title
             }
-            return self._gis.content.add(item_properties=ip)
+            new_item = self._gis.content.add(item_properties=ip)
+            if item.url and item.url.find(item.id) > -1:
+                new_item.update({"url" : item.url.replace(item.id, new_item.id)})
+            return new_item
+                
         else:
             raise ValueError("Item of type: %s is not supported by copy" % (item.type))
         return
