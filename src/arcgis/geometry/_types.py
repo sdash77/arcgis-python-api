@@ -2952,6 +2952,22 @@ class SpatialReference(BaseGeometry):
         """represents the SVG of the object"""
         return "<g/>"
     #----------------------------------------------------------------------
+    def __eq__(self, other):
+        """checks if the spatial reference is not equal"""
+        if 'wkt' in self and \
+           'wkt' in other and \
+           self['wkt'] == other['wkt']:
+            return True
+        elif 'wkid' in self and \
+           'wkid' in other and \
+           self['wkid'] == other['wkid']:
+            return True        
+        return False
+    #----------------------------------------------------------------------
+    def __ne__(self, other):
+        """checks if the two values are unequal"""
+        return self.__eq__(other) == False
+    #----------------------------------------------------------------------
     @property
     def as_arcpy(self):
         """returns the class as an arcpy SpatialReference object"""
