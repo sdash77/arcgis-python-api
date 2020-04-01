@@ -7,7 +7,8 @@ import sys
 import json 
 import logging      
 import types       
-import traceback                                                                                                                                                
+import traceback    
+from ._utils.env import ARCGIS_ENABLE_TF_BACKEND                                                                                                                                            
 
 import_exception = None
 try:
@@ -383,9 +384,13 @@ def prepare_data(path,
 
     databunch_kwargs = {'num_workers':0} if sys.platform == 'win32' else {}
     databunch_kwargs['bs'] = batch_size
-
+    
     if hasattr(arcgis, "env") and getattr(arcgis.env, "_processorType", "") == "CPU":
         databunch_kwargs["device"] = torch.device('cpu')
+
+    if ARCGIS_ENABLE_TF_BACKEND:
+        databunch_kwargs["device"] = torch.device('cpu')
+        databunch_kwargs["pin_memory"] = False
 
     kwargs_transforms = {}
     if resize_to:

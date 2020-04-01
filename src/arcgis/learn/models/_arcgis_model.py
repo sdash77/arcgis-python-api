@@ -25,8 +25,10 @@ try:
     from torch import nn
     import torch
     from torchvision import models
+    import numpy as np
     import math
     import warnings
+    from .._utils.common import get_post_processed_model
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
     HAS_FASTAI = False
@@ -288,6 +290,37 @@ class ArcGISModel(object):
         if not HAS_TENSORFLOW:
             raise_tensorflow_import_error()
 
+    def _init_tensorflow(self, data, backbone):
+        self._check_tf()
+        
+        from .._utils.common import get_color_array
+        from .._utils.common_tf import handle_backbone_parameter, get_input_shape, check_backbone_is_mobile_optimized
+
+        # Get color Array
+        color_array = get_color_array(data.color_mapping)
+        if len(data.color_mapping) == (data.c -1 ):
+            # Add Background color
+            color_array = np.concatenate([np.array([[0.0, 0.0, 0.0, 0.0]]), color_array]) 
+        data._multispectral_color_array = color_array
+
+        # Handle Backbone
+        self._backbone = handle_backbone_parameter(backbone)
+
+        self._backbone_mobile_optimized = check_backbone_is_mobile_optimized(self._backbone)
+    
+        # Initialize Backbone
+        in_shape = get_input_shape(data.chip_size)
+        self._backbone_initalized = self._backbone(
+            input_shape=in_shape, 
+            include_top=False, 
+            weights='imagenet'
+        )
+
+        self._backbone_initalized.trainable = False
+        self._device = torch.device('cpu')
+        self._data = data
+
+
     def lr_find(self, allow_plot=True):
         """
         Runs the Learning Rate Finder, and displays the graph of it's output.
@@ -466,7 +499,10 @@ class ArcGISModel(object):
         if self._backbone is None:
             backbone = self._backbone
         else:
-            backbone = self._backbone.__name__
+            if self._backend == 'tensorflow':
+                backbone = self._backbone._keras_api_names[-1].split('.')[-1]
+            else:
+                backbone = self._backbone.__name__
             if backbone == 'backbone_wrapper':
                 backbone = self._orig_backbone.__name__
 
@@ -485,11 +521,17 @@ class ArcGISModel(object):
         _emd_template["ImageSpaceUsed"] = self._data._image_space_used
         _emd_template["LearningRate"] = str(_emd_lr)
         _emd_template["ModelName"] = type(self).__name__
+        _emd_template["backend"] = self._backend
 
+        model_params = {
+            "backbone": backbone,
+            "backend": self._backend
+            }
         if not _emd_template.get("ModelParameters"):
-            _emd_template["ModelParameters"] = {"backbone": backbone}
+            _emd_template["ModelParameters"] = model_params
         else:
-            _emd_template["ModelParameters"]["backbone"] = backbone
+            if _key in model_params:
+                _emd_template["ModelParameters"][_key] = model_params[_key]
 
         model_metrics = self._model_metrics
 
@@ -638,12 +680,12 @@ class ArcGISModel(object):
             _framework = framework.lower()
             if self._backend == 'tensorflow' and _framework == 'tflite':
                 saved_path = self._save_tflite(name, post_processed=post_processed, quantized=quantized)
-            elif self._backend == 'tensorflow' and _framework != 'tflite':
-                _err_msg = """
-                Models initialized with parameter backend="tensorflow" are currently only supported to be saved into tflite framework
-                \nPlease set parameter framework="tflite"
-                """
-                raise Exception(_err_msg)
+            # elif self._backend == 'tensorflow' and _framework != 'tflite':
+            #     _err_msg = """
+            #     Models initialized with parameter backend="tensorflow" are currently only supported to be saved into tflite framework
+            #     \nPlease set parameter framework="tflite"
+            #     """
+            #     raise Exception(_err_msg)
             elif self._backend != 'tensorflow' and _framework == 'tflite':
                 _err_msg = """
                 Only models initialized with parameter backend="tensorflow" are supported to be saved into tflite framework
@@ -702,8 +744,7 @@ class ArcGISModel(object):
             
 
     def _get_post_processed_model(self, input_normalization=True):
-        from .._utils.common import _get_post_processed_model
-        return _get_post_processed_model(self, input_normalization=input_normalization)
+        return get_post_processed_model(self, input_normalization=input_normalization)
 
     def _save_model_characteristics(self, model_characteristics_dir):
 

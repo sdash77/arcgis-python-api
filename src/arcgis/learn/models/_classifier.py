@@ -95,6 +95,11 @@ class FeatureClassifier(ArcGISModel):
     ---------------------   -------------------------------------------
     oversample              Optional boolean. If set to True, it oversamples unbalanced
                             classes of the dataset during training.
+    ---------------------   -------------------------------------------
+    backend                 Optional string. Controls the backend framework to be used
+                            for this model, which is 'pytorch' by default.
+
+                            valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
     :returns: `FeatureClassifier` Object

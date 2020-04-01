@@ -48,36 +48,41 @@ class UnetClassifier(ArcGISModel):
     :returns: `UnetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, backbone=None, pretrained_path=None, backend='pytorch', **kwargs):
 
-        super().__init__(data, backbone)
+        self._backend = backend
+        if self._backend == 'tensorflow':
+            super().__init__(data, None)
+            self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
+        else:
+            super().__init__(data, backbone)
 
-        self._code = image_classifier_prf
+            self._code = image_classifier_prf
 
-        backbone_cut = None
-        backbone_split = None
+            backbone_cut = None
+            backbone_split = None
 
-        _backbone = self._backbone
-        if hasattr(self, '_orig_backbone'):
-            _backbone = self._orig_backbone
-            
-        if not (self._check_backbone_support(_backbone)):
-            raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
+            _backbone = self._backbone
+            if hasattr(self, '_orig_backbone'):
+                _backbone = self._orig_backbone
+                
+            if not (self._check_backbone_support(_backbone)):
+                raise Exception(f"Enter only compatible backbones from {', '.join(self.supported_backbones)}")
 
-        if hasattr(self, '_orig_backbone'):
-            _backbone_meta = cnn_config(self._orig_backbone)
-            backbone_cut = _backbone_meta['cut']
-            backbone_split = _backbone_meta['split']
+            if hasattr(self, '_orig_backbone'):
+                _backbone_meta = cnn_config(self._orig_backbone)
+                backbone_cut = _backbone_meta['cut']
+                backbone_split = _backbone_meta['split']
 
-        self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
-        self._arcgis_init_callback() # make first conv weights learnable
-        self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
+            self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+            self._arcgis_init_callback() # make first conv weights learnable
+            self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
 
-        self.learn.model = self.learn.model.to(self._device)
+            self.learn.model = self.learn.model.to(self._device)
 
-        # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
-        if pretrained_path is not None:
-            self.load(pretrained_path)
+            # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
+            if pretrained_path is not None:
+                self.load(pretrained_path)
 
     def __str__(self):
         return self.__repr__()
@@ -257,4 +262,72 @@ class UnetClassifier(ArcGISModel):
         if mean:
             return np.mean(miou)
         return dict(zip(['0'] + self._data.classes[1:], miou))
+
+    ## Tensorflow specific functions start ##
+    def _intialize_tensorflow(self, data, backbone, pretrained_path, kwargs):
+        self._check_tf()
+        
+        import tensorflow as tf
+        from .._utils.common import get_color_array
+        from .._utils.common_tf import handle_backbone_parameter, get_input_shape
+        from .._model_archs.unet_tf import get_unet_tf_model 
+        from tensorflow.keras.losses import SparseCategoricalCrossentropy, BinaryCrossentropy
+        from .._utils.fastai_tf_fit import TfLearner, defaults
+        from tensorflow.keras.models import Model
+        from tensorflow.keras.optimizers import Adam
+        from .._utils.common import kwarg_fill_none
+        
+        if data._is_multispectral:
+            raise Exception('Multispectral data is not supported with backend="tensorflow"')
+
+        # Intialize Tensorflow
+        self._init_tensorflow(data, backbone)
+
+        # Loss Function
+        #self._loss_function_tf_ = BinaryCrossentropy(from_logits=True)
+        self._loss_function_tf_ = SparseCategoricalCrossentropy(from_logits=True, reduction='auto')
+
+        self._mobile_optimized = kwarg_fill_none(kwargs, 'mobile_optimized', self._backbone_mobile_optimized)
+
+        # Create Unet Model
+        model = get_unet_tf_model(
+            self._backbone_initalized, 
+            data,
+            mobile_optimized=self._mobile_optimized
+        )
+
+        self.learn = TfLearner(
+            data, 
+            model,
+            opt_func=Adam,
+            loss_func=self._loss_function_tf,
+            true_wd=True, 
+            bn_wd=True, 
+            wd=defaults.wd, 
+            train_bn=True
+        )
+        
+        self.learn.unfreeze()
+        self.learn.freeze_to(len(self._backbone_initalized.layers))
+
+        self.show_results = self._show_results_multispectral
+
+        self._code = image_classifier_prf
+
+    def _loss_function_tf(self, target, predictions):
+        import tensorflow as tf
+        # print(target.shape, predictions.shape)
+        # print(target.dtype, predictions.dtype)
+        # print(tf.unique(tf.reshape(target, [-1]))[0])
+        # print('\n', tf.unique(tf.reshape(predictions, [-1]))[0])
+        #print(tf.unique(tf.reshape(target, [-1])).numpy(), tf.unique(tf.reshape(predictions, [-1])))
+        target = tf.squeeze(target, axis=1)
+
+        # from .._utils.pixel_classification import segmentation_mask_to_one_hot
+        # from .._utils.fastai_tf_fit import _pytorch_to_tf
+        # target = _pytorch_to_tf(segmentation_mask_to_one_hot(target.cpu().numpy(), self._data.c).permute(0, 2, 3, 1))
+
+        return self._loss_function_tf_(target, predictions)
+
+    ## Tensorflow specific functions end ##
         
