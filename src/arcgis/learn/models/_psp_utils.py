@@ -41,7 +41,8 @@ from fastai.vision import flatten_model
 from fastai.vision.models import unet
 from fastai.basic_train import Learner
 from fastai.vision import to_device
-from ._arcgis_model import _get_backbone_meta
+from ._arcgis_model import _get_backbone_meta, _set_ddp_multigpu, _isnotebook
+import os as arcgis_os
 
 def initialize_weights(*models):
     for model in models:
@@ -283,10 +284,23 @@ class PSPNet(nn.Module):
         else:
             return F.interpolate(x, x_size[2:], mode='bilinear', align_corners=True)
 
+class DummyDistributed:
+    "Dummy class to create a Learner since learner is created from fuction not a class. It will be used in case of multigpu training."
+    def __getitem__(self, item):
+        return eval('self.' + item)
+
 def _pspnet_learner(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, **kwargs):
     "Build psp_net learner from `data` and `arch`."
     model = to_device(PSPNet(data.c, backbone, chip_size, pyramid_sizes, pretrained), data.device)
-    learn = Learner(data, model, **kwargs)
+    if not _isnotebook() and arcgis_os.name=='posix':
+        distributed_prep = DummyDistributed()
+        _set_ddp_multigpu(distributed_prep)
+        if distributed_prep._multigpu_training:
+            learn = Learner(data, model, **kwargs).to_distributed(distributed_prep._rank_distributed)
+        else:
+            learn = Learner(data, model, **kwargs)
+    else:
+        learn = Learner(data, model, **kwargs)
     return learn
 
 def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 2, 3, 6), pretrained=True, unet_aux_loss=False, **kwargs):
@@ -294,7 +308,15 @@ def _pspnet_learner_with_unet(data,  backbone, chip_size=224, pyramid_sizes=(1, 
     model = unet.DynamicUnet(encoder=_pspnet_unet(data.c, backbone, chip_size, pyramid_sizes, pretrained), n_classes=data.c, last_cross=False)
     if unet_aux_loss:
         model = _add_auxillary_branch_to_psunet(model, chip_size, data.c)
-    learn = Learner(data, model, **kwargs)
+    if not _isnotebook() and arcgis_os.name=='posix':
+        distributed_prep = DummyDistributed()
+        _set_ddp_multigpu(distributed_prep)
+        if distributed_prep._multigpu_training:
+            learn = Learner(data, model, **kwargs).to_distributed(distributed_prep._rank_distributed)
+        else:
+            learn = Learner(data, model, **kwargs)
+    else:
+        learn = Learner(data, model, **kwargs)
     return learn
 
 def accuracy(input, target): 

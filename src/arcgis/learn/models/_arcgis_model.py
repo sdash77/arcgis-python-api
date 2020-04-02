@@ -28,6 +28,12 @@ try:
     import numpy as np
     import math
     import warnings
+    from fastai.distributed import *
+    import argparse
+    import torch.distributed as dist
+    from fastai.torch_core import get_model
+    from torch.nn.parallel import DistributedDataParallel
+
     from .._utils.common import get_post_processed_model
 except ImportError as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -105,6 +111,41 @@ def _set_multigpu_callback(model):
             (arcgis.env._gpuid >= torch.cuda.device_count()):
         model.learn.callback_fns.append(_MultiGPUCallback)
 
+def _set_ddp_multigpu(model):
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--local_rank", type=int)
+    args = parser.parse_args()
+    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+        args.rank = int(os.environ["RANK"])
+        args.world_size = int(os.environ['WORLD_SIZE'])
+        args.gpu = int(os.environ['LOCAL_RANK'])
+    elif 'SLURM_PROCID' in os.environ:
+        args.rank = int(os.environ['SLURM_PROCID'])
+        args.gpu = args.rank % torch.cuda.device_count()
+    elif hasattr(args, "rank"):
+        pass
+    else:
+        model._multigpu_training = False
+        return
+    model._multigpu_training = True
+    torch.cuda.set_device(args.gpu)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://',world_size=args.world_size, rank=args.rank)
+    torch.distributed.barrier()
+    model._rank_distributed = args.gpu
+
+def _isnotebook():
+
+    try:
+        shell = get_ipython().__class__.__name__
+        if shell == 'ZMQInteractiveShell':
+            return True
+        elif shell == 'TerminalInteractiveShell':
+            return False
+        else:
+            return False
+    except NameError:
+        return False
 
 def _create_zip(zipname, path):
     import shutil
@@ -133,6 +174,7 @@ class SaveModelCallback(TrackerCallback):
 
     def on_epoch_end(self, epoch, **kwargs):
         "Compare the value monitored to its best score and maybe save the model."
+
         if self.every == "epoch": self.model.save('{}_{}'.format(self.name, epoch))
         else: #every="improvement"
             current = self.get_monitor_value()
@@ -143,7 +185,8 @@ class SaveModelCallback(TrackerCallback):
                 self.model._save('{}'.format(self.name), zip_files=False, save_html=False)
 
     def on_train_end(self, **kwargs):
-        "Load the best model."      
+        "Load the best model."     
+
         if self.every == "improvement" and self.load_best_at_end:
             try:
                 self.model.load('{}'.format(self.name))
@@ -692,11 +735,20 @@ class ArcGISModel(object):
                 """
                 raise Exception(_err_msg)
             else:
+
+                if isinstance(self.learn.model, (DistributedDataParallel)):
+
+                    if not int(os.environ.get('RANK', 0)):
+                        saved_path = self.learn.save(name,  return_path=True)
+                    return
+
                 saved_path = self.learn.save(name,  return_path=True)
+
             # undoing changes to self.learn.path
         except Exception as e:
             raise e
         finally:
+
             self.learn.path = temp
             self.learn.model_dir = 'models'
 
@@ -891,7 +943,9 @@ class ArcGISModel(object):
                                 Boolean `overwrite` if True, it will overwrite
                                 the item on ArcGIS Online/Enterprise, default False.                                
         =====================   ===========================================
-        """        
+        """    
+        if int(os.environ.get('RANK', 0)):
+            return
         return self._save(name_or_path, framework=framework, publish=publish, gis=gis, **kwargs)
         
     def load(self, name_or_path):

@@ -140,13 +140,15 @@ def mask_rcnn_loss(loss_value, *args):
 
     final_loss = 0.
     for i in loss_value.values():
-        if not (torch.isnan(i) or torch.isinf(i)):
-            final_loss += i
-            
+        i[torch.isnan(i)] = 0.
+        i[torch.isinf(i)] = 0.
+        final_loss += i
+        
     return final_loss
 
 def mask_to_dict(last_target, device):
     target_list = []
+    
     for i in range(len(last_target)):
 
         boxes =  []
@@ -163,12 +165,17 @@ def mask_to_dict(last_target, device):
             obj_ids = obj_ids[1:]
             mask_j = mask == obj_ids[:, None, None]
             num_objs = len(obj_ids)
+
             for k in range(num_objs):
                 pos = np.where(mask_j[k])
                 xmin = np.min(pos[1])
                 xmax = np.max(pos[1])
                 ymin = np.min(pos[0])
                 ymax = np.max(pos[0])
+                if xmax-xmin==0:
+                    xmax += 1
+                if ymax-ymin==0:
+                    ymax += 1
                 boxes.append([xmin, ymin, xmax, ymax])
 
             masks = np.append(masks, mask_j, axis = 0)
@@ -199,10 +206,10 @@ class train_callback(LearnerCallback):
         super().__init__(learn)
    
     def on_batch_begin(self, last_input, last_target, **kwargs):
-        "Handle new batch `xb`,`yb` in `train` or validation."        
+        "Handle new batch `xb`,`yb` in `train` or validation."      
         target_list = mask_to_dict(last_target, self.c_device)
         self.learn.model.train()
-        last_input = [list(last_input.to(self.c_device)), target_list]
+        last_input = [list(last_input), target_list]
         last_target = [torch.tensor([1]) for i in last_target]
         return {'last_input':last_input, 'last_target':last_target}
 

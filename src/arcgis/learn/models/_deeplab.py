@@ -7,7 +7,7 @@ from ._arcgis_model import ArcGISModel
 
 try:
     from fastai.basic_train import Learner
-    from ._arcgis_model import SaveModelCallback, _resnet_family, _vgg_family, _densenet_family
+    from ._arcgis_model import SaveModelCallback, _resnet_family, _vgg_family, _densenet_family, _set_ddp_multigpu, _isnotebook
     from ._unet_utils import is_no_color, predict_batch, show_results_multispectral
     import torch
     from torch import nn
@@ -25,6 +25,7 @@ try:
     from torchvision.models.segmentation.fcn import FCNHead
     from ._deeplab_utils import Deeplab, compute_miou
     from .._utils.common import get_multispectral_data_params_from_emd
+
     HAS_FASTAI = True
 except Exception as e:
     class DeepLabV3():
@@ -101,7 +102,15 @@ class DeepLab(ArcGISModel):
         else:
             model = Deeplab(data.c, self._backbone, data.chip_size)
 
-        self.learn = Learner(data, model, metrics=self._accuracy)
+        if not _isnotebook() and os.name=='posix':
+            _set_ddp_multigpu(self)
+            if self._multigpu_training:
+                self.learn = Learner(data, model, metrics=self._accuracy).to_distributed(self._rank_distributed)
+            else:
+                self.learn = Learner(data, model, metrics=self._accuracy)
+        else:
+            self.learn = Learner(data, model, metrics=self._accuracy)
+
         self.learn.loss_func = self._deeplab_loss
         self.learn.model = self.learn.model.to(self._device)
         self._freeze()

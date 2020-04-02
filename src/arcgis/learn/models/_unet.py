@@ -8,7 +8,7 @@ from .._data import _raise_fastai_import_error
 import traceback    
 
 try:
-    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family
+    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family, _set_ddp_multigpu, _isnotebook
     import torch
     from torchvision import models
     from fastai.vision.learner import unet_learner, cnn_config
@@ -19,6 +19,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
+    import os as arcgis_os
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -74,15 +75,22 @@ class UnetClassifier(ArcGISModel):
                 backbone_cut = _backbone_meta['cut']
                 backbone_split = _backbone_meta['split']
 
+        if not _isnotebook() and arcgis_os.name=='posix':
+            _set_ddp_multigpu(self)
+            if self._multigpu_training:
+                self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split).to_distributed(self._rank_distributed)
+            else:
+                self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+        else:
             self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
-            self._arcgis_init_callback() # make first conv weights learnable
-            self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
+        self._arcgis_init_callback() # make first conv weights learnable
+        self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
 
-            self.learn.model = self.learn.model.to(self._device)
+        self.learn.model = self.learn.model.to(self._device)
 
-            # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
-            if pretrained_path is not None:
-                self.load(pretrained_path)
+        # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
+        if pretrained_path is not None:
+            self.load(pretrained_path)
 
     def __str__(self):
         return self.__repr__()
