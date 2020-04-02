@@ -1957,9 +1957,17 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-        gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
+        import inspect
+        in_args = inspect.getfullargspec(self._tbx.find_centroids).args
+        if 'context' in in_args:
+            
+            gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
                                          output_name=output_name, context=context, gis=self._gis,
                                          future=True)
+        else:
+            gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
+                                         output_name=output_name, gis=self._gis,
+                                         future=True)            
         gpjob._is_fa = True
         if future:
             return gpjob

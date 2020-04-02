@@ -2209,7 +2209,7 @@ class UserManager(object):
 
         """
         #map role parameter of a viewer to the internal value for org viewer.
-        if self._gis.verion >= [7,2]:
+        if self._gis.version >= [7,2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
                     if 'userLicenseType' in self.user_settings:
