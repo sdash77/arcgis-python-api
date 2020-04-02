@@ -570,10 +570,11 @@ class ArcGISModel(object):
             "backbone": backbone,
             "backend": self._backend
             }
-        if not _emd_template.get("ModelParameters"):
+
+        if _emd_template.get("ModelParameters", None) is None:
             _emd_template["ModelParameters"] = model_params
         else:
-            if _key in model_params:
+            for _key in model_params:
                 _emd_template["ModelParameters"][_key] = model_params[_key]
 
         model_metrics = self._model_metrics
