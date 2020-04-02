@@ -133,7 +133,7 @@ class Federation(BasePortalAdmin):
                                         or HOSTING_SERVER.
         ---------------------------     --------------------------------------------------------------------
         function                        Optional string. This is the purpose of the ArcGIS Server.
-                                        Values are: GeoAnalytics, RasterAnalytics, ImageHosting, or None
+                                        Values are: GeoAnalytics, RasterAnalytics, ImageHosting, NotebookServer, MissionServer, WorkflowManager, or None
         ===========================     ====================================================================
 
         :returns: boolean
@@ -144,7 +144,10 @@ class Federation(BasePortalAdmin):
                       "HOSTING_SERVER"]
         function_allow = ["GeoAnalytics",
                           "RasterAnalytics",
-                          "ImageHosting"]
+                          "ImageHosting",
+                          "NotebookServer",
+                          "MissionServer",
+                          "WorkflowManager"]
         if role.upper() in role_allow:
             role = role.upper()
         else:
