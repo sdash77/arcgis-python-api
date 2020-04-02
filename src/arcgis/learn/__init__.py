@@ -1164,10 +1164,10 @@ def export_point_dataset(data_path, output_path, block_size=50.0, max_points=819
     output_path            Required string. Path where exported files will be dumped. This directory
                            either should be empty or be a totally new directory.                                
     ------------------     --------------------------------------------------------------------
-    block_size             Optinal float. Size of the block to contain in one exported file.
+    block_size             Optional float. Size of the block to contain in one exported file.
                            Default 50.0
     ------------------     --------------------------------------------------------------------
-    max_points             Required integer. Maximum number of points to contain in each block.
+    max_points             Optional integer. Maximum number of points to contain in each block.
                            Default 8192
     ------------------     --------------------------------------------------------------------
     extra_features         Optional list of tuple. Extra features to read from las files.

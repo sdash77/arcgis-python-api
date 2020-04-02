@@ -4,6 +4,7 @@ from ._codetemplate import image_classifier_prf
 from ._arcgis_model import _raise_fastai_import_error
 from functools import partial
 from ._arcgis_model import ArcGISModel
+import types
 
 try:
     from fastai.basic_train import Learner
@@ -19,7 +20,9 @@ try:
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
+    from .._utils.classified_tiles import per_class_metrics
     from fastai.vision import flatten_model
+    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback
     from torchvision.models.segmentation.segmentation import _segm_resnet
     from torchvision.models.segmentation.deeplabv3 import DeepLabHead, DeepLabV3
     from torchvision.models.segmentation.fcn import FCNHead
@@ -78,12 +81,32 @@ class DeepLab(ArcGISModel):
                             saved.
     =====================   ===========================================
 
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    class_balancing         Optional boolean. If True, it will balance the
+                            cross-entropy loss inverse to the frequency
+                            of pixels per class. Default: False. 
+    ---------------------   -------------------------------------------
+    mixup                   Optional boolean. If True, it will use mixup
+                            augmentation and mixup loss. Default: False
+    ---------------------   -------------------------------------------
+    focal_loss              Optional boolean. If True, it will use focal loss.
+                            Default: False                                                         
+    =====================   ===========================================     
+
     :returns: ``DeepLab`` Object
     """
-    def __init__(self, data, backbone=None, pretrained_path=None):
+    def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
         # Set default backbone to be 'resnet101'
         if backbone is None:
             backbone = models.resnet101
+
+        self.mixup = kwargs.get('mixup', False)
+        self.class_balancing = kwargs.get('class_balancing', False)
+        self.focal_loss = kwargs.get('focal_loss', False)               
 
         super().__init__(data, backbone)
         
@@ -112,7 +135,14 @@ class DeepLab(ArcGISModel):
             self.learn = Learner(data, model, metrics=self._accuracy)
 
         self.learn.loss_func = self._deeplab_loss
+
+        if self.focal_loss:
+            self.learn.loss_func = FocalLoss(self.learn.loss_func)
+        if self.mixup:
+            self.learn.callbacks.append(MixUpCallback(self.learn))
+
         self.learn.model = self.learn.model.to(self._device)
+        self.per_class_metrics = types.MethodType(per_class_metrics, self)
         self._freeze()
         self._arcgis_init_callback() # make first conv weights learnable
         if pretrained_path is not None:
@@ -215,7 +245,13 @@ class DeepLab(ArcGISModel):
 
     def _deeplab_loss(self, outputs, targets):
         targets = targets.squeeze(1).detach()
-        criterion = nn.CrossEntropyLoss().to(self._device)
+
+        if self.class_balancing:
+            class_weight = torch.tensor([self._data.class_weight.mean()] + self._data.class_weight.tolist()).float().to(self._device)
+        else:
+            class_weight = None
+
+        criterion = nn.CrossEntropyLoss(weight=class_weight).to(self._device)
         if self.learn.model.training:
             out = outputs[0]
             aux = outputs[1]

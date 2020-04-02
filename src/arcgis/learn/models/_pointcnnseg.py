@@ -41,7 +41,7 @@ class PointCNN(ArcGISModel):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    encoder_params          Optinal dictionary. The keys of the dictionary are 
+    encoder_params          Optional dictionary. The keys of the dictionary are 
                             `out_channels`, `P`, `K`, `D` and `m`.
 
                               Examples:
@@ -64,7 +64,7 @@ class PointCNN(ArcGISModel):
     dropout                 Optional float. This parameter will control overfitting.                          
                             The range of this parameter is [0,1).
     ---------------------   -------------------------------------------
-    sample_point_num        Optinal integer. The number of points that the models
+    sample_point_num        Optional integer. The number of points that the models
                             will actually process.     
     =====================   ===========================================
 
