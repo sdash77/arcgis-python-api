@@ -46,7 +46,7 @@ class Server(BaseServer):
     baseurl                   Optional string. The root URL to a site.
                               Example: https://mysite.com/arcgis
     ---------------------     --------------------------------------------------------------------
-    tokenurl                  Optional string. Used when a site is federated or when the token
+    token_url                  Optional string. Used when a site is federated or when the token
                               URL differs from the site's baseurl.  If a site is federated, the
                               token URL will return as the Portal token and ArcGIS Server users
                               will not validate correctly.
@@ -86,6 +86,25 @@ class Server(BaseServer):
     =====================     ====================================================================
 
     """
+
+
+    ..code - block:: python
+
+    # Usage Example 1: Connecting to a stand alone unfederated server using Web Adaptor
+
+    server_base_url = "https://example.site.com"
+
+    server2 = Server(url=f"{server_base_url}/<web adaptor name>/admin",
+                     token_url=f"{server_base_url}/<web adaptor name>/tokens/generateToken",
+                     username="<admin_user>",
+                     password="<admin_passwrd>",
+                     verify_cert=False)
+
+    server2
+
+       <Server at https://dev0012279.esri.com/server/admin>
+
+
     _url = None
     _con = None
     _json_dict = None

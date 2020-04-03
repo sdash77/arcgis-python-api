@@ -68,6 +68,9 @@ class GIS(object):
     A GIS is representative of a single ArcGIS Online organization or an ArcGIS Enterprise deployment. The GIS object
     provides helper objects to manage (search, create, retrieve) GIS resources such as content, users, and groups.
 
+       NOTE: For connecting to stand-alone GIS servers, see documentation for the Server class in the Server module
+       (https://developers.arcgis.com/python/api-reference/arcgis.gis.server.html#server)
+
     Additionally, the GIS object has properties to query its state, which is accessible using the properties attribute.
 
     The GIS provides a mapping widget that can be used in the Jupyter Notebook environment for visualizing GIS content
