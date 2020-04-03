@@ -210,16 +210,16 @@ class FeatureClassifier(ArcGISModel):
         from matplotlib import pyplot as plt
         import fastai
         try:
-            from fastprogress import fastprogress
+            from fastprogress import fastprogress, force_console_behavior, master_bar, progress_bar
         except ImportError:
             import fastprogress
-        fastprogress.fastprogress.NO_BAR = True
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.force_console_behavior()
+        fastprogress.NO_BAR = True
+        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = force_console_behavior()
         self.plot_confusion_matrix()
-        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = fastprogress.master_bar, fastprogress.progress_bar
         plt.savefig(os.path.join(path, 'confusion_matrix.png'))
         plt.close()
-
+        fastai.basic_train.master_bar, fastai.basic_train.progress_bar = master_bar, progress_bar
+        
     @property
     def _model_metrics(self):
         return {}
