@@ -17,7 +17,7 @@ try:
     import numpy as np
     from .._data import prepare_data, _raise_fastai_import_error
     from fastai.callbacks import EarlyStoppingCallback
-    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta, _resnet_family
+    from ._arcgis_model import SaveModelCallback, _set_multigpu_callback, _get_backbone_meta, _resnet_family, _set_ddp_multigpu, _isnotebook
     import torchvision
     from torchvision import models
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
@@ -31,6 +31,7 @@ try:
     import matplotlib
     from fastai.basic_data import DatasetType
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
+    import os as arcgis_os
 
     HAS_FASTAI = True
 except Exception as e:
@@ -121,7 +122,14 @@ class MaskRCNN(ArcGISModel):
                                                        hidden_layer,
                                                        data.c)
 
-        self.learn = Learner(data, model, loss_func = mask_rcnn_loss)
+        if not _isnotebook() and arcgis_os.name=='posix':
+            _set_ddp_multigpu(self)
+            if self._multigpu_training:
+                self.learn = Learner(data, model, loss_func=mask_rcnn_loss).to_distributed(self._rank_distributed)
+            else:
+                self.learn = Learner(data, model, loss_func=mask_rcnn_loss)
+        else:
+            self.learn = Learner(data, model, loss_func=mask_rcnn_loss)
         self.learn.callbacks.append(train_callback(self.learn))
         self.learn.model = self.learn.model.to(self._device)
         self.learn.c_device = self._device

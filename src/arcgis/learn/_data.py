@@ -356,7 +356,7 @@ def prepare_data(path,
                             map.txt file. If the path does not contain the 
                             map.txt file pass either of 'PASCAL_VOC_rectangles', 
                             'RCNN_Masks', 'Classified_Tiles', 'Labeled_Tiles' and 
-                            'Imagenet'.                    
+                            'Imagenet', 'PointCloud'.                    
     ---------------------   -------------------------------------------
     resize_to               Optional integer. Resize the image to given size.
     =====================   ===========================================
@@ -370,7 +370,7 @@ def prepare_data(path,
     * norm_pct=0.3 # sample of images to calculate normalization stats on 
     * do_normalize=True # Normalize data 
     """
-
+    
     height_width = []
 
     if not HAS_FASTAI:
@@ -410,9 +410,9 @@ def prepare_data(path,
 
     if dataset_type is None and not has_esri_files:
         raise Exception("Could not infer dataset type.")
-
+    
+    stats_file = path / 'esri_accumulated_stats.json'
     if dataset_type != "Imagenet" and has_esri_files:
-        stats_file = path / 'esri_accumulated_stats.json'
         with open(stats_file) as f:
             stats = json.load(f)
             dataset_type = stats['MetaDataMode']
@@ -699,7 +699,7 @@ def prepare_data(path,
         return pointcloud_prepare_data(path, class_mapping, batch_size, val_split_pct, dataset_type, transform_fn, **kwargs)
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
-    
+
     if _is_multispectral:
         if dataset_type == 'RCNN_Masks':
             kwargs['do_normalize'] = False
@@ -752,6 +752,8 @@ def prepare_data(path,
                     normstats[norm_pct_search][s] = normstats[norm_pct_search][s].tolist()
             with open(normstats_json_path, 'w', encoding='utf-8') as f:
                 json.dump(normstats, f, ensure_ascii=False, indent=4)
+
+                
 
         # batch_stats -> [band_min_values, band_max_values, band_mean_values, band_std_values, scaled_min_values, scaled_max_values, scaled_mean_values, scaled_std_values]
         data._band_min_values = batch_stats['band_min_values']
@@ -824,6 +826,16 @@ def prepare_data(path,
         for i, class_name in enumerate(class_mapping.keys()):
             new_mapping[i+1] = class_name
         class_mapping = new_mapping
+
+    ## For calculating loss from inverse of frquency.
+    if dataset_type == 'Classified_Tiles':
+        with open(stats_file) as f:
+            stats_json = json.load(f)
+            num_pixels_per_class = stats_json['ClassPixelStats']['NumPixelsPerClass']
+            data.num_pixels_per_class = num_pixels_per_class
+            ## Might want to change the variable name
+            data.class_weight = np.array(num_pixels_per_class).sum() / np.array(num_pixels_per_class)
+
 
     data.class_mapping = class_mapping
     data.color_mapping = color_mapping

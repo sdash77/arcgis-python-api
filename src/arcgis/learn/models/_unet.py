@@ -4,21 +4,26 @@ from ._codetemplate import image_classifier_prf
 from ._arcgis_model import _EmptyData
 from functools import partial
 import math
+import types
 from .._data import _raise_fastai_import_error  
 import traceback    
 
 try:
-    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family
+    from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family, _set_ddp_multigpu, _isnotebook
     import torch
     from torchvision import models
     from fastai.vision.learner import unet_learner, cnn_config
     import numpy as np
+    from fastai.layers import CrossEntropyFlat
+    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback
     from ._unet_utils import is_no_color, LabelCallback, _class_array_to_rbg, predict_batch, show_results_multispectral
     from fastai.callbacks import EarlyStoppingCallback
     from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.classified_tiles import per_class_metrics
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
+    import os as arcgis_os
     HAS_FASTAI = True
 except Exception as e:
     import_exception = "\n".join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -45,6 +50,22 @@ class UnetClassifier(ArcGISModel):
                             saved.
     =====================   ===========================================
 
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    class_balancing         Optional boolean. If True, it will balance the
+                            cross-entropy loss inverse to the frequency
+                            of pixels per class. Default: False. 
+    ---------------------   -------------------------------------------
+    mixup                   Optional boolean. If True, it will use mixup
+                            augmentation and mixup loss. Default: False
+    ---------------------   -------------------------------------------
+    focal_loss              Optional boolean. If True, it will use focal loss
+                            Default: False                                                         
+    =====================   ===========================================
+
     :returns: `UnetClassifier` Object
     """
 
@@ -56,6 +77,10 @@ class UnetClassifier(ArcGISModel):
             self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
         else:
             super().__init__(data, backbone)
+
+            self.mixup = kwargs.get('mixup', False)
+            self.class_balancing = kwargs.get('class_balancing', False)
+            self.focal_loss = kwargs.get('focal_loss', False)
 
             self._code = image_classifier_prf
 
@@ -74,12 +99,29 @@ class UnetClassifier(ArcGISModel):
                 backbone_cut = _backbone_meta['cut']
                 backbone_split = _backbone_meta['split']
 
-            self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+            if not _isnotebook() and arcgis_os.name=='posix':
+                _set_ddp_multigpu(self)
+                if self._multigpu_training:
+                    self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split).to_distributed(self._rank_distributed)
+                else:
+                    self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+            else:
+                self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
+
+            if self.class_balancing:
+                class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
+                self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+            if self.focal_loss:
+                self.learn.loss_func = FocalLoss(self.learn.loss_func)
+            if self.mixup:
+                self.learn.callbacks.append(MixUpCallback(self.learn))
+
             self._arcgis_init_callback() # make first conv weights learnable
             self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback
 
             self.learn.model = self.learn.model.to(self._device)
 
+            self.per_class_metrics = types.MethodType(per_class_metrics, self)
             # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
             if pretrained_path is not None:
                 self.load(pretrained_path)

@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._arcgis_model import ArcGISModel
+import types
 
 try:
     from fastai.basic_train import Learner
@@ -13,8 +14,11 @@ try:
     from torchvision import models
     from ._unet_utils import LabelCallback
     from ._arcgis_model import _EmptyData
+    from fastai.layers import CrossEntropyFlat
+    from .._utils.segmentation_loss_functions import  FocalLoss, MixUpCallback
     from ._psp_utils import PSPNet, _pspnet_learner, _pspnet_learner_with_unet, accuracy
     from .._utils.common import get_multispectral_data_params_from_emd
+    from .._utils.classified_tiles import per_class_metrics
     import numpy as np
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
@@ -58,16 +62,35 @@ class PSPNetClassifier(ArcGISModel):
                             use_unet is True.                            
     =====================   ===========================================
 
+    **kwargs**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    class_balancing         Optional boolean. If True, it will balance the
+                            cross-entropy loss inverse to the frequency
+                            of pixels per class. Default: False. 
+    ---------------------   -------------------------------------------
+    mixup                   Optional boolean. If True, it will use mixup
+                            augmentation and mixup loss. Default: False
+    ---------------------   -------------------------------------------
+    focal_loss              Optional boolean. If True, it will use focal loss.
+                            Default: False                                                         
+    =====================   ===========================================    
+
     :returns: `PSPNetClassifier` Object
     """
 
-    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False):
+    def __init__(self, data, backbone=None, use_unet=True, pyramid_sizes=[1, 2, 3, 6], pretrained_path=None, unet_aux_loss=False, **kwargs):
 
         # Set default backbone to be 'resnet50'
         if backbone is None: 
             backbone = models.resnet50
       
         super().__init__(data, backbone)
+        self.mixup = kwargs.get('mixup', False)
+        self.class_balancing = kwargs.get('class_balancing', False)
+        self.focal_loss = kwargs.get('focal_loss', False)        
         
         _backbone = self._backbone
         if hasattr(self, '_orig_backbone'):
@@ -90,15 +113,25 @@ class PSPNetClassifier(ArcGISModel):
                                                    pretrained=True, 
                                                    metrics=accuracy, 
                                                    unet_aux_loss=unet_aux_loss)
+            if self.class_balancing:
+                class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
+                self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+
             if unet_aux_loss:
                self.learn.loss_func = self._psp_loss 
         else:
             self.learn = _pspnet_learner(data, backbone=self._backbone, chip_size=self._data.chip_size, pyramid_sizes=pyramid_sizes, pretrained=True, metrics=accuracy)
             self.learn.loss_func = self._psp_loss
+
+        if self.focal_loss:
+            self.learn.loss_func = FocalLoss(self.learn.loss_func)
+        if self.mixup:
+            self.learn.callbacks.append(MixUpCallback(self.learn))
+
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
         self.learn.model = self.learn.model.to(self._device)
-        
+        self.per_class_metrics = types.MethodType(per_class_metrics, self)
         self.freeze()
         self._arcgis_init_callback() # make first conv weights learnable
 
@@ -172,7 +205,13 @@ class PSPNetClassifier(ArcGISModel):
 
     def _psp_loss(self, outputs, targets):
         targets = targets.squeeze(1).detach()
-        criterion = nn.CrossEntropyLoss().to(self._device)
+
+        if self.class_balancing:
+            class_weight = torch.tensor([self._data.class_weight.mean()] + self._data.class_weight.tolist()).float().to(self._device)
+        else:
+            class_weight = None
+
+        criterion = nn.CrossEntropyLoss(weight=class_weight).to(self._device)
 
         if self.learn.model.training: # returns a tuple of aux_logits and main_logits while training
             out = outputs[0]

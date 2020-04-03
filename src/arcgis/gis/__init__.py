@@ -2209,7 +2209,7 @@ class UserManager(object):
 
         """
         #map role parameter of a viewer to the internal value for org viewer.
-        if self._gis.verion >= [7,2]:
+        if self._gis.version >= [7,2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
                     if 'userLicenseType' in self.user_settings:
@@ -3548,7 +3548,7 @@ class ContentManager(object):
         return False
     #----------------------------------------------------------------------
     def add(self, item_properties, data=None, thumbnail=None,
-            metadata=None, owner=None, folder=None):
+            metadata=None, owner=None, folder=None, item_id=None):
         """ Adds content to the GIS by creating an item.
 
         .. note::
@@ -3581,6 +3581,14 @@ class ContentManager(object):
         owner               Optional string. Defaults to the logged in user.
         ---------------     --------------------------------------------------------------------
         folder              Optional string. Name of the folder where placing item.
+        ---------------     --------------------------------------------------------------------
+        item_id             Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string 
+                            of 32 character UID without any special characters.  
+                            
+                            If the `item_id` is already being used, an error will be raised 
+                            during the `add` process.
+                            
+                            Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===============     ====================================================================
 
 
@@ -3637,6 +3645,11 @@ class ContentManager(object):
         """
         import os
         filetype = None
+        if not isinstance(item_properties, dict):
+            raise ValueError("`item_properties` must be  dictionary.")
+        if item_id and isinstance(item_id, str) and len(item_id) == 32:
+            item_properties['itemIdToCreate'] = item_id
+            
         if data is not None:
             title = os.path.splitext(os.path.basename(data))[0]
             extn = os.path.splitext(os.path.basename(data))[1].upper()
@@ -3859,7 +3872,12 @@ class ContentManager(object):
                        wkid=102100,
                        create_params=None,
                        service_type="featureService",
-                       owner=None, folder=None, item_properties=None, is_view=False):
+                       owner=None, folder=None, 
+                       item_properties=None, 
+                       is_view=False,
+                       tags=None,
+                       snippet=None, 
+                       item_id=None):
         """ Creates a service in the Portal.
 
 
@@ -3903,6 +3921,19 @@ class ContentManager(object):
         item_properties            Optional dictionary. See below for the keys and values
         -----------------------    -------------------------------------------------------------
         is_view                    Optional boolean. Indicating if the service is a hosted feature layer view
+        -----------------------    -------------------------------------------------------------
+        item_id                    Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string 
+                                   of 32 character UID without any special characters.  
+                                   
+                                   If the `item_id` is already being used, an error will be raised 
+                                   during the `add` process.
+                                   
+                                   Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
+        -----------------------    -------------------------------------------------------------
+        tags                       Optional string. Tags listed as comma-separated values, or a list of strings.
+                                   Used for searches on items.
+        -----------------------    -------------------------------------------------------------
+        snippet                    Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
         =======================    =============================================================
 
 
@@ -3955,7 +3986,10 @@ class ContentManager(object):
                 capabilities = 'Query'
             else:
                 capabilities = 'Query'
-
+        if self._gis.version <= [7,1]:
+            item_id = None
+            import warnings
+            warnings.warn("Item ID is not Support at this version. Please use version >=10.8.1 Enterprise.")
         itemid = self._portal.create_service(name,
                                              service_description,
                                              has_static_data,
@@ -3967,7 +4001,8 @@ class ContentManager(object):
                                              wkid,
                                              service_type,
                                              create_params,
-                                             owner, folder, item_properties, is_view)
+                                             owner, folder, item_properties, 
+                                             is_view, item_id, tags, snippet)
         if itemid is not None:
             item = Item(self._gis, itemid)
             if item_properties is None:
@@ -4402,7 +4437,7 @@ class ContentManager(object):
                 owner_name = owner
             return self._portal.delete_folder(owner_name, folder)
 
-    def import_data(self, df, address_fields=None, folder=None, **kwargs):
+    def import_data(self, df, address_fields=None, folder=None, item_id=None, **kwargs):
         """
         Imports a Pandas data frame (that has an address column), or an arcgis
         spatial dataframe into the GIS.
@@ -4425,6 +4460,14 @@ class ContentManager(object):
         title             Optional string. Title of the item. This is used for spatial dataframe objects.
         ----------------  --------------------------------------------------------------------------
         tags              Optional string. Tags listed as comma-separated values, or a list of strings. Provide tags when publishing a spatial dataframe to the the GIS.
+        ----------------  --------------------------------------------------------------------------
+        item_id           Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string 
+                          of 32 character UID without any special characters.  
+                            
+                          If the `item_id` is already being used, an error will be raised 
+                          during the `add` process.
+                          
+                          Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ================  ==========================================================================
 
         In addition to the parameters aboce, you can specify additional information to help publish CSV
@@ -4514,6 +4557,10 @@ class ContentManager(object):
            A feature collection or feature layer that can be used for analysis,
            visualization, or published to the GIS as an item.
         """
+        if item_id and self._gis.version <= [7,1]:
+            item_id = None
+            import warnings 
+            warnings.warn("`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+")
         from arcgis.features import FeatureCollection, SpatialDataFrame, FeatureSet
 
         from arcgis._impl.common._utils import zipws
@@ -4580,7 +4627,7 @@ class ContentManager(object):
                                        "maxRecordCount":2000, "layerInfo":{"capabilities":capabilities}}
                 if target_sr is not None:
                     publish_parameters['targetSR'] = { 'wkid' : target_sr }
-                return item.publish(publish_parameters=publish_parameters)
+                return item.publish(publish_parameters=publish_parameters, item_id=item_id)
             elif has_pyshp:
                 import random
                 import string
@@ -4607,7 +4654,7 @@ class ContentManager(object):
                                        "maxRecordCount":2000, "layerInfo":{"capabilities":capabilities}}
                 if target_sr is not None:
                     publish_parameters['targetSR'] = { 'wkid' : target_sr }
-                return item.publish(publish_parameters=publish_parameters)
+                return item.publish(publish_parameters=publish_parameters, item_id=item_id)
             return
         elif isinstance(df, pd.DataFrame) and \
              'location_type' not in kwargs:
@@ -4645,7 +4692,8 @@ class ContentManager(object):
                 "filetype" : "csv",
                 "publishParameters" : json.dumps(res['publishParameters'])
             }
-
+            if item_id:
+                postdata['itemIdToCreate'] = item_id
             res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< PropertyMap
 
             fc = FeatureCollection(res['featureCollection']['layers'][0])
@@ -4698,6 +4746,8 @@ class ContentManager(object):
                 "filetype" : "csv",
                 "publishParameters" : json.dumps(res['publishParameters'])
             }
+            if item_id:
+                postdata['itemIdToCreate'] = item_id
             res = self._portal.con.post(path, postdata)#, use_ordered_dict=True) - OrderedDict >36< PropertyMap
 
             fc = FeatureCollection(res['featureCollection']['layers'][0])
@@ -7743,7 +7793,9 @@ class Item(dict):
             else:
                 return download_path
 
-    def export(self, title, export_format, parameters=None, wait=True, enforce_fld_vis=None):
+    def export(self, title, export_format, 
+               parameters=None, wait=True, enforce_fld_vis=None, 
+               tags=None, snippet=None, overwrite=False):
         """
         Exports a service item to the specified export format.
         Available only to users with an organizational subscription.
@@ -7758,7 +7810,7 @@ class Item(dict):
         ---------------     --------------------------------------------------------------------
         export_format       Required string. The format to export the data to. Allowed types: 'Shapefile',
                             'CSV', 'File Geodatabase', 'Feature Collection', 'GeoJson', 'Scene Package', 'KML',
-                             and 'Excel'
+                             'Excel', 'geoPackage', or 'Vector Tile Package'.
         ---------------     --------------------------------------------------------------------
         parameters          Optional string. A JSON object describing the layers to be exported
                             and the export parameters for each layer.  See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#/Export_Item/02r30000008s000000/
@@ -7774,6 +7826,13 @@ class Item(dict):
                             column definition is honor, then set the value to True. When the
                             owner of the service and the value is set to False, all data and
                             columns will be exported.
+        ---------------     --------------------------------------------------------------------
+        tags                Optional String.  A comma seperated value of item descriptors.
+        ---------------     --------------------------------------------------------------------
+        snippet             Optional String. A short descriptive piece of text.
+        ---------------     --------------------------------------------------------------------
+        overwrite           Optional Boolean. If the export Item exists, the item will be 
+                            replaced with the new one.
         ===============     ====================================================================
 
 
@@ -7787,17 +7846,28 @@ class Item(dict):
                    'File Geodatabase',
                    'Feature Collection',
                    'GeoJson',
+                   'GeoPackage', # geoPackage
+                   'geoPackage',
                    'Scene Package',
                    'KML',
-                   'Excel']
+                   'Excel',
+                   'Vector Tile Package']
+        if export_format == 'GeoPackage':
+            export_format = 'geoPackage'
         user_id = self._user_id
         data_path = 'content/users/%s/export' % user_id
         params = {
             "f" : "json",
             "itemId" : self.itemid,
             "exportFormat" : export_format,
-            "title" : title,
+            "title" : title
         }
+        if tags and isinstance(tags, (list, tuple)):
+            tags = ",".join([str(t) for t in tags])
+        if tags and isinstance(tags, str):
+            params['tags'] = tags
+        if snippet:
+            params['snippet'] = snippet
         if parameters:
             params.update({'exportParameters': parameters})
         if not enforce_fld_vis is None and \
@@ -9040,7 +9110,7 @@ class Item(dict):
             return resp.get('success')
 
     def publish(self, publish_parameters=None, address_fields=None, output_type=None, overwrite=False,
-                file_type=None, build_initial_cache=False):
+                file_type=None, build_initial_cache=False, item_id=None):
         """
         Publishes a hosted service based on an existing source item (this item).
         Publishers can create feature, tiled map, vector tile and scene services.
@@ -9087,6 +9157,14 @@ class Item(dict):
         build_initial_cache    Optional boolean.  The boolean value (default False), if true
                                and applicable for the file_type, the value will built cache
                                for the service.
+        -------------------    ---------------------------------------------------------------
+        item_id                Optionl String. **Available in Enterprise/AGOL 10.8.1+**.  A string 
+                               of 32 character UID without any special characters.  
+                            
+                               If the `item_id` is already being used, an error will be raised 
+                               during the `publish` process.
+                               
+                               Example: item_id=9311d21a9a2047d19c0faaebd6f2cca6
         ===================    ===============================================================
 
 
@@ -9100,6 +9178,7 @@ class Item(dict):
         params = {
             "f" : "json"
         }
+        
         buildInitialCache = build_initial_cache
         if file_type is None:
             if self['type'] == "GeoPackage":
@@ -9295,7 +9374,7 @@ class Item(dict):
                                         None, fileType,
                                         publish_parameters, output_type,
                                         overwrite, self.owner,
-                                        folder, buildInitialCache)
+                                        folder, buildInitialCache, item_id=item_id)
 
         #Check publishing job status
 
