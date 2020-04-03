@@ -186,6 +186,16 @@ class PointCNN(ArcGISModel):
 
                                 The default value is 'False'.
         =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        iters_per_epoch         Optional integer. The number of iterations 
+                                to run during the training phase.
+        =====================   ===========================================
+                
         """
         iterations = kwargs.get('iters_per_epoch', None)
         from ._pointcnn_utils import IterationStop
