@@ -1957,9 +1957,13 @@ class _FeatureAnalysisTools(BaseAnalytics):
             from arcgis.features._credits import _estimate_credits
             return _estimate_credits(task=task,
                                      parameters=params)
-        gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
-                                         output_name=output_name, context=context, gis=self._gis,
-                                         future=True)
+        if context is None:
+            gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
+                                             output_name=output_name, gis=self._gis, future=True)            
+        else:
+            gpjob = self._tbx.find_centroids(input_layer=input_layer, point_location=point_location,
+                                             output_name=output_name, context=context, gis=self._gis,
+                                             future=True)
         gpjob._is_fa = True
         if future:
             return gpjob
@@ -2688,12 +2692,12 @@ class _FeatureAnalysisTools(BaseAnalytics):
     def join_features(self,
                       target_layer,
                       join_layer,
-                      spatial_relationship,
-                      spatial_relationship_distance,
-                      spatial_relationship_distance_units,
-                      attribute_relationship,
-                      join_operation,
-                      summary_fields,
+                      spatial_relationship=None,
+                      spatial_relationship_distance=None,
+                      spatial_relationship_distance_units=None,
+                      attribute_relationship=None,
+                      join_operation="JoinOneToOne",
+                      summary_fields=None,
                       output_name=None,
                       context=None,
                       estimate=False,

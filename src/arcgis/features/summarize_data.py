@@ -6,11 +6,13 @@ aggregate_points calculates statistics about points that fall within specified a
 summarize_nearby calculates statistics for features and their attributes that are within a specified distance.
 summarize_within calculates statistics for area features and attributes that overlap each other.
 """
+import inspect
 import arcgis as _arcgis
-from arcgis._impl.common._utils import _date_handler
+from .._impl.common._utils import _date_handler
+from .._impl.common._utils import inspect_function_inputs
 import arcgis.network as network
 
-
+#--------------------------------------------------------------------------
 def aggregate_points(point_layer,
                      polygon_layer,
                      keep_boundaries_with_no_points=True,
@@ -22,7 +24,10 @@ def aggregate_points(point_layer,
                      context=None,
                      gis=None,
                      estimate=False,
-                     future=False):
+                     future=False, 
+                     bin_type=None, 
+                     bin_size=None,
+                     bin_size_unit=None):
     """
     .. image:: _static/images/agg_points_standard/aggregate_points.png
 
@@ -67,6 +72,18 @@ def aggregate_points(point_layer,
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Optional Boolean. When True, the task will be performed asynchronously.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_type                                 Optional String. The type of bin that will be generated and points will be aggregated into. Bin options are as follows: Hexagon and Square.
+                                             Square is the Default. When generating bins, for Square, the number and units specified determine the height and length of the square. 
+                                             For Hexagon, the number and units specified determine the distance between parallel sides. Either `bin_type` or `polygon_layer` must be 
+                                             specified. If `bin_type` is chosen, then `bin_size` and `bin_size_unit` specifying the size of the bins must be included.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_size                                 Optional Float. The distance for the bins of type `bin_type` that the `point_layer` will be aggregated into.
+    ------------------------------------     --------------------------------------------------------------------
+    bin_size_unit                            Optional String. The linear unit to be used with the distance value specified in `bin_size`. 
+                                             Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
     ====================================     ====================================================================
 
     :returns: result_layer : feature layer Item if output_name is specified, else Feature Collection.
@@ -87,21 +104,12 @@ def aggregate_points(point_layer,
                                 context='{"extent":{"xmin":-8609738.077325115,"ymin":4743483.445485223,"xmax":-8594030.268012533,"ymax":4752206.821338257,"spatialReference":{"wkid":102100,"latestWkid":3857}}}')
 
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.featureanalysis.aggregate_points(
-                     point_layer,
-                     polygon_layer,
-                     keep_boundaries_with_no_points,
-                     summary_fields,
-                     group_by_field,
-                     minority_majority,
-                     percent_points,
-                     output_name,
-                     context,
-                     estimate=estimate, future=future)
-
-
-
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.aggregate_points, 
+                                     **kwargs)
+    return gis._tools.featureanalysis.aggregate_points(**params)
+#--------------------------------------------------------------------------
 def summarize_nearby(sum_nearby_layer,
                      summary_layer,
                      near_type="StraightLine",
@@ -302,32 +310,17 @@ def summarize_nearby(sum_nearby_layer,
                           shape_units=None,
                           output_name='nearest hospitals to schools')
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_nearby, 
+                                     **kwargs)    
     if isinstance(near_type, str):
         if near_type != 'StraightLine':
             route_service = network.RouteLayer(gis.properties.helperServices.route.url, gis=gis)
             near_type = [i for i in route_service.retrieve_travel_modes()['supportedTravelModes'] if i['name'] == near_type][0]
-
-    return gis._tools.featureanalysis.summarize_nearby(
-                     sum_nearby_layer,
-                     summary_layer,
-                     near_type,
-                     distances,
-                     units,
-                     _date_handler(time_of_day),
-                     time_zone_for_time_of_day,
-                     return_boundaries,
-                     sum_shape,
-                     shape_units,
-                     summary_fields,
-                     group_by_field,
-                     minority_majority,
-                     percent_shape,
-                     output_name,
-                     context,
-                     estimate=estimate, future=future)
-
-
+            params['near_type'] = near_type
+    return gis._tools.featureanalysis.summarize_nearby(**params)
+#--------------------------------------------------------------------------
 def summarize_center_and_dispersion(
         analysis_layer,
         summarize_type=["CentralFeature"],
@@ -403,18 +396,11 @@ def summarize_center_and_dispersion(
 
     """
 
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-    return gis._tools.featureanalysis.summarize_center_and_dispersion(
-        analysis_layer,
-        summarize_type,
-        ellipse_size,
-        weight_field,
-        group_field,
-        output_name,
-        context,
-        estimate=estimate, future=future)
-
-
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_center_and_dispersion, **kwargs)   
+    return gis._tools.featureanalysis.summarize_center_and_dispersion(**params)
+#--------------------------------------------------------------------------
 def summarize_within(sum_within_layer,
                      summary_layer,
                      sum_shape=True,
@@ -525,7 +511,9 @@ def summarize_within(sum_within_layer,
                                              output_name='summarize accidents within each county',
                                              context={"extent":{"xmin":-13160690.837046918,"ymin":4041586.5461609075,"xmax":-13132466.464352652,"ymax":4058001.397985127,"spatialReference":{"wkid":102100,"latestWkid":3857}}})
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.summarize_within, **kwargs)
     return gis._tools.featureanalysis.summarize_within(
                      sum_within_layer,
                      summary_layer,
@@ -538,8 +526,7 @@ def summarize_within(sum_within_layer,
                      output_name,
                      context,
                      estimate=estimate, future=future)
-
-
+#--------------------------------------------------------------------------
 def join_features(target_layer,
                   join_layer,
                   spatial_relationship=None,
@@ -645,17 +632,11 @@ def join_features(target_layer,
                                                       output_name='join features',
                                                       context={"extent":{"xmin":-9375809.87305117,"ymin":4031882.3806860778,"xmax":-9370182.196843527,"ymax":4034872.9794178144,"spatialReference":{"wkid":102100,"latestWkid":3857}}}, )
     """
+    kwargs = locals()
     gis = _arcgis.env.active_gis if gis is None else gis
-
-    return gis._tools.featureanalysis.join_features(
-        target_layer,
-        join_layer,
-        spatial_relationship,
-        spatial_relationship_distance,
-        spatial_relationship_distance_units,
-        attribute_relationship,
-        join_operation,
-        summary_fields,
-        output_name,
-        context,
-        estimate=estimate, future=future)
+    params = inspect_function_inputs(fn=gis._tools.featureanalysis._tbx.join_features, **kwargs)   
+    if 'attribute_relationship' not in params:
+        params['attribute_relationship'] = attribute_relationship
+    if 'summary_fields' not in params:
+        params['summary_fields'] = summary_fields
+    return gis._tools.featureanalysis.join_features(**params)

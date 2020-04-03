@@ -5,7 +5,7 @@ channels:
 - pytorch
 dependencies:
 - ipywidgets >=7
-- pandas >=0.25
+- pandas >=1
 - numpy>=1.16.2
 - pip
 - python=3.6
