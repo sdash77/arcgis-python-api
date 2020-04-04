@@ -6,7 +6,9 @@ from functools import partial
 import math
 import types
 from .._data import _raise_fastai_import_error  
-import traceback    
+import traceback
+import logging
+logger = logging.getLogger()
 
 try:
     from ._arcgis_model import ArcGISModel, SaveModelCallback, _set_multigpu_callback, _resnet_family, _set_ddp_multigpu, _isnotebook
@@ -108,9 +110,12 @@ class UnetClassifier(ArcGISModel):
             else:
                 self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
 
-            if self.class_balancing:
+            if self.class_balancing and data.class_weight is not None:
                 class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
                 self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+            else:
+                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+
             if self.focal_loss:
                 self.learn.loss_func = FocalLoss(self.learn.loss_func)
             if self.mixup:
@@ -121,7 +126,6 @@ class UnetClassifier(ArcGISModel):
 
             self.learn.model = self.learn.model.to(self._device)
 
-            self.per_class_metrics = types.MethodType(per_class_metrics, self)
             # _set_multigpu_callback(self) # MultiGPU doesn't work for U-Net. (Fastai-Forums)
             if pretrained_path is not None:
                 self.load(pretrained_path)
@@ -372,4 +376,10 @@ class UnetClassifier(ArcGISModel):
         return self._loss_function_tf_(target, predictions)
 
     ## Tensorflow specific functions end ##
-        
+
+    def per_class_metrics(self):
+        """
+        Computer per class precision, recall and f1-score on validation set.
+        """
+        ## Calling imported function `per_class_metrics`        
+        return per_class_metrics(self)

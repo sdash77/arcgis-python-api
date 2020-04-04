@@ -5,6 +5,8 @@ from ._arcgis_model import _raise_fastai_import_error
 from functools import partial
 from ._arcgis_model import ArcGISModel
 import types
+import logging
+logger = logging.getLogger()
 
 try:
     from fastai.basic_train import Learner
@@ -136,13 +138,15 @@ class DeepLab(ArcGISModel):
 
         self.learn.loss_func = self._deeplab_loss
 
+        if self.class_balancing and self._data.class_weight is None:
+            logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+
         if self.focal_loss:
             self.learn.loss_func = FocalLoss(self.learn.loss_func)
         if self.mixup:
             self.learn.callbacks.append(MixUpCallback(self.learn))
 
         self.learn.model = self.learn.model.to(self._device)
-        self.per_class_metrics = types.MethodType(per_class_metrics, self)
         self._freeze()
         self._arcgis_init_callback() # make first conv weights learnable
         if pretrained_path is not None:
@@ -246,7 +250,7 @@ class DeepLab(ArcGISModel):
     def _deeplab_loss(self, outputs, targets):
         targets = targets.squeeze(1).detach()
 
-        if self.class_balancing:
+        if self.class_balancing and self._data.class_weight is not None:
             class_weight = torch.tensor([self._data.class_weight.mean()] + self._data.class_weight.tolist()).float().to(self._device)
         else:
             class_weight = None
@@ -333,3 +337,10 @@ class DeepLab(ArcGISModel):
         if mean:
             return np.mean(miou)
         return dict(zip(['0'] + self._data.classes[1:], miou))
+
+    def per_class_metrics(self):
+        """
+        Computer per class precision, recall and f1-score on validation set.
+        """
+        ## Calling imported function `per_class_metrics`
+        return per_class_metrics(self)            

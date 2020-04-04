@@ -831,10 +831,16 @@ def prepare_data(path,
     if dataset_type == 'Classified_Tiles':
         with open(stats_file) as f:
             stats_json = json.load(f)
-            num_pixels_per_class = stats_json['ClassPixelStats']['NumPixelsPerClass']
-            data.num_pixels_per_class = num_pixels_per_class
+            pixel_stats = stats_json.get('ClassPixelStats', None)
+            if pixel_stats is not None:
+                data.num_pixels_per_class = pixel_stats.get('NumPixelsPerClass', None)
+            else:
+                data.num_pixels_per_class = None
             ## Might want to change the variable name
-            data.class_weight = np.array(num_pixels_per_class).sum() / np.array(num_pixels_per_class)
+            if data.num_pixels_per_class is not None:
+                data.class_weight = np.array(data.num_pixels_per_class).sum() / np.array(data.num_pixels_per_class)
+            else:
+                data.class_weight = None
 
 
     data.class_mapping = class_mapping

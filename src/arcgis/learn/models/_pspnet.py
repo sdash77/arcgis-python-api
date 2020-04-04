@@ -3,6 +3,8 @@ from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._arcgis_model import ArcGISModel
 import types
+import logging
+logger = logging.getLogger()
 
 try:
     from fastai.basic_train import Learner
@@ -113,9 +115,12 @@ class PSPNetClassifier(ArcGISModel):
                                                    pretrained=True, 
                                                    metrics=accuracy, 
                                                    unet_aux_loss=unet_aux_loss)
-            if self.class_balancing:
+
+            if self.class_balancing and data.class_weight is not None:
                 class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
                 self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+            else:
+                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
 
             if unet_aux_loss:
                self.learn.loss_func = self._psp_loss 
@@ -131,7 +136,6 @@ class PSPNetClassifier(ArcGISModel):
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
 
         self.learn.model = self.learn.model.to(self._device)
-        self.per_class_metrics = types.MethodType(per_class_metrics, self)
         self.freeze()
         self._arcgis_init_callback() # make first conv weights learnable
 
@@ -206,7 +210,7 @@ class PSPNetClassifier(ArcGISModel):
     def _psp_loss(self, outputs, targets):
         targets = targets.squeeze(1).detach()
 
-        if self.class_balancing:
+        if self.class_balancing and self._data.class_weight is not None:
             class_weight = torch.tensor([self._data.class_weight.mean()] + self._data.class_weight.tolist()).float().to(self._device)
         else:
             class_weight = None
@@ -340,3 +344,10 @@ class PSPNetClassifier(ArcGISModel):
         if mean:
             return np.mean(miou)
         return dict(zip(['0'] + self._data.classes[1:], miou))
+
+    def per_class_metrics(self):
+        """
+        Computer per class precision, recall and f1-score on validation set.
+        """
+        ## Calling imported function `per_class_metrics`        
+        return per_class_metrics(self)
