@@ -131,7 +131,12 @@ def _from_xy(df, x_column, y_column, sr=None):
     """
     Takes an X/Y Column and Creates a Point Geometry from it.
     """
-    from arcgis.geometry import SpatialReference, Geometry
+    from arcgis.geometry import SpatialReference, Point
+    from arcgis.features.geo._array import GeoArray
+    def _xy_to_geometry(x,y,sr):
+        """converts x/y coordinates to Point object"""
+        return Point({'spatialReference' : sr, 'x' : x, 'y': y})
+    
     if sr is None:
         sr = SpatialReference({'wkid' : 4326})
     if not isinstance(sr, SpatialReference):
@@ -142,13 +147,11 @@ def _from_xy(df, x_column, y_column, sr=None):
         elif isinstance(sr, str):
             sr = SpatialReference({'wkt' : sr})
     geoms = []
-    for idx, row in df.iterrows():
-        geoms.append(
-            Geometry({'x' : row[x_column], 'y' : row[y_column],
-             'spatialReference' : sr})
-        )
-    df['SHAPE'] = geoms
-    df.spatial.set_geometry('SHAPE')
+    v_func = np.vectorize(_xy_to_geometry, otypes='O')
+    ags_geom = np.empty(len(df), dtype="O")
+    ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)    
+    df['SHAPE'] = GeoArray(ags_geom)
+    df.spatial.name
     return df
 
 def _ensure_path_string(input_path):
