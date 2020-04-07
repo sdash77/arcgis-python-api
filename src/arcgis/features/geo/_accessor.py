@@ -2852,7 +2852,10 @@ class GeoAccessor(object):
 
         # get wkid
         try:
-            if geo_df.crs is not None and 'init' in geo_df.crs:
+            if geo_df.crs is not None and hasattr(geo_df.crs, 'to_epsg'):
+                # check for pyproj
+                epsg_code = geo_df.crs.to_epsg()
+            elif geo_df.crs is not None and 'init' in geo_df.crs:
                 epsg_code = geo_df.crs['init'].split(':')[-1]
                 epsg_code = int(epsg_code) # convert string to number
             elif geo_df.crs is not None:
@@ -2887,12 +2890,12 @@ class GeoAccessor(object):
         # initialize empty array
         ags_geom = np.empty(geo_df.shape[0], dtype="O")
 
-        ags_geom[:] = v_func(geo_df['geometry'].values)
+        ags_geom[:] = v_func(geo_df[geo_df.geometry.name].values)
 
         if inplace:
             geo_df[column_name] = GeoArray(ags_geom)
         else:
-            geo_df = pd.DataFrame(geo_df.drop(columns='geometry'))
+            geo_df = pd.DataFrame(geo_df.drop(columns=geo_df.geometry.name))
             geo_df[column_name] = GeoArray(ags_geom)
 
         geo_df.spatial.set_geometry(column_name)
