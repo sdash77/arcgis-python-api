@@ -138,8 +138,9 @@ class DeepLab(ArcGISModel):
 
         self.learn.loss_func = self._deeplab_loss
 
-        if self.class_balancing and self._data.class_weight is None:
-            logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+        if self.class_balancing:
+            if self._data.class_weight is None:
+                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
 
         if self.focal_loss:
             self.learn.loss_func = FocalLoss(self.learn.loss_func)

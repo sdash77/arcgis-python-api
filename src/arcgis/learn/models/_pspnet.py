@@ -119,9 +119,7 @@ class PSPNetClassifier(ArcGISModel):
             if self.class_balancing and data.class_weight is not None:
                 class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
                 self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
-            else:
-                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
-
+            
             if unet_aux_loss:
                self.learn.loss_func = self._psp_loss 
         else:
@@ -134,6 +132,10 @@ class PSPNetClassifier(ArcGISModel):
             self.learn.callbacks.append(MixUpCallback(self.learn))
 
         self.learn.callbacks.append(LabelCallback(self.learn))  #appending label callback 
+
+        if self.class_balancing:
+            if self._data.class_weight is None:
+                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
 
         self.learn.model = self.learn.model.to(self._device)
         self.freeze()

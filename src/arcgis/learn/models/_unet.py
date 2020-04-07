@@ -110,11 +110,12 @@ class UnetClassifier(ArcGISModel):
             else:
                 self.learn = unet_learner(data, arch=self._backbone, metrics=accuracy, wd=1e-2, bottle=True, last_cross=True, cut=backbone_cut, split_on=backbone_split)
 
-            if self.class_balancing and data.class_weight is not None:
-                class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
-                self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
-            else:
-                logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")
+            if self.class_balancing:
+                if data.class_weight is not None:
+                    class_weight = torch.tensor([data.class_weight.mean()] + data.class_weight.tolist()).float().to(self._device)
+                    self.learn.loss_func = CrossEntropyFlat(class_weight, axis=1)
+                else:
+                    logger.warning("Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter.")                
 
             if self.focal_loss:
                 self.learn.loss_func = FocalLoss(self.learn.loss_func)
