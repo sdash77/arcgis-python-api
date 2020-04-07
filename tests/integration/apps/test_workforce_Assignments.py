@@ -529,6 +529,7 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
                 dispatcher=self.dispatcher,
                 assignment_type=self.inspection,
             )
+            # add assignment without assigned date
             assignment3 = Assignment(
                 self.project,
                 geometry={"x": 123, "y": 456},
