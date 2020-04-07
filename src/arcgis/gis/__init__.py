@@ -3638,7 +3638,7 @@ class ContentManager(object):
         =================  =====================================================================
 
 
-        URL 1: http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000000ms000000
+        URL 1:  `Item and Item Types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
 
         :return:
            The item if successfully added, None if unsuccessful.
